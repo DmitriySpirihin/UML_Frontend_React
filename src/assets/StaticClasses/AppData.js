@@ -12,8 +12,8 @@ export class AppData{
 
    static choosenHabits = [0,1,4,6,12,16,22];
    static habitsByDate = {
-   [esterDay.toISOString().split('T')[0]] : {0:0},
-   [dateKey]:{0:0,1:0,4:0,6:-1,12:1,16:1,22:0}
+   [esterDay.toISOString().split('T')[0]] : {0:1},
+   [dateKey]:{0:1,1:0,4:0,6:-1,12:1,16:1,22:0}
   };
 
   // methods

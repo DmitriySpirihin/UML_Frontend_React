@@ -28,7 +28,9 @@ const HabitsMain = () => {
     const [habitsCards, setHabitsCards] = React.useState([]);
     const [categories, setCategories] = React.useState([]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [hasHabits, setHasHabits] = useState(AppData.choosenHabits.length > 0);
     // subscriptions
+    
     React.useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
         return () => subscription.unsubscribe();
@@ -72,6 +74,7 @@ const HabitsMain = () => {
             }
             return prev;
         });
+        setHasHabits(AppData.choosenHabits.length > 0);
     };
     const removeHabit = (habitId) => {
         if (habitsCards.includes(habitId)) {
@@ -84,6 +87,7 @@ const HabitsMain = () => {
             ? `Привычка: \'${name}\' удалена`
             : `Habit: \'${name}\' deleted`;
             setShowPopUpPanel(popUpText,2000);
+            setHasHabits(AppData.choosenHabits.length > 0);
         }
     };
     
@@ -93,9 +97,12 @@ const HabitsMain = () => {
     // render    
     return (
         <div style={styles(theme).container}>
-            <div style={styles(theme).scrollView}>
+            {!hasHabits && <div style={styles(theme).panel}>
+              <p style={styles(theme).subText}>{setInfoText(langIndex)}</p>
+            </div>}
+            {hasHabits && <div style={styles(theme).scrollView}>
               {buildMenu({theme, habitsCards, categories, getAllHabits: () => getAllHabits()})}
-        </div>
+        </div>}
         <BottomPanel theme={theme} globalTheme={globalTheme}/>
         </div>
     )
@@ -432,4 +439,9 @@ const styles = (theme) =>
   return '#' + r.toString(16).padStart(2, '0') + 
          g.toString(16).padStart(2, '0') + 
          b.toString(16).padStart(2, '0');
+}
+function setInfoText(langIndex) {
+    return langIndex === 0 ? 
+    'Вы еще не добавили ни одной привычки\n\n\n Вы можете выбрать из списка или добавить свою привычку.\n\nВыбранные привычки будут обновляться автоматически каждый день, если вы пропустите день, привычка будет не выполнена для этого дня.\n\nВы должны выполнить свою привычку и затем свайпнуть вправо, чтобы отметить её как выполненную.\n\nЧтобы сформировать привычку, вам нужно выполнить ее 66 дней подряд.\n\nВы можете просмотреть прогресс ваших привычек в панели метрик и календаре.\n\n\n * Чтобы начать, нажмите кнопку "+" ниже' :
+    'You have not added any habits yet\n\n\n You can choose from the list or add your own habit.\n\nChoosen habits will update automatically every day, if you skip a day, the habit will be skipped for that day.\n\nYou need to perform your habit and then swipe right to mark it as done.\n\nTo form a habit you need to perform it for 66 days in a row.\n\nYou can view a progress of your habits in the metrics panel and calendar.\n\n\n * To get started tap the "+" button below';
 }
