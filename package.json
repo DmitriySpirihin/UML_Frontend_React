@@ -9,7 +9,8 @@
     "dev:proxy:open": "vite --mode proxy --open",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "BROWSER=chrome react-scripts start"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

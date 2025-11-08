@@ -52,7 +52,7 @@ const AddHabitPanel = () => {
     const [habitCategory, setHabitCategory] = useState('');
     const [habitDescription, setHabitDescription] = useState('');
     const [habitIcon, setHabitIcon] = useState(DefaultIcon);
-    const [habitId, setHabitId] = useState(null);
+    const [habitId, setHabitId] = useState(-1);
     
     // UI state
     const [habitList, setHabitList] = useState(getAllHabits());

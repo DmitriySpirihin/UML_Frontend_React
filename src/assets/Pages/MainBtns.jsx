@@ -369,7 +369,6 @@ function getThemeName(langIndex,theme) {
             themeName = langIndex === 0 ? 'светлая(доп)' : 'light(Add)';
             break;
     }
-    console.log(theme);
     return langIndex === 0 ?  'тема: ' + themeName : 'theme: ' + themeName;
 }
 

@@ -13,6 +13,7 @@ export class Colors {
     mainText: { light: "#151414ff", dark: "#dfd5d5ff", speciallight: "#653737ff", specialdark: "#c6b1b1ff" },
     subText: { light: "#1b1a1aff", dark: "#756e6eff", speciallight: "#34211bff", specialdark: "#8c7e7eff" },
     simplePanel: { light: "#adc0d2ff", dark: "#1c1b1dff", speciallight: "#cdb0a6ff", specialdark: "#232b23ff" },
+    metricsPanel: { light: "#7d97afff", dark: "#101114ff", speciallight: "#af8679ff", specialdark: "#181414ff" },
     highlitedPanel: { light: "#698198ff", dark: "#332b3bff", speciallight: "#995e4bff", specialdark: "#427042ff" },
     panelGradient: { light: "linear-gradient(135deg, #c9def6ff 0%, #8daec9ff 100%)", dark: "linear-gradient(135deg, #292932ff 0%, #0e0e10ff 100%)", speciallight: "linear-gradient(135deg, #d6b9afff 0%, #96552cff 100%)", specialdark: "linear-gradient(135deg, #454e49ff 0%, #142018ff 100%)",},
     border: { light: "#1f2c37ff", dark: "#88a0c6ff", speciallight: "#ffffffff", specialdark: "#d3e3d3ff" },

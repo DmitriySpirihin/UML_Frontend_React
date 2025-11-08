@@ -11,7 +11,7 @@ export const confirmationPanel$ = new BehaviorSubject(false);
 export const header$ = new BehaviorSubject('');
 export const showPopUpPanel$ = new BehaviorSubject({show:false,header:''});
 export const addHabitPanel$ = new BehaviorSubject(false);
-export const setPage$ = new BehaviorSubject('HabitMetrics');
+export const setPage$ = new BehaviorSubject('MainMenu');
 export const habitsChanged$ = new Subject();
 
 export const setConfirmationPanel = (state) => confirmationPanel$.next(state);

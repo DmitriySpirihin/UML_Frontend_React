@@ -30,7 +30,9 @@ const HabitMetrics = () => {
     const [showInfo,setShowInfo] = useState(false);
     const [showListOfHabitsPanel,setShowListOfHabitsPanel] = useState(false);
     const [daysCount, setDaysCount] = useState(0);
-    const [habitId, setHabitId] = useState(0);
+    const [habitId, setHabitId] = useState(() => (
+      AppData.choosenHabits.length > 0 ? AppData.choosenHabits[0] : -1
+    ));
     // subscriptions
     React.useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
@@ -51,26 +53,32 @@ const HabitMetrics = () => {
     }, [currentStreak]);
     const habits = Array.from(Object.values(AppData.habitsByDate))
     React.useEffect(() => {
+      if(habitId > -1){
       let maxStreak = 0;
       let currentStreak = 0;
-      habits.forEach((v) => {
-        let streak = 0;
-        if(habitId in v){
-          if(v.id > 0)streak ++;
+      let streak = 0;
+      for(let i = 0; i < habits.length; i++){
+        if(habitId in habits[i]){
+          if(habits[i][habitId] > 0)streak ++;
           else{
             if(streak > maxStreak)maxStreak = streak;
             streak = 0;
           }
         }
-      })
-      for(let i = habits.length - 1; i >= 0; i--){
+        if(streak > maxStreak)maxStreak = streak;
+      }
+      for(let i = habits.length - 2; i >= 0; i--){
         if(habitId in habits[i]){
-          if(habits[i].habitId > 0)currentStreak ++;
+          if(habits[i][habitId] > 0)currentStreak ++;
           else break;
         }
       }
+      if(habitId in habits[habits.length - 1]){
+        if(habits[habits.length - 1][habitId] > 0)currentStreak ++;
+      }
       setMaxStreak(maxStreak);
       setCurrentStreak(currentStreak);
+    }
     }, [habitId]);
     // circle percent bar
     const radius = 55;
@@ -79,8 +87,8 @@ const HabitMetrics = () => {
     // render    
     return (
         <div style={styles(theme).container}>
-          {habitId === -1 && <div style={styles(theme).panel}>
-            <p style={styles(theme).subText}>{langIndex === 0 ? 'Вы еще не выбрали привычку' : 'You have not selected a habit yet'}</p>
+          {habitId === -1 && <div style={{display:'flex',justifyContent:'center',alignItems:'center',marginTop:'40%'}}>
+            <p style={{...styles(theme).subText,fontSize:'12px',margin:'10%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setStartingInfo(langIndex)}</p>
           </div>}
           {habitId > -1 && <p style={{...styles(theme).text,fontSize:'14px',marginTop:'15vh',marginLeft:'40%'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel)}}>
             {!showListOfHabitsPanel ? langIndex === 0 ? 'Открыть список >' : 'Open list >' : langIndex === 0 ? 'Закрыть список <' : 'Close list <'}
@@ -94,15 +102,18 @@ const HabitMetrics = () => {
             </div>
             {/* habit metrics days*/}
             <div style={{display:'flex',justifyContent:'center',alignItems:'center',width:'90%',height:'15vh',flexDirection:'column',
-                  backgroundColor:Colors.get('simplePanel', theme),marginTop:'10px',borderRadius:'24px'}}>
-              <div style={{display:'flex',justifyContent:'center',alignItems:'center',width:'90%',height:'7vh',backgroundColor:Colors.get('background', theme),
-                borderRadius:'12px',marginTop:'12px'}}>
-                    {/* days elements here */}
+                  backgroundColor:Colors.get('metricsPanel', theme),marginTop:'10px',borderRadius:'24px'}}>
+              <div style={{display:'flex',justifyContent:'center',alignItems:'center',flexWrap:'wrap',width:'90%',height:'8vh',backgroundColor:Colors.get('background', theme),
+                borderRadius:'4px',marginTop:'8px'}}>
+                    {getHabitStatusElements(daysCount, habits, habitId, theme)}
+              </div>
+              <div style={{width:'90%', display:'flex', justifyContent:'flex-start'}}>
+                <p style={{...styles(theme).subText, fontSize:'10px', marginTop:'4px'}}>{getHabitRangeStartLabel(daysCount)}</p>
               </div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'60%',height:'10vh'}}>
-                  <div onClick={() => {setDaysCount(daysCount - 1 < 0 ? 3 : daysCount - 1)}}><h1 style={{...styles(theme).text,fontSize:'24px',paddingRight:'25px'}}>{'<'}</h1></div>
+                  <div onClick={() => {setDaysCount(daysCount - 1 < 0 ? 2 : daysCount - 1)}}><h1 style={{...styles(theme).text,fontSize:'24px',paddingRight:'25px'}}>{'<'}</h1></div>
                   <p style={styles(theme).text}>{daysCountText(langIndex,daysCount)}</p>
-                  <div onClick={() => {setDaysCount(daysCount + 1 > 3 ? 0 : daysCount + 1)}}><h1 style={{...styles(theme).text,fontSize:'24px',paddingLeft:'25px'}}>{'>'}</h1></div> 
+                  <div onClick={() => {setDaysCount(daysCount + 1 > 2 ? 0 : daysCount + 1)}}><h1 style={{...styles(theme).text,fontSize:'24px',paddingLeft:'25px'}}>{'>'}</h1></div> 
                 </div>
                 <div style={{fontSize:'8px',color:Colors.get('subText', theme),lineHeight:'5px',padding:'5px'}}>{infoMicro(langIndex,daysCount)}</div>
             </div>
@@ -111,7 +122,7 @@ const HabitMetrics = () => {
               <p style={styles(theme).subText}>{langIndex === 0 ? 'максимальная серия ' + maxStreak : 'Max streak ' + maxStreak}</p>
               {maxStreak > currentStreak && <img src={StreakIcon} style={{width:'30px'}} />}
               <img src={Divider} style={{width:'40px',color:Colors.get('border', theme)}} />
-              {currentStreak > maxStreak && <img src={StreakIcon} style={{width:'30px'}} />}
+              {currentStreak >= maxStreak && <img src={StreakIcon} style={{width:'30px'}} />}
               <p style={styles(theme).subText}>{langIndex === 0 ? 'текущая серия ' + currentStreak : 'Current streak ' + currentStreak}</p>
             </div>
             {/* percent filled icon*/}
@@ -144,13 +155,15 @@ const HabitMetrics = () => {
             transition: 'all 0.5s ease-in-out',transform: showListOfHabitsPanel ? 'translate(-20%,-17%)' : 'translate(-110%,-17%)'}}>
               <div style={{display:'flex',flexDirection:'column',overflowY:'scroll',justifyContent:'start',alignItems:'center',width:'75%',height:'95%',marginTop:'4%',marginLeft:'20%'}}>
                 {AppData.choosenHabits.map((id,index) => {
-                  const habits = Array.from(Object.values(AppData.habitsByDate))
-                  const currentStreak = 0;
-                  for(let i = habits.length - 1; i >= 0; i--){
+                  let currentStreak = 0;
+                  for(let i = habits.length - 2; i >= 0; i--){
                     if(id in habits[i]){
-                      if(habits[i].id > 0)currentStreak ++;
+                      if(habits[i][id] > 0)currentStreak ++;
                       else break;
                     }
+                  }
+                  if(id in habits[habits.length - 1]){
+                    if(habits[habits.length - 1][id] > 0)currentStreak ++;
                   }
                 return (
                   <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'space-between',width:'90%',height:'8%',borderBottom: `1px solid ${Colors.get('border', theme)}`,
@@ -264,6 +277,49 @@ const styles = (theme) =>
     alignItems:'stretch',
   }
 })
+
+function getHabitStatusElements(daysCount, habitsArray, habitId, theme) {
+  const daysMapping = [7, 30, 90, 180];
+  const numberOfDays = daysMapping[daysCount] ?? 7;
+  if (habitId === -1) return [];
+
+  const byDate = AppData.habitsByDate || {};
+  const today = new Date();
+
+  const items = [];
+  for (let i = numberOfDays - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayObj = byDate[dateStr];
+
+    const hasValue = dayObj && (habitId in dayObj);
+    const done = hasValue && dayObj[habitId] > 0;
+    const skipped = hasValue && dayObj[habitId] <= 0;
+    const bg = done
+      ? Colors.get('habitCardDone', theme)
+      : skipped
+      ? Colors.get('habitCardSkipped', theme)
+      : Colors.get('habitCard', theme);
+
+    items.push(
+      <div
+        key={dateStr}
+        style={{
+          flex: '1 1 0',
+          height: '100%',
+          marginLeft:'1px',
+          marginRight:'1px',
+          borderRadius: '3px',
+          backgroundColor: bg,
+        }}
+      />
+    );
+  }
+
+  return items;
+}
+
 function interpolateColor(color1, color2, factor) {
   if (!color1 || !color2) return color1 || color2 || '#000000';
   // Ensure factor is clamped between 0 and 1
@@ -328,6 +384,27 @@ const daysCountText = (langIndex,daysCount) => {
       case 0:  return langIndex === 0 ? '7 дней' : '7 days';  break;
       case 1:  return langIndex === 0 ? '30 дней' : '30 days';  break;
       case 2:  return langIndex === 0 ? '90 дней' : '90 days';  break;
-      case 3:  return langIndex === 0 ? '180 дней' : '180 days';  break;
     }
+}
+const setStartingInfo = (langIndex) => {
+    return langIndex === 0 ? 
+    'Сначала вам нужно добавить привычку\n\n Здесь вы можете просмотреть прогресс и метрики ваших привычек.\n\nВернитесь в предыдущее меню, чтобы выбрать или создать свою привычку' :
+    'First you need to add a habit\n\n Here you can view your habits progress and view your habits metrics.\n\nGet back to the previous menu to choose or create a habit';
+}
+
+function getHabitRangeStartLabel(daysCount){
+  const daysMapping = [7, 30, 90, 180];
+  const numberOfDays = daysMapping[daysCount] ?? 7;
+  const byDate = AppData.habitsByDate || {};
+  const keys = Object.keys(byDate);
+  if (keys.length === 0) return '';
+  const sorted = keys.slice().sort();
+  const startIndex = Math.max(0, sorted.length - numberOfDays);
+  const dateStr = sorted[startIndex];
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length < 3) return '';
+  const mm = parts[1];
+  const dd = parts[2];
+  return `${mm}-${dd}`;
 }
