@@ -12,11 +12,16 @@ import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import { expandedCard$, setExpandedCard , setPage} from '../../StaticClasses/HabitsBus.js';
 import Colors, { THEME } from '../../StaticClasses/Colors'
-import { theme$ ,lang$, globalTheme$, updateConfirmationPanel,setShowPopUpPanel,setAddHabitPanel} from '../../StaticClasses/HabitsBus'
+import { loadCustomIcon } from '../../StaticClasses/SaveHelper';
+import { saveData } from '../../StaticClasses/SaveHelper';
+import { theme$ ,lang$, globalTheme$, updateConfirmationPanel,setShowPopUpPanel,setAddHabitPanel,setHabitSettingsPanel} from '../../StaticClasses/HabitsBus'
 
 const dateKey = new Date().toISOString().split('T')[0];
-const clickSound = new Audio(new URL('../../Audio/Click_Add.mp3', import.meta.url).href);
-const isDoneSound = new Audio(new URL('../../Audio/IsDone.mp3', import.meta.url).href); 
+const clickSound = new Audio(new URL('../../Audio/Click.wav', import.meta.url).href);
+const isDoneSound = new Audio(new URL('../../Audio/IsDone.wav', import.meta.url).href); 
+const skipSound = new Audio(new URL('../../Audio/Skip.wav', import.meta.url).href);
+const switchSound = new Audio(new URL('../../Audio/SwitchPanel.wav', import.meta.url).href);
+const closeSound = new Audio(new URL('../../Audio/Transition.wav', import.meta.url).href);
 export let removeHabitFn;
 export let addHabitFn;
 export let currentId;
@@ -30,7 +35,6 @@ const HabitsMain = () => {
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [hasHabits, setHasHabits] = useState(AppData.choosenHabits.length > 0);
     // subscriptions
-    
     React.useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
         return () => subscription.unsubscribe();
@@ -55,9 +59,9 @@ const HabitsMain = () => {
         if (habitsCards.length > 0) {
             const cats = new Set();
             habitsCards.forEach(id => {
-                const h = getAllHabits().find(h => h.Id() === id);
-                if (h && h.Category && h.Category()[0]) {
-                    cats.add(h.Category()[0]);
+                const h = getAllHabits().find(h => h.id === id);
+                if (h && h.category && h.category[  langIndex]) {
+                    cats.add(h.category[langIndex]);
                 }
             });
             setCategories(Array.from(cats));
@@ -80,8 +84,8 @@ const HabitsMain = () => {
         if (habitsCards.includes(habitId)) {
             AppData.removeHabit(dateKey,habitId);
             setHabitsCards(prev => prev.filter(id => id !== habitId));
-            const habitObj = getAllHabits().find(h => h.Id() === habitId);
-            const nameArr = habitObj?.Name?.() || ["",""];
+            const habitObj = getAllHabits().find(h => h.id === habitId);
+            const nameArr = habitObj?.name || ["",""];
             const name = nameArr[langIndex] || (langIndex === 0 ? "Привычка" : "Habit");
             const popUpText = langIndex === 0 
             ? `Привычка: \'${name}\' удалена`
@@ -112,25 +116,25 @@ export default HabitsMain
 
 function getAllHabits() {
     return allHabits.concat(
-        (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.Id() === ch.Id()))
+        (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.id === ch.id))
     );
 }
 
 function buildMenu({ theme, habitsCards, categories}) {
     return categories.map(category => {
         const habitsInCategory = habitsCards
-            .map(id => getAllHabits().find(h => h.Id() === id))
-            .filter(h => h && h.Category && Array.isArray(h.Category()) && h.Category()[0] === category);
+            .map(id => getAllHabits().find(h => h.id === id))
+            .filter(h => h && h.category && Array.isArray(h.category) && h.category[0] === category);
 
         return (
             <CategoryPanel key={category} text={category} theme={theme}>
                 {habitsInCategory.map(habit => (
                     <HabitCard
-                        key={habit.Id()}
-                        id={habit.Id()}
-                        text={habit.Name()}
-                        descr={habit.Description()}
-                        imgsrc={habit.IsCustom() ? habit.Src() : new URL(habit.Src(), import.meta.url).href}
+                        key={habit.id}
+                        id={habit.id}
+                        text={habit.name}
+                        descr={habit.description}
+                        imgsrc={habit.isCustom ? habit.src : new URL(habit.src, import.meta.url).href}
                         theme={theme}
                     />
                 ))}
@@ -139,8 +143,9 @@ function buildMenu({ theme, habitsCards, categories}) {
     });
 }
 function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Описание", "Description"], imgsrc, theme}) {
-    const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id] ?? 0);
+    const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [iconUrl, setIconUrl] = useState(null);
     const maxX = 100;
     const minX = -maxX;
     const [canDrag, setCanDrag] = useState(true);
@@ -158,6 +163,35 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
         });
         return () => subscription.unsubscribe();
     }, []);
+    useEffect(() => {
+      AppData.changeStatus(dateKey,id,status);
+    }, [status]);
+
+    // Load custom icon if needed
+    useEffect(() => {
+        const loadIcon = async () => {
+            try {
+                if (imgsrc && typeof imgsrc === 'string' && imgsrc.startsWith('icon_')) {
+                    // This is a custom icon, load it
+                    const iconData = await loadCustomIcon(imgsrc);
+                    if (iconData) {
+                        setIconUrl(iconData);
+                    } else {
+                        // Fallback to default icon if loading fails
+                        setIconUrl(new URL('../../Art/HabitsIcons/Default.png', import.meta.url).href);
+                    }
+                } else {
+                    // This is a regular icon, use it directly
+                    setIconUrl(imgsrc);
+                }
+            } catch (error) {
+                console.error('Error loading icon:', error);
+                setIconUrl(new URL('../../Art/HabitsIcons/Default.png', import.meta.url).href);
+            }
+        };
+        
+        loadIcon();
+    }, [imgsrc]);
     
     // Get localized text
     const displayText = Array.isArray(text) ? text[langIndex] : text;
@@ -213,18 +247,15 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
             }
             AppData.habitsByDate[dateKey][id] = newStatus;
         }
-        if(newStatus === 1){
-            isDoneSound.play();
-            navigator.vibrate(50);
-        }
+        if(newStatus === 1)playEffects(isDoneSound,50);
+        else if(newStatus === -1)playEffects(skipSound,50);
         setColor(Colors.get(newStatus === 1 ? 'habitCardDone' : newStatus === -1 ? 'habitCardSkipped' : 'habitCard', theme));
         setStatus(newStatus);
     }
             
     
     const toggleIsActive = () => {
-        if(AppData.prefs[2] == 0)clickSound.play();
-        if(AppData.prefs[3] == 0)navigator.vibrate(50);
+        playEffects(clickSound,50);
         const newExpanded = !expanded;
         setExpanded(newExpanded);
         setExpandedCard(newExpanded ? id : null);
@@ -288,15 +319,17 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                 }}
             >
                 <div style={{display: "flex", alignItems: "flex-start", maxHeight: '40px', paddingBottom: '5px'}}>   
-                    <img 
-                        src={imgsrc} 
-                        style={{width: '24px', objectFit: 'contain', marginLeft: '15px', marginTop: '8px'}} 
-                        onError={(e) => {
-                            e.target.onerror = null; // Prevent infinite loop if default image is also missing
-                            e.target.src = new URL('../../Art/HabitsIcons/Default.png', import.meta.url).href;
-                        }}
-                        alt="" 
-                    />
+                    {iconUrl && (
+                        <img 
+                            src={iconUrl} 
+                            style={{width: '24px', objectFit: 'contain', marginLeft: '15px', marginTop: '8px'}} 
+                            onError={(e) => {
+                                e.target.onerror = null; // Prevent infinite loop if default image is also missing
+                                e.target.src = new URL('../../Art/HabitsIcons/Default.png', import.meta.url).href;
+                            }}
+                            alt="" 
+                        />
+                    )}
                     <h2 style={mainText}>{displayText}</h2>
                 </div> 
                 {expanded && (
@@ -362,10 +395,11 @@ function BottomPanel({globalTheme,theme})
     }
     return (
         <div style={style}>
-            <img src={globalTheme === 'dark' ? BackDark : BackLight} style={btnstyle} onClick={() => setPage('MainMenu')} />
-            <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => setPage('HabitMetrics')} />
-            <img src={globalTheme === 'dark' ? AddDark : AddLight} style={btnstyle} onClick={() => setAddHabitPanel(true)} />
-            <img src={globalTheme === 'dark' ? CalendarDark : CalendarLight} style={btnstyle} onClick={() => setPage('HabitCalendar')} />
+            <img src={globalTheme === 'dark' ? BackDark : BackLight} style={btnstyle} onClick={() => {setPage('MainMenu');saveData();playEffects(skipSound,50);}} />
+            <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {setPage('HabitMetrics');playEffects(switchSound,50);}} />
+            <img src={globalTheme === 'dark' ? AddDark : AddLight} style={btnstyle} onClick={() => {setAddHabitPanel(true);playEffects(closeSound,50);}} />
+            <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
+            <img src={globalTheme === 'dark' ? CalendarDark : CalendarLight} style={btnstyle} onClick={() => {setPage('HabitCalendar');playEffects(switchSound,50);}} />
         </div>
     )
 }
@@ -444,4 +478,15 @@ function setInfoText(langIndex) {
     return langIndex === 0 ? 
     'Вы еще не добавили ни одной привычки\n\n Вы можете выбрать из списка или добавить свою привычку.\n\nВыбранные привычки будут обновляться автоматически каждый день, если вы пропустите день, привычка будет не выполнена для этого дня.\n\nВы должны выполнить свою привычку и затем свайпнуть вправо, чтобы отметить её как выполненную.\n\nЧтобы сформировать привычку, вам нужно выполнить ее 66 дней подряд.\n\nВы можете просмотреть прогресс ваших привычек в панели метрик и календаре.\n\n\n * Чтобы начать, нажмите кнопку "+" ниже' :
     'You have not added any habits yet\n\n You can choose from the list or add your own habit.\n\nChoosen habits will update automatically every day, if you skip a day, the habit will be skipped for that day.\n\nYou need to perform your habit and then swipe right to mark it as done.\n\nTo form a habit you need to perform it for 66 days in a row.\n\nYou can view a progress of your habits in the metrics panel and calendar.\n\n\n * To get started tap the "+" button below';
+}
+function playEffects(sound,vibrationDuration ){
+  if(AppData.prefs[2] == 0 && sound !== null){
+    if(!sound.paused){
+        sound.pause();
+        sound.currentTime = 0;
+    }
+    sound.volume = 0.5;
+    sound.play();
+  }
+  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
 }

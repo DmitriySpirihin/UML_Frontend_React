@@ -8,11 +8,59 @@ export class AppData{
 
    static choosenHabits = [];
    static habitsByDate = {};
-
+   static daysToFormAHabit = 66;
   // methods
+  static init(data) {
+    if (!data) return;
+    
+    this.version = data.version || "1.0.0";
+    this.prefs = data.prefs || [0, 0, 0, 0];
+    this.dayTostart = data.dayTostart || '';
+    this.choosenHabits = Array.isArray(data.choosenHabits) ? [...data.choosenHabits] : [];
+    this.daysToFormAHabit = data.daysToFormAHabit || 66;
+    
+    // Recreate Habit instances from the serialized data
+    this.CustomHabits = data.CustomHabits || [];
+    /*
+    if (Array.isArray(data.CustomHabits)) {
+      data.CustomHabits.forEach(habitData => {
+        if (habitData) {
+          this.CustomHabits.push(new Habit(
+            habitData.name || ["", ""],
+            habitData.category || ["", ""],
+            habitData.description || ["", ""],
+            habitData.id || 0,
+            habitData.isCustom !== undefined ? habitData.isCustom : true,
+            habitData.src || ''
+          ));
+        }
+      });
+    }*/
+    
+    // Reconstruct the habitsByDate object
+    this.habitsByDate = data.habitsByDate || {};
+    /*
+    if (Array.isArray(data.habitsByDate)) {
+      data.habitsByDate.forEach(([date, habits]) => {
+        if (date && habits && typeof habits === 'object') {
+          this.habitsByDate[date] = { ...habits };
+        }
+      });
+    } else if (data.habitsByDate && typeof data.habitsByDate === 'object') {
+      Object.entries(data.habitsByDate).forEach(([date, habits]) => {
+        if (habits && typeof habits === 'object') {
+          this.habitsByDate[date] = { ...habits };
+        }
+      });
+    }
+    */
+  }
+
+
   static setPrefs(ind,value){
     this.prefs[ind] = value;
   }
+  
   static hasKey(key) {
     return Object.prototype.hasOwnProperty.call(this.habitsByDate, key);
   }
@@ -45,17 +93,30 @@ export class AppData{
       }
     });
   }
-  static changeStatus(day,habitId,status){
-    if(day in this.habitsByDate){
-      this.habitsByDate[day][habitId] = status;
+  static changeStatus(day, habitId, status) {
+    // Create day entry if it doesn't exist
+    if (!(day in this.habitsByDate)) {
+      this.habitsByDate[day] = {};
     }
+    // Update the status for the habit
+    this.habitsByDate[day][habitId] = status;
+    console.log('Updated habitsByDate:', JSON.stringify(this.habitsByDate));
   }
-  static AddCustomHabit(n,cat,desc,src,id){
-    const description = desc === "" ? ["Своя привычка","My custom habit"] : [desc,desc];
-    this.CustomHabits.push(new Habit([n,n],[cat,cat],description,id,true,src === '' ? '../../Art/HabitsIcons/Default.png' : src));
+  static AddCustomHabit(n, cat, desc, src, id) {
+    const description = desc === "" ? ["Своя привычка", "My custom habit"] : [desc, desc];
+    const newHabit = new Habit(
+      [n, n],
+      [cat, cat],
+      description,
+      id,
+      true,
+      src === '' ? '../../Art/HabitsIcons/Default.png' : src
+    );
+    this.CustomHabits.push(newHabit);
+    return newHabit;
   }
   static IsCustomHabitExists(habitId){
-    return this.CustomHabits.some(habit => habit.Id() === habitId);
+    return this.CustomHabits.some(habit => habit.id === habitId);
   }
   static IsHabitInChoosenList(habitId){
     return this.choosenHabits.includes(habitId);
@@ -63,8 +124,10 @@ export class AppData{
 }
 
 export const fillEmptyDays = () => {
-   const startDate = new Date(AppData.dayTostart)
-   const endDate = new Date();
+  if(AppData.dayTostart !== ''){
+   const startDate = new Date(AppData.dayTostart);
+   const today = new Date();
+   const endDate = today.setDate(today.getDate() - 1);
    let currentDate = new Date(startDate);
    while (currentDate < endDate) {
     if(!(currentDate.toISOString().split('T')[0] in AppData.habitsByDate)) {
@@ -80,91 +143,34 @@ export const fillEmptyDays = () => {
     currentDate.setDate(currentDate.getDate() + 1);
    }
   
-   AppData.habitsByDate[endDate.toISOString().split('T')[0]] = {};
+   if(!AppData.hasKey(today.toISOString().split('T')[0])){
+   AppData.habitsByDate[today.toISOString().split('T')[0]] = {};
    for (let index = 0; index < AppData.choosenHabits.length; index++) {
-     AppData.habitsByDate[endDate.toISOString().split('T')[0]][AppData.choosenHabits[index]] = 0; 
+     AppData.habitsByDate[today.toISOString().split('T')[0]][AppData.choosenHabits[index]] = 0; 
+   }
+  }
+ }
+}
+
+
+export class UserData {
+   static name = 'guest';
+   static photo = null;
+
+   static Init(name,photo){
+      this.name = name;
+      this.photo = photo;
    }
 }
 
-class SaveData{
-   constructor(){
-      this.data = {
-         prefs: AppData.prefs,
-         choosenHabits: AppData.choosenHabits,
-         habitsByDate: AppData.habitsByDate,
-         dayTostart: AppData.dayTostart,
-         CustomHabits: AppData.CustomHabits
-      }
-   }
-}
-
-
-// in AppData.js
-function serialize() {
-  return {
-    version: this.version,
-    prefs: this.prefs,
-    dayTostart: this.dayTostart,
-    choosenHabits: this.choosenHabits,
-    habitsByDate: this.habitsByDate,
-    CustomHabits: this.CustomHabits.map(h => ({
-      id: h.Id(),
-      isCustom: h.IsCustom(),
-      name: h.Name(),
-      category: h.Category(),
-      description: h.Description(),
-      src: h.Src(),
-    })),
-  };
-}
-
-function deserialize(data) {
-  if (!data || typeof data !== 'object') return;
-
-  this.version = data.version ?? this.version;
-  this.prefs = Array.isArray(data.prefs) ? data.prefs : this.prefs;
-  this.dayTostart = data.dayTostart ?? '';
-  this.choosenHabits = Array.isArray(data.choosenHabits) ? data.choosenHabits : [];
-  this.habitsByDate = data.habitsByDate && typeof data.habitsByDate === 'object' ? data.habitsByDate : {};
-
-  this.CustomHabits = Array.isArray(data.CustomHabits)
-    ? data.CustomHabits.map(h =>
-        new Habit(h.name, h.category, h.description, h.id, h.isCustom, h.src)
-      )
-    : [];
-}
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(STORE)) {
-        db.createObjectStore(STORE);
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-export async function saveAppData(AppData) {
-  const db = await openDB();
-  const tx = db.transaction(STORE, 'readwrite');
-  tx.objectStore(STORE).put(AppData.serialize(), KEY);
-  return new Promise((resolve, reject) => {
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-    tx.onabort = () => reject(tx.error);
-  });
-}
-
-export async function loadAppData(AppData) {
-  const db = await openDB();
-  const tx = db.transaction(STORE, 'readonly');
-  const req = tx.objectStore(STORE).get(KEY);
-  const data = await new Promise((resolve, reject) => {
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  if (data) AppData.deserialize(data);
+export class Data{
+  constructor(){
+    this.version = AppData.version,
+    this.prefs = AppData.prefs,
+    this.choosenHabits = AppData.choosenHabits,
+    this.habitsByDate = AppData.habitsByDate,
+    this.dayTostart = AppData.dayTostart,
+    this.CustomHabits = AppData.CustomHabits,
+    this.daysToFormAHabit = AppData.daysToFormAHabit
+  }
 }

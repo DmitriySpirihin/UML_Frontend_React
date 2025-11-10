@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import PropTypes from 'prop-types';
+import { useState, useEffect,useRef } from 'react';
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
-import Colors, { THEME } from '../../StaticClasses/Colors';
+import Colors from '../../StaticClasses/Colors';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
-import { theme$, lang$, setShowPopUpPanel, setAddHabitPanel } from '../../StaticClasses/HabitsBus';
+import { setShowPopUpPanel, setAddHabitPanel ,addHabitPanel$} from '../../StaticClasses/HabitsBus';
 import Cropper from 'react-easy-crop';
 import DefaultIcon from '../../Art/HabitsIcons/Default.png';
-import Select from 'react-select';
+import { saveCustomIcon } from '../../StaticClasses/SaveHelper';
 
 // Import icons
 import drinkWaterIcon from '../../Art/HabitsIcons/Drink water.png';
@@ -21,6 +20,10 @@ import runIcon from '../../Art/HabitsIcons/Run 3 km.png';
 import vitaminsIcon from '../../Art/HabitsIcons/Take vitamins.png';
 import yogaIcon from '../../Art/HabitsIcons/Yoga 15 minutes.png';
 import brainExerciseIcon from '../../Art/HabitsIcons/brain.png';
+
+const clickMiniSound = new Audio(new URL('../../Audio/Click_Mini.wav', import.meta.url).href);
+const clickSound = new Audio(new URL('../../Audio/Click_Add.wav', import.meta.url).href);
+const closeSound = new Audio(new URL('../../Audio/Transition.wav', import.meta.url).href);
 
 const icons = {
   'Drink water': drinkWaterIcon,
@@ -38,14 +41,15 @@ const icons = {
 
 const getAllHabits = () => {
   return allHabits.concat(
-    (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.Id() === ch.Id()))
+    (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.id === ch.id))
   );
 }
 
 const AddHabitPanel = () => {
     // Theme and language state
-    const [theme, setThemeState] = useState('dark');
-    const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [theme] = useState('dark');
+    const [langIndex] = useState(AppData.prefs[0]);
+    const [addHabitPanel, setAddHabitPanel] = useState(addHabitPanel$);
     
     // Habit data state
     const [habitName, setHabitName] = useState('');
@@ -58,6 +62,7 @@ const AddHabitPanel = () => {
     const [habitList, setHabitList] = useState(getAllHabits());
     const [selectedHabit, setSelectedHabit] = useState(null);
     const [selectIconPanel, setSelectIconPanel] = useState(false);
+    const [opacity, setOpacity] = useState(0);
     // Hidden file input to open system dialog without showing input
     const fileInputRef = useRef(null);
     
@@ -76,17 +81,29 @@ const AddHabitPanel = () => {
     useEffect(() => {
         setHabitList(getAllHabits());
     }, []);
+    useEffect(() => {
+      addHabitPanel$.subscribe(setAddHabitPanel);
+    }, []);
+    useEffect(() => {
+      if(addHabitPanel)setTimeout(() => setOpacity(1),400);
+      else setOpacity(0);
+    }, [addHabitPanel]);
     const handleInputValue = (value,index) => {
-      if(index === 0) setHabitName(value);
-      else if(index === 1) setHabitCategory(value);
-      else if(index === 2) setHabitDescription(value);
+      if(index === 0) setHabitName(value[0].toUpperCase() + value.toLowerCase().slice(1));
+      else if(index === 1) setHabitCategory(value[0].toUpperCase() + value.toLowerCase().slice(1));
+      else if(index === 2) setHabitDescription(value[0].toUpperCase() + value.toLowerCase().slice(1));
       if(habitName.length > 3 && habitCategory.length > 3){
         setAddButtonEnabled(true);
         setAddButtonContext({text: langIndex === 0 ? 'создать и добавить' : 'create and add',onClick: () => createHabit(habitName,habitCategory,habitDescription,habitIcon)})
       }
     }
+    
     return (
-        <div style={styles(theme).container}>
+        <div style={{...styles(theme).container,
+          transform: addHabitPanel ? 'translateX(0)' : 'translateX(-100%)',
+          backgroundColor: opacity === 1 ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
+          transition: 'transform 0.3s ease-in-out, background-color 0.1s ease-in-out',
+        }}>
          <div style={styles(theme).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
            <div style={{...styles(theme).simplePanel,height:"35vh"}}>
@@ -94,26 +111,26 @@ const AddHabitPanel = () => {
               onChange={(e) => searchHabitsList(e.target.value,habitList, setHabitList) }/>
             <div style={styles(theme).scrollView}>
               {habitList.map((habit) => (
-                <li key={habit.Id()} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.Id() === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
-                onClick={() => {setSelectedHabit(habit.Id());setHabitId(habit.Id());setAddButtonEnabled(true);
-                setAddButtonContext({text: langIndex === 0 ? 'Добавить' : 'Add',onClick: () => addHabit(habit.Id(),habit.Name()[langIndex],false)})}}>
-                  <p style={styles(theme).text}>{habit.Name()[langIndex]}</p>
+                <li key={habit.id} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
+                onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(clickMiniSound,20);
+                setAddButtonContext({text: langIndex === 0 ? 'Добавить' : 'Add',onClick: () => addHabit(habit.id,habit.name[langIndex],false)})}}>
+                  <p style={styles(theme).text}>{habit.name[langIndex]}</p>
                 </li>
               ))}
            </div>
            </div>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
            <div style={styles(theme).simplePanel}>
-            <input type="text" placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
+            <input type="text" maxLength={25} placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
             onChange={(e) => handleInputValue(e.target.value,0)}/>
             <div style={{display:"flex",justifyContent:"space-between"}}>
-              <input type="text" placeholder={habitCategory === '' ? langIndex === 0 ? 'категория' : 'category' : habitCategory} style={{...styles(theme).input,width:"48%"}}
+              <input type="text" maxLength={25} placeholder={habitCategory === '' ? langIndex === 0 ? 'категория' : 'category' : habitCategory} style={{...styles(theme).input,width:"48%"}}
               onChange={(e) => handleInputValue(e.target.value,1)}/>
               <select style={{...styles(theme).input,width:"48%"}} onChange={(e) => handleInputValue(e.target.value,1)}>
                 {renderCategoryOptions(theme, langIndex)}
               </select>
             </div>
-            <input type="text" placeholder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} style={styles(theme).input}
+            <input type="text" maxLength={60} placeholder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} style={styles(theme).input}
             onChange={(e) => handleInputValue(e.target.value,2)}/>
             <div style={styles(theme).headerText}>{langIndex === 0 ? 'выбери иконку(опционально)' : 'choose icon(optional)'}</div>
             <div style={{display:"flex",justifyContent:"space-between"}}>
@@ -145,8 +162,8 @@ const AddHabitPanel = () => {
             </div>
            </div>
            <div style={{marginTop:"40px"}}>
-           <button style={{...styles(theme).button,padding:"10px"}} onClick={() => setAddHabitPanel(false)}>{langIndex === 0 ? 'назад' : 'back'}</button>
-           {addButtonEnabled && <button style={{...styles(theme).button,padding:"10px"}} onClick={() => addButtonContext.onClick()}>{addButtonContext.text}</button>}
+           <button style={{...styles(theme).button,padding:"10px"}} onClick={() => {setAddHabitPanel(false);playEffects(closeSound,20);}}>{langIndex === 0 ? 'назад' : 'back'}</button>
+           {addButtonEnabled && <button style={{...styles(theme).button,padding:"10px"}} onClick={() => {addButtonContext.onClick();playEffects(clickSound,50);}}>{addButtonContext.text}</button>}
            </div>
          </div>
          {selectIconPanel && (
@@ -156,12 +173,13 @@ const AddHabitPanel = () => {
                 <img src={value} alt="habit icon" style={{width:"8vw",padding:"30px"}}
                 onClick={() => {
                   setHabitIcon(value);
+                  playEffects(clickSound,50);
                   setSelectIconPanel(false);
                   if(habitName.length > 3 && habitCategory.length > 3){
                     setAddButtonEnabled(true);
                     setAddButtonContext({
                       text: langIndex === 0 ? 'создать и добавить' : 'create and add',
-                      onClick: () => createHabit(habitName,habitCategory,habitDescription,value)
+                      onClick: () => {createHabit(habitName,habitCategory,habitDescription,value);playEffects(clickSound,50);}
                     });
                   }
                 }}/>
@@ -186,6 +204,7 @@ const AddHabitPanel = () => {
                <button
                  style={{...styles(theme).button, width:'auto', padding:'8px 12px'}}
                  onClick={() => {
+                   playEffects(null,20);
                    setImageSrc(null);
                    setCrop({x:0,y:0});
                    setZoom(1);
@@ -198,6 +217,7 @@ const AddHabitPanel = () => {
                  style={{...styles(theme).button, width:'auto', padding:'8px 12px'}}
                  onClick={async () => {
                    if (!imageSrc || !cropPixels) return;
+                   playEffects(null,20);
                    const img = new Image();
                    img.crossOrigin = 'anonymous';
                    img.src = imageSrc;
@@ -217,15 +237,17 @@ const AddHabitPanel = () => {
                      cropPixels.width,
                      cropPixels.height
                    );
-                   canvas.toBlob((blob) => {
+                   canvas.toBlob(async (blob) => {
                     if (!blob) return;
                     const url = URL.createObjectURL(blob);
+                    // Save the icon to cloud and db and get its key
+                    const iconKey = await saveCustomIcon(blob);
                     setHabitIcon(url);
-                    if(habitName.length > 3 && habitCategory.length > 3){
+                    if(habitName.length > 3 && habitCategory.length > 3 && iconKey) {
                       setAddButtonEnabled(true);
                       setAddButtonContext({
                         text: langIndex === 0 ? 'создать и добавить' : 'create and add',
-                        onClick: () => createHabit(habitName,habitCategory,habitDescription,url)
+                        onClick: () => {createHabit(habitName, habitCategory, habitDescription, iconKey);playEffects(clickSound,50);}
                       });
                     }
                     setImageSrc(null);
@@ -243,12 +265,13 @@ const AddHabitPanel = () => {
         </div>
         
     )
+    
 }
 export default AddHabitPanel;
 
 // Helper function to render category options
 const renderCategoryOptions = (theme, langIndex) => {
-    const categories = Array.from(new Set(allHabits.map(h => h.Category()[langIndex])));
+    const categories = Array.from(new Set(allHabits.map(h => h.category[langIndex])));
     return categories.map((category) => (
         <option key={category} value={category} style={{...styles(theme).text}}>
             {category}
@@ -277,7 +300,7 @@ const addHabit =  (habitId,habitName,isCustom) => {
 
 const createHabit =  (name,category,description,icon) => {
     const currentAll = getAllHabits();
-    const maxId = currentAll.length > 0 ? Math.max(...currentAll.map(h => h.Id())) : 0;
+    const maxId = currentAll.length > 0 ? Math.max(...currentAll.map(h => h.id)) : 0;
     const habitId = maxId + 1;
     if(!AppData.IsCustomHabitExists(habitId)){
       
@@ -292,7 +315,7 @@ const createHabit =  (name,category,description,icon) => {
 const searchHabitsList = (name, habitList, setHabitList) => {
     if(name.length > 0){
       const newList = getAllHabits().filter((habit) => {
-        return habit.Name()[AppData.prefs[0]].toLowerCase().startsWith(name.toLowerCase());
+        return habit.name[AppData.prefs[0]].toLowerCase().startsWith(name.toLowerCase());
       });
       setHabitList(newList);
     }else{
@@ -433,6 +456,17 @@ const styles = (theme) => ({
     backgroundColor:Colors.get('habitCard', theme),
   }
 })
+function playEffects(sound,vibrationDuration ){
+  if(AppData.prefs[2] == 0 && sound !== null){
+    if(!sound.paused){
+        sound.pause();
+        sound.currentTime = 0;
+    }
+    sound.volume = 0.5;
+    sound.play();
+  }
+  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+}
 
 
     

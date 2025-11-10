@@ -30,8 +30,8 @@ const ConfirmationPanel = () => {
         <div style={styles(theme).container}>
             <div style={styles(theme).panel}>
                 <h1 style={styles(theme).text}>{header}</h1>
-                <button style={styles(theme).button} onClick={() => {confirmAction(); setConfirmationPanel(false);}}>{lang === 'ru' ? 'Да' : 'Yes'}</button>
-                <button style={styles(theme).button} onClick={() => {setConfirmationPanel(false);}}>{lang === 'ru' ? 'Нет' : 'No'}</button>    
+                <button style={styles(theme).button} onClick={() => {confirmAction(); setConfirmationPanel(false);if(AppData.prefs[3] == 0)navigator.vibrate(50)}}>{lang === 'ru' ? 'Да' : 'Yes'}</button>
+                <button style={styles(theme).button} onClick={() => {setConfirmationPanel(false);if(AppData.prefs[3] == 0)navigator.vibrate(50)}}>{lang === 'ru' ? 'Нет' : 'No'}</button>    
             </div>
         </div>
     )

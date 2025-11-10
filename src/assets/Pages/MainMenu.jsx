@@ -5,6 +5,8 @@ import Colors, { THEME } from '../StaticClasses/Colors'
 import { theme$, lang$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
 import 'grained'
+import sSound from '../Audio/Start.wav'
+const startSound = new Audio(sSound);
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
@@ -31,11 +33,7 @@ const MainMenu = ({ onPageChange }) => {
             grainColor: "#ffffffff",
         });
     }, []);
-    const clickSound = new Audio('src/assets/Audio/Click.mp3');
-    function playEffects(){
-      if(AppData.prefs[2] == 0)clickSound.play();
-      if(AppData.prefs[3] == 0)navigator.vibrate(100);
-    }
+
     return (
           
           <div style={styles(theme).container}>
@@ -50,7 +48,7 @@ const MainMenu = ({ onPageChange }) => {
                     ]} 
                     theme={theme}  
                     lang={lang}
-                    onClick={() => {onPageChange('HabitsMain');playEffects();}}
+                    onClick={() => {onPageChange('HabitsMain');playEffects(startSound,100);}}
                 />
                 <MenuCard 
                     text={['Тренировочная дневник', 'Training diary']} 
@@ -61,7 +59,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#9de074ff" 
                     theme={theme} 
                     lang={lang}
-                    onClick={() => {playEffects();}}
+                    onClick={() => {playEffects(startSound,100);}}
                 />
                <MenuCard 
                     text={['Список задач', 'Simple task manager']} 
@@ -72,7 +70,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#d0e074ff" 
                     theme={theme} 
                     lang={lang}
-                    onClick={() => {playEffects();}}
+                    onClick={() => {playEffects(startSound,100);}}
                 />
                 <MenuCard 
                     text={['Хорошие новости', 'Good news']} 
@@ -83,7 +81,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#e194c6ff" 
                     theme={theme} 
                     lang={lang}
-                    onClick={() => {playEffects();}}
+                    onClick={() => {playEffects(startSound,100);}}
                 />
             </div>
 
@@ -176,3 +174,14 @@ const styles = (theme) => ({
     alignItems: 'center'
   }
 })
+function playEffects(sound,vibrationDuration ){
+  if(AppData.prefs[2] == 0 && sound !== null){
+    if(!sound.paused){
+        sound.pause();
+        sound.currentTime = 0;
+    }
+    sound.volume = 0.5;
+    sound.play();
+  }
+  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+}

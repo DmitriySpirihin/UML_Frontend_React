@@ -13,7 +13,7 @@ import skippedIcon from '../../Art/Ui/Skipped_Icon.png'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors, { THEME } from '../../StaticClasses/Colors'
-import { setPage,theme$ ,lang$, globalTheme$, habitsChanged$, emitHabitsChanged} from '../../StaticClasses/HabitsBus'
+import { setPage,theme$ ,lang$, globalTheme$, habitsChanged$, emitHabitsChanged,setHabitSettingsPanel} from '../../StaticClasses/HabitsBus'
 
 
 const formatDateKey = (d) => {
@@ -25,8 +25,17 @@ const formatDateKey = (d) => {
 // Monday-based weekday index helper (Mon=0 ... Sun=6)
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
 const dateKey = formatDateKey(new Date());
-const clickSound = new Audio(new URL('../../Audio/Click_Add.mp3', import.meta.url).href);
-const isDoneSound = new Audio(new URL('../../Audio/IsDone.mp3', import.meta.url).href); 
+const switchSound = new Audio(new URL('../../Audio/SwitchPanel.wav', import.meta.url).href);
+const clickSound = new Audio(new URL('../../Audio/Click_Calendar.wav', import.meta.url).href);
+const isDoneSound = new Audio(new URL('../../Audio/IsDone.wav', import.meta.url).href); 
+const skipSound = new Audio(new URL('../../Audio/Skip.wav', import.meta.url).href);
+
+// dynamic list that includes defaults + current custom habits
+function getAllHabits() {
+  return allHabits.concat(
+    (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.id === ch.id))
+  );
+}
 
 const HabitCalendar = () => {
     // states
@@ -76,8 +85,8 @@ const HabitCalendar = () => {
     for (let i = 0; i < calendarCells.length; i+=7) {
       weeks.push(calendarCells.slice(i, i + 7));
     } 
-    const prevMonth = () => setDate(new Date(date.getFullYear(), date.getMonth() - 1));
-    const nextMonth = () => setDate(new Date(date.getFullYear(), date.getMonth() + 1));
+    const prevMonth = () => {setDate(new Date(date.getFullYear(), date.getMonth() - 1));playEffects(switchSound,50);};
+    const nextMonth = () =>{  setDate(new Date(date.getFullYear(), date.getMonth() + 1));playEffects(switchSound,50);};
     // render    
     return (
         <div style={styles(theme).container}>
@@ -120,7 +129,7 @@ const HabitCalendar = () => {
                             border:`3px solid ${isChoosen ? Colors.get('currentDateBorder', theme) : Colors.get('background', theme)}`,
                             backgroundColor:day < 1 ? Colors.get('background', theme) : status === 1 ? Colors.get('habitCardDone', theme) : status === -1 ? Colors.get('habitCardSkipped', theme) : Colors.get('background', theme),
                         }}
-                            onClick={() => {setCurrentDate(new Date(cellYear, cellMonth, day));setInfoPanelData(AppData.hasKey(formatDateKey(new Date(cellYear, cellMonth, day))));}}   >
+                            onClick={() => {setCurrentDate(new Date(cellYear, cellMonth, day));setInfoPanelData(AppData.hasKey(formatDateKey(new Date(cellYear, cellMonth, day))));playEffects(clickSound,50);}}   >
                             {day}
                             {day > 0 && <div style={{fontSize:'8px',color:Colors.get('subText', theme),lineHeight:'5px',padding:'5px'}}>{percent}</div>}
                           </div>
@@ -135,7 +144,7 @@ const HabitCalendar = () => {
               color:Colors.get('simplePanel', theme)
             }}> {langIndex === 0 ? 'Выберите дату для просмотра привычек' : 'Choose the date to see habits'}</div>
           </div>
-          {inFoPanelData && <div style={{...styles(theme).panel,height:'30vh',width:'75vw',position:'fixed',top:'74%',left:'50%',zIndex:1000}}>
+          {inFoPanelData && <div style={{...styles(theme).panel,height:'30vh',width:'75vw',position:'fixed',top:'74%',left:'50%'}}>
             <div style={{...styles(theme).calendarHead,display:'flex',flexDirection:'column',alignItems:'center',boxSizing:'border-box', paddingTop:'5px'}}>
                 <h1 style={{...styles(theme).header,fontSize:'22px',paddingTop:'1px',paddingBottom:'1px'}}>{currentDate.getDate() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)]}</h1>
                 <div style={{fontSize:'10px',color:Colors.get('subText', theme),lineHeight:'1px',paddingRight:'50%'}}>{habitAmountString(currentDate,langIndex)}</div>
@@ -158,13 +167,13 @@ const Habit = ({theme, langIndex, date}) => {
     return (
         habits.map(([id, initStatus]) => {
           const numId = Number(id);
-          const found = allHabits.find(habit => habit.Id() === numId);
-          const name = found ? found.Name() : ["", ""];
+          const found = getAllHabits().find(habit => habit.id === numId);
+          const name = found ? found.name[langIndex] : "";
           return (
               <HabitRow
                   key={`${dateKey}-${id}`}
                   id={numId}
-                  name={name[langIndex]}
+                  name={name}
                   theme={theme}
                   date={date}
                   statusInit={initStatus}
@@ -208,9 +217,11 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
                 setStatus(newStatus);
                 emitHabitsChanged();
                 if (newStatus === 1) {
-                    isDoneSound.play();
-                    navigator.vibrate?.(50);
+                    if(AppData.prefs[2] == 0)isDoneSound.play();
+                }else if(newStatus === -1){
+                    if(AppData.prefs[2] == 0)skipSound.play();
                 }
+                if(AppData.prefs[3] == 0)navigator.vibrate?.(50);
             }
             setCanDrag(false);
             animate(constrainedX, 0, { type: 'tween', duration: 0.2 });
@@ -283,10 +294,13 @@ function BottomPanel({globalTheme,theme})
     }
     return (
         <div style={style}>
-            <img src={globalTheme === 'dark' ? BackDark : BackLight} style={btnstyle} onClick={() => setPage('HabitsMain')} />
-            <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => setPage('HabitMetrics')} />
-            <img src={globalTheme === 'dark' ? AddDark : AddLight} style={btnstyle} onClick={() => {}} />
-            <img src={globalTheme === 'dark' ? CalendarDark : CalendarLight} style={btnstyle} onClick={() => setPage('HabitCalendar')} />
+            <div style={style}>
+                <img src={globalTheme === 'dark' ? BackDark : BackLight} style={btnstyle} onClick={() => {setPage('HabitsMain');playEffects(skipSound,50);}} />
+                <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {setPage('HabitMetrics');playEffects(switchSound,50);}} />
+                <img src={globalTheme === 'dark' ? AddDark : AddLight} style={btnstyle} onClick={() => {}} />
+                <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
+                <img src={globalTheme === 'dark' ? CalendarDark : CalendarLight} style={btnstyle} onClick={() => {}} />
+            </div>
         </div>
     )
 }
@@ -383,7 +397,6 @@ const styles = (theme) =>
   scrollView:
   {
     margin:'15px',
-    width:'90%',
     overflowY: "scroll",
     width:'90%',
     height:'70%',
@@ -412,3 +425,15 @@ function habitAmountString(date,langIndex)
    }
    return '0 ' + names[langIndex][2];
 }
+function playEffects(sound,vibrationDuration ){
+  if(AppData.prefs[2] == 0 && sound !== null){
+    if(!sound.paused){
+        sound.pause();
+        sound.currentTime = 0;
+    }
+    sound.volume = 0.5;
+    sound.play();
+  }
+  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+}
+  

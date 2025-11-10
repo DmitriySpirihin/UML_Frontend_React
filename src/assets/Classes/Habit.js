@@ -2,38 +2,31 @@ import {AppData} from '../StaticClasses/AppData.js';
 
 export class Habit
 {
-    #id;
-    #isCustom;
-    #name;
-    #category;
-    #description;
-    #src;
+    id = 0;
+    isCustom = false;
+    name = ["",""];
+    category = ["",""];
+    description = ["",""];
+    src = "";
     constructor(n = ["Привычка","Habit"],c = ["Другое","Other"],d = ["Своя привычка","My custom habit"],
         id,isCustom = false,src = '../../Art/HabitsIcons/Default.png')
     {
         if(Array.isArray(n))
         {
-           this.#name = n;
-           this.#category = c;
-           this.#description = d;
+           this.name = n;
+           this.category = c;
+           this.description = d;
         }
         else
         {
-            this.#name = [n,n];
-            this.#category = [c,c];
-            this.#description = [d,d];
+            this.name = [n,n];
+            this.category = [c,c];
+            this.description = [d,d];
         }
-        this.#id = id;
-        this.#isCustom = isCustom;
-        this.#src = src;
+        this.id = id;
+        this.isCustom = isCustom;
+        this.src = src;
     }
-
-    Name = () => this.#name;
-    Category = () => this.#category;
-    Description = () => this.#description;
-    Id = () => this.#id;
-    IsCustom = () => this.#isCustom;
-    Src = () => this.#src;
 }
 const path = '../../Art/HabitsIcons/';
 const DefaultHabits = [
@@ -91,7 +84,11 @@ const DefaultHabits = [
     ["Заправить кровать утром","Make your bed in the morning"],25,false,path + 'Make the bed' + '.png'),
 ]
 
-export const allHabits = [...DefaultHabits,...AppData.CustomHabits];
+export let allHabits = [];
+
+export function setAllHabits(){
+    allHabits = [...DefaultHabits,...AppData.CustomHabits];
+}
 
 
 

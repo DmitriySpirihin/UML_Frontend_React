@@ -11,8 +11,10 @@ export const confirmationPanel$ = new BehaviorSubject(false);
 export const header$ = new BehaviorSubject('');
 export const showPopUpPanel$ = new BehaviorSubject({show:false,header:''});
 export const addHabitPanel$ = new BehaviorSubject(false);
-export const setPage$ = new BehaviorSubject('MainMenu');
+export const habitSettingsPanel$ = new BehaviorSubject(false);
+export const setPage$ = new BehaviorSubject('LoadPanel');
 export const habitsChanged$ = new Subject();
+export const daysToFormAHabit$ = new BehaviorSubject(66);
 
 export const setConfirmationPanel = (state) => confirmationPanel$.next(state);
 export const setTheme = (theme) => {
@@ -30,6 +32,8 @@ export function setShowPopUpPanel(text,duration ) {
 }
 export const setPage = (page) => setPage$.next(page);
 export const setAddHabitPanel = (state) => addHabitPanel$.next(state);
+export const setHabitSettingsPanel = (state) => habitSettingsPanel$.next(state);
 export const emitHabitsChanged = () => habitsChanged$.next(Date.now());
+export const setDaysToFormAHabit = (days) => {daysToFormAHabit$.next(days);AppData.daysToFormAHabit = days;};
 
   

@@ -2,16 +2,24 @@ import SettingsDark from '../Art/Ui/Settings_Dark.png'
 import SettingsLight from '../Art/Ui/Settings_Light.png'
 import ThemeDark from '../Art/Ui/Theme_Dark.png'
 import ThemeLight from '../Art/Ui/Theme_Light.png'
+import TelegramIcon from '../Art/Ui/TelegramIcon.png'
 import React, { useEffect, useState } from 'react'
-import {AppData} from '../StaticClasses/AppData'
+import {AppData,UserData} from '../StaticClasses/AppData'
 import { motion, AnimatePresence } from 'framer-motion'
 import Colors, { THEME } from "../StaticClasses/Colors";
+import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate} from 'react-icons/fa'
+import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
 import { setTheme as setGlobalTheme, globalTheme$ ,theme$,showPopUpPanel$,setLang,lang$} from '../StaticClasses/HabitsBus';
-
+import trSound from '../Audio/Transition.wav'
+import pSound from '../Audio/Info.wav'
+const transitionSound = new Audio(trSound);
+const popUpSound = new Audio(pSound);
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
     const [theme, setthemeState] = React.useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [additionalPanel, setAdditionalPanel] = useState(false);
+    const [additionalPanelNum, setAdditionalPanelNum] = useState(1);
 
     React.useEffect(() => {
         const subscription = globalTheme$.subscribe(setGlobalThemeState);
@@ -31,14 +39,38 @@ const MainBtns = () => {
     return (
         <>
             <PopUpPanel theme={theme}  />
+            <UserPanel theme={theme} />
             <SettingsBtn globalTheme={globalTheme}/>  
             <ThemeBtn globalTheme={globalTheme}/>
-            <SettingsPanel theme={theme} langIndex={langIndex}/>
+            <SettingsPanel theme={theme} langIndex={langIndex} setAdditionalPanel={setAdditionalPanel} setAdditionalPanelNum={setAdditionalPanelNum}/>
+            <AdditionalPanel theme={theme} langIndex={langIndex} isOpen={additionalPanel} setIsOpen={setAdditionalPanel} panelNum={additionalPanelNum}/>
         </>
     )
 }
 
 export default MainBtns
+const UserPanel = ({theme}) => {
+    const _style = {
+        position: "fixed",
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        top: "7vh",
+        left: "80vw",
+        width: "35px",
+        zIndex: 1000,
+    }
+    return (
+        <div style={_style}>
+            <p style={{color: Colors.get('subText', theme),fontSize: "10px",fontFamily: "Segoe UI"}}>{UserData.name}</p>
+            <img 
+                src={UserData.photo} 
+                style={{border: "3px solid " + Colors.get('border', theme),borderRadius: "50%",objectFit: "cover",width: "6vw",margin: "10px"}} 
+            /> 
+        </div>
+    )
+}
 const SettingsBtn = ({globalTheme}) => {
     const _style = {
         outline: "none",
@@ -57,6 +89,7 @@ const SettingsBtn = ({globalTheme}) => {
     const toggleSettings = () => {
         // This will be handled by the SettingsPanel's internal state
         // We'll use a custom event to communicate between components
+        playEffects(transitionSound,50);
         const event = new CustomEvent('toggleSettingsPanel');
         window.dispatchEvent(event);
     };
@@ -85,15 +118,19 @@ const ThemeBtn = ({globalTheme}) => {
 
     return (
        
-        <img src={icon} onClick={() => {changeSettings(1)}} style={_style} />
+        <img src={icon} onClick={() => {changeSettings(1);playEffects(null,50);}} style={_style} />
     )
 }
+
 const PopUpPanel = ({theme}) => {
     const [show, setShow] = React.useState({show:false,header:''});
     useEffect(() => {
         const subscription = showPopUpPanel$.subscribe(setShow);  
         return () => subscription.unsubscribe();
     }, []);
+    useEffect(() => {
+      if(show.show) playEffects(popUpSound,0);
+    }, [show]);
     return (
         <AnimatePresence>
             {show.show && (
@@ -141,7 +178,64 @@ const popUpStyles = (theme) => {
   }
 }
 
-const SettingsPanel = ({theme, langIndex}) => {
+const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
+    const [report, setReport] = useState('');
+    const sendReport = () => {
+        // send report via backend
+    }
+    const TelegramLink = ({name}) => {
+        return (
+            <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center",width:"50%",height:"10%",borderBottom:"1px solid " + Colors.get('border', theme)}}>
+                <img src={TelegramIcon} alt="Telegram" style={{width: "24px", height: "24px"}} />
+                <a href={`https://t.me/${name}`} target="_blank" rel="noopener noreferrer">
+                    <p style={styles(theme).text}>{name}</p>
+                </a>
+            </div>
+        )
+    }
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div
+                    initial={{ x: '100%'}}
+                    animate={{ x: '0%'}}
+                    exit={{ x: '100%'}}
+                    transition={{
+                        type: 'spring',
+                        stiffness: 300,
+                        damping: 25
+                    }}
+                    style={{...settingsPanelStyles(theme).panel,width:"100vw",height:"100vh",borderRadius:"0"}}
+                >
+                    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"100%",height:"100%"}}>
+                   {panelNum === 1 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
+                      <p style={styles(theme).text}>{langIndex === 0 ? 'Если вы нашли ошибку, пожалуйста, сообщите об этом' : 'If you find a bug, please report it'}</p>
+                      <textarea maxLength={160} onChange={(e) => setReport(e.target.value)} placeholder={langIndex === 0 ? 'опишите проблему' : 'describe a problem'} style={styles(theme).input}/>
+                      {report.length > 0 && <div style={{width:"50%",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={sendReport}>{langIndex === 0 ? 'отправить' : 'send'}</div>}
+                   </div>}
+                   {panelNum === 3 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
+                      <div style={{display:"flex",flexDirection:"row"}}><FaAddressCard style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Наши телеграм контакты' : 'Our telegram contacts'}</p></div>
+                      <TelegramLink name = "Diiimaan777"/>
+                      <TelegramLink name = "wakeupdemianos"/>
+                   </div>}
+                   {panelNum === 2 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
+                      <div style={{display:"flex",flexDirection:"row"}}><FaDonate style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Здесь будет ссылка на донат' : 'Here will be a donate link'}</p></div>
+                   </div>}
+                  <div  onClick={() => {setIsOpen(false);playEffects(null,20)}} style={{display:"flex",flexDirection:"row",borderBottom:"1px solid " + Colors.get('border', theme),width:'40%'}}>
+                    <FaBackspace style={styles(theme).miniIcon}/>
+                    <p style={styles(theme).text} >{langIndex === 0 ? 'Закрыть' : 'Close'}</p>
+                  </div>
+                  
+                
+                  </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    )
+}
+    
+
+const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNum}) => {
     const [isOpen, setIsOpen] = useState(false);
     const [soundIndex, setSoundIndex] = useState(AppData.prefs[2]);
     const [vibroIndex, setVibroIndex] = useState(AppData.prefs[3]);
@@ -201,7 +295,7 @@ const SettingsPanel = ({theme, langIndex}) => {
                             zIndex: 999,
                             pointerEvents: 'auto',
                         }}
-                        onClick={() => setIsOpen(false)}
+                        onClick={() => {setIsOpen(false);playEffects(transitionSound,20);}}
                     />
                     <motion.div
                         className="settings-panel"
@@ -225,8 +319,10 @@ const SettingsPanel = ({theme, langIndex}) => {
                     </p>
                     <div style={settingsPanelStyles(theme).list}>
                         <div style={settingsPanelStyles(theme).listEl}>
+                            <FaLanguage style={settingsPanelStyles(theme).miniIcon}/>
                             <p style={settingsPanelStyles(theme).text} onClick={() => { 
                                 changeSettings(0);
+                                playEffects(null,20);
                                 // Update language text immediately
                                 const newLangIndex = langIndex === 0 ? 1 : 0;
                                 setLang(newLangIndex === 0 ? 'ru' : 'en');
@@ -236,13 +332,15 @@ const SettingsPanel = ({theme, langIndex}) => {
                             </p>
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(1)}}>
+                            <FaHighlighter style={settingsPanelStyles(theme).miniIcon}/>
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(1);playEffects(null,20)}}>
                                  {
                                     getThemeName(langIndex,theme)
                                  }
                             </p>
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
+                            {soundIndex === 0 ? <FaVolumeUp style={settingsPanelStyles(theme).miniIcon}/> : <FaVolumeMute style={settingsPanelStyles(theme).miniIcon}/>}
                             <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(2);setSoundIndex(soundIndex === 0 ? 1 : 0)}}>
                                  {
                                    langIndex === 0 ? 'звук: '+ (soundIndex === 0 ? 'вкл' : 'выкл') : 'sound: ' + (soundIndex === 0 ? 'on' : 'off')
@@ -250,7 +348,8 @@ const SettingsPanel = ({theme, langIndex}) => {
                             </p>
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(3);setVibroIndex(vibroIndex === 0 ? 1 : 0)}}>
+                            {vibroIndex === 0 ? <LuVibrate style={settingsPanelStyles(theme).miniIcon}/> : <LuVibrateOff style={settingsPanelStyles(theme).miniIcon}/>}
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(3);setVibroIndex(vibroIndex === 0 ? 1 : 0);playEffects(null,20)}}>
                                  {
                                    langIndex === 0 ? 'вибрация: '+ (vibroIndex === 0 ? 'вкл' : 'выкл') : 'vibration: ' + (vibroIndex === 0 ? 'on' : 'off')
                                  }
@@ -259,21 +358,24 @@ const SettingsPanel = ({theme, langIndex}) => {
                     </div>
                     <div style={settingsPanelStyles(theme).list}>
                         <div style={settingsPanelStyles(theme).listEl}>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(0)}}>
+                            <FaBug style={settingsPanelStyles(theme).miniIcon}/>
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(1)}}>
                                  {
                                     langIndex === 0 ? 'сообщить об ошибке' : 'report a bug'
                                  }
                             </p>
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(1)}}>
+                            <FaDonate style={settingsPanelStyles(theme).miniIcon}/>
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(2);playEffects(null,20)}}>
                                  {
                                     langIndex === 0 ? 'поддержи нас' : 'support us'
                                  }
                             </p>
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(2);setSoundIndex(soundIndex === 0 ? 1 : 0)}}>
+                            <FaAddressCard style={settingsPanelStyles(theme).miniIcon}/>
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(3);playEffects(null,20)}}>
                                  {
                                    langIndex === 0 ? 'контакты разработчиков' : 'developers contacts'
                                  }
@@ -282,9 +384,10 @@ const SettingsPanel = ({theme, langIndex}) => {
                     </div>
                     <div style={settingsPanelStyles(theme).list}>
                         <div style={settingsPanelStyles(theme).listEl}>
+                            <FaBackspace style={settingsPanelStyles(theme).miniIcon}/>
                             <p 
                                 style={{...settingsPanelStyles(theme).text, cursor: 'pointer'}} 
-                                onClick={() => setIsOpen(false)}
+                                onClick={() => {setIsOpen(false);playEffects(transitionSound,20)}}
                             >
                                 {langIndex === 0 ? 'назад' : 'back'}
                             </p>
@@ -315,7 +418,7 @@ const settingsPanelStyles = (theme) => {
       right: 0,
       top: 0,
       bottom: 0,
-      zIndex: 1000,
+      zIndex: 9000,
       width: '80vw',
       maxWidth: '400px',
       backgroundColor: Colors.get('simplePanel', theme),
@@ -333,7 +436,16 @@ const settingsPanelStyles = (theme) => {
       marginTop: '15px',
       marginLeft: "5%",
     },
+    miniIcon: {
+            width: "20px",
+            height: "20px",
+            padding: "5px",
+            color: Colors.get('mainText', theme),
+        },
     listEl: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
         width: '70%',
         marginBottom: '15px',
         borderBottom: `1px solid ${Colors.get('border', theme)}`,
@@ -409,3 +521,42 @@ const toggleTheme = () => {
         Colors.setTheme(next);
         setGlobalTheme(next);
 };
+const styles = (theme) => {
+    return {
+        text: {
+            color: Colors.get('mainText', theme),
+            fontSize: "14px",
+            fontFamily: "Segoe UI",
+        },
+        input: {
+            width: "90%",
+            height: "30%",
+            padding: "10px",
+            margin: "10px 0",
+            border: `1px solid ${Colors.get('border', theme)}`,
+            borderRadius: "12px",
+            outline: "none",
+            fontSize: "14px",
+            color: Colors.get('mainText', theme),
+            fontFamily: "Segoe UI",
+        },
+        miniIcon: {
+            width: "20px",
+            height: "20px",
+            padding: "5px",
+            marginTop: "10px",
+            color: Colors.get('mainText', theme),
+        }
+    }
+}
+function playEffects(sound,vibrationDuration ){
+  if(AppData.prefs[2] == 0 && sound !== null){
+    if(!sound.paused){
+        sound.pause();
+        sound.currentTime = 0;
+    }
+    sound.volume = 0.5;
+    sound.play();
+  }
+  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+}

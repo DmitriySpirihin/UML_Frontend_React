@@ -13,11 +13,20 @@ import Divider from '../../Art/Ui/Divider.png'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors, { THEME } from '../../StaticClasses/Colors'
-import { theme$ ,lang$, globalTheme$,setPage } from '../../StaticClasses/HabitsBus'
+import {FaArrowAltCircleLeft,FaArrowAltCircleRight,FaList} from 'react-icons/fa'
+import { theme$ ,lang$, globalTheme$,setPage,setHabitSettingsPanel } from '../../StaticClasses/HabitsBus'
 
-const dateKey = new Date().toISOString().split('T')[0];
-const clickSound = new Audio(new URL('../../Audio/Click_Add.mp3', import.meta.url).href);
-const isDoneSound = new Audio(new URL('../../Audio/IsDone.mp3', import.meta.url).href); 
+const switchSound = new Audio(new URL('../../Audio/SwitchPanel.wav', import.meta.url).href);
+const skipSound = new Audio(new URL('../../Audio/Skip.wav', import.meta.url).href);
+const clickSound = new Audio(new URL('../../Audio/Click_Add.wav', import.meta.url).href);
+const clickMainSound = new Audio(new URL('../../Audio/Click.wav', import.meta.url).href);
+
+// dynamic list that includes defaults + current custom habits
+function getAllHabits() {
+  return allHabits.concat(
+    (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.id === ch.id))
+  );
+}
 
 const HabitMetrics = () => {
     // states
@@ -30,6 +39,7 @@ const HabitMetrics = () => {
     const [showInfo,setShowInfo] = useState(false);
     const [showListOfHabitsPanel,setShowListOfHabitsPanel] = useState(false);
     const [daysCount, setDaysCount] = useState(0);
+    const [daysToForm, setDaysToForm] = useState(AppData.daysToFormAHabit);
     const [habitId, setHabitId] = useState(() => (
       AppData.choosenHabits.length > 0 ? AppData.choosenHabits[0] : -1
     ));
@@ -49,7 +59,7 @@ const HabitMetrics = () => {
         return () => subscription.unsubscribe();
     }, []);
     React.useEffect(() => {
-        setFillAmount(currentStreak / 66);
+        setFillAmount(currentStreak / daysToForm);
     }, [currentStreak]);
     const habits = Array.from(Object.values(AppData.habitsByDate))
     React.useEffect(() => {
@@ -90,15 +100,18 @@ const HabitMetrics = () => {
           {habitId === -1 && <div style={{display:'flex',justifyContent:'center',alignItems:'center',marginTop:'40%'}}>
             <p style={{...styles(theme).subText,fontSize:'12px',margin:'10%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setStartingInfo(langIndex)}</p>
           </div>}
-          {habitId > -1 && <p style={{...styles(theme).text,fontSize:'14px',marginTop:'15vh',marginLeft:'40%'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel)}}>
-            {!showListOfHabitsPanel ? langIndex === 0 ? 'Открыть список >' : 'Open list >' : langIndex === 0 ? 'Закрыть список <' : 'Close list <'}
-            </p>}
+          {habitId > -1 && <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'50%',height:'5vh',marginTop:'14vh',marginLeft:'15vh'}}>
+            <FaList style={{...styles(theme).text,fontSize:'16px',marginRight:'10px'}}/>
+            <p style={{...styles(theme).text,fontSize:'14px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}>
+               {!showListOfHabitsPanel ? langIndex === 0 ? 'Открыть список >' : 'Open list >' : langIndex === 0 ? 'Закрыть список <' : 'Close list <'}
+            </p>
+            </div>} 
           {habitId > -1 && <div style={styles(theme).panel}>
             {/* habit changer */}
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'75%',height:'10vh'}}>
-              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) - 1 < 0 ? AppData.choosenHabits.length - 1 : AppData.choosenHabits.indexOf(habitId) - 1])}}><h1 style={{...styles(theme).text,fontSize:'28px',paddingBottom:'7px',paddingRight:'15px'}}>{'<'}</h1></div>
-              <p style={styles(theme).text}>{allHabits.find(h => h.Id() === habitId).Name()[langIndex]}</p>
-              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) + 1 > AppData.choosenHabits.length - 1 ? 0 : AppData.choosenHabits.indexOf(habitId) + 1])}}><h1 style={{...styles(theme).text,fontSize:'28px',paddingLeft:'15px'}}>{'>'}</h1></div> 
+              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) - 1 < 0 ? AppData.choosenHabits.length - 1 : AppData.choosenHabits.indexOf(habitId) - 1]);playEffects(clickSound,50);}}><FaArrowAltCircleLeft style={{...styles(theme).text,fontSize:'24px',marginTop:'5px',paddingRight:'10px'}}/></div>
+              <p style={styles(theme).text}>{getAllHabits().find(h => h.id === habitId).name[langIndex]}</p>
+              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) + 1 > AppData.choosenHabits.length - 1 ? 0 : AppData.choosenHabits.indexOf(habitId) + 1]);playEffects(clickSound,50);}}><FaArrowAltCircleRight style={{...styles(theme).text,fontSize:'24px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
             </div>
             {/* habit metrics days*/}
             <div style={{display:'flex',justifyContent:'center',alignItems:'center',width:'90%',height:'15vh',flexDirection:'column',
@@ -111,9 +124,9 @@ const HabitMetrics = () => {
                 <p style={{...styles(theme).subText, fontSize:'10px', marginTop:'4px'}}>{getHabitRangeStartLabel(daysCount)}</p>
               </div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'60%',height:'10vh'}}>
-                  <div onClick={() => {setDaysCount(daysCount - 1 < 0 ? 2 : daysCount - 1)}}><h1 style={{...styles(theme).text,fontSize:'24px',paddingRight:'25px'}}>{'<'}</h1></div>
+                  <div onClick={() => {setDaysCount(daysCount - 1 < 0 ? 2 : daysCount - 1);if(AppData.prefs[2] == 0)clickSound.play();if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}><FaArrowAltCircleLeft style={{...styles(theme).text,fontSize:'20px',marginTop:'5px',paddingRight:'10px'}}/></div>
                   <p style={styles(theme).text}>{daysCountText(langIndex,daysCount)}</p>
-                  <div onClick={() => {setDaysCount(daysCount + 1 > 2 ? 0 : daysCount + 1)}}><h1 style={{...styles(theme).text,fontSize:'24px',paddingLeft:'25px'}}>{'>'}</h1></div> 
+                  <div onClick={() => {setDaysCount(daysCount + 1 > 2 ? 0 : daysCount + 1);if(AppData.prefs[2] == 0)clickSound.play();if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}><FaArrowAltCircleRight style={{...styles(theme).text,fontSize:'20px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
                 </div>
                 <div style={{fontSize:'8px',color:Colors.get('subText', theme),lineHeight:'5px',padding:'5px'}}>{infoMicro(langIndex,daysCount)}</div>
             </div>
@@ -122,7 +135,7 @@ const HabitMetrics = () => {
               <p style={styles(theme).subText}>{langIndex === 0 ? 'максимальная серия ' + maxStreak : 'Max streak ' + maxStreak}</p>
               {maxStreak > currentStreak && <img src={StreakIcon} style={{width:'30px'}} />}
               <img src={Divider} style={{width:'40px',color:Colors.get('border', theme)}} />
-              {currentStreak >= maxStreak && <img src={StreakIcon} style={{width:'30px'}} />}
+              {currentStreak >= maxStreak && currentStreak > 0 && <img src={StreakIcon} style={{width:'30px'}} />}
               <p style={styles(theme).subText}>{langIndex === 0 ? 'текущая серия ' + currentStreak : 'Current streak ' + currentStreak}</p>
             </div>
             {/* percent filled icon*/}
@@ -137,13 +150,13 @@ const HabitMetrics = () => {
                </svg>
                {/* texts info and days to reach goal */}
                <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'80%',height:'5vh',marginTop:'40px'}}>
-                 <p style={{...styles(theme).text,fontSize:'14px'}}>{infoDaysToFormHabit(langIndex,currentStreak)}</p>
-                 <p style={{...styles(theme).subText,fontSize:'10px',whiteSpace:'pre-line'}} onClick={() => {setShowInfo(true)}}>{infoTextShort(langIndex)}</p>
+                 <p style={{...styles(theme).text,fontSize:'14px'}}>{infoDaysToFormHabit(langIndex,currentStreak,daysToForm)}</p>
+                 <p style={{...styles(theme).subText,fontSize:'10px',whiteSpace:'pre-line'}} onClick={() => {setShowInfo(true);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}>{infoTextShort(langIndex)}</p>
                </div>
                
           </div>}
           <BottomPanel theme={theme} globalTheme={globalTheme}/>
-          {showInfo && <div onClick={() => {setShowInfo(false)}} style={{position:'fixed',top:'0',left:'0',width:'100vw',height:'100vh',justifyContent:'center',alignItems:'center',backgroundColor:'rgba(0,0,0,0.5)'}}>
+          {showInfo && <div onClick={() => {setShowInfo(false);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}} style={{position:'fixed',top:'0',left:'0',width:'100vw',height:'100vh',justifyContent:'center',alignItems:'center',backgroundColor:'rgba(0,0,0,0.5)'}}>
             <div style={{display:'flex',flexDirection:'column',marginLeft:'10vw',marginTop:'15vh',justifyContent:'center',alignItems:'center',paddingRight:'10px',width:'80vw',height:'72vh',backgroundColor:Colors.get('background', theme),borderRadius:'24px'}}>
               <p style={{...styles(theme).subText,fontSize:'12px',padding:'10px',textAlign:'left',whiteSpace:'pre-line',textIndent:'12px'}}>{infoTextLong(langIndex)}</p>
             </div>
@@ -168,10 +181,10 @@ const HabitMetrics = () => {
                 return (
                   <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'space-between',width:'90%',height:'8%',borderBottom: `1px solid ${Colors.get('border', theme)}`,
                     backgroundColor:habitId === id ? Colors.get('highlitedPanel', theme) : Colors.get('background', theme)}}
-                    onClick={() => {setHabitId(id)}}>
-                    <p style={{...styles(theme).text,fontSize:'14px'}}>{allHabits.find(h => h.Id() === id).Name()[langIndex]}</p>
-                    <p style={{...styles(theme).text,fontSize:'14px'}}>{Math.ceil(currentStreak / 66 * 100) + '%'}</p>
-                    {currentStreak >= 66 && <img src={DoneIcon} style={{width:'20px'}} />}
+                    onClick={() => {setHabitId(id);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}>
+                    <p style={{...styles(theme).text,fontSize:'14px'}}>{getAllHabits().find(h => h.id === id).name[langIndex]}</p>
+                    <p style={{...styles(theme).text,fontSize:'14px'}}>{Math.ceil(currentStreak / daysToForm * 100) + '%'}</p>
+                    {currentStreak >= daysToForm && <img src={DoneIcon} style={{width:'20px'}} />}
                   </div>
                 )
               })}
@@ -212,10 +225,11 @@ function BottomPanel({globalTheme,theme})
     }
     return (
         <div style={style}>
-            <img src={globalTheme === 'dark' ? BackDark : BackLight} style={btnstyle} onClick={() => {setPage('HabitsMain')}} />
-            <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => setPage('HabitMetrics')} />
-            <img src={globalTheme === 'dark' ? AddDark : AddLight} style={btnstyle} onClick={() => {}} />
-            <img src={globalTheme === 'dark' ? CalendarDark : CalendarLight} style={btnstyle} onClick={() => setPage('HabitCalendar')} />
+          <img src={globalTheme === 'dark' ? BackDark : BackLight} style={btnstyle} onClick={() => {setPage('HabitsMain');playEffects(skipSound,50);}} />
+          <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {}} />
+          <img src={globalTheme === 'dark' ? AddDark : AddLight} style={btnstyle} onClick={() => {}} />
+          <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
+          <img src={globalTheme === 'dark' ? CalendarDark : CalendarLight} style={btnstyle} onClick={() => {setPage('HabitCalendar');playEffects(switchSound,50);}} />
         </div>
     )
 }
@@ -350,12 +364,12 @@ function interpolateColor(color1, color2, factor) {
 }
 const infoTextShort = (langIndex) => {
     return langIndex === 0 ?
-    'Согласно исследованиям, для формирования привычки требуется 66 дней.\n(нажми для получения подробной информации)' : 
-    'According to research, it takes 66 days to form a habit.\n(click for more detailed info)';
+    'Согласно исследованиям, для формирования привычки требуется 21-66 дней.\n(нажми для получения подробной информации)' : 
+    'According to research, it takes 21-66 days to form a habit.\n(click for more detailed info)';
 }
-const infoDaysToFormHabit = (langIndex, days) => {
+const infoDaysToFormHabit = (langIndex, days,daysToForm) => {
     const names = [[' день', ' дня', ' дней'],[' day', ' days', ' days']];
-    const lastDays = 66 - days;
+    const lastDays = daysToForm - days;
     let name = '';
     if(lastDays < 10 || lastDays > 19){
       name = lastDays % 10 === 1 ? names[langIndex][0] : lastDays % 10 > 1 && lastDays % 10 < 5 ? names[langIndex][1] : names[langIndex][2];
@@ -407,4 +421,15 @@ function getHabitRangeStartLabel(daysCount){
   const mm = parts[1];
   const dd = parts[2];
   return `${mm}-${dd}`;
+}
+function playEffects(sound,vibrationDuration ){
+  if(AppData.prefs[2] == 0 && sound !== null){
+    if(!sound.paused){
+        sound.pause();
+        sound.currentTime = 0;
+    }
+    sound.volume = 0.5;
+    sound.play();
+  }
+  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
 }
