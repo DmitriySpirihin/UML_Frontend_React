@@ -182,7 +182,7 @@ const HabitMetrics = () => {
                   <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'space-between',width:'90%',height:'8%',borderBottom: `1px solid ${Colors.get('border', theme)}`,
                     backgroundColor:habitId === id ? Colors.get('highlitedPanel', theme) : Colors.get('background', theme)}}
                     onClick={() => {setHabitId(id);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}>
-                    <p style={{...styles(theme).text,fontSize:'14px'}}>{getAllHabits().find(h => h.id === id).name[langIndex]}</p>
+                    <p style={{...styles(theme).text,fontSize:'14px'}}>{(getAllHabits().find(h => h.id === id) || {}).name?.[langIndex] || 'Unknown Habit'}</p>
                     <p style={{...styles(theme).text,fontSize:'14px'}}>{Math.ceil(currentStreak / daysToForm * 100) + '%'}</p>
                     {currentStreak >= daysToForm && <img src={DoneIcon} style={{width:'20px'}} />}
                   </div>

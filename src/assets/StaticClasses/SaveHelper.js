@@ -220,9 +220,7 @@ function deserializeData(data) {
     const parsedData = JSON.parse(data);
     const restoredData = plainToClass(Data, parsedData);
     AppData.init(restoredData);
-    return restoredData;
   } catch (error) {
     console.error('Deserialization failed:', error);
-    return null;
   }
 }

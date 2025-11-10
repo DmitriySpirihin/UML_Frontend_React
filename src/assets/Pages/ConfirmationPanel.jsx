@@ -3,6 +3,7 @@ import Colors from 'src/assets/StaticClasses/Colors.js'
 import { theme$ , lang$} from 'assets/StaticClasses/HabitsBus'
 import { setConfirmationPanel,header$} from 'assets/StaticClasses/HabitsBus'
 import { removeHabitFn , currentId} from 'assets/Pages/HabitsPages/HabitsMain'
+import {AppData} from 'assets/StaticClasses/AppData'
 
 function confirmAction(){
     removeHabitFn(currentId);
