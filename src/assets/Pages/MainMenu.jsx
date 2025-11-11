@@ -1,6 +1,6 @@
 import React from 'react'
 import Colors, { THEME } from '../StaticClasses/Colors'
-import { theme$, lang$ } from '../StaticClasses/HabitsBus'
+import { theme$, lang$ , globalTheme$} from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
 import 'grained'
 
@@ -8,6 +8,7 @@ const startSound = new Audio('Audio/Start.wav');
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
+    const [globalTheme, setGlobalTheme] = React.useState('dark');
     const [lang, setLang] = React.useState(AppData.prefs[0]);
 
     React.useEffect(() => {
@@ -20,7 +21,7 @@ const MainMenu = ({ onPageChange }) => {
             langSubscription.unsubscribe();
         };
     }, []);
-     React.useEffect(() => {
+    React.useEffect(() => {
         window.grained('#grain', {
             animate: true,
             grainSize: 0.05,
@@ -31,11 +32,17 @@ const MainMenu = ({ onPageChange }) => {
             grainColor: "#ffffffff",
         });
     }, []);
+    React.useEffect(() => {
+        const globalThemeSubscription = globalTheme$.subscribe(setGlobalTheme);
+        return () => {
+            globalThemeSubscription.unsubscribe();
+        };
+    }, []);
 
     return (
           
           <div style={styles(theme).container}>
-            <img src={theme === 'dark' || theme === 'specialdark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} alt="Logo" />
+            <img src={globalTheme === 'dark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} alt="Logo" />
             <h2 style={styles(theme).mainText}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
             <div style={styles(theme).scrollView}>
                
