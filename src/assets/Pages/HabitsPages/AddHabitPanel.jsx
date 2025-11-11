@@ -217,11 +217,14 @@ const AddHabitPanel = () => {
                    img.crossOrigin = 'anonymous';
                    img.src = imageSrc;
                    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
-                   const canvas = document.createElement('canvas');
-                   canvas.width = cropPixels.width;
-                   canvas.height = cropPixels.height;
-                   const ctx = canvas.getContext('2d');
-                   ctx.drawImage(
+                   // Create a canvas for the cropped image
+                   const sourceCanvas = document.createElement('canvas');
+                   sourceCanvas.width = cropPixels.width;
+                   sourceCanvas.height = cropPixels.height;
+                   const sourceCtx = sourceCanvas.getContext('2d');
+                   
+                   // Draw the cropped image onto the source canvas
+                   sourceCtx.drawImage(
                      img,
                      cropPixels.x,
                      cropPixels.y,
@@ -232,24 +235,44 @@ const AddHabitPanel = () => {
                      cropPixels.width,
                      cropPixels.height
                    );
-                   canvas.toBlob(async (blob) => {
-                    if (!blob) return;
-                    const url = URL.createObjectURL(blob);
-                    // Save the icon to cloud and db and get its key
-                    const iconKey = await saveCustomIcon(blob);
-                    setHabitIcon(url);
-                    if(habitName.length > 3 && habitCategory.length > 3 && iconKey) {
-                      setAddButtonEnabled(true);
-                      setAddButtonContext({
-                        text: langIndex === 0 ? 'создать и добавить' : 'create and add',
-                        onClick: () => {createHabit(habitName, habitCategory, habitDescription, iconKey);playEffects(clickSound,50);}
-                      });
-                    }
-                    setImageSrc(null);
-                    setCrop({x:0,y:0});
-                    setZoom(1);
-                    setCropPixels(null);
-                  }, 'image/png');
+                   
+                   // Create a new canvas for the resized image (128x128)
+                   const targetCanvas = document.createElement('canvas');
+                   targetCanvas.width = 128;
+                   targetCanvas.height = 128;
+                   const targetCtx = targetCanvas.getContext('2d');
+                   
+                   // Draw the cropped image onto the target canvas with resizing
+                   targetCtx.drawImage(
+                     sourceCanvas,
+                     0,
+                     0,
+                     cropPixels.width,
+                     cropPixels.height,
+                     0,
+                     0,
+                     128,
+                     128
+                   );
+                   
+                   // Convert to data URL with compression
+                   const dataUrl = targetCanvas.toDataURL('image/png', 0.2);
+                  if (!dataUrl) return;
+                  const url = dataUrl;
+                  // Save the icon to cloud and db and get its key
+                  const iconKey = await saveCustomIcon(dataUrl);
+                  setHabitIcon(url);
+                  if(habitName.length > 3 && habitCategory.length > 3 && iconKey) {
+                    setAddButtonEnabled(true);
+                    setAddButtonContext({
+                      text: langIndex === 0 ? 'создать и добавить' : 'create and add',
+                      onClick: () => {createHabit(habitName, habitCategory, habitDescription, iconKey);playEffects(clickSound,50);}
+                    });
+                  }
+                  setImageSrc(null);
+                  setCrop({x:0,y:0});
+                  setZoom(1);
+                  setCropPixels(null);
                  }}
                >
                  {langIndex === 0 ? 'сохранить' : 'save'}

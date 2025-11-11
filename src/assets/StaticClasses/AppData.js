@@ -124,11 +124,12 @@ export class AppData{
 }
 
 export const fillEmptyDays = () => {
+  const today = new Date();
   if(AppData.dayTostart !== ''){
+   if(AppData.dayTostart !== today.toISOString().split('T')[0]){
    const startDate = new Date(AppData.dayTostart);
-   const today = new Date();
    const endDate = today.setDate(today.getDate() - 1);
-   let currentDate = new Date(startDate);
+   let currentDate = startDate;
    while (currentDate < endDate) {
     if(!(currentDate.toISOString().split('T')[0] in AppData.habitsByDate)) {
       AppData.habitsByDate[currentDate.toISOString().split('T')[0]] = {};
@@ -142,7 +143,8 @@ export const fillEmptyDays = () => {
     }
     currentDate.setDate(currentDate.getDate() + 1);
    }
-  
+   }
+
    if(!AppData.hasKey(today.toISOString().split('T')[0])){
    AppData.habitsByDate[today.toISOString().split('T')[0]] = {};
    for (let index = 0; index < AppData.choosenHabits.length; index++) {

@@ -130,31 +130,27 @@ export async function loadData() {
 }
 
 export async function saveCustomIcon(icon) {
-  // Generate a unique key for the icon (using timestamp + random string)
-  const iconKey = `icon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-  
   try {
-    // Convert blob to base64 for storage
-    const base64Icon = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(icon);
-    });
-
-    // Save to IndexedDB
-    if (db) {
-      // The object store uses inline keys, so we don't pass the key as a separate parameter
-      await db.put('Icons', { id: iconKey, data: base64Icon });
+    // Generate a unique key for the icon
+    const iconKey = 'icon_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    
+    // Try to save to IndexedDB first
+    try {
+      const db = await openDB('UML_Data', 2);
+      const tx = db.transaction('Icons', 'readwrite');
+      // Store the icon with its key as part of the object since we're using in-line keys
+      const iconData = { id: iconKey, data: icon };
+      await tx.store.put(iconData);
+      await tx.done;
+      return iconKey;
+    } catch (error) {
+      console.warn('Failed to save icon to IndexedDB, falling back to localStorage', error);
+      // Fallback to localStorage if IndexedDB fails
+      localStorage.setItem(iconKey, icon);
+      return iconKey;
     }
-
-    // Save to cloud if available
-    if (setCloudStorageItem?.isAvailable?.()) {
-      await setCloudStorageItem(`icon_${iconKey}`, base64Icon);
-    }
-
-    return iconKey; // Return the key for future reference
   } catch (error) {
-    console.error('Failed to save icon:', error);
+    console.error('Error saving custom icon:', error);
     return null;
   }
 }
@@ -163,29 +159,25 @@ export async function loadCustomIcon(iconKey) {
   if (!iconKey) return null;
   
   try {
-    // Try to get from IndexedDB first
-    if (db) {
-      const iconData = await db.get('Icons', iconKey);
-      if (iconData?.data) {
-        return iconData.data; // Return base64 data URL
-      }
-    }
-
-    // Fallback to cloud
-    if (getCloudStorageItem?.isAvailable?.()) {
-      const cloudIcon = await getCloudStorageItem(`icon_${iconKey}`);
-      if (cloudIcon) {
-        // Cache in IndexedDB for next time
-        if (db) {
-          await db.put('Icons', { id: iconKey, data: cloudIcon }, iconKey);
-        }
-        return cloudIcon;
-      }
+    // First try to load from IndexedDB
+    try {
+      const db = await openDB('UML_Data', 2);
+      const tx = db.transaction('Icons', 'readonly');
+      const icon = await tx.store.get(iconKey);
+      await tx.done;
+      if (icon) return icon;
+    } catch (error) {
+      console.warn('Failed to load icon from IndexedDB, trying localStorage', error);
     }
     
+    // If not found in IndexedDB, try localStorage
+    const icon = localStorage.getItem(iconKey);
+    if (icon) return icon;
+    
+    console.warn(`Icon with key ${iconKey} not found`);
     return null;
   } catch (error) {
-    console.error('Failed to load icon:', error);
+    console.error('Error loading custom icon:', error);
     return null;
   }
 }

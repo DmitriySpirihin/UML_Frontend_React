@@ -16,6 +16,7 @@ export default defineConfig(() => {
     },
     build: {
       outDir: 'build',
+      chunkSizeWarningLimit: 1000, // Set chunk size warning limit to 1000 kBs
     },
   }
 })

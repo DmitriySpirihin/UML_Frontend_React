@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react'
 import {AppData,UserData} from '../StaticClasses/AppData'
 import { motion, AnimatePresence } from 'framer-motion'
 import Colors, { THEME } from "../StaticClasses/Colors";
-import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate} from 'react-icons/fa'
+import { clearAllSaves } from '../StaticClasses/SaveHelper'
+import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
 import { setTheme as setGlobalTheme, globalTheme$ ,theme$,showPopUpPanel$,setLang,lang$} from '../StaticClasses/HabitsBus';
 
@@ -181,7 +182,7 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
     const TelegramLink = ({name}) => {
         return (
             <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center",width:"50%",height:"10%",borderBottom:"1px solid " + Colors.get('border', theme)}}>
-                <img src={'/Ui/TelegramIcon.png'} alt="Telegram" style={{width: "24px", height: "24px"}} />
+                <img src={'Art/Ui/TelegramIcon.png'} alt="Telegram" style={{width: "24px", height: "24px"}} />
                 <a href={`https://t.me/${name}`} target="_blank" rel="noopener noreferrer">
                     <p style={styles(theme).text}>{name}</p>
                 </a>
@@ -192,15 +193,14 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    initial={{ x: '100%'}}
+                    initial={{ x: '110%'}}
                     animate={{ x: '0%'}}
-                    exit={{ x: '100%'}}
+                    exit={{ x: '110%'}}
                     transition={{
-                        type: 'spring',
-                        stiffness: 300,
-                        damping: 25
+                        type: 'tween',
+                        duration: 0.2
                     }}
-                    style={{...settingsPanelStyles(theme).panel,width:"100vw",height:"100vh",borderRadius:"0"}}
+                    style={{...settingsPanelStyles(theme).panel,width:"110vw",height:"100vh",borderRadius:"0"}}
                 >
                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"100%",height:"100%"}}>
                    {panelNum === 1 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
@@ -242,34 +242,6 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
         return () => window.removeEventListener('toggleSettingsPanel', handleToggle);
     }, []);
 
-    // Close panel when clicking outside
-    useEffect(() => {
-        if (!isOpen) return;
-        
-        const handleClickOutside = (e) => {
-            const panel = document.querySelector('.settings-panel');
-            const settingsBtn = document.querySelector('img[alt*="settings"]');
-            
-            if (panel && !panel.contains(e.target) && settingsBtn && !settingsBtn.contains(e.target)) {
-                setIsOpen(false);
-            }
-        };
-
-        // Add escape key listener to close panel
-        const handleEscape = (e) => {
-            if (e.key === 'Escape') {
-                setIsOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        window.addEventListener('keydown', handleEscape);
-        
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-            window.removeEventListener('keydown', handleEscape);
-        };
-    }, [isOpen]);
 
     return (
         <AnimatePresence>
@@ -376,8 +348,37 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                                  }
                             </p>
                         </div>
+                        <div style={settingsPanelStyles(theme).listEl}>
+                            <FaExclamationTriangle style={settingsPanelStyles(theme).miniIcon}/>
+                            <p 
+                                style={{...settingsPanelStyles(theme).text, cursor: 'pointer'}} 
+                                onClick={async () => {
+                                    if (window.confirm(langIndex === 0 
+                                    ? 'Вы уверены, что хотите удалить все сохранения? Это действие нельзя отменить.' 
+                                    : 'Are you sure you want to clear all saves? This action cannot be undone.')) {
+                                    try {
+                                        await clearAllSaves();
+                                        window.alert(langIndex === 0 
+                                        ? 'Все сохранения успешно удалены' 
+                                        : 'All saves have been cleared successfully');
+                                        window.location.reload(); // Reload to reflect changes
+                                    } catch (error) {
+                                        console.error('Error clearing saves:', error);
+                                        window.alert(langIndex === 0 
+                                        ? 'Произошла ошибка при удалении сохранений' 
+                                        : 'An error occurred while clearing saves');
+                                    }
+                                }
+                            }}
+                            >
+                                {langIndex === 0 ? '!Удалить сохранения!' : '! Delete saves!'}
+                            </p>
+                        </div>
                     </div>
                     <div style={settingsPanelStyles(theme).list}>
+                        
+                        </div>
+                        <div style={settingsPanelStyles(theme).list}>
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaBackspace style={settingsPanelStyles(theme).miniIcon}/>
                             <p 
@@ -388,6 +389,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                             </p>
                         </div>
                     </div>
+                    
                     <p 
                     style={{
                         fontFamily: 'Segoe UI',
