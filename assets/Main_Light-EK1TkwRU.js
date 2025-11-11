@@ -1,1 +1,0 @@
-const t="https://dmitriyspirihin.github.io/UML_Frontend_React/assets/Main_Dark-BttpH-e_.png",i="https://dmitriyspirihin.github.io/UML_Frontend_React/assets/Main_Light-CpFVc3uH.png";export{t as M,i as a};
