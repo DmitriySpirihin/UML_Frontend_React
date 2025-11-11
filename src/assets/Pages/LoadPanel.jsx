@@ -1,11 +1,8 @@
 import React, { useEffect } from 'react';
 import { AppData, UserData ,fillEmptyDays} from '../StaticClasses/AppData';
 import { theme$, lang$, setPage } from '../StaticClasses/HabitsBus'
-import MainDark from '../Art/Ui/Main_Dark.png'
-import MainLight from '../Art/Ui/Main_Light.png'
 import Colors from '../StaticClasses/Colors'
 import { setAllHabits } from '../Classes/Habit';
-import userIcon from '../Art/Ui/Guest.jpg'
 import { initDBandCloud,loadData } from '../StaticClasses/SaveHelper';
 import { initializeTelegramSDK, getTelegramContext } from '../StaticClasses/SaveHelper';
 
@@ -37,10 +34,10 @@ function LoadPanel() {
                     setTheme(colorScheme === 'dark' ? 'dark' : 'light');
                     UserData.Init(user.username, user.photo_url);
                     setTimeout(() => setUserName(user.username), 1000);
-                    setTimeout(() => setUserPhoto(user.photo_url), 1000);
+                    setTimeout(() => setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url), 1000);
                 } else {
                     setTimeout(() => setUserName('guest'), 1000);
-                    setTimeout(() => setUserPhoto(userIcon), 1000);
+                    setTimeout(() => setUserPhoto('Art/Ui/Guest.jpg'), 1000);
                 }
                 // Load saved data
                 await loadData();
@@ -71,7 +68,7 @@ function LoadPanel() {
    return (
     <>
       <div style={styles(theme).container}>
-        <img src={theme === 'dark' ? MainDark : MainLight} style={styles(theme).logo} />
+        <img src={theme === 'dark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} />
         {loading && <div className='spinner'>
             <style>
                 {

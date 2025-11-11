@@ -1,15 +1,5 @@
 import React, {useState,useEffect} from 'react'
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
-import BackDark from '../../Art/Ui/Back_Dark.png'
-import MetricsDark from '../../Art/Ui/Metrics_Dark.png'
-import AddDark from '../../Art/Ui/Add_Dark.png'
-import CalendarDark from '../../Art/Ui/Calendar_Dark.png'
-import BackLight from '../../Art/Ui/Back_Light.png'
-import MetricsLight from '../../Art/Ui/Metrics_Light.png'
-import AddLight from '../../Art/Ui/Add_Light.png'
-import CalendarLight from '../../Art/Ui/Calendar_Light.png'
-import doneIcon from '../../Art/Ui/Done_Icon.png'
-import skippedIcon from '../../Art/Ui/Skipped_Icon.png'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors, { THEME } from '../../StaticClasses/Colors'
@@ -25,10 +15,10 @@ const formatDateKey = (d) => {
 // Monday-based weekday index helper (Mon=0 ... Sun=6)
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
 const dateKey = formatDateKey(new Date());
-const switchSound = new Audio(new URL('../../Audio/SwitchPanel.wav', import.meta.url).href);
-const clickSound = new Audio(new URL('../../Audio/Click_Calendar.wav', import.meta.url).href);
-const isDoneSound = new Audio(new URL('../../Audio/IsDone.wav', import.meta.url).href); 
-const skipSound = new Audio(new URL('../../Audio/Skip.wav', import.meta.url).href);
+const switchSound = new Audio('Audio/SwitchPanel.wav');
+const clickSound = new Audio('Audio/Click_Calendar.wav');
+const isDoneSound = new Audio('Audio/IsDone.wav'); 
+const skipSound = new Audio('Audio/Skip.wav');
 
 // dynamic list that includes defaults + current custom habits
 function getAllHabits() {
@@ -245,9 +235,9 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
         >
             <p style={{...styles(theme).text,fontSize:'14px', paddingLeft:'30px'}}>{name}</p>
             {status === 1 ? (
-                <img src={doneIcon} style={styles(theme).icon}/>
+                <img src={'Art/Ui/Done_Icon.png'} style={styles(theme).icon}/>
             ) : status === -1 ? (
-                <img src={skippedIcon} style={styles(theme).icon}/>
+                <img src={'Art/Ui/Skipped_Icon.png'} style={styles(theme).icon}/>
             ) : null}
             <span style={{
                 ...styles(theme).subText,
@@ -295,11 +285,11 @@ function BottomPanel({globalTheme,theme})
     return (
         <div style={style}>
             <div style={style}>
-                <img src={globalTheme === 'dark' ? BackDark : BackLight} style={btnstyle} onClick={() => {setPage('HabitsMain');playEffects(skipSound,50);}} />
-                <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {setPage('HabitMetrics');playEffects(switchSound,50);}} />
-                <img src={globalTheme === 'dark' ? AddDark : AddLight} style={btnstyle} onClick={() => {}} />
-                <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
-                <img src={globalTheme === 'dark' ? CalendarDark : CalendarLight} style={btnstyle} onClick={() => {}} />
+                <img src={globalTheme === 'dark' ? 'Art/Ui/Back_Dark.png' : 'Art/Ui/Back_Light.png'} style={btnstyle} onClick={() => {setPage('HabitsMain');playEffects(skipSound,50);}} />
+                <img src={globalTheme === 'dark' ? 'Art/Ui/Metrics_Dark.png' : 'Art/Ui/Metrics_Light.png'} style={btnstyle} onClick={() => {setPage('HabitMetrics');playEffects(switchSound,50);}} />
+                <img src={globalTheme === 'dark' ? 'Art/Ui/Add_Dark.png' : 'Art/Ui/Add_Light.png'} style={btnstyle} onClick={() => {}} />
+                <img src={globalTheme === 'dark' ? 'Art/Ui/Setting_Dark.png' : 'Art/Ui/Metrics_Light.png'} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
+                <img src={globalTheme === 'dark' ? 'Art/Ui/Calendar_Dark.png' : 'Art/Ui/Calendar_Light.png'} style={btnstyle} onClick={() => {}} />
             </div>
         </div>
     )

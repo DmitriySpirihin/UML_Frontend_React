@@ -1,8 +1,4 @@
-import SettingsDark from '../Art/Ui/Settings_Dark.png'
-import SettingsLight from '../Art/Ui/Settings_Light.png'
-import ThemeDark from '../Art/Ui/Theme_Dark.png'
-import ThemeLight from '../Art/Ui/Theme_Light.png'
-import TelegramIcon from '../Art/Ui/TelegramIcon.png'
+
 import React, { useEffect, useState } from 'react'
 import {AppData,UserData} from '../StaticClasses/AppData'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -10,10 +6,9 @@ import Colors, { THEME } from "../StaticClasses/Colors";
 import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
 import { setTheme as setGlobalTheme, globalTheme$ ,theme$,showPopUpPanel$,setLang,lang$} from '../StaticClasses/HabitsBus';
-import trSound from '../Audio/Transition.wav'
-import pSound from '../Audio/Info.wav'
-const transitionSound = new Audio(trSound);
-const popUpSound = new Audio(pSound);
+
+const transitionSound = new Audio('Audio/Transition.wav');
+const popUpSound = new Audio('Audio/Info.wav');
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
     const [theme, setthemeState] = React.useState('dark');
@@ -65,7 +60,7 @@ const UserPanel = ({theme}) => {
         <div style={_style}>
             <p style={{color: Colors.get('subText', theme),fontSize: "10px",fontFamily: "Segoe UI"}}>{UserData.name}</p>
             <img 
-                src={UserData.photo} 
+                src={Array.isArray(UserData.photo) ? UserData.photo[0] : UserData.photo} 
                 style={{border: "3px solid " + Colors.get('border', theme),borderRadius: "50%",objectFit: "cover",width: "6vw",margin: "10px"}} 
             /> 
         </div>
@@ -84,7 +79,7 @@ const SettingsBtn = ({globalTheme}) => {
         background: "transparent",
         cursor: "pointer",
     }
-    const icon = globalTheme === 'dark' ? SettingsDark : SettingsLight;
+    const icon = globalTheme === 'dark' ? 'Art/Ui/Settings_Dark.png' : 'Art/Ui/Settings_Light.png';
     
     const toggleSettings = () => {
         // This will be handled by the SettingsPanel's internal state
@@ -114,7 +109,7 @@ const ThemeBtn = ({globalTheme}) => {
             background: "transparent",
         }
 
-    const icon = globalTheme === 'dark' ? ThemeDark : ThemeLight;
+    const icon = globalTheme === 'dark' ? 'Art/Ui/Theme_Dark.png' : 'Art/Ui/Theme_Light.png';
 
     return (
        
@@ -186,7 +181,7 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
     const TelegramLink = ({name}) => {
         return (
             <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center",width:"50%",height:"10%",borderBottom:"1px solid " + Colors.get('border', theme)}}>
-                <img src={TelegramIcon} alt="Telegram" style={{width: "24px", height: "24px"}} />
+                <img src={'/Ui/TelegramIcon.png'} alt="Telegram" style={{width: "24px", height: "24px"}} />
                 <a href={`https://t.me/${name}`} target="_blank" rel="noopener noreferrer">
                     <p style={styles(theme).text}>{name}</p>
                 </a>

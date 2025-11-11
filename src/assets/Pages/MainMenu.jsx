@@ -1,12 +1,11 @@
 import React from 'react'
-import MainDark from '../Art/Ui/Main_Dark.png'
-import MainLight from '../Art/Ui/Main_Light.png'
 import Colors, { THEME } from '../StaticClasses/Colors'
 import { theme$, lang$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
+import { clearAllSaves } from '../StaticClasses/SaveHelper'
 import 'grained'
-import sSound from '../Audio/Start.wav'
-const startSound = new Audio(sSound);
+
+const startSound = new Audio('Audio/Start.wav');
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
@@ -37,9 +36,10 @@ const MainMenu = ({ onPageChange }) => {
     return (
           
           <div style={styles(theme).container}>
-            <img src={theme === 'dark' ? MainDark : MainLight} style={styles(theme).logo} />
+            <img src={theme === 'dark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} alt="Logo" />
             <h2 style={styles(theme).mainText}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
             <div style={styles(theme).scrollView}>
+               
                <MenuCard 
                     text={['Привычки', 'Habits']} 
                     decr={[
@@ -83,6 +83,31 @@ const MainMenu = ({ onPageChange }) => {
                     lang={lang}
                     onClick={() => {playEffects(startSound,100);}}
                 />
+                <div style={styles(theme).clearButtonContainer}>
+                    <button 
+                        style={styles(theme).clearButton}
+                        onClick={async () => {
+                            if (window.confirm(lang === 0 
+                                ? 'Вы уверены, что хотите удалить все сохранения? Это действие нельзя отменить.' 
+                                : 'Are you sure you want to clear all saves? This action cannot be undone.')) {
+                                try {
+                                    await clearAllSaves();
+                                    window.alert(lang === 0 
+                                        ? 'Все сохранения успешно удалены' 
+                                        : 'All saves have been cleared successfully');
+                                    window.location.reload(); // Reload to reflect changes
+                                } catch (error) {
+                                    console.error('Error clearing saves:', error);
+                                    window.alert(lang === 0 
+                                        ? 'Произошла ошибка при удалении сохранений' 
+                                        : 'An error occurred while clearing saves');
+                                }
+                            }
+                        }}
+                    >
+                        {lang === 0 ? 'Очистить все сохранения / dev option' : 'Clear All Saves / dev option'}
+                    </button>
+                </div>
             </div>
 
           </div>

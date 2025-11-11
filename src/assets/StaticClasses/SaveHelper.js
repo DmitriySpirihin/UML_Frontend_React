@@ -1,6 +1,5 @@
 import { init, miniApp, setCloudStorageItem, getCloudStorageItem } from '@telegram-apps/sdk'
 import {AppData,Data} from '../StaticClasses/AppData'
-import userIcon from '../Art/Ui/Guest.jpg'
 import {openDB} from 'idb'
 import 'reflect-metadata'
 import {instanceToPlain, plainToClass} from 'class-transformer'
@@ -22,7 +21,7 @@ export async function initializeTelegramSDK(opts = {}){
                 last_name: 'Dev',
                 username: 'dima_dev',
                 language_code: 'ru',
-                photo_url: userIcon
+                photo_url: 'Art/Ui/Guest.jpg'
             };
             if (typeof window !== 'undefined') {
                 window.Telegram = window.Telegram || {};
@@ -222,5 +221,31 @@ function deserializeData(data) {
     AppData.init(restoredData);
   } catch (error) {
     console.error('Deserialization failed:', error);
+    throw error;
+  }
+}
+
+export async function clearAllSaves() {
+  try {
+    if (db) {
+      // Clear UserData store
+      const tx = db.transaction('UserData', 'readwrite');
+      await tx.objectStore('UserData').clear();
+      
+      // Clear Icons store
+      const tx2 = db.transaction('Icons', 'readwrite');
+      await tx2.objectStore('Icons').clear();
+      
+      console.log('Local storage cleared successfully');
+    }
+    
+    if (setCloudStorageItem?.isAvailable?.()) {
+      // Clear cloud storage by setting it to null
+      await setCloudStorageItem('UserData', null);
+      console.log('Cloud storage cleared successfully');
+    }
+  } catch (error) {
+    console.error('Error clearing saves:', error);
+    throw error;
   }
 }

@@ -1,25 +1,14 @@
 import React, {useState,useEffect} from 'react'
-import BackDark from '../../Art/Ui/Back_Dark.png'
-import MetricsDark from '../../Art/Ui/Metrics_Dark.png'
-import AddDark from '../../Art/Ui/Add_Dark.png'
-import CalendarDark from '../../Art/Ui/Calendar_Dark.png'
-import BackLight from '../../Art/Ui/Back_Light.png'
-import MetricsLight from '../../Art/Ui/Metrics_Light.png'
-import AddLight from '../../Art/Ui/Add_Light.png'
-import CalendarLight from '../../Art/Ui/Calendar_Light.png'
-import StreakIcon from '../../Art/Ui/Streak_Flame.png'
-import DoneIcon from '../../Art/Ui/Done_Icon.png'
-import Divider from '../../Art/Ui/Divider.png'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors, { THEME } from '../../StaticClasses/Colors'
 import {FaArrowAltCircleLeft,FaArrowAltCircleRight,FaList} from 'react-icons/fa'
 import { theme$ ,lang$, globalTheme$,setPage,setHabitSettingsPanel } from '../../StaticClasses/HabitsBus'
 
-const switchSound = new Audio(new URL('../../Audio/SwitchPanel.wav', import.meta.url).href);
-const skipSound = new Audio(new URL('../../Audio/Skip.wav', import.meta.url).href);
-const clickSound = new Audio(new URL('../../Audio/Click_Add.wav', import.meta.url).href);
-const clickMainSound = new Audio(new URL('../../Audio/Click.wav', import.meta.url).href);
+const switchSound = new Audio('Audio/SwitchPanel.wav');
+const skipSound = new Audio('Audio/Skip.wav');
+const clickSound = new Audio('Audio/Click_Add.wav');
+const clickMainSound = new Audio('Audio/Click.wav');
 
 // dynamic list that includes defaults + current custom habits
 function getAllHabits() {
@@ -133,9 +122,9 @@ const HabitMetrics = () => {
             {/* streaks*/}
             <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'80%',height:'7vh',marginTop:'10px'}}>
               <p style={styles(theme).subText}>{langIndex === 0 ? 'максимальная серия ' + maxStreak : 'Max streak ' + maxStreak}</p>
-              {maxStreak > currentStreak && <img src={StreakIcon} style={{width:'30px'}} />}
-              <img src={Divider} style={{width:'40px',color:Colors.get('border', theme)}} />
-              {currentStreak >= maxStreak && currentStreak > 0 && <img src={StreakIcon} style={{width:'30px'}} />}
+              {maxStreak > currentStreak && <img src={'Art/Ui/Streak_Flame.png'} style={{width:'30px'}} />}
+              <img src={'Art/Ui/Divider.png'} style={{width:'40px',color:Colors.get('border', theme)}} />
+              {currentStreak >= maxStreak && currentStreak > 0 && <img src={'Art/Ui/Streak_Flame.png'} style={{width:'30px'}} />}
               <p style={styles(theme).subText}>{langIndex === 0 ? 'текущая серия ' + currentStreak : 'Current streak ' + currentStreak}</p>
             </div>
             {/* percent filled icon*/}
@@ -184,7 +173,7 @@ const HabitMetrics = () => {
                     onClick={() => {setHabitId(id);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}>
                     <p style={{...styles(theme).text,fontSize:'14px'}}>{(getAllHabits().find(h => h.id === id) || {}).name?.[langIndex] || 'Unknown Habit'}</p>
                     <p style={{...styles(theme).text,fontSize:'14px'}}>{Math.ceil(currentStreak / daysToForm * 100) + '%'}</p>
-                    {currentStreak >= daysToForm && <img src={DoneIcon} style={{width:'20px'}} />}
+                    {currentStreak >= daysToForm && <img src={'Art/Ui/Done_Icon.png'} style={{width:'20px'}} />}
                   </div>
                 )
               })}
@@ -225,11 +214,11 @@ function BottomPanel({globalTheme,theme})
     }
     return (
         <div style={style}>
-          <img src={globalTheme === 'dark' ? BackDark : BackLight} style={btnstyle} onClick={() => {setPage('HabitsMain');playEffects(skipSound,50);}} />
-          <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {}} />
-          <img src={globalTheme === 'dark' ? AddDark : AddLight} style={btnstyle} onClick={() => {}} />
-          <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
-          <img src={globalTheme === 'dark' ? CalendarDark : CalendarLight} style={btnstyle} onClick={() => {setPage('HabitCalendar');playEffects(switchSound,50);}} />
+          <img src={globalTheme === 'dark' ? 'Art/Ui/Back_Dark.png' : 'Art/Ui/Back_Light.png'} style={btnstyle} onClick={() => {setPage('HabitsMain');playEffects(skipSound,50);}} />
+          <img src={globalTheme === 'dark' ? 'Art/Ui/Metrics_Dark.png' : 'Art/Ui/Metrics_Light.png'} style={btnstyle} onClick={() => {}} />
+          <img src={globalTheme === 'dark' ? 'Art/Ui/Add_Dark.png' : 'Art/Ui/Add_Light.png'} style={btnstyle} onClick={() => {}} />
+          <img src={globalTheme === 'dark' ? 'Art/Ui/Setting_Dark.png' : 'Art/Ui/Metrics_Light.png'} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
+          <img src={globalTheme === 'dark' ? 'Art/Ui/Calendar_Dark.png' : 'Art/Ui/Calendar_Light.png'} style={btnstyle} onClick={() => {setPage('HabitCalendar');playEffects(switchSound,50);}} />
         </div>
     )
 }

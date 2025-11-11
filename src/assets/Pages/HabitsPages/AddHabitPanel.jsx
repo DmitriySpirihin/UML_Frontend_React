@@ -5,38 +5,24 @@ import Colors from '../../StaticClasses/Colors';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
 import { setShowPopUpPanel, setAddHabitPanel ,addHabitPanel$} from '../../StaticClasses/HabitsBus';
 import Cropper from 'react-easy-crop';
-import DefaultIcon from '../../Art/HabitsIcons/Default.png';
 import { saveCustomIcon } from '../../StaticClasses/SaveHelper';
 
-// Import icons
-import drinkWaterIcon from '../../Art/HabitsIcons/Drink water.png';
-import eatFruitsIcon from '../../Art/HabitsIcons/Eat a serving of fruits,vegetables.png';
-import meditationIcon from '../../Art/HabitsIcons/Meditation.png';
-import morningWaterIcon from '../../Art/HabitsIcons/Morning glass of water.png';
-import morningStretchIcon from '../../Art/HabitsIcons/Morning stretch.png';
-import reviewExpensesIcon from '../../Art/HabitsIcons/Review expenses and budget.png';
-import reviewVocabularyIcon from '../../Art/HabitsIcons/Review vocabulary.png';
-import runIcon from '../../Art/HabitsIcons/Run 3 km.png';
-import vitaminsIcon from '../../Art/HabitsIcons/Take vitamins.png';
-import yogaIcon from '../../Art/HabitsIcons/Yoga 15 minutes.png';
-import brainExerciseIcon from '../../Art/HabitsIcons/brain.png';
-
-const clickMiniSound = new Audio(new URL('../../Audio/Click_Mini.wav', import.meta.url).href);
-const clickSound = new Audio(new URL('../../Audio/Click_Add.wav', import.meta.url).href);
-const closeSound = new Audio(new URL('../../Audio/Transition.wav', import.meta.url).href);
+const clickMiniSound = new Audio('Audio/Click_Mini.wav');
+const clickSound = new Audio('Audio/Click_Add.wav');
+const closeSound = new Audio('Audio/Transition.wav');
 
 const icons = {
-  'Drink water': drinkWaterIcon,
-  'Eat a serving of fruits,vegetables': eatFruitsIcon,
-  'Meditation': meditationIcon,
-  'Morning glass of water': morningWaterIcon,
-  'Morning stretch': morningStretchIcon,
-  'Review expenses and budget': reviewExpensesIcon,
-  'Review vocabulary': reviewVocabularyIcon,
-  'Run 3 km': runIcon,
-  'Take vitamins': vitaminsIcon,
-  'Yoga 15 minutes': yogaIcon,
-  'Brain exercise': brainExerciseIcon
+  'Drink water': 'Art/HabitsIcons/Drink water.png',
+  'Eat a serving of fruits,vegetables': 'Art/HabitsIcons/Eat a serving of fruits,vegetables.png',
+  'Meditation': 'Art/HabitsIcons/Meditation.png',
+  'Morning glass of water': 'Art/HabitsIcons/Morning glass of water.png',
+  'Morning stretch': 'Art/HabitsIcons/Morning stretch.png',
+  'Review expenses and budget': 'Art/HabitsIcons/Review expenses and budget.png',
+  'Review vocabulary': 'Art/HabitsIcons/Review vocabulary.png',
+  'Run 3 km': 'Art/HabitsIcons/Run 3 km.png',
+  'Take vitamins': 'Art/HabitsIcons/Take vitamins.png',
+  'Yoga 15 minutes': 'Art/HabitsIcons/Yoga 15 minutes.png',
+  'Brain exercise': 'Art/HabitsIcons/brain.png'
 };
 
 const getAllHabits = () => {
@@ -55,7 +41,7 @@ const AddHabitPanel = () => {
     const [habitName, setHabitName] = useState('');
     const [habitCategory, setHabitCategory] = useState('');
     const [habitDescription, setHabitDescription] = useState('');
-    const [habitIcon, setHabitIcon] = useState(DefaultIcon);
+    const [habitIcon, setHabitIcon] = useState('Art/HabitsIcons/Default.png');
     const [habitId, setHabitId] = useState(-1);
     
     // UI state
@@ -88,15 +74,24 @@ const AddHabitPanel = () => {
       if(addHabitPanel)setTimeout(() => setOpacity(1),400);
       else setOpacity(0);
     }, [addHabitPanel]);
-    const handleInputValue = (value,index) => {
-      if(index === 0) setHabitName(value[0].toUpperCase() + value.toLowerCase().slice(1));
-      else if(index === 1) setHabitCategory(value[0].toUpperCase() + value.toLowerCase().slice(1));
-      else if(index === 2) setHabitDescription(value[0].toUpperCase() + value.toLowerCase().slice(1));
-      if(habitName.length > 3 && habitCategory.length > 3){
+    const handleInputValue = (value, index) => {
+      if(value.length > 0){
+        if (index === 0) setHabitName(value[0].toUpperCase() + value.toLowerCase().slice(1));
+        else if (index === 1) setHabitCategory(value[0].toUpperCase() + value.toLowerCase().slice(1));
+        else if (index === 2) setHabitDescription(value[0].toUpperCase() + value.toLowerCase().slice(1));}
+    };
+    
+    useEffect(() => {
+      if (habitName.length > 3 && habitCategory.length > 3) {
         setAddButtonEnabled(true);
-        setAddButtonContext({text: langIndex === 0 ? 'создать и добавить' : 'create and add',onClick: () => createHabit(habitName,habitCategory,habitDescription,habitIcon)})
+        setAddButtonContext({
+          text: langIndex === 0 ? 'создать и добавить' : 'create and add',
+          onClick: () => createHabit(habitName, habitCategory, habitDescription, habitIcon)
+        });
+      } else {
+        setAddButtonEnabled(false);
       }
-    }
+    }, [habitName, habitCategory, habitDescription, habitIcon, langIndex]);
     
     return (
         <div style={{...styles(theme).container,
@@ -157,7 +152,7 @@ const AddHabitPanel = () => {
                />
              </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                <img src={habitIcon} alt="habit icon" style={{width:"10vw",padding:"30px"}}/>
+                <img src={habitIcon} alt="Art/HabitsIcons/Default.png" style={{width:"10vw",padding:"30px"}}/>
               </div>
             </div>
            </div>
@@ -170,7 +165,7 @@ const AddHabitPanel = () => {
            <div style={styles(theme).selectPanel}>
              {Object.entries(icons).map(([key,value], index) => (
               <div key={key} style={styles(theme).selectIcon}>
-                <img src={value} alt="habit icon" style={{width:"8vw",padding:"30px"}}
+                <img src={value} alt="Art/HabitsIcons/Default.png" style={{width:"8vw",padding:"30px"}}
                 onClick={() => {
                   setHabitIcon(value);
                   playEffects(clickSound,50);

@@ -1,13 +1,6 @@
 import React, {useState,useEffect} from 'react'
 import { motion , useTransform, useMotionValue,animate} from 'framer-motion'
-import BackDark from '../../Art/Ui/Back_Dark.png'
-import MetricsDark from '../../Art/Ui/Metrics_Dark.png'
-import AddDark from '../../Art/Ui/Add_Dark.png'
-import CalendarDark from '../../Art/Ui/Calendar_Dark.png'
-import BackLight from '../../Art/Ui/Back_Light.png'
-import MetricsLight from '../../Art/Ui/Metrics_Light.png'
-import AddLight from '../../Art/Ui/Add_Light.png'
-import CalendarLight from '../../Art/Ui/Calendar_Light.png'
+
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import { expandedCard$, setExpandedCard , setPage} from '../../StaticClasses/HabitsBus.js';
@@ -17,11 +10,11 @@ import { saveData } from '../../StaticClasses/SaveHelper';
 import { theme$ ,lang$, globalTheme$, updateConfirmationPanel,setShowPopUpPanel,setAddHabitPanel,setHabitSettingsPanel} from '../../StaticClasses/HabitsBus'
 
 const dateKey = new Date().toISOString().split('T')[0];
-const clickSound = new Audio(new URL('../../Audio/Click.wav', import.meta.url).href);
-const isDoneSound = new Audio(new URL('../../Audio/IsDone.wav', import.meta.url).href); 
-const skipSound = new Audio(new URL('../../Audio/Skip.wav', import.meta.url).href);
-const switchSound = new Audio(new URL('../../Audio/SwitchPanel.wav', import.meta.url).href);
-const closeSound = new Audio(new URL('../../Audio/Transition.wav', import.meta.url).href);
+const clickSound = new Audio('Audio/Click.wav');
+const isDoneSound = new Audio('Audio/IsDone.wav'); 
+const skipSound = new Audio('Audio/Skip.wav');
+const switchSound = new Audio('Audio/SwitchPanel.wav');
+const closeSound = new Audio('Audio/Transition.wav');
 export let removeHabitFn;
 export let addHabitFn;
 export let currentId;
@@ -60,8 +53,8 @@ const HabitsMain = () => {
             const cats = new Set();
             habitsCards.forEach(id => {
                 const h = getAllHabits().find(h => h.id === id);
-                if (h && h.category && h.category[  langIndex]) {
-                    cats.add(h.category[langIndex]);
+                if (h && !cats.has(h.category[0])) {
+                    cats.add(h.category[0]);
                 }
             });
             setCategories(Array.from(cats));
@@ -124,17 +117,17 @@ function buildMenu({ theme, habitsCards, categories}) {
     return categories.map(category => {
         const habitsInCategory = habitsCards
             .map(id => getAllHabits().find(h => h.id === id))
-            .filter(h => h && h.category && Array.isArray(h.category) && h.category[0] === category);
+            .filter(h => h && h.category[0] === category);
 
         return (
-            <CategoryPanel key={category} text={category} theme={theme}>
+            <CategoryPanel key={category} text={getAllHabits().find(h => h.category[0] === category)?.category} theme={theme}>
                 {habitsInCategory.map(habit => (
                     <HabitCard
                         key={habit.id}
                         id={habit.id}
                         text={habit.name}
                         descr={habit.description}
-                        imgsrc={habit.isCustom ? habit.src : new URL(habit.src, import.meta.url).href}
+                        imgsrc={habit.src}
                         theme={theme}
                     />
                 ))}
@@ -178,7 +171,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                         setIconUrl(iconData);
                     } else {
                         // Fallback to default icon if loading fails
-                        setIconUrl(new URL('../../Art/HabitsIcons/Default.png', import.meta.url).href);
+                        setIconUrl('Art/HabitsIcons/Default.png');
                     }
                 } else {
                     // This is a regular icon, use it directly
@@ -186,7 +179,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                 }
             } catch (error) {
                 console.error('Error loading icon:', error);
-                setIconUrl(new URL('../../Art/HabitsIcons/Default.png', import.meta.url).href);
+                setIconUrl('Art/HabitsIcons/Default.png');
             }
         };
         
@@ -325,7 +318,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                             style={{width: '24px', objectFit: 'contain', marginLeft: '15px', marginTop: '8px'}} 
                             onError={(e) => {
                                 e.target.onerror = null; // Prevent infinite loop if default image is also missing
-                                e.target.src = new URL('../../Art/HabitsIcons/Default.png', import.meta.url).href;
+                                e.target.src = 'Art/HabitsIcons/Default.png';
                             }}
                             alt="" 
                         />
@@ -350,8 +343,6 @@ function CategoryPanel({text = ["Имя", "Name"], children, theme}) {
         return () => subscription.unsubscribe();
     }, []);
     
-    const displayText = Array.isArray(text) ? text[langIndex] : text;
-    
     return (
         <div style={styles(theme).categoryPanel}>
             <h2 style={{
@@ -359,7 +350,7 @@ function CategoryPanel({text = ["Имя", "Name"], children, theme}) {
                 fontSize: "14px",
                 color: Colors.get('mainText', theme)
             }}>
-                {displayText}
+                {text[langIndex]}
             </h2>
             {children}
         </div>
@@ -395,11 +386,11 @@ function BottomPanel({globalTheme,theme})
     }
     return (
         <div style={style}>
-            <img src={globalTheme === 'dark' ? BackDark : BackLight} style={btnstyle} onClick={() => {setPage('MainMenu');saveData();playEffects(skipSound,50);}} />
-            <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {setPage('HabitMetrics');playEffects(switchSound,50);}} />
-            <img src={globalTheme === 'dark' ? AddDark : AddLight} style={btnstyle} onClick={() => {setAddHabitPanel(true);playEffects(closeSound,50);}} />
-            <img src={globalTheme === 'dark' ? MetricsDark : MetricsLight} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
-            <img src={globalTheme === 'dark' ? CalendarDark : CalendarLight} style={btnstyle} onClick={() => {setPage('HabitCalendar');playEffects(switchSound,50);}} />
+            <img src={globalTheme === 'dark' ? 'Art/Ui/Back_Dark.png' : 'Art/Ui/Back_Light.png'} style={btnstyle} onClick={() => {setPage('MainMenu');saveData();playEffects(skipSound,50);}} />
+            <img src={globalTheme === 'dark' ? 'Art/Ui/Metrics_Dark.png' : 'Art/Ui/Metrics_Light.png'} style={btnstyle} onClick={() => {setPage('HabitMetrics');playEffects(switchSound,50);}} />
+            <img src={globalTheme === 'dark' ? 'Art/Ui/Add_Dark.png' : 'Art/Ui/Add_Light.png'} style={btnstyle} onClick={() => {setAddHabitPanel(true);playEffects(closeSound,50);}} />
+            <img src={globalTheme === 'dark' ? 'Art/Ui/Setting_Dark.png' : 'Art/Ui/Settings_Light.png'} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
+            <img src={globalTheme === 'dark' ? 'Art/Ui/Calendar_Dark.png' : 'Art/Ui/Calendar_Light.png'} style={btnstyle} onClick={() => {setPage('HabitCalendar');playEffects(switchSound,50);}} />
         </div>
     )
 }
