@@ -21,17 +21,17 @@ function LoadPanel() {
                 const outsideTelegram = typeof window !== 'undefined' ? !window.Telegram?.WebApp : true;
                 await initializeTelegramSDK({ mock: outsideTelegram });
                 
-                const { user, language_code, color_scheme } = getTelegramContext();
+                const { user, languageCode, colorScheme } = getTelegramContext();
                 
                 // Apply user preferences
                 if (user) {
                     // Only update prefs if they're not already set from loaded data
                     if (AppData.prefs[0] === 0 && AppData.prefs[1] === 0) {
-                        AppData.prefs[0] = language_code === 'ru' ? 0 : 1;
-                        AppData.prefs[1] = color_scheme === 'dark' ? 0 : 1;
+                        AppData.prefs[0] = languageCode === 'ru' ? 0 : 1;
+                        AppData.prefs[1] = colorScheme === 'dark' ? 0 : 1;
                     }
                     setLang(AppData.prefs[0]);
-                    setTheme(color_scheme === 'dark' ? 'dark' : 'light');
+                    setTheme(colorScheme === 'dark' ? 'dark' : 'light');
                     UserData.Init(user.username, user.photo_url);
                     setTimeout(() => setUserName(user.username), 1000);
                     setTimeout(() => setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url), 1000);
