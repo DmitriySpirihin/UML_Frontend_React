@@ -3,7 +3,7 @@ import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
-import { setShowPopUpPanel, setAddHabitPanel ,addHabitPanel$} from '../../StaticClasses/HabitsBus';
+import { setShowPopUpPanel, setAddHabitPanel ,addHabitPanel$,theme$,lang$} from '../../StaticClasses/HabitsBus';
 import Cropper from 'react-easy-crop';
 import { saveCustomIcon } from '../../StaticClasses/SaveHelper';
 
@@ -33,8 +33,8 @@ const getAllHabits = () => {
 
 const AddHabitPanel = () => {
     // Theme and language state
-    const [theme] = useState('dark');
-    const [langIndex] = useState(AppData.prefs[0]);
+    const [theme,setTheme] = useState('dark');
+    const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
     const [addHabitPanel, setAddHabitPanel] = useState(addHabitPanel$);
     
     // Habit data state
@@ -64,6 +64,16 @@ const AddHabitPanel = () => {
         text: langIndex === 0 ? 'Добавить' : 'Add',
         onClick: () => addHabit(false)
     });
+    React.useEffect(() => {
+            const themeSubscription = theme$.subscribe(setTheme);
+            const langSubscription = lang$.subscribe((lang) => {
+                setLangIndex(lang === 'ru' ? 0 : 1);
+            });
+            return () => {
+                themeSubscription.unsubscribe();
+                langSubscription.unsubscribe();
+            };
+        }, []);
     useEffect(() => {
         setHabitList(getAllHabits());
     }, []);
