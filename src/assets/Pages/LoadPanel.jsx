@@ -26,7 +26,7 @@ function LoadPanel() {
                 // Apply user preferences
                 if (user) {
                     // Only update prefs if they're not already set from loaded data
-                    if (AppData.prefs[0] === 0 && AppData.prefs[1] === 0) {
+                    if (AppData.isFirstStart) {
                         AppData.prefs[0] = languageCode === 'ru' ? 0 : 1;
                         AppData.prefs[1] = colorScheme === 'dark' ? 0 : 1;
                     }

@@ -1,6 +1,7 @@
 import {Habit} from "../Classes/Habit";
 
 export class AppData{
+   static isFirstStart = true;
    static version = "1.0.0";
    static prefs = [0,0,0,0]; //language, theme, sound, vibro
    static CustomHabits = [];
@@ -12,9 +13,10 @@ export class AppData{
   // methods
   static init(data) {
     if (!data) return;
-    
+    this.isFirstStart = data.isFirstStart || true;
     this.version = data.version || "1.0.0";
-    this.prefs = data.prefs || [0, 0, 0, 0];
+    if(!this.isFirstStart)this.prefs = data.prefs || [0, 0, 0, 0];
+    else this.isFirstStart = false;
     this.dayTostart = data.dayTostart || '';
     this.choosenHabits = Array.isArray(data.choosenHabits) ? [...data.choosenHabits] : [];
     this.daysToFormAHabit = data.daysToFormAHabit || 66;
@@ -167,6 +169,7 @@ export class UserData {
 
 export class Data{
   constructor(){
+    this.isFirstStart = AppData.isFirstStart,
     this.version = AppData.version,
     this.prefs = AppData.prefs,
     this.choosenHabits = AppData.choosenHabits,
