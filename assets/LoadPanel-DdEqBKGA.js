@@ -1,0 +1,13 @@
+import{R as r,r as w,t as j,l as k,j as s,C as a,i as S,f as A,k as U,A as o,U as v,n as C,o as D,p as M,s as y}from"./index-ZDuoRJat.js";function P(){const[e,d]=r.useState("dark"),[c,p]=r.useState(0),[u,g]=r.useState("Guest"),[m,h]=r.useState("Art/Ui/Guest.jpg"),[f,x]=r.useState(!0);return w.useEffect(()=>{async function l(){try{await S();const i=typeof window<"u"?!window.Telegram?.WebApp:!0;await A({mock:i});const{user:t,languageCode:T,colorScheme:b}=U();t?(o.prefs[0]===0&&o.prefs[1]===0&&(o.prefs[0]=T==="ru"?0:1,o.prefs[1]=b==="dark"?0:1),p(o.prefs[0]),d(b==="dark"?"dark":"light"),v.Init(t.username,t.photo_url),setTimeout(()=>g(t.username),1e3),setTimeout(()=>h(Array.isArray(t.photo_url)?t.photo_url[0]:t.photo_url),1e3)):(setTimeout(()=>g("guest"),1e3),setTimeout(()=>h("Art/Ui/Guest.jpg"),1e3)),await C(),D(),M(),setTimeout(()=>x(!1),1e3),setTimeout(()=>y("MainMenu"),2600)}catch(i){console.error("Initialization error:",i),setTimeout(()=>x(!1),1e3),setTimeout(()=>y("MainMenu"),2e3)}}l()},[]),r.useEffect(()=>{const l=j.subscribe(d),i=k.subscribe(t=>p(t==="ru"?0:1));return()=>{l.unsubscribe(),i.unsubscribe()}},[]),s.jsx(s.Fragment,{children:s.jsxs("div",{style:n(e).container,children:[s.jsx("img",{src:e==="dark"?"Art/Ui/Main_Dark.png":"Art/Ui/Main_Light.png",style:n(e).logo}),f&&s.jsx("div",{className:"spinner",children:s.jsx("style",{children:`.spinner {
+                        margin-top: 20%;
+                        border: 4px solid ${a.get("subText",e)};
+                        border-top: 4px solid ${a.get("habitCardSkipped",e)};
+                        border-radius: 50%;
+                        width: 10vw;
+                        height: 10vw;
+                        animation: spinner 1.6s linear infinite;
+                    }
+                    @keyframes spinner {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }`})}),!f&&m&&s.jsx("img",{src:m,style:n(e).userPhoto}),s.jsx("h2",{style:n(e).mainText,children:u!==""?c===0?`Добро пожаловать в UltyMyLife ${u}`:`Welcome to UltyMyLife ${u}`:c===0?"Загружаю данные...":"Loading data..."})]})})}const n=e=>({container:{backgroundColor:a.get("background",e),display:"flex",flexDirection:"column",justifyContent:"start",alignItems:"center",height:"100vh",width:"100vw"},logo:{width:"256px",objectFit:"contain",marginTop:"40%"},mainText:{marginTop:"10%",fontSize:"14px",color:a.get("subText",e)},userPhoto:{border:"4px solid "+a.get("border",e),boxShadow:"0px 0px 10px "+a.get("shadow",e),width:"10vw",height:"10vw",borderRadius:"50%",objectFit:"cover",marginTop:"20%"}});export{P as default};
