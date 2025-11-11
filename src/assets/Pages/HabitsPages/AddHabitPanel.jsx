@@ -1,4 +1,4 @@
-import { useState, useEffect,useRef } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';

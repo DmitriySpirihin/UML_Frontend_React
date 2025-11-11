@@ -9,8 +9,8 @@ import { initializeTelegramSDK, getTelegramContext } from '../StaticClasses/Save
 function LoadPanel() {
     const [theme, setTheme] = React.useState('dark');
     const [lang, setLang] = React.useState(0);
-    const [userName, setUserName] = React.useState('');
-    const [userPhoto, setUserPhoto] = React.useState(null);
+    const [userName, setUserName] = React.useState('Guest');
+    const [userPhoto, setUserPhoto] = React.useState('Art/Ui/Guest.jpg');
     const [loading, setLoading] = React.useState(true);
     useEffect(() => {
         async function initializeApp() {
