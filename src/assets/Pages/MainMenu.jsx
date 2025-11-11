@@ -35,7 +35,7 @@ const MainMenu = ({ onPageChange }) => {
     return (
           
           <div style={styles(theme).container}>
-            <img src={theme === 'dark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} alt="Logo" />
+            <img src={theme === 'dark' || theme === 'specialdark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} alt="Logo" />
             <h2 style={styles(theme).mainText}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
             <div style={styles(theme).scrollView}>
                
