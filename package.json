@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://dmitriyspirihin.github.io/UltyMyLife_Bot",
+  "homepage": "https://dmitriyspirihin.github.io/UML_Frontend_React",
   "scripts": {
     "dev": "vite",
     "predeploy": "npm run build",

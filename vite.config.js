@@ -6,7 +6,7 @@ import path from 'path'
 export default defineConfig(() => {
 
   return {
-    base: 'https://dmitriyspirihin.github.io/UltyMyLife_Bot/',
+    base: 'https://dmitriyspirihin.github.io/UML_Frontend_React/',
     plugins: [react()],
     resolve: {
       alias: {
