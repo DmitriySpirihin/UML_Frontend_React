@@ -28,7 +28,7 @@ function LoadPanel() {
                     // Only update prefs if they're not already set from loaded data
                     if (AppData.isFirstStart) {
                         AppData.prefs[0] = languageCode === 'ru' ? 0 : 1;
-                        AppData.prefs[1] = colorScheme === 'dark' ? 0 : 1;
+                        AppData.prefs[1] = colorScheme === 'dark' ? 0 : 2;
                     }
                     UserData.Init(user.username, user.photo_url);
                     setTimeout(() => setUserName(user.username), 1000);
