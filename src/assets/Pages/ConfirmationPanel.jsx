@@ -4,6 +4,8 @@ import { theme$ , lang$} from 'assets/StaticClasses/HabitsBus'
 import { setConfirmationPanel,header$} from 'assets/StaticClasses/HabitsBus'
 import { removeHabitFn , currentId} from 'assets/Pages/HabitsPages/HabitsMain'
 import {AppData} from 'assets/StaticClasses/AppData'
+import {FaExclamationTriangle} from 'react-icons/fa'
+import {MdBorderBottom, MdClose,MdDone} from 'react-icons/md'
 
 function confirmAction(){
     removeHabitFn(currentId);
@@ -30,9 +32,12 @@ const ConfirmationPanel = () => {
     return (
         <div style={styles(theme).container}>
             <div style={styles(theme).panel}>
+                <FaExclamationTriangle style={styles(theme).miniIcon}/>
                 <h1 style={styles(theme).text}>{header}</h1>
-                <button style={styles(theme).button} onClick={() => {confirmAction(); setConfirmationPanel(false);if(AppData.prefs[3] == 0)navigator.vibrate(50)}}>{lang === 'ru' ? 'Да' : 'Yes'}</button>
-                <button style={styles(theme).button} onClick={() => {setConfirmationPanel(false);if(AppData.prefs[3] == 0)navigator.vibrate(50)}}>{lang === 'ru' ? 'Нет' : 'No'}</button>    
+                <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
+                  <div style={styles(theme).button} onClick={() => {setConfirmationPanel(false);if(AppData.prefs[3] == 0)navigator.vibrate(50)}}><MdClose style={styles(theme).miniIcon}/></div>  
+                  <div style={styles(theme).button} onClick={() => {confirmAction(); setConfirmationPanel(false);if(AppData.prefs[3] == 0)navigator.vibrate(50)}}><MdDone style={styles(theme).miniIcon}/></div>  
+                </div>
             </div>
         </div>
     )
@@ -83,10 +88,16 @@ const styles = (theme) =>
   },
   button :
   {
-    width: "100px",
+    width: "35px",
     height: "40px",
-    borderRadius: "24px",
-    border: `1px solid ${Colors.get('border', theme)}`,
+    borderBottom: `1px solid ${Colors.get('border', theme)}`,
     margin: "5px",
-  }
+  },
+    miniIcon: {
+         width: "20px",
+        height: "20px",
+         padding: "5px",
+            marginTop: "10px",
+        color: Colors.get('mainText', theme),
+    }
 })

@@ -144,9 +144,10 @@ const styles = (theme) => ({
   },
   logo :
   {
-    width: "150px",
-    height: "150px",
+    width: "45vw",
     objectFit: "contain",
+    marginTop:'6vw',
+    marginBottom:'8vw'
   },
  
   mainText :
@@ -174,7 +175,7 @@ const styles = (theme) => ({
   scrollView:
   {
     width: "95vw",
-    maxHeight: "100vh",
+    maxHeight: "90vh",
     overflowY: "auto",
     justifyContent: 'center',
     alignItems: 'center'

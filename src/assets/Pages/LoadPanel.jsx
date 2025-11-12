@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { AppData, UserData ,fillEmptyDays} from '../StaticClasses/AppData';
-import { theme$, lang$, setPage } from '../StaticClasses/HabitsBus'
+import { theme$, lang$, setPage} from '../StaticClasses/HabitsBus'
 import Colors from '../StaticClasses/Colors'
 import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud,loadData } from '../StaticClasses/SaveHelper';
@@ -30,8 +30,6 @@ function LoadPanel() {
                         AppData.prefs[0] = languageCode === 'ru' ? 0 : 1;
                         AppData.prefs[1] = colorScheme === 'dark' ? 0 : 1;
                     }
-                    setLang(AppData.prefs[0]);
-                    setTheme(colorScheme === 'dark' ? 'dark' : 'light');
                     UserData.Init(user.username, user.photo_url);
                     setTimeout(() => setUserName(user.username), 1000);
                     setTimeout(() => setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url), 1000);

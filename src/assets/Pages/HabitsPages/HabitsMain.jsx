@@ -264,9 +264,9 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
     const _style = {
         display:'flex',
         flexDirection:'column',
-        alignItems:'stretch',
+        width:'90%',
         borderRadius: "24px",
-        margin: "10px",
+        margin: "5px",
         overflow: 'hidden',
         borderStyle: 'solid',
         borderColor: Colors.get('border', theme),
@@ -345,13 +345,7 @@ function CategoryPanel({text = ["Имя", "Name"], children, theme}) {
     
     return (
         <div style={styles(theme).categoryPanel}>
-            <h2 style={{
-                textAlign: "center",
-                fontSize: "14px",
-                color: Colors.get('mainText', theme)
-            }}>
-                {text[langIndex]}
-            </h2>
+            {text[langIndex]}
             {children}
         </div>
     )
@@ -409,13 +403,17 @@ const styles = (theme) =>
   },
   categoryPanel :
   {
+    display:'flex',
+    flexDirection:'column',
     alignItems: "center",
     justifyContent: "center",
     borderRadius: "24px",
     border: `1px solid ${Colors.get('border', theme)}`,
-    margin: "5px",
+    margin: "4px",
     background:Colors.get('panelGradient', theme),
-    boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`
+    boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
+    fontFamily:'Segoe UI',
+    color: Colors.get('subText', theme),
   },
   text :
   {
@@ -427,14 +425,17 @@ const styles = (theme) =>
   },
   scrollView:
   {
-    width: "85vw",
+    padding:'20px',
+    width: "90vw",
     height: "74vh",
     overflowY: "auto",
-    marginTop:"17vh",
+    marginTop:"20vh",
     boxSizing:'border-box',
     display:'flex',
     flexDirection:'column',
     alignItems:'stretch',
+    borderRadius:'24px',
+    backgroundColor:'rgba(0,0,0,0.1)'
   }
 })
  function interpolateColor(color1, color2, factor) {

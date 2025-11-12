@@ -3,6 +3,7 @@ import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors, { THEME } from '../../StaticClasses/Colors'
 import {FaArrowAltCircleLeft,FaArrowAltCircleRight,FaList} from 'react-icons/fa'
+import {IoMdArrowDropright,IoMdArrowDropleft} from 'react-icons/io'
 import { theme$ ,lang$, globalTheme$,setPage,setHabitSettingsPanel } from '../../StaticClasses/HabitsBus'
 
 const switchSound = new Audio('Audio/SwitchPanel.wav');
@@ -89,15 +90,14 @@ const HabitMetrics = () => {
           {habitId === -1 && <div style={{display:'flex',justifyContent:'center',alignItems:'center',marginTop:'40%'}}>
             <p style={{...styles(theme).subText,fontSize:'12px',margin:'10%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setStartingInfo(langIndex)}</p>
           </div>}
-          {habitId > -1 && <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'50%',height:'5vh',marginTop:'14vh',marginLeft:'15vh'}}>
-            <FaList style={{...styles(theme).text,fontSize:'16px',marginRight:'10px'}}/>
-            <p style={{...styles(theme).text,fontSize:'14px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}>
-               {!showListOfHabitsPanel ? langIndex === 0 ? 'Открыть список >' : 'Open list >' : langIndex === 0 ? 'Закрыть список <' : 'Close list <'}
-            </p>
+          {habitId > -1 && <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'50%',height:'5vh',marginTop:'15vh',marginLeft:'20vh'}}>
+            <FaList style={{...styles(theme).text,fontSize:'16px',marginRight:'10px',marginLeft:'25vw'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>
+            {showListOfHabitsPanel && (<IoMdArrowDropleft style={{...styles(theme).text,fontSize:'28px',marginRight:'10px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>)}
+            {!showListOfHabitsPanel && (<IoMdArrowDropright style={{...styles(theme).text,fontSize:'28px',marginRight:'10px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>)}
             </div>} 
           {habitId > -1 && <div style={styles(theme).panel}>
             {/* habit changer */}
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'75%',height:'10vh'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'70%',height:'10vh'}}>
               <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) - 1 < 0 ? AppData.choosenHabits.length - 1 : AppData.choosenHabits.indexOf(habitId) - 1]);playEffects(clickSound,50);}}><FaArrowAltCircleLeft style={{...styles(theme).text,fontSize:'24px',marginTop:'5px',paddingRight:'10px'}}/></div>
               <p style={styles(theme).text}>{getAllHabits().find(h => h.id === habitId).name[langIndex]}</p>
               <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) + 1 > AppData.choosenHabits.length - 1 ? 0 : AppData.choosenHabits.indexOf(habitId) + 1]);playEffects(clickSound,50);}}><FaArrowAltCircleRight style={{...styles(theme).text,fontSize:'24px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
@@ -238,21 +238,21 @@ const styles = (theme) =>
   },
   panel :
   {
-       display:'flex',
-       flexDirection:'column',
-         width: "80vw",
-        height: "65vh",
-        position:'absolute',
-        top:'50%',
-        left:'50%',
-        transform:'translate(-50%,-50%)',
-        alignItems: "center",
-        justifyContent: "start",
-        borderRadius: "24px",
-        border: `1px solid ${Colors.get('border', theme)}`,
-        margin: "5px",
-        background:Colors.get('background', theme),
-        boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`
+    display:'flex',
+    flexDirection:'column',
+    width: "90vw",
+    height: "150vw",
+    position:'absolute',
+    top:'53%',
+    left:'49%',
+    transform:'translate(-50%,-50%)',
+    alignItems: "center",
+    justifyContent: "start",
+    borderRadius: "24px",
+    border: `1px solid ${Colors.get('border', theme)}`,
+    margin: "5px",
+    background:Colors.get('background', theme),
+    boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`
   },
   text :
   {
@@ -397,19 +397,13 @@ const setStartingInfo = (langIndex) => {
 
 function getHabitRangeStartLabel(daysCount){
   const daysMapping = [7, 30, 90, 180];
-  const numberOfDays = daysMapping[daysCount] ?? 7;
-  const byDate = AppData.habitsByDate || {};
-  const keys = Object.keys(byDate);
-  if (keys.length === 0) return '';
-  const sorted = keys.slice().sort();
-  const startIndex = Math.max(0, sorted.length - numberOfDays);
-  const dateStr = sorted[startIndex];
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length < 3) return '';
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysMapping[daysCount]);
+  const firstDayString = startDate.toISOString().split('T')[0];
+  const parts = firstDayString.split('-');
   const mm = parts[1];
   const dd = parts[2];
-  return `${mm}-${dd}`;
+  return `${dd}-${mm}`;
 }
 function playEffects(sound,vibrationDuration ){
   if(AppData.prefs[2] == 0 && sound !== null){

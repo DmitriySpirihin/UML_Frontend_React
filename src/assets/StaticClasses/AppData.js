@@ -1,4 +1,6 @@
 import {Habit} from "../Classes/Habit";
+import { THEME } from './Colors';
+import {setTheme,setLang ,setSoundAndVibro} from '../StaticClasses/HabitsBus'
 
 export class AppData{
    static isFirstStart = true;
@@ -13,49 +15,18 @@ export class AppData{
   // methods
   static init(data) {
     if (!data) return;
-    this.isFirstStart = data.isFirstStart || true;
-    this.version = data.version || "1.0.0";
-    if(!this.isFirstStart)this.prefs = data.prefs || [0, 0, 0, 0];
+    this.isFirstStart = data.isFirstStart;
+    this.version = data.version;
+    if(this.isFirstStart === false)this.prefs = data.prefs;
     else this.isFirstStart = false;
-    this.dayTostart = data.dayTostart || '';
-    this.choosenHabits = Array.isArray(data.choosenHabits) ? [...data.choosenHabits] : [];
-    this.daysToFormAHabit = data.daysToFormAHabit || 66;
-    
-    // Recreate Habit instances from the serialized data
-    this.CustomHabits = data.CustomHabits || [];
-    /*
-    if (Array.isArray(data.CustomHabits)) {
-      data.CustomHabits.forEach(habitData => {
-        if (habitData) {
-          this.CustomHabits.push(new Habit(
-            habitData.name || ["", ""],
-            habitData.category || ["", ""],
-            habitData.description || ["", ""],
-            habitData.id || 0,
-            habitData.isCustom !== undefined ? habitData.isCustom : true,
-            habitData.src || ''
-          ));
-        }
-      });
-    }*/
-    
-    // Reconstruct the habitsByDate object
-    this.habitsByDate = data.habitsByDate || {};
-    /*
-    if (Array.isArray(data.habitsByDate)) {
-      data.habitsByDate.forEach(([date, habits]) => {
-        if (date && habits && typeof habits === 'object') {
-          this.habitsByDate[date] = { ...habits };
-        }
-      });
-    } else if (data.habitsByDate && typeof data.habitsByDate === 'object') {
-      Object.entries(data.habitsByDate).forEach(([date, habits]) => {
-        if (habits && typeof habits === 'object') {
-          this.habitsByDate[date] = { ...habits };
-        }
-      });
-    }
-    */
+    setLang(this.prefs[0] === 0 ? 'ru' : 'en');
+    setTheme(this.prefs[1] < 2 ? this.prefs[1] === 0 ? THEME.DARK : THEME.SPECIALDARK : this.prefs[1] === 2 ? THEME.LIGHT : THEME.SPECIALLIGHT);
+    setSoundAndVibro(this.prefs[2],this.prefs[3]);
+    this.dayTostart = data.dayTostart;
+    this.choosenHabits = [...data.choosenHabits];
+    this.daysToFormAHabit = data.daysToFormAHabit;
+    this.CustomHabits = data.CustomHabits;
+    this.habitsByDate = data.habitsByDate;
   }
 
 

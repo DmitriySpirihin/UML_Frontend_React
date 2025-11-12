@@ -4,6 +4,8 @@ import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
 import { setShowPopUpPanel, setAddHabitPanel ,addHabitPanel$,theme$,lang$} from '../../StaticClasses/HabitsBus';
+import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt,FaFolderOpen} from 'react-icons/fa'
+import {MdFiberNew,MdDone} from 'react-icons/md'
 import Cropper from 'react-easy-crop';
 import { saveCustomIcon } from '../../StaticClasses/SaveHelper';
 
@@ -36,6 +38,7 @@ const AddHabitPanel = () => {
     const [theme,setTheme] = useState('dark');
     const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
     const [addHabitPanel, setAddHabitPanel] = useState(addHabitPanel$);
+    const [showCreatePanel,setshowCreatePanel] = useState(false);
     
     // Habit data state
     const [habitName, setHabitName] = useState('');
@@ -109,11 +112,14 @@ const AddHabitPanel = () => {
           backgroundColor: opacity === 1 ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
           transition: 'transform 0.3s ease-in-out, background-color 0.1s ease-in-out',
         }}>
-         <div style={styles(theme).panel}>
+         {!showCreatePanel && (<div style={styles(theme).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
-           <div style={{...styles(theme).simplePanel,height:"35vh"}}>
-            <input type="text" placeholder={langIndex === 0 ? 'поиск' : 'search'} style={styles(theme).input}
+           <div style={{...styles(theme).simplePanel,height:"47vh"}}>
+            <div style={{display:'flex',flexDirection:'row'}}>
+              <FaSearch style={{color:Colors.get("mainText",theme),width:'5vw',marginTop:'10px',marginLeft:'10px'}}/>
+              <input type="text"  style={styles(theme).input}
               onChange={(e) => searchHabitsList(e.target.value,habitList, setHabitList) }/>
+            </div>
             <div style={styles(theme).scrollView}>
               {habitList.map((habit) => (
                 <li key={habit.id} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
@@ -124,29 +130,40 @@ const AddHabitPanel = () => {
               ))}
            </div>
            </div>
+           {/* buttons */}
+           <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
+             <div style={{...styles(theme).button}} onClick={() => {setAddHabitPanel(false);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(true);setAddButtonEnabled(false);}}><MdFiberNew style={styles(theme).miniIcon}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('mainText', theme) : Colors.get('habitCard', theme)}}/></div>
+           </div>
+           </div>)}
+           {/* creation panel */}
+           {showCreatePanel && (<div style={styles(theme).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
-           <div style={styles(theme).simplePanel}>
-            <input type="text" maxLength={25} placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
+           <div style={{...styles(theme).simplePanel,height:'47vh',justifyContent:'center'}}>
+            <textarea maxLength={25} placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
             onChange={(e) => handleInputValue(e.target.value,0)}/>
             <div style={{display:"flex",justifyContent:"space-between"}}>
-              <input type="text" maxLength={25} placeholder={habitCategory === '' ? langIndex === 0 ? 'категория' : 'category' : habitCategory} style={{...styles(theme).input,width:"48%"}}
+              <textarea  maxLength={25} placeholder={habitCategory === '' ? langIndex === 0 ? 'категория' : 'category' : habitCategory} style={{...styles(theme).input,width:"48%"}}
               onChange={(e) => handleInputValue(e.target.value,1)}/>
               <select style={{...styles(theme).input,width:"48%"}} onChange={(e) => handleInputValue(e.target.value,1)}>
                 {renderCategoryOptions(theme, langIndex)}
               </select>
             </div>
-            <input type="text" maxLength={60} placeholder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} style={styles(theme).input}
+            <textarea maxLength={60} placeholder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} style={{...styles(theme).input,height:'20%'}}
             onChange={(e) => handleInputValue(e.target.value,2)}/>
             <div style={styles(theme).headerText}>{langIndex === 0 ? 'выбери иконку(опционально)' : 'choose icon(optional)'}</div>
             <div style={{display:"flex",justifyContent:"space-between"}}>
-              <div style={{width: '100%'}}>
-               <button style={styles(theme).button} onClick={() => setSelectIconPanel(selectIconPanel ? false : true)}>{selectIconPanel ? langIndex === 0 ? 'свернуть' : 'collapse' : langIndex === 0 ? 'выбери' : 'select'}</button>
-               <button
+              <div style={{width: '80%',marginLeft:'30px',padding:'5px'}}>
+               <div style={styles(theme).button} onClick={() => setSelectIconPanel(selectIconPanel ? false : true)}>
+                {!selectIconPanel && (<FaListAlt style={styles(theme).miniIcon}/>)}{selectIconPanel && (<FaRegWindowClose style={styles(theme).miniIcon}/>)}
+               </div>
+               <div
                  style={styles(theme).button}
                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
                >
-                 {langIndex === 0 ? 'из устройства' : 'from device'}
-               </button>
+                 <FaFolderOpen style={styles(theme).miniIcon}/>
+               </div>
                <input
                  ref={fileInputRef}
                  type="file"
@@ -162,15 +179,16 @@ const AddHabitPanel = () => {
                />
              </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                <img src={habitIcon} alt="Art/HabitsIcons/Default.png" style={{width:"10vw",padding:"30px"}}/>
+                <img src={habitIcon} alt="Art/HabitsIcons/Default.png" style={{width:"15vw",margin:'40px'}}/>
               </div>
             </div>
            </div>
-           <div style={{marginTop:"40px"}}>
-           <button style={{...styles(theme).button,padding:"10px"}} onClick={() => {setAddHabitPanel(false);playEffects(closeSound,20);}}>{langIndex === 0 ? 'назад' : 'back'}</button>
-           {addButtonEnabled && <button style={{...styles(theme).button,padding:"10px"}} onClick={() => {addButtonContext.onClick();playEffects(clickSound,50);}}>{addButtonContext.text}</button>}
+           <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
+             <div style={{...styles(theme).button}} onClick={() => {setAddHabitPanel(false);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(false);setAddButtonEnabled(false);setSelectedHabit(null);}}><FaSearchPlus style={styles(theme).miniIcon}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('mainText', theme) : Colors.get('habitCard', theme)}}/></div>
            </div>
-         </div>
+         </div>)}
          {selectIconPanel && (
            <div style={styles(theme).selectPanel}>
              {Object.entries(icons).map(([key,value], index) => (
@@ -193,7 +211,7 @@ const AddHabitPanel = () => {
            </div>
          )}
          {imageSrc && (
-           <div style={{position:"absolute",width:"70vw",height:"70vw",top:"50%",left:"50%",transform:'translate(-50%,-50%)',backgroundColor:Colors.get('habitPanel', theme),zIndex:"1000",borderRadius:"24px",boxShadow:Colors.get('shadow', theme), overflow:'hidden', display:'flex', flexDirection:'column'}}>
+           <div style={{position:"absolute",width:"85vw",height:"85vw",top:"39%",left:"50%",transform:'translate(-50%,-50%)',backgroundColor:Colors.get('simplePanel', theme),zIndex:"1000",borderRadius:"24px",border: `1px solid ${Colors.get('border', theme)}`,overflow:'hidden', display:'flex', flexDirection:'column'}}>
              <div style={{position:'relative',flex:1}}>
                <Cropper
                  image={imageSrc}
@@ -205,9 +223,9 @@ const AddHabitPanel = () => {
                  onCropComplete={(_, croppedAreaPixels) => setCropPixels(croppedAreaPixels)}
                />
              </div>
-             <div style={{display:'flex', gap: 8, padding: 12, justifyContent:'flex-end'}}>
-               <button
-                 style={{...styles(theme).button, width:'auto', padding:'8px 12px'}}
+             <div style={{display:'flex', gap: 8, padding: 12, justifyContent:'space-between',paddingRight:'10vw',paddingLeft:'10vw'}}>
+               <div
+                 style={{...styles(theme).button, padding:'8px 12px'}}
                  onClick={() => {
                    playEffects(null,20);
                    setImageSrc(null);
@@ -216,10 +234,10 @@ const AddHabitPanel = () => {
                    setCropPixels(null);
                  }}
                >
-                 {langIndex === 0 ? 'отмена' : 'cancel'}
-               </button>
-               <button
-                 style={{...styles(theme).button, width:'auto', padding:'8px 12px'}}
+                 <FaRegWindowClose style={styles(theme).miniIcon}/>
+               </div>
+               <div
+                 style={{...styles(theme).button, padding:'8px 12px'}}
                  onClick={async () => {
                    if (!imageSrc || !cropPixels) return;
                    playEffects(null,20);
@@ -285,8 +303,8 @@ const AddHabitPanel = () => {
                   setCropPixels(null);
                  }}
                >
-                 {langIndex === 0 ? 'сохранить' : 'save'}
-               </button>
+                 <MdDone style={styles(theme).miniIcon}/>
+               </div>
              </div>
            </div>
          )}
@@ -363,7 +381,7 @@ const styles = (theme) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -380,7 +398,7 @@ const styles = (theme) => ({
     backgroundColor:Colors.get('simplePanel', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
     width: "85vw",
-    height: "90vh",
+    height: "60vh",
   },
   text :
   {
@@ -420,11 +438,12 @@ const styles = (theme) => ({
   input:
   {
     width:'65vw',
-    height:'22px',
-    borderRadius:'24px',
+    height:'5vw',
+    borderRadius:'12px',
     border:`1px solid ${Colors.get('border', theme)}`,
-    margin:'8px',
+    margin:'12px',
     fontSize:'14px',
+    fontFamily:'Segoe UI',
     color:Colors.get('subText', theme),
     backgroundColor:Colors.get('inputField', theme),
   },
@@ -437,8 +456,8 @@ const styles = (theme) => ({
   select:
   {
     width:'20vw',
-    height:'2.3vh',
-    borderRadius:'24px',
+    height:'6vw',
+    borderRadius:'12px',
     border:`1px solid ${Colors.get('border', theme)}`,
     marginTop:'12px',
     fontSize:'14px',
@@ -457,7 +476,7 @@ const styles = (theme) => ({
     borderRadius:'24px',
     border:`1px solid ${Colors.get('border', theme)}`,
     position:'absolute',
-    top:'50%',
+    top:'40%',
     left:'50%',
     transform:'translate(-50%,-50%)',
     display:'flex',
@@ -475,13 +494,20 @@ const styles = (theme) => ({
   },
   button:
   {
-    width:'30vw',
-    borderRadius:'24px',
-    border:`1px solid ${Colors.get('border', theme)}`,
+    display:'flex',
+    alignContent:"center",
+    justifyContent:"center",
+    width:'10vw',
+    borderBottom:`1px solid ${Colors.get('border', theme)}`,
     marginTop:'12px',
     fontSize:'12px',
-    color:Colors.get('subText', theme),
-    backgroundColor:Colors.get('habitCard', theme),
+  },
+  miniIcon: {
+    width: "6vw",
+    height: "6vw",
+    padding: "5px",
+    marginTop: "10px",
+    color: Colors.get('mainText', theme),
   }
 })
 function playEffects(sound,vibrationDuration ){

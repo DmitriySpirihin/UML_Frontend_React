@@ -121,7 +121,7 @@ const HabitCalendar = () => {
                         }}
                             onClick={() => {setCurrentDate(new Date(cellYear, cellMonth, day));setInfoPanelData(AppData.hasKey(formatDateKey(new Date(cellYear, cellMonth, day))));playEffects(clickSound,50);}}   >
                             {day}
-                            {day > 0 && <div style={{fontSize:'8px',color:Colors.get('subText', theme),lineHeight:'5px',padding:'5px'}}>{percent}</div>}
+                            {day > 0 && <div style={{fontSize:'8px',color:Colors.get('subText', theme),lineHeight:'5px',paddingBottom:'7px'}}>{percent}</div>}
                           </div>
                         </td>
                       )
@@ -130,19 +130,21 @@ const HabitCalendar = () => {
                   ))}
                 </tbody>
             </table>
-            <div style={{position:'fixed',top:'120%',padding:'10%',fontSize:'14px',fontFamily:'Segoe UI',
+            <div style={{position:'fixed',top:'120%',left:'20%',fontSize:'14px',fontFamily:'Segoe UI',
               color:Colors.get('simplePanel', theme)
             }}> {langIndex === 0 ? 'Выберите дату для просмотра привычек' : 'Choose the date to see habits'}</div>
-          </div>
-          {inFoPanelData && <div style={{...styles(theme).panel,height:'30vh',width:'75vw',position:'fixed',top:'74%',left:'50%'}}>
-            <div style={{...styles(theme).calendarHead,display:'flex',flexDirection:'column',alignItems:'center',boxSizing:'border-box', paddingTop:'5px'}}>
-                <h1 style={{...styles(theme).header,fontSize:'22px',paddingTop:'1px',paddingBottom:'1px'}}>{currentDate.getDate() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)]}</h1>
+          <div style={{height:'60%',width:'100%',paddingTop:'15px'}}>
+          {inFoPanelData && <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
+            <div style={{borderTop: `1px solid ${Colors.get('border', theme)}`,}}>
+                <h1 style={{...styles(theme).header,fontSize:'22px',paddingTop:'1px',paddingBottom:'5px'}}>{currentDate.getDate() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)]}</h1>
                 <div style={{fontSize:'10px',color:Colors.get('subText', theme),lineHeight:'1px',paddingRight:'50%'}}>{habitAmountString(currentDate,langIndex)}</div>
             </div>
             <div style={styles(theme).scrollView}>
               <Habit theme={theme} langIndex={langIndex} date={currentDate}/>
             </div>
           </div>}
+          </div>
+          </div>
           <BottomPanel theme={theme} globalTheme={globalTheme}/>
         </div>
     )
@@ -239,17 +241,7 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
             ) : status === -1 ? (
                 <img src={'Art/Ui/Skipped_Icon.png'} style={styles(theme).icon}/>
             ) : null}
-            <span style={{
-                ...styles(theme).subText,
-                marginLeft: '6px',
-                color: status === 1
-                    ? Colors.get('habitCardDone', theme)
-                    : status === -1
-                    ? Colors.get('habitCardSkipped', theme)
-                    : Colors.get('subText', theme)
-            }}>
-                {status === 1 ? langIndex === 0 ? 'Выполнено' : 'Done' : status === -1 ? langIndex === 0 ? 'Пропущено' : 'Skipped' : ''}
-            </span>
+            
         </motion.div>
     );
 }
@@ -338,7 +330,7 @@ const styles = (theme) =>
     border:'5',
     cellPadding:'5',
     borderCollapse:'collapse',
-    width:'100%',
+    width:'90%',
     textAlign:'center',
   },
   cell:
@@ -348,8 +340,8 @@ const styles = (theme) =>
      flexDirection:'column',
      alignItems:'center',
      justifyContent:'center',
-     width:'11vw',
-     height:'11vw',
+     width:'9vw',
+     height:'9vw',
      borderRadius:'12px',
      fontSize:'20px',
      fontWeight:'bold',
@@ -358,14 +350,16 @@ const styles = (theme) =>
   },
   panel :
   {
+    display:'flex',
+    flexDirection:'column',
     width: "90vw",
-    height: "105vw",
+    height: "150vw",
     position:'absolute',
-    top:'36%',
-    left:'50%',
+    top:'53%',
+    left:'49%',
     transform:'translate(-50%,-50%)',
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "start",
     borderRadius: "24px",
     border: `1px solid ${Colors.get('border', theme)}`,
     margin: "5px",
@@ -388,17 +382,17 @@ const styles = (theme) =>
   {
     margin:'15px',
     overflowY: "scroll",
-    width:'90%',
-    height:'70%',
-    boxSizing:'border-box',
+    width:'65vw',
+    height:'20vh',
     display:'flex',
     flexDirection:'column',
-    alignItems:'start',
+    alignItems:'center',
     borderRadius:'24px',
+    backgroundColor:'rgba(0,0,0,0.1)'
   },
   icon:
   {
-    paddingLeft:'25px',
+    paddingLeft:'8px',
     paddingBottom:'5px',
     width:'25px',
   }

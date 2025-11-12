@@ -6,7 +6,7 @@ import Colors, { THEME } from "../StaticClasses/Colors";
 import { clearAllSaves } from '../StaticClasses/SaveHelper'
 import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
-import { setTheme as setGlobalTheme, globalTheme$ ,theme$,showPopUpPanel$,setLang,lang$} from '../StaticClasses/HabitsBus';
+import { setTheme as setGlobalTheme, globalTheme$ ,theme$,showPopUpPanel$,setLang,lang$,vibro$,sound$} from '../StaticClasses/HabitsBus';
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSound = new Audio('Audio/Info.wav');
@@ -16,20 +16,24 @@ const MainBtns = () => {
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [additionalPanel, setAdditionalPanel] = useState(false);
     const [additionalPanelNum, setAdditionalPanelNum] = useState(1);
+    const [sound, setSound] = useState(0);
+    const [vibro, setVibro] = useState(0);
 
     React.useEffect(() => {
-        const subscription = globalTheme$.subscribe(setGlobalThemeState);
-        return () => subscription.unsubscribe();
-    }, []);
-    React.useEffect(() => {
-        const subscription = theme$.subscribe(setthemeState);  
-        return () => subscription.unsubscribe();
-    }, []);
-    React.useEffect(() => {
+        const subscriptionG = globalTheme$.subscribe(setGlobalThemeState);
+        const subscriptionT = theme$.subscribe(setthemeState);
         const subscription = lang$.subscribe((lang) => {
             setLangIndex(lang === 'ru' ? 0 : 1);
         });
-        return () => subscription.unsubscribe();
+        const subscriptionS = sound$.subscribe(setSound);
+        const subscriptionV = vibro$.subscribe(setVibro);
+        return () => {
+            subscription.unsubscribe();
+            subscriptionG.unsubscribe();
+            subscriptionT.unsubscribe();
+            subscriptionS.unsubscribe();
+            subscriptionV.unsubscribe();
+        }
     }, []);
 
     return (
@@ -38,7 +42,7 @@ const MainBtns = () => {
             <UserPanel theme={theme} />
             <SettingsBtn globalTheme={globalTheme}/>  
             <ThemeBtn globalTheme={globalTheme}/>
-            <SettingsPanel theme={theme} langIndex={langIndex} setAdditionalPanel={setAdditionalPanel} setAdditionalPanelNum={setAdditionalPanelNum}/>
+            <SettingsPanel theme={theme} langIndex={langIndex} setAdditionalPanel={setAdditionalPanel} setAdditionalPanelNum={setAdditionalPanelNum} vibroIndex={vibro} soundIndex={sound} setSound={setSound} setVibro={setVibro}/>
             <AdditionalPanel theme={theme} langIndex={langIndex} isOpen={additionalPanel} setIsOpen={setAdditionalPanel} panelNum={additionalPanelNum}/>
         </>
     )
@@ -52,7 +56,7 @@ const UserPanel = ({theme}) => {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        top: "7vh",
+        top: "12vh",
         left: "80vw",
         width: "35px",
         zIndex: 1000,
@@ -72,7 +76,7 @@ const SettingsBtn = ({globalTheme}) => {
         outline: "none",
         boxShadow: "none",
         position: "fixed",
-        top: "8vh",
+        top: "12vh",
         left: "4vw",
         width: "35px",
         zIndex: 1000,
@@ -102,7 +106,7 @@ const SettingsBtn = ({globalTheme}) => {
 const ThemeBtn = ({globalTheme}) => {
     const _style = {
             position: "fixed",
-            top: "8vh",
+            top: "12vh",
             left: "14vw",
             width: "30px",
             zIndex: 1000,
@@ -230,10 +234,8 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
 }
     
 
-const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNum}) => {
+const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNum,vibroIndex,soundIndex,setSound,setVibro}) => {
     const [isOpen, setIsOpen] = useState(false);
-    const [soundIndex, setSoundIndex] = useState(AppData.prefs[2]);
-    const [vibroIndex, setVibroIndex] = useState(AppData.prefs[3]);
 
     // Toggle panel visibility when settings button is clicked
     useEffect(() => {
@@ -308,7 +310,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
                             {soundIndex === 0 ? <FaVolumeUp style={settingsPanelStyles(theme).miniIcon}/> : <FaVolumeMute style={settingsPanelStyles(theme).miniIcon}/>}
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(2);setSoundIndex(soundIndex === 0 ? 1 : 0)}}>
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(2);setSound(soundIndex === 0 ? 1 : 0)}}>
                                  {
                                    langIndex === 0 ? 'звук: '+ (soundIndex === 0 ? 'вкл' : 'выкл') : 'sound: ' + (soundIndex === 0 ? 'on' : 'off')
                                  }
@@ -316,7 +318,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
                             {vibroIndex === 0 ? <LuVibrate style={settingsPanelStyles(theme).miniIcon}/> : <LuVibrateOff style={settingsPanelStyles(theme).miniIcon}/>}
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(3);setVibroIndex(vibroIndex === 0 ? 1 : 0);playEffects(null,20)}}>
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(3);setVibro(vibroIndex === 0 ? 1 : 0);playEffects(null,20)}}>
                                  {
                                    langIndex === 0 ? 'вибрация: '+ (vibroIndex === 0 ? 'вкл' : 'выкл') : 'vibration: ' + (vibroIndex === 0 ? 'on' : 'off')
                                  }
@@ -501,20 +503,21 @@ function changeSettings(prefIndex){
 const toggleTheme = () => {
         let next;
         let themeNum = 0;
-        if (Colors.theme === THEME.LIGHT) {
-            themeNum = 2;
-            next = THEME.SPECIALLIGHT;
-        } else if (Colors.theme === THEME.DARK) {
-            themeNum = 0;
-            next = THEME.SPECIALDARK;
-        } else if (Colors.theme === THEME.SPECIALLIGHT) {
-            themeNum = 3;
-            next = THEME.DARK;
-        } else {
+        if (Colors.theme === THEME.DARK) {
             themeNum = 1;
+            next = THEME.SPECIALDARK;
+        }else if(Colors.theme === THEME.SPECIALDARK) {
+            themeNum = 2;
             next = THEME.LIGHT;
+        }else if(Colors.theme === THEME.LIGHT) {
+            themeNum = 3;
+            next = THEME.SPECIALLIGHT;
+        }else{
+            themeNum = 0;
+            next = THEME.DARK;
         }
-        AppData.prefs[1] == themeNum;
+        AppData.setPrefs(1,themeNum);
+        console.log('SetTheme' + themeNum + ':' + AppData.prefs[1]);
         Colors.setTheme(next);
         setGlobalTheme(next);
 };
