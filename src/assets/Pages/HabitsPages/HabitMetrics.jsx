@@ -88,7 +88,7 @@ const HabitMetrics = () => {
     return (
         <div style={styles(theme).container}>
           {habitId === -1 && <div style={{display:'flex',justifyContent:'center',alignItems:'center',marginTop:'40%'}}>
-            <p style={{...styles(theme).subText,fontSize:'12px',margin:'10%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setStartingInfo(langIndex)}</p>
+            <p style={{...styles(theme).subText,fontSize:'12px',margin:'10%',marginTop:'30%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setStartingInfo(langIndex)}</p>
           </div>}
           {habitId > -1 && <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'50%',height:'5vh',marginTop:'15vh',marginLeft:'20vh'}}>
             <FaList style={{...styles(theme).text,fontSize:'16px',marginRight:'10px',marginLeft:'25vw'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>

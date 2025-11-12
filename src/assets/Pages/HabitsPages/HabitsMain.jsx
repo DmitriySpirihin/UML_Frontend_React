@@ -94,8 +94,8 @@ const HabitsMain = () => {
     // render    
     return (
         <div style={styles(theme).container}>
-            {!hasHabits && <div style={{...styles(theme).panel,justifyContent:'center',alignItems:'center', marginTop:'30%'}}>
-              <p style={{...styles(theme).subText,fontSize:'12px',margin:'10%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setInfoText(langIndex)}</p>
+            {!hasHabits && <div style={{...styles(theme).panel,justifyContent:'center',alignItems:'center', marginTop:'40%'}}>
+              <p style={{...styles(theme).subText,fontSize:'12px',margin:'10%',marginTop:'20%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setInfoText(langIndex)}</p>
             </div>}
             {hasHabits && <div style={styles(theme).scrollView}>
               {buildMenu({theme, habitsCards, categories, getAllHabits: () => getAllHabits()})}
