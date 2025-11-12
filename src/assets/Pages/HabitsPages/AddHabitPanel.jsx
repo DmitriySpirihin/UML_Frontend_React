@@ -134,7 +134,7 @@ const AddHabitPanel = () => {
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
              <div style={{...styles(theme).button}} onClick={() => {setAddHabitPanel(false);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(true);setAddButtonEnabled(false);}}><MdFiberNew style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('mainText', theme) : Colors.get('habitCard', theme)}}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('mainText', theme) : Colors.get('subText', theme)}}/></div>
            </div>
            </div>)}
            {/* creation panel */}
@@ -186,7 +186,7 @@ const AddHabitPanel = () => {
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
              <div style={{...styles(theme).button}} onClick={() => {setAddHabitPanel(false);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(false);setAddButtonEnabled(false);setSelectedHabit(null);}}><FaSearchPlus style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('mainText', theme) : Colors.get('habitCard', theme)}}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('mainText', theme) : Colors.get('subText', theme)}}/></div>
            </div>
          </div>)}
          {selectIconPanel && (
