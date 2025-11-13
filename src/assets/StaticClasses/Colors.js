@@ -17,7 +17,7 @@ export class Colors {
     highlitedPanel: { light: "#b4cee6ff", dark: "#282e30ff", speciallight: "#b88787ff", specialdark: "#445344ff" },
     panelGradient: { light: "linear-gradient(135deg, #f3f5f8ff 0%, #b8d0e6ff 100%)", dark: "linear-gradient(135deg, #292932ff 0%, #0e0e10ff 100%)", speciallight: "linear-gradient(135deg, #e6d2cfff 0%, #d6806bff 100%)", specialdark: "linear-gradient(135deg, #454e49ff 0%, #142018ff 100%)",},
     border: { light: "#576c7eff", dark: "#88bdc6ff", speciallight: "#e8d9d9ff", specialdark: "#d3e3d3ff" },
-    shadow: { light: "#353940ff", dark: "#000000ff", speciallight: "#522323ff", specialdark: "#21221bff" },
+    shadow: { light: "#353940ff", dark: "#000000ff", speciallight: "#522323ff", specialdark: "#111512ff" },
     bottomPanel: { light: "#c8d7deff", dark: "#101316ff", speciallight: "#d5b1a9ff", specialdark: "#1f1d1dff" },
     bottomPanelShadow: { light: "#8b9cc6ff", dark: "#64797aff", speciallight: "#fffdfcff", specialdark: "#38483dff" },
     habitCard: { light: "#eef1f5ff", dark: "#1c1b1dff", speciallight: "#d7a1a1ff", specialdark: "#161917ff" },

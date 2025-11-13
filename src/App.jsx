@@ -2,6 +2,7 @@ import './App.css'
 import React, { useState, Suspense, lazy} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
+import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
 import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage, setKeyboardVisible } from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
@@ -12,6 +13,7 @@ const LoadPanel = lazy(() => import('./assets/Pages/LoadPanel'));
 const ConfirmationPanel = lazy(() => import('./assets/Pages/ConfirmationPanel'));
 const AddHabitPanel = lazy(() => import('./assets/Pages/HabitsPages/AddHabitPanel'));
 const HabitSettings = lazy(() => import('./assets/Pages/HabitsPages/HabitSettings'));
+const TrainingMain = lazy(() => import('./assets/Pages/TrainingPages/TrainingMain'));
 
 function App() {
   const [page, setPageState] = useState('LoadPanel');
@@ -107,7 +109,11 @@ React.useEffect(() => {
       {confirmationPanel && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <ConfirmationPanel/>
       </Suspense>}
+      {page === 'TrainingMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingMain/>
+      </Suspense>}
       {bottomBtnPanel === 'BtnsHabits' && !keyboardVisible && <BtnsHabits/>}
+      {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
     </>
   )
 }

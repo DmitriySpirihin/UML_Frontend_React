@@ -90,17 +90,18 @@ const HabitMetrics = () => {
           {habitId === -1 && <div style={{display:'flex',justifyContent:'center',alignItems:'center',marginTop:'40%'}}>
             <p style={{...styles(theme).subText,fontSize:'12px',margin:'10%',marginTop:'30%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setStartingInfo(langIndex)}</p>
           </div>}
-          {habitId > -1 && <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'50%',height:'5vh',marginTop:'15vh',marginLeft:'20vh'}}>
-            <FaList style={{...styles(theme).text,fontSize:'16px',marginRight:'10px',marginLeft:'25vw'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>
-            {showListOfHabitsPanel && (<IoMdArrowDropleft style={{...styles(theme).text,fontSize:'28px',marginRight:'10px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>)}
-            {!showListOfHabitsPanel && (<IoMdArrowDropright style={{...styles(theme).text,fontSize:'28px',marginRight:'10px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>)}
-            </div>} 
+          
           {habitId > -1 && <div style={styles(theme).panel}>
+            {habitId > -1 && <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'50%',marginLeft:'18vh'}}>
+            <FaList style={{color:Colors.get('icons',theme),fontSize:'16px',marginRight:'10px',marginLeft:'25vw'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>
+            {showListOfHabitsPanel && (<IoMdArrowDropleft style={{color:Colors.get('icons',theme),fontSize:'28px',marginRight:'10px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>)}
+            {!showListOfHabitsPanel && (<IoMdArrowDropright style={{color:Colors.get('icons',theme),fontSize:'28px',marginRight:'10px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>)}
+            </div>} 
             {/* habit changer */}
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'70%',height:'10vh'}}>
-              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) - 1 < 0 ? AppData.choosenHabits.length - 1 : AppData.choosenHabits.indexOf(habitId) - 1]);playEffects(clickSound,50);}}><FaArrowAltCircleLeft style={{...styles(theme).text,fontSize:'24px',marginTop:'5px',paddingRight:'10px'}}/></div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'70%',height:'7vh'}}>
+              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) - 1 < 0 ? AppData.choosenHabits.length - 1 : AppData.choosenHabits.indexOf(habitId) - 1]);playEffects(clickSound,50);}}><FaArrowAltCircleLeft style={{color:Colors.get('icons',theme),fontSize:'24px',marginTop:'5px',paddingRight:'10px'}}/></div>
               <p style={styles(theme).text}>{getAllHabits().find(h => h.id === habitId).name[langIndex]}</p>
-              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) + 1 > AppData.choosenHabits.length - 1 ? 0 : AppData.choosenHabits.indexOf(habitId) + 1]);playEffects(clickSound,50);}}><FaArrowAltCircleRight style={{...styles(theme).text,fontSize:'24px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
+              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) + 1 > AppData.choosenHabits.length - 1 ? 0 : AppData.choosenHabits.indexOf(habitId) + 1]);playEffects(clickSound,50);}}><FaArrowAltCircleRight style={{color:Colors.get('icons',theme),fontSize:'24px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
             </div>
             {/* habit metrics days*/}
             <div style={{display:'flex',justifyContent:'center',alignItems:'center',width:'90%',height:'15vh',flexDirection:'column',
@@ -113,9 +114,9 @@ const HabitMetrics = () => {
                 <p style={{...styles(theme).subText, fontSize:'10px', marginTop:'4px'}}>{getHabitRangeStartLabel(daysCount)}</p>
               </div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'60%',height:'10vh'}}>
-                  <div onClick={() => {setDaysCount(daysCount - 1 < 0 ? 2 : daysCount - 1);if(AppData.prefs[2] == 0)clickSound.play();if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}><FaArrowAltCircleLeft style={{...styles(theme).text,fontSize:'20px',marginTop:'5px',paddingRight:'10px'}}/></div>
+                  <div onClick={() => {setDaysCount(daysCount - 1 < 0 ? 2 : daysCount - 1);if(AppData.prefs[2] == 0)clickSound.play();if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}><FaArrowAltCircleLeft style={{color:Colors.get('icons',theme),fontSize:'20px',marginTop:'5px',paddingRight:'10px'}}/></div>
                   <p style={styles(theme).text}>{daysCountText(langIndex,daysCount)}</p>
-                  <div onClick={() => {setDaysCount(daysCount + 1 > 2 ? 0 : daysCount + 1);if(AppData.prefs[2] == 0)clickSound.play();if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}><FaArrowAltCircleRight style={{...styles(theme).text,fontSize:'20px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
+                  <div onClick={() => {setDaysCount(daysCount + 1 > 2 ? 0 : daysCount + 1);if(AppData.prefs[2] == 0)clickSound.play();if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}><FaArrowAltCircleRight style={{color:Colors.get('icons',theme),fontSize:'20px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
                 </div>
                 <div style={{fontSize:'8px',color:Colors.get('subText', theme),lineHeight:'5px',padding:'5px'}}>{infoMicro(langIndex,daysCount)}</div>
             </div>
@@ -123,13 +124,14 @@ const HabitMetrics = () => {
             <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'80%',height:'7vh',marginTop:'10px'}}>
               <p style={styles(theme).subText}>{langIndex === 0 ? 'максимальная серия ' + maxStreak : 'Max streak ' + maxStreak}</p>
               {maxStreak > currentStreak && <img src={'Art/Ui/Streak_Flame.png'} style={{width:'30px'}} />}
-              <img src={'Art/Ui/Divider.png'} style={{width:'40px',color:Colors.get('border', theme)}} />
+              <svg width={50} height={40}>
+                <line x1={10} y1={0} x2={10} y2={40} stroke={Colors.get('icons',theme)} strokeWidth={3} />
+              </svg>
               {currentStreak >= maxStreak && currentStreak > 0 && <Fire style={{width:'30px',color:'#c6382eff'}} />}
               <p style={styles(theme).subText}>{langIndex === 0 ? 'текущая серия ' + currentStreak : 'Current streak ' + currentStreak}</p>
             </div>
             {/* percent filled icon*/}
-               <svg width="16vh" height="16vh" transform = "rotate(-90, 0, 0)">
-                <circle stroke={Colors.get('shadow', theme)} fill="none" strokeWidth="17" r={radius} cx="77" cy="77"/>
+               <svg width="16vh" height="16vh" transform = "rotate(-90, 0, 0)" style={{filter : `drop-shadow(-2px 2px 3px ${Colors.get('shadow', theme)})`}}>
                 <circle stroke={Colors.get('border', theme)} fill="none" strokeWidth="16" r={radius} cx="75" cy="75"/>
                 <circle stroke={Colors.get('progressBar', theme)} fill="none" strokeWidth="15" r={radius} cx="75" cy="75"/>
                 <circle stroke={interpolateColor(Colors.get('habitCardSkipped', theme), Colors.get('habitCardDone', theme), fillAmount)} fill="none" strokeWidth="15" r={radius} cx="75" cy="75" 
@@ -150,7 +152,7 @@ const HabitMetrics = () => {
             </div>
           </div>}
           {/* list of habits panel */}
-          <div style={{position:'fixed',bottom:'0',left:'0',width:'90vw',height:'70vh',borderRadius:'24px',
+          <div style={{position:'fixed',bottom:'0',left:'0',width:'90vw',height:'72vh',borderRadius:'24px',
             backgroundColor: Colors.get('background', theme),border: `1px solid ${Colors.get('border', theme)}`,
             boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
             transition: 'all 0.5s ease-in-out',transform: showListOfHabitsPanel ? 'translate(-20%,-17%)' : 'translate(-110%,-17%)'}}>
@@ -167,11 +169,11 @@ const HabitMetrics = () => {
                     if(habits[habits.length - 1][id] > 0)currentStreak ++;
                   }
                 return (
-                  <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'space-between',width:'90%',height:'8%',borderBottom: `1px solid ${Colors.get('border', theme)}`,
-                    backgroundColor:habitId === id ? Colors.get('highlitedPanel', theme) : Colors.get('background', theme),borderTopRightRadius:'12px',borderBottomRightRadius:'12px'}}
+                  <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'space-between',width:'100%',height:'8%',borderBottom: `1px solid ${Colors.get('border', theme)}`,
+                    backgroundColor:habitId === id ? Colors.get('highlitedPanel', theme) : Colors.get('background', theme),borderTopRightRadius:'12px'}}
                     onClick={() => {setHabitId(id);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}>
-                    <p style={{...styles(theme).text,fontSize:'14px'}}>{(getAllHabits().find(h => h.id === id) || {}).name?.[langIndex] || 'Unknown Habit'}</p>
-                    <p style={{...styles(theme).text,fontSize:'14px'}}>{Math.ceil(currentStreak / daysToForm * 100) + '%'}</p>
+                    <p style={{...styles(theme).text,fontSize:'14px',marginLeft:'20px'}}>{(getAllHabits().find(h => h.id === id) || {}).name?.[langIndex] || 'Unknown Habit'}</p>
+                    <p style={{...styles(theme).text,fontSize:'14px',marginRight:'20px'}}>{Math.ceil(currentStreak / daysToForm * 100) + '%'}</p>
                     {currentStreak >= daysToForm && <Check style={{width:'20px',color:'#2e9741ff'}} />}
                   </div>
                 )

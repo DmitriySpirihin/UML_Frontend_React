@@ -58,14 +58,17 @@ const MainMenu = ({ onPageChange }) => {
                 />
                 <MenuCard 
                     text={['Тренировочная дневник', 'Training diary']} 
-                    decr={['Скоро будет доступно', 'Coming soon']}
+                    decr={[
+                        'Отслеживайте свой тренировочный прогресс, ставьте цели и анализируйте результаты. Идеальный инструмент для системного подхода к физическому развитию.', 
+                        'Track your workout progress, set goals, and analyze results. The perfect tool for a systematic approach to physical development.'
+                    ]}
                     colorDark="#143113ff" 
                     colorLight="#98f9a0ff" 
                     colorSpecialDark="#26352fff" 
                     colorSpecialLight="#9de074ff" 
                     theme={theme} 
                     lang={lang}
-                    onClick={() => {playEffects(startSound,100);}}
+                    onClick={() => {onPageChange('TrainingMain');playEffects(startSound,100);}}
                 />
                <MenuCard 
                     text={['Список задач', 'Simple task manager']} 
