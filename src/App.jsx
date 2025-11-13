@@ -22,23 +22,35 @@ function App() {
   const [windowHeight, setWindowHeight] = React.useState(window.innerHeight);
   const [keyboardVisible, setKeyboardVisibleState] = React.useState(false);
   
-  // Detect keyboard visibility for mobile devices and Telegram WebView
+  // Handle keyboard visibility for Telegram WebView
   React.useEffect(() => {
-    // For Telegram WebView
-    if (window.Telegram && window.Telegram.WebApp) {
+    if (window.Telegram?.WebApp) {
+      // Expand the WebView to full height
       window.Telegram.WebApp.expand();
       
-      // Listen to viewport changes in Telegram WebView
-      window.Telegram.WebApp.onEvent('viewportChanged', (isStateStable) => {
+      const handleViewportChange = (isStateStable) => {
         if (isStateStable) {
-          const isKeyboardVisible = window.Telegram.WebApp.isExpanded;
-          setKeyboardVisibleState(!isKeyboardVisible);
-          setKeyboardVisible(!isKeyboardVisible);
+          // Invert the logic - when keyboard is visible, isExpanded is false
+          const isKeyboardVisible = !window.Telegram.WebApp.isExpanded;
+          setKeyboardVisibleState(isKeyboardVisible);
+          setKeyboardVisible(isKeyboardVisible);
         }
-      });
+      };
+
+      // Set initial state
+      handleViewportChange(true);
+      
+      // Add event listener
+      window.Telegram.WebApp.onEvent('viewportChanged', handleViewportChange);
+
+      // Cleanup function
+      return () => {
+        if (window.Telegram?.WebApp?.offEvent) {
+          window.Telegram.WebApp.offEvent('viewportChanged', handleViewportChange);
+        }
+      };
     }
-    
-  }, [windowHeight]);
+  }, []); // Removed windowHeight dependency as it's not needed
   React.useEffect(() => {
           const subscription = confirmationPanel$.subscribe(setConfirmationPanel);  
           return () => subscription.unsubscribe();
