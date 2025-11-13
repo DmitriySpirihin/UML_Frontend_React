@@ -1,5 +1,5 @@
 import React, { useState, useEffect,useRef } from 'react';
-import { setCurrentBottomBtn } from '../../StaticClasses/HabitsBus';
+import { setCurrentBottomBtn, setKeyboardVisible } from '../../StaticClasses/HabitsBus';
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
@@ -36,7 +36,11 @@ const getAllHabits = () => {
 
 const AddHabitPanel = () => {
     // Theme and language state
-    const [theme,setTheme] = useState('dark');
+    const [theme, setTheme] = useState(theme$.value);
+    const [lang, setLang] = useState(lang$.value);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [viewportHeight, setViewportHeight] = useState(window.visualViewport?.height || window.innerHeight);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
     const [showCreatePanel,setshowCreatePanel] = useState(false);
     const [addPanel,setAddPanelState] = useState('');
@@ -69,6 +73,42 @@ const AddHabitPanel = () => {
         onClick: () => addHabit(false)
     });
     React.useEffect(() => {
+    const handleResize = () => {
+      const newViewportHeight = window.visualViewport?.height || window.innerHeight;
+      const keyboardVisible = newViewportHeight < viewportHeight;
+      
+      if (keyboardVisible !== isKeyboardVisible) {
+        setIsKeyboardVisible(keyboardVisible);
+        setKeyboardVisible(keyboardVisible);
+      }
+      
+      setViewportHeight(newViewportHeight);
+      
+      // Scroll to the focused input when keyboard appears
+      if (document.activeElement?.tagName === 'INPUT' || 
+          document.activeElement?.tagName === 'TEXTAREA') {
+        document.activeElement.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    };
+
+    // Add event listeners
+    window.visualViewport?.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize);
+    
+    const subscription = theme$.subscribe(setTheme);
+    const langSubscription = lang$.subscribe(setLang);
+    
+    return () => {
+      window.visualViewport?.removeEventListener('resize', handleResize);
+      window.removeEventListener('resize', handleResize);
+      subscription.unsubscribe();
+      langSubscription.unsubscribe();
+    };
+  }, [viewportHeight]);
+    useEffect(() => {
             const themeSubscription = theme$.subscribe(setTheme);
             const langSubscription = lang$.subscribe((lang) => {
                 setLangIndex(lang === 'ru' ? 0 : 1);
@@ -114,7 +154,7 @@ const AddHabitPanel = () => {
           backgroundColor: opacity === 1 ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
           transition: 'transform 0.3s ease-in-out, background-color 0.1s ease-in-out',
         }}>
-         {!showCreatePanel && (<div style={styles(theme).panel}>
+         {!showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
            <div style={{...styles(theme).simplePanel,height:"47vh"}}>
             <div style={{display:'flex',flexDirection:'row'}}>
@@ -140,7 +180,7 @@ const AddHabitPanel = () => {
            </div>
            </div>)}
            {/* creation panel */}
-           {showCreatePanel && (<div style={styles(theme).panel}>
+           {showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
            <div style={{...styles(theme).simplePanel,height:'47vh',justifyContent:'center'}}>
             <textarea maxLength={25} placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
@@ -373,7 +413,7 @@ const searchHabitsList = (name, habitList, setHabitList) => {
 }
 
 
-const styles = (theme,resize) => ({
+const styles = (theme, keyboardVisible) => ({
   // Container styles
   container: {
     position: 'fixed',
@@ -392,7 +432,7 @@ const styles = (theme,resize) => ({
   {
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: "24px",
+    borderRadius:"24px",
     overflow: "hidden",
     boxSizing:'border-box',
     overflowY: "scroll",
@@ -400,8 +440,8 @@ const styles = (theme,resize) => ({
     margin: "5px",
     backgroundColor:Colors.get('simplePanel', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
-    width: "85vw",
-    height:"55vh"
+    width:"85vw",
+    height: keyboardVisible ? "90vh" : "60vh"
   },
   text :
   {

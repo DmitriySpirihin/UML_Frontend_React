@@ -4,7 +4,7 @@ import Metrics from '@mui/icons-material/AnalyticsTwoTone';
 import Calendar from '@mui/icons-material/CalendarMonthTwoTone';
 import Settings from '@mui/icons-material/SettingsTwoTone';
 import Add from '@mui/icons-material/AddCircleOutlineTwoTone';
-import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurrentBottomBtn} from '../../StaticClasses/HabitsBus'
+import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurrentBottomBtn,keyboardVisible$} from '../../StaticClasses/HabitsBus'
 import Colors from '../../StaticClasses/Colors'
 import {useState,useEffect} from 'react'
 import {AppData} from '../../StaticClasses/AppData'
@@ -19,6 +19,7 @@ const BtnsHabits = () => {
     const [page,setPageState] = useState('');
     const [addPanel,setAddPanelState] = useState('');
     const [currentBtn,setBtnState] = useState(0);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
  
     // subscriptions
     useEffect(() => {
@@ -35,7 +36,11 @@ const BtnsHabits = () => {
     }, []);
     useEffect(() => {
         const subscription = currentBottomBtn$.subscribe(setBtnState);
-        return () => subscription.unsubscribe();
+        const keyboardSubscription = keyboardVisible$.subscribe(setKeyboardVisible);
+        return () => {
+            subscription.unsubscribe();
+            keyboardSubscription.unsubscribe();
+        };
     }, []);
     useEffect(() => {
         if(currentBtn === 0){
@@ -46,7 +51,15 @@ const BtnsHabits = () => {
     
     // render    
     return (
-        <BottomPanel theme={theme} page={page} addPanel={addPanel} currentBtn={currentBtn} setBtnState={setBtnState}/>
+        !keyboardVisible && (
+            <BottomPanel 
+                theme={theme} 
+                page={page} 
+                addPanel={addPanel} 
+                currentBtn={currentBtn} 
+                setBtnState={setBtnState}
+            />
+        )
     )
 }
 
