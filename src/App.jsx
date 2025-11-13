@@ -20,20 +20,10 @@ function App() {
   const [theme, setTheme] = React.useState('dark');
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
   const [windowHeight, setWindowHeight] = React.useState(window.innerHeight);
+  const [keyboardVisible, setKeyboardVisibleState] = React.useState(false);
   
   // Detect keyboard visibility for mobile devices and Telegram WebView
   React.useEffect(() => {
-    const handleResize = () => {
-      const newHeight = window.innerHeight;
-      const isKeyboardVisible = (window.screen.height - newHeight) > (window.screen.height * 0.15);
-      
-      if (isKeyboardVisible !== (windowHeight > newHeight)) {
-        setKeyboardVisible(isKeyboardVisible);
-      }
-      
-      setWindowHeight(newHeight);
-    };
-    
     // For Telegram WebView
     if (window.Telegram && window.Telegram.WebApp) {
       window.Telegram.WebApp.expand();
@@ -42,6 +32,7 @@ function App() {
       window.Telegram.WebApp.onEvent('viewportChanged', (isStateStable) => {
         if (isStateStable) {
           const isKeyboardVisible = window.Telegram.WebApp.isExpanded;
+          setKeyboardVisibleState(!isKeyboardVisible);
           setKeyboardVisible(!isKeyboardVisible);
         }
       });
@@ -85,7 +76,7 @@ React.useEffect(() => {
 
   return (
     <>
-      {page !== 'LoadPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+      {page !== 'LoadPanel' && !keyboardVisible && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <MainBtns/>
       </Suspense>}
       {page === 'LoadPanel' && <LoadPanel/>}
@@ -108,7 +99,7 @@ React.useEffect(() => {
       {confirmationPanel && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <ConfirmationPanel/>
       </Suspense>}
-      {bottomBtnPanel === 'BtnsHabits' && <BtnsHabits/>}
+      {bottomBtnPanel === 'BtnsHabits' && !keyboardVisible && <BtnsHabits/>}
     </>
   )
 }
