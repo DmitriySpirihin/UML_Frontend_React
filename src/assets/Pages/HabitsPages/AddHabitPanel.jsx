@@ -176,7 +176,7 @@ const AddHabitPanel = () => {
         }}>
          {!showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
-           <div style={{...styles(theme).simplePanel,height:"47vh"}}>
+           <div style={{...styles(theme).simplePanel,height: keyboardVisible ? "66vh" : "47vh"}}>
             <div style={{display:'flex',flexDirection:'row'}}>
               <FaSearch style={{color:Colors.get("mainText",theme),width:'5vw',marginTop:'10px',marginLeft:'10px'}}/>
               <input type="text"  style={styles(theme).input}
@@ -202,7 +202,7 @@ const AddHabitPanel = () => {
            {/* creation panel */}
            {showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
-           <div style={{...styles(theme).simplePanel,height:'47vh',justifyContent:'center'}}>
+           <div style={{...styles(theme).simplePanel,height: keyboardVisible ? "66vh" : "47vh",justifyContent:'center'}}>
             <textarea maxLength={25} placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
             onChange={(e) => handleInputValue(e.target.value,0)}/>
             <div style={{display:"flex",justifyContent:"space-between"}}>
@@ -212,7 +212,7 @@ const AddHabitPanel = () => {
                 {renderCategoryOptions(theme, langIndex)}
               </select>
             </div>
-            <textarea maxLength={60} placeholder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} style={{...styles(theme).input,height:'20%'}}
+            <textarea maxLength={60} placeholder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} style={{...styles(theme).input,height: keyboardVisible ? "40%" : "25%"}}
             onChange={(e) => handleInputValue(e.target.value,2)}/>
             <div style={styles(theme).headerText}>{langIndex === 0 ? 'выбери иконку(опционально)' : 'choose icon(optional)'}</div>
             <div style={{display:"flex",justifyContent:"space-between"}}>
@@ -461,7 +461,7 @@ const styles = (theme, keyboardVisible) => ({
     backgroundColor:Colors.get('simplePanel', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
     width:"85vw",
-    height: keyboardVisible ? "90vh" : "60vh"
+    height: keyboardVisible ? "85vh" : "60vh"
   },
   text :
   {
@@ -501,7 +501,7 @@ const styles = (theme, keyboardVisible) => ({
   input:
   {
     width:'65vw',
-    height:'5vw',
+    height: keyboardVisible ? "10vh" : "5vh",
     borderRadius:'12px',
     border:`1px solid ${Colors.get('border', theme)}`,
     margin:'12px',

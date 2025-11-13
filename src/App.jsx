@@ -2,7 +2,7 @@ import './App.css'
 import React, { useState, Suspense, lazy} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
-import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$,setPage} from './assets/StaticClasses/HabitsBus'
+import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage, setKeyboardVisible } from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
 const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'));
@@ -19,6 +19,44 @@ function App() {
   const [confirmationPanel, setConfirmationPanel] = useState(false);
   const [theme, setTheme] = React.useState('dark');
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
+  const [windowHeight, setWindowHeight] = React.useState(window.innerHeight);
+  
+  // Detect keyboard visibility for mobile devices and Telegram WebView
+  React.useEffect(() => {
+    const handleResize = () => {
+      const newHeight = window.innerHeight;
+      const isKeyboardVisible = (window.screen.height - newHeight) > (window.screen.height * 0.15);
+      
+      if (isKeyboardVisible !== (windowHeight > newHeight)) {
+        setKeyboardVisible(isKeyboardVisible);
+      }
+      
+      setWindowHeight(newHeight);
+    };
+    
+    // For Telegram WebView
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.expand();
+      
+      // Listen to viewport changes in Telegram WebView
+      window.Telegram.WebApp.onEvent('viewportChanged', (isStateStable) => {
+        if (isStateStable) {
+          const isKeyboardVisible = window.Telegram.WebApp.isExpanded;
+          setKeyboardVisible(!isKeyboardVisible);
+        }
+      });
+    }
+    
+    // For regular mobile browsers
+    window.addEventListener('resize', handleResize);
+    
+    // Initial check
+    handleResize();
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [windowHeight]);
   React.useEffect(() => {
           const subscription = confirmationPanel$.subscribe(setConfirmationPanel);  
           return () => subscription.unsubscribe();
