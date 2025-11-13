@@ -38,7 +38,7 @@ const AddHabitPanel = () => {
     // Theme and language state
     const [theme, setTheme] = useState(theme$.value);
     const [lang, setLang] = useState(lang$.value);
-    const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [keyboardVisible, setKeyboardVisibleState] = useState(false);
     const [viewportHeight, setViewportHeight] = useState(window.visualViewport?.height || window.innerHeight);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
@@ -84,6 +84,7 @@ const AddHabitPanel = () => {
       
       if (keyboardVisible !== isKeyboardVisible) {
         setIsKeyboardVisible(keyboardVisible);
+        setKeyboardVisibleState(keyboardVisible);
         setKeyboardVisible(keyboardVisible);
       }
 
@@ -126,7 +127,7 @@ const AddHabitPanel = () => {
       subscription.unsubscribe();
       langSubscription.unsubscribe();
     };
-  }, [isKeyboardVisible, setKeyboardVisible]);
+  }, [isKeyboardVisible, setKeyboardVisibleState]);
     useEffect(() => {
             const themeSubscription = theme$.subscribe(setTheme);
             const langSubscription = lang$.subscribe((lang) => {
