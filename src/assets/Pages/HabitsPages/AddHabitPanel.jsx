@@ -1,5 +1,5 @@
 import React, { useState, useEffect,useRef } from 'react';
-import { setCurrentBottomBtn, setKeyboardVisible } from '../../StaticClasses/HabitsBus';
+import { setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
@@ -39,8 +39,6 @@ const AddHabitPanel = () => {
     const [theme, setTheme] = useState(theme$.value);
     const [lang, setLang] = useState(lang$.value);
     const [keyboardVisible, setKeyboardVisibleState] = useState(false);
-    const [viewportHeight, setViewportHeight] = useState(window.visualViewport?.height || window.innerHeight);
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
     const [showCreatePanel,setshowCreatePanel] = useState(false);
     const [addPanel,setAddPanelState] = useState('');
@@ -73,61 +71,16 @@ const AddHabitPanel = () => {
         onClick: () => addHabit(false)
     });
     React.useEffect(() => {
-    const isTelegram = window.Telegram?.WebApp?.initDataUnsafe?.user;
-    let originalHeight = window.visualViewport?.height || window.innerHeight;
-
-    const handleResize = () => {
-      if (!isTelegram) return;
-
-      const newViewportHeight = window.visualViewport?.height || window.innerHeight;
-      const keyboardVisible = newViewportHeight < originalHeight * 0.8; // 80% threshold for keyboard detection
-      
-      if (keyboardVisible !== isKeyboardVisible) {
-        setIsKeyboardVisible(keyboardVisible);
-        setKeyboardVisibleState(keyboardVisible);
-        setKeyboardVisible(keyboardVisible);
-      }
-
-      // Scroll to focused input when keyboard appears
-      if (keyboardVisible && (document.activeElement?.tagName === 'INPUT' || 
-                             document.activeElement?.tagName === 'TEXTAREA')) {
-        setTimeout(() => {
-          document.activeElement.scrollIntoView({ 
-            behavior: 'smooth',
-            block: 'center'
-          });
-        }, 100);
-      }
-    };
-
-    const handleFocusIn = (e) => {
-      if (isTelegram && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
-        setTimeout(() => {
-          e.target.scrollIntoView({ 
-            behavior: 'smooth',
-            block: 'center'
-          });
-        }, 100);
-      }
-    };
-
     const subscription = theme$.subscribe(setTheme);
     const langSubscription = lang$.subscribe(setLang);
-    
-    if (isTelegram) {
-      window.visualViewport?.addEventListener('resize', handleResize);
-      document.addEventListener('focusin', handleFocusIn);
-    }
+    const keyboardSubscription = keyboardVisible$.subscribe(setKeyboardVisibleState);
     
     return () => {
-      if (isTelegram) {
-        window.visualViewport?.removeEventListener('resize', handleResize);
-        document.removeEventListener('focusin', handleFocusIn);
-      }
       subscription.unsubscribe();
       langSubscription.unsubscribe();
+      keyboardSubscription.unsubscribe();
     };
-  }, [isKeyboardVisible, setKeyboardVisibleState]);
+  }, []);
     useEffect(() => {
             const themeSubscription = theme$.subscribe(setTheme);
             const langSubscription = lang$.subscribe((lang) => {
@@ -501,7 +454,7 @@ const styles = (theme, keyboardVisible) => ({
   input:
   {
     width:'65vw',
-    height: keyboardVisible ? "10vh" : "5vh",
+    height: keyboardVisible ? "8vh" : "5vh",
     borderRadius:'12px',
     border:`1px solid ${Colors.get('border', theme)}`,
     margin:'12px',
