@@ -39,8 +39,8 @@ const AddHabitPanel = () => {
     const [theme, setTheme] = useState(theme$.value);
     const [lang, setLang] = useState(lang$.value);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
-    const [viewportHeight, setViewportHeight] = useState(window.visualViewport?.height || window.innerHeight);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const inputRef = useRef(null);
     const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
     const [showCreatePanel,setshowCreatePanel] = useState(false);
     const [addPanel,setAddPanelState] = useState('');
@@ -72,42 +72,87 @@ const AddHabitPanel = () => {
         text: langIndex === 0 ? 'Добавить' : 'Add',
         onClick: () => addHabit(false)
     });
+    // Handle keyboard in Telegram WebView
     React.useEffect(() => {
-    const handleResize = () => {
-      const newViewportHeight = window.visualViewport?.height || window.innerHeight;
-      const keyboardVisible = newViewportHeight < viewportHeight;
+      // Check if we're in Telegram WebView
+      const isTelegramWebView = window.Telegram?.WebApp?.initData !== undefined;
       
-      if (keyboardVisible !== isKeyboardVisible) {
-        setIsKeyboardVisible(keyboardVisible);
-        setKeyboardVisible(keyboardVisible);
-      }
-      
-      setViewportHeight(newViewportHeight);
-      
-      // Scroll to the focused input when keyboard appears
-      if (document.activeElement?.tagName === 'INPUT' || 
-          document.activeElement?.tagName === 'TEXTAREA') {
-        document.activeElement.scrollIntoView({ 
-          behavior: 'smooth',
-          block: 'center'
-        });
-      }
-    };
+      const handleFocus = (e) => {
+        if (isTelegramWebView) {
+          // For Telegram WebView, we'll use the focus/blur events
+          setIsKeyboardVisible(true);
+          setKeyboardVisible(true);
+          
+          // Scroll the focused element into view with some padding
+          setTimeout(() => {
+            e.target.scrollIntoView({ 
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }, 100);
+        }
+      };
 
-    // Add event listeners
-    window.visualViewport?.addEventListener('resize', handleResize);
-    window.addEventListener('resize', handleResize);
-    
-    const subscription = theme$.subscribe(setTheme);
-    const langSubscription = lang$.subscribe(setLang);
-    
-    return () => {
-      window.visualViewport?.removeEventListener('resize', handleResize);
-      window.removeEventListener('resize', handleResize);
-      subscription.unsubscribe();
-      langSubscription.unsubscribe();
-    };
-  }, [viewportHeight]);
+      const handleBlur = () => {
+        if (isTelegramWebView) {
+          setIsKeyboardVisible(false);
+          setKeyboardVisible(false);
+        }
+      };
+
+      // Add event listeners for all inputs and textareas
+      const inputs = document.querySelectorAll('input, textarea');
+      inputs.forEach(input => {
+        input.addEventListener('focus', handleFocus);
+        input.addEventListener('blur', handleBlur);
+      });
+
+      // For non-Telegram browsers, keep the viewport resize handler
+      if (!isTelegramWebView) {
+        const handleResize = () => {
+          const newViewportHeight = window.visualViewport?.height || window.innerHeight;
+          const keyboardVisible = newViewportHeight < viewportHeight;
+          
+          if (keyboardVisible !== isKeyboardVisible) {
+            setIsKeyboardVisible(keyboardVisible);
+            setKeyboardVisible(keyboardVisible);
+          }
+          
+          setViewportHeight(newViewportHeight);
+          
+          if (document.activeElement?.tagName === 'INPUT' || 
+              document.activeElement?.tagName === 'TEXTAREA') {
+            document.activeElement.scrollIntoView({ 
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+        };
+
+        window.visualViewport?.addEventListener('resize', handleResize);
+        window.addEventListener('resize', handleResize);
+      }
+      
+      const subscription = theme$.subscribe(setTheme);
+      const langSubscription = lang$.subscribe(setLang);
+      
+      // Cleanup function
+      return () => {
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+          input.removeEventListener('focus', handleFocus);
+          input.removeEventListener('blur', handleBlur);
+        });
+        
+        if (!isTelegramWebView) {
+          window.visualViewport?.removeEventListener('resize', handleResize);
+          window.removeEventListener('resize', handleResize);
+        }
+        
+        subscription.unsubscribe();
+        langSubscription.unsubscribe();
+      };
+    }, [isKeyboardVisible, viewportHeight]);
     useEffect(() => {
             const themeSubscription = theme$.subscribe(setTheme);
             const langSubscription = lang$.subscribe((lang) => {
