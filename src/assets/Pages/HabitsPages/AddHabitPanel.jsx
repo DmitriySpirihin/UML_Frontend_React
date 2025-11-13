@@ -129,10 +129,10 @@ const AddHabitPanel = () => {
         }}>
          {!showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
-           <div style={{...styles(theme).simplePanel,height: keyboardVisible ? "66vh" : "47vh"}}>
+           <div style={{...styles(theme).simplePanel,height: keyboardVisible ? "66vh" : "52vh"}}>
             <div style={{display:'flex',flexDirection:'row'}}>
               <FaSearch style={{color:Colors.get("mainText",theme),width:'5vw',marginTop:'10px',marginLeft:'10px'}}/>
-              <input type="text"  style={styles(theme).input}
+              <input type="text"  style={{...styles(theme).input,height: keyboardVisible ? "50%" : "40%"}}
               onChange={(e) => searchHabitsList(e.target.value,habitList, setHabitList) }/>
             </div>
             <div style={styles(theme).scrollView}>
@@ -149,13 +149,13 @@ const AddHabitPanel = () => {
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
              <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(true);setAddButtonEnabled(false);}}><MdFiberNew style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('mainText', theme) : Colors.get('subText', theme)}}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
            </div>
            </div>)}
            {/* creation panel */}
            {showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
-           <div style={{...styles(theme).simplePanel,height: keyboardVisible ? "66vh" : "47vh",justifyContent:'center'}}>
+           <div style={{...styles(theme).simplePanel,height: keyboardVisible ? "66vh" : "52vh",justifyContent:'center'}}>
             <textarea maxLength={25} placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
             onChange={(e) => handleInputValue(e.target.value,0)}/>
             <div style={{display:"flex",justifyContent:"space-between"}}>
@@ -201,7 +201,7 @@ const AddHabitPanel = () => {
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
              <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(false);setAddButtonEnabled(false);setSelectedHabit(null);}}><FaSearchPlus style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('mainText', theme) : Colors.get('subText', theme)}}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
            </div>
          </div>)}
          {selectIconPanel && (
@@ -414,7 +414,7 @@ const styles = (theme, keyboardVisible) => ({
     backgroundColor:Colors.get('simplePanel', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
     width:"85vw",
-    height: keyboardVisible ? "85vh" : "60vh"
+    height: keyboardVisible ? "85vh" : "65vh"
   },
   text :
   {
@@ -454,7 +454,7 @@ const styles = (theme, keyboardVisible) => ({
   input:
   {
     width:'65vw',
-    height: keyboardVisible ? "8vh" : "5vh",
+    height: keyboardVisible ? "6vh" : "3vh",
     borderRadius:'12px',
     border:`1px solid ${Colors.get('border', theme)}`,
     margin:'12px',
@@ -513,17 +513,16 @@ const styles = (theme, keyboardVisible) => ({
     display:'flex',
     alignContent:"center",
     justifyContent:"center",
-    width:'10vw',
-    borderBottom:`1px solid ${Colors.get('border', theme)}`,
+    width:'15vw',
     marginTop:'12px',
     fontSize:'12px',
   },
   miniIcon: {
-    width: "6vw",
-    height: "6vw",
+    fontSize: "28px",
     padding: "5px",
     marginTop: "10px",
-    color: Colors.get('mainText', theme),
+    color: Colors.get('icons', theme),
+    filter :`drop-shadow(0 0px 1px ${Colors.get('iconsShadow', theme)})`
   }
 })
 function playEffects(sound,vibrationDuration ){

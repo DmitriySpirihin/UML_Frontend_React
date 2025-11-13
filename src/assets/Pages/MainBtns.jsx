@@ -55,13 +55,14 @@ const MainBtns = () => {
     return (
         <>
             <PopUpPanel theme={theme}  />
-            <UserPanel theme={theme} />
+            
             
               <div style={styles(theme).logoContainer}>
+                <UserPanel theme={theme} />
                 <img src={globalTheme === 'dark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} />
-                {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon,top:'14vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
-                {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon,top:'14vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
-                <Menu  style={{...styles(theme).icon,top:'14vh',left:'2vh'}} onClick={() => {toggleSettings();playEffects(null,50);}} />
+                {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon,top:'9vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
+                {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon,top:'9vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
+                <Menu  style={{...styles(theme).icon,top:'9vh',left:'2vh'}} onClick={() => {toggleSettings();playEffects(null,50);}} />
               </div>
             
             
@@ -90,7 +91,7 @@ const UserPanel = ({theme}) => {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        top: "13vh",
+        top: "8vh",
         left: "80vw",
         width: "35px",
         zIndex: 1000,
@@ -542,9 +543,7 @@ const styles = (theme) => {
        },
   logo :
   {
-    width: "45vw",
-    marginTop:'6vw',
-    marginBottom:'3vw'
+    width: "40vw"
   },
   logoContainer:
   {
@@ -552,7 +551,7 @@ const styles = (theme) => {
     width: "100vw",
     backgroundColor: Colors.get('bottomPanel', theme),
     boxShadow: `0px 2px 0px ${Colors.get('bottomPanelShadow', theme)}`,
-    bottom:'78vh',
+    bottom:'83vh',
     left:'0vw',
     marginTop:'6vw',
     marginBottom:'8vw'

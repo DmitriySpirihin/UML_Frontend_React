@@ -38,15 +38,6 @@ function App() {
       });
     }
     
-    // For regular mobile browsers
-    window.addEventListener('resize', handleResize);
-    
-    // Initial check
-    handleResize();
-    
-    return () => {
-      window.removeEventListener('resize', handleResize);
-    };
   }, [windowHeight]);
   React.useEffect(() => {
           const subscription = confirmationPanel$.subscribe(setConfirmationPanel);  

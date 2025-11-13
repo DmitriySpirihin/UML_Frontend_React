@@ -386,9 +386,9 @@ const styles = (theme) =>
   {
     padding:'20px',
     width: "90vw",
-    height: "74vh",
+    height: "80vh",
     overflowY: "auto",
-    marginTop:"20vh",
+    marginTop:"15vh",
     boxSizing:'border-box',
     display:'flex',
     flexDirection:'column',
