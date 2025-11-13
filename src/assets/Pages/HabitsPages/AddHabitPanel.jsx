@@ -409,7 +409,7 @@ const styles = (theme,resize) => ({
     backgroundColor:Colors.get('simplePanel', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
     width: "85vw",
-    height: resize ? "45vh" : "60vh",
+    height: resize ? "50vh" : "60vh",
   },
   text :
   {
