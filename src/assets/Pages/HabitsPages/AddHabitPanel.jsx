@@ -61,15 +61,7 @@ const AddHabitPanel = () => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [cropPixels, setCropPixels] = useState(null);
-    const [resize,setResize] = useState(false);
-    useEffect(() => {
-      window.visualViewport.addEventListener('resize', () => {
-        setResize(!resize);
-      });
-      return () => {
-        window.visualViewport.removeEventListener('resize',() => setResize(!resize));
-      };
-    }, []);
+   
     // Button state
     const [addButtonEnabled, setAddButtonEnabled] = useState(false);
     const [addButtonContext, setAddButtonContext] = useState({
@@ -122,7 +114,7 @@ const AddHabitPanel = () => {
           backgroundColor: opacity === 1 ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
           transition: 'transform 0.3s ease-in-out, background-color 0.1s ease-in-out',
         }}>
-         {!showCreatePanel && (<div style={styles(theme,resize).panel}>
+         {!showCreatePanel && (<div style={styles(theme).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
            <div style={{...styles(theme).simplePanel,height:"47vh"}}>
             <div style={{display:'flex',flexDirection:'row'}}>
@@ -148,7 +140,7 @@ const AddHabitPanel = () => {
            </div>
            </div>)}
            {/* creation panel */}
-           {showCreatePanel && (<div style={styles(theme,resize).panel}>
+           {showCreatePanel && (<div style={styles(theme).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
            <div style={{...styles(theme).simplePanel,height:'47vh',justifyContent:'center'}}>
             <textarea maxLength={25} placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
@@ -409,7 +401,7 @@ const styles = (theme,resize) => ({
     backgroundColor:Colors.get('simplePanel', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
     width: "85vw",
-    height: resize ? "50vh" : "60vh",
+    height:"55vh"
   },
   text :
   {
