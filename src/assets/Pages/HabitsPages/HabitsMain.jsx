@@ -7,14 +7,11 @@ import { expandedCard$, setExpandedCard , setPage} from '../../StaticClasses/Hab
 import Colors, { THEME } from '../../StaticClasses/Colors'
 import { loadCustomIcon } from '../../StaticClasses/SaveHelper';
 import { saveData } from '../../StaticClasses/SaveHelper';
-import { theme$ ,lang$, globalTheme$, updateConfirmationPanel,setShowPopUpPanel,setAddHabitPanel,setHabitSettingsPanel} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$, globalTheme$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
 
 const dateKey = new Date().toISOString().split('T')[0];
 const clickSound = new Audio('Audio/Click.wav');
 const isDoneSound = new Audio('Audio/IsDone.wav'); 
-const skipSound = new Audio('Audio/Skip.wav');
-const switchSound = new Audio('Audio/SwitchPanel.wav');
-const closeSound = new Audio('Audio/Transition.wav');
 export let removeHabitFn;
 export let addHabitFn;
 export let currentId;
@@ -100,7 +97,6 @@ const HabitsMain = () => {
             {hasHabits && <div style={styles(theme).scrollView}>
               {buildMenu({theme, habitsCards, categories, getAllHabits: () => getAllHabits()})}
         </div>}
-        <BottomPanel theme={theme} globalTheme={globalTheme}/>
         </div>
     )
 }
@@ -351,43 +347,6 @@ function CategoryPanel({text = ["Имя", "Name"], children, theme}) {
     )
 }
 
-function BottomPanel({globalTheme,theme})
-{
-    const style ={
-        position:'fixed',
-        bottom:'0',
-        left:'0',
-        width:'100vw',
-        height:'10vh',
-        borderTopLeftRadius:'24px',
-        borderTopRightRadius:'24px',
-        backgroundColor: Colors.get('bottomPanel', theme),
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center",
-        zIndex:900,
-        boxShadow: `0px -2px 0px ${Colors.get('bottomPanelShadow', theme)}`,
-    }
-    const btnstyle = {
-        width: "35px",
-        
-        border: "none",
-        display:'flex',
-        alignItems:'center',
-        justifyContent : 'center',
-        background: "transparent",
-
-    }
-    return (
-        <div style={style}>
-            <img src={globalTheme === 'dark' ? 'Art/Ui/Back_Dark.png' : 'Art/Ui/Back_Light.png'} style={btnstyle} onClick={() => {setPage('MainMenu');saveData();playEffects(skipSound,50);}} />
-            <img src={globalTheme === 'dark' ? 'Art/Ui/Metrics_Dark.png' : 'Art/Ui/Metrics_Light.png'} style={btnstyle} onClick={() => {setPage('HabitMetrics');playEffects(switchSound,50);}} />
-            <img src={globalTheme === 'dark' ? 'Art/Ui/Add_Dark.png' : 'Art/Ui/Add_Light.png'} style={btnstyle} onClick={() => {setAddHabitPanel(true);playEffects(closeSound,50);}} />
-            <img src={globalTheme === 'dark' ? 'Art/Ui/Setting_Dark.png' : 'Art/Ui/Settings_Light.png'} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
-            <img src={globalTheme === 'dark' ? 'Art/Ui/Calendar_Dark.png' : 'Art/Ui/Calendar_Light.png'} style={btnstyle} onClick={() => {setPage('HabitCalendar');playEffects(switchSound,50);}} />
-        </div>
-    )
-}
 const styles = (theme) =>
 ({
     container :

@@ -3,7 +3,9 @@ import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors, { THEME } from '../../StaticClasses/Colors'
-import { setPage,theme$ ,lang$, globalTheme$, habitsChanged$, emitHabitsChanged,setHabitSettingsPanel} from '../../StaticClasses/HabitsBus'
+import {theme$ ,lang$, globalTheme$, habitsChanged$, emitHabitsChanged} from '../../StaticClasses/HabitsBus'
+import Check from '@mui/icons-material/Check';
+import Close from '@mui/icons-material/Close';
 
 
 const formatDateKey = (d) => {
@@ -145,7 +147,6 @@ const HabitCalendar = () => {
           </div>}
           </div>
           </div>
-          <BottomPanel theme={theme} globalTheme={globalTheme}/>
         </div>
     )
 }
@@ -237,54 +238,13 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
         >
             <p style={{...styles(theme).text,fontSize:'14px', paddingLeft:'30px'}}>{name}</p>
             {status === 1 ? (
-                <img src={'Art/Ui/Done_Icon.png'} style={styles(theme).icon}/>
+                <Check style={{...styles(theme).icon,color:'#2e9741ff'}}/>
             ) : status === -1 ? (
-                <img src={'Art/Ui/Skipped_Icon.png'} style={styles(theme).icon}/>
+                <Close style={{...styles(theme).icon,color:'#973939ff'}}/>
             ) : null}
             
         </motion.div>
     );
-}
-
-
-function BottomPanel({globalTheme,theme})
-{
-    const style ={
-        position:'fixed',
-        bottom:'0',
-        left:'0',
-        width:'100vw',
-        height:'10vh',
-        borderTopLeftRadius:'24px',
-        borderTopRightRadius:'24px',
-        backgroundColor: Colors.get('bottomPanel', theme),
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center",
-        zIndex:900,
-        boxShadow: `0px -2px 0px ${Colors.get('bottomPanelShadow', theme)}`,
-    }
-    const btnstyle = {
-        width: "35px",
-        
-        border: "none",
-        display:'flex',
-        alignItems:'center',
-        justifyContent : 'center',
-        background: "transparent",
-
-    }
-    return (
-        <div style={style}>
-            <div style={style}>
-                <img src={globalTheme === 'dark' ? 'Art/Ui/Back_Dark.png' : 'Art/Ui/Back_Light.png'} style={btnstyle} onClick={() => {setPage('HabitsMain');playEffects(skipSound,50);}} />
-                <img src={globalTheme === 'dark' ? 'Art/Ui/Metrics_Dark.png' : 'Art/Ui/Metrics_Light.png'} style={btnstyle} onClick={() => {setPage('HabitMetrics');playEffects(switchSound,50);}} />
-                <img src={globalTheme === 'dark' ? 'Art/Ui/Add_Dark.png' : 'Art/Ui/Add_Light.png'} style={btnstyle} onClick={() => {}} />
-                <img src={globalTheme === 'dark' ? 'Art/Ui/Setting_Dark.png' : 'Art/Ui/Metrics_Light.png'} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
-                <img src={globalTheme === 'dark' ? 'Art/Ui/Calendar_Dark.png' : 'Art/Ui/Calendar_Light.png'} style={btnstyle} onClick={() => {}} />
-            </div>
-        </div>
-    )
 }
   
 const styles = (theme) =>
@@ -393,7 +353,6 @@ const styles = (theme) =>
   icon:
   {
     paddingLeft:'8px',
-    paddingBottom:'5px',
     width:'25px',
   }
 })

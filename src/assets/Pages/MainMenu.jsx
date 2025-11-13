@@ -42,7 +42,7 @@ const MainMenu = ({ onPageChange }) => {
     return (
           
           <div style={styles(theme).container}>
-            <img src={globalTheme === 'dark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} alt="Logo" />
+            <div style={{height:'20vh'}}/>
             <h2 style={styles(theme).mainText}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
             <div style={styles(theme).scrollView}>
                
@@ -142,14 +142,6 @@ const styles = (theme) => ({
      width: "100vw",
      fontFamily: "Segoe UI",
   },
-  logo :
-  {
-    width: "45vw",
-    objectFit: "contain",
-    marginTop:'6vw',
-    marginBottom:'8vw'
-  },
- 
   mainText :
   {
     textAlign: "left",

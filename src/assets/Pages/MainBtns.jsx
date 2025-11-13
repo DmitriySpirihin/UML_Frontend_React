@@ -4,9 +4,14 @@ import {AppData,UserData} from '../StaticClasses/AppData'
 import { motion, AnimatePresence } from 'framer-motion'
 import Colors, { THEME } from "../StaticClasses/Colors";
 import { clearAllSaves } from '../StaticClasses/SaveHelper'
+import TelegramIcon from '@mui/icons-material/Telegram';
 import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
 import { setTheme as setGlobalTheme, globalTheme$ ,theme$,showPopUpPanel$,setLang,lang$,vibro$,sound$} from '../StaticClasses/HabitsBus';
+
+import Dark from '@mui/icons-material/DarkModeTwoTone';
+import Light from '@mui/icons-material/LightModeTwoTone';
+import Menu from '@mui/icons-material/MenuTwoTone';
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSound = new Audio('Audio/Info.wav');
@@ -18,6 +23,17 @@ const MainBtns = () => {
     const [additionalPanelNum, setAdditionalPanelNum] = useState(1);
     const [sound, setSound] = useState(0);
     const [vibro, setVibro] = useState(0);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    useEffect(() => {
+        const handleToggle = () => setIsSettingsOpen(prev => !prev);
+        window.addEventListener('toggleSettingsPanel', handleToggle);
+        return () => window.removeEventListener('toggleSettingsPanel', handleToggle);
+    }, []);
+
+    const toggleSettings = () => {
+        window.dispatchEvent(new Event('toggleSettingsPanel'));
+    };
 
     React.useEffect(() => {
         const subscriptionG = globalTheme$.subscribe(setGlobalThemeState);
@@ -40,9 +56,24 @@ const MainBtns = () => {
         <>
             <PopUpPanel theme={theme}  />
             <UserPanel theme={theme} />
-            <SettingsBtn globalTheme={globalTheme}/>  
-            <ThemeBtn globalTheme={globalTheme}/>
-            <SettingsPanel theme={theme} langIndex={langIndex} setAdditionalPanel={setAdditionalPanel} setAdditionalPanelNum={setAdditionalPanelNum} vibroIndex={vibro} soundIndex={sound} setSound={setSound} setVibro={setVibro}/>
+            <div style={styles(theme).logoContainer}>
+            <img src={globalTheme === 'dark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} />
+            </div>
+            {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon,top:'14vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
+            {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon,top:'14vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
+            <Menu  style={{...styles(theme).icon,top:'14vh',left:'2vh'}} onClick={() => {toggleSettings();playEffects(null,50);}} />
+            <SettingsPanel 
+                theme={theme} 
+                langIndex={langIndex} 
+                setAdditionalPanel={setAdditionalPanel} 
+                setAdditionalPanelNum={setAdditionalPanelNum} 
+                vibroIndex={vibro} 
+                soundIndex={sound} 
+                setSound={setSound} 
+                setVibro={setVibro}
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+            />
             <AdditionalPanel theme={theme} langIndex={langIndex} isOpen={additionalPanel} setIsOpen={setAdditionalPanel} panelNum={additionalPanelNum}/>
         </>
     )
@@ -56,7 +87,7 @@ const UserPanel = ({theme}) => {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        top: "12vh",
+        top: "13vh",
         left: "80vw",
         width: "35px",
         zIndex: 1000,
@@ -69,56 +100,6 @@ const UserPanel = ({theme}) => {
                 style={{border: "3px solid " + Colors.get('border', theme),borderRadius: "50%",objectFit: "cover",width: "6vw",margin: "10px"}} 
             /> 
         </div>
-    )
-}
-const SettingsBtn = ({globalTheme}) => {
-    const _style = {
-        outline: "none",
-        boxShadow: "none",
-        position: "fixed",
-        top: "12vh",
-        left: "4vw",
-        width: "35px",
-        zIndex: 1000,
-        border: "none",
-        background: "transparent",
-        cursor: "pointer",
-    }
-    const icon = globalTheme === 'dark' ? 'Art/Ui/Settings_Dark.png' : 'Art/Ui/Settings_Light.png';
-    
-    const toggleSettings = () => {
-        // This will be handled by the SettingsPanel's internal state
-        // We'll use a custom event to communicate between components
-        playEffects(transitionSound,50);
-        const event = new CustomEvent('toggleSettingsPanel');
-        window.dispatchEvent(event);
-    };
-    
-    return (
-        <img 
-            src={icon} 
-            style={_style} 
-            onClick={toggleSettings}
-            alt={globalTheme === 'dark' ? 'Dark settings icon' : 'Light settings icon'}
-        /> 
-    )
-}
-const ThemeBtn = ({globalTheme}) => {
-    const _style = {
-            position: "fixed",
-            top: "12vh",
-            left: "14vw",
-            width: "30px",
-            zIndex: 1000,
-            border: "none",
-            background: "transparent",
-        }
-
-    const icon = globalTheme === 'dark' ? 'Art/Ui/Theme_Dark.png' : 'Art/Ui/Theme_Light.png';
-
-    return (
-       
-        <img src={icon} onClick={() => {changeSettings(1);playEffects(null,50);}} style={_style} />
     )
 }
 
@@ -186,7 +167,7 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
     const TelegramLink = ({name}) => {
         return (
             <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center",width:"50%",height:"10%",borderBottom:"1px solid " + Colors.get('border', theme)}}>
-                <img src={'Art/Ui/TelegramIcon.png'} alt="Telegram" style={{width: "24px", height: "24px"}} />
+                <TelegramIcon style={{width: "24px", height: "24px",color:'#3f86afff'}} />
                 <a href={`https://t.me/${name}`} target="_blank" rel="noopener noreferrer">
                     <p style={styles(theme).text}>{name}</p>
                 </a>
@@ -261,7 +242,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                             width: '100vw',
                             height: '100vh',
                             backgroundColor: 'rgba(0, 0, 0, 0.98)',
-                            zIndex: 999,
+                            zIndex: 2000,
                             pointerEvents: 'auto',
                         }}
                         onClick={() => {setIsOpen(false);playEffects(transitionSound,20);}}
@@ -272,7 +253,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         animate={{ x: '-30%' }}
                         exit={{ x: '-120%' }}
                         transition={{ type: 'spring', stiffness: 250, damping: 25}}
-                        style={{...settingsPanelStyles(theme).panel, zIndex: 1000}}
+                        style={{...settingsPanelStyles(theme).panel, zIndex: 2100}}
                     >
                     <p 
                     style={{
@@ -546,7 +527,33 @@ const styles = (theme) => {
             padding: "5px",
             marginTop: "10px",
             color: Colors.get('mainText', theme),
-        }
+        },
+        icon: {
+        position: "fixed",
+        top: "12vh",
+        left: "4vw",
+        width: "35px",
+        zIndex: 1000,
+        filter: 'drop-shadow(0px 0px 1px ' + Colors.get('shadow', theme) + ')',
+        color: Colors.get('icons', theme),
+       },
+  logo :
+  {
+    width: "45vw",
+    marginTop:'6vw',
+    marginBottom:'3vw'
+  },
+  logoContainer:
+  {
+    position: "fixed",
+    width: "100vw",
+    backgroundColor: Colors.get('bottomPanel', theme),
+    boxShadow: `0px 2px 0px ${Colors.get('bottomPanelShadow', theme)}`,
+    bottom:'78vh',
+    left:'0vw',
+    marginTop:'6vw',
+    marginBottom:'8vw'
+  }
     }
 }
 function playEffects(sound,vibrationDuration ){

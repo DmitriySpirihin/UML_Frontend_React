@@ -1,7 +1,7 @@
 import { Slider } from '@mui/material';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, setHabitSettingsPanel } from '../../StaticClasses/HabitsBus';
+import { theme$, lang$, setAddPanel,setCurrentBottomBtn} from '../../StaticClasses/HabitsBus';
 import React, { useState , useEffect} from 'react';
 
 const HabitSettings = () => {
@@ -30,7 +30,7 @@ const HabitSettings = () => {
                   <Slider style={styles(theme).slider} min={21} max={66} value={daysToFormAHabit} onChange={(e, value) => {setDaysToFormAHabitFn(value)}} />
                   <p style={{...styles(theme).text,fontSize:'16px',marginLeft:'18px'}}>{daysToFormAHabit}</p>
                 </div>
-                <p style={styles(theme).subText} onClick={() => setHabitSettingsPanel(false)}>{langIndex === 0 ? '! нажми для закрытия !' : '! tap to close !'}</p>
+                <p style={styles(theme).subText} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);}}>{langIndex === 0 ? '! нажми для закрытия !' : '! tap to close !'}</p>
             </div>
         </div>
     );
@@ -58,9 +58,9 @@ const styles = (theme) => ({
     justifyContent: "center",
     borderRadius: "24px",
     border: `1px solid ${Colors.get('border', theme)}`,
-    backgroundColor:Colors.get('simplePanel', theme),
+    backgroundColor:Colors.get('background', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
-    width: "85vw",
+    width: "90vw",
     height: "25vh",
   },
   text :

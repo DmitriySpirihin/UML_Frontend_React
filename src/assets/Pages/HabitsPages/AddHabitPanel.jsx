@@ -1,9 +1,10 @@
 import React, { useState, useEffect,useRef } from 'react';
+import { setCurrentBottomBtn } from '../../StaticClasses/HabitsBus';
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
-import { setShowPopUpPanel, setAddHabitPanel ,addHabitPanel$,theme$,lang$} from '../../StaticClasses/HabitsBus';
+import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$} from '../../StaticClasses/HabitsBus';
 import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt,FaFolderOpen} from 'react-icons/fa'
 import {MdFiberNew,MdDone} from 'react-icons/md'
 import Cropper from 'react-easy-crop';
@@ -37,8 +38,8 @@ const AddHabitPanel = () => {
     // Theme and language state
     const [theme,setTheme] = useState('dark');
     const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
-    const [addHabitPanel, setAddHabitPanel] = useState(addHabitPanel$);
     const [showCreatePanel,setshowCreatePanel] = useState(false);
+    const [addPanel,setAddPanelState] = useState('');
     
     // Habit data state
     const [habitName, setHabitName] = useState('');
@@ -60,7 +61,15 @@ const AddHabitPanel = () => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [cropPixels, setCropPixels] = useState(null);
-    
+    const [resize,setResize] = useState(false);
+    useEffect(() => {
+      window.visualViewport.addEventListener('resize', () => {
+        setResize(!resize);
+      });
+      return () => {
+        window.visualViewport.removeEventListener('resize',() => setResize(!resize));
+      };
+    }, []);
     // Button state
     const [addButtonEnabled, setAddButtonEnabled] = useState(false);
     const [addButtonContext, setAddButtonContext] = useState({
@@ -81,12 +90,13 @@ const AddHabitPanel = () => {
         setHabitList(getAllHabits());
     }, []);
     useEffect(() => {
-      addHabitPanel$.subscribe(setAddHabitPanel);
-    }, []);
-    useEffect(() => {
-      if(addHabitPanel)setTimeout(() => setOpacity(1),400);
+      const subscription = addPanel$.subscribe(setAddPanelState);
+      if(addPanel === 'AddHabitPanel')setTimeout(() => setOpacity(1),400);
       else setOpacity(0);
-    }, [addHabitPanel]);
+      return () => {
+        subscription.unsubscribe();
+      };
+    }, []);
     const handleInputValue = (value, index) => {
       if(value.length > 0){
         if (index === 0) setHabitName(value[0].toUpperCase() + value.toLowerCase().slice(1));
@@ -108,11 +118,11 @@ const AddHabitPanel = () => {
     
     return (
         <div style={{...styles(theme).container,
-          transform: addHabitPanel ? 'translateX(0)' : 'translateX(-100%)',
+          transform: addPanel === 'AddHabitPanel' ? 'translateX(0)' : 'translateX(-100%)',
           backgroundColor: opacity === 1 ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
           transition: 'transform 0.3s ease-in-out, background-color 0.1s ease-in-out',
         }}>
-         {!showCreatePanel && (<div style={styles(theme).panel}>
+         {!showCreatePanel && (<div style={styles(theme,resize).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
            <div style={{...styles(theme).simplePanel,height:"47vh"}}>
             <div style={{display:'flex',flexDirection:'row'}}>
@@ -132,13 +142,13 @@ const AddHabitPanel = () => {
            </div>
            {/* buttons */}
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
-             <div style={{...styles(theme).button}} onClick={() => {setAddHabitPanel(false);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(true);setAddButtonEnabled(false);}}><MdFiberNew style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('mainText', theme) : Colors.get('subText', theme)}}/></div>
            </div>
            </div>)}
            {/* creation panel */}
-           {showCreatePanel && (<div style={styles(theme).panel}>
+           {showCreatePanel && (<div style={styles(theme,resize).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
            <div style={{...styles(theme).simplePanel,height:'47vh',justifyContent:'center'}}>
             <textarea maxLength={25} placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
@@ -184,7 +194,7 @@ const AddHabitPanel = () => {
             </div>
            </div>
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
-             <div style={{...styles(theme).button}} onClick={() => {setAddHabitPanel(false);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(false);setAddButtonEnabled(false);setSelectedHabit(null);}}><FaSearchPlus style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('mainText', theme) : Colors.get('subText', theme)}}/></div>
            </div>
@@ -341,7 +351,6 @@ const addHabit =  (habitId,habitName,isCustom) => {
     addHabitFn(habitId);
     const message = !isCustom ? AppData.prefs[0] === 0 ? 'привычка добавлена' : 'habit added' : AppData.prefs[0] === 0 ? `привычка: ${habitName} создана и добавлена` : `habit: ${habitName} was created and added`;
     setShowPopUpPanel(message,2500);
-    setAddHabitPanel(false);
 }
 
 const createHabit =  (name,category,description,icon) => {
@@ -352,7 +361,6 @@ const createHabit =  (name,category,description,icon) => {
       
       AppData.AddCustomHabit(name,category,description,icon,habitId);
       setTimeout(() => {addHabit(habitId,name,true);}, 100);
-      setAddHabitPanel(false);
     }else{
       setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка с таким названием уже существует' : 'habit with this name already exists',2500);
     }
@@ -373,7 +381,7 @@ const searchHabitsList = (name, habitList, setHabitList) => {
 }
 
 
-const styles = (theme) => ({
+const styles = (theme,resize) => ({
   // Container styles
   container: {
     position: 'fixed',
@@ -401,7 +409,7 @@ const styles = (theme) => ({
     backgroundColor:Colors.get('simplePanel', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
     width: "85vw",
-    height: "60vh",
+    height: resize ? "45vh" : "60vh",
   },
   text :
   {

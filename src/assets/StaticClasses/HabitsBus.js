@@ -12,11 +12,12 @@ export const globalTheme$ = new BehaviorSubject('dark');
 export const confirmationPanel$ = new BehaviorSubject(false);
 export const header$ = new BehaviorSubject('');
 export const showPopUpPanel$ = new BehaviorSubject({show:false,header:''});
-export const addHabitPanel$ = new BehaviorSubject(false);
-export const habitSettingsPanel$ = new BehaviorSubject(false);
+export const addPanel$ = new BehaviorSubject('');
 export const setPage$ = new BehaviorSubject('LoadPanel');
+export const bottomBtnPanel$ = new BehaviorSubject('');
 export const habitsChanged$ = new Subject();
 export const daysToFormAHabit$ = new BehaviorSubject(66);
+export const currentBottomBtn$ = new BehaviorSubject(0);
 
 export const setConfirmationPanel = (state) => confirmationPanel$.next(state);
 export const setTheme = (theme) => {
@@ -33,11 +34,16 @@ export function setShowPopUpPanel(text,duration ) {
   showPopUpPanel$.next({show:true,header:text});
   setTimeout(() => showPopUpPanel$.next({show:false,header:''}), duration);
 }
-export const setPage = (page) => setPage$.next(page);
-export const setAddHabitPanel = (state) => addHabitPanel$.next(state);
-export const setHabitSettingsPanel = (state) => habitSettingsPanel$.next(state);
+export const setPage = (page) => {
+  setPage$.next(page);
+  if(page.startsWith('Habit')) bottomBtnPanel$.next('BtnsHabits');
+  else bottomBtnPanel$.next('');
+}
+export const setAddPanel = (state) => addPanel$.next(state);
 export const emitHabitsChanged = () => habitsChanged$.next(Date.now());
 export const setDaysToFormAHabit = (days) => {daysToFormAHabit$.next(days);AppData.daysToFormAHabit = days;};
 export const setSoundAndVibro = (s,v) => {sound$.next(s);vibro$.next(v);}
+export const setCurrentBottomBtn = (btn) => currentBottomBtn$.next(btn);
+
 
   

@@ -4,10 +4,10 @@ import { AppData } from '../../StaticClasses/AppData.js'
 import Colors, { THEME } from '../../StaticClasses/Colors'
 import {FaArrowAltCircleLeft,FaArrowAltCircleRight,FaList} from 'react-icons/fa'
 import {IoMdArrowDropright,IoMdArrowDropleft} from 'react-icons/io'
-import { theme$ ,lang$, globalTheme$,setPage,setHabitSettingsPanel } from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$, globalTheme$} from '../../StaticClasses/HabitsBus'
+import Fire from '@mui/icons-material/LocalFireDepartment';
+import Check from '@mui/icons-material/Check';
 
-const switchSound = new Audio('Audio/SwitchPanel.wav');
-const skipSound = new Audio('Audio/Skip.wav');
 const clickSound = new Audio('Audio/Click_Add.wav');
 const clickMainSound = new Audio('Audio/Click.wav');
 
@@ -124,7 +124,7 @@ const HabitMetrics = () => {
               <p style={styles(theme).subText}>{langIndex === 0 ? 'максимальная серия ' + maxStreak : 'Max streak ' + maxStreak}</p>
               {maxStreak > currentStreak && <img src={'Art/Ui/Streak_Flame.png'} style={{width:'30px'}} />}
               <img src={'Art/Ui/Divider.png'} style={{width:'40px',color:Colors.get('border', theme)}} />
-              {currentStreak >= maxStreak && currentStreak > 0 && <img src={'Art/Ui/Streak_Flame.png'} style={{width:'30px'}} />}
+              {currentStreak >= maxStreak && currentStreak > 0 && <Fire style={{width:'30px',color:'#c6382eff'}} />}
               <p style={styles(theme).subText}>{langIndex === 0 ? 'текущая серия ' + currentStreak : 'Current streak ' + currentStreak}</p>
             </div>
             {/* percent filled icon*/}
@@ -144,7 +144,6 @@ const HabitMetrics = () => {
                </div>
                
           </div>}
-          <BottomPanel theme={theme} globalTheme={globalTheme}/>
           {showInfo && <div onClick={() => {setShowInfo(false);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}} style={{position:'fixed',top:'0',left:'0',width:'100vw',height:'100vh',justifyContent:'center',alignItems:'center',backgroundColor:'rgba(0,0,0,0.5)'}}>
             <div style={{display:'flex',flexDirection:'column',marginLeft:'10vw',marginTop:'15vh',justifyContent:'center',alignItems:'center',paddingRight:'10px',width:'80vw',height:'72vh',backgroundColor:Colors.get('background', theme),borderRadius:'24px'}}>
               <p style={{...styles(theme).subText,fontSize:'12px',padding:'10px',textAlign:'left',whiteSpace:'pre-line',textIndent:'12px'}}>{infoTextLong(langIndex)}</p>
@@ -169,11 +168,11 @@ const HabitMetrics = () => {
                   }
                 return (
                   <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'space-between',width:'90%',height:'8%',borderBottom: `1px solid ${Colors.get('border', theme)}`,
-                    backgroundColor:habitId === id ? Colors.get('highlitedPanel', theme) : Colors.get('background', theme)}}
+                    backgroundColor:habitId === id ? Colors.get('highlitedPanel', theme) : Colors.get('background', theme),borderTopRightRadius:'12px',borderBottomRightRadius:'12px'}}
                     onClick={() => {setHabitId(id);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}>
                     <p style={{...styles(theme).text,fontSize:'14px'}}>{(getAllHabits().find(h => h.id === id) || {}).name?.[langIndex] || 'Unknown Habit'}</p>
                     <p style={{...styles(theme).text,fontSize:'14px'}}>{Math.ceil(currentStreak / daysToForm * 100) + '%'}</p>
-                    {currentStreak >= daysToForm && <img src={'Art/Ui/Done_Icon.png'} style={{width:'20px'}} />}
+                    {currentStreak >= daysToForm && <Check style={{width:'20px',color:'#2e9741ff'}} />}
                   </div>
                 )
               })}
@@ -184,44 +183,6 @@ const HabitMetrics = () => {
 }
 
 export default HabitMetrics
-
-function BottomPanel({globalTheme,theme})
-{
-    const style ={
-        position:'fixed',
-        bottom:'0',
-        left:'0',
-        width:'100vw',
-        height:'10vh',
-        borderTopLeftRadius:'24px',
-        borderTopRightRadius:'24px',
-        backgroundColor: Colors.get('bottomPanel', theme),
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center",
-        zIndex:900,
-        boxShadow: `0px -2px 0px ${Colors.get('bottomPanelShadow', theme)}`,
-    }
-    const btnstyle = {
-        width: "35px",
-        
-        border: "none",
-        display:'flex',
-        alignItems:'center',
-        justifyContent : 'center',
-        background: "transparent",
-
-    }
-    return (
-        <div style={style}>
-          <img src={globalTheme === 'dark' ? 'Art/Ui/Back_Dark.png' : 'Art/Ui/Back_Light.png'} style={btnstyle} onClick={() => {setPage('HabitsMain');playEffects(skipSound,50);}} />
-          <img src={globalTheme === 'dark' ? 'Art/Ui/Metrics_Dark.png' : 'Art/Ui/Metrics_Light.png'} style={btnstyle} onClick={() => {}} />
-          <img src={globalTheme === 'dark' ? 'Art/Ui/Add_Dark.png' : 'Art/Ui/Add_Light.png'} style={btnstyle} onClick={() => {}} />
-          <img src={globalTheme === 'dark' ? 'Art/Ui/Setting_Dark.png' : 'Art/Ui/Metrics_Light.png'} style={btnstyle} onClick={() => {setHabitSettingsPanel(true);playEffects(switchSound,50);}} />
-          <img src={globalTheme === 'dark' ? 'Art/Ui/Calendar_Dark.png' : 'Art/Ui/Calendar_Light.png'} style={btnstyle} onClick={() => {setPage('HabitCalendar');playEffects(switchSound,50);}} />
-        </div>
-    )
-}
   
 const styles = (theme) =>
 ({
