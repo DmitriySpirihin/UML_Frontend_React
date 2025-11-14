@@ -12,6 +12,7 @@ const MainMenu = ({ onPageChange }) => {
     const [devConsolePanel, setDevConsolePanel] = React.useState(false);
     const [devMessage, setDevMessage] = React.useState('');
     const [devInputMessage, setDevInputMessage] = React.useState('');
+    const [devMessageToAll, setDevMessageToAll] = React.useState('');
     const maxClickCount = 10;
 
     React.useEffect(() => {
@@ -52,12 +53,13 @@ const MainMenu = ({ onPageChange }) => {
           <>
             {devConsolePanel && (
                 <div style={{position:'absolute',top:'0',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
-                  <div style={{width:'85vw',height:'25vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
+                  <div style={{marginRight:'5vw',width:'85vw',height:'13vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
                      <h1>{devMessage}</h1>
                  </div>
+                 <textarea style={{marginRight:'5vw',width:'85vw',height:'12vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)}/>
             <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-between'}}>
                 <input type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
-                <button onClick={() => NotificationsManager.sendMessage(devInputMessage, 'dev')}>Submit</button>
+                <button onClick={() => NotificationsManager.sendMessage(devInputMessage,devMessageToAll)}>Submit</button>
             </div>
             <button onClick={() => setDevConsolePanel(false)}>Close console</button>
         </div>
