@@ -27,20 +27,46 @@ class NotificationsManager {
 export default NotificationsManager;
 
 export const habitReminder = () => {
-    if(AppData.choosenHabits.length === 0) return;
-   const lang = AppData.prefs[0];
-   let message = '⏰ ' + UserData.name + ', ';
-    message = lang === 0 
-      ? habits.length > 1 ? 'время для ваших привычек: ' : 'время для вашей привычки: '  
-      : `it's time to work on your ${habits.length > 1 ? 'habits' : 'habit'}: `;
-   const habits = AppData.choosenHabits
-        .map(habitId => allHabits?.find(h => h.id === habitId))
-        .filter(Boolean);
-   const habitNames = habits.map(h => h.name).join(', ');
-   message += habitNames;
-   NotificationsManager.sendMessage("habit",message);
+    try {
+        if (!AppData.choosenHabits || AppData.choosenHabits.length === 0) {
+            console.log('No habits chosen');
+            return;
+        }
+        
+        const lang = AppData.prefs[0];
+        const habits = AppData.choosenHabits
+            .map(habitId => allHabits?.find(h => h.id === habitId))
+            .filter(Boolean);
+            
+        if (habits.length === 0) {
+            console.log('No valid habits found');
+            return;
+        }
+        
+        let message = '⏰ ' + (UserData?.name || '') + ', ';
+        message += lang === 0 
+            ? (habits.length > 1 ? 'время для ваших привычек: ' : 'время для вашей привычки: ')
+            : `it's time to work on your ${habits.length > 1 ? 'habits' : 'habit'}: `;
+        
+        const habitNames = habits.map(h => h.name).join(', ');
+        message += habitNames;
+        
+        NotificationsManager.sendMessage("habit", message);
+    } catch (error) {
+        console.error('Error in habitReminder:', error);
+    }
 }
 
 export const trainingReminder = () => {
-   NotificationsManager.sendMessage("training",AppData.prefs[0] === 0 ? 'Пора тренироваться' + UserData.name + '!' : 'It\'s time to train' + UserData.name + '!');
+    try {
+        const lang = AppData.prefs[0];
+        const userName = UserData?.name || '';
+        const message = lang === 0 
+            ? `Пора тренироваться, ${userName}!`
+            : `It's time to train, ${userName}!`;
+            
+        NotificationsManager.sendMessage("training", message);
+    } catch (error) {
+        console.error('Error in trainingReminder:', error);
+    }
 }
