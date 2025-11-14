@@ -1,13 +1,18 @@
 import React from 'react'
 import Colors from '../StaticClasses/Colors'
-import { theme$, lang$ } from '../StaticClasses/HabitsBus'
+import { theme$, lang$, devMessage$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
 import 'grained'
-import { habitReminder, trainingReminder } from '../StaticClasses/NotificationsManager'
+import  {NotificationsManager, habitReminder, trainingReminder } from '../StaticClasses/NotificationsManager'
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
     const [lang, setLang] = React.useState(AppData.prefs[0]);
+    const [clickCount, setClickCount] = React.useState(0);
+    const [devConsolePanel, setDevConsolePanel] = React.useState(false);
+    const [devMessage, setDevMessage] = React.useState('');
+    const [devInputMessage, setDevInputMessage] = React.useState('');
+    const maxClickCount = 10;
 
     React.useEffect(() => {
         const themeSubscription = theme$.subscribe(setThemeState);
@@ -29,11 +34,24 @@ const MainMenu = ({ onPageChange }) => {
             grainHeight: 0.9,
             grainColor: "#ffffffff",
         });
+        const devMessageSubscription = devMessage$.subscribe(setDevMessage);
+        return () => {
+            devMessageSubscription.unsubscribe();
+        };
     }, []);
 
+    const handleClick = () => {
+       if(clickCount >= maxClickCount){
+          setDevConsolePanel(!devConsolePanel);
+          setClickCount(0);
+       }
+        setClickCount(clickCount + 1);
+    }
+
     return (
-          
-          <div style={styles(theme).container}>
+          <>
+            {devConsolePanel && <DevConsole devMessage={devMessage} devInputMessage={devInputMessage} setDevInputMessage={setDevInputMessage} setDevConsolePanel={setDevConsolePanel} />}
+            <div style={styles(theme).container}>
             <div style={{height:'20vh'}}/>
             <div style={{width:'100%', display:'flex',flexDirection:'row', justifyContent:'space-between'}}>
               <button onClick={() => habitReminder()}>Habit reminder</button>
@@ -89,8 +107,10 @@ const MainMenu = ({ onPageChange }) => {
                     lang={lang}
                     onClick={() => {playEffects(null,100);}}
                 />
+                <div style={{height:'5vh',width:'100%'}} onClick={() => {handleClick()}} />
             </div>
           </div>
+          </>
     )
 }
 
@@ -182,4 +202,19 @@ function playEffects(sound,vibrationDuration ){
     sound.play();
   }
   if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+}
+
+function DevConsole({devMessage,devInputMessage, setDevInputMessage,setDevConsolePanel}){
+    return (
+        <div style={{position:'absolute',top:'0',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
+            <div style={{width:'100%',height:'70%',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
+                <h1>{devMessage}</h1>
+            </div>
+            <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-between'}}>
+                <input type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
+                <button onClick={() => NotificationsManager.sendMessage(devInputMessage, 'dev')}>Submit</button>
+            </div>
+            <button onClick={() => setDevConsolePanel(false)}>Close console</button>
+        </div>
+    )
 }

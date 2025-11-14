@@ -1,7 +1,8 @@
 import {AppData, UserData } from './AppData';
 import { allHabits } from '../Classes/Habit';
+import { setDevMessage } from './HabitsBus';
 
-class NotificationsManager {
+export class NotificationsManager {
    static BASE_URL = 'https://uml-backend-node.onrender.com/api/notifications';
 
    static async sendMessage(type,message){
@@ -19,12 +20,13 @@ class NotificationsManager {
     })
 })
 .then(response => response.json())
-.then(data => console.log('Success:', data))
+.then(data => {
+    console.log('Success:', data);
+    setDevMessage(data.message);
+})
 .catch(error => console.error('Error:', error));
    }
 }
-
-export default NotificationsManager;
 
 export const habitReminder = () => {
     try {
@@ -48,7 +50,7 @@ export const habitReminder = () => {
             ? (habits.length > 1 ? 'время для ваших привычек: ' : 'время для вашей привычки: ')
             : `it's time to work on your ${habits.length > 1 ? 'habits' : 'habit'}: `;
         
-        const habitNames = habits.map(h => h.name).join(', ');
+        const habitNames = habits.map(h => h.name[lang]).join(', ');
         message += habitNames;
         
         NotificationsManager.sendMessage("habit", message);
