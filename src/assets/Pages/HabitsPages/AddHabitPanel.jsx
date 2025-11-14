@@ -9,7 +9,7 @@ import {MdFiberNew,MdDone} from 'react-icons/md'
 import Cropper from 'react-easy-crop';
 import { saveCustomIcon } from '../../StaticClasses/SaveHelper';
 const click = new Audio('Audio/Click.wav');
-
+/*
 const icons = {
   'Drink water': 'Art/HabitsIcons/Drink water.png',
   'Eat a serving of fruits,vegetables': 'Art/HabitsIcons/Eat a serving of fruits,vegetables.png',
@@ -23,7 +23,7 @@ const icons = {
   'Yoga 15 minutes': 'Art/HabitsIcons/Yoga 15 minutes.png',
   'Brain exercise': 'Art/HabitsIcons/brain.png'
 };
-
+*/
 const getAllHabits = () => {
   return allHabits.concat(
     (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.id === ch.id))
@@ -202,7 +202,7 @@ const AddHabitPanel = () => {
          </div>)}
          {selectIconPanel && (
            <div style={styles(theme).selectPanel}>
-             {Object.entries(icons).map(([key,value], index) => (
+             {/*{Object.entries(icons).map(([key,value], index) => (
               <div key={key} style={styles(theme).selectIcon}>
                 <img src={value} alt="Art/HabitsIcons/Default.png" style={{width:"8vw",padding:"30px"}}
                 onClick={() => {
@@ -218,7 +218,7 @@ const AddHabitPanel = () => {
                   }
                 }}/>
               </div>
-             ))}
+             ))}*/}
            </div>
          )}
          {imageSrc && (
