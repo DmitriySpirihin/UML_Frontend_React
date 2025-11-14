@@ -51,8 +51,8 @@ const MainMenu = ({ onPageChange }) => {
     return (
           <>
             {devConsolePanel && (
-                <div style={{position:'absolute',top:'10',left:'0',width:'85vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
-            <div style={{width:'100%',height:'70%',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
+                <div style={{position:'absolute',top:'0',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
+            <div style={{width:'85%',height:'70%',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
                 <h1>{devMessage}</h1>
             </div>
             <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-between'}}>
