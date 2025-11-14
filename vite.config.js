@@ -6,7 +6,7 @@ import path from 'path'
 export default defineConfig(() => {
 
   return {
-    base: '/UML_Frontend_React/',
+    base: 'https://dmitriyspirihin.github.io/UML_Frontend_React/',
     plugins: [react()],
     resolve: {
       alias: {
@@ -17,13 +17,6 @@ export default defineConfig(() => {
     build: {
       outDir: 'build',
       chunkSizeWarningLimit: 1000, // Set chunk size warning limit to 1000 kBs
-      rollupOptions: {
-        output: {
-          entryFileNames: 'assets/[name]-[hash].js',
-          chunkFileNames: 'assets/[name]-[hash].js',
-          assetFileNames: 'assets/[name]-[hash][extname]'
-        }
-      }
     },
   }
 })

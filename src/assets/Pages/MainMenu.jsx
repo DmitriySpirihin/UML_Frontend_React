@@ -50,7 +50,18 @@ const MainMenu = ({ onPageChange }) => {
 
     return (
           <>
-            {devConsolePanel && <DevConsole devMessage={devMessage} devInputMessage={devInputMessage} setDevInputMessage={setDevInputMessage} setDevConsolePanel={setDevConsolePanel} />}
+            {devConsolePanel && (
+                <div style={{position:'absolute',top:'0',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
+            <div style={{width:'100%',height:'70%',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
+                <h1>{devMessage}</h1>
+            </div>
+            <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-between'}}>
+                <input type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
+                <button onClick={() => NotificationsManager.sendMessage(devInputMessage, 'dev')}>Submit</button>
+            </div>
+            <button onClick={() => setDevConsolePanel(false)}>Close console</button>
+        </div>
+            )}
             <div style={styles(theme).container}>
             <div style={{height:'20vh'}}/>
             <div style={{width:'100%', display:'flex',flexDirection:'row', justifyContent:'space-between'}}>
@@ -204,17 +215,3 @@ function playEffects(sound,vibrationDuration ){
   if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
 }
 
-function DevConsole({devMessage,devInputMessage, setDevInputMessage,setDevConsolePanel}){
-    return (
-        <div style={{position:'absolute',top:'0',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
-            <div style={{width:'100%',height:'70%',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
-                <h1>{devMessage}</h1>
-            </div>
-            <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-between'}}>
-                <input type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
-                <button onClick={() => NotificationsManager.sendMessage(devInputMessage, 'dev')}>Submit</button>
-            </div>
-            <button onClick={() => setDevConsolePanel(false)}>Close console</button>
-        </div>
-    )
-}
