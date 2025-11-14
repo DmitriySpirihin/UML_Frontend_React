@@ -3,8 +3,8 @@ import Colors from '../StaticClasses/Colors'
 import { theme$, lang$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
 import 'grained'
-import NotificationsManager from '../StaticClasses/NotificationsManager'
-
+import habitReminder from '../StaticClasses/NotificationsManager'
+import trainingReminder from '../StaticClasses/NotificationsManager'
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
@@ -36,7 +36,10 @@ const MainMenu = ({ onPageChange }) => {
           
           <div style={styles(theme).container}>
             <div style={{height:'20vh'}}/>
-            <button onClick={() => NotificationsManager.sendMessage('Message from mini app')}>Send message</button>
+            <div style={{width:'100%', display:'flex',flexDirection:'row', justifyContent:'space-between'}}>
+              <button onClick={() => habitReminder()}>Habit reminder</button>
+              <button onClick={() => trainingReminder()}>Training reminder</button>
+            </div>
             <h2 style={styles(theme).mainText}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
             
             <div style={styles(theme).scrollView}>
