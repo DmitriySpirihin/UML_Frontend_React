@@ -3,6 +3,7 @@ import Colors from '../StaticClasses/Colors'
 import { theme$, lang$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
 import 'grained'
+import NotificationsManager from '../StaticClasses/NotificationsManager'
 
 
 const MainMenu = ({ onPageChange }) => {
@@ -85,7 +86,7 @@ const MainMenu = ({ onPageChange }) => {
                     onClick={() => {playEffects(null,100);}}
                 />
             </div>
-
+             <button onClick={() => NotificationsManager.sendMessage('Message from mini app')}>Send message</button>
           </div>
     )
 }
