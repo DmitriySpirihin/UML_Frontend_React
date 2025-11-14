@@ -52,9 +52,9 @@ const MainMenu = ({ onPageChange }) => {
           <>
             {devConsolePanel && (
                 <div style={{position:'absolute',top:'0',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
-            <div style={{width:'85%',height:'70%',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
-                <h1>{devMessage}</h1>
-            </div>
+                  <div style={{width:'85vw',height:'25vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
+                     <h1>{devMessage}</h1>
+                 </div>
             <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-between'}}>
                 <input type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
                 <button onClick={() => NotificationsManager.sendMessage(devInputMessage, 'dev')}>Submit</button>
