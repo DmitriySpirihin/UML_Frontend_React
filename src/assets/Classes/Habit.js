@@ -25,14 +25,14 @@ export class Habit
         }
         this.id = id;
         this.isCustom = isCustom;
-        const image = new Image();
+       /* const image = new Image();
         image.src = src;
         image.onload = () => {
             this.src = src;
         }
         image.onerror = () => {
             this.src = '/public/Art/HabitsIcons/Default.png';
-        }
+        }*/
     }
 }
 const path = '/public/Art/HabitsIcons/';
