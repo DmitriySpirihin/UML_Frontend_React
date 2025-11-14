@@ -9,7 +9,7 @@ export class Habit
     description = ["",""];
     src = "";
     constructor(n = ["Привычка","Habit"],c = ["Другое","Other"],d = ["Своя привычка","My custom habit"],
-        id,isCustom = false,src = '/public/Art/HabitsIcons/Default.png')
+        id,isCustom = false,src = 'Art/HabitsIcons/Default.png')
     {
         if(Array.isArray(n))
         {
@@ -25,17 +25,17 @@ export class Habit
         }
         this.id = id;
         this.isCustom = isCustom;
-       /* const image = new Image();
+        const image = new Image();
         image.src = src;
         image.onload = () => {
             this.src = src;
         }
         image.onerror = () => {
-            this.src = '/public/Art/HabitsIcons/Default.png';
-        }*/
+            this.src = 'Art/HabitsIcons/Default.png';
+        }
     }
 }
-const path = '/public/Art/HabitsIcons/';
+const path = 'Art/HabitsIcons/';
 const DefaultHabits = [
     new Habit(["Пить воду","Drink water"],["Здоровье","Health"],
     ["Пить воду каждый день","Drink water every day"],0,false,path + 'Drink water' + '.png'),
