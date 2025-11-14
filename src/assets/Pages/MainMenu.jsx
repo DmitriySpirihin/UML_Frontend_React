@@ -52,9 +52,9 @@ const MainMenu = ({ onPageChange }) => {
     return (
           <>
             {devConsolePanel && (
-                <div style={{position:'absolute',top:'0',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
+                <div style={{position:'absolute',display:'flex',flexDirection:'column',top:'0',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
                   <div style={{marginRight:'5vw',width:'85vw',height:'13vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
-                     <h1>{devMessage}</h1>
+                     {devMessage}
                  </div>
                  <textarea style={{marginRight:'5vw',width:'85vw',height:'12vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)}/>
             <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-between'}}>
