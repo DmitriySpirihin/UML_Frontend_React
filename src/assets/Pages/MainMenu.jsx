@@ -1,14 +1,12 @@
 import React from 'react'
-import Colors, { THEME } from '../StaticClasses/Colors'
-import { theme$, lang$ , globalTheme$} from '../StaticClasses/HabitsBus'
+import Colors from '../StaticClasses/Colors'
+import { theme$, lang$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
 import 'grained'
 
-const startSound = new Audio('Audio/Start.wav');
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
-    const [globalTheme, setGlobalTheme] = React.useState('dark');
     const [lang, setLang] = React.useState(AppData.prefs[0]);
 
     React.useEffect(() => {
@@ -32,12 +30,6 @@ const MainMenu = ({ onPageChange }) => {
             grainColor: "#ffffffff",
         });
     }, []);
-    React.useEffect(() => {
-        const globalThemeSubscription = globalTheme$.subscribe(setGlobalTheme);
-        return () => {
-            globalThemeSubscription.unsubscribe();
-        };
-    }, []);
 
     return (
           
@@ -54,7 +46,7 @@ const MainMenu = ({ onPageChange }) => {
                     ]} 
                     theme={theme}  
                     lang={lang}
-                    onClick={() => {onPageChange('HabitsMain');playEffects(startSound,100);}}
+                    onClick={() => {onPageChange('HabitsMain');playEffects(null,100);}}
                 />
                 <MenuCard 
                     text={['Тренировочная дневник', 'Training diary']} 
@@ -68,7 +60,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#9de074ff" 
                     theme={theme} 
                     lang={lang}
-                    onClick={() => {onPageChange('TrainingMain');playEffects(startSound,100);}}
+                    onClick={() => {onPageChange('TrainingMain');playEffects(null,100);}}
                 />
                <MenuCard 
                     text={['Список задач', 'Simple task manager']} 
@@ -79,7 +71,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#d0e074ff" 
                     theme={theme} 
                     lang={lang}
-                    onClick={() => {playEffects(startSound,100);}}
+                    onClick={() => {playEffects(null,100);}}
                 />
                 <MenuCard 
                     text={['Хорошие новости', 'Good news']} 
@@ -90,7 +82,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#e194c6ff" 
                     theme={theme} 
                     lang={lang}
-                    onClick={() => {playEffects(startSound,100);}}
+                    onClick={() => {playEffects(null,100);}}
                 />
             </div>
 

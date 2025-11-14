@@ -8,11 +8,11 @@ const HabitSettings = () => {
     const [theme, setThemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [daysToFormAHabit, setDaysToFormAHabit] = useState(AppData.daysToFormAHabit);
-    React.useEffect(() => {
+    useEffect(() => {
         const subscription = theme$.subscribe(setThemeState);  
         return () => subscription.unsubscribe();
     }, []);
-    React.useEffect(() => {
+    useEffect(() => {
         const subscription = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));  
         return () => subscription.unsubscribe();
     }, []);

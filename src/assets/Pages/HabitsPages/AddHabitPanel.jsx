@@ -8,10 +8,7 @@ import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAl
 import {MdFiberNew,MdDone} from 'react-icons/md'
 import Cropper from 'react-easy-crop';
 import { saveCustomIcon } from '../../StaticClasses/SaveHelper';
-
-const clickMiniSound = new Audio('Audio/Click_Mini.wav');
-const clickSound = new Audio('Audio/Click_Add.wav');
-const closeSound = new Audio('Audio/Transition.wav');
+const click = new Audio('Audio/Click.wav');
 
 const icons = {
   'Drink water': 'Art/HabitsIcons/Drink water.png',
@@ -137,7 +134,7 @@ const AddHabitPanel = () => {
             <div style={styles(theme).scrollView}>
               {habitList.map((habit) => (
                 <li key={habit.id} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
-                onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(clickMiniSound,20);
+                onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(click,20);
                 setAddButtonContext({text: langIndex === 0 ? 'Добавить' : 'Add',onClick: () => addHabit(habit.id,habit.name[langIndex],false)})}}>
                   <p style={styles(theme).text}>{habit.name[langIndex]}</p>
                 </li>
@@ -146,9 +143,9 @@ const AddHabitPanel = () => {
            </div>
            {/* buttons */}
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
-             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(click,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(true);setAddButtonEnabled(false);}}><MdFiberNew style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(click,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
            </div>
            </div>)}
            {/* creation panel */}
@@ -198,9 +195,9 @@ const AddHabitPanel = () => {
             </div>
            </div>
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
-             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(closeSound,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(click,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(false);setAddButtonEnabled(false);setSelectedHabit(null);}}><FaSearchPlus style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(clickSound,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(click,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
            </div>
          </div>)}
          {selectIconPanel && (
@@ -210,13 +207,13 @@ const AddHabitPanel = () => {
                 <img src={value} alt="Art/HabitsIcons/Default.png" style={{width:"8vw",padding:"30px"}}
                 onClick={() => {
                   setHabitIcon(value);
-                  playEffects(clickSound,50);
+                  playEffects(click,50);
                   setSelectIconPanel(false);
                   if(habitName.length > 3 && habitCategory.length > 3){
                     setAddButtonEnabled(true);
                     setAddButtonContext({
                       text: langIndex === 0 ? 'создать и добавить' : 'create and add',
-                      onClick: () => {createHabit(habitName,habitCategory,habitDescription,value);playEffects(clickSound,50);}
+                      onClick: () => {createHabit(habitName,habitCategory,habitDescription,value);playEffects(click,50);}
                     });
                   }
                 }}/>
@@ -308,7 +305,7 @@ const AddHabitPanel = () => {
                     setAddButtonEnabled(true);
                     setAddButtonContext({
                       text: langIndex === 0 ? 'создать и добавить' : 'create and add',
-                      onClick: () => {createHabit(habitName, habitCategory, habitDescription, iconKey);playEffects(clickSound,50);}
+                      onClick: () => {createHabit(habitName, habitCategory, habitDescription, iconKey);playEffects(click,50);}
                     });
                   }
                   setImageSrc(null);

@@ -2,8 +2,8 @@ import React, {useState,useEffect} from 'react'
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
-import Colors, { THEME } from '../../StaticClasses/Colors'
-import {theme$ ,lang$, globalTheme$, habitsChanged$, emitHabitsChanged} from '../../StaticClasses/HabitsBus'
+import Colors from '../../StaticClasses/Colors'
+import {theme$ ,lang$, emitHabitsChanged} from '../../StaticClasses/HabitsBus'
 import Check from '@mui/icons-material/Check';
 import Close from '@mui/icons-material/Close';
 
@@ -17,8 +17,7 @@ const formatDateKey = (d) => {
 // Monday-based weekday index helper (Mon=0 ... Sun=6)
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
 const dateKey = formatDateKey(new Date());
-const switchSound = new Audio('Audio/SwitchPanel.wav');
-const clickSound = new Audio('Audio/Click_Calendar.wav');
+const clickSound = new Audio('Audio/Click.wav');
 const isDoneSound = new Audio('Audio/IsDone.wav'); 
 const skipSound = new Audio('Audio/Skip.wav');
 
@@ -32,30 +31,22 @@ function getAllHabits() {
 const HabitCalendar = () => {
     // states
     const [theme, setthemeState] = React.useState('dark');
-    const [globalTheme, setglobalThemeState] = React.useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [date, setDate] = useState(new Date());
     const [currentDate, setCurrentDate] = useState(date);
     const [inFoPanelData, setInfoPanelData] = useState(false);
-    const [version, setVersion] = useState(0);
+
     // subscriptions
     React.useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
         return () => subscription.unsubscribe();
     }, []);
-    React.useEffect(() => {
-        const subscription = globalTheme$.subscribe(setglobalThemeState);   
-        return () => subscription.unsubscribe();
-    }, []);
+    
     React.useEffect(() => {
         const subscription = lang$.subscribe((lang) => {
             setLangIndex(lang === 'ru' ? 0 : 1);
         });
         return () => subscription.unsubscribe();
-    }, []);
-    React.useEffect(() => {
-        const sub = habitsChanged$.subscribe(() => setVersion(v => v + 1));
-        return () => sub.unsubscribe();
     }, []);
     
     const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -77,8 +68,8 @@ const HabitCalendar = () => {
     for (let i = 0; i < calendarCells.length; i+=7) {
       weeks.push(calendarCells.slice(i, i + 7));
     } 
-    const prevMonth = () => {setDate(new Date(date.getFullYear(), date.getMonth() - 1));playEffects(switchSound,50);};
-    const nextMonth = () =>{  setDate(new Date(date.getFullYear(), date.getMonth() + 1));playEffects(switchSound,50);};
+    const prevMonth = () => {setDate(new Date(date.getFullYear(), date.getMonth() - 1));playEffects(clickSound,50);};
+    const nextMonth = () =>{  setDate(new Date(date.getFullYear(), date.getMonth() + 1));playEffects(clickSound,50);};
     // render    
     return (
         <div style={styles(theme).container}>
@@ -210,9 +201,9 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
                 setStatus(newStatus);
                 emitHabitsChanged();
                 if (newStatus === 1) {
-                    if(AppData.prefs[2] == 0)isDoneSound.play();
+                    if(AppData.prefs[2] == 0)playEffects(isDoneSound,80)
                 }else if(newStatus === -1){
-                    if(AppData.prefs[2] == 0)skipSound.play();
+                    if(AppData.prefs[2] == 0)playEffects(skipSound,80);
                 }
                 if(AppData.prefs[3] == 0)navigator.vibrate?.(50);
             }

@@ -8,10 +8,7 @@ import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurre
 import Colors from '../../StaticClasses/Colors'
 import {useState,useEffect} from 'react'
 import {AppData} from '../../StaticClasses/AppData'
-
-
-const skipSound = new Audio('Audio/Skip.wav');
-const switchSound = new Audio('Audio/SwitchPanel.wav');
+const switchSound = new Audio('Audio/Click.wav');
 
 const BtnsTraining = () => {
     // states
@@ -82,7 +79,7 @@ const onBack = (page,addPanel) => {
         if(addPanel !== '') setAddPanel('');
         else setPage('HabitsMain');
     }
-    playEffects(skipSound,50);
+    playEffects(switchSound,50);
 }
 function playEffects(sound,vibrationDuration ){
   if(AppData.prefs[2] == 0 && sound !== null){
@@ -115,7 +112,7 @@ const styles = (theme,currentBtn,id,disengageable,disabled) => ({
     btnstyle : {
         transition: 'all 0.2s ease-out',
         transform: currentBtn === id ? 'scale(1.3)' : 'scale(1)',
-        fontSize:'40px',
+        fontSize:'30px',
         color: disengageable && disabled ? Colors.get('iconsDisabled', theme) : currentBtn === id ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
         filter : currentBtn === id ? `drop-shadow(0 0px 8px ${Colors.get('iconsShadow', theme)})` : `drop-shadow(0px 1px 1px ${Colors.get('shadow', theme)})`,
     }

@@ -10,9 +10,7 @@ import {useState,useEffect} from 'react'
 import {AppData} from '../../StaticClasses/AppData'
 import {saveData} from '../../StaticClasses/SaveHelper'
 
-
-const skipSound = new Audio('Audio/Skip.wav');
-const switchSound = new Audio('Audio/SwitchPanel.wav');
+const switchSound = new Audio('Audio/Click.wav');
 
 const BtnsHabits = () => {
     // states
@@ -67,9 +65,9 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState})
     
     return (    
         <div style={styles(theme,currentBtn).style}>
-          {page !== 'HabitsMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);}} />)}
-          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);}} />)}
-          {page === 'HabitsMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);}} />)}
+          {page !== 'HabitsMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
+          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
+          {page === 'HabitsMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
           <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('HabitMetrics');setAddPanel('');playEffects(switchSound,50);}} />
           <Add style={styles(theme,currentBtn,2,true,page !== 'HabitsMain').btnstyle} onClick={() => {if(page === 'HabitsMain'){setCurrentBottomBtn(2);setAddPanel('AddHabitPanel');playEffects(switchSound,50);}}} />
           <Settings style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setAddPanel('HabitSettings');playEffects(switchSound,50);}} />
@@ -86,7 +84,7 @@ const onBack = async(page,addPanel) => {
             setPage('HabitsMain');
         }
     }
-    playEffects(skipSound,50);
+    playEffects(switchSound,50);
 }
 function playEffects(sound,vibrationDuration ){
   if(AppData.prefs[2] == 0 && sound !== null){
@@ -119,7 +117,7 @@ const styles = (theme,currentBtn,id,disengageable,disabled) => ({
     btnstyle : {
         transition: 'all 0.2s ease-out',
         transform: currentBtn === id ? 'scale(1.3)' : 'scale(1)',
-        fontSize:'40px',
+        fontSize:'30px',
         color: disengageable && disabled ? Colors.get('iconsDisabled', theme) : currentBtn === id ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
         filter : currentBtn === id ? `drop-shadow(0 0px 8px ${Colors.get('iconsShadow', theme)})` : `drop-shadow(0px 1px 1px ${Colors.get('shadow', theme)})`,
     }

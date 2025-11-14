@@ -6,11 +6,11 @@ import { AppData } from '../../StaticClasses/AppData.js'
 import { expandedCard$, setExpandedCard , setPage} from '../../StaticClasses/HabitsBus.js';
 import Colors, { THEME } from '../../StaticClasses/Colors'
 import { loadCustomIcon } from '../../StaticClasses/SaveHelper';
-import { saveData } from '../../StaticClasses/SaveHelper';
 import { theme$ ,lang$, globalTheme$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
 
 const dateKey = new Date().toISOString().split('T')[0];
 const clickSound = new Audio('Audio/Click.wav');
+const skipSound = new Audio('Audio/Skip.wav');
 const isDoneSound = new Audio('Audio/IsDone.wav'); 
 export let removeHabitFn;
 export let addHabitFn;

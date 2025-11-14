@@ -3,6 +3,7 @@ import {AppData,Data} from '../StaticClasses/AppData'
 import {openDB} from 'idb'
 import 'reflect-metadata'
 import {instanceToPlain, plainToClass} from 'class-transformer'
+import NotificationsManager from '../StaticClasses/NotificationsManager';
 
 export async function initializeTelegramSDK(opts = {}){
     try {
@@ -24,7 +25,7 @@ export async function initializeTelegramSDK(opts = {}){
                 // Enable the back button
                 window.Telegram.WebApp.BackButton.show();
                 // Set up the event listener for the back button
-                window.Telegram.WebApp.onEvent('backButtonClicked',()=> {saveData();Telegram.WebApp.close();});
+                window.Telegram.WebApp.onEvent('backButtonClicked',()=> {saveData();NotificationsManager.sendHabitReminder();Telegram.WebApp.close();});
             }
         }
         return true;

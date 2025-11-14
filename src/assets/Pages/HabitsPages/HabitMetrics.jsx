@@ -8,7 +8,6 @@ import { theme$ ,lang$, globalTheme$} from '../../StaticClasses/HabitsBus'
 import Fire from '@mui/icons-material/LocalFireDepartment';
 import Check from '@mui/icons-material/Check';
 
-const clickSound = new Audio('Audio/Click_Add.wav');
 const clickMainSound = new Audio('Audio/Click.wav');
 
 // dynamic list that includes defaults + current custom habits
@@ -99,9 +98,9 @@ const HabitMetrics = () => {
             </div>} 
             {/* habit changer */}
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'70%',height:'7vh'}}>
-              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) - 1 < 0 ? AppData.choosenHabits.length - 1 : AppData.choosenHabits.indexOf(habitId) - 1]);playEffects(clickSound,50);}}><FaArrowAltCircleLeft style={{color:Colors.get('icons',theme),fontSize:'24px',marginTop:'5px',paddingRight:'10px'}}/></div>
+              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) - 1 < 0 ? AppData.choosenHabits.length - 1 : AppData.choosenHabits.indexOf(habitId) - 1]);playEffects(clickMainSound,50);}}><FaArrowAltCircleLeft style={{color:Colors.get('icons',theme),fontSize:'24px',marginTop:'5px',paddingRight:'10px'}}/></div>
               <p style={styles(theme).text}>{getAllHabits().find(h => h.id === habitId).name[langIndex]}</p>
-              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) + 1 > AppData.choosenHabits.length - 1 ? 0 : AppData.choosenHabits.indexOf(habitId) + 1]);playEffects(clickSound,50);}}><FaArrowAltCircleRight style={{color:Colors.get('icons',theme),fontSize:'24px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
+              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) + 1 > AppData.choosenHabits.length - 1 ? 0 : AppData.choosenHabits.indexOf(habitId) + 1]);playEffects(clickMainSound,50);}}><FaArrowAltCircleRight style={{color:Colors.get('icons',theme),fontSize:'24px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
             </div>
             {/* habit metrics days*/}
             <div style={{display:'flex',justifyContent:'center',alignItems:'center',width:'90%',height:'15vh',flexDirection:'column',
@@ -114,9 +113,9 @@ const HabitMetrics = () => {
                 <p style={{...styles(theme).subText, fontSize:'10px', marginTop:'4px'}}>{getHabitRangeStartLabel(daysCount)}</p>
               </div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'60%',height:'10vh'}}>
-                  <div onClick={() => {setDaysCount(daysCount - 1 < 0 ? 2 : daysCount - 1);if(AppData.prefs[2] == 0)clickSound.play();if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}><FaArrowAltCircleLeft style={{color:Colors.get('icons',theme),fontSize:'20px',marginTop:'5px',paddingRight:'10px'}}/></div>
+                  <div onClick={() => {setDaysCount(daysCount - 1 < 0 ? 2 : daysCount - 1);if(AppData.prefs[2] == 0)if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}><FaArrowAltCircleLeft style={{color:Colors.get('icons',theme),fontSize:'20px',marginTop:'5px',paddingRight:'10px'}}/></div>
                   <p style={styles(theme).text}>{daysCountText(langIndex,daysCount)}</p>
-                  <div onClick={() => {setDaysCount(daysCount + 1 > 2 ? 0 : daysCount + 1);if(AppData.prefs[2] == 0)clickSound.play();if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}><FaArrowAltCircleRight style={{color:Colors.get('icons',theme),fontSize:'20px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
+                  <div onClick={() => {setDaysCount(daysCount + 1 > 2 ? 0 : daysCount + 1);if(AppData.prefs[2] == 0)if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}><FaArrowAltCircleRight style={{color:Colors.get('icons',theme),fontSize:'20px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
                 </div>
                 <div style={{fontSize:'8px',color:Colors.get('subText', theme),lineHeight:'5px',padding:'5px'}}>{infoMicro(langIndex,daysCount)}</div>
             </div>
