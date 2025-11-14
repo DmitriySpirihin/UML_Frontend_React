@@ -1,8 +1,9 @@
 import './App.css'
-import React, { useState, Suspense, lazy} from 'react';
+import { useState,useEffect, Suspense, lazy} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
+import { saveData } from './assets/StaticClasses/SaveHelper';
 import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage, setKeyboardVisible } from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
@@ -19,12 +20,12 @@ function App() {
   const [page, setPageState] = useState('LoadPanel');
   const [addPanel, setAddPanel] = useState('');
   const [confirmationPanel, setConfirmationPanel] = useState(false);
-  const [theme, setTheme] = React.useState('dark');
+  const [theme, setTheme] = useState('dark');
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
-  const [keyboardVisible, setKeyboardVisibleState] = React.useState(false);
+  const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   
   // Handle keyboard visibility for Telegram WebView
-  React.useEffect(() => {
+  useEffect(() => {
     if (window.Telegram?.WebApp) {
       // Expand the WebView to full height
       window.Telegram.WebApp.expand();
@@ -58,11 +59,11 @@ function App() {
       };
     }
   }, []);
-  React.useEffect(() => {
+  useEffect(() => {
           const subscription = confirmationPanel$.subscribe(setConfirmationPanel);  
           return () => subscription.unsubscribe();
       }, []);
-      React.useEffect(() => {
+  useEffect(() => {
         const subscription = addPanel$.subscribe(setAddPanel);  
         return () => subscription.unsubscribe();
     }, []);
@@ -71,18 +72,38 @@ function App() {
     setPage(page);
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     const subscription = setPage$.subscribe(setPageState);  
     return () => subscription.unsubscribe();
 }, []);
-React.useEffect(() => {
+useEffect(() => {
     const subscription = theme$.subscribe(setTheme);  
     return () => subscription.unsubscribe();
 }, []);
-React.useEffect(() => {
+useEffect(() => {
     const subscription = bottomBtnPanel$.subscribe(setBottomBtnPanel);  
     return () => subscription.unsubscribe();
 }, []);
+
+ // handle telegram close btn
+ useEffect(() => {
+    const onBackHandler = async () => {
+        try {
+            await saveData();
+            console.log('Data saved successfully, closing WebApp...');
+        } catch (error) {
+            console.error('Error saving data:', error);
+        } finally {
+            window.Telegram.WebApp.close();
+        }
+    };
+
+    window.Telegram.WebApp.BackButton.onClick(onBackHandler);
+    
+    return () => {
+        window.Telegram.WebApp.BackButton.offClick(onBackHandler);
+    };
+}, [saveData])
 
   return (
     <>
