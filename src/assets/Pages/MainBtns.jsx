@@ -62,7 +62,7 @@ const MainBtns = () => {
             
               {!keyboardVisible && (<div style={styles(theme).logoContainer}>
                 <UserPanel theme={theme} />
-                <img src={globalTheme === 'dark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} />
+                <img src={globalTheme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={styles(theme).logo} />
                 {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon,top:'9vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
                 {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon,top:'9vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
                 <Menu  style={{...styles(theme).icon,top:'9vh',left:'2vh'}} onClick={() => {toggleSettings();playEffects(null,50);}} />

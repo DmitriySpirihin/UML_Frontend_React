@@ -11,17 +11,17 @@ import { saveCustomIcon } from '../../StaticClasses/SaveHelper';
 const click = new Audio('Audio/Click.wav');
 
 const icons = {
-  'Drink water': 'Art/HabitsIcons/Drink water.png',
-  'Eat a serving of fruits,vegetables': 'Art/HabitsIcons/Eat a serving of fruits,vegetables.png',
-  'Meditation': 'Art/HabitsIcons/Meditation.png',
-  'Morning glass of water': 'Art/HabitsIcons/Morning glass of water.png',
-  'Morning stretch': 'Art/HabitsIcons/Morning stretch.png',
-  'Review expenses and budget': 'Art/HabitsIcons/Review expenses and budget.png',
-  'Review vocabulary': 'Art/HabitsIcons/Review vocabulary.png',
-  'Run 3 km': 'Art/HabitsIcons/Run 3 km.png',
-  'Take vitamins': 'Art/HabitsIcons/Take vitamins.png',
-  'Yoga 15 minutes': 'Art/HabitsIcons/Yoga 15 minutes.png',
-  'Brain exercise': 'Art/HabitsIcons/brain.png'
+  'Drink water': 'images/HabitsIcons/Drink water.png',
+  'Eat a serving of fruits,vegetables': 'images/HabitsIcons/Eat a serving of fruits,vegetables.png',
+  'Meditation': 'images/HabitsIcons/Meditation.png',
+  'Morning glass of water': 'images/HabitsIcons/Morning glass of water.png',
+  'Morning stretch': 'images/HabitsIcons/Morning stretch.png',
+  'Review expenses and budget': 'images/HabitsIcons/Review expenses and budget.png',
+  'Review vocabulary': 'images/HabitsIcons/Review vocabulary.png',
+  'Run 3 km': 'images/HabitsIcons/Run 3 km.png',
+  'Take vitamins': 'images/HabitsIcons/Take vitamins.png',
+  'Yoga 15 minutes': 'images/HabitsIcons/Yoga 15 minutes.png',
+  'Brain exercise': 'images/HabitsIcons/brain.png'
 };
 
 const getAllHabits = () => {
@@ -43,7 +43,7 @@ const AddHabitPanel = () => {
     const [habitName, setHabitName] = useState('');
     const [habitCategory, setHabitCategory] = useState('');
     const [habitDescription, setHabitDescription] = useState('');
-    const [habitIcon, setHabitIcon] = useState('Art/HabitsIcons/Default.png');
+    const [habitIcon, setHabitIcon] = useState('images/HabitsIcons/Default.png');
     const [habitId, setHabitId] = useState(-1);
     
     // UI state
@@ -190,7 +190,7 @@ const AddHabitPanel = () => {
                />
              </div>
               <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                <img src={habitIcon} alt="Art/HabitsIcons/Default.png" style={{width:"15vw",margin:'40px'}}/>
+                <img src={habitIcon} alt="images/HabitsIcons/Default.png" style={{width:"15vw",margin:'40px'}}/>
               </div>
             </div>
            </div>
@@ -204,7 +204,7 @@ const AddHabitPanel = () => {
            <div style={styles(theme).selectPanel}>
              {Object.entries(icons).map(([key,value], index) => (
               <div key={key} style={styles(theme).selectIcon}>
-                <img src={value} alt="Art/HabitsIcons/Default.png" style={{width:"8vw",padding:"30px"}}
+                <img src={value} alt="images/HabitsIcons/Default.png" style={{width:"8vw",padding:"30px"}}
                 onClick={() => {
                   setHabitIcon(value);
                   playEffects(click,50);

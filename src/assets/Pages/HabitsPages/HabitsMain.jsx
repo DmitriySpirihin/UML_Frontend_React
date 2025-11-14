@@ -167,7 +167,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                         setIconUrl(iconData);
                     } else {
                         // Fallback to default icon if loading fails
-                        setIconUrl('Art/HabitsIcons/Default.png');
+                        setIconUrl('images/HabitsIcons/Default.png');
                     }
                 } else {
                     // This is a regular icon, use it directly
@@ -175,7 +175,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                 }
             } catch (error) {
                 console.error('Error loading icon:', error);
-                setIconUrl('Art/HabitsIcons/Default.png');
+                setIconUrl('images/HabitsIcons/Default.png');
             }
         };
         
@@ -314,7 +314,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                             style={{width: '24px', objectFit: 'contain', marginLeft: '15px', marginTop: '8px'}} 
                             onError={(e) => {
                                 e.target.onerror = null; // Prevent infinite loop if default image is also missing
-                                e.target.src = 'Art/HabitsIcons/Default.png';
+                                e.target.src = 'images/HabitsIcons/Default.png';
                             }}
                             alt="" 
                         />

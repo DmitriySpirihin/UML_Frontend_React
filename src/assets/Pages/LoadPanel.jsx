@@ -10,7 +10,7 @@ function LoadPanel() {
     const [theme, setTheme] = React.useState('dark');
     const [lang, setLang] = React.useState(0);
     const [userName, setUserName] = React.useState('Guest');
-    const [userPhoto, setUserPhoto] = React.useState('Art/Ui/Guest.jpg');
+    const [userPhoto, setUserPhoto] = React.useState('images/Ui/Guest.jpg');
     const [loading, setLoading] = React.useState(true);
     useEffect(() => {
         async function initializeApp() {
@@ -35,7 +35,7 @@ function LoadPanel() {
                     setTimeout(() => setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url), 1000);
                 } else {
                     setTimeout(() => setUserName('guest'), 1000);
-                    setTimeout(() => setUserPhoto('Art/Ui/Guest.jpg'), 1000);
+                    setTimeout(() => setUserPhoto('images/Ui/Guest.jpg'), 1000);
                 }
                 // Load saved data
                 await loadData();
@@ -66,7 +66,7 @@ function LoadPanel() {
    return (
     <>
       <div style={styles(theme).container}>
-        <img src={theme === 'dark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} />
+        <img src={theme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={styles(theme).logo} />
         {loading && <div className='spinner'>
             <style>
                 {

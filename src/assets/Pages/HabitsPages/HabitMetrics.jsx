@@ -122,7 +122,7 @@ const HabitMetrics = () => {
             {/* streaks*/}
             <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'80%',height:'7vh',marginTop:'10px'}}>
               <p style={styles(theme).subText}>{langIndex === 0 ? 'максимальная серия ' + maxStreak : 'Max streak ' + maxStreak}</p>
-              {maxStreak > currentStreak && <img src={'Art/Ui/Streak_Flame.png'} style={{width:'30px'}} />}
+              {maxStreak > currentStreak && <img src={'images/Ui/Streak_Flame.png'} style={{width:'30px'}} />}
               <svg width={50} height={40}>
                 <line x1={10} y1={0} x2={10} y2={40} stroke={Colors.get('icons',theme)} strokeWidth={3} />
               </svg>
