@@ -2,7 +2,7 @@ import {AppData, UserData } from './AppData';
 import { allHabits } from '../Classes/Habit';
 
 class NotificationsManager {
-    static BASE_URL = 'https://uml-backend-node.onrender.com/api/notifications';
+   static BASE_URL = 'https://uml-backend-node.onrender.com/api/notifications';
 
     /**
      * Gets the current user's ID
@@ -19,26 +19,33 @@ class NotificationsManager {
 
     /**
      * Sends a notification to the backend
-     * @param {Object} notificationData - The notification data to send
-     * @param {string} notificationData.type - Type of notification (e.g., 'habit_reminder', 'goal_achieved')
-     * @param {string} notificationData.message - The message content
-     * @param {string} notificationData.userId - The ID of the user to notify
+     * @param {Object} notification - The notification data to send
+     * @param {string} notification.type - Type of notification (e.g., 'habit_reminder', 'goal_achieved')
+     * @param {string} notification.message - The message content
+     * @param {string} [notification.userId] - The ID of the user to notify (optional, will use current user if not provided)
      * @param {Object} [metadata] - Additional metadata for the notification
      * @returns {Promise<Object>} - The response from the server
      */
-    static async sendNotification(notificationData) {
+    static async sendNotification({ type, message, userId, metadata = {} }) {
+        const targetUserId = userId || this.getUserId();
+        
         try {
             const response = await fetch(this.BASE_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(notificationData)
+                body: JSON.stringify({
+                    type,
+                    message,
+                    userId: targetUserId,
+                    metadata
+                }),
+                credentials: 'include' // Important for cookies if using sessions
             });
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Failed to send notification');
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             return await response.json();
@@ -48,13 +55,9 @@ class NotificationsManager {
         }
     }
 
-    /**
-     * Sends a habit reminder notification
-     * @param {string} habitName - The name of the habit
-     * @param {string} [customMessage] - Optional custom message
-     */
     static async sendHabitReminder() {
-    if (AppData.choosenHabits.length > 0) {
+        if (AppData.choosenHabits.length === 0) return;
+
         const lang = AppData.prefs[0];
         const userId = this.getUserId();
         
@@ -88,11 +91,11 @@ class NotificationsManager {
             metadata: {
                 habitNames: activeHabitNames,
                 isMultiple: isMultiple,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                source: 'frontend'
             }
         });
     }
-}
 
     /**
      * Sends a goal achievement notification
