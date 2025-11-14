@@ -11,8 +11,11 @@ export async function initializeTelegramSDK(opts = {}){
             await miniApp.ready();
             
             // Setup back button handler to save data when back button is pressed
-            if (miniApp.BackButton && miniApp.BackButton.isVisible && miniApp.BackButton.onClick) {
-                miniApp.BackButton.onClick(saveData);
+            if (window.Telegram?.WebApp?.BackButton) {
+                // Enable the back button
+                window.Telegram.WebApp.BackButton.show();
+                // Set up the event listener for the back button
+                window.Telegram.WebApp.onEvent('backButtonClicked', saveData);
             }
         }
         return true;

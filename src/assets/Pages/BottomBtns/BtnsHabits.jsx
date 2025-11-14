@@ -8,6 +8,7 @@ import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurre
 import Colors from '../../StaticClasses/Colors'
 import {useState,useEffect} from 'react'
 import {AppData} from '../../StaticClasses/AppData'
+import {saveData} from '../../StaticClasses/SaveHelper'
 
 
 const skipSound = new Audio('Audio/Skip.wav');
@@ -76,11 +77,14 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState})
         </div>
     )
 }
-const onBack = (page,addPanel) => {
+const onBack = async(page,addPanel) => {
     if(page === 'HabitsMain' && addPanel === '') setPage('MainMenu');
     else{
         if(addPanel !== '') setAddPanel('');
-        else setPage('HabitsMain');
+        else {
+            await saveData();
+            setPage('HabitsMain');
+        }
     }
     playEffects(skipSound,50);
 }
