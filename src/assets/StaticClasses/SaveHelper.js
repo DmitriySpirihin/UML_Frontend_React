@@ -9,6 +9,11 @@ export async function initializeTelegramSDK(opts = {}){
         await init();
         if (miniApp.ready.isAvailable()) {
             await miniApp.ready();
+            
+            // Setup back button handler to save data when back button is pressed
+            if (miniApp.BackButton && miniApp.BackButton.isVisible && miniApp.BackButton.onClick) {
+                miniApp.BackButton.onClick(saveData);
+            }
         }
         return true;
     } catch (error) {
