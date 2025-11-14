@@ -3,8 +3,7 @@ import Colors from '../StaticClasses/Colors'
 import { theme$, lang$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
 import 'grained'
-import habitReminder from '../StaticClasses/NotificationsManager'
-import trainingReminder from '../StaticClasses/NotificationsManager'
+import { habitReminder, trainingReminder } from '../StaticClasses/NotificationsManager'
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
