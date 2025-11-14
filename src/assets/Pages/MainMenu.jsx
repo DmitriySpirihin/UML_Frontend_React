@@ -37,6 +37,7 @@ const MainMenu = ({ onPageChange }) => {
           <div style={styles(theme).container}>
             <div style={{height:'20vh'}}/>
             <h2 style={styles(theme).mainText}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
+            <button onClick={() => NotificationsManager.sendMessage('Message from mini app')}>Send message</button>
             <div style={styles(theme).scrollView}>
                
                <MenuCard 
@@ -86,7 +87,6 @@ const MainMenu = ({ onPageChange }) => {
                     onClick={() => {playEffects(null,100);}}
                 />
             </div>
-             <button onClick={() => NotificationsManager.sendMessage('Message from mini app')}>Send message</button>
           </div>
     )
 }
