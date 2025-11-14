@@ -6,6 +6,7 @@ import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
 import { saveData } from './assets/StaticClasses/SaveHelper';
 import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage, setKeyboardVisible } from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
+import { viewport } from '@telegram-apps/sdk';
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
 const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'));
 const HabitsMain = lazy(() => import('./assets/Pages/HabitsPages/HabitsMain'));
@@ -23,6 +24,31 @@ function App() {
   const [theme, setTheme] = useState('dark');
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
+
+  // full screen handling
+  useEffect(() => {
+    let isMounted = true;
+    
+    const setupFullscreen = async () => {
+      try {
+        if (isMounted && viewport.requestFullscreen?.isAvailable?.()) {
+          await viewport.requestFullscreen();
+        }
+      } catch (error) {
+        console.error('Error setting up fullscreen:', error);
+      }
+    };
+
+    setupFullscreen();
+    
+    return () => {
+      isMounted = false;
+      // Optional: Exit fullscreen on unmount if needed
+      // if (document.fullscreenElement) {
+      //   document.exitFullscreen().catch(console.error);
+      // }
+    };
+  }, []);
   
   // Handle keyboard visibility for Telegram WebView
   useEffect(() => {
