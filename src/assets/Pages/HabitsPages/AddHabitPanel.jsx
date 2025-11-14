@@ -1,10 +1,9 @@
 import React, { useState, useEffect,useRef } from 'react';
-import { setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
-import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$} from '../../StaticClasses/HabitsBus';
+import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$,setKeyboardVisible,setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
 import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt,FaFolderOpen} from 'react-icons/fa'
 import {MdFiberNew,MdDone} from 'react-icons/md'
 import Cropper from 'react-easy-crop';
@@ -132,7 +131,7 @@ const AddHabitPanel = () => {
            <div style={{...styles(theme).simplePanel,height: keyboardVisible ? "66vh" : "52vh"}}>
             <div style={{display:'flex',flexDirection:'row'}}>
               <FaSearch style={{color:Colors.get("mainText",theme),width:'5vw',marginTop:'10px',marginLeft:'10px'}}/>
-              <input type="text"  style={{...styles(theme).input,height: keyboardVisible ? "50%" : "40%"}}
+              <input type="text" onFocus={() => setKeyboardVisible(true)} onBlur={() => setKeyboardVisible(false)} style={{...styles(theme).input,height: keyboardVisible ? "50%" : "40%"}}
               onChange={(e) => searchHabitsList(e.target.value,habitList, setHabitList) }/>
             </div>
             <div style={styles(theme).scrollView}>
@@ -157,16 +156,16 @@ const AddHabitPanel = () => {
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
            <div style={{...styles(theme).simplePanel,height: keyboardVisible ? "66vh" : "52vh",justifyContent:'center'}}>
             <textarea maxLength={25} placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
-            onChange={(e) => handleInputValue(e.target.value,0)}/>
+            onChange={(e) => handleInputValue(e.target.value,0)} onFocus={() => setKeyboardVisible(true)} onBlur={() => setKeyboardVisible(false)}/>
             <div style={{display:"flex",justifyContent:"space-between"}}>
               <textarea  maxLength={25} placeholder={habitCategory === '' ? langIndex === 0 ? 'категория' : 'category' : habitCategory} style={{...styles(theme).input,width:"48%"}}
-              onChange={(e) => handleInputValue(e.target.value,1)}/>
+              onChange={(e) => handleInputValue(e.target.value,1)} onFocus={() => setKeyboardVisible(true)} onBlur={() => setKeyboardVisible(false)}/>
               <select style={{...styles(theme).input,width:"48%"}} onChange={(e) => handleInputValue(e.target.value,1)}>
                 {renderCategoryOptions(theme, langIndex)}
               </select>
             </div>
             <textarea maxLength={60} placeholder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} style={{...styles(theme).input,height: keyboardVisible ? "40%" : "25%"}}
-            onChange={(e) => handleInputValue(e.target.value,2)}/>
+            onChange={(e) => handleInputValue(e.target.value,2)} onFocus={() => setKeyboardVisible(true)} onBlur={() => setKeyboardVisible(false)}/>
             <div style={styles(theme).headerText}>{langIndex === 0 ? 'выбери иконку(опционально)' : 'choose icon(optional)'}</div>
             <div style={{display:"flex",justifyContent:"space-between"}}>
               <div style={{width: '80%',marginLeft:'30px',padding:'5px'}}>

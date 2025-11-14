@@ -3,9 +3,8 @@ import { useState,useEffect, Suspense, lazy} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
-import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage, setKeyboardVisible } from './assets/StaticClasses/HabitsBus'
+import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage,keyboardVisible$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
-import { viewport } from '@telegram-apps/sdk';
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
 const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'));
 const HabitsMain = lazy(() => import('./assets/Pages/HabitsPages/HabitsMain'));
@@ -24,66 +23,6 @@ function App() {
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
 
-  // full screen handling
-  useEffect(() => {
-    let isMounted = true;
-    
-    const setupFullscreen = async () => {
-      try {
-        if (isMounted && viewport.requestFullscreen?.isAvailable?.()) {
-          await viewport.requestFullscreen();
-        }
-      } catch (error) {
-        console.error('Error setting up fullscreen:', error);
-      }
-    };
-
-    setupFullscreen();
-    
-    return () => {
-      isMounted = false;
-      // Optional: Exit fullscreen on unmount if needed
-      // if (document.fullscreenElement) {
-      //   document.exitFullscreen().catch(console.error);
-      // }
-    };
-  }, []);
-  
-  // Handle keyboard visibility for Telegram WebView
-  useEffect(() => {
-    if (window.Telegram?.WebApp) {
-      // Expand the WebView to full height
-      window.Telegram.WebApp.expand();
-      
-      const checkKeyboardState = () => {
-        const viewportHeight = window.visualViewport?.height || window.innerHeight;
-        const isKeyboardVisible = viewportHeight < window.outerHeight * 0.9; // Threshold for keyboard detection
-        
-        setKeyboardVisibleState(isKeyboardVisible);
-        setKeyboardVisible(isKeyboardVisible);
-      };
-
-      // Set up viewport change listener
-      const handleViewportChange = (isStateStable) => {
-        if (isStateStable) {
-          checkKeyboardState();
-        }
-      };
-
-      // Set initial state
-      checkKeyboardState();
-      
-      // Add event listeners
-      window.Telegram.WebApp.onEvent('viewportChanged', handleViewportChange);
-      window.visualViewport?.addEventListener('resize', checkKeyboardState);
-
-      // Cleanup function
-      return () => {
-        window.Telegram.WebApp?.offEvent?.('viewportChanged', handleViewportChange);
-        window.visualViewport?.removeEventListener('resize', checkKeyboardState);
-      };
-    }
-  }, []);
   useEffect(() => {
           const subscription = confirmationPanel$.subscribe(setConfirmationPanel);  
           return () => subscription.unsubscribe();
@@ -109,10 +48,13 @@ useEffect(() => {
     const subscription = bottomBtnPanel$.subscribe(setBottomBtnPanel);  
     return () => subscription.unsubscribe();
 }, []);
-
+useEffect(() => {
+    const subscription = keyboardVisible$.subscribe(setKeyboardVisibleState);  
+    return () => subscription.unsubscribe();
+}, []);
   return (
     <>
-      {page !== 'LoadPanel' && !keyboardVisible && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+      {page !== 'LoadPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <MainBtns/>
       </Suspense>}
       {page === 'LoadPanel' && <LoadPanel/>}
@@ -138,7 +80,7 @@ useEffect(() => {
       {page === 'TrainingMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingMain/>
       </Suspense>}
-      {bottomBtnPanel === 'BtnsHabits' && !keyboardVisible && <BtnsHabits/>}
+      {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
       {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
     </>
   )

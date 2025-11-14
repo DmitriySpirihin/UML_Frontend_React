@@ -129,10 +129,12 @@ export const fillEmptyDays = () => {
 
 
 export class UserData {
+   static id = null;
    static name = 'guest';
    static photo = null;
 
-   static Init(name,photo){
+   static Init(id,name,photo){
+      this.id = id;
       this.name = name;
       this.photo = photo;
    }

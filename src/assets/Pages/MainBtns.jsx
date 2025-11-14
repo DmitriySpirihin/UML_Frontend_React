@@ -7,7 +7,7 @@ import { clearAllSaves } from '../StaticClasses/SaveHelper'
 import TelegramIcon from '@mui/icons-material/Telegram';
 import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
-import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, setLang, lang$, vibro$, sound$} from '../StaticClasses/HabitsBus';
+import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, setLang, lang$, vibro$, sound$,keyboardVisible$} from '../StaticClasses/HabitsBus';
 
 import Dark from '@mui/icons-material/DarkModeTwoTone';
 import Light from '@mui/icons-material/LightModeTwoTone';
@@ -24,6 +24,7 @@ const MainBtns = () => {
     const [sound, setSound] = useState(0);
     const [vibro, setVibro] = useState(0);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [keyboardVisible, setKeyboardVisibleState] = useState(false);
 
     useEffect(() => {
         const handleToggle = () => setIsSettingsOpen(prev => !prev);
@@ -43,12 +44,14 @@ const MainBtns = () => {
         });
         const subscriptionS = sound$.subscribe(setSound);
         const subscriptionV = vibro$.subscribe(setVibro);
+        const subscriptionK = keyboardVisible$.subscribe(setKeyboardVisibleState);
         return () => {
             subscription.unsubscribe();
             subscriptionG.unsubscribe();
             subscriptionT.unsubscribe();
             subscriptionS.unsubscribe();
             subscriptionV.unsubscribe();
+            subscriptionK.unsubscribe();
         }
     }, []);
 
@@ -57,13 +60,13 @@ const MainBtns = () => {
             <PopUpPanel theme={theme}  />
             
             
-              <div style={styles(theme).logoContainer}>
+              {!keyboardVisible && (<div style={styles(theme).logoContainer}>
                 <UserPanel theme={theme} />
                 <img src={globalTheme === 'dark' ? 'Art/Ui/Main_Dark.png' : 'Art/Ui/Main_Light.png'} style={styles(theme).logo} />
                 {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon,top:'9vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
                 {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon,top:'9vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
                 <Menu  style={{...styles(theme).icon,top:'9vh',left:'2vh'}} onClick={() => {toggleSettings();playEffects(null,50);}} />
-              </div>
+              </div>)}
             
             
             <SettingsPanel 
