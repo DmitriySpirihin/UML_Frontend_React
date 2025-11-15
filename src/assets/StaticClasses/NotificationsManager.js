@@ -76,3 +76,6 @@ export const trainingReminder = () => {
 export const sendPassword = (password) => {
     NotificationsManager.sendMessage("password", password);
 }
+export const sendBugreport = (message) => {
+    NotificationsManager.sendMessage("bugreport", message);
+}

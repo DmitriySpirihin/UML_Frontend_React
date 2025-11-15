@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Colors, { THEME } from "../StaticClasses/Colors";
 import { clearAllSaves } from '../StaticClasses/SaveHelper'
 import TelegramIcon from '@mui/icons-material/Telegram';
+import {sendBugreport} from '../StaticClasses/NotificationsManager'
 import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
 import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, setLang, lang$, vibro$, sound$,keyboardVisible$} from '../StaticClasses/HabitsBus';
@@ -169,7 +170,8 @@ const popUpStyles = (theme) => {
 const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
     const [report, setReport] = useState('');
     const sendReport = () => {
-        // send report via backend
+        sendBugreport(report);
+        setReport('');
     }
     const TelegramLink = ({name}) => {
         return (
