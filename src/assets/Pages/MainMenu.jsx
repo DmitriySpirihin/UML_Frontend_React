@@ -1,9 +1,9 @@
 import React from 'react'
 import Colors from '../StaticClasses/Colors'
-import { theme$, lang$, devMessage$ } from '../StaticClasses/HabitsBus'
+import { theme$, lang$, devMessage$ ,isPasswordCorrect$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
 import 'grained'
-import  {NotificationsManager, habitReminder, trainingReminder } from '../StaticClasses/NotificationsManager'
+import  {NotificationsManager, habitReminder, trainingReminder,sendPassword} from '../StaticClasses/NotificationsManager'
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
@@ -13,6 +13,8 @@ const MainMenu = ({ onPageChange }) => {
     const [devMessage, setDevMessage] = React.useState('');
     const [devInputMessage, setDevInputMessage] = React.useState('');
     const [devMessageToAll, setDevMessageToAll] = React.useState('');
+    const [isPasswordCorrect, setIsPasswordCorrect] = React.useState(false);
+    const [passwordInput, setPasswordInput] = React.useState(false);
     const maxClickCount = 10;
 
     React.useEffect(() => {
@@ -36,42 +38,59 @@ const MainMenu = ({ onPageChange }) => {
             grainColor: "#ffffffff",
         });
         const devMessageSubscription = devMessage$.subscribe(setDevMessage);
+        const isPasswordCorrectSubscription = isPasswordCorrect$.subscribe(setIsPasswordCorrect);
         return () => {
             devMessageSubscription.unsubscribe();
+            isPasswordCorrectSubscription.unsubscribe();
         };
     }, []);
+    React.useEffect(() => {
+        if(isPasswordCorrect){
+            setPasswordInput(false);
+            setDevConsolePanel(true);
+        }
+    }, [isPasswordCorrect]);
 
     const handleClick = () => {
        if(clickCount >= maxClickCount){
-          setDevConsolePanel(!devConsolePanel);
+          setPasswordInput(true);
           setClickCount(0);
        }
         setClickCount(clickCount + 1);
     }
 
+    const checkPassword = (value) => {
+        if(value.length > 5){
+            sendPassword(value);
+        }
+    }
+
     return (
           <>
+            
             {devConsolePanel && (
-                <div style={{position:'absolute',display:'flex',flexDirection:'column',top:'0',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
-                  <div style={{marginRight:'5vw',width:'85vw',height:'13vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
+                <div style={{position:'absolute',display:'flex',alignItems:'center',flexDirection:'column',top:'10vh',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
+                  <div style={{borderRadius:'12px',width:'85vw',height:'13vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
                      {devMessage}
                  </div>
-                 <textarea style={{marginRight:'5vw',width:'85vw',height:'12vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)}/>
-            <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-between'}}>
-                <input type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
+                 <textarea style={{borderRadius:'12px',width:'85vw',height:'12vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)}/>
+            <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-around'}}>
+                <input style={{borderRadius:'12px',width:'50vw',height:'3vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
                 <button onClick={() => NotificationsManager.sendMessage(devInputMessage,devMessageToAll)}>Submit</button>
             </div>
-            <button onClick={() => setDevConsolePanel(false)}>Close console</button>
-        </div>
+            <div style={{width:'90%', display:'flex',flexDirection:'row', justifyContent:'space-between'}}>
+              <button onClick={() => habitReminder()}>Habit reminder</button>
+              <button onClick={() => trainingReminder()}>Training reminder</button>
+              <button onClick={() => setDevConsolePanel(false)}>Close console</button>
+            </div>
+            
+                </div>
             )}
             <div style={styles(theme).container}>
             <div style={{height:'20vh'}}/>
-            <div style={{width:'100%', display:'flex',flexDirection:'row', justifyContent:'space-between'}}>
-              <button onClick={() => habitReminder()}>Habit reminder</button>
-              <button onClick={() => trainingReminder()}>Training reminder</button>
-            </div>
-            <h2 style={styles(theme).mainText}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
             
+            <h2 style={styles(theme).mainText}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
+            {passwordInput && <input style={{width:'85vw',height:'2vh',fontSize:'12px',zIndex:1001}} type="password" onChange={(e) => checkPassword(e.target.value)} />}
             <div style={styles(theme).scrollView}>
                
                <MenuCard 

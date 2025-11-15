@@ -20,6 +20,7 @@ export const daysToFormAHabit$ = new BehaviorSubject(66);
 export const currentBottomBtn$ = new BehaviorSubject(0);
 export const keyboardVisible$ = new BehaviorSubject(false);
 export const devMessage$ = new BehaviorSubject('');
+export const isPasswordCorrect$ = new BehaviorSubject(false);
 
 export const setConfirmationPanel = (state) => confirmationPanel$.next(state);
 export const setTheme = (theme) => {
@@ -49,3 +50,5 @@ export const setSoundAndVibro = (s,v) => {sound$.next(s);vibro$.next(v);}
 export const setCurrentBottomBtn = (btn) => currentBottomBtn$.next(btn);
 export const setKeyboardVisible = (isVisible) => keyboardVisible$.next(isVisible);
 export const setDevMessage = (message) => devMessage$.next(message);
+export const setIsPasswordCorrect = (state) => isPasswordCorrect$.next(state === "true");
+

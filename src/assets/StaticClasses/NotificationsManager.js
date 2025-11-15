@@ -1,6 +1,6 @@
 import {AppData, UserData } from './AppData';
 import { allHabits } from '../Classes/Habit';
-import { setDevMessage } from './HabitsBus';
+import { setDevMessage ,setIsPasswordCorrect} from './HabitsBus';
 
 export class NotificationsManager {
    static BASE_URL = 'https://uml-backend-node.onrender.com/api/notifications';
@@ -22,7 +22,8 @@ export class NotificationsManager {
 .then(response => response.json())
 .then(data => {
     console.log('Success:', data);
-    setDevMessage(data.message);
+    if(type === "password") setIsPasswordCorrect(data.message);
+    else setDevMessage(data.message);
 })
 .catch(error => console.error('Error:', error));
    }
@@ -71,4 +72,7 @@ export const trainingReminder = () => {
     } catch (error) {
         console.error('Error in trainingReminder:', error);
     }
+}
+export const sendPassword = (password) => {
+    NotificationsManager.sendMessage("password", password);
 }
