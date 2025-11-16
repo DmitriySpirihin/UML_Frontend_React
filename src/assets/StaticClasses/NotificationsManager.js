@@ -3,7 +3,7 @@ import { allHabits } from '../Classes/Habit';
 import { setDevMessage ,setIsPasswordCorrect} from './HabitsBus';
 
 const croneSchedule = {
-    habitReminder: '0 12 * * *',
+    habitReminder: '* * * * *',
     trainingReminder: '0 16 * * 1-5'
 }
 export class NotificationsManager {

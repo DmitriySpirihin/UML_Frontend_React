@@ -25,7 +25,7 @@ export async function initializeTelegramSDK(opts = {}){
                 // Enable the back button
                 window.Telegram.WebApp.BackButton.show();
                 // Set up the event listener for the back button
-                window.Telegram.WebApp.onEvent('backButtonClicked',()=> {saveData();habitReminder();Telegram.WebApp.close();});
+                window.Telegram.WebApp.onEvent('backButtonClicked',()=> {saveData();Telegram.WebApp.close();});
             }
         }
         return true;
@@ -93,6 +93,7 @@ export async function initDBandCloud(){
 
 export async function saveData() {
   const dataToSave = serializeData();
+  habitReminder();
   try {
     if (db) {
       await db.put('UserData', dataToSave, 'current');
