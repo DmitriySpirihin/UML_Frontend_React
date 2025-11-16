@@ -3,7 +3,7 @@ import { allHabits } from '../Classes/Habit';
 import { setDevMessage ,setIsPasswordCorrect} from './HabitsBus';
 
 export class NotificationsManager {
-   static BASE_URL = 'https://uml-backend-node.onrender.com/api/notifications';
+   static BASE_URL = 'https://poised-alane-dmitriyspirikhindev-46194500.koyeb.app/api/notifications';
 
    static async sendMessage(type,message){
       fetch(this.BASE_URL, {
