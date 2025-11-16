@@ -60,7 +60,7 @@ const MainMenu = ({ onPageChange }) => {
     }
 
     const checkPassword = (value) => {
-        if(value.length > 4){
+        if(value.length > 5){
             sendPassword(value);
         }
     }
