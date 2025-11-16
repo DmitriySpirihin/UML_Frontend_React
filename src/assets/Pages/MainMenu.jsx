@@ -3,7 +3,7 @@ import Colors from '../StaticClasses/Colors'
 import { theme$, lang$, devMessage$ ,isPasswordCorrect$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
 import 'grained'
-import  {NotificationsManager, habitReminder, trainingReminder,sendPassword} from '../StaticClasses/NotificationsManager'
+import  {NotificationsManager,sendPassword} from '../StaticClasses/NotificationsManager'
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
@@ -79,8 +79,6 @@ const MainMenu = ({ onPageChange }) => {
                 <button onClick={() => NotificationsManager.sendMessage(devInputMessage,devMessageToAll)}>Submit</button>
             </div>
             <div style={{width:'90%', display:'flex',flexDirection:'row', justifyContent:'space-between'}}>
-              <button onClick={() => habitReminder()}>Habit reminder</button>
-              <button onClick={() => trainingReminder()}>Training reminder</button>
               <button onClick={() => setDevConsolePanel(false)}>Close console</button>
             </div>
             
