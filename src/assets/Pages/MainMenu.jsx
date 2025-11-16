@@ -90,7 +90,7 @@ const MainMenu = ({ onPageChange }) => {
             <div style={{height:'20vh'}}/>
             
             <h2 style={styles(theme).mainText}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
-            {passwordInput && <input style={{width:'85vw',height:'2vh',fontSize:'12px',zIndex:1001}} type="password" onChange={(e) => checkPassword(e.target.value)} />}
+            {passwordInput && <input style={{width:'85vw',height:'2vh',fontSize:'12px',borderRadius:'12px',zIndex:1001}} type="password" onChange={(e) => checkPassword(e.target.value)} />}
             <div style={styles(theme).scrollView}>
                
                <MenuCard 
