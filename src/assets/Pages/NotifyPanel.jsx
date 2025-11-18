@@ -112,7 +112,7 @@ const NotifyPanel = () => {
                 <FaBackspace onClick={() => {closePanel();}} style={{fontSize:'28px',width:'30%',color:Colors.get('icons', theme)}}></FaBackspace>
                 <MdDone onClick={() => {setNotification();}} style={{fontSize:'28px',width:'30%',color:Colors.get('icons', theme),paddingRight:'18px'}}></MdDone>
                 <label style={{...styles(theme).switch}}>
-                  <input type="checkbox" style={styles(theme).input} checked={isSliderOn} onChange={() => {setIsSliderOn(!isSliderOn);toggleNotify(page,!isSliderOn);}} />
+                  <input type="checkbox" style={styles(theme).input} checked={isSliderOn} onChange={() => {setIsSliderOn(!isSliderOn);toggleNotify(page,!isSliderOn,langIndex,cron,hour,minute);}} />
                   <span style={styles(theme,isSliderOn).slider}></span>
                   <span style={styles(theme,isSliderOn).sliderBefore}></span>
                 </label>
@@ -369,12 +369,12 @@ const trainingReminder = (langIndex,_cron,hour,minute) => {
     }
 }
 
-const toggleNotify = (page,isEnabled) => {
+const toggleNotify = (page,isEnabled,langIndex,_cron,hour,minute) => {
   if(page.startsWith("H")){
     AppData.notify[0].enabled = isEnabled;
     if(UserData?.id){
       if(isEnabled) {
-        habitReminder();
+        habitReminder(langIndex,_cron,hour,minute);
       }
       else {
         NotificationsManager.sendMessage("habitoff", UserData.id);
@@ -386,7 +386,7 @@ const toggleNotify = (page,isEnabled) => {
     AppData.notify[1].enabled = isEnabled;
     if(UserData?.id){
       if(isEnabled){
-        trainingReminder();
+        trainingReminder(langIndex,_cron,hour,minute);
       }
       else {
         NotificationsManager.sendMessage("trainingoff", UserData.id);
