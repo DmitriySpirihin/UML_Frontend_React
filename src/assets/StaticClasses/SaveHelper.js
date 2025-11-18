@@ -206,6 +206,7 @@ export async function loadData() {
                 // Local data is newer, update cloud
                 await setCloudStorageItem('UserData', localData);
                 deserializeData(JSON.stringify(parsedLocal));
+                console.log('Both sources have data and local is newer');
                 return { success: true, data: parsedLocal, source: 'local' };
             } else if (cloudLastSave > localLastSave) {
                 // Cloud data is newer, update local
@@ -213,10 +214,12 @@ export async function loadData() {
                     await db.put('UserData', JSON.stringify(parsedCloud), 'current');
                 }
                 deserializeData(JSON.stringify(parsedCloud));
+                console.log('Both sources have data and cloud is newer');
                 return { success: true, data: parsedCloud, source: 'cloud' };
             } else {
                 // Both have same timestamp, use local
                 deserializeData(JSON.stringify(parsedLocal));
+                console.log('Both sources have data and both the same');
                 return { success: true, data: parsedLocal, source: 'local' };
             }
         }
@@ -224,6 +227,7 @@ export async function loadData() {
         // Only local data available
         if (parsedLocal) {
             deserializeData(JSON.stringify(parsedLocal));
+            console.log('Data loaded from local , cloud is empty');
             return { success: true, data: parsedLocal, source: 'local' };
         }
 
@@ -233,10 +237,12 @@ export async function loadData() {
                 await db.put('UserData', JSON.stringify(parsedCloud), 'current');
             }
             deserializeData(JSON.stringify(parsedCloud));
+            console.log('Data loaded from Cloud , local is empty');
             return { success: true, data: parsedCloud, source: 'cloud' };
         }
 
         // No data available
+        console.log('No data available in any storage');
         return { 
             success: false, 
             error: lastError || 'No data available in any storage' 
