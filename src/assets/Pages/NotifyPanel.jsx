@@ -55,15 +55,19 @@ const NotifyPanel = () => {
         return () => subscription.unsubscribe();
     }, []); 
     
-    const setDay = (index) => {
-      let falseCount = 0;
-      for(let i = 0; i < daysOfWeek.length; i++){
-        if(!daysOfWeek[i]) falseCount++;
-      }
-      if(falseCount == 6 && daysOfWeek[index]) return;
-      setDaysOfWeek(prev => [...prev.slice(0, index), !prev[index], ...prev.slice(index + 1)]);
-    }   
+  const setDay = (index) => {
+    const updatedDays = [...daysOfWeek];
+    updatedDays[index] = !updatedDays[index];
+  
+    let falseCount = updatedDays.filter(day => !day).length;
+    if (falseCount === 6 && daysOfWeek[index]) return;
+  
+    const newDays = [...updatedDays];
+    setDaysOfWeek(newDays);
+    setCron(getCronExpression(newDays, hour, minute));
+  };
     const setNotification = () => {
+      /////
       if(page.startsWith("H"))habitReminder(langIndex,cron,hour,minute);
       if(page.startsWith("T"))trainingReminder(langIndex,cron,hour,minute);
     }
@@ -93,19 +97,19 @@ const NotifyPanel = () => {
                {/*days picker*/}
                <div style={styles(theme).daysContainer}>
                  <div style={{backgroundColor:daysOfWeek[0] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => setDay(0)} >{daysNames[langIndex][0]}</p></div>
+                 onClick={() => {setDay(0)}} >{daysNames[langIndex][0]}</p></div>
                  <div style={{backgroundColor:daysOfWeek[1] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => setDay(1)} >{daysNames[langIndex][1]}</p></div>
+                 onClick={() => {setDay(1)}} >{daysNames[langIndex][1]}</p></div>
                  <div style={{backgroundColor:daysOfWeek[2] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => setDay(2)} >{daysNames[langIndex][2]}</p></div>
+                 onClick={() => {setDay(2)}} >{daysNames[langIndex][2]}</p></div>
                  <div style={{backgroundColor:daysOfWeek[3] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => setDay(3)} >{daysNames[langIndex][3]}</p></div>
+                 onClick={() => {setDay(3)}} >{daysNames[langIndex][3]}</p></div>
                  <div style={{backgroundColor:daysOfWeek[4] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => setDay(4)} >{daysNames[langIndex][4]}</p></div>
+                 onClick={() => {setDay(4)}} >{daysNames[langIndex][4]}</p></div>
                  <div style={{backgroundColor:daysOfWeek[5] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => setDay(5)} >{daysNames[langIndex][5]}</p></div>
+                 onClick={() => {setDay(5)}} >{daysNames[langIndex][5]}</p></div>
                  <div style={{backgroundColor:daysOfWeek[6] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => setDay(6)} >{daysNames[langIndex][6]}</p></div>
+                 onClick={() => {setDay(6)}} >{daysNames[langIndex][6]}</p></div>
                </div>
                
                <div style={{display:'flex',width:'90%',flexDirection:'row',alignItems:'space-between',justifyContent:'center'}}>
@@ -260,6 +264,7 @@ function getCronExpression(daysOfWeek,hour,minute){
     }
     cron += ' ' + daysMap.join(',');
   }
+  console.log(cron);
   return cron;
 }
 function stringToCron(page,setCron,setHour,setMinute,setDaysOfWeek,setIsSliderOn){
@@ -276,20 +281,18 @@ function stringToCron(page,setCron,setHour,setMinute,setDaysOfWeek,setIsSliderOn
   const cronArr = str.split(' ');
   setHour(cronArr[1] !== '*' ? parseInt(cronArr[1]) : 0);
   setMinute(cronArr[0] !== '*' ? parseInt(cronArr[0]) : 0);
-  const days = [true,true,true,true,true,true,true];
-  if(cronArr[4] === '*')setDaysOfWeek(days);
-  else {
-  const daysMap = cronArr[4].split(',').map(Number).filter(day => day >= 1 && day <= 7);
-  const newDays = Array(7).fill(false);
-  daysMap.forEach(day => {
-    if (day >= 1 && day <= 7) {
+  if (cronArr[4] === '*') {
+    setDaysOfWeek([true, true, true, true, true, true, true]);
+  } else {
+    const daysMap = cronArr[4].split(',');
+    const newDays = Array(7).fill(false);
+    daysMap.forEach(day => {
       newDays[day - 1] = true;
-    }
-  });
-  setDaysOfWeek(newDays);
+    });
+    setDaysOfWeek(newDays);
+  }
 }
-}
-const habitReminder = (langIndex,_cron,hour,minute) => {
+function habitReminder(langIndex,_cron,hour,minute) {
   const messages = [
     ['время для ваших привычек,', 'Time for your habits,'],
     ['пора выполнить вашу привычку,', 'Time to complete your habit,'],

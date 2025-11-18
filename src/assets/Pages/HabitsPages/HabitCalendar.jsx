@@ -123,9 +123,7 @@ const HabitCalendar = () => {
                   ))}
                 </tbody>
             </table>
-            <div style={{position:'fixed',top:'120%',left:'20%',fontSize:'14px',fontFamily:'Segoe UI',
-              color:Colors.get('simplePanel', theme)
-            }}> {langIndex === 0 ? 'Выберите дату для просмотра привычек' : 'Choose the date to see habits'}</div>
+            
           <div style={{height:'60%',width:'100%',paddingTop:'15px'}}>
           {inFoPanelData && <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
             <div style={{borderTop: `1px solid ${Colors.get('border', theme)}`,}}>
@@ -240,17 +238,35 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
   
 const styles = (theme) =>
 ({
-    container :
-   {
-     backgroundColor:Colors.get('background', theme),
-     display: "flex",
-     flexDirection: "column",
-     justifyContent: "start",
-     alignItems: "center",
-     height: "100vh",
-     width: "100vw",
-     fontFamily: "Segoe UI",
-  },
+     container :
+       {
+         backgroundColor:Colors.get('background', theme),
+         display: "flex",
+         flexDirection: "column",
+         justifyContent: "start",
+         alignItems: "center",
+         height: "100vh",
+         width: "100vw",
+         fontFamily: "Segoe UI",
+      },
+      panel :
+      {
+        display:'flex',
+        flexDirection:'column',
+        width: "90vw",
+        height: "160vw",
+        position:'absolute',
+        top:'51%',
+        left:'49%',
+        transform:'translate(-50%,-50%)',
+        alignItems: "center",
+        justifyContent: "start",
+        borderRadius: "24px",
+        border: `1px solid ${Colors.get('border', theme)}`,
+        margin: "5px",
+        background:Colors.get('background', theme),
+        boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`
+      },
   calendarHead:
   {
     margin:'2px',
@@ -298,24 +314,6 @@ const styles = (theme) =>
      fontWeight:'bold',
      color: Colors.get('mainText', theme),
      fontFamily: "Segoe UI",
-  },
-  panel :
-  {
-    display:'flex',
-    flexDirection:'column',
-    width: "90vw",
-    height: "160vw",
-    position:'absolute',
-    top:'51%',
-    left:'49%',
-    transform:'translate(-50%,-50%)',
-    alignItems: "center",
-    justifyContent: "start",
-    borderRadius: "24px",
-    border: `1px solid ${Colors.get('border', theme)}`,
-    margin: "5px",
-    background:Colors.get('background', theme),
-    boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`
   },
   text :
   {

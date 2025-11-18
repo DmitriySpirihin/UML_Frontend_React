@@ -39,6 +39,7 @@ function LoadPanel() {
                 }
                 // Load saved data
                 await loadData();
+                console.log(JSON.stringify(AppData.notify));
                 fillEmptyDays();
                 setAllHabits();
                 
