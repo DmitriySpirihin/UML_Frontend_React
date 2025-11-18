@@ -317,7 +317,7 @@ const habitReminder = (langIndex,_cron,hour,minute) => {
         const habits = AppData.choosenHabits
             .map(habitId => allHabits?.find(h => h.id === habitId))
             .filter(Boolean);
-        let message = '⏰ ' + (UserData?.name || langIndex === 0 ? 'Пользователь' : 'User') + " ," + messages[langIndex][Math.floor(Math.random() * messages[langIndex].length)] + ': ';
+        let message = '⏰ ' + UserData.name + " ," + messages[langIndex][Math.floor(Math.random() * messages[langIndex].length)] + ': ';
         const habitNames = habits.map(h => h.name[langIndex]).join(', ');
         message += habitNames + '$' + _cron;
         AppData.notify[0] = {enabled:true,cron:_cron};
@@ -357,7 +357,7 @@ const trainingReminder = (langIndex,_cron,hour,minute) => {
     return;
   }
     try {
-        const userName = UserData?.name || '';
+        const userName = UserData.name;
         let message = "🏋️⏰ " + messages[langIndex][Math.floor(Math.random() * messages[langIndex].length)] + ' ' + userName + ' !';
         message += '$' + _cron;
         AppData.notify[1] = {enabled:true,cron:_cron};
