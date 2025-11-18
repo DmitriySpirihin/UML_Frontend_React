@@ -3,6 +3,7 @@ import { THEME } from './Colors';
 import {setTheme,setLang ,setSoundAndVibro,setNotify} from '../StaticClasses/HabitsBus'
 
 export class AppData{
+   static lastSave = new Date().toISOString();
    static isFirstStart = true;
    static version = "1.0.0";
    static prefs = [0,0,0,0]; //language, theme, sound, vibro
@@ -15,6 +16,7 @@ export class AppData{
   // methods
   static init(data) {
     if (!data) return;
+    this.lastSave = data.lastSave;
     this.isFirstStart = data.isFirstStart;
     this.version = data.version;
     if(this.isFirstStart === false)this.prefs = data.prefs;
@@ -145,6 +147,7 @@ export class UserData {
 
 export class Data{
   constructor(){
+    this.lastSave = new Date().toISOString();
     this.isFirstStart = AppData.isFirstStart,
     this.version = AppData.version,
     this.prefs = AppData.prefs,

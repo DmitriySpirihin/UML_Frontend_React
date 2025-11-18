@@ -90,116 +90,166 @@ export async function initDBandCloud(){
 }
 }
 
+/**
+ * Saves application data to both local DB and cloud storage
+ * @returns {Promise<{success: boolean, error?: string}>} Result of the save operation
+ */
 export async function saveData() {
-  const dataToSave = serializeData();
-  try {
+    // Get and validate data
+    const dataToSave = serializeData();
+    if (!dataToSave) {
+        console.error('No data to save');
+        return { success: false, error: 'No data to save' };
+    }
+
+    let savedToDB = false;
+    let savedToCloud = false;
+    let lastError = null;
+
+    // Try saving to IndexedDB
     if (db) {
-      await db.put('UserData', dataToSave, 'current');
-      console.log('Data saved to DB' + dataToSave);
-      try {
-    if (setCloudStorageItem?.isAvailable?.()) {
-      await setCloudStorageItem('UserData', dataToSave);
-      console.log('Data saved to Cloud');
+        try {
+            await db.put('UserData', dataToSave, 'current');
+            savedToDB = true;
+            console.log('Data saved to DB');
+        } catch (e) {
+            console.error('Saving to DB failed:', e);
+            lastError = e.message || 'Failed to save to local database';
+        }
     }
-  } catch (e) {
-    console.error('Saving to Cloud failed');
-  }
-    }
-  } catch (e) {
-    console.error('Saving to DB failed');
+
+    // Try saving to cloud
     try {
-    if (setCloudStorageItem?.isAvailable?.()) {
-      await setCloudStorageItem('UserData', dataToSave);
-      console.log('Data saved to Cloud');
+        if (setCloudStorageItem?.isAvailable?.()) {
+            await setCloudStorageItem('UserData', dataToSave);
+            savedToCloud = true;
+            console.log('Data saved to Cloud');
+        }
+    } catch (e) {
+        console.error('Saving to Cloud failed:', e);
+        lastError = lastError || e.message || 'Failed to save to cloud';
     }
-  } catch (e) {
-    console.error('Saving to Cloud failed');
-  }
-  }
+
+    // Return result
+    if (savedToDB || savedToCloud) {
+        return { success: true };
+    }
+    return { 
+        success: false, 
+        error: lastError || 'No storage available' 
+    };
 }
 
+/**
+ * Loads application data from available storage sources
+ * @returns {Promise<{success: boolean, data?: Data, source?: 'local'|'cloud', error?: string}>} 
+ * Result of the load operation with the loaded data and its source
+ */
 export async function loadData() {
-  let raw = null;
-  try {
-    if (db) {
-      raw = await db.get('UserData', 'current');
-      if (raw) {
-        deserializeData(raw);
-        console.log('Data loaded from DB' + raw);
-        return;
-      }
-    }
-  } catch (e) {
-    console.error('Loading from DB failed');
-  }
-  try {
-    if (getCloudStorageItem?.isAvailable?.()) {
-      raw = await getCloudStorageItem('UserData');
-      if (raw) {
-        deserializeData(raw);
-        console.log('Data loaded from Cloud');
-        return;
-      }
-    }
-  } catch (e) {
-    console.error('Loading from Cloud failed');
-  }
-}
-/*
-export async function saveCustomIcon(icon) {
-  try {
-    // Generate a unique key for the icon
-    const iconKey = 'icon_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
-    
-    // Try to save to IndexedDB first
+    let localData = null;
+    let cloudData = null;
+    let lastError = null;
+
+    // Try loading from local DB
     try {
-      const db = await openDB('UML_Data', 2);
-      const tx = db.transaction('Icons', 'readwrite');
-      // Store the icon with its key as part of the object since we're using in-line keys
-      const iconData = { id: iconKey, data: icon };
-      await tx.store.put(iconData);
-      await tx.done;
-      return iconKey;
-    } catch (error) {
-      console.warn('Failed to save icon to IndexedDB, falling back to localStorage', error);
-      // Fallback to localStorage if IndexedDB fails
-      localStorage.setItem(iconKey, icon);
-      return iconKey;
+        if (db) {
+            localData = await db.get('UserData', 'current');
+            if (localData) {
+                console.log('Data loaded from DB');
+            }
+        }
+    } catch (e) {
+        console.error('Loading from DB failed:', e);
+        lastError = e.message || 'Failed to load from local database';
     }
-  } catch (error) {
-    console.error('Error saving custom icon:', error);
-    return null;
-  }
-}
-*/
-/*
-export async function loadCustomIcon(iconKey) {
-  if (!iconKey) return null;
-  
-  try {
-    // First try to load from IndexedDB
+
+    // Try loading from cloud
     try {
-      const db = await openDB('UML_Data', 2);
-      const tx = db.transaction('Icons', 'readonly');
-      const icon = await tx.store.get(iconKey);
-      await tx.done;
-      if (icon) return icon;
-    } catch (error) {
-      console.warn('Failed to load icon from IndexedDB, trying localStorage', error);
+        if (getCloudStorageItem?.isAvailable?.()) {
+            cloudData = await getCloudStorageItem('UserData');
+            if (cloudData) {
+                console.log('Data loaded from Cloud');
+            }
+        }
+    } catch (e) {
+        console.error('Loading from Cloud failed:', e);
+        lastError = lastError || e.message || 'Failed to load from cloud';
     }
-    
-    // If not found in IndexedDB, try localStorage
-    const icon = localStorage.getItem(iconKey);
-    if (icon) return icon;
-    
-    console.warn(`Icon with key ${iconKey} not found`);
-    return null;
-  } catch (error) {
-    console.error('Error loading custom icon:', error);
-    return null;
-  }
-    */
-//}
+
+    // Parse and compare data
+    try {
+        let parsedLocal = null;
+        let parsedCloud = null;
+
+        if (localData) {
+            try {
+                parsedLocal = JSON.parse(localData);
+            } catch (e) {
+                console.error('Failed to parse local data:', e);
+            }
+        }
+
+        if (cloudData) {
+            try {
+                parsedCloud = typeof cloudData === 'string' ? JSON.parse(cloudData) : cloudData;
+            } catch (e) {
+                console.error('Failed to parse cloud data:', e);
+            }
+        }
+
+        // If both sources have data, compare lastSave timestamps
+        if (parsedLocal && parsedCloud) {
+            const localLastSave = parsedLocal.lastSave || 0;
+            const cloudLastSave = parsedCloud.lastSave || 0;
+
+            if (localLastSave > cloudLastSave) {
+                // Local data is newer, update cloud
+                await setCloudStorageItem('UserData', localData);
+                deserializeData(JSON.stringify(parsedLocal));
+                return { success: true, data: parsedLocal, source: 'local' };
+            } else if (cloudLastSave > localLastSave) {
+                // Cloud data is newer, update local
+                if (db) {
+                    await db.put('UserData', JSON.stringify(parsedCloud), 'current');
+                }
+                deserializeData(JSON.stringify(parsedCloud));
+                return { success: true, data: parsedCloud, source: 'cloud' };
+            } else {
+                // Both have same timestamp, use local
+                deserializeData(JSON.stringify(parsedLocal));
+                return { success: true, data: parsedLocal, source: 'local' };
+            }
+        }
+
+        // Only local data available
+        if (parsedLocal) {
+            deserializeData(JSON.stringify(parsedLocal));
+            return { success: true, data: parsedLocal, source: 'local' };
+        }
+
+        // Only cloud data available
+        if (parsedCloud) {
+            if (db) {
+                await db.put('UserData', JSON.stringify(parsedCloud), 'current');
+            }
+            deserializeData(JSON.stringify(parsedCloud));
+            return { success: true, data: parsedCloud, source: 'cloud' };
+        }
+
+        // No data available
+        return { 
+            success: false, 
+            error: lastError || 'No data available in any storage' 
+        };
+
+    } catch (e) {
+        console.error('Error processing loaded data:', e);
+        return { 
+            success: false, 
+            error: `Failed to process loaded data: ${e.message || 'Unknown error'}` 
+        };
+    }
+}
 
 /**
  * Serializes the current application data to a JSON string
