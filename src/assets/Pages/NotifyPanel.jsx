@@ -324,6 +324,7 @@ const habitReminder = (langIndex,_cron,hour,minute) => {
         NotificationsManager.sendMessage("habit", message);
         setShowPopUpPanel(langIndex === 0 ? 'Уведомление установлено  на ' + hour + ':' + minute : 'Notification set on ' + hour + ':' + minute,2000,true);
     } catch (error) {
+        console.log(error);
         setShowPopUpPanel(langIndex === 0 ? 'Ошибка отправки уведомления' : 'Error sending notification',2000,false);
     }
 }
@@ -363,6 +364,7 @@ const trainingReminder = (langIndex,_cron,hour,minute) => {
         NotificationsManager.sendMessage("training", message);
         setShowPopUpPanel(langIndex === 0 ? 'Уведомление установлено  на ' + hour + ':' + minute : 'Notification set on ' + hour + ':' + minute,2000,true);
     } catch (error) {
+        console.log(error);
         setShowPopUpPanel(langIndex === 0 ? 'Ошибка отправки уведомления' : 'Error sending notification',2000,false);
     }
 }
