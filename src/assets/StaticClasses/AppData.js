@@ -1,6 +1,6 @@
 import {Habit} from "../Classes/Habit";
 import { THEME } from './Colors';
-import {setTheme,setLang ,setSoundAndVibro} from '../StaticClasses/HabitsBus'
+import {setTheme,setLang ,setSoundAndVibro,setNotify} from '../StaticClasses/HabitsBus'
 
 export class AppData{
    static isFirstStart = true;
@@ -8,10 +8,10 @@ export class AppData{
    static prefs = [0,0,0,0]; //language, theme, sound, vibro
    static CustomHabits = [];
    static dayTostart = '';
-
    static choosenHabits = [];
    static habitsByDate = {};
    static daysToFormAHabit = 66;
+   static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
   // methods
   static init(data) {
     if (!data) return;
@@ -27,6 +27,8 @@ export class AppData{
     this.daysToFormAHabit = data.daysToFormAHabit;
     this.CustomHabits = data.CustomHabits;
     this.habitsByDate = data.habitsByDate;
+    this.notify = data.notify;
+    setNotify(this.notify);
   }
 
 
@@ -77,13 +79,14 @@ export class AppData{
   }
   static AddCustomHabit(n, cat, desc, src, id) {
     const description = desc === "" ? ["Своя привычка", "My custom habit"] : [desc, desc];
+    const iconName = src === '' ? 'default' : src;
     const newHabit = new Habit(
       [n, n],
       [cat, cat],
       description,
       id,
       true,
-      src === '' ? '../../Art/HabitsIcons/Default.png' : src
+      iconName
     );
     this.CustomHabits.push(newHabit);
     return newHabit;
@@ -149,6 +152,7 @@ export class Data{
     this.habitsByDate = AppData.habitsByDate,
     this.dayTostart = AppData.dayTostart,
     this.CustomHabits = AppData.CustomHabits,
-    this.daysToFormAHabit = AppData.daysToFormAHabit
+    this.daysToFormAHabit = AppData.daysToFormAHabit,
+    this.notify = AppData.notify
   }
 }

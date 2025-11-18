@@ -10,8 +10,8 @@ export class Colors {
 
   static palette = {
     background: { light: "#e9f3f7ff", dark: "#131619ff", speciallight: "#ecd1cbff", specialdark: "#232020ff" },
-    mainText: { light: "#151414ff", dark: "#dfd5d5ff", speciallight: "#653737ff", specialdark: "#c6b1b1ff" },
-    subText: { light: "#1b1a1aff", dark: "#756e6eff", speciallight: "#34211bff", specialdark: "#8c7e7eff" },
+    mainText: { light: "#151414ff", dark: "#dfd5d5ff", speciallight: "#3e2424ff", specialdark: "#c6b1b1ff" },
+    subText: { light: "#1b1a1aff", dark: "#756e6eff", speciallight: "#744444ff", specialdark: "#8c7e7eff" },
     simplePanel: { light: "#c2cbd4ff", dark: "#1c1b1dff", speciallight: "#cdb0a6ff", specialdark: "#242a24ff" },
     metricsPanel: { light: "#a9c6e1ff", dark: "#101114ff", speciallight: "#af7979ff", specialdark: "#181414ff" },
     highlitedPanel: { light: "#b4cee6ff", dark: "#282e30ff", speciallight: "#b88787ff", specialdark: "#445344ff" },
@@ -33,6 +33,8 @@ export class Colors {
     iconsDisabled:{ light: "#8cabc4ff", dark: "#383f44ff", speciallight: "#e2b0b0ff", specialdark: "#2e3a2eff" },
     iconsHighlited:{ light: "#658eb2ff", dark: "#5a8181ff", speciallight: "#b85b5bff", specialdark: "#679667ff" },
     iconsShadow:{ light: "#ffffffff", dark: "#5a8181ff", speciallight: "#df2c2cff", specialdark: "#679667ff" },
+
+    habitIcon:{ light: "#4f8ac2ff", dark: "#48706fff", speciallight: "#773838ff", specialdark: "#407f40ff" },
   };
 
   static setTheme(theme) {

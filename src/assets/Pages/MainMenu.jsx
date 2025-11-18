@@ -9,13 +9,13 @@ const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
     const [lang, setLang] = React.useState(AppData.prefs[0]);
     const [clickCount, setClickCount] = React.useState(0);
+    const [clickCountUp, setClickCountUp] = React.useState(0);
     const [devConsolePanel, setDevConsolePanel] = React.useState(false);
     const [devMessage, setDevMessage] = React.useState('');
     const [devInputMessage, setDevInputMessage] = React.useState('');
     const [devMessageToAll, setDevMessageToAll] = React.useState('');
     const [isPasswordCorrect, setIsPasswordCorrect] = React.useState(false);
     const [passwordInput, setPasswordInput] = React.useState(false);
-    const maxClickCount = 10;
 
     React.useEffect(() => {
         const themeSubscription = theme$.subscribe(setThemeState);
@@ -51,12 +51,17 @@ const MainMenu = ({ onPageChange }) => {
         }
     }, [isPasswordCorrect]);
 
-    const handleClick = () => {
-       if(clickCount >= maxClickCount){
+    const handleClick = (isUp) => {
+       if(isUp){
+        setClickCountUp(clickCountUp + 1);
+       }else{
+        setClickCount(clickCount + 1);
+       }
+       if(clickCount === 5 && clickCountUp === 5){
           setPasswordInput(true);
           setClickCount(0);
+          setClickCountUp(0);
        }
-        setClickCount(clickCount + 1);
     }
 
     const checkPassword = (value) => {
@@ -87,7 +92,7 @@ const MainMenu = ({ onPageChange }) => {
             <div style={styles(theme).container}>
             <div style={{height:'20vh'}}/>
             
-            <h2 style={styles(theme).mainText}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
+            <h2 style={styles(theme).mainText} onClick={() => {handleClick(true)}}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
             {passwordInput && <input style={{width:'85vw',height:'2vh',fontSize:'12px',borderRadius:'12px',zIndex:1001}} type="password" onChange={(e) => checkPassword(e.target.value)} />}
             <div style={styles(theme).scrollView}>
                
@@ -137,7 +142,7 @@ const MainMenu = ({ onPageChange }) => {
                     lang={lang}
                     onClick={() => {playEffects(null,100);}}
                 />
-                <div style={{height:'5vh',width:'100%'}} onClick={() => {handleClick()}} />
+                <div style={{height:'5vh',width:'100%'}} onClick={() => {handleClick(false)}} />
             </div>
           </div>
           </>

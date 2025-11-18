@@ -3,7 +3,6 @@ import {AppData,Data} from '../StaticClasses/AppData'
 import {openDB} from 'idb'
 import 'reflect-metadata'
 import {instanceToPlain, plainToClass} from 'class-transformer'
-import { habitReminder , trainingReminder} from './NotificationsManager'
 
 export async function initializeTelegramSDK(opts = {}){
     try {
@@ -93,7 +92,6 @@ export async function initDBandCloud(){
 
 export async function saveData() {
   const dataToSave = serializeData();
-  habitReminder();
   try {
     if (db) {
       await db.put('UserData', dataToSave, 'current');
@@ -147,7 +145,7 @@ export async function loadData() {
     console.error('Loading from Cloud failed');
   }
 }
-
+/*
 export async function saveCustomIcon(icon) {
   try {
     // Generate a unique key for the icon
@@ -173,7 +171,8 @@ export async function saveCustomIcon(icon) {
     return null;
   }
 }
-
+*/
+/*
 export async function loadCustomIcon(iconKey) {
   if (!iconKey) return null;
   
@@ -199,7 +198,8 @@ export async function loadCustomIcon(iconKey) {
     console.error('Error loading custom icon:', error);
     return null;
   }
-}
+    */
+//}
 
 /**
  * Serializes the current application data to a JSON string

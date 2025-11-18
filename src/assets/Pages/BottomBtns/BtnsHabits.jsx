@@ -4,11 +4,13 @@ import Metrics from '@mui/icons-material/AnalyticsTwoTone';
 import Calendar from '@mui/icons-material/CalendarMonthTwoTone';
 import Settings from '@mui/icons-material/SettingsTwoTone';
 import Add from '@mui/icons-material/AddCircleOutlineTwoTone';
-import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurrentBottomBtn} from '../../StaticClasses/HabitsBus'
+import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurrentBottomBtn,setNotifyPanel,notify$} from '../../StaticClasses/HabitsBus'
 import Colors from '../../StaticClasses/Colors'
 import {useState,useEffect} from 'react'
 import {AppData} from '../../StaticClasses/AppData'
 import {saveData} from '../../StaticClasses/SaveHelper'
+import FaBellSlash from '@mui/icons-material/NotificationsOffTwoTone';
+import FaBell from '@mui/icons-material/NotificationsActiveTwoTone';
 
 const switchSound = new Audio('Audio/Click.wav');
 
@@ -17,7 +19,9 @@ const BtnsHabits = () => {
     const [theme, setthemeState] = useState('dark');
     const [page,setPageState] = useState('');
     const [addPanel,setAddPanelState] = useState('');
+    const [notifyPanel,setNotifyPanelState] = useState(false);
     const [currentBtn,setBtnState] = useState(0);
+    const [notify,setNotifyState] = useState([{enabled:false,cron:''},{enabled:false,cron:''},{enabled:false,cron:''}]);
  
     // subscriptions
     useEffect(() => {
@@ -34,8 +38,10 @@ const BtnsHabits = () => {
     }, []);
     useEffect(() => {
         const subscription = currentBottomBtn$.subscribe(setBtnState);
+        const subscription2 = notify$.subscribe(setNotifyState);
         return () => {
             subscription.unsubscribe();
+            subscription2.unsubscribe();
         };
     }, []);
     useEffect(() => {
@@ -53,6 +59,7 @@ const BtnsHabits = () => {
                 addPanel={addPanel} 
                 currentBtn={currentBtn} 
                 setBtnState={setBtnState}
+                notify={notify}
             />
     )
 }
@@ -60,27 +67,35 @@ const BtnsHabits = () => {
 export default BtnsHabits
 
 
-function BottomPanel({page,addPanel,theme,currentBtn,setBtnState})
+function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,notify})
 {
     
     return (    
         <div style={styles(theme,currentBtn).style}>
-          {page !== 'HabitsMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
-          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
-          {page === 'HabitsMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
-          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('HabitMetrics');setAddPanel('');playEffects(switchSound,50);}} />
-          <Add style={styles(theme,currentBtn,2,true,page !== 'HabitsMain').btnstyle} onClick={() => {if(page === 'HabitsMain'){setCurrentBottomBtn(2);setAddPanel('AddHabitPanel');playEffects(switchSound,50);}}} />
-          <Settings style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setAddPanel('HabitSettings');playEffects(switchSound,50);}} />
-          <Calendar style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('HabitCalendar');setAddPanel('');playEffects(switchSound,50);}} />
+          {page !== 'HabitsMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setNotifyPanel(false);setCurrentBottomBtn(-1);}} />)}
+          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setNotifyPanel(false);setCurrentBottomBtn(-1);}} />)}
+          {page === 'HabitsMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setNotifyPanel(false);setCurrentBottomBtn(-1);}} />)}
+          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('HabitMetrics');setAddPanel('');setNotifyPanel(false);playEffects(switchSound,50);}} />
+          <Calendar style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('HabitCalendar');setAddPanel('');setNotifyPanel(false);playEffects(switchSound,50);}} />
+          <Add style={styles(theme,currentBtn,2,true,page !== 'HabitsMain').btnstyle} onClick={() => {if(page === 'HabitsMain'){setCurrentBottomBtn(2);setAddPanel('AddHabitPanel');setNotifyPanel(false);playEffects(switchSound,50);}}} />
+          
+          {page.startsWith('H') && (notify[0].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} /> 
+              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} />)}
+          {page.startsWith('T') && (notify[1].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} /> 
+              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} />)}
+
+          <Settings style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setAddPanel('HabitSettings');setNotifyPanel(false);playEffects(switchSound,50);}} />
         </div>
     )
 }
 const onBack = async(page,addPanel) => {
-    if(page === 'HabitsMain' && addPanel === '') setPage('MainMenu');
+    if(page === 'HabitsMain' && addPanel === '') {
+    await saveData();
+    setPage('MainMenu');
+    }
     else{
         if(addPanel !== '') setAddPanel('');
         else {
-            await saveData();
             setPage('HabitsMain');
         }
     }

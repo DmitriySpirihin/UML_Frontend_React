@@ -1,11 +1,10 @@
 import React, {useState,useEffect} from 'react'
 import { motion , useTransform, useMotionValue,animate} from 'framer-motion'
-
+import Icons from '../../StaticClasses/Icons';
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import { expandedCard$, setExpandedCard , setPage} from '../../StaticClasses/HabitsBus.js';
 import Colors, { THEME } from '../../StaticClasses/Colors'
-import { loadCustomIcon } from '../../StaticClasses/SaveHelper';
 import { theme$ ,lang$, globalTheme$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
 
 const dateKey = new Date().toISOString().split('T')[0];
@@ -80,7 +79,7 @@ const HabitsMain = () => {
             const popUpText = langIndex === 0 
             ? `Привычка: \'${name}\' удалена`
             : `Habit: \'${name}\' deleted`;
-            setShowPopUpPanel(popUpText,2000);
+            setShowPopUpPanel(popUpText,2000,true);
             setHasHabits(AppData.choosenHabits.length > 0);
         }
     };
@@ -131,10 +130,9 @@ function buildMenu({ theme, habitsCards, categories}) {
         );
     });
 }
-function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Описание", "Description"], imgsrc, theme}) {
+function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Описание", "Description"], theme}) {
     const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-    const [iconUrl, setIconUrl] = useState(null);
     const maxX = 100;
     const minX = -maxX;
     const [canDrag, setCanDrag] = useState(true);
@@ -156,31 +154,21 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
       AppData.changeStatus(dateKey,id,status);
     }, [status]);
 
-    // Load custom icon if needed
-    useEffect(() => {
-        const loadIcon = async () => {
-            try {
-                if (imgsrc && typeof imgsrc === 'string' && imgsrc.startsWith('icon_')) {
-                    // This is a custom icon, load it
-                    const iconData = await loadCustomIcon(imgsrc);
-                    if (iconData) {
-                        setIconUrl(iconData);
-                    } else {
-                        // Fallback to default icon if loading fails
-                        setIconUrl('images/HabitsIcons/Default.png');
-                    }
-                } else {
-                    // This is a regular icon, use it directly
-                    setIconUrl(imgsrc);
-                }
-            } catch (error) {
-                console.error('Error loading icon:', error);
-                setIconUrl('images/HabitsIcons/Default.png');
-            }
-        };
+    // Get the appropriate icon based on whether it's a custom habit or not
+    const getHabitIcon = () => {
+        const habit = getAllHabits().find(h => h.id === id);
+        if (!habit) return Icons.getIcon(iconName, {style: {color: Colors.get("habitIcon", theme)}});
         
-        loadIcon();
-    }, [imgsrc]);
+        if (habit.isCustom && habit.iconName) {
+            // For custom habits, use the iconName with theme color
+            return Icons.getIcon(habit.iconName, { style:{color: Colors.get('habitIcon', theme)} });
+        } else {
+            // For default habits, use the habit name to get the appropriate icon with theme color
+            const icon = Icons.getHabitIcon(habit.name[0],{ style:{color: Colors.get('habitIcon', theme)}});
+            // Since getHabitIcon already applies theme color, we don't need to set it again
+            return icon;
+        }
+    };
     
     // Get localized text
     const displayText = Array.isArray(text) ? text[langIndex] : text;
@@ -308,17 +296,9 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                 }}
             >
                 <div style={{display: "flex", alignItems: "flex-start", maxHeight: '40px', paddingBottom: '5px'}}>   
-                    {iconUrl && (
-                        <img 
-                            src={iconUrl} 
-                            style={{width: '24px', objectFit: 'contain', marginLeft: '15px', marginTop: '8px'}} 
-                            onError={(e) => {
-                                e.target.onerror = null; // Prevent infinite loop if default image is also missing
-                                e.target.src = 'images/HabitsIcons/Default.png';
-                            }}
-                            alt="" 
-                        />
-                    )}
+                    <div style={{marginLeft: '15px', marginTop: '8px'}}>
+                        {getHabitIcon()}
+                    </div>
                     <h2 style={mainText}>{displayText}</h2>
                 </div> 
                 {expanded && (
@@ -433,11 +413,12 @@ function setInfoText(langIndex) {
 function playEffects(sound,vibrationDuration ){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
-        sound.pause();
         sound.currentTime = 0;
     }
-    sound.volume = 0.5;
-    sound.play();
+    else{
+      sound.volume = 0.5;
+      sound.play();
+    }
   }
   if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
 }

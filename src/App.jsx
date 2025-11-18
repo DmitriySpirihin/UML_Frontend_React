@@ -3,7 +3,7 @@ import { useState,useEffect, Suspense, lazy} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
-import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage,keyboardVisible$} from './assets/StaticClasses/HabitsBus'
+import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage,keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
 const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'));
@@ -14,6 +14,7 @@ const ConfirmationPanel = lazy(() => import('./assets/Pages/ConfirmationPanel'))
 const AddHabitPanel = lazy(() => import('./assets/Pages/HabitsPages/AddHabitPanel'));
 const HabitSettings = lazy(() => import('./assets/Pages/HabitsPages/HabitSettings'));
 const TrainingMain = lazy(() => import('./assets/Pages/TrainingPages/TrainingMain'));
+const NotifyPanel = lazy(() => import('./assets/Pages/NotifyPanel'));
 
 function App() {
   const [page, setPageState] = useState('LoadPanel');
@@ -22,6 +23,7 @@ function App() {
   const [theme, setTheme] = useState('dark');
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
+  const [notifyPanel, setNotifyPanelState] = useState(true);
 
   useEffect(() => {
           const subscription = confirmationPanel$.subscribe(setConfirmationPanel);  
@@ -35,7 +37,10 @@ function App() {
     setPageState(page);
     setPage(page);
   }
-
+ useEffect(() => {
+    const subscription = notifyPanel$.subscribe(setNotifyPanelState);  
+    return () => subscription.unsubscribe();
+}, []);
   useEffect(() => {
     const subscription = setPage$.subscribe(setPageState);  
     return () => subscription.unsubscribe();
@@ -73,6 +78,9 @@ useEffect(() => {
       </Suspense>}
       {addPanel === 'HabitSettings' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <HabitSettings/>
+      </Suspense>}
+      {notifyPanel && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <NotifyPanel/>
       </Suspense>}
       {confirmationPanel && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <ConfirmationPanel/>

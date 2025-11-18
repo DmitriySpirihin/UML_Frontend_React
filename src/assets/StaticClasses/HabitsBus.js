@@ -1,6 +1,5 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 import Colors, { THEME } from './Colors';
-
 export const expandedCard$ = new BehaviorSubject(null);
 export const setExpandedCard = (idOrNull) => expandedCard$.next(idOrNull);
 
@@ -11,10 +10,12 @@ export const vibro$ = new BehaviorSubject(0);
 export const globalTheme$ = new BehaviorSubject('dark');
 export const confirmationPanel$ = new BehaviorSubject(false);
 export const header$ = new BehaviorSubject('');
-export const showPopUpPanel$ = new BehaviorSubject({show:false,header:''});
+export const showPopUpPanel$ = new BehaviorSubject({show:false,header:'',isPositive:true});
 export const addPanel$ = new BehaviorSubject('');
 export const setPage$ = new BehaviorSubject('LoadPanel');
 export const bottomBtnPanel$ = new BehaviorSubject('');
+export const notifyPanel$ = new BehaviorSubject(false);
+export const notify$ = new BehaviorSubject([{enabled:false,cron:''},{enabled:false,cron:''},{enabled:false,cron:''}]);
 export const habitsChanged$ = new Subject();
 export const daysToFormAHabit$ = new BehaviorSubject(66);
 export const currentBottomBtn$ = new BehaviorSubject(0);
@@ -33,9 +34,9 @@ export const updateConfirmationPanel = (text) => {
   setConfirmationPanel(true);
   header$.next(text);
 };
-export function setShowPopUpPanel(text,duration ) {
-  showPopUpPanel$.next({show:true,header:text});
-  setTimeout(() => showPopUpPanel$.next({show:false,header:''}), duration);
+export function setShowPopUpPanel(text,duration,isPositive ) {
+  showPopUpPanel$.next({show:true,header:text,isPositive});
+  setTimeout(() => showPopUpPanel$.next({show:false,header:'',isPositive}), duration);
 }
 export const setPage = (page) => {
   setPage$.next(page);
@@ -51,4 +52,8 @@ export const setCurrentBottomBtn = (btn) => currentBottomBtn$.next(btn);
 export const setKeyboardVisible = (isVisible) => keyboardVisible$.next(isVisible);
 export const setDevMessage = (message) => devMessage$.next(message);
 export const setIsPasswordCorrect = (state) => isPasswordCorrect$.next(state === "true");
+export const setNotifyPanel = (state) => notifyPanel$.next(state);
+export const setNotify = (state) => notify$.next(state);
+
+
 

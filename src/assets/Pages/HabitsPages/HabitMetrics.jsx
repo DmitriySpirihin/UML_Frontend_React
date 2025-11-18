@@ -370,11 +370,12 @@ function getHabitRangeStartLabel(daysCount){
 function playEffects(sound,vibrationDuration ){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
-        sound.pause();
         sound.currentTime = 0;
     }
-    sound.volume = 0.5;
-    sound.play();
+    else{
+      sound.volume = 0.5;
+      sound.play();
+    }
   }
   if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
 }

@@ -6,23 +6,8 @@ import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
 import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$,setKeyboardVisible,setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
 import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt,FaFolderOpen} from 'react-icons/fa'
 import {MdFiberNew,MdDone} from 'react-icons/md'
-import Cropper from 'react-easy-crop';
-import { saveCustomIcon } from '../../StaticClasses/SaveHelper';
+import Icons from '../../StaticClasses/Icons';
 const click = new Audio('Audio/Click.wav');
-
-const icons = {
-  'Drink water': 'images/HabitsIcons/Drink water.png',
-  'Eat a serving of fruits,vegetables': 'images/HabitsIcons/Eat a serving of fruits,vegetables.png',
-  'Meditation': 'images/HabitsIcons/Meditation.png',
-  'Morning glass of water': 'images/HabitsIcons/Morning glass of water.png',
-  'Morning stretch': 'images/HabitsIcons/Morning stretch.png',
-  'Review expenses and budget': 'images/HabitsIcons/Review expenses and budget.png',
-  'Review vocabulary': 'images/HabitsIcons/Review vocabulary.png',
-  'Run 3 km': 'images/HabitsIcons/Run 3 km.png',
-  'Take vitamins': 'images/HabitsIcons/Take vitamins.png',
-  'Yoga 15 minutes': 'images/HabitsIcons/Yoga 15 minutes.png',
-  'Brain exercise': 'images/HabitsIcons/brain.png'
-};
 
 const getAllHabits = () => {
   return allHabits.concat(
@@ -43,7 +28,7 @@ const AddHabitPanel = () => {
     const [habitName, setHabitName] = useState('');
     const [habitCategory, setHabitCategory] = useState('');
     const [habitDescription, setHabitDescription] = useState('');
-    const [habitIcon, setHabitIcon] = useState('images/HabitsIcons/Default.png');
+    const [habitIcon, setHabitIcon] = useState('default');
     const [habitId, setHabitId] = useState(-1);
     
     // UI state
@@ -51,16 +36,7 @@ const AddHabitPanel = () => {
     const [selectedHabit, setSelectedHabit] = useState(null);
     const [selectIconPanel, setSelectIconPanel] = useState(false);
     const [opacity, setOpacity] = useState(0);
-    // Hidden file input to open system dialog without showing input
-    const fileInputRef = useRef(null);
-    
-    // Image cropping state
-    const [imageSrc, setImageSrc] = useState(null);
-    const [crop, setCrop] = useState({ x: 0, y: 0 });
-    const [zoom, setZoom] = useState(1);
-    const [cropPixels, setCropPixels] = useState(null);
-   
-    // Button state
+    const [iconName, setIconName] = useState('default');
     const [addButtonEnabled, setAddButtonEnabled] = useState(false);
     const [addButtonContext, setAddButtonContext] = useState({
         text: langIndex === 0 ? 'Добавить' : 'Add',
@@ -169,28 +145,24 @@ const AddHabitPanel = () => {
                <div style={styles(theme).button} onClick={() => setSelectIconPanel(selectIconPanel ? false : true)}>
                 {!selectIconPanel && (<FaListAlt style={styles(theme).miniIcon}/>)}{selectIconPanel && (<FaRegWindowClose style={styles(theme).miniIcon}/>)}
                </div>
-               <div
-                 style={styles(theme).button}
-                 onClick={() => fileInputRef.current && fileInputRef.current.click()}
-               >
-                 <FaFolderOpen style={styles(theme).miniIcon}/>
-               </div>
-               <input
-                 ref={fileInputRef}
-                 type="file"
-                 accept="image/*"
-                 style={{ display: 'none' }}
-                 onChange={(e) => {
-                   const file = e.target.files && e.target.files[0];
-                   if (file) {
-                     const imgUrl = URL.createObjectURL(file);
-                     setImageSrc(imgUrl);
-                   }
-                 }}
-               />
-             </div>
-              <div style={{display:"flex",flexDirection:"column",alignItems:"center"}}>
-                <img src={habitIcon} alt="images/HabitsIcons/Default.png" style={{width:"15vw",margin:'40px'}}/>
+              </div>
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                width: '20%',
+                height: '100%',
+                padding: '8px'
+              }}>
+                {Icons.getIcon(iconName, {
+                  size: 48,
+                  style: {
+                    marginRight:'70px',
+                    color: Colors.get("habitIcon", theme),
+                    filter: 'drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5))'
+                  }
+                })}
               </div>
             </div>
            </div>
@@ -202,128 +174,54 @@ const AddHabitPanel = () => {
          </div>)}
          {selectIconPanel && (
            <div style={styles(theme).selectPanel}>
-             {Object.entries(icons).map(([key,value], index) => (
-              <div key={key} style={styles(theme).selectIcon}>
-                <img src={value} alt="images/HabitsIcons/Default.png" style={{width:"8vw",padding:"30px"}}
-                onClick={() => {
-                  setHabitIcon(value);
-                  playEffects(click,50);
-                  setSelectIconPanel(false);
-                  if(habitName.length > 3 && habitCategory.length > 3){
-                    setAddButtonEnabled(true);
-                    setAddButtonContext({
-                      text: langIndex === 0 ? 'создать и добавить' : 'create and add',
-                      onClick: () => {createHabit(habitName,habitCategory,habitDescription,value);playEffects(click,50);}
-                    });
-                  }
-                }}/>
-              </div>
+             {Object.entries(Icons.ic).map(([key]) => (
+               <div 
+                 key={key}
+                 style={{
+                   width: '15%',
+                   padding: '12px',
+                   display: 'flex',
+                   justifyContent: 'center',
+                   alignItems: 'center',
+                   cursor: 'pointer',
+                   borderRadius: '8px',
+                   transition: 'background-color 0.2s',
+                   ':hover': {
+                     backgroundColor: Colors.get('highlitedPanel', theme)
+                   }
+                 }}
+                 onClick={() => {
+                   setIconName(key);
+                   setHabitIcon(key);
+                   playEffects(click, 50);
+                   setSelectIconPanel(false);
+                   if(habitName.length > 3 && habitCategory.length > 3) {
+                     setAddButtonEnabled(true);
+                     setAddButtonContext({
+                       text: langIndex === 0 ? 'создать и добавить' : 'create and add',
+                       onClick: () => {
+                         createHabit(habitName, habitCategory, habitDescription, key);
+                         playEffects(click, 50);
+                       }
+                     });
+                   }
+                 }}
+               >
+                 {Icons.getIcon(key, { 
+                   size: 32, 
+                   style: { 
+                     color: Colors.get('habitIcon', theme),
+                     filter: 'drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5))'
+                   } 
+                 })}
+               </div>
              ))}
            </div>
          )}
-         {imageSrc && (
-           <div style={{position:"absolute",width:"85vw",height:"85vw",top:"39%",left:"50%",transform:'translate(-50%,-50%)',backgroundColor:Colors.get('simplePanel', theme),zIndex:"1000",borderRadius:"24px",border: `1px solid ${Colors.get('border', theme)}`,overflow:'hidden', display:'flex', flexDirection:'column'}}>
-             <div style={{position:'relative',flex:1}}>
-               <Cropper
-                 image={imageSrc}
-                 crop={crop}
-                 zoom={zoom}
-                 aspect={1}
-                 onCropChange={setCrop}
-                 onZoomChange={setZoom}
-                 onCropComplete={(_, croppedAreaPixels) => setCropPixels(croppedAreaPixels)}
-               />
-             </div>
-             <div style={{display:'flex', gap: 8, padding: 12, justifyContent:'space-between',paddingRight:'10vw',paddingLeft:'10vw'}}>
-               <div
-                 style={{...styles(theme).button, padding:'8px 12px'}}
-                 onClick={() => {
-                   playEffects(null,20);
-                   setImageSrc(null);
-                   setCrop({x:0,y:0});
-                   setZoom(1);
-                   setCropPixels(null);
-                 }}
-               >
-                 <FaRegWindowClose style={styles(theme).miniIcon}/>
-               </div>
-               <div
-                 style={{...styles(theme).button, padding:'8px 12px'}}
-                 onClick={async () => {
-                   if (!imageSrc || !cropPixels) return;
-                   playEffects(null,20);
-                   const img = new Image();
-                   img.crossOrigin = 'anonymous';
-                   img.src = imageSrc;
-                   await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
-                   // Create a canvas for the cropped image
-                   const sourceCanvas = document.createElement('canvas');
-                   sourceCanvas.width = cropPixels.width;
-                   sourceCanvas.height = cropPixels.height;
-                   const sourceCtx = sourceCanvas.getContext('2d');
-                   
-                   // Draw the cropped image onto the source canvas
-                   sourceCtx.drawImage(
-                     img,
-                     cropPixels.x,
-                     cropPixels.y,
-                     cropPixels.width,
-                     cropPixels.height,
-                     0,
-                     0,
-                     cropPixels.width,
-                     cropPixels.height
-                   );
-                   
-                   // Create a new canvas for the resized image (128x128)
-                   const targetCanvas = document.createElement('canvas');
-                   targetCanvas.width = 128;
-                   targetCanvas.height = 128;
-                   const targetCtx = targetCanvas.getContext('2d');
-                   
-                   // Draw the cropped image onto the target canvas with resizing
-                   targetCtx.drawImage(
-                     sourceCanvas,
-                     0,
-                     0,
-                     cropPixels.width,
-                     cropPixels.height,
-                     0,
-                     0,
-                     128,
-                     128
-                   );
-                   
-                   // Convert to data URL with compression
-                   const dataUrl = targetCanvas.toDataURL('image/png', 0.2);
-                  if (!dataUrl) return;
-                  const url = dataUrl;
-                  // Save the icon to cloud and db and get its key
-                  const iconKey = await saveCustomIcon(dataUrl);
-                  setHabitIcon(url);
-                  if(habitName.length > 3 && habitCategory.length > 3 && iconKey) {
-                    setAddButtonEnabled(true);
-                    setAddButtonContext({
-                      text: langIndex === 0 ? 'создать и добавить' : 'create and add',
-                      onClick: () => {createHabit(habitName, habitCategory, habitDescription, iconKey);playEffects(click,50);}
-                    });
-                  }
-                  setImageSrc(null);
-                  setCrop({x:0,y:0});
-                  setZoom(1);
-                  setCropPixels(null);
-                 }}
-               >
-                 <MdDone style={styles(theme).miniIcon}/>
-               </div>
-             </div>
-           </div>
-         )}
         </div>
-        
     )
-    
 }
+
 export default AddHabitPanel;
 
 // Helper function to render category options
@@ -342,16 +240,16 @@ const renderCategoryOptions = (theme, langIndex) => {
 const addHabit =  (habitId,habitName,isCustom) => {
     if (typeof addHabitFn !== 'function') {
       console.warn('AddHabitPanel: addHabitFn is not set yet. Ensure HabitsMain is mounted.');
-      setShowPopUpPanel(AppData.prefs[0] === 0 ? 'экран привычек ещё не готов' : 'habits screen not ready yet', 2000);
+      setShowPopUpPanel(AppData.prefs[0] === 0 ? 'экран привычек ещё не готов' : 'habits screen not ready yet', 2000,false);
       return;
     }
     if(AppData.IsHabitInChoosenList(habitId)) {
-       setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list',2500);
+       setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list',2500,false);
       return;
     }
     addHabitFn(habitId);
     const message = !isCustom ? AppData.prefs[0] === 0 ? 'привычка добавлена' : 'habit added' : AppData.prefs[0] === 0 ? `привычка: ${habitName} создана и добавлена` : `habit: ${habitName} was created and added`;
-    setShowPopUpPanel(message,2500);
+    setShowPopUpPanel(message,2500,true);
 }
 
 const createHabit =  (name,category,description,icon) => {
@@ -363,7 +261,7 @@ const createHabit =  (name,category,description,icon) => {
       AppData.AddCustomHabit(name,category,description,icon,habitId);
       setTimeout(() => {addHabit(habitId,name,true);}, 100);
     }else{
-      setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка с таким названием уже существует' : 'habit with this name already exists',2500);
+      setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка с таким названием уже существует' : 'habit with this name already exists',2500,false);
     }
 }
 
@@ -484,16 +382,22 @@ const styles = (theme, keyboardVisible) => ({
   },
   selectPanel:
   {
-    backgroundColor:Colors.get('habitCard', theme),
-    borderRadius:'24px',
-    border:`1px solid ${Colors.get('border', theme)}`,
-    position:'absolute',
-    top:'40%',
-    left:'50%',
-    transform:'translate(-50%,-50%)',
-    display:'flex',
-    flexWrap:'wrap',
-    width:'80vw',
+    backgroundColor: Colors.get('habitCard', theme),
+    borderRadius: '24px',
+    border: `1px solid ${Colors.get('border', theme)}`,
+    position: 'absolute',
+    top: '40%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    display: 'flex',
+    flexWrap: 'wrap',
+    width: '77vw',
+    maxHeight: '42vh',
+    overflowY: 'auto',
+    padding: '16px',
+    gap: '8px',
+    justifyContent: 'center',
+    zIndex: 1000
   },
   selectIcon:
   {
@@ -524,11 +428,12 @@ const styles = (theme, keyboardVisible) => ({
 function playEffects(sound,vibrationDuration ){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
-        sound.pause();
         sound.currentTime = 0;
     }
-    sound.volume = 0.5;
-    sound.play();
+    else{
+      sound.volume = 0.5;
+      sound.play();
+    }
   }
   if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
 }

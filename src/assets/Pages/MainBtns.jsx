@@ -9,13 +9,15 @@ import {sendBugreport} from '../StaticClasses/NotificationsManager'
 import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
 import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, setLang, lang$, vibro$, sound$,keyboardVisible$} from '../StaticClasses/HabitsBus';
-
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import Dark from '@mui/icons-material/DarkModeTwoTone';
 import Light from '@mui/icons-material/LightModeTwoTone';
 import Menu from '@mui/icons-material/MenuTwoTone';
 
 const transitionSound = new Audio('Audio/Transition.wav');
-const popUpSound = new Audio('Audio/Info.wav');
+const popUpSoundPositive = new Audio('Audio/Info.wav');
+const popUpSoundNegative = new Audio('Audio/Warn.wav');
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
     const [theme, setthemeState] = React.useState('dark');
@@ -112,13 +114,13 @@ const UserPanel = ({theme}) => {
 }
 
 const PopUpPanel = ({theme}) => {
-    const [show, setShow] = React.useState({show:false,header:''});
+    const [show, setShow] = React.useState({show:false,header:'',isPositive:true});
     useEffect(() => {
         const subscription = showPopUpPanel$.subscribe(setShow);  
         return () => subscription.unsubscribe();
     }, []);
     useEffect(() => {
-      if(show.show) playEffects(popUpSound,0);
+      if(show.show) playEffects(show.isPositive ? popUpSoundPositive : popUpSoundNegative,0);
     }, [show]);
     return (
         <AnimatePresence>
@@ -132,8 +134,19 @@ const PopUpPanel = ({theme}) => {
                         stiffness: 300,
                         damping: 25
                     }}
-                    style={popUpStyles(theme).panel}
+                    style={popUpStyles(theme,show.isPositive).panel}
                 >
+                   <div style={popUpStyles(theme, show.isPositive).iconContainer}>
+                        {show.isPositive ? (
+                            <CheckCircleOutlineIcon 
+                                style={popUpStyles(theme, show.isPositive).icon} 
+                            />
+                        ) : (
+                            <WarningAmberIcon 
+                                style={popUpStyles(theme, show.isPositive).icon} 
+                            />
+                        )}
+                    </div>
                     <h1 style={popUpStyles(theme).text}>{show.header}</h1>
                 </motion.div>
             )}
@@ -141,20 +154,20 @@ const PopUpPanel = ({theme}) => {
     )
 }
 
-const popUpStyles = (theme) => {
+const popUpStyles = (theme,isPositive) => {
     return {
     panel : {
       position: "fixed",
       left: "7.5%",
-      
       zIndex: 9000,
       width: "85vw",
       height: "15vh",
       borderRadius: "24px",
-      border: `1px solid ${Colors.get('border', theme)}`,
+      border: `4px solid ${isPositive ? Colors.get('habitCardDone',theme) : Colors.get('habitCardSkipped',theme)}`,
       backgroundColor: Colors.get('simplePanel', theme),
       boxShadow: `0 -4px 20px ${Colors.get('shadow', theme)}`,
       display: "flex",
+      flexDirection:'column',
       alignItems: "center",
       justifyContent: "center",
     },
@@ -163,7 +176,18 @@ const popUpStyles = (theme) => {
       fontSize: "14px",
       color: Colors.get('mainText', theme),
       margin: "20px 0"
-    }
+    },
+    iconContainer: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: "20px",
+        minHeight: "20px",
+    },
+    icon: {
+        color: isPositive ? '#acaf4cff' : '#F44336',
+        fontSize: '24px',
+    },
   }
 }
 
