@@ -4,7 +4,7 @@ import { setDevMessage, setIsPasswordCorrect } from './HabitsBus';
 
 export class NotificationsManager {
     // Updated to use your SmartApe server
-    static BASE_URL = 'https://188.127.230.12:8000/api/notifications';
+    static BASE_URL = 'https://ultymylife.ru/api/notifications';
 
     static async sendMessage(type, message) {
         try {
