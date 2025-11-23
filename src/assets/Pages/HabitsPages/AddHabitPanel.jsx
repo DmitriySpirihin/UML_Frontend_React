@@ -1,7 +1,8 @@
-import React, { useState, useEffect,useRef } from 'react';
+import { useState, useEffect} from 'react';
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
+import { useLongPress } from 'use-long-press';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
 import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$,setKeyboardVisible,setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
 import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt} from 'react-icons/fa'
@@ -38,7 +39,6 @@ const AddHabitPanel = () => {
     const [year,setYear] = useState(new Date().getFullYear());
     const [month,setMonth] = useState(new Date().getMonth());
     const [day,setDay] = useState(new Date().getDate());
-    const intervalRef = useRef(null);
     
     // UI state
     const [habitList, setHabitList] = useState(getAllHabits());
@@ -52,19 +52,35 @@ const AddHabitPanel = () => {
         onClick: () => addHabit(false)
     });
     const handleDateDown = (isIncr,dateType) => {
-      intervalRef.current = setInterval(() => {
         if(dateType === 2)setDay(getday(isIncr,day,year,month));
         else if(dateType === 1)setMonth(!isIncr ? month - 1 > 0 ? month - 1 : 12 : month + 1 < 12 ? month + 1 : 1);
         else if(dateType === 0)setYear(isIncr && year + 1 <= now.getFullYear() + 2 && year -1 >= now.getFullYear() - 2 ? year + 1 : year - 1);
-      }, 100);
     }
-    const handleDateUp = () => {
-      clearInterval(intervalRef.current);
-      if(intervalRef.current){
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
+    const bindYearhMinus = useLongPress(() => handleDateChange(false, 0), {
+      threshold: 1000,
+      interval: 500
+    });
+     const bindYearPlus = useLongPress(() => handleDateChange(true, 0), {
+      threshold: 1000,
+       interval: 500
+    });
+    const bindMonthMinus = useLongPress(() => handleDateChange(false, 1), {
+      threshold: 700,
+      interval: 300
+    });
+     const bindMonthPlus = useLongPress(() => handleDateChange(true, 1), {
+      threshold: 700,
+       interval: 300
+    });
+    const bindDayMinus = useLongPress(() => handleDateChange(false, 2), {
+      threshold: 500,
+      interval: 100
+    });
+    const bindDayPlus = useLongPress(() => handleDateChange(true, 2), {
+      threshold: 500,
+       interval: 100
+    });
+    
     const months =[ ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'],['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
     useEffect(() => {
     const subscription = theme$.subscribe(setTheme);
@@ -249,19 +265,19 @@ const AddHabitPanel = () => {
              <div style={{...styles(theme).simplePanelRow,flexDirection:'column',alignItems:'center',backgroundColor:Colors.get('background', theme),width:'90%',borderRadius:'24px'}}>
                <p style={styles(theme).text}>{langIndex === 0 ? 'установите дату' : 'set date'}</p>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <FiMinus onPointerDown={() => handleDateDown(false,0)} onPointerUp={handleDateUp} onClick={() => {if(now.getFullYear() - 2 <= year - 1)setYear(year - 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+                   <div {...bindYearhMinus} onClick={() => {if(now.getFullYear() - 2 <= year - 1)setYear(year - 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
                    <p style={styles(theme).textDate}> {year} </p>
-                   <FiPlus onPointerDown={() => handleDateDown(true,0)} onPointerUp={handleDateUp} onClick={() => {if(now.getFullYear() + 2 >= year + 1)setYear(year + 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+                   <div {...bindYearPlus} onClick={() => {if(now.getFullYear() + 2 >= year + 1)setYear(year + 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
                </div>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <FiMinus onPointerDown={() => handleDateDown(false,1)} onPointerUp={handleDateUp} onClick={() => {setMonth(month - 1 > 0 ? month - 1 : 12);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+                   <div {...bindMonthMinus} onClick={() => {setMonth(month - 1 > 0 ? month - 1 : 12);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
                    <p style={styles(theme).textDate}> {months[langIndex][month - 1]} </p>
-                   <FiPlus onPointerDown={() => handleDateDown(true,1)} onPointerUp={handleDateUp} onClick={() => {setMonth(month + 1 < 12 ? month + 1 : 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+                   <div {...bindMonthPlus} onClick={() => {setMonth(month + 1 < 12 ? month + 1 : 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
                </div>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <FiMinus onPointerDown={() => handleDateDown(false,2)} onPointerUp={handleDateUp} onClick={() => {setDay(getday(false,day,year,month));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+                   <div {...bindDayMinus} onClick={() => {setDay(getday(false,day,year,month));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
                    <p style={styles(theme).textDate}> {day} </p>
-                   <FiPlus onPointerDown={() => handleDateDown(true,2)} onPointerUp={handleDateUp} onClick={() => {setDay(getday(true,day,year,month));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+                   <div {...bindDayPlus} onClick={() => {setDay(getday(true,day,year,month));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
                </div>
              </div>
              <div style={styles(theme).simplePanelRow}>
@@ -494,6 +510,8 @@ const styles = (theme, keyboardVisible) => ({
     fontSize:'12px',
   },
   miniIcon: {
+    userSelect: 'none',
+    touchAction: 'none',
     fontSize: "28px",
     padding: "5px",
     marginTop: "10px",
