@@ -588,6 +588,7 @@ const styles = (theme) => {
     }
 }
 function playEffects(sound,vibrationDuration ){
+    /*
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
         sound.pause();
@@ -597,4 +598,5 @@ function playEffects(sound,vibrationDuration ){
     sound.play();
   }
   if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+  */
 }

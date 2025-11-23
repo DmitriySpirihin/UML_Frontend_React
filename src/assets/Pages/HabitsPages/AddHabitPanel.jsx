@@ -426,6 +426,7 @@ const styles = (theme, keyboardVisible) => ({
   }
 })
 function playEffects(sound,vibrationDuration ){
+  /*
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
         sound.currentTime = 0;
@@ -436,6 +437,7 @@ function playEffects(sound,vibrationDuration ){
     }
   }
   if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+  */
 }
 
 

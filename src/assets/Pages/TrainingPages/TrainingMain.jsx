@@ -5,7 +5,7 @@ import { theme$ ,lang$, globalTheme$} from '../../StaticClasses/HabitsBus'
 
 // Monday-based weekday index helper (Mon=0 ... Sun=6)
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
-const clickSound = new Audio('/Audio/Click.wav');
+const clickSound = new Audio('Audio/Click.wav');
 
 
 const TrainingMain = () => {
