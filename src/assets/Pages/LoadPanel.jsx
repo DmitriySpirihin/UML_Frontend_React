@@ -42,8 +42,6 @@ function LoadPanel() {
                 await loadData();
                 console.log(JSON.stringify(AppData.notify));
                 console.log(Telegram.WebApp.version);
-                const platform = Telegram.WebApp.platform;
-                console.log(platform);
                 
                 fillEmptyDays();
                 setAllHabits();

@@ -4,8 +4,9 @@ import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
 import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$,setKeyboardVisible,setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
-import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt,FaFolderOpen} from 'react-icons/fa'
-import {MdFiberNew,MdDone} from 'react-icons/md'
+import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt} from 'react-icons/fa'
+import {MdFiberNew,MdDone,MdClose,} from 'react-icons/md'
+import {FiPlus,FiMinus} from 'react-icons/fi'
 import Icons from '../../StaticClasses/Icons';
 const click = new Audio('Audio/Click.wav');
 
@@ -14,6 +15,7 @@ const getAllHabits = () => {
     (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.id === ch.id))
   );
 }
+const now = new Date();
 
 const AddHabitPanel = () => {
     // Theme and language state
@@ -23,6 +25,7 @@ const AddHabitPanel = () => {
     const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
     const [showCreatePanel,setshowCreatePanel] = useState(false);
     const [addPanel,setAddPanelState] = useState('');
+    const [confirmationPanel,setConfirmationPanel] = useState(false);
     
     // Habit data state
     const [habitName, setHabitName] = useState('');
@@ -30,6 +33,12 @@ const AddHabitPanel = () => {
     const [habitDescription, setHabitDescription] = useState('');
     const [habitIcon, setHabitIcon] = useState('default');
     const [habitId, setHabitId] = useState(-1);
+
+    //date
+    const [year,setYear] = useState(new Date().getFullYear());
+    const [month,setMonth] = useState(new Date().getMonth());
+    const [day,setDay] = useState(new Date().getDate());
+    const intervalRef = useRef(null);
     
     // UI state
     const [habitList, setHabitList] = useState(getAllHabits());
@@ -42,7 +51,22 @@ const AddHabitPanel = () => {
         text: langIndex === 0 ? 'Добавить' : 'Add',
         onClick: () => addHabit(false)
     });
-    React.useEffect(() => {
+    const handleDateDown = (isIncr,dateType) => {
+      intervalRef.current = setInterval(() => {
+        if(dateType === 2)setDay(getday(isIncr,day,year,month));
+        else if(dateType === 1)setMonth(!isIncr ? month - 1 > 0 ? month - 1 : 12 : month + 1 < 12 ? month + 1 : 1);
+        else if(dateType === 0)setYear(isIncr && year + 1 <= now.getFullYear() + 2 && year -1 >= now.getFullYear() - 2 ? year + 1 : year - 1);
+      }, 100);
+    }
+    const handleDateUp = () => {
+      clearInterval(intervalRef.current);
+      if(intervalRef.current){
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    }
+    const months =[ ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'],['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
+    useEffect(() => {
     const subscription = theme$.subscribe(setTheme);
     const langSubscription = lang$.subscribe(setLang);
     const keyboardSubscription = keyboardVisible$.subscribe(setKeyboardVisibleState);
@@ -52,7 +76,7 @@ const AddHabitPanel = () => {
       langSubscription.unsubscribe();
       keyboardSubscription.unsubscribe();
     };
-  }, []);
+    }, []);
     useEffect(() => {
             const themeSubscription = theme$.subscribe(setTheme);
             const langSubscription = lang$.subscribe((lang) => {
@@ -108,7 +132,7 @@ const AddHabitPanel = () => {
               onChange={(e) => searchHabitsList(e.target.value,habitList, setHabitList) }/>
             </div>
             <div style={styles(theme).scrollView}>
-              {habitList.map((habit) => (
+              {habitList.map((habit) => !AppData.choosenHabits.includes(habit.id) && (
                 <li key={habit.id} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
                 onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(click);
                 setAddButtonContext({text: langIndex === 0 ? 'Добавить' : 'Add',onClick: () => addHabit(habit.id,habit.name[langIndex],false)})}}>
@@ -121,7 +145,7 @@ const AddHabitPanel = () => {
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
              <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(click);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(true);setAddButtonEnabled(false);}}><MdFiberNew style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(click);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){setConfirmationPanel(true);playEffects(click);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
            </div>
            </div>)}
            {/* creation panel */}
@@ -169,7 +193,7 @@ const AddHabitPanel = () => {
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
              <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(click);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(false);setAddButtonEnabled(false);setSelectedHabit(null);}}><FaSearchPlus style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(click);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){setConfirmationPanel(true);playEffects(click);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
            </div>
          </div>)}
          {selectIconPanel && (
@@ -216,6 +240,35 @@ const AddHabitPanel = () => {
                  })}
                </div>
              ))}
+           </div>
+         )}
+         {confirmationPanel && (
+           <div style={styles(theme).container}>
+            <div style={styles(theme).confirmationPanel}>
+             <p style={styles(theme).text}>{confirmationText(langIndex,showCreatePanel,habitId,habitName)}</p>
+             <div style={{...styles(theme).simplePanelRow,flexDirection:'column',alignItems:'center',backgroundColor:Colors.get('background', theme),width:'90%',borderRadius:'24px'}}>
+               <p style={styles(theme).text}>{langIndex === 0 ? 'установите дату' : 'set date'}</p>
+               <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
+                   <FiMinus onPointerDown={() => handleDateDown(false,0)} onPointerUp={handleDateUp} onClick={() => {if(now.getFullYear() - 2 <= year - 1)setYear(year - 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+                   <p style={styles(theme).textDate}> {year} </p>
+                   <FiPlus onPointerDown={() => handleDateDown(true,0)} onPointerUp={handleDateUp} onClick={() => {if(now.getFullYear() + 2 >= year + 1)setYear(year + 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+               </div>
+               <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
+                   <FiMinus onPointerDown={() => handleDateDown(false,1)} onPointerUp={handleDateUp} onClick={() => {setMonth(month - 1 > 0 ? month - 1 : 12);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+                   <p style={styles(theme).textDate}> {months[langIndex][month - 1]} </p>
+                   <FiPlus onPointerDown={() => handleDateDown(true,1)} onPointerUp={handleDateUp} onClick={() => {setMonth(month + 1 < 12 ? month + 1 : 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+               </div>
+               <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
+                   <FiMinus onPointerDown={() => handleDateDown(false,2)} onPointerUp={handleDateUp} onClick={() => {setDay(getday(false,day,year,month));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+                   <p style={styles(theme).textDate}> {day} </p>
+                   <FiPlus onPointerDown={() => handleDateDown(true,2)} onPointerUp={handleDateUp} onClick={() => {setDay(getday(true,day,year,month));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}/>
+               </div>
+             </div>
+             <div style={styles(theme).simplePanelRow}>
+               <div style={styles(theme).button} onClick={() => {setConfirmationPanel(false);resetDate(setDay,setMonth,setYear);playEffects(click);}}><MdClose style={styles(theme).miniIcon}/></div>
+               <div style={styles(theme).button} onClick={() => {addButtonContext.onClick();playEffects(click);}}><MdDone style={styles(theme).miniIcon}/></div>
+             </div>
+            </div>
            </div>
          )}
         </div>
@@ -288,11 +341,11 @@ const styles = (theme, keyboardVisible) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1000,
+    zIndex: 9900,
     padding: '20px',
   },
   panel :
@@ -310,12 +363,33 @@ const styles = (theme, keyboardVisible) => ({
     width:"85vw",
     height: keyboardVisible ? "85vh" : "65vh"
   },
+  confirmationPanel :
+  {
+    display:'flex',
+    flexDirection:'column',
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius:"24px",
+    border: `1px solid ${Colors.get('border', theme)}`,
+    margin: "5px",
+    backgroundColor:Colors.get('simplePanel', theme),
+    boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
+    width:"85vw",
+    height:"80vw"
+  },
   text :
   {
     textAlign: "center",
     fontSize: "12px",
     color: Colors.get('mainText', theme),
     marginBottom:'12px'
+  },
+  textDate:
+  {
+    textAlign: "center",
+    fontSize: "18px",
+    color: Colors.get('mainText', theme),
+    marginBottom:'4px'
   },
   headerText :
   {
@@ -359,9 +433,11 @@ const styles = (theme, keyboardVisible) => ({
   },
   simplePanelRow:
   {
+    width:'75vw',
     display:'flex',
     flexDirection:'row',
     alignItems:'stretch',
+    justifyContent:'space-around',
   },
   select:
   {
@@ -436,5 +512,23 @@ function playEffects(sound){
   }
   if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
-
-    
+function confirmationText(lang,isCreatePanel,habitId,customHabitName)
+{
+  if(isCreatePanel){
+     return lang === 0 ? 'добавить привычку ' + customHabitName + '?':'add habit ' + customHabitName + '?';
+  }
+  else{
+    const name = getAllHabits().find(h => h.id === habitId).name[lang];
+    return lang === 0 ? 'добавить привычку ' + name + '?':'add habit ' + name + '?';
+  }
+}
+function getday(isMax,day,year,month){
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return isMax ? day + 1 <= daysInMonth ? day + 1 : 1 : day - 1 > 0 ? day - 1 : daysInMonth;
+}
+function resetDate(setDay,setMonth,setYear){
+  const now = new Date();
+  setDay(now.getDate());
+  setMonth(now.getMonth());
+  setYear(now.getFullYear());
+}

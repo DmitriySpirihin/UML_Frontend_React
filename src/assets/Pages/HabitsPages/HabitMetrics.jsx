@@ -105,7 +105,7 @@ const HabitMetrics = () => {
             {/* habit metrics days*/}
             <div style={{display:'flex',justifyContent:'center',alignItems:'center',width:'90%',height:'15vh',flexDirection:'column',
                   backgroundColor:Colors.get('metricsPanel', theme),marginTop:'10px',borderRadius:'24px'}}>
-              <div style={{display:'flex',justifyContent:'center',alignItems:'center',flexWrap:'wrap',width:'90%',height:'8vh',backgroundColor:Colors.get('background', theme),
+              <div style={{display:'flex',justifyContent:'center',alignItems:'center',flexWrap:'wrap',width:'90%',height:'2vh',backgroundColor:Colors.get('background', theme),
                 borderRadius:'4px',marginTop:'8px'}}>
                     {getHabitStatusElements(daysCount, habits, habitId, theme)}
               </div>
@@ -130,13 +130,13 @@ const HabitMetrics = () => {
               <p style={styles(theme).subText}>{langIndex === 0 ? 'текущая серия ' + currentStreak : 'Current streak ' + currentStreak}</p>
             </div>
             {/* percent filled icon*/}
-               <svg width="16vh" height="16vh" transform = "rotate(-90, 0, 0)" style={{filter : `drop-shadow(-2px 2px 3px ${Colors.get('shadow', theme)})`}}>
-                <circle stroke={Colors.get('border', theme)} fill="none" strokeWidth="16" r={radius} cx="75" cy="75"/>
-                <circle stroke={Colors.get('progressBar', theme)} fill="none" strokeWidth="15" r={radius} cx="75" cy="75"/>
+               <svg width="17vh" height="17vh" style={{filter : `drop-shadow(-2px 2px 3px ${Colors.get('shadow', theme)})`}}>
+                <circle stroke={Colors.get('border', theme)} fill="none" strokeWidth="15" r={radius} cx="75" cy="75"/>
+                <circle stroke={Colors.get('progressBar', theme)} fill="none" strokeWidth="14" r={radius} cx="75" cy="75"/>
                 <circle stroke={interpolateColor(Colors.get('habitCardSkipped', theme), Colors.get('habitCardDone', theme), fillAmount)} fill="none" strokeWidth="15" r={radius} cx="75" cy="75" 
-                strokeDasharray={circumference} strokeDashoffset={circumference + (fillAmount * circumference)} 
+                strokeDasharray={circumference} strokeDashoffset={circumference + (-fillAmount * circumference)} 
                 style={{transition: 'stroke-dashoffset 1s linear'}}   />
-                <text transform="rotate(90, 75, 75)" x="75" y="75" textAnchor="middle" dominantBaseline="middle" fontSize="24" fill={Colors.get('mainText', theme)}>{Math.ceil(fillAmount * 100)+"%"}</text>
+                <text x="75" y="75" textAnchor="middle" dominantBaseline="middle" fontSize="24" fill={Colors.get('mainText', theme)}>{Math.ceil(fillAmount * 100)+"%"}</text>
                </svg>
                {/* texts info and days to reach goal */}
                <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'80%',height:'5vh',marginTop:'40px'}}>
