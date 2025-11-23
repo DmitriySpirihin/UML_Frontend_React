@@ -53,7 +53,7 @@ const AddHabitPanel = () => {
     });
     const handleDateChange = (isIncr,dateType) => {
         if(dateType === 2)setDay(getday(isIncr,day,year,month));
-        else if(dateType === 1)setMonth(!isIncr ? month - 1 > 0 ? month - 1 : 12 : month + 1 < 12 ? month + 1 : 1);
+        if(dateType === 1)setMonth(prev => !isIncr ? prev - 1 > -1 ? prev - 1 : 11 : prev + 1 < 12 ? prev + 1 : 0);
         else if(dateType === 0)setYear(isIncr && year + 1 <= now.getFullYear() + 2 && year -1 >= now.getFullYear() - 2 ? year + 1 : year - 1);
     }
     const bindYearhMinus = useLongPress(() => handleDateChange(false, 0), {
@@ -265,19 +265,19 @@ const AddHabitPanel = () => {
              <div style={{...styles(theme).simplePanelRow,flexDirection:'column',alignItems:'center',backgroundColor:Colors.get('background', theme),width:'90%',borderRadius:'24px'}}>
                <p style={styles(theme).text}>{langIndex === 0 ? 'установите дату' : 'set date'}</p>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindYearhMinus} onClick={() => {if(now.getFullYear() - 2 <= year - 1)setYear(prev => prev - 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
+                   <div {...bindYearhMinus} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
                    <p style={styles(theme).textDate}> {year} </p>
-                   <div {...bindYearPlus} onClick={() => {if(now.getFullYear() + 2 >= year + 1)setYear(prev => prev + 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
+                   <div {...bindYearPlus} onClick={() => {if(now.getFullYear() + 2 >= year + 1)setYear(prev => prev + 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
                </div>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindMonthMinus} onClick={() => {setMonth(prev => prev - 1 > -1 ? prev - 1 : 11);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
+                   <div {...bindMonthMinus} onClick={() => {setMonth(prev => prev - 1 > -1 ? prev - 1 : 11);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
                    <p style={styles(theme).textDate}> {months[langIndex][month]} </p>
-                   <div {...bindMonthPlus} onClick={() => {setMonth(prev => prev + 1 < 12 ? prev + 1 : 0);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
+                   <div {...bindMonthPlus} onClick={() => {setMonth(prev => prev + 1 < 12 ? prev + 1 : 0);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
                </div>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindDayMinus} onClick={() => {setDay(prev => (getday(false,prev,year,month)));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
+                   <div {...bindDayMinus} onClick={() => {setDay(prev => (getday(false,prev,year,month)));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
                    <p style={styles(theme).textDate}> {day} </p>
-                   <div {...bindDayPlus} onClick={() => {setDay(prev => (getday(true,prev,year,month)));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
+                   <div {...bindDayPlus} onClick={() => {setDay(prev => (getday(true,prev,year,month)));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
                </div>
              </div>
              <div style={styles(theme).simplePanelRow}>
@@ -454,6 +454,8 @@ const styles = (theme, keyboardVisible) => ({
     flexDirection:'row',
     alignItems:'stretch',
     justifyContent:'space-around',
+    userSelect: 'none',
+    touchAction: 'none',
   },
   select:
   {
@@ -510,12 +512,12 @@ const styles = (theme, keyboardVisible) => ({
     fontSize:'12px',
   },
   miniIcon: {
-    userSelect: 'none',
-    touchAction: 'none',
     fontSize: "28px",
     padding: "5px",
     marginTop: "10px",
     color: Colors.get('icons', theme),
+    userSelect: 'none',
+    touchAction: 'none',
     filter :`drop-shadow(0 0px 1px ${Colors.get('iconsShadow', theme)})`
   }
 })
