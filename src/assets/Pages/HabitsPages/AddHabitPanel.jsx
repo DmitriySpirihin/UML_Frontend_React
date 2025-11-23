@@ -51,7 +51,7 @@ const AddHabitPanel = () => {
         text: langIndex === 0 ? 'Добавить' : 'Add',
         onClick: () => addHabit(false)
     });
-    const handleDateDown = (isIncr,dateType) => {
+    const handleDateChange = (isIncr,dateType) => {
         if(dateType === 2)setDay(getday(isIncr,day,year,month));
         else if(dateType === 1)setMonth(!isIncr ? month - 1 > 0 ? month - 1 : 12 : month + 1 < 12 ? month + 1 : 1);
         else if(dateType === 0)setYear(isIncr && year + 1 <= now.getFullYear() + 2 && year -1 >= now.getFullYear() - 2 ? year + 1 : year - 1);
@@ -81,7 +81,7 @@ const AddHabitPanel = () => {
        interval: 100
     });
     
-    const months =[ ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'],['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
+    const months =[ ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
     useEffect(() => {
     const subscription = theme$.subscribe(setTheme);
     const langSubscription = lang$.subscribe(setLang);
@@ -265,19 +265,19 @@ const AddHabitPanel = () => {
              <div style={{...styles(theme).simplePanelRow,flexDirection:'column',alignItems:'center',backgroundColor:Colors.get('background', theme),width:'90%',borderRadius:'24px'}}>
                <p style={styles(theme).text}>{langIndex === 0 ? 'установите дату' : 'set date'}</p>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindYearhMinus} onClick={() => {if(now.getFullYear() - 2 <= year - 1)setYear(year - 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
+                   <div {...bindYearhMinus} onClick={() => {if(now.getFullYear() - 2 <= year - 1)setYear(prev => prev - 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
                    <p style={styles(theme).textDate}> {year} </p>
-                   <div {...bindYearPlus} onClick={() => {if(now.getFullYear() + 2 >= year + 1)setYear(year + 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
+                   <div {...bindYearPlus} onClick={() => {if(now.getFullYear() + 2 >= year + 1)setYear(prev => prev + 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
                </div>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindMonthMinus} onClick={() => {setMonth(month - 1 > 0 ? month - 1 : 12);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
-                   <p style={styles(theme).textDate}> {months[langIndex][month - 1]} </p>
-                   <div {...bindMonthPlus} onClick={() => {setMonth(month + 1 < 12 ? month + 1 : 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
+                   <div {...bindMonthMinus} onClick={() => {setMonth(prev => prev - 1 > -1 ? prev - 1 : 11);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
+                   <p style={styles(theme).textDate}> {months[langIndex][month]} </p>
+                   <div {...bindMonthPlus} onClick={() => {setMonth(prev => prev + 1 < 12 ? prev + 1 : 0);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
                </div>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindDayMinus} onClick={() => {setDay(getday(false,day,year,month));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
+                   <div {...bindDayMinus} onClick={() => {setDay(prev => (getday(false,prev,year,month)));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus/></div>
                    <p style={styles(theme).textDate}> {day} </p>
-                   <div {...bindDayPlus} onClick={() => {setDay(getday(true,day,year,month));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
+                   <div {...bindDayPlus} onClick={() => {setDay(prev => (getday(true,prev,year,month)));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus/></div>
                </div>
              </div>
              <div style={styles(theme).simplePanelRow}>
