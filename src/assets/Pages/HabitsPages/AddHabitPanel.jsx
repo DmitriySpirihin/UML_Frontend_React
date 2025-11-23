@@ -1,8 +1,8 @@
-import { useState, useEffect} from 'react';
+import { useState, useEffect,useRef} from 'react';
+import {useLongPress} from '../../Helpers/LongPress.js';
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { useLongPress } from 'use-long-press';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
 import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$,setKeyboardVisible,setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
 import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt} from 'react-icons/fa'
@@ -49,37 +49,38 @@ const AddHabitPanel = () => {
     const [addButtonEnabled, setAddButtonEnabled] = useState(false);
     const [addButtonContext, setAddButtonContext] = useState({
         text: langIndex === 0 ? 'Добавить' : 'Add',
-        onClick: () => addHabit(false)
+        onClick: () => addHabit(false,year.toString()+'-'+month+'-'+day)
     });
-    const handleDateChange = (isIncr,dateType) => {
-        if(dateType === 2)setDay(getday(isIncr,day,year,month));
-        if(dateType === 1)setMonth(prev => !isIncr ? prev - 1 > -1 ? prev - 1 : 11 : prev + 1 < 12 ? prev + 1 : 0);
-        else if(dateType === 0)setYear(isIncr && year + 1 <= now.getFullYear() + 2 && year -1 >= now.getFullYear() - 2 ? year + 1 : year - 1);
-    }
-    const bindYearhMinus = useLongPress(() => handleDateChange(false, 0), {
-      threshold: 1000,
-      interval: 500
-    });
-     const bindYearPlus = useLongPress(() => handleDateChange(true, 0), {
-      threshold: 1000,
-       interval: 500
-    });
-    const bindMonthMinus = useLongPress(() => handleDateChange(false, 1), {
-      threshold: 700,
-      interval: 300
-    });
-     const bindMonthPlus = useLongPress(() => handleDateChange(true, 1), {
-      threshold: 700,
-       interval: 300
-    });
-    const bindDayMinus = useLongPress(() => handleDateChange(false, 2), {
-      threshold: 500,
-      interval: 100
-    });
-    const bindDayPlus = useLongPress(() => handleDateChange(true, 2), {
-      threshold: 500,
-       interval: 100
-    });
+    const handleDateChange = (isIncr, dateType) => {
+  if (dateType === 2) {
+    setDay(prevDay =>
+      getday(isIncr, prevDay, year, month)
+    );
+  } else if (dateType === 1) {
+    setMonth(prevMonth =>
+      !isIncr
+        ? prevMonth - 1 > -1
+          ? prevMonth - 1
+          : 11
+        : prevMonth + 1 < 12
+        ? prevMonth + 1
+        : 0
+    );
+  } else if (dateType === 0) {
+    setYear(prevYear =>
+      isIncr && prevYear + 1 <= now.getFullYear() + 2 && prevYear - 1 >= now.getFullYear() - 2
+        ? prevYear + 1
+        : prevYear - 1
+    );
+  }
+};
+
+    const bindYearhMinus = useLongPress(() => handleDateChange(false, 0));
+    const bindYearPlus = useLongPress(() => handleDateChange(true, 0));
+    const bindMonthMinus = useLongPress(() => handleDateChange(false, 1));
+    const bindMonthPlus = useLongPress(() => handleDateChange(true, 1));
+    const bindDayMinus = useLongPress(() => handleDateChange(false, 2));
+    const bindDayPlus = useLongPress(() => handleDateChange(true, 2));
     
     const months =[ ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
     useEffect(() => {
@@ -151,7 +152,7 @@ const AddHabitPanel = () => {
               {habitList.map((habit) => !AppData.choosenHabits.includes(habit.id) && (
                 <li key={habit.id} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
                 onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(click);
-                setAddButtonContext({text: langIndex === 0 ? 'Добавить' : 'Add',onClick: () => addHabit(habit.id,habit.name[langIndex],false)})}}>
+                setAddButtonContext({text: langIndex === 0 ? 'Добавить' : 'Add',onClick: () => addHabit(habit.id,habit.name[langIndex],false,year.toString()+'-'+month+'-'+day)})}}>
                   <p style={styles(theme).text}>{habit.name[langIndex]}</p>
                 </li>
               ))}
@@ -281,8 +282,9 @@ const AddHabitPanel = () => {
                </div>
              </div>
              <div style={styles(theme).simplePanelRow}>
+              
                <div style={styles(theme).button} onClick={() => {setConfirmationPanel(false);resetDate(setDay,setMonth,setYear);playEffects(click);}}><MdClose style={styles(theme).miniIcon}/></div>
-               <div style={styles(theme).button} onClick={() => {addButtonContext.onClick();playEffects(click);}}><MdDone style={styles(theme).miniIcon}/></div>
+               <div style={styles(theme).button} onClick={() => {addButtonContext.onClick();playEffects(click);setConfirmationPanel(false);resetDate(setDay,setMonth,setYear);}}><MdDone style={styles(theme).miniIcon}/></div>
              </div>
             </div>
            </div>
@@ -290,7 +292,11 @@ const AddHabitPanel = () => {
         </div>
     )
 }
-
+ function Demo() {
+  const [value, setValue] = useState(0);
+  const bind = useLongPress(() => setValue(v => v + 1), {threshold: 400, interval: 150});
+  return <button {...bind}>Value: {value}</button>;
+}
 export default AddHabitPanel;
 
 // Helper function to render category options
@@ -303,20 +309,12 @@ const renderCategoryOptions = (theme, langIndex) => {
     ));
 };
 
-
-// Removed unused external file and crop handlers; logic moved inside component
-
-const addHabit =  (habitId,habitName,isCustom) => {
-    if (typeof addHabitFn !== 'function') {
-      console.warn('AddHabitPanel: addHabitFn is not set yet. Ensure HabitsMain is mounted.');
-      setShowPopUpPanel(AppData.prefs[0] === 0 ? 'экран привычек ещё не готов' : 'habits screen not ready yet', 2000,false);
-      return;
-    }
+const addHabit =  (habitId,habitName,isCustom,dateString) => {
     if(AppData.IsHabitInChoosenList(habitId)) {
        setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list',2500,false);
       return;
     }
-    addHabitFn(habitId);
+    addHabitFn(habitId,dateString);
     const message = !isCustom ? AppData.prefs[0] === 0 ? 'привычка добавлена' : 'habit added' : AppData.prefs[0] === 0 ? `привычка: ${habitName} создана и добавлена` : `habit: ${habitName} was created and added`;
     setShowPopUpPanel(message,2500,true);
 }
@@ -328,7 +326,7 @@ const createHabit =  (name,category,description,icon) => {
     if(!AppData.IsCustomHabitExists(habitId)){
       
       AppData.AddCustomHabit(name,category,description,icon,habitId);
-      setTimeout(() => {addHabit(habitId,name,true);}, 100);
+      setTimeout(() => {addHabit(habitId,name,true,dateString);}, 100);
     }else{
       setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка с таким названием уже существует' : 'habit with this name already exists',2500,false);
     }
@@ -544,7 +542,7 @@ function confirmationText(lang,isCreatePanel,habitId,customHabitName)
 }
 function getday(isMax,day,year,month){
   const daysInMonth = new Date(year, month, 0).getDate();
-  return isMax ? day + 1 <= daysInMonth ? day + 1 : 1 : day - 1 > 0 ? day - 1 : daysInMonth;
+  return isMax ? day + 1 <= daysInMonth && new Date(year, month, day + 1).getTime() <= now.getTime()  ? day + 1 : 1 : day - 1 > 0 ? day - 1 : new Date(year, month, day - 1).getTime() <= now.getTime() ? now.getDate() : daysInMonth; 
 }
 function resetDate(setDay,setMonth,setYear){
   const now = new Date();

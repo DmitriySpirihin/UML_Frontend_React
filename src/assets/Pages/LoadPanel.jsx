@@ -40,9 +40,6 @@ function LoadPanel() {
                 }
                 // Load saved data
                 await loadData();
-                console.log(JSON.stringify(AppData.notify));
-                console.log(Telegram.WebApp.version);
-                
                 fillEmptyDays();
                 setAllHabits();
                 setAllExercisesAndProgramms();

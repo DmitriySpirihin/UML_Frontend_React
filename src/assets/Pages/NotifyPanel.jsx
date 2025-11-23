@@ -5,7 +5,7 @@ import Colors from '../StaticClasses/Colors';
 import { theme$, lang$,setPage$,setShowPopUpPanel,notify$,setCurrentBottomBtn,setAddPanel,setNotifyPanel} from '../StaticClasses/HabitsBus';
 import { useState , useEffect, useRef} from 'react';
 import {NotificationsManager} from '../StaticClasses/NotificationsManager';
-import {FaBackspace,FaRegWindowClose} from 'react-icons/fa'
+import {FaBackspace} from 'react-icons/fa'
 import {MdDone} from 'react-icons/md'
 
 const clickSound = new Audio('Audio/Click.wav');

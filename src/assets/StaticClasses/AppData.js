@@ -8,7 +8,7 @@ export class AppData{
    static version = "1.0.0";
    static prefs = [0,0,0,0]; //language, theme, sound, vibro
    static CustomHabits = [];
-   static dayTostart = '';
+   static choosenHabitsStartDates = [];
    static choosenHabits = [];
    static habitsByDate = {};
    static daysToFormAHabit = 66;
@@ -30,7 +30,7 @@ export class AppData{
     setLang(this.prefs[0] === 0 ? 'ru' : 'en');
     setTheme(this.prefs[1] < 2 ? this.prefs[1] === 0 ? THEME.DARK : THEME.SPECIALDARK : this.prefs[1] === 2 ? THEME.LIGHT : THEME.SPECIALLIGHT);
     setSoundAndVibro(this.prefs[2],this.prefs[3]);
-    this.dayTostart = data.dayTostart;
+    this.choosenHabitsStartDates = [...data.choosenHabitsStartDates];
     this.choosenHabits = [...data.choosenHabits];
     this.daysToFormAHabit = data.daysToFormAHabit;
     this.CustomHabits = data.CustomHabits;
@@ -53,29 +53,44 @@ export class AppData{
      }
      return false;
   } 
-  static addHabit(day,habitId){
-    if(!this.choosenHabits.includes(habitId)) this.choosenHabits.push(habitId);
-    if(!(day in this.habitsByDate)){
-      this.habitsByDate[day] = {};
+  static addHabit(habitId,dateString){
+    if(!this.choosenHabits.includes(habitId)) {
+       this.choosenHabits.push(habitId);
+       this.choosenHabitsStartDates.push(dateString);
     }
-    if(!(habitId in this.habitsByDate[day])){
-      this.habitsByDate[day][habitId] = 0;
+  const dayTostart = dateString;
+  const startDate = new Date(dayTostart);
+  const endDate = new Date();
+  let currentDate = startDate;
+   while (currentDate < endDate) {
+    const current = currentDate.toISOString().split('T')[0];
+    if(!(current in AppData.habitsByDate)) {
+      AppData.habitsByDate[current] = {};
+      AppData.habitsByDate[current][AppData.choosenHabits[AppData.choosenHabits.length - 1]] = 1; 
     }
-    if(this.dayTostart === '') this.dayTostart = day;
-    console.log(JSON.stringify(this.habitsByDate));
+    else{
+      AppData.habitsByDate[current][AppData.choosenHabits[AppData.choosenHabits.length - 1]] = 1; 
+    }
+    currentDate.setDate(currentDate.getDate() + 1);
   }
-  static removeHabit(day,habitId){
-    this.choosenHabits.includes(habitId) ? this.choosenHabits.splice(this.choosenHabits.indexOf(habitId),1) : null;
+  AppData.habitsByDate[endDate.toISOString().split('T')[0]][AppData.choosenHabits[AppData.choosenHabits.length - 1]] = 0;
+}
+
+  static removeHabit(habitId){
+    if(this.choosenHabits.includes(habitId)){
+    const index = this.choosenHabits.indexOf(habitId);
+    this.choosenHabits.splice(index,1);
+    this.choosenHabitsStartDates.splice(index,1);
     Array.from(Object.values(this.habitsByDate)).forEach(habit => {
       if(habitId in habit){
         delete habit[habitId];
       }
       if(this.choosenHabits.length === 0){
         this.habitsByDate = {};
-        this.dayTostart = '';
       }
     });
   }
+}
   static changeStatus(day, habitId, status) {
     // Create day entry if it doesn't exist
     if (!(day in this.habitsByDate)) {
@@ -109,27 +124,31 @@ export class AppData{
 
 export const fillEmptyDays = () => {
   const today = new Date();
-  if(AppData.dayTostart !== ''){
-   if(AppData.dayTostart !== today.toISOString().split('T')[0]){
-   const startDate = new Date(AppData.dayTostart);
+  const dayTostart = AppData.choosenHabitsStartDates.length === 0 ? '' : new Date(Math.min(...AppData.choosenHabitsStartDates.map(date => new Date(date).getTime()))).toISOString().split('T')[0];
+  if(dayTostart !== '' && dayTostart !== today.toISOString().split('T')[0]){
+   if(dayTostart !== today.toISOString().split('T')[0]){
+   const startDate = new Date(dayTostart);
    const endDate = today.setDate(today.getDate() - 1);
    let currentDate = startDate;
    while (currentDate < endDate) {
-    if(!(currentDate.toISOString().split('T')[0] in AppData.habitsByDate)) {
-      AppData.habitsByDate[currentDate.toISOString().split('T')[0]] = {};
+    const current = currentDate.toISOString().split('T')[0];
+    if(!(current in AppData.habitsByDate)) {
+      AppData.habitsByDate[current] = {};
       for (let index = 0; index < AppData.choosenHabits.length; index++) {
-        AppData.habitsByDate[currentDate.toISOString().split('T')[0]][AppData.choosenHabits[index]] = -1; 
+        if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime())
+        AppData.habitsByDate[current][AppData.choosenHabits[index]] = -1; 
       }
     }else{
       for (let index = 0; index < AppData.choosenHabits.length; index++) {
-        if(AppData.habitsByDate[currentDate.toISOString().split('T')[0]][AppData.choosenHabits[index]] < 1)AppData.habitsByDate[currentDate.toISOString().split('T')[0]][AppData.choosenHabits[index]] = -1; 
+        if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime())
+        if(AppData.habitsByDate[current][AppData.choosenHabits[index]] < 1)AppData.habitsByDate[current][AppData.choosenHabits[index]] = -1; 
       }
     }
     currentDate.setDate(currentDate.getDate() + 1);
    }
    }
-
-   if(!AppData.hasKey(today.toISOString().split('T')[0])){
+   
+   if(!(today.toISOString().split('T')[0] in AppData.habitsByDate)){
    AppData.habitsByDate[today.toISOString().split('T')[0]] = {};
    for (let index = 0; index < AppData.choosenHabits.length; index++) {
      AppData.habitsByDate[today.toISOString().split('T')[0]][AppData.choosenHabits[index]] = 0; 
@@ -159,7 +178,7 @@ export class Data{
     this.prefs = AppData.prefs,
     this.choosenHabits = AppData.choosenHabits,
     this.habitsByDate = AppData.habitsByDate,
-    this.dayTostart = AppData.dayTostart,
+    this.choosenHabitsStartDates = AppData.choosenHabitsStartDates,
     this.CustomHabits = AppData.CustomHabits,
     this.daysToFormAHabit = AppData.daysToFormAHabit,
     this.notify = AppData.notify

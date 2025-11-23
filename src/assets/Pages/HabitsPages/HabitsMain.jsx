@@ -57,12 +57,12 @@ const HabitsMain = () => {
         }
     }, [habitsCards]);
     // functions to add/remove habits at runtime
-    const addHabit = (habitId) => {
+    const addHabit = (habitId,dateString) => {
         // Use Set to ensure no duplicates before adding
         setHabitsCards(prev => {
             const newHabits = new Set(prev);
             if (!newHabits.has(habitId)) {
-                AppData.addHabit(dateKey, habitId);
+                AppData.addHabit(habitId,dateString);
                 return [...newHabits,habitId];
             }
             return prev;
