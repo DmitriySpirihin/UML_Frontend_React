@@ -29,7 +29,7 @@ const NotifyPanel = () => {
         const itemHeight = 70;
         ref.current.scrollTop = value * itemHeight;
         setCron(getCronExpression(daysOfWeek,hour,minute));
-        playEffects(clickSound,0);
+        playEffects(clickSound);
       }
     };
     const hoursRef = useRef(null);
@@ -398,7 +398,7 @@ const toggleNotify = (page,isEnabled,langIndex,_cron,hour,minute) => {
     } 
   }
 }
-function playEffects(sound,vibrationDuration ){
+function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
         sound.currentTime = 0;
@@ -408,5 +408,5 @@ function playEffects(sound,vibrationDuration ){
       sound.play();
     }
   }
-  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }

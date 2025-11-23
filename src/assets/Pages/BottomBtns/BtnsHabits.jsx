@@ -74,16 +74,16 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,notify})
           {page !== 'HabitsMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setNotifyPanel(false);setCurrentBottomBtn(-1);}} />)}
           {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setNotifyPanel(false);setCurrentBottomBtn(-1);}} />)}
           {page === 'HabitsMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setNotifyPanel(false);setCurrentBottomBtn(-1);}} />)}
-          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('HabitMetrics');setAddPanel('');setNotifyPanel(false);playEffects(switchSound,50);}} />
-          <Calendar style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('HabitCalendar');setAddPanel('');setNotifyPanel(false);playEffects(switchSound,50);}} />
-          <Add style={styles(theme,currentBtn,2,true,page !== 'HabitsMain').btnstyle} onClick={() => {if(page === 'HabitsMain'){setCurrentBottomBtn(2);setAddPanel('AddHabitPanel');setNotifyPanel(false);playEffects(switchSound,50);}}} />
+          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('HabitMetrics');setAddPanel('');setNotifyPanel(false);playEffects(switchSound);}} />
+          <Calendar style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('HabitCalendar');setAddPanel('');setNotifyPanel(false);playEffects(switchSound);}} />
+          <Add style={styles(theme,currentBtn,2,true,page !== 'HabitsMain').btnstyle} onClick={() => {if(page === 'HabitsMain'){setCurrentBottomBtn(2);setAddPanel('AddHabitPanel');setNotifyPanel(false);playEffects(switchSound);}}} />
           
-          {page.startsWith('H') && (notify[0].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} /> 
-              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} />)}
-          {page.startsWith('T') && (notify[1].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} /> 
-              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} />)}
+          {page.startsWith('H') && (notify[0].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} /> 
+              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} />)}
+          {page.startsWith('T') && (notify[1].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} /> 
+              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} />)}
 
-          <Settings style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setAddPanel('HabitSettings');setNotifyPanel(false);playEffects(switchSound,50);}} />
+          <Settings style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setAddPanel('HabitSettings');setNotifyPanel(false);playEffects(switchSound);}} />
         </div>
     )
 }
@@ -98,9 +98,9 @@ const onBack = async(page,addPanel) => {
             setPage('HabitsMain');
         }
     }
-    playEffects(switchSound,50);
+    playEffects(switchSound);
 }
-function playEffects(sound,vibrationDuration ){
+function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
         sound.pause();
@@ -109,7 +109,7 @@ function playEffects(sound,vibrationDuration ){
     sound.volume = 0.5;
     sound.play();
   }
-  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
 
 const styles = (theme,currentBtn,id,disengageable,disabled) => ({

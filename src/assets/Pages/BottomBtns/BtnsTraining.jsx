@@ -75,15 +75,15 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,
           {page !== 'TrainingMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);}} />)}
           {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);}} />)}
           {page === 'TrainingMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);}} />)}
-          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('TrainingMetrics');setAddPanel('');playEffects(switchSound,50);}} />
-          <Programs style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('TrainingProgramm');setAddPanel('');playEffects(switchSound,50);}} />
-          <Exercises style={styles(theme,currentBtn,2,true,false).btnstyle} onClick={() => {setCurrentBottomBtn(2);setPage('TrainingExercise');playEffects(switchSound,50);}} />
-          <Add style={styles(theme,currentBtn,9,true,addPanel === 'AddExercisesPanel' || addPanel === 'AddProgramPanel' || page == 'AddExercisesPanel' || page !== 'TrainingMain').btnstyle} onClick={() => {if(page === 'TrainingMain'){setAddPanel('AddExercisePanel');}else if(page === 'TrainingProgramm'){setAddPanel('AddProgrammPanel');}else if(page === 'TrainingExercise'){setAddPanel('AddExercisePanel');};setCurrentBottomBtn(0);setNotifyPanel(false);playEffects(switchSound,50);}} />
-          {page.startsWith('H') && (notify[0].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} /> 
-              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} />)}
-          {page.startsWith('T') && (notify[1].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} /> 
-              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound,50);}} />)}
-          <Settings style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setAddPanel('TrainingSettings');playEffects(switchSound,50);}} />
+          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('TrainingMetrics');setAddPanel('');playEffects(switchSound);}} />
+          <Programs style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('TrainingProgramm');setAddPanel('');playEffects(switchSound);}} />
+          <Exercises style={styles(theme,currentBtn,2,true,false).btnstyle} onClick={() => {setCurrentBottomBtn(2);setPage('TrainingExercise');playEffects(switchSound);}} />
+          <Add style={styles(theme,currentBtn,9,true,addPanel === 'AddExercisesPanel' || addPanel === 'AddProgramPanel' || page == 'AddExercisesPanel' || page !== 'TrainingMain').btnstyle} onClick={() => {if(page === 'TrainingMain'){setAddPanel('AddExercisePanel');}else if(page === 'TrainingProgramm'){setAddPanel('AddProgrammPanel');}else if(page === 'TrainingExercise'){setAddPanel('AddExercisePanel');};setCurrentBottomBtn(0);setNotifyPanel(false);playEffects(switchSound);}} />
+          {page.startsWith('H') && (notify[0].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} /> 
+              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} />)}
+          {page.startsWith('T') && (notify[1].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} /> 
+              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} />)}
+          <Settings style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setAddPanel('TrainingSettings');playEffects(switchSound);}} />
         </div>
     )
 }   
@@ -93,9 +93,9 @@ const onBack = (page,addPanel) => {
         if(addPanel !== '') setAddPanel('');
         else setPage('TrainingMain');
     }
-    playEffects(switchSound,50);
+    playEffects(switchSound);
 }
-function playEffects(sound,vibrationDuration ){
+function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
         sound.pause();
@@ -104,7 +104,7 @@ function playEffects(sound,vibrationDuration ){
     sound.volume = 0.5;
     sound.play();
   }
-  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
 
 const styles = (theme,currentBtn,id,disengageable,disabled) => ({

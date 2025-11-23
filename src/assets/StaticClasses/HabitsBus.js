@@ -22,6 +22,7 @@ export const currentBottomBtn$ = new BehaviorSubject(0);
 export const keyboardVisible$ = new BehaviorSubject(false);
 export const devMessage$ = new BehaviorSubject('');
 export const isPasswordCorrect$ = new BehaviorSubject(false);
+export const trainingAddPanelNum$ = new BehaviorSubject(-1);
 
 export const setConfirmationPanel = (state) => confirmationPanel$.next(state);
 export const setTheme = (theme) => {
@@ -54,6 +55,7 @@ export const setDevMessage = (message) => devMessage$.next(message);
 export const setIsPasswordCorrect = (state) => isPasswordCorrect$.next(state === "true");
 export const setNotifyPanel = (state) => notifyPanel$.next(state);
 export const setNotify = (state) => notify$.next(state);
+export const setTrainingAddPanelNum = (num) => trainingAddPanelNum$.next(num);
 
 
 

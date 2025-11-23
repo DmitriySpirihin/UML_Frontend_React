@@ -92,15 +92,15 @@ const HabitMetrics = () => {
           
           {habitId > -1 && <div style={styles(theme).panel}>
             {habitId > -1 && <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'50%',marginLeft:'18vh'}}>
-            <FaList style={{color:Colors.get('icons',theme),fontSize:'16px',marginRight:'10px',marginLeft:'25vw'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>
-            {showListOfHabitsPanel && (<IoMdArrowDropleft style={{color:Colors.get('icons',theme),fontSize:'28px',marginRight:'10px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>)}
-            {!showListOfHabitsPanel && (<IoMdArrowDropright style={{color:Colors.get('icons',theme),fontSize:'28px',marginRight:'10px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound,50);}}/>)}
+            <FaList style={{color:Colors.get('icons',theme),fontSize:'16px',marginRight:'10px',marginLeft:'25vw'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound);}}/>
+            {showListOfHabitsPanel && (<IoMdArrowDropleft style={{color:Colors.get('icons',theme),fontSize:'28px',marginRight:'10px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound);}}/>)}
+            {!showListOfHabitsPanel && (<IoMdArrowDropright style={{color:Colors.get('icons',theme),fontSize:'28px',marginRight:'10px'}} onClick={() => {setShowListOfHabitsPanel(!showListOfHabitsPanel);playEffects(clickMainSound);}}/>)}
             </div>} 
             {/* habit changer */}
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',width:'70%',height:'7vh'}}>
-              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) - 1 < 0 ? AppData.choosenHabits.length - 1 : AppData.choosenHabits.indexOf(habitId) - 1]);playEffects(clickMainSound,50);}}><FaArrowAltCircleLeft style={{color:Colors.get('icons',theme),fontSize:'24px',marginTop:'5px',paddingRight:'10px'}}/></div>
+              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) - 1 < 0 ? AppData.choosenHabits.length - 1 : AppData.choosenHabits.indexOf(habitId) - 1]);playEffects(clickMainSound);}}><FaArrowAltCircleLeft style={{color:Colors.get('icons',theme),fontSize:'24px',marginTop:'5px',paddingRight:'10px'}}/></div>
               <p style={styles(theme).text}>{getAllHabits().find(h => h.id === habitId).name[langIndex]}</p>
-              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) + 1 > AppData.choosenHabits.length - 1 ? 0 : AppData.choosenHabits.indexOf(habitId) + 1]);playEffects(clickMainSound,50);}}><FaArrowAltCircleRight style={{color:Colors.get('icons',theme),fontSize:'24px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
+              <div onClick={() => {setHabitId(AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) + 1 > AppData.choosenHabits.length - 1 ? 0 : AppData.choosenHabits.indexOf(habitId) + 1]);playEffects(clickMainSound);}}><FaArrowAltCircleRight style={{color:Colors.get('icons',theme),fontSize:'24px',marginTop:'5px',paddingLeft:'10px'}}/></div> 
             </div>
             {/* habit metrics days*/}
             <div style={{display:'flex',justifyContent:'center',alignItems:'center',width:'90%',height:'15vh',flexDirection:'column',
@@ -367,15 +367,14 @@ function getHabitRangeStartLabel(daysCount){
   const dd = parts[2];
   return `${dd}-${mm}`;
 }
-function playEffects(sound,vibrationDuration ){
+function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
+        sound.pause();
         sound.currentTime = 0;
     }
-    else{
-      sound.volume = 0.5;
-      sound.play();
-    }
+    sound.volume = 0.5;
+    sound.play();
   }
-  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }

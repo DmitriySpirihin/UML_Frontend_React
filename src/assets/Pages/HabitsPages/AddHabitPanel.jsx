@@ -110,7 +110,7 @@ const AddHabitPanel = () => {
             <div style={styles(theme).scrollView}>
               {habitList.map((habit) => (
                 <li key={habit.id} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
-                onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(click,20);
+                onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(click);
                 setAddButtonContext({text: langIndex === 0 ? 'Добавить' : 'Add',onClick: () => addHabit(habit.id,habit.name[langIndex],false)})}}>
                   <p style={styles(theme).text}>{habit.name[langIndex]}</p>
                 </li>
@@ -119,9 +119,9 @@ const AddHabitPanel = () => {
            </div>
            {/* buttons */}
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
-             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(click,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(click);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(true);setAddButtonEnabled(false);}}><MdFiberNew style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(click,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(click);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
            </div>
            </div>)}
            {/* creation panel */}
@@ -167,9 +167,9 @@ const AddHabitPanel = () => {
             </div>
            </div>
            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
-             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(click,20);}}><FaBackspace style={styles(theme).miniIcon}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(click);}}><FaBackspace style={styles(theme).miniIcon}/></div>
              <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(false);setAddButtonEnabled(false);setSelectedHabit(null);}}><FaSearchPlus style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(click,50);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
+             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){addButtonContext.onClick();playEffects(click);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
            </div>
          </div>)}
          {selectIconPanel && (
@@ -193,7 +193,7 @@ const AddHabitPanel = () => {
                  onClick={() => {
                    setIconName(key);
                    setHabitIcon(key);
-                   playEffects(click, 50);
+                   playEffects(click);
                    setSelectIconPanel(false);
                    if(habitName.length > 3 && habitCategory.length > 3) {
                      setAddButtonEnabled(true);
@@ -201,7 +201,7 @@ const AddHabitPanel = () => {
                        text: langIndex === 0 ? 'создать и добавить' : 'create and add',
                        onClick: () => {
                          createHabit(habitName, habitCategory, habitDescription, key);
-                         playEffects(click, 50);
+                         playEffects(click);
                        }
                      });
                    }
@@ -425,20 +425,16 @@ const styles = (theme, keyboardVisible) => ({
     filter :`drop-shadow(0 0px 1px ${Colors.get('iconsShadow', theme)})`
   }
 })
-function playEffects(sound,vibrationDuration ){
-  /*
+function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
+        sound.pause();
         sound.currentTime = 0;
     }
-    else{
-      sound.volume = 0.5;
-      sound.play();
-    }
+    sound.volume = 0.5;
+    sound.play();
   }
-  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
-  */
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
-
 
     

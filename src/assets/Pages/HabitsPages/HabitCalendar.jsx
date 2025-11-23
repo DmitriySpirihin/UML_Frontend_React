@@ -68,8 +68,8 @@ const HabitCalendar = () => {
     for (let i = 0; i < calendarCells.length; i+=7) {
       weeks.push(calendarCells.slice(i, i + 7));
     } 
-    const prevMonth = () => {setDate(new Date(date.getFullYear(), date.getMonth() - 1));playEffects(clickSound,50);};
-    const nextMonth = () =>{  setDate(new Date(date.getFullYear(), date.getMonth() + 1));playEffects(clickSound,50);};
+    const prevMonth = () => {setDate(new Date(date.getFullYear(), date.getMonth() - 1));playEffects(clickSound);};
+    const nextMonth = () =>{  setDate(new Date(date.getFullYear(), date.getMonth() + 1));playEffects(clickSound);};
     // render    
     return (
         <div style={styles(theme).container}>
@@ -112,7 +112,7 @@ const HabitCalendar = () => {
                             border:`3px solid ${isChoosen ? Colors.get('currentDateBorder', theme) : Colors.get('background', theme)}`,
                             backgroundColor:day < 1 ? Colors.get('background', theme) : status === 1 ? Colors.get('habitCardDone', theme) : status === -1 ? Colors.get('habitCardSkipped', theme) : Colors.get('background', theme),
                         }}
-                            onClick={() => {setCurrentDate(new Date(cellYear, cellMonth, day));setInfoPanelData(AppData.hasKey(formatDateKey(new Date(cellYear, cellMonth, day))));playEffects(clickSound,50);}}   >
+                            onClick={() => {setCurrentDate(new Date(cellYear, cellMonth, day));setInfoPanelData(AppData.hasKey(formatDateKey(new Date(cellYear, cellMonth, day))));playEffects(clickSound);}}   >
                             {day}
                             {day > 0 && <div style={{fontSize:'8px',color:Colors.get('subText', theme),lineHeight:'5px',paddingBottom:'7px'}}>{percent}</div>}
                           </div>
@@ -199,11 +199,11 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
                 setStatus(newStatus);
                 emitHabitsChanged();
                 if (newStatus === 1) {
-                    if(AppData.prefs[2] == 0)playEffects(isDoneSound,80)
+                    if(AppData.prefs[2] == 0)playEffects(isDoneSound)
                 }else if(newStatus === -1){
-                    if(AppData.prefs[2] == 0)playEffects(skipSound,80);
+                    if(AppData.prefs[2] == 0)playEffects(skipSound);
                 }
-                if(AppData.prefs[3] == 0)navigator.vibrate?.(50);
+                playEffects(null);
             }
             setCanDrag(false);
             animate(constrainedX, 0, { type: 'tween', duration: 0.2 });
@@ -357,16 +357,15 @@ function habitAmountString(date,langIndex)
    }
    return '0 ' + names[langIndex][2];
 }
-function playEffects(sound,vibrationDuration ){
+function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
+        sound.pause();
         sound.currentTime = 0;
     }
-    else{
-      sound.volume = 0.5;
-      sound.play();
-    }
+    sound.volume = 0.5;
+    sound.play();
   }
-  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
   

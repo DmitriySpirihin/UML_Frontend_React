@@ -104,7 +104,7 @@ const MainMenu = ({ onPageChange }) => {
                     ]} 
                     theme={theme}  
                     lang={lang}
-                    onClick={() => {onPageChange('HabitsMain');playEffects(null,100);}}
+                    onClick={() => {onPageChange('HabitsMain');playEffects(null);}}
                 />
                 <MenuCard 
                     text={['Тренировочная дневник', 'Training diary']} 
@@ -118,7 +118,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#9de074ff" 
                     theme={theme} 
                     lang={lang}
-                    onClick={() => {onPageChange('TrainingMain');playEffects(null,100);}}
+                    onClick={() => {onPageChange('TrainingMain');playEffects(null);}}
                 />
                <MenuCard 
                     text={['Список задач', 'Simple task manager']} 
@@ -129,7 +129,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#d0e074ff" 
                     theme={theme} 
                     lang={lang}
-                    onClick={() => {playEffects(null,100);}}
+                    onClick={() => {playEffects(null);}}
                 />
                 <MenuCard 
                     text={['Хорошие новости', 'Good news']} 
@@ -140,7 +140,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#e194c6ff" 
                     theme={theme} 
                     lang={lang}
-                    onClick={() => {playEffects(null,100);}}
+                    onClick={() => {playEffects(null);}}
                 />
                 <div style={{height:'5vh',width:'100%'}} onClick={() => {handleClick(false)}} />
             </div>
@@ -227,7 +227,7 @@ const styles = (theme) => ({
     alignItems: 'center'
   }
 })
-function playEffects(sound,vibrationDuration ){
+function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
         sound.pause();
@@ -236,6 +236,6 @@ function playEffects(sound,vibrationDuration ){
     sound.volume = 0.5;
     sound.play();
   }
-  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
 

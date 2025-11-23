@@ -1,7 +1,7 @@
 import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
-import { theme$ ,lang$} from '../../StaticClasses/HabitsBus.js'
+import { theme$ ,lang$,trainingAddPanelNum$} from '../../StaticClasses/HabitsBus.js'
 import {IoIosArrowDown,IoIosArrowUp} from 'react-icons/io'
 import {allExercises,MuscleIcon,addExercise,removeExercise} from '../../Classes/TrainingData.jsx'
 
@@ -10,6 +10,7 @@ const TrainingExercise = () => {
     let exercises = allExercises;
     const [theme, setthemeState] = React.useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [trainingAddPanelNum, setTrainingAddPanelNum] = useState(0);
     const [currentMuscleGroupId, setCurrentMuscleGroupId] = useState(-1);
     const [currentExerciseId, setCurrentExerciseId] = useState(-1);
     // subscriptions
@@ -24,10 +25,12 @@ const TrainingExercise = () => {
         }
     }, []);  
     function setMuscleGroup(id){
+        playEffects(null);
         setCurrentMuscleGroupId(currentMuscleGroupId == id ? -1 : id);
         if(currentMuscleGroupId === -1) setCurrentExerciseId(-1);
     }
     function setExercise(id){
+        playEffects(null);
         setCurrentExerciseId(currentExerciseId == id ? -1 : id);
     }
        // render    
@@ -135,7 +138,7 @@ const styles = (theme,isCurrentGroup,isCurrentExercise) =>
   }
 })
 
-function playEffects(sound,vibrationDuration ){
+function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
         sound.pause();
@@ -144,5 +147,5 @@ function playEffects(sound,vibrationDuration ){
     sound.volume = 0.5;
     sound.play();
   }
-  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }

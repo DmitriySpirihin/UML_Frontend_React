@@ -35,8 +35,8 @@ const ConfirmationPanel = () => {
                 <FaExclamationTriangle style={styles(theme).miniIcon}/>
                 <h1 style={styles(theme).text}>{header}</h1>
                 <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
-                  <div style={styles(theme).button} onClick={() => {setConfirmationPanel(false);if(AppData.prefs[3] == 0)navigator.vibrate(50)}}><MdClose style={styles(theme).miniIcon}/></div>  
-                  <div style={styles(theme).button} onClick={() => {confirmAction(); setConfirmationPanel(false);if(AppData.prefs[3] == 0)navigator.vibrate(50)}}><MdDone style={styles(theme).miniIcon}/></div>  
+                  <div style={styles(theme).button} onClick={() => {setConfirmationPanel(false);if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');}}><MdClose style={styles(theme).miniIcon}/></div>  
+                  <div style={styles(theme).button} onClick={() => {confirmAction(); setConfirmationPanel(false);if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');}}><MdDone style={styles(theme).miniIcon}/></div>  
                 </div>
             </div>
         </div>

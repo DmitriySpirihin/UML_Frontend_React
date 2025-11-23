@@ -224,15 +224,15 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
             }
             AppData.habitsByDate[dateKey][id] = newStatus;
         }
-        if(newStatus === 1)playEffects(isDoneSound,50);
-        else if(newStatus === -1)playEffects(skipSound,50);
+        if(newStatus === 1)playEffects(isDoneSound);
+        else if(newStatus === -1)playEffects(skipSound);
         setColor(Colors.get(newStatus === 1 ? 'habitCardDone' : newStatus === -1 ? 'habitCardSkipped' : 'habitCard', theme));
         setStatus(newStatus);
     }
             
     
     const toggleIsActive = () => {
-        playEffects(clickSound,50);
+        playEffects(clickSound);
         const newExpanded = !expanded;
         setExpanded(newExpanded);
         setExpandedCard(newExpanded ? id : null);
@@ -410,15 +410,14 @@ function setInfoText(langIndex) {
     'Вы еще не добавили ни одной привычки\n\n Вы можете выбрать из списка или добавить свою привычку.\n\nВыбранные привычки будут обновляться автоматически каждый день, если вы пропустите день, привычка будет не выполнена для этого дня.\n\nВы должны выполнить свою привычку и затем свайпнуть вправо, чтобы отметить её как выполненную.\n\nЧтобы сформировать привычку, вам нужно выполнить ее 66 дней подряд.\n\nВы можете просмотреть прогресс ваших привычек в панели метрик и календаре.\n\n\n * Чтобы начать, нажмите кнопку "+" ниже' :
     'You have not added any habits yet\n\n You can choose from the list or add your own habit.\n\nChoosen habits will update automatically every day, if you skip a day, the habit will be skipped for that day.\n\nYou need to perform your habit and then swipe right to mark it as done.\n\nTo form a habit you need to perform it for 66 days in a row.\n\nYou can view a progress of your habits in the metrics panel and calendar.\n\n\n * To get started tap the "+" button below';
 }
-function playEffects(sound,vibrationDuration ){
+function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
+        sound.pause();
         sound.currentTime = 0;
     }
-    else{
-      sound.volume = 0.5;
-      sound.play();
-    }
+    sound.volume = 0.5;
+    sound.play();
   }
-  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }

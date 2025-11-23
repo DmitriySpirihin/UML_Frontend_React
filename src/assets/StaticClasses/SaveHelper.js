@@ -9,20 +9,22 @@ export async function initializeTelegramSDK(opts = {}){
         await init();
         if (miniApp.ready.isAvailable()) {
             await miniApp.ready();
-            if(viewport.mount?.isAvailable?.()){
-                await viewport.mount();
-                viewport.expand();
+            const platform = Telegram.WebApp.platform;
+            if (platform !== 'desktop' || platform !== 'web'){
+                if(viewport.mount?.isAvailable?.()){
+                    await viewport.mount();
+                    viewport.expand();
+                    if (viewport.requestFullscreen?.isAvailable?.()) {
+                        await viewport.requestFullscreen();
+                    }
+                }
             }
-
-            if (viewport.requestFullscreen?.isAvailable?.()) {
-                await viewport.requestFullscreen();
-            }
-            
-            // Setup back button handler to save data when back button is pressed
-            if (window.Telegram?.WebApp?.BackButton) {
-                // Enable the back button
-                window.Telegram.WebApp.BackButton.show();
-                // Set up the event listener for the back button
+        
+        // Setup back button handler to save data when back button is pressed
+        if (window.Telegram?.WebApp?.BackButton) {
+            // Enable the back button
+            window.Telegram.WebApp.BackButton.show();
+            // Set up the event listener for the back button
                 window.Telegram.WebApp.onEvent('backButtonClicked',()=> {saveData();Telegram.WebApp.close();});
             }
         }

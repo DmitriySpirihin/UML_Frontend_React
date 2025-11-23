@@ -188,7 +188,6 @@ const styles = (theme) =>
 })
 
 function playEffects(sound){
-  /*
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
         sound.pause();
@@ -196,7 +195,7 @@ function playEffects(sound){
     }
     sound.volume = 0.5;
     sound.play();
-  }*/
+  }
   if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
 const trainingAmountText = (trainingAmount,langIndex) => {

@@ -66,9 +66,9 @@ const MainBtns = () => {
               {!keyboardVisible && (<div style={styles(theme).logoContainer}>
                 <UserPanel theme={theme} />
                 <img src={globalTheme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={styles(theme).logo} />
-                {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon,top:'11vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
-                {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon,top:'11vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null,50);}} />)}
-                <Menu  style={{...styles(theme).icon,top:'11vh',left:'2vh'}} onClick={() => {toggleSettings();playEffects(null,50);}} />
+                {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon,top:'11vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null);}} />)}
+                {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon,top:'11vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null);}} />)}
+                <Menu  style={{...styles(theme).icon,top:'11vh',left:'2vh'}} onClick={() => {toggleSettings();playEffects(null);}} />
               </div>)}
             
             
@@ -120,7 +120,7 @@ const PopUpPanel = ({theme}) => {
         return () => subscription.unsubscribe();
     }, []);
     useEffect(() => {
-      if(show.show) playEffects(show.isPositive ? popUpSoundPositive : popUpSoundNegative,0);
+      if(show.show) playEffects(show.isPositive ? popUpSoundPositive : popUpSoundNegative);
     }, [show]);
     return (
         <AnimatePresence>
@@ -234,7 +234,7 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
                    {panelNum === 2 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
                       <div style={{display:"flex",flexDirection:"row"}}><FaDonate style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Здесь будет ссылка на донат' : 'Here will be a donate link'}</p></div>
                    </div>}
-                  <div  onClick={() => {setIsOpen(false);playEffects(null,20)}} style={{display:"flex",flexDirection:"row",borderBottom:"1px solid " + Colors.get('border', theme),width:'40%'}}>
+                  <div  onClick={() => {setIsOpen(false);playEffects(null)}} style={{display:"flex",flexDirection:"row",borderBottom:"1px solid " + Colors.get('border', theme),width:'40%'}}>
                     <FaBackspace style={styles(theme).miniIcon}/>
                     <p style={styles(theme).text} >{langIndex === 0 ? 'Закрыть' : 'Close'}</p>
                   </div>
@@ -278,7 +278,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                             zIndex: 2000,
                             pointerEvents: 'auto',
                         }}
-                        onClick={() => {setIsOpen(false);playEffects(transitionSound,20);}}
+                        onClick={() => {setIsOpen(false);playEffects(transitionSound);}}
                     />
                     <motion.div
                         className="settings-panel"
@@ -305,7 +305,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                             <FaLanguage style={settingsPanelStyles(theme).miniIcon}/>
                             <p style={settingsPanelStyles(theme).text} onClick={() => { 
                                 changeSettings(0);
-                                playEffects(null,20);
+                                playEffects(null);
                                 // Update language text immediately
                                 const newLangIndex = langIndex === 0 ? 1 : 0;
                                 setLang(newLangIndex === 0 ? 'ru' : 'en');
@@ -316,7 +316,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaHighlighter style={settingsPanelStyles(theme).miniIcon}/>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(1);playEffects(null,20)}}>
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(1);playEffects(null)}}>
                                  {
                                     getThemeName(langIndex,theme)
                                  }
@@ -332,7 +332,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
                             {vibroIndex === 0 ? <LuVibrate style={settingsPanelStyles(theme).miniIcon}/> : <LuVibrateOff style={settingsPanelStyles(theme).miniIcon}/>}
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(3);setVibro(vibroIndex === 0 ? 1 : 0);playEffects(null,20)}}>
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(3);setVibro(vibroIndex === 0 ? 1 : 0);playEffects(null)}}>
                                  {
                                    langIndex === 0 ? 'вибрация: '+ (vibroIndex === 0 ? 'вкл' : 'выкл') : 'vibration: ' + (vibroIndex === 0 ? 'on' : 'off')
                                  }
@@ -350,7 +350,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaDonate style={settingsPanelStyles(theme).miniIcon}/>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(2);playEffects(null,20)}}>
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(2);playEffects(null)}}>
                                  {
                                     langIndex === 0 ? 'поддержи нас' : 'support us'
                                  }
@@ -358,7 +358,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaAddressCard style={settingsPanelStyles(theme).miniIcon}/>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(3);playEffects(null,20)}}>
+                            <p style={settingsPanelStyles(theme).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(3);playEffects(null)}}>
                                  {
                                    langIndex === 0 ? 'контакты разработчиков' : 'developers contacts'
                                  }
@@ -399,7 +399,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                             <FaBackspace style={settingsPanelStyles(theme).miniIcon}/>
                             <p 
                                 style={{...settingsPanelStyles(theme).text, cursor: 'pointer'}} 
-                                onClick={() => {setIsOpen(false);playEffects(transitionSound,20)}}
+                                onClick={() => {setIsOpen(false);playEffects(transitionSound)}}
                             >
                                 {langIndex === 0 ? 'назад' : 'back'}
                             </p>
@@ -587,8 +587,7 @@ const styles = (theme) => {
   }
     }
 }
-function playEffects(sound,vibrationDuration ){
-    /*
+function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){
     if(!sound.paused){
         sound.pause();
@@ -597,6 +596,5 @@ function playEffects(sound,vibrationDuration ){
     sound.volume = 0.5;
     sound.play();
   }
-  if(AppData.prefs[3] == 0)navigator.vibrate(vibrationDuration);
-  */
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
