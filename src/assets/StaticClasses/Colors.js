@@ -35,6 +35,12 @@ export class Colors {
     iconsShadow:{ light: "#ffffffff", dark: "#5a8181ff", speciallight: "#df2c2cff", specialdark: "#679667ff" },
 
     habitIcon:{ light: "#4f8ac2ff", dark: "#48706fff", speciallight: "#773838ff", specialdark: "#407f40ff" },
+
+    trainingGroup:{ light: "#b3ced8ff", dark: "#101215ff", speciallight: "#a8756aff", specialdark: "#171515ff" },
+    trainingGroupSelected:{ light: "#b8e6f9ff", dark: "#1e2927ff", speciallight: "#e6a7a7ff", specialdark: "#282e27ff" },
+
+    trainingBaseFont: { light: "#341717ff", dark: "#794040ff", speciallight: "#3c0707ff", specialdark: "#903d3dff" },
+    trainingIsolatedFont: { light: "#3d3923ff", dark: "#77713dff", speciallight: "#464302ff", specialdark: "#797b3aff" },
   };
 
   static setTheme(theme) {

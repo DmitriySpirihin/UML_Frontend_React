@@ -5,6 +5,7 @@ import Colors from '../StaticClasses/Colors'
 import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud,loadData } from '../StaticClasses/SaveHelper';
 import { initializeTelegramSDK, getTelegramContext } from '../StaticClasses/SaveHelper';
+import { setAllExercisesAndProgramms } from '../Classes/TrainingData';
 
 function LoadPanel() {
     const [theme, setTheme] = React.useState('dark');
@@ -40,8 +41,11 @@ function LoadPanel() {
                 // Load saved data
                 await loadData();
                 console.log(JSON.stringify(AppData.notify));
+                            console.log(Telegram.WebApp.version);
+                
                 fillEmptyDays();
                 setAllHabits();
+                setAllExercisesAndProgramms();
                 
                 setTimeout(() => setLoading(false), 1000);
                 setTimeout(() => setPage('MainMenu'), 2600);

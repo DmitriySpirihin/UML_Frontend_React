@@ -83,7 +83,7 @@ const HabitCalendar = () => {
               <thead>
                 <tr>
                   {daysOfWeek[langIndex].map((day) => (
-                    <th key={day}><p style={{textAlign:'center',fontSize:'14px',color:day === 'Вс' || day === 'Sun' ? '#873535ff' : Colors.get('subText', theme)}}>{day}</p></th>
+                    <th key={day}><p style={{textAlign:'center',fontSize:'12px',color:day === 'Вс' || day === 'Sun' ? '#873535ff' : Colors.get('subText', theme)}}>{day}</p></th>
                   ))}
                 </tr>
               </thead>
@@ -318,7 +318,7 @@ const styles = (theme) =>
   text :
   {
     fontFamily: "Segoe UI",
-    fontSize: "18px",
+    fontSize: "14px",
     color: Colors.get('mainText', theme),
   },
   subText :

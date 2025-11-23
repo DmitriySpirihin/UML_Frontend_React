@@ -41,7 +41,7 @@ export function setShowPopUpPanel(text,duration,isPositive ) {
 export const setPage = (page) => {
   setPage$.next(page);
   if(page.startsWith('Habit')) bottomBtnPanel$.next('BtnsHabits');
-  else if(page === 'TrainingMain') bottomBtnPanel$.next('BtnsTraining');
+  else if(page.startsWith('Training')) bottomBtnPanel$.next('BtnsTraining');
   else bottomBtnPanel$.next('');
 }
 export const setAddPanel = (state) => addPanel$.next(state);

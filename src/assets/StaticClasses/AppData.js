@@ -13,6 +13,12 @@ export class AppData{
    static habitsByDate = {};
    static daysToFormAHabit = 66;
    static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
+
+   // training log
+   static currentProgram = null;
+   static exercises = [];
+   static programs = [];
+   static trainingLog = [];
   // methods
   static init(data) {
     if (!data) return;

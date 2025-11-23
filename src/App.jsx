@@ -13,8 +13,16 @@ const LoadPanel = lazy(() => import('./assets/Pages/LoadPanel'));
 const ConfirmationPanel = lazy(() => import('./assets/Pages/ConfirmationPanel'));
 const AddHabitPanel = lazy(() => import('./assets/Pages/HabitsPages/AddHabitPanel'));
 const HabitSettings = lazy(() => import('./assets/Pages/HabitsPages/HabitSettings'));
-const TrainingMain = lazy(() => import('./assets/Pages/TrainingPages/TrainingMain'));
 const NotifyPanel = lazy(() => import('./assets/Pages/NotifyPanel'));
+const AddProgrammPanel = lazy(() => import('./assets/Pages/TrainingPages/AddProgrammPanel'));
+const AddExercisePanel = lazy(() => import('./assets/Pages/TrainingPages/AddExercisePanel'));
+const TrainingMain = lazy(() => import('./assets/Pages/TrainingPages/TrainingMain'));
+const TrainingMetrics = lazy(() => import('./assets/Pages/TrainingPages/TrainingMetrics'));
+const TrainingExercise = lazy(() => import('./assets/Pages/TrainingPages/TrainingExercise'));
+const TrainingProgramm = lazy(() => import('./assets/Pages/TrainingPages/TrainingProgramms'));
+const TrainingCurrent = lazy(() => import('./assets/Pages/TrainingPages/TrainingCurrent'));
+const TrainingSettings = lazy(() => import('./assets/Pages/TrainingPages/TrainingSettings'));
+
 
 function App() {
   const [page, setPageState] = useState('LoadPanel');
@@ -76,8 +84,20 @@ useEffect(() => {
       {addPanel === 'AddHabitPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <AddHabitPanel/>
       </Suspense>}
+      {addPanel === 'AddExercisePanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <AddExercisePanel/>
+      </Suspense>}
+      {addPanel === 'AddProgrammPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <AddProgrammPanel/>
+      </Suspense>}
+      {page === 'TrainingCurrent' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingCurrent/>
+      </Suspense>}
       {addPanel === 'HabitSettings' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <HabitSettings/>
+      </Suspense>}
+      {addPanel === 'TrainingSettings' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingSettings/>
       </Suspense>}
       {notifyPanel && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <NotifyPanel/>
@@ -87,6 +107,15 @@ useEffect(() => {
       </Suspense>}
       {page === 'TrainingMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingMain/>
+      </Suspense>}
+      {page === 'TrainingMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingMetrics/>
+      </Suspense>}
+      {page === 'TrainingExercise' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingExercise/>
+      </Suspense>}
+      {page === 'TrainingProgramm' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingProgramm/>
       </Suspense>}
       {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
       {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}

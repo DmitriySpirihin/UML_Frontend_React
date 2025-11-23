@@ -19,7 +19,6 @@ const BtnsHabits = () => {
     const [theme, setthemeState] = useState('dark');
     const [page,setPageState] = useState('');
     const [addPanel,setAddPanelState] = useState('');
-    const [notifyPanel,setNotifyPanelState] = useState(false);
     const [currentBtn,setBtnState] = useState(0);
     const [notify,setNotifyState] = useState([{enabled:false,cron:''},{enabled:false,cron:''},{enabled:false,cron:''}]);
  

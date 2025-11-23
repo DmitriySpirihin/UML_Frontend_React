@@ -9,7 +9,6 @@ export async function initializeTelegramSDK(opts = {}){
         await init();
         if (miniApp.ready.isAvailable()) {
             await miniApp.ready();
-
             if(viewport.mount?.isAvailable?.()){
                 await viewport.mount();
                 viewport.expand();
