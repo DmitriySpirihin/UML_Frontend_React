@@ -27,7 +27,7 @@ const HabitSettings = () => {
                 <p style={styles(theme).text}>{langIndex === 0 ? 'индивидуальные настройки' : 'individual settings'}</p>
                 <p style={styles(theme).subText}>{getInfoText(langIndex)}</p>
                 <div style={styles(theme).sliderContainer}>
-                  <Slider style={styles(theme).slider} min={21} max={66} value={daysToFormAHabit} onChange={(e, value) => {setDaysToFormAHabitFn(value)}} />
+                  <Slider style={styles(theme).slider} min={21} max={99} value={daysToFormAHabit} onChange={(e, value) => {setDaysToFormAHabitFn(value)}} />
                   <p style={{...styles(theme).text,fontSize:'16px',marginLeft:'18px'}}>{daysToFormAHabit}</p>
                 </div>
                 <p style={styles(theme).subText} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);}}>{langIndex === 0 ? '! нажми для закрытия !' : '! tap to close !'}</p>

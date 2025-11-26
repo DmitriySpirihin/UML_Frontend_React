@@ -6,6 +6,7 @@ import Colors from '../../StaticClasses/Colors'
 import {theme$ ,lang$, emitHabitsChanged} from '../../StaticClasses/HabitsBus'
 import Check from '@mui/icons-material/Check';
 import Close from '@mui/icons-material/Close';
+import {MdDoneAll} from 'react-icons/md'
 
 
 const formatDateKey = (d) => {
@@ -100,7 +101,7 @@ const HabitCalendar = () => {
                         if(Object.keys(AppData.habitsByDate).includes(dayKey)){
                             const allHabitsOfCurrentDay = Array.from(Object.values(AppData.habitsByDate[dayKey]));
                             const allHabitsOfDay = allHabitsOfCurrentDay.length;
-                            const doneHabitsOfDay = allHabitsOfCurrentDay.filter((v) => v === 1).length;
+                            const doneHabitsOfDay = allHabitsOfCurrentDay.filter((v) => v > 0).length;
                             const percentNum = allHabitsOfDay > 0 ? Math.round((doneHabitsOfDay/allHabitsOfDay)*100) : 0;
                             percent = percentNum + '%';
                             status = percentNum >= 100 ? 1 : -1;
@@ -168,7 +169,7 @@ const Habit = ({theme, langIndex, date}) => {
 
 const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
     const [status, setStatus] = useState(statusInit);
-    const [canDrag, setCanDrag] = useState(true);
+    const [canDrag, setCanDrag] = useState(status < 2);
     const maxX = 100;
     const minX = -100;
     const x = useMotionValue(0);
@@ -218,7 +219,7 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
     return (
         <motion.div
             id={`cal-${id}`}
-            style={{display:'flex',flexDirection:'row',justifyContent:'space-around',alignItems:'center',lineHeight:'2px', x: constrainedX}}
+            style={{backgroundColor:status < 2 ? 'transparent' : Colors.get('habitCardEnded',theme),display:'flex',flexDirection:'row',width:'95%',justifyContent:'space-around',alignItems:'center',lineHeight:'2px', x: constrainedX}}
             drag={canDrag ? 'x' : false}
             dragConstraints={{ left: minX, right: status === 1 ? 0 : maxX }}
             dragElastic={0}
@@ -226,8 +227,8 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
             onDragEnd={onDragEnd}
         >
             <p style={{...styles(theme).text,fontSize:'14px', paddingLeft:'30px'}}>{name}</p>
-            {status === 1 ? (
-                <Check style={{...styles(theme).icon,color:'#2e9741ff'}}/>
+            {status > 0 ? (
+              status > 1 ? <MdDoneAll style={{...styles(theme).icon,color:'#8e972eff'}}/> : <Check style={{...styles(theme).icon,color:'#2e9741ff'}}/>
             ) : status === -1 ? (
                 <Close style={{...styles(theme).icon,color:'#973939ff'}}/>
             ) : null}

@@ -40,7 +40,6 @@ const styles = (theme) =>
    {
      backgroundColor:Colors.get('background', theme),
      display: "flex",
-     position:'absolute',
      flexDirection: "column",
      overflowY:'scroll',
      justifyContent: "start",

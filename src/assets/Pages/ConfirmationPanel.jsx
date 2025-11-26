@@ -1,11 +1,11 @@
-import React, {useState,useEffect} from 'react'
+import React from 'react'
 import Colors from 'src/assets/StaticClasses/Colors.js'
 import { theme$ , lang$} from 'assets/StaticClasses/HabitsBus'
 import { setConfirmationPanel,header$} from 'assets/StaticClasses/HabitsBus'
 import { removeHabitFn , currentId} from 'assets/Pages/HabitsPages/HabitsMain'
 import {AppData} from 'assets/StaticClasses/AppData'
 import {FaExclamationTriangle} from 'react-icons/fa'
-import {MdBorderBottom, MdClose,MdDone} from 'react-icons/md'
+import {MdClose,MdDone} from 'react-icons/md'
 
 function confirmAction(){
     removeHabitFn(currentId);

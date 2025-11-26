@@ -1,14 +1,15 @@
-import { useState, useEffect,useRef} from 'react';
+import { useState, useEffect} from 'react';
 import {useLongPress} from '../../Helpers/LongPress.js';
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
-import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$,setKeyboardVisible,setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
-import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt} from 'react-icons/fa'
+import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$,setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
+import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt,FaTrashAlt} from 'react-icons/fa'
 import {MdFiberNew,MdDone,MdClose,} from 'react-icons/md'
 import {FiPlus,FiMinus} from 'react-icons/fi'
 import Icons from '../../StaticClasses/Icons';
+import MyInput from '../../Helpers/MyInput';
 const click = new Audio('Audio/Click.wav');
 
 const getAllHabits = () => {
@@ -36,10 +37,12 @@ const AddHabitPanel = () => {
     const [habitId, setHabitId] = useState(-1);
 
     //date
-    const [year,setYear] = useState(new Date().getFullYear());
-    const [month,setMonth] = useState(new Date().getMonth());
-    const [day,setDay] = useState(new Date().getDate());
-    
+    const [year,setYear] = useState(now.getFullYear());
+    const [month,setMonth] = useState(now.getMonth() + 1);
+    const [day,setDay] = useState(now.getDate());
+    const [goals,setGoals] = useState([]);
+    const [goalName,setGoalName] = useState('');
+   
     // UI state
     const [habitList, setHabitList] = useState(getAllHabits());
     const [selectedHabit, setSelectedHabit] = useState(null);
@@ -47,33 +50,64 @@ const AddHabitPanel = () => {
     const [opacity, setOpacity] = useState(0);
     const [iconName, setIconName] = useState('default');
     const [addButtonEnabled, setAddButtonEnabled] = useState(false);
-    const [addButtonContext, setAddButtonContext] = useState({
-        text: langIndex === 0 ? 'Добавить' : 'Add',
-        onClick: () => addHabit(false,year.toString()+'-'+month+'-'+day)
-    });
-    const handleDateChange = (isIncr, dateType) => {
+   const handleDateChange = (isIncr, dateType) => {
   if (dateType === 2) {
-    setDay(prevDay =>
-      getday(isIncr, prevDay, year, month)
-    );
+    setDay(prevDay => {
+      const maxDay = new Date(year, month, 0).getDate();
+      let d = prevDay;
+      if (isIncr) {
+        if (prevDay < maxDay && new Date(year, month - 1, prevDay + 1).getTime() <= now.getTime()) d = prevDay + 1;
+      } else {
+        if (prevDay > 1) d = prevDay - 1;
+      }
+      return d;
+    });
   } else if (dateType === 1) {
-    setMonth(prevMonth =>
-      !isIncr
-        ? prevMonth - 1 > -1
-          ? prevMonth - 1
-          : 11
-        : prevMonth + 1 < 12
-        ? prevMonth + 1
-        : 0
-    );
+    setMonth(prevMonth => {
+      let m = prevMonth;
+      if (isIncr) {
+        // нельзя месяц в будущем, учитываем год!
+        if (
+          prevMonth < 12 &&
+          new Date(year, prevMonth, day).getTime() <= now.getTime()
+        ) {
+          m = prevMonth + 1;
+        }
+      } else {
+        if (prevMonth > 1) {
+          m = prevMonth - 1;
+        }
+      }
+      // коррекция дня, если месяц изменён: например, 31 января -> февраль
+      const maxDay = new Date(year, m, 0).getDate();
+      if (day > maxDay) setDay(maxDay);
+      return m;
+    });
   } else if (dateType === 0) {
-    setYear(prevYear =>
-      isIncr && prevYear + 1 <= now.getFullYear() + 2 && prevYear - 1 >= now.getFullYear() - 2
-        ? prevYear + 1
-        : prevYear - 1
-    );
+    setYear(prevYear => {
+      let y = prevYear;
+      if (isIncr) {
+        // не больше текущего года или месяца/дня сегодняшних
+        if (
+          prevYear < now.getFullYear() &&
+          new Date(prevYear + 1, month - 1, day).getTime() <= now.getTime()
+        ) {
+          y = prevYear + 1;
+        }
+      } else {
+        // ограничь минимальный год (например, -100, по желанию)
+        if (prevYear > now.getFullYear() - 1) {
+          y = prevYear - 1;
+        }
+      }
+      // коррекция дня/месяца, если нужно
+      const maxDay = new Date(y, month, 0).getDate();
+      if (day > maxDay) setDay(maxDay);
+      return y;
+    });
   }
-};
+   };
+
 
     const bindYearhMinus = useLongPress(() => handleDateChange(false, 0));
     const bindYearPlus = useLongPress(() => handleDateChange(true, 0));
@@ -81,7 +115,16 @@ const AddHabitPanel = () => {
     const bindMonthPlus = useLongPress(() => handleDateChange(true, 1));
     const bindDayMinus = useLongPress(() => handleDateChange(false, 2));
     const bindDayPlus = useLongPress(() => handleDateChange(true, 2));
-    
+    const setNewGoal = () => {
+      if (goalName.length > 0) {
+        setGoals(prev => [...prev, goalName]);
+        setGoalName('');
+      }
+      else setShowPopUpPanel( langIndex === 0 ? 'Введите цель' : 'Enter goal',2000,false);
+    };
+    const removeGoal = (index) => {
+      setGoals(prev => prev.filter((_, i) => i !== index));
+    };
     const months =[ ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
     useEffect(() => {
     const subscription = theme$.subscribe(setTheme);
@@ -119,16 +162,19 @@ const AddHabitPanel = () => {
       if(value.length > 0){
         if (index === 0) setHabitName(value[0].toUpperCase() + value.toLowerCase().slice(1));
         else if (index === 1) setHabitCategory(value[0].toUpperCase() + value.toLowerCase().slice(1));
-        else if (index === 2) setHabitDescription(value[0].toUpperCase() + value.toLowerCase().slice(1));}
+        else if (index === 2) setHabitDescription(value[0].toUpperCase() + value.toLowerCase().slice(1));
+        else if (index === 3) setGoalName(value[0].toUpperCase() + value.toLowerCase().slice(1));
+      }else{
+        if (index === 0) setHabitName('');
+        else if (index === 1) setHabitCategory('');
+        else if (index === 2) setHabitDescription('');
+        else if (index === 3) setGoalName('');
+      }
     };
     
     useEffect(() => {
       if (habitName.length > 3 && habitCategory.length > 3) {
         setAddButtonEnabled(true);
-        setAddButtonContext({
-          text: langIndex === 0 ? 'создать и добавить' : 'create and add',
-          onClick: () => createHabit(habitName, habitCategory, habitDescription, habitIcon)
-        });
       } else {
         setAddButtonEnabled(false);
       }
@@ -142,17 +188,16 @@ const AddHabitPanel = () => {
         }}>
          {!showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
-           <div style={{...styles(theme).simplePanel,height: keyboardVisible ? "66vh" : "52vh"}}>
-            <div style={{display:'flex',flexDirection:'row'}}>
-              <FaSearch style={{color:Colors.get("mainText",theme),width:'5vw',marginTop:'10px',marginLeft:'10px'}}/>
-              <input type="text" onFocus={() => setKeyboardVisible(true)} onBlur={() => setKeyboardVisible(false)} style={{...styles(theme).input,height: keyboardVisible ? "50%" : "40%"}}
-              onChange={(e) => searchHabitsList(e.target.value,habitList, setHabitList) }/>
+           <div style={{...styles(theme).simplePanel,height:"52vh"}}>
+            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',width:'90%'}}>
+              <FaSearch style={{color:Colors.get("icons",theme),fontSize:'16px',marginTop:'10px',marginLeft:'10px'}}/>
+              <MyInput maxL={10} w="70%" placeHolder={langIndex === 0 ? 'поиск' : 'search'} theme={theme} 
+              onChange={value => searchHabitsList(value,habitList, setHabitList) }/>
             </div>
             <div style={styles(theme).scrollView}>
               {habitList.map((habit) => !AppData.choosenHabits.includes(habit.id) && (
                 <li key={habit.id} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
-                onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(click);
-                setAddButtonContext({text: langIndex === 0 ? 'Добавить' : 'Add',onClick: () => addHabit(habit.id,habit.name[langIndex],false,year.toString()+'-'+month+'-'+day)})}}>
+                onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(click);}}>
                   <p style={styles(theme).text}>{habit.name[langIndex]}</p>
                 </li>
               ))}
@@ -168,18 +213,15 @@ const AddHabitPanel = () => {
            {/* creation panel */}
            {showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
-           <div style={{...styles(theme).simplePanel,height: keyboardVisible ? "66vh" : "52vh",justifyContent:'center'}}>
-            <textarea maxLength={25} placeholder={langIndex === 0 ? 'имя' : 'name'} style={styles(theme).input}
-            onChange={(e) => handleInputValue(e.target.value,0)} onFocus={() => setKeyboardVisible(true)} onBlur={() => setKeyboardVisible(false)}/>
-            <div style={{display:"flex",justifyContent:"space-between"}}>
-              <textarea  maxLength={25} placeholder={habitCategory === '' ? langIndex === 0 ? 'категория' : 'category' : habitCategory} style={{...styles(theme).input,width:"48%"}}
-              onChange={(e) => handleInputValue(e.target.value,1)} onFocus={() => setKeyboardVisible(true)} onBlur={() => setKeyboardVisible(false)}/>
+           <div style={{...styles(theme).simplePanel,height:"52vh",justifyContent:'space-around',alignItems:'center'}}>
+            <MyInput maxL={25} h="15%" w='90%' placeHolder={langIndex === 0 ? 'имя' : 'name'} theme={theme} onChange={v => handleInputValue(v,0)}/>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:'center',width:'95%'}}>
+               <MyInput maxL={25} h="40%" w='50%' placeHolder={langIndex === 0 ? 'категория' : 'category'} theme={theme} onChange={v => handleInputValue(v,1)} value={habitCategory}/>
               <select style={{...styles(theme).input,width:"48%"}} onChange={(e) => handleInputValue(e.target.value,1)}>
                 {renderCategoryOptions(theme, langIndex)}
               </select>
             </div>
-            <textarea maxLength={60} placeholder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} style={{...styles(theme).input,height: keyboardVisible ? "40%" : "25%"}}
-            onChange={(e) => handleInputValue(e.target.value,2)} onFocus={() => setKeyboardVisible(true)} onBlur={() => setKeyboardVisible(false)}/>
+            <MyInput maxL={100} h="20%"w='90%' placeHolder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} theme={theme} onChange={v => handleInputValue(v,2)}/>
             <div style={styles(theme).headerText}>{langIndex === 0 ? 'выбери иконку(опционально)' : 'choose icon(optional)'}</div>
             <div style={{display:"flex",justifyContent:"space-between"}}>
               <div style={{width: '80%',marginLeft:'30px',padding:'5px'}}>
@@ -238,13 +280,6 @@ const AddHabitPanel = () => {
                    setSelectIconPanel(false);
                    if(habitName.length > 3 && habitCategory.length > 3) {
                      setAddButtonEnabled(true);
-                     setAddButtonContext({
-                       text: langIndex === 0 ? 'создать и добавить' : 'create and add',
-                       onClick: () => {
-                         createHabit(habitName, habitCategory, habitDescription, key);
-                         playEffects(click);
-                       }
-                     });
                    }
                  }}
                >
@@ -263,39 +298,56 @@ const AddHabitPanel = () => {
            <div style={styles(theme).container}>
             <div style={styles(theme).confirmationPanel}>
              <p style={styles(theme).text}>{confirmationText(langIndex,showCreatePanel,habitId,habitName)}</p>
-             <div style={{...styles(theme).simplePanelRow,flexDirection:'column',alignItems:'center',backgroundColor:Colors.get('background', theme),width:'90%',borderRadius:'24px'}}>
-               <p style={styles(theme).text}>{langIndex === 0 ? 'установите дату' : 'set date'}</p>
+             <div style={{...styles(theme).simplePanelRow,flexDirection:'column',justifyContent:'space-between',alignItems:'center',backgroundColor:Colors.get('background', theme),width:'90%',height:'80%',borderRadius:'24px'}}>
+               <p style={styles(theme).text}>{langIndex === 0 ? 'установите дату': 'set date'}</p>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindYearhMinus} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
+                   <div {...bindYearhMinus} onClick={() => {handleDateChange(false,0)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
                    <p style={styles(theme).textDate}> {year} </p>
-                   <div {...bindYearPlus} onClick={() => {if(now.getFullYear() + 2 >= year + 1)setYear(prev => prev + 1);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
+                   <div {...bindYearPlus} onClick={() => {handleDateChange(true,0)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
                </div>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindMonthMinus} onClick={() => {setMonth(prev => prev - 1 > -1 ? prev - 1 : 11);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
-                   <p style={styles(theme).textDate}> {months[langIndex][month]} </p>
-                   <div {...bindMonthPlus} onClick={() => {setMonth(prev => prev + 1 < 12 ? prev + 1 : 0);playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
+                   <div {...bindMonthMinus} onClick={() => {handleDateChange(false,1)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
+                   <p style={styles(theme).textDate}> {months[langIndex][month - 1]} </p>
+                   <div {...bindMonthPlus} onClick={() => {handleDateChange(true,1)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
                </div>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindDayMinus} onClick={() => {setDay(prev => (getday(false,prev,year,month)));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
+                   <div {...bindDayMinus} onClick={() => {handleDateChange(false,2)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
                    <p style={styles(theme).textDate}> {day} </p>
-                   <div {...bindDayPlus} onClick={() => {setDay(prev => (getday(true,prev,year,month)));playEffects(click);}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
+                   <div {...bindDayPlus} onClick={() => {handleDateChange(true,2)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
+               </div> 
+               <p style={styles(theme).text}>{langIndex === 0 ? '(опционально) дополнительные цели' : '(optional) additional goals'}</p>
+               <div style={{...styles(theme).simplePanelRow,width:'70%',flexDirection:'row',justifyContent:'space-around',alignItems:'center'}}>
+                <MyInput w='80%'h='70%' maxL={50} placeHolder={langIndex === 0 ? 'новая цель' : 'new goal'} onChange={v => handleInputValue(v,3) } clear={true}/>
+                <FaPlusSquare style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}} onClick={setNewGoal}/>
                </div>
+               <div style={{marginTop:'10px',width:'60%',display:'flex',flexDirection:'column',justifyContent:'start',alignItems:'start',overflowY:'auto',height:'120%'}}>
+                  {goals.map((goal,index) => (
+                    <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'100%',height:'20%'}}>
+                      <div style={styles(theme).text}>{index + 1 + ': ' + goal}</div>
+                      <FaTrashAlt style={{...styles(theme).miniIcon,fontSize:'14px',marginBottom:'20px',marginLeft:'auto'}} onClick={() => removeGoal(index)}/>
+                    </div>
+                  ))}
+                </div>
              </div>
+             
              <div style={styles(theme).simplePanelRow}>
               
                <div style={styles(theme).button} onClick={() => {setConfirmationPanel(false);resetDate(setDay,setMonth,setYear);playEffects(click);}}><MdClose style={styles(theme).miniIcon}/></div>
-               <div style={styles(theme).button} onClick={() => {addButtonContext.onClick();playEffects(click);setConfirmationPanel(false);resetDate(setDay,setMonth,setYear);}}><MdDone style={styles(theme).miniIcon}/></div>
+               <div style={styles(theme).button} onClick={() => {
+                 const curDateString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                 const habitgoals = goals.length > 0 ? goals.map(goal => ({text: goal, isDone: false})) : [];
+                 if (showCreatePanel)createHabit(habitName, habitCategory, habitDescription, habitIcon, curDateString,habitgoals)
+                 else addHabit(habitId, habitName, false, curDateString,habitgoals);
+                 playEffects(click);
+                 setConfirmationPanel(false);
+                 resetDate(setDay, setMonth, setYear);
+                 playEffects(click);setConfirmationPanel(false);resetDate(setDay,setMonth,setYear);}}><MdDone style={styles(theme).miniIcon}/></div>
              </div>
             </div>
            </div>
          )}
         </div>
     )
-}
- function Demo() {
-  const [value, setValue] = useState(0);
-  const bind = useLongPress(() => setValue(v => v + 1), {threshold: 400, interval: 150});
-  return <button {...bind}>Value: {value}</button>;
 }
 export default AddHabitPanel;
 
@@ -309,33 +361,33 @@ const renderCategoryOptions = (theme, langIndex) => {
     ));
 };
 
-const addHabit =  (habitId,habitName,isCustom,dateString) => {
+const addHabit =  (habitId,habitName,isCustom,dateString,goals) => {
     if(AppData.IsHabitInChoosenList(habitId)) {
        setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list',2500,false);
       return;
     }
-    addHabitFn(habitId,dateString);
+    addHabitFn(habitId,dateString,goals);
     const message = !isCustom ? AppData.prefs[0] === 0 ? 'привычка добавлена' : 'habit added' : AppData.prefs[0] === 0 ? `привычка: ${habitName} создана и добавлена` : `habit: ${habitName} was created and added`;
     setShowPopUpPanel(message,2500,true);
 }
 
-const createHabit =  (name,category,description,icon) => {
+const createHabit =  (name,category,description,icon,dateString,goals) => {
     const currentAll = getAllHabits();
     const maxId = currentAll.length > 0 ? Math.max(...currentAll.map(h => h.id)) : 0;
     const habitId = maxId + 1;
     if(!AppData.IsCustomHabitExists(habitId)){
       
       AppData.AddCustomHabit(name,category,description,icon,habitId);
-      setTimeout(() => {addHabit(habitId,name,true,dateString);}, 100);
+      setTimeout(() => {addHabit(habitId,name,true,dateString,goals);}, 100);
     }else{
       setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка с таким названием уже существует' : 'habit with this name already exists',2500,false);
     }
 }
 
-const searchHabitsList = (name, habitList, setHabitList) => {
-    if(name.length > 0){
+const searchHabitsList = (val, habitList, setHabitList) => {
+    if(val.length > 0){
       const newList = getAllHabits().filter((habit) => {
-        return habit.name[AppData.prefs[0]].toLowerCase().startsWith(name.toLowerCase());
+        return habit.name[AppData.prefs[0]].toLowerCase().startsWith(val.toLowerCase());
       });
       setHabitList(newList);
     }else{
@@ -359,7 +411,7 @@ const styles = (theme, keyboardVisible) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 9900,
+    zIndex: 2900,
     padding: '20px',
   },
   panel :
@@ -386,10 +438,11 @@ const styles = (theme, keyboardVisible) => ({
     borderRadius:"24px",
     border: `1px solid ${Colors.get('border', theme)}`,
     margin: "5px",
+    marginBottom:'15vw',
     backgroundColor:Colors.get('simplePanel', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
     width:"85vw",
-    height:"80vw"
+    height:"140vw"
   },
   text :
   {
@@ -435,15 +488,15 @@ const styles = (theme, keyboardVisible) => ({
   },
   input:
   {
+    backgroundColor:Colors.get('simplePanel',theme),
     width:'65vw',
-    height: keyboardVisible ? "6vh" : "3vh",
+    height: "3vh",
+    borderBottom:`1px solid ${Colors.get('border', theme)}`,
     borderRadius:'12px',
-    border:`1px solid ${Colors.get('border', theme)}`,
     margin:'12px',
-    fontSize:'14px',
+    fontSize:'12px',
     fontFamily:'Segoe UI',
     color:Colors.get('subText', theme),
-    backgroundColor:Colors.get('inputField', theme),
   },
   simplePanelRow:
   {
@@ -540,13 +593,9 @@ function confirmationText(lang,isCreatePanel,habitId,customHabitName)
     return lang === 0 ? 'добавить привычку ' + name + '?':'add habit ' + name + '?';
   }
 }
-function getday(isMax,day,year,month){
-  const daysInMonth = new Date(year, month, 0).getDate();
-  return isMax ? day + 1 <= daysInMonth && new Date(year, month, day + 1).getTime() <= now.getTime()  ? day + 1 : 1 : day - 1 > 0 ? day - 1 : new Date(year, month, day - 1).getTime() <= now.getTime() ? now.getDate() : daysInMonth; 
-}
 function resetDate(setDay,setMonth,setYear){
   const now = new Date();
   setDay(now.getDate());
-  setMonth(now.getMonth());
+  setMonth(now.getMonth() + 1);
   setYear(now.getFullYear());
 }

@@ -1,8 +1,9 @@
 import { init, miniApp, setCloudStorageItem, getCloudStorageItem,viewport} from '@telegram-apps/sdk'
-import {AppData,Data} from '../StaticClasses/AppData'
+import {AppData,Data,UserData} from '../StaticClasses/AppData'
 import {openDB} from 'idb'
 import 'reflect-metadata'
 import {instanceToPlain, plainToClass} from 'class-transformer'
+import {NotificationsManager} from '../StaticClasses/NotificationsManager'
 
 export async function initializeTelegramSDK(opts = {}){
     try {
@@ -312,6 +313,8 @@ export async function clearAllSaves() {
       await setCloudStorageItem('UserData', null);
       console.log('Cloud storage cleared successfully');
     }
+    NotificationsManager.sendMessage("trainingoff", UserData.id);
+    NotificationsManager.sendMessage("habitoff", UserData.id);
   } catch (error) {
     console.error('Error clearing saves:', error);
     throw error;

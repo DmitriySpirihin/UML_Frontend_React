@@ -23,13 +23,11 @@ const NotifyPanel = () => {
 
     const hours = Array.from({length: 24}, (_, i) => i);
     const minutes = Array.from({length: 60}, (_, i) => i);
-
     const scrollToSelect = (ref,value) => {
       if(ref.current){
         const itemHeight = 70;
         ref.current.scrollTop = value * itemHeight;
         setCron(getCronExpression(daysOfWeek,hour,minute));
-        playEffects(clickSound);
       }
     };
     const hoursRef = useRef(null);
@@ -68,7 +66,7 @@ const NotifyPanel = () => {
   };
     const setNotification = () => {
       /////
-      if(page.startsWith("H"))habitReminder(langIndex,cron,hour,minute);
+      if(page.startsWith("H"))habitReminder(langIndex,cron,hour,minute,true);
       if(page.startsWith("T"))trainingReminder(langIndex,cron,hour,minute);
     }
     const closePanel = () => {
@@ -264,7 +262,6 @@ function getCronExpression(daysOfWeek,hour,minute){
     }
     cron += ' ' + daysMap.join(',');
   }
-  console.log(cron);
   return cron;
 }
 function stringToCron(page,setCron,setHour,setMinute,setDaysOfWeek,setIsSliderOn){
@@ -292,7 +289,7 @@ function stringToCron(page,setCron,setHour,setMinute,setDaysOfWeek,setIsSliderOn
     setDaysOfWeek(newDays);
   }
 }
-function habitReminder(langIndex,_cron,hour,minute) {
+export function habitReminder(langIndex,_cron,hour,minute,needMessage) {
   const messages = [
     ['время для ваших привычек,', 'Time for your habits,'],
     ['пора выполнить вашу привычку,', 'Time to complete your habit,'],
@@ -309,12 +306,12 @@ function habitReminder(langIndex,_cron,hour,minute) {
     ['время для самодисциплины,', 'Time for self-discipline,'],
   ]
   if(!AppData.notify[0].enabled){
-    setShowPopUpPanel(langIndex === 0 ? 'Уведомления отключены ,сначала включите их' : 'Notifications disabled, first enable them',2000,false);
+    if(needMessage)setShowPopUpPanel(langIndex === 0 ? 'Уведомления отключены ,сначала включите их' : 'Notifications disabled, first enable them',2000,false);
     return;
   }
     try {
         if (!AppData.choosenHabits || AppData.choosenHabits.length === 0) {
-            setShowPopUpPanel(langIndex === 0 ? 'Нет выбранных привычек' : 'No habits chosen',2000,false);
+            if(needMessage)setShowPopUpPanel(langIndex === 0 ? 'Нет выбранных привычек' : 'No habits chosen',2000,false);
             return;
         }
         const habits = AppData.choosenHabits
@@ -325,10 +322,10 @@ function habitReminder(langIndex,_cron,hour,minute) {
         message += habitNames + '$' + _cron;
         AppData.notify[0] = {enabled:true,cron:_cron};
         NotificationsManager.sendMessage("habit", message);
-        setShowPopUpPanel(langIndex === 0 ? 'Уведомление установлено  на ' + hour + ':' + minute : 'Notification set on ' + hour + ':' + minute,2000,true);
+        if(needMessage)setShowPopUpPanel(langIndex === 0 ? 'Уведомление установлено  на ' + hour + ':' + minute : 'Notification set on ' + hour + ':' + minute,2000,true);
     } catch (error) {
         console.log(error);
-        setShowPopUpPanel(langIndex === 0 ? 'Ошибка отправки уведомления' : 'Error sending notification',2000,false);
+        if(needMessage)setShowPopUpPanel(langIndex === 0 ? 'Ошибка отправки уведомления' : 'Error sending notification',2000,false);
     }
 }
 
@@ -377,7 +374,7 @@ const toggleNotify = (page,isEnabled,langIndex,_cron,hour,minute) => {
     AppData.notify[0].enabled = isEnabled;
     if(UserData?.id){
       if(isEnabled) {
-        habitReminder(langIndex,_cron,hour,minute);
+        habitReminder(langIndex,_cron,hour,minute,true);
       }
       else {
         NotificationsManager.sendMessage("habitoff", UserData.id);
@@ -397,16 +394,4 @@ const toggleNotify = (page,isEnabled,langIndex,_cron,hour,minute) => {
       }
     } 
   }
-}
-function playEffects(sound){
-  if(AppData.prefs[2] == 0 && sound !== null){
-    if(!sound.paused){
-        sound.currentTime = 0;
-    }
-    else{
-      sound.volume = 0.5;
-      sound.play();
-    }
-  }
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }

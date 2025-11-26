@@ -8,12 +8,13 @@ import TelegramIcon from '@mui/icons-material/Telegram';
 import {sendBugreport} from '../StaticClasses/NotificationsManager'
 import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
-import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, setLang, lang$, vibro$, sound$,keyboardVisible$} from '../StaticClasses/HabitsBus';
+import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, setLang, lang$, vibro$, sound$} from '../StaticClasses/HabitsBus';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import Dark from '@mui/icons-material/DarkModeTwoTone';
 import Light from '@mui/icons-material/LightModeTwoTone';
 import Menu from '@mui/icons-material/MenuTwoTone';
+import KeyBoard from '../Helpers/KeyBoard';
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
@@ -47,14 +48,12 @@ const MainBtns = () => {
         });
         const subscriptionS = sound$.subscribe(setSound);
         const subscriptionV = vibro$.subscribe(setVibro);
-        const subscriptionK = keyboardVisible$.subscribe(setKeyboardVisibleState);
         return () => {
             subscription.unsubscribe();
             subscriptionG.unsubscribe();
             subscriptionT.unsubscribe();
             subscriptionS.unsubscribe();
             subscriptionV.unsubscribe();
-            subscriptionK.unsubscribe();
         }
     }, []);
 
@@ -63,13 +62,13 @@ const MainBtns = () => {
             <PopUpPanel theme={theme}  />
             
             
-              {!keyboardVisible && (<div style={styles(theme).logoContainer}>
+              (<div style={styles(theme).logoContainer}>
                 <UserPanel theme={theme} />
                 <img src={globalTheme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={styles(theme).logo} />
                 {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon,top:'11vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null);}} />)}
                 {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon,top:'11vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null);}} />)}
                 <Menu  style={{...styles(theme).icon,top:'11vh',left:'2vh'}} onClick={() => {toggleSettings();playEffects(null);}} />
-              </div>)}
+              </div>)
             
             
             <SettingsPanel 
@@ -85,6 +84,7 @@ const MainBtns = () => {
                 onClose={() => setIsSettingsOpen(false)}
             />
             <AdditionalPanel theme={theme} langIndex={langIndex} isOpen={additionalPanel} setIsOpen={setAdditionalPanel} panelNum={additionalPanelNum}/>
+            <KeyBoard/>
         </>
     )
 }
@@ -159,7 +159,7 @@ const popUpStyles = (theme,isPositive) => {
     panel : {
       position: "fixed",
       left: "7.5%",
-      zIndex: 9000,
+      zIndex: 9999,
       width: "85vw",
       height: "15vh",
       borderRadius: "24px",

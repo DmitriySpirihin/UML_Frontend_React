@@ -3,10 +3,14 @@ import { motion , useTransform, useMotionValue,animate} from 'framer-motion'
 import Icons from '../../StaticClasses/Icons';
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
-import { expandedCard$, setExpandedCard , setPage} from '../../StaticClasses/HabitsBus.js';
-import Colors, { THEME } from '../../StaticClasses/Colors'
-import { theme$ ,lang$, globalTheme$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
-
+import { expandedCard$, setExpandedCard} from '../../StaticClasses/HabitsBus.js';
+import Colors from '../../StaticClasses/Colors'
+import { theme$ ,lang$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
+import {MdDoneAll} from 'react-icons/md'
+import {FaPlusSquare,FaTrash} from 'react-icons/fa'
+import {FaRegSquareCheck,FaRegSquare} from 'react-icons/fa6'
+import {MdClose,MdDone} from 'react-icons/md'
+import MyInput from '../../Helpers/MyInput';
 const dateKey = new Date().toISOString().split('T')[0];
 const clickSound = new Audio('Audio/Click.wav');
 const skipSound = new Audio('Audio/Skip.wav');
@@ -18,33 +22,31 @@ export let currentId;
 const HabitsMain = () => {
     // states
     const [theme, setthemeState] = React.useState('dark');
-    const [globalTheme, setglobalThemeState] = React.useState('dark');
     const [habitsCards, setHabitsCards] = React.useState([]);
     const [categories, setCategories] = React.useState([]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [hasHabits, setHasHabits] = useState(AppData.choosenHabits.length > 0);
+    const [confirmationPanel,setConfirmationPanel] = useState(false);
+    const [currentId, setCurrentId] = useState(0);
+    const [goalName,setGoalName] = useState('');
     // subscriptions
-    React.useEffect(() => {
+    useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
         return () => subscription.unsubscribe();
     }, []);
-    React.useEffect(() => {
-        const subscription = globalTheme$.subscribe(setglobalThemeState);   
-        return () => subscription.unsubscribe();
-    }, []);
-    React.useEffect(() => {
+    useEffect(() => {
         const subscription = lang$.subscribe((lang) => {
             setLangIndex(lang === 'ru' ? 0 : 1);
         });
         return () => subscription.unsubscribe();
     }, []);
     // Initialize habits cards on mount
-    React.useEffect(() => {
+    useEffect(() => {
         setHabitsCards(AppData.choosenHabits);
     }, []);
 
     // Update categories whenever habitsCards changes
-    React.useEffect(() => {
+    useEffect(() => {
         if (habitsCards.length > 0) {
             const cats = new Set();
             habitsCards.forEach(id => {
@@ -57,12 +59,12 @@ const HabitsMain = () => {
         }
     }, [habitsCards]);
     // functions to add/remove habits at runtime
-    const addHabit = (habitId,dateString) => {
+    const addHabit = (habitId,dateString,goals) => {
         // Use Set to ensure no duplicates before adding
         setHabitsCards(prev => {
             const newHabits = new Set(prev);
             if (!newHabits.has(habitId)) {
-                AppData.addHabit(habitId,dateString);
+                AppData.addHabit(habitId,dateString,goals);
                 return [...newHabits,habitId];
             }
             return prev;
@@ -71,7 +73,7 @@ const HabitsMain = () => {
     };
     const removeHabit = (habitId) => {
         if (habitsCards.includes(habitId)) {
-            AppData.removeHabit(dateKey,habitId);
+            AppData.removeHabit(habitId);
             setHabitsCards(prev => prev.filter(id => id !== habitId));
             const habitObj = getAllHabits().find(h => h.id === habitId);
             const nameArr = habitObj?.name || ["",""];
@@ -82,6 +84,13 @@ const HabitsMain = () => {
             setShowPopUpPanel(popUpText,2000,true);
             setHasHabits(AppData.choosenHabits.length > 0);
         }
+    };
+    const setNewGoal = () => {
+      if (goalName.length > 0) {
+        AppData.addHabitGoal(currentId,{text:goalName,isDone:false});
+        setGoalName('');
+      }
+      else setShowPopUpPanel( langIndex === 0 ? 'Введите цель' : 'Enter goal',2000,false);
     };
     
     removeHabitFn = removeHabit;
@@ -94,8 +103,27 @@ const HabitsMain = () => {
               <p style={{...styles(theme).subText,fontSize:'12px',margin:'10%',marginTop:'20%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setInfoText(langIndex)}</p>
             </div>}
             {hasHabits && <div style={styles(theme).scrollView}>
-              {buildMenu({theme, habitsCards, categories, getAllHabits: () => getAllHabits()})}
+              {buildMenu({theme, habitsCards, categories, getAllHabits: () => getAllHabits(),setConfirmationPanel,setCurrentId})}
         </div>}
+        {confirmationPanel && (
+                   <div style={styles(theme).confirmContainer}>
+                    <div style={styles(theme).confirmationPanel}>
+                      <p style={{...styles(theme).subText,fontSize:'12px',marginTop:'5%',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'Введите цель' : 'Enter goal'}</p>
+                      <MyInput
+                        w='80%'
+                        h='20%'
+                        maxL={30}
+                        onChange={value => setGoalName(value)}
+                        placeholder={langIndex === 0 ? 'Введите цель' : 'Enter goal'}
+                        theme={theme}
+                      />
+                     <div style={styles(theme).simplePanelRow}>
+                       <MdClose style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setConfirmationPanel(false);}}/>
+                       <MdDone style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setNewGoal();setConfirmationPanel(false);}}/>
+                    </div>
+                </div>
+              </div>
+            )}
         </div>
     )
 }
@@ -108,7 +136,7 @@ function getAllHabits() {
     );
 }
 
-function buildMenu({ theme, habitsCards, categories}) {
+function buildMenu({ theme, habitsCards, categories,setConfirmationPanel,setCurrentId}) {
     return categories.map(category => {
         const habitsInCategory = habitsCards
             .map(id => getAllHabits().find(h => h.id === id))
@@ -124,13 +152,15 @@ function buildMenu({ theme, habitsCards, categories}) {
                         descr={habit.description}
                         imgsrc={habit.src}
                         theme={theme}
+                        setConfirmationPanel={setConfirmationPanel}
+                        setCurrentId={setCurrentId}
                     />
                 ))}
             </CategoryPanel>
         );
     });
 }
-function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Описание", "Description"], theme}) {
+function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Описание", "Description"], theme,setConfirmationPanel,setCurrentId}) {
     const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const maxX = 100;
@@ -142,6 +172,9 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
     
     const [expanded, setExpanded] = useState(false);
     const [_color, setColor] = useState(cardColor);
+
+    const [goals,setGoals] = useState(AppData.ChoosenHabitsGoals[id].length > 0 ? AppData.ChoosenHabitsGoals[id].map(goal => goal.isDone) : []);
+    
     
     // Handle language changes
     useEffect(() => {
@@ -214,12 +247,19 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
         else{
             if(status === 0)newStatus = -1;
             else if(status === 1)newStatus = 0;
-            else{
+            else if(status === -1){
                 newStatus = -1;
                 currentId = id;
                 const newText = AppData.prefs[0] === 0 
                 ? `Вы уверены, что хотите удалить привычку: \'${displayText}\' ?`
                 : `Are you sure you want to delete \'${displayText}\' habit?`;
+                updateConfirmationPanel(newText);
+            }
+            else{
+                currentId = id;
+                const newText = AppData.prefs[0] === 0 
+                ? `Вы уверены, что хотите удалить выполненную привычку:  \'${displayText}\' ?`
+                : `Are you sure you want to delete the performed habit:  \'${displayText}\' ?`;
                 updateConfirmationPanel(newText);
             }
             AppData.habitsByDate[dateKey][id] = newStatus;
@@ -232,6 +272,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
             
     
     const toggleIsActive = () => {
+        setCurrentId(id);
         playEffects(clickSound);
         const newExpanded = !expanded;
         setExpanded(newExpanded);
@@ -248,15 +289,15 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
     const _style = {
         display:'flex',
         flexDirection:'column',
-        width:'90%',
+        width:'95%',
         borderRadius: "24px",
         margin: "5px",
         overflow: 'hidden',
         borderStyle: 'solid',
-        borderColor: Colors.get('border', theme),
         borderWidth: 1,
+        borderColor: status < 1 ? Colors.get('border', theme) : Colors.get('habitDoneBorder', theme),
         position: 'relative' ,
-        backgroundColor: _color,
+        backgroundColor: status < 2 ? _color : Colors.get('habitCardEnded', theme),
         x: constrainedX,
     }
     const mainText = 
@@ -270,24 +311,36 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
        textAlign: "left",
        fontSize: "10px",
        color: Colors.get('subText', theme),
-       marginLeft: "70px",
+       padding:'3px',
     }
-    
+
+    let newHeight = '15vh';
+    if(AppData.ChoosenHabitsGoals[id].length > 0){
+        newHeight = ((AppData.ChoosenHabitsGoals[id].length * 3) + 15) + 'vh';
+    }
         
     return (
             <motion.div 
                 id={id} 
                 style={_style} 
-                onClick={toggleIsActive}
+                onClick={(event) => {
+                    const mousePageY = event.nativeEvent.pageY;
+                    const el = document.getElementById(id);
+                    const elTop = el.getBoundingClientRect().top + window.scrollY;
+                    const clickY = mousePageY - elTop;
+                    if(el.clientHeight < 0.06 * window.innerHeight)toggleIsActive();
+                    else {
+                        if(clickY < el.clientHeight * 0.2)toggleIsActive();
+                    }
+                }}
                 drag={canDrag ? 'x' : false}
-                dragConstraints={{left: minX, right: status === 1 ? 0 : maxX}} 
+                dragConstraints={{left: minX, right: status > 0 ? 0 : maxX}} 
                 onDragStart={onDragStart} 
                 dragElastic={0} 
                 onDrag={handledDrag} 
                 onDragEnd={onDragEnd}
                 animate={{
-                    height: expanded ? '10vh' : '4.5vh',
-                    outline: expanded ? '3px solid ' + Colors.get('border', theme) : '1px solid ' + Colors.get('border', theme)
+                    height: expanded ? newHeight : '4.5vh',
                 }}
                 transition={{ 
                     type: 'tween',
@@ -300,10 +353,23 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                         {getHabitIcon()}
                     </div>
                     <h2 style={mainText}>{displayText}</h2>
+                    {status > 1 && <MdDoneAll style={{...styles(theme).icon,color:'#d8e363ff',fontSize:'24px',marginLeft:'auto',marginTop:'10px',marginRight:'15px'}}/>}
                 </div> 
                 {expanded && (
-                    <div style={{ paddingBottom: '25px'}}>
-                        <p style={subText}>{displayDescr}</p>
+                    <div style={{marginLeft:'15px',width:'90%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'space-around'}}>
+                      <div style={subText}>{displayDescr}</div>
+                      <div style={subText}>{langIndex === 0 ? 'Цели : ' : 'Goals : '}</div>
+                      {AppData.ChoosenHabitsGoals[id].map((goal,index) => (
+                        <div key={index} style={{display:'flex',flexDirection:'row',alignItems:'end',width:'98%',borderBottom:'1px solid ',marginBottom:'5px',marginLeft:'5px'}}>
+                           <div style={{...mainText,fontSize:'12px',marginLeft:'1px'}}>{index + 1 + ': ' + goal.text}</div>
+                           {goals[index] ? <FaRegSquareCheck style={{fontSize:'24px',color:Colors.get('icons', theme),marginLeft:'auto'}} onClick={() => {AppData.ChoosenHabitsGoals[id][index].isDone = false;setGoals(prev => {const newGoals = [...prev];newGoals[index] = false;return newGoals;})}}/> :
+                            <FaRegSquare style={{fontSize:'24px',color:Colors.get('icons', theme),marginLeft:'auto'}} onClick={() => {AppData.ChoosenHabitsGoals[id][index].isDone = true;setGoals(prev => {const newGoals = [...prev];newGoals[index] = true;return newGoals;})}}/>}
+                        </div>
+                      ))}
+                      <div style={{display:'flex',flexDirection:'row',justifyContent:'flex-start',alignItems:'center'}}>
+                         <FaPlusSquare onClick={() => setConfirmationPanel(true)} style={{fontSize:'24px',color:Colors.get('icons', theme)}}/>
+                         <div style={{...subText,marginLeft:'15px'}}>{langIndex === 0 ? 'Добавить цель' : 'Add goal'}</div>
+                      </div> 
                     </div>
                 )}
             </motion.div>
@@ -364,17 +430,53 @@ const styles = (theme) =>
   },
   scrollView:
   {
-    padding:'20px',
-    width: "90vw",
+    padding:'5px',
+    width: "98vw",
     height: "80vh",
     overflowY: "auto",
-    marginTop:"15vh",
+    marginTop:"12vh",
     boxSizing:'border-box',
     display:'flex',
     flexDirection:'column',
     alignItems:'stretch',
     borderRadius:'24px',
     backgroundColor:'rgba(0,0,0,0.1)'
+  },
+  confirmationPanel :
+    {
+      display:'flex',
+      flexDirection:'column',
+      alignItems: "center",
+      justifyContent: "space-around",
+      borderRadius:"24px",
+      border: `1px solid ${Colors.get('border', theme)}`,
+      margin: "5px",
+      marginBottom:'35vw',
+      backgroundColor:Colors.get('simplePanel', theme),
+      boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
+      width:"85vw",
+      height:"40vw"
+    },
+    confirmContainer: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2900,
+    padding: '20px',
+  },
+  simplePanelRow:
+  {
+    width:'75vw',
+    display:'flex',
+    flexDirection:'row',
+    alignItems:'stretch',
+    justifyContent:'space-around',
   }
 })
  function interpolateColor(color1, color2, factor) {

@@ -1,7 +1,7 @@
 import Home from '@mui/icons-material/HomeTwoTone';
 import Back from '@mui/icons-material/BackspaceTwoTone';
 import Metrics from '@mui/icons-material/BarChartTwoTone';
-import Settings from '@mui/icons-material/SettingsTwoTone';
+import MonitorWeightIcon from '@mui/icons-material/MonitorWeightTwoTone';
 import Exercises from '@mui/icons-material/FitnessCenter';
 import Programs from '@mui/icons-material/MenuBookTwoTone';
 import FaBellSlash from '@mui/icons-material/NotificationsOffTwoTone';
@@ -47,6 +47,7 @@ const BtnsTraining = () => {
             if(page === 'TrainingExercise') setBtnState(2);
             else if(page === 'TrainingMetrics') setBtnState(1);
             else if(page === 'TrainingProgramm') setBtnState(4);
+            else if(page === 'TrainingMesurments') setBtnState(3);
         }
     }, [currentBtn]);
     
@@ -72,18 +73,25 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,
     
     return (    
         <div style={styles(theme,currentBtn).style}>
-          {page !== 'TrainingMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);}} />)}
-          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);}} />)}
-          {page === 'TrainingMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);}} />)}
-          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('TrainingMetrics');setAddPanel('');playEffects(switchSound);}} />
-          <Programs style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('TrainingProgramm');setAddPanel('');playEffects(switchSound);}} />
-          <Exercises style={styles(theme,currentBtn,2,true,false).btnstyle} onClick={() => {setCurrentBottomBtn(2);setPage('TrainingExercise');playEffects(switchSound);}} />
-          <Add style={styles(theme,currentBtn,9,true,addPanel === 'AddExercisesPanel' || addPanel === 'AddProgramPanel' || page == 'AddExercisesPanel' || page !== 'TrainingMain').btnstyle} onClick={() => {if(page === 'TrainingMain'){setAddPanel('AddExercisePanel');}else if(page === 'TrainingProgramm'){setAddPanel('AddProgrammPanel');}else if(page === 'TrainingExercise'){setAddPanel('AddExercisePanel');};setCurrentBottomBtn(0);setNotifyPanel(false);playEffects(switchSound);}} />
+          {page !== 'TrainingMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
+          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
+          {page === 'TrainingMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
+          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('TrainingMetrics');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
+          <Programs style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('TrainingProgramm');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
+            <Add style={styles(theme,currentBtn,9,true,addPanel === '' && page === 'TrainingMetrics').btnstyle} 
+          onClick={() => {
+            if(page === 'TrainingMain'){setAddPanel('AddTrainingDayPanel');}
+            else if(page === 'TrainingProgramm'){setAddPanel('AddProgrammPanel');}
+            else if(page === 'TrainingExercise'){setAddPanel('AddExercisePanel');}
+            else if(page === 'TrainingMesurments'){setAddPanel('AddMesurmentsPanel');}
+            setCurrentBottomBtn(0);setNotifyPanel(false);playEffects(switchSound);}} />
+          <Exercises style={styles(theme,currentBtn,2,true,false).btnstyle} onClick={() => {setCurrentBottomBtn(2);setPage('TrainingExercise');playEffects(switchSound);setNotifyPanel(false);}} />
+          <MonitorWeightIcon style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setNotifyPanel(false);setPage('TrainingMesurments');playEffects(switchSound);}} />
           {page.startsWith('H') && (notify[0].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} /> 
               : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} />)}
           {page.startsWith('T') && (notify[1].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} /> 
               : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} />)}
-          <Settings style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setAddPanel('TrainingSettings');playEffects(switchSound);}} />
+          
         </div>
     )
 }   

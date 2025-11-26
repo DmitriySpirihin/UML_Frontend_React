@@ -1,6 +1,7 @@
 
 import {AppData} from "../StaticClasses/AppData";
 import { saveData } from "../StaticClasses/SaveHelper";
+import {setShowPopUpPanel} from "../StaticClasses/HabitsBus";
 import Colors from "../StaticClasses/Colors";
 export class MuscleIcon{
     static muscleIconsSrc = {
@@ -53,12 +54,12 @@ export class MuscleIcon{
         'Neck'
     ]
 ];
-    static get(name,lang,theme) {
+    static get(name,lang,theme,needAmount = true) {
         return (
             <div style={{ display:'flex',width:'80%',marginLeft:'5%',flexDirection:'row',alignItems:'space-around',justifyContent:'space-between' }}>
             <p style={{ color: Colors.get('mainText',theme) ,fontSize:'13px'}}>{this.names[lang][name]}</p>
             <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'center'}}>
-                <p style={{ color: Colors.get('subText',theme) ,fontSize:'12px',marginRight:'5px'}}>{allExercises.filter((exercise) => exercise.mgId == name).length + (lang === 0 ? ' упр' : ' ex')}</p>
+            {needAmount ? <p style={{ color: Colors.get('subText',theme) ,fontSize:'12px',marginRight:'5px'}}>{allExercises().filter((exercise) => exercise.mgId == name).length + (lang === 0 ? ' упр' : ' ex')}</p> : null}
             <div style={{ width: '45px', height: '45px',border:`2px solid ${Colors.get('border',theme)}`,borderRadius:'50%',overflow:'hidden' }}>
                 <img 
                     src={this.muscleIconsSrc[name]} 
@@ -69,16 +70,28 @@ export class MuscleIcon{
             </div>
         );
     }
+    static getForList(name,lang,theme) {
+        return (
+            <div style={{ width: '50px', height: '50px',fontSize:'12px',color:Colors.get('subText',theme)}}>
+                <img 
+                    src={this.muscleIconsSrc[name]} 
+                    style={{ width: '50px'}}
+                />
+                {this.names[lang][name]}
+            </div>
+        );
+    }
 }
 
 
 export class Exercise{
-    constructor(id,mgId,name,description,isBase){
+    constructor(id,mgId,name,description,isBase,isCustom = false){
         this.id = id;
         this.mgId = mgId;
         this.name = typeof name === 'string' ? [name,name] : name;
         this.description = typeof description === 'string' ? [description,description] : description;
         this.isBase = isBase;
+        this.isCustom = isCustom;
     }
 }
 
@@ -143,15 +156,15 @@ const exercises = [
     new Exercise(9,1,['Подъем гантелей в стороны','Dumbbell Lateral Raise'],
     ['Изолирующее упражнение для средней части плеч. Встаньте, держите гантели, поднимайте руки в стороны до уровня плеч, затем плавно опускайте.',
     'Isolating exercise for the middle deltoids. Stand, hold dumbbells, raise your arms sideways to shoulder level, then slowly lower.'
-    ],true),
+    ],false),
     new Exercise(10,1,['Тяга штанги к подбородку','Barbell Upright Row'],
     ['Базовое упражнение для плеч и трапеций. Встаньте, возьмите штангу узким хватом, подтяните её вертикально к подбородку, локти выше рук, затем опустите обратно.',
     'Basic exercise for shoulders and traps. Stand, grip the barbell narrowly, pull it vertically to your chin with elbows leading, then lower back down.'
-    ],true),
+    ],false),
     new Exercise(11,1,['Разведение гантелей в наклоне','Bent-Over Dumbbell Raise'],
     ['Изолирующее упражнение для задних дельт. Наклонитесь вперёд, держите гантели, разводите руки в стороны, концентрируясь на работе задней части плеч.',
     'Isolating exercise for rear delts. Bend forward, hold dumbbells, raise arms sideways, focusing on rear shoulder activation.'
-    ],true),
+    ],false),
     // lats
     new Exercise(12,2,['Подтягивания широким хватом','Wide-Grip Pull-Up'],
     ['Базовое упражнение для широчайших мышц спины. Возьмитесь за перекладину широким хватом, подтянитесь вверх, сводя лопатки, затем плавно опуститесь в исходное положение.',
@@ -164,7 +177,7 @@ const exercises = [
     new Exercise(14,2,['Тяга гантели одной рукой','One-Arm Dumbbell Row'],
     ['Изолирующее упражнение для широчайших. Упритесь одной рукой и коленом на скамью, второй рукой подтяните гантель к поясу, затем опустите.',
     'Isolating lat exercise. Place one hand and knee on the bench, pull the dumbbell to your waist with the other hand, then lower.'
-    ],true),
+    ],false),
     new Exercise(15,2,['Тяга штанги в наклоне','Bent-Over Barbell Row'],
     ['Базовое упражнение для спины. Наклонитесь вперёд со штангой в руках, подтяните её к поясу, сводя лопатки, затем плавно опустите.',
     'Basic back exercise. Bend forward with barbell in hands, row it to your waist while pinching shoulder blades, then lower slowly.'
@@ -173,7 +186,7 @@ const exercises = [
     new Exercise(16,3,['Сгибание рук со штангой стоя','Barbell Curl'],
     ['Классическое упражнение для бицепса. Встаньте, возьмите штангу хватом снизу на ширине плеч, на вдохе согните руки в локтях, поднимая штангу к плечам, затем плавно опустите.',
     'Classic biceps exercise. Stand and hold a barbell with an underhand grip at shoulder width, curl it up to your shoulders, then slowly lower.'
-    ],true),
+    ],false),
     new Exercise(17,3,['Сгибание рук с гантелями поочередно','Alternating Dumbbell Curl'],
     ['Упражнение для бицепса. Стоя или сидя, поочередно сгибайте руки с гантелями, поднимая их к плечам, затем плавно опускайте.',
     'Biceps exercise. Stand or sit, alternately curl dumbbells up to your shoulders, then slowly lower back.'
@@ -189,11 +202,11 @@ const exercises = [
     new Exercise(20,3,['Сгибание рук на скамье Скотта','Preacher Curl'],
     ['Упражнение для изоляции бицепса. Сядьте на скамью Скотта, возьмите гриф хватом снизу, медленно поднимайте к плечам и опускайте вниз.',
     'Isolating biceps exercise. Sit on the preacher bench, hold the barbell with an underhand grip, curl up to your shoulders, then lower.'
-    ],true),
+    ],false),
     new Exercise(21,3,['Молотковый подъем гантелей','Hammer Curl'],
     ['Упражнение для бицепса и предплечья. Держите гантели нейтральным хватом (ладони к телу), поднимайте их к плечам, затем опускайте.',
     'Biceps and forearm exercise. Hold dumbbells with a neutral grip (palms facing body), curl up to your shoulders, then lower.'
-    ],true),
+    ],false),
     // triceps
     new Exercise(22,4,['Жим штанги узким хватом','Close-Grip Barbell Bench Press'],
     ['Базовое упражнение для трицепса. Лягте на горизонтальную скамью, возьмите штангу узким хватом, опустите её к груди и выжмите вверх, чувствуя работу трицепса.',
@@ -241,16 +254,16 @@ const exercises = [
     new Exercise(31,7,['Подъем ног в висе','Hanging Leg Raise'],
     ['Эффективное упражнение для развития мышц пресса. Повисните на турнике, держась руками, на выдохе поднимайте прямые ноги вверх, почувствуйте сокращение пресса, затем плавно опускайте ноги.',
     'Effective abs exercise. Hang from a pull-up bar with arms extended, raise straight legs up while exhaling to contract the abs, then slowly lower your legs back down.'
-    ],true),
+    ],false),
     //Forearms
     new Exercise(32,8,['Сгибание запястий со штангой','Barbell Wrist Curl'],
     ['Изолирующее упражнение для мышц предплечья. Сядьте, возьмите штангу снизу, положите предплечья на колени или скамью, выполняйте сгибание запястий вверх, затем опускайте вниз.',
     'Isolating forearm exercise. Sit, hold the barbell with an underhand grip, rest your forearms on knees or bench, curl wrists upward, then lower down.'
-    ],true),
+    ],false),
     new Exercise(33,8,['Разгибание запястий со штангой','Barbell Reverse Wrist Curl'],
     ['Упражнение для тыльной стороны предплечий. Сядьте, держите штангу сверху, предплечья на коленях или скамье, разгибайте запястья вверх и затем опускайте вниз.',
     'Forearm exercise for the extensor muscles. Sit, hold the barbell with an overhand grip, forearms rested, raise wrists upward and lower down.'
-    ],true),
+    ],false),
     //Quads
     new Exercise(34,9,['Приседания со штангой','Barbell Squat'],
     ['Базовое упражнение для квадрицепсов и всей нижней части тела. Встаньте, положите штангу на плечи, присядьте до параллели бедер с полом, затем вернитесь в исходное положение.',
@@ -276,7 +289,7 @@ const exercises = [
     new Exercise(39,10,['Сгибание ног лежа в тренажере','Lying Leg Curl'],
     ['Изолирующее упражнение для бицепса бедра. Лягте лицом вниз в тренажёр, зафиксируйте голени под валиком, сгибайте ноги, максимально сокращая мышцы, затем плавно опускайте.',
     'Isolating hamstring exercise. Lie face down in the machine, hook ankles under the pad, curl your legs up and fully contract the muscles, then slowly lower.'
-    ],true),
+    ],false),
     new Exercise(40,10,['Становая тяга на прямых ногах','Stiff-Legged Deadlift'],
     ['Базовое упражнение для задней группы бедра и поясницы. Встаньте, ноги чуть согнуты, держите штангу в руках, наклоняйтесь вперёд с ровной спиной, почувствуйте растяжение мышц, затем вернитесь.',
     'Basic hamstring and lower back exercise. Stand with knees slightly bent, hold barbell in hands, lean forward with flat back, feel the stretch in hamstrings, then return upright.'
@@ -306,7 +319,7 @@ const exercises = [
     new Exercise(46,12,['Подъемы на носки сидя','Seated Calf Raise'],
     ['Упражнение для камбаловидной мышцы голени. Сядьте, поставьте стопы на платформу, разместите вес на коленях, поднимайте пятки вверх, затем опускайте.',
     'Exercise for the soleus muscle of the calf. Sit, place feet on a platform, rest weight on your knees, lift your heels up, then lower down.'
-    ],true)
+    ],false)
 ];
 const programs = [
     new Program(0,['Трёхдневная классическая программа', '3 days classic'],
@@ -319,13 +332,8 @@ const programs = [
     }),
 ];
 
-export let allExercises = [];
-export let allPrograms = [];
-
-export function setAllExercisesAndProgramms(){
-   allExercises = [...exercises,...AppData.exercises];
-   allPrograms = [...programs,...AppData.programs];
-}
+export const allExercises = () => [...exercises,...AppData.exercises]; 
+export const allPrograms = () => [...programs,...AppData.programs];
 
 export async function setTrainingDay(startDate,endDate,pId,exercises){
     const trainingDay = new TrainingDay(startDate,endDate,pId,exercises);
@@ -345,16 +353,16 @@ export async function updateTrainingDay(startDate,endDate,pId,exercises){
 }
 
 export async function addExercise(mgId,name,description,isBase){
-    const newId = allExercises.length;
-    const exercise = new Exercise(newId,mgId,name,description,isBase);
+    const newId = allExercises().length;
+    const exercise = new Exercise(newId,mgId,name,description,isBase,true);
     AppData.exercises.push(exercise);
-    allExercises.push(exercise);
+    setShowPopUpPanel(AppData.prefs[0] === 0 ? 'Новое упражнение: '+ name +' успешно добавлено' : 'New exercise: '+ name +' successfully added',2000,true);
     await saveData();
 }
 
 export async function removeExercise(id){
     AppData.exercises = AppData.exercises.filter(exercise => exercise.id !== id);
-    allExercises = allExercises.filter(exercise => exercise.id !== id);
+    setShowPopUpPanel(AppData.prefs[0] === 0 ? 'Упражнение успешно удалено' : 'Exercise successfully removed',2000,true);
     await saveData();
 }
 export async function addProgram(name,description,isCustom,days){

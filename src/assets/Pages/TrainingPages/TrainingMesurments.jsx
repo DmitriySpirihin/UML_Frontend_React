@@ -1,9 +1,9 @@
 import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
-import Colors, { THEME } from '../../StaticClasses/Colors'
+import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$} from '../../StaticClasses/HabitsBus'
 
-const AddProgrammPanel = () => {
+const TrainingMesurments = () => {
     // states
     const [theme, setthemeState] = React.useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
@@ -24,13 +24,13 @@ const AddProgrammPanel = () => {
        return (
            <div style={styles(theme).container}>
              <div style={styles(theme).panel}>
-               <h1>Add training programm</h1>
+               <h1>training mesurments</h1>
              </div>
            </div>
        )
 }
 
-export default AddProgrammPanel
+export default TrainingMesurments
 
 
 
@@ -40,7 +40,6 @@ const styles = (theme) =>
    {
      backgroundColor:Colors.get('background', theme),
      display: "flex",
-     position:'absolute',
      flexDirection: "column",
      overflowY:'scroll',
      justifyContent: "start",

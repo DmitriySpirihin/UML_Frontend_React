@@ -1,12 +1,12 @@
 import React, {useState,useEffect} from 'react'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
-import Colors, { THEME } from '../../StaticClasses/Colors'
+import Colors from '../../StaticClasses/Colors'
 import {FaArrowAltCircleLeft,FaArrowAltCircleRight,FaList} from 'react-icons/fa'
 import {IoMdArrowDropright,IoMdArrowDropleft} from 'react-icons/io'
-import { theme$ ,lang$, globalTheme$} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$} from '../../StaticClasses/HabitsBus'
 import Fire from '@mui/icons-material/LocalFireDepartment';
-import Check from '@mui/icons-material/Check';
+import {MdDoneAll} from 'react-icons/md'
 
 const clickMainSound = new Audio('Audio/Click.wav');
 
@@ -20,7 +20,6 @@ function getAllHabits() {
 const HabitMetrics = () => {
     // states
     const [theme, setthemeState] = React.useState('dark');
-    const [globalTheme, setglobalThemeState] = React.useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fillAmount, setFillAmount] = useState(0.0);
     const [maxStreak, setMaxStreak] = useState(0);
@@ -33,25 +32,21 @@ const HabitMetrics = () => {
       AppData.choosenHabits.length > 0 ? AppData.choosenHabits[0] : -1
     ));
     // subscriptions
-    React.useEffect(() => {
+    useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
         return () => subscription.unsubscribe();
     }, []);
-    React.useEffect(() => {
-        const subscription = globalTheme$.subscribe(setglobalThemeState);   
-        return () => subscription.unsubscribe();
-    }, []);
-    React.useEffect(() => {
+    useEffect(() => {
         const subscription = lang$.subscribe((lang) => {
             setLangIndex(lang === 'ru' ? 0 : 1);
         });
         return () => subscription.unsubscribe();
     }, []);
-    React.useEffect(() => {
-        setFillAmount(currentStreak / daysToForm);
+    useEffect(() => {
+        setFillAmount(Math.min(currentStreak / daysToForm,1));
     }, [currentStreak]);
     const habits = Array.from(Object.values(AppData.habitsByDate))
-    React.useEffect(() => {
+    useEffect(() => {
       if(habitId > -1){
       let maxStreak = 0;
       let currentStreak = 0;
@@ -134,9 +129,9 @@ const HabitMetrics = () => {
                 <circle stroke={Colors.get('border', theme)} fill="none" strokeWidth="15" r={radius} cx="75" cy="75"/>
                 <circle stroke={Colors.get('progressBar', theme)} fill="none" strokeWidth="14" r={radius} cx="75" cy="75"/>
                 <circle stroke={interpolateColor(Colors.get('habitCardSkipped', theme), Colors.get('habitCardDone', theme), fillAmount)} fill="none" strokeWidth="15" r={radius} cx="75" cy="75" 
-                strokeDasharray={circumference} strokeDashoffset={circumference + (-fillAmount * circumference)} 
+                strokeDasharray={circumference} strokeDashoffset={(circumference + (-fillAmount * circumference))} 
                 style={{transition: 'stroke-dashoffset 1s linear'}}   />
-                <text x="75" y="75" textAnchor="middle" dominantBaseline="middle" fontSize="24" fill={Colors.get('mainText', theme)}>{Math.ceil(fillAmount * 100)+"%"}</text>
+                <text x="75" y="75" textAnchor="middle" dominantBaseline="middle" fontSize="24" fill={Colors.get('mainText', theme)}>{Math.min(Math.ceil(fillAmount * 100),100)+"%"}</text>
                </svg>
                {/* texts info and days to reach goal */}
                <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'80%',height:'5vh',marginTop:'40px'}}>
@@ -169,11 +164,11 @@ const HabitMetrics = () => {
                   }
                 return (
                   <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'space-between',width:'100%',height:'8%',borderBottom: `1px solid ${Colors.get('border', theme)}`,
-                    backgroundColor:habitId === id ? Colors.get('highlitedPanel', theme) : Colors.get('background', theme),borderTopRightRadius:'12px'}}
+                    backgroundColor:habitId === id ? currentStreak < daysToForm ? Colors.get('highlitedPanel', theme) : Colors.get('habitCardended', theme) : Colors.get('background', theme),borderTopRightRadius:'12px'}}
                     onClick={() => {setHabitId(id);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}}>
                     <p style={{...styles(theme).text,fontSize:'14px',marginLeft:'20px'}}>{(getAllHabits().find(h => h.id === id) || {}).name?.[langIndex] || 'Unknown Habit'}</p>
-                    <p style={{...styles(theme).text,fontSize:'14px',marginRight:'20px'}}>{Math.ceil(currentStreak / daysToForm * 100) + '%'}</p>
-                    {currentStreak >= daysToForm && <Check style={{width:'20px',color:'#2e9741ff'}} />}
+                    {currentStreak < daysToForm && <p style={{...styles(theme).text,fontSize:'14px',marginRight:'20px'}}>{Math.min(Math.ceil(currentStreak / daysToForm * 100),100) + '%'}</p>}
+                    {currentStreak >= daysToForm && <MdDoneAll style={{width:'20px',color:'#c9af2cff',fontSize:'20px',marginTop:'15px',marginRight:'20px'}} />}
                   </div>
                 )
               })}
@@ -321,6 +316,10 @@ const infoTextShort = (langIndex) => {
 const infoDaysToFormHabit = (langIndex, days,daysToForm) => {
     const names = [[' день', ' дня', ' дней'],[' day', ' days', ' days']];
     const lastDays = daysToForm - days;
+    if(lastDays < 1) return langIndex === 0
+     ? "🏆 Все цели достигнуты! Поздравляем — вы на вершине успеха! 🚀"
+     : "🏆 All goals accomplished! Congratulations — you’ve reached the top! 🚀";
+
     let name = '';
     if(lastDays < 10 || lastDays > 19){
       name = lastDays % 10 === 1 ? names[langIndex][0] : lastDays % 10 > 1 && lastDays % 10 < 5 ? names[langIndex][1] : names[langIndex][2];
