@@ -82,7 +82,55 @@ export class MuscleIcon{
         );
     }
 }
+export const MuscleView = ({programmId,theme,langIndex}) =>{
+    const baseSrc = 'images/BodyIcons/Full.png';
+    const muscleIconsSrc = {
+        0:'images/BodyIcons/Full_0.png',
+        1:'images/BodyIcons/Full_1.png',
+        2:'images/BodyIcons/Full_2.png',
+        3:'images/BodyIcons/Full_3.png',
+        4:'images/BodyIcons/Full_4.png',
+        5:'images/BodyIcons/Full_5.png',
+        6:'images/BodyIcons/Full_6.png',
+        7:'images/BodyIcons/Full_7.png',
+        8:'images/BodyIcons/Full_8.png',
+        9:'images/BodyIcons/Full_9.png',
+        10:'images/BodyIcons/Full_10.png',
+        11:'images/BodyIcons/Full_11.png',
+        12:'images/BodyIcons/Full_12.png',
+        13:'images/BodyIcons/Full_13.png'
+    }
+    const programs = allPrograms();
+    const exercises = allExercises();
+    const program = programs[programmId];
+    const categoryArray = [];
+    Object.keys(program.days || {}).forEach((dayKey) => {
+    const dayExercises = program.days[dayKey];
+    if (!Array.isArray(dayExercises) || !dayExercises.length) return;
+    dayExercises.forEach(({ exId }) => {
+      const exercise = exercises.find((ex) => ex.id === exId);
+      if (!exercise) return;
+      const muscleGroup = exercise.mgId;
+      if (!categoryArray.includes(muscleGroup)) {
+        categoryArray.push(muscleGroup);
+      }
+    });
+   });
 
+
+    return (
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',width:'25vw',height:'25vw',margin:'2%'}}>
+        <div style={{fontSize:'6px',marginBottom:'2px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Анализ мышц' : 'Muscle analysis'}</div>
+        <div style={{position:'relative',display: 'block',width:'95%',height:'95%'}}>
+            <img src={baseSrc} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+            {categoryArray.map((category,index) => (
+                <img key={index} src={muscleIconsSrc[category]} style={{position:'absolute',top:'0',left:'0',width:'100%',height:'100%',objectFit:'cover',zIndex:'1'}}/>
+            ))}
+            
+        </div>
+        </div>
+    )
+}
 
 export class Exercise{
     constructor(id,mgId,name,description,isBase,isCustom = false){
@@ -96,13 +144,14 @@ export class Exercise{
 }
 
 export class Program{
-    constructor(id,name,description,isCustom,days){
+    constructor(id,name,description,isCustom,days,daysNames){
         this.id = id;
         this.name = typeof name === 'string' ? [name,name] : name;
         this.description = typeof description === 'string' ? [description,description] : description;
         this.isCustom = isCustom;
         this.days = days;
-        isCustom ? this.creationDate = new Date().toISOString() : this.creationDate = '';
+        this.daysNames = daysNames;
+        isCustom ? this.creationDate = new Date().toISOString() : this.creationDate = '2025-11-20';
     }
 }
 
@@ -322,14 +371,46 @@ const exercises = [
     ],false)
 ];
 const programs = [
-    new Program(0,['Трёхдневная классическая программа', '3 days classic'],
-    ['Программа тренировок, рассчитанная на три дня в неделю, включает основные упражнения для всех групп мышц. После каждого тренировочного дня рекомендуется делать 1 или 2 дня отдыха для оптимального восстановления мышц и предотвращения перенапряжения.',
-    'A training program designed for three days a week, includes basic exercises for all muscle groups. After each training day, it is recommended to take 1 or 2 rest days for optimal muscle recovery and injury prevention.'],
-    false,{
-        1:[{exId:34,sets:'3x12'},{exId:37,sets:'2x12'},{exId:7,sets:'3x12'},{exId:9,sets:'2x12'},{exId:27,sets:'2x15'}],
-        2:[{exId:0,sets:'3x12'},{exId:3,sets:'2x12'},{exId:23,sets:'3x12'},{exId:26,sets:'2x12'},{exId:31,sets:'2x12'}],
-        3:[{exId:31,sets:'1x12'},{exId:12,sets:'3x12'},{exId:17,sets:'3x12'},{exId:21,sets:'3x12'},{exId:45,sets:'3x15'}]
-    }),
+    new Program(
+        0,
+        ['Трёхдневная классическая программа', '3 days classic'],
+        ['Программа тренировок, рассчитанная на три дня в неделю, включает основные упражнения для всех групп мышц. После каждого тренировочного дня рекомендуется делать 1 или 2 дня отдыха для оптимального восстановления мышц и предотвращения перенапряжения.',
+        'A training program designed for three days a week, includes basic exercises for all muscle groups. After each training day, it is recommended to take 1 or 2 rest days for optimal muscle recovery and injury prevention.'],
+        false,
+        {
+           1:[{exId:34,sets:'3x12'},{exId:37,sets:'2x12'},{exId:7,sets:'3x12'},{exId:9,sets:'2x12'},{exId:27,sets:'2x15'}],
+           2:[{exId:0,sets:'3x12'},{exId:3,sets:'2x12'},{exId:23,sets:'3x12'},{exId:26,sets:'2x12'},{exId:31,sets:'2x12'}],
+           3:[{exId:31,sets:'1x12'},{exId:12,sets:'3x12'},{exId:17,sets:'3x12'},{exId:21,sets:'3x12'},{exId:45,sets:'3x15'}]
+        },
+        [['Ноги и плечи','Legs & shoulders'],['Грудь,трицепсы','Chest & triceps'],['Спина,бицепсы','Back & biceps']]),
+        
+        new Program(
+        1, 
+        ['4-дневная сплит-программа', '4-day split program'],
+        [
+          'Четырёхдневная программа, разделяющая тренировки по основным группам мышц для более целенаправленной нагрузки и восстановления.',
+          'A four-day program that splits workouts by major muscle groups for more focused loading and recovery.'
+        ],
+        false,
+        {
+          1: [ { exId: 0, sets: '3x8-10' }, { exId: 2, sets: '3x10-12' }, { exId: 4, sets: '2x12-15' }, { exId: 22, sets: '3x8-10' }, { exId: 23, sets: '2x10-12' } ],
+          2: [ { exId: 12, sets: '3x8-10' }, { exId: 15, sets: '3x8-10' }, { exId: 14, sets: '2x10-12' }, { exId: 16, sets: '3x8-10' }, { exId: 21, sets: '2x10-12' } ],
+          3: [ { exId: 34, sets: '3x8-10' }, { exId: 36, sets: '3x10-12' }, { exId: 40, sets: '3x8-10' }, { exId: 44, sets: '3x12-15' }, { exId: 45, sets: '2x12-15' } ],
+          4: [ { exId: 7,  sets: '3x8-10' }, { exId: 9,  sets: '3x10-12' }, { exId: 11, sets: '2x12-15' }, { exId: 27, sets: '3x10-12' }, { exId: 31, sets: '3x8-10' } ]
+        }, 
+        [['Грудь,трицепс','Chest & triceps'],['Спина,бицепс','Back & biceps'],['Ноги','Legs'],['Плечи','Shoulders']]),
+        new Program(
+        2,
+        ['Фулбоди раз в неделю', 'Full Body Once a Week'],
+        [
+          'Фуллбоди-программа на одну тренировку в неделю с акцентом на базовые упражнения для всех основных групп мышц.',
+          'Full body routine performed once per week focusing on compound lifts for all major muscle groups.'
+        ],
+        false,
+        {
+          1: [{ exId: 34, sets: '4x6-10' },{ exId: 0,  sets: '3x6-10' },{ exId: 15, sets: '3x6-10' },{ exId: 7,  sets: '3x8-12' }, { exId: 21, sets: '2x8-12' } ]
+        },
+        [['Фуллбоди','Full body']])
 ];
 
 export const allExercises = () => [...exercises,...AppData.exercises]; 

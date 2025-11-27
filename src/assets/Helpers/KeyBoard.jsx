@@ -115,7 +115,7 @@ const KeyBoard = () => {
          </div>
          {/*third line*/}
          <div style={styles(theme).rowPanel}>
-             <div onClick={() => {setIsShift(!isShift);setCurrentKey('shift')}} style={keyStyle(theme,keys[currentKeys][2].length + 2,currentKey,'shift')}>
+             <div onClick={() => {setIsShift(!isShift);setCurrentKey('shift')}} style={{...keyStyle(theme,keys[currentKeys][2].length + 2,currentKey,'shift'),backgroundColor:Colors.get('currentDateBorder2', theme)}}>
                 <FaArrowUp style={{...styles(theme).text,color:isShift ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme)}}/>
               </div>
             {keys[currentKeys][2].map((key) => (
@@ -123,31 +123,31 @@ const KeyBoard = () => {
                 <p key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
               </div>
             ))}
-            <div {...bindKey} onClick={() => click('bs')} style={keyStyle(theme,keys[currentKeys][2].length + 2,currentKey,'bs')}>
-                <MdBackspace style={{...styles(theme).text,color:isShift ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme)}}/>
+            <div {...bindKey} onClick={() => click('bs')} style={{...keyStyle(theme,keys[currentKeys][2].length + 2,currentKey,'bs'),backgroundColor:Colors.get('currentDateBorder2', theme)}}>
+                <MdBackspace style={styles(theme).text}/>
               </div>
          </div>
          {/*last line*/}
          <div style={styles(theme).rowPanel}>
-              <div onClick={() => {setCurrentKeys(prev => prev === 2 ? currentLang : 2);setCurrentKey('num')}} style={{...keyStyle(theme,1,currentKey,'num'),width:'10%'}}>
+              <div onClick={() => {setCurrentKeys(prev => prev === 2 ? currentLang : 2);setCurrentKey('num')}} style={{...keyStyle(theme,1,currentKey,'num'),width:'10%',backgroundColor:Colors.get('currentDateBorder2', theme)}}>
                 <p style={styles(theme).text}>{currentKeys < 2 ? '?12' : 'AB'}</p>
               </div>
-              <div onClick={() => {setNeedEmoji(true);setCurrentKey('em')}} style={{...keyStyle(theme,1,currentKey,'em'),width:'6%'}}>
+              <div onClick={() => {setNeedEmoji(true);setCurrentKey('em')}} style={{...keyStyle(theme,1,currentKey,'em'),width:'6%',backgroundColor:Colors.get('currentDateBorder2', theme)}}>
                 <FaSmileWink style={styles(theme).text}/>
               </div>
-              <div onClick={() => click(',')} style={{...keyStyle(theme,1,currentKey,','),width:'8%'}}>
+              <div onClick={() => click(',')} style={{...keyStyle(theme,1,currentKey,','),width:'9%'}}>
                 <p style={styles(theme).text}>{','}</p>
               </div>
-              <div onClick={() => {setCurrentKeys(prev => prev === 0 ? 1 : 0);setCurrentLang(prev => prev === 0 ? 1 : 0),setCurrentKey('lang')}} style={{...keyStyle(theme,1,currentKey,'lang'),width:'10%'}}>
+              <div onClick={() => {setCurrentKeys(prev => prev === 0 ? 1 : 0);setCurrentLang(prev => prev === 0 ? 1 : 0),setCurrentKey('lang')}} style={{...keyStyle(theme,1,currentKey,'lang'),width:'8%',backgroundColor:Colors.get('currentDateBorder2', theme)}}>
                 <IoLanguage style={styles(theme).text}/>
               </div>
               <div onClick={() => click(' ')} style={{...keyStyle(theme,1,currentKey,' '),width:'41%'}}>
                 <p style={{...styles(theme).text,fontSize:'12px'}}>{'UltyMyLife'}</p>
               </div>
-              <div onClick={() => click('.')} style={{...keyStyle(theme,1,currentKey,'.'),width:'8%'}}>
+              <div onClick={() => click('.')} style={{...keyStyle(theme,1,currentKey,'.'),width:'9%'}}>
                 <p style={styles(theme).text}>{'.'}</p>
               </div>
-              <div onClick={() => click('\n')} style={{...keyStyle(theme,1,currentKey,'\n'),width:'15%',backgroundColor:Colors.get('currentDateBorder2', theme)}}>
+              <div onClick={() => click('\n')} style={{...keyStyle(theme,1,currentKey,'\n'),width:'12%',backgroundColor:Colors.get('currentDateBorder2', theme)}}>
                 <FiCornerDownLeft style={styles(theme).text}/>
               </div>
          </div>
@@ -214,7 +214,8 @@ const styles = (theme,needKeyBoard) =>
   },
   text:
   {
-    fontSize: "20px",
+    fontSize: "21px",
+    fontWeight:'bold',
     color: Colors.get('icons', theme),
   },
   selectPanel:

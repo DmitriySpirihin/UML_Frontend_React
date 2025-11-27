@@ -360,7 +360,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                       <div style={subText}>{displayDescr}</div>
                       <div style={subText}>{langIndex === 0 ? 'Цели : ' : 'Goals : '}</div>
                       {AppData.ChoosenHabitsGoals[id].map((goal,index) => (
-                        <div key={index} style={{display:'flex',flexDirection:'row',alignItems:'end',width:'98%',borderBottom:'1px solid ',marginBottom:'5px',marginLeft:'5px'}}>
+                        <div key={index} style={{display:'flex',flexDirection:'row',alignItems:'end',width:'98%',borderBottom:`1px solid ${Colors.get('border', theme)}`,marginBottom:'5px',marginLeft:'5px'}}>
                            <div style={{...mainText,fontSize:'12px',marginLeft:'1px'}}>{index + 1 + ': ' + goal.text}</div>
                            {goals[index] ? <FaRegSquareCheck style={{fontSize:'24px',color:Colors.get('icons', theme),marginLeft:'auto'}} onClick={() => {AppData.ChoosenHabitsGoals[id][index].isDone = false;setGoals(prev => {const newGoals = [...prev];newGoals[index] = false;return newGoals;})}}/> :
                             <FaRegSquare style={{fontSize:'24px',color:Colors.get('icons', theme),marginLeft:'auto'}} onClick={() => {AppData.ChoosenHabitsGoals[id][index].isDone = true;setGoals(prev => {const newGoals = [...prev];newGoals[index] = true;return newGoals;})}}/>}

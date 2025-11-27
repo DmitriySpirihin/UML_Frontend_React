@@ -82,7 +82,7 @@ const TrainingExercise = () => {
            <div style={styles(theme).container}>
                {Object.keys(MuscleIcon.muscleIconsSrc).map((key) => (
                 <div key={key} style={styles(theme).panel}>
-                   <div key={key} style={styles(theme,currentMuscleGroupId == key,false).groupPanel} onClick={() => setMuscleGroup(key)}>
+                   <div key={key} style={styles(theme,currentMuscleGroupId == key,false).groupPanel} onClick={() => setMuscleGroup(prev => prev === key ? -1 : key)}>
                        {currentMuscleGroupId == key ? <IoIosArrowUp style={styles(theme).icon}/> : <IoIosArrowDown style={styles(theme).icon}/>}
                        {MuscleIcon.get(key,langIndex,theme)}
                    </div>
@@ -90,7 +90,7 @@ const TrainingExercise = () => {
                     <div style={styles(theme).panel}>
                         {allExercises().filter((exercise) => exercise.mgId == key).map((exercise) => (
                           <div key={exercise.id} style={styles(theme).panel}>
-                            <div style={{...styles(theme,false,currentExerciseId == exercise.id).exercisePanel,width:'98%',flexDirection:'row'}} onClick={() => setExercise(exercise.id)}>
+                            <div style={{...styles(theme,false,currentExerciseId == exercise.id).exercisePanel,width:'98%',flexDirection:'row'}} onClick={() => setExercise(prev => prev === exercise.id ? -1 : exercise.id)}>
                               {currentExerciseId == exercise.id ? <IoIosArrowUp style={{...styles(theme).icon,marginLeft:'7%',width:'10px',marginTop:'7px'}}/> : <IoIosArrowDown style={{...styles(theme).icon,marginLeft:'7%',width:'10px',marginTop:'7px'}}/>}
                               <p style={{...styles(theme).text,fontSize:'11px',marginLeft:'5%'}}>{exercise.name[langIndex]}</p>
                               <p style={{...styles(theme).subtext,fontSize:'10px',marginLeft: 'auto',marginRight:'5%',color:exercise.isBase ? Colors.get('trainingBaseFont',theme) : Colors.get('trainingIsolatedFont',theme)}}>{exercise.isBase ? langIndex === 0 ? 'Базовое' : 'Base' : langIndex === 0 ? 'Изолированное' : 'Isolated'}</p>
