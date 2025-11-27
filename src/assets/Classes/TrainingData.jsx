@@ -383,7 +383,7 @@ const programs = [
            3:[{exId:31,sets:'1x12'},{exId:12,sets:'3x12'},{exId:17,sets:'3x12'},{exId:21,sets:'3x12'},{exId:45,sets:'3x15'}]
         },
         [['Ноги и плечи','Legs & shoulders'],['Грудь,трицепсы','Chest & triceps'],['Спина,бицепсы','Back & biceps']]),
-        
+
         new Program(
         1, 
         ['4-дневная сплит-программа', '4-day split program'],
@@ -454,13 +454,11 @@ export async function addProgram(name,description,isCustom,days){
     await saveData();
 }
 export async function removeProgram(id){
-    AppData.programs = AppData.programs.filter(program => program.id !== id);
-    allPrograms = allPrograms.filter(program => program.id !== id);
+    AppData.programs.filter(program => program.id !== id);
     await saveData();
 }
 export async function updateProgram(id,name,description,isCustom,days){
     const program = new Program(id,name,description,isCustom,days);
-    AppData.programs = AppData.programs.map(program => program.id === id ? program : program);
-    allPrograms = allPrograms.map(program => program.id === id ? program : program);
+    AppData.programs.map(program => program.id === id ? program : program);
     await saveData();
 }

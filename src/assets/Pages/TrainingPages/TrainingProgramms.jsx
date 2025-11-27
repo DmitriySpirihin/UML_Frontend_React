@@ -1,12 +1,11 @@
 import {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
-import { theme$ ,lang$,addPanel$,setShowPopUpPanel} from '../../StaticClasses/HabitsBus.js'
+import { theme$ ,lang$,addPanel$,setShowPopUpPanel,setAddPanel} from '../../StaticClasses/HabitsBus.js'
 import {IoIosArrowDown,IoIosArrowUp,IoIosTrash} from 'react-icons/io'
 import {allExercises,allPrograms, MuscleView} from '../../Classes/TrainingData.jsx'
-import { FaRegSquare, FaRegCheckSquare,FaCalendarDay} from 'react-icons/fa';
+import {FaCalendarDay,FaPlusSquare} from 'react-icons/fa';
 import {MdBook} from 'react-icons/md'
-import {IoMdArrowDropdown,IoMdArrowDropup,IoMdList} from 'react-icons/io'
 import {MdDone,MdClose,MdFitnessCenter} from 'react-icons/md'
 import MyInput from '../../Helpers/MyInput';
 
@@ -14,16 +13,25 @@ const TrainingExercise = () => {
     // states
     const [theme, setthemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-    const [addPanel, setAddPanel] = useState('');
+    const [showAddPanel, setShowAddPanel] = useState(false);
     const [currentId, setCurrentId] = useState(-1);
     const [currentDay, setCurrentDay] = useState(-1);
-    const [currentExercise, setCurrentExercise] = useState('');
-
+    //new programm
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [currentProgramName, setCurrentProgramName] = useState('');
-    const [days,addDays] = useState({});
+    const [currentSet, setCurrentSet] = useState(3);
+    const [currentRep, setCurrentRep] = useState(4);
+    const [currentSets, setCurrentSets] = useState([3]);
+    const [currentReps, setCurrentReps] = useState([4]);
+    const [currentExercises, setCurrentExercises] = useState([0]);
+    const [days,addDays] = useState({
+      1: [ { exId: 0, sets: '3x8-10' }],
+    });
+    const [daysNames,addDaysNames] = useState(['ноги']);
 
+    const [showAddDayPanel, setShowAddDayPanel] = useState(false);
+    const [showExercisesList, setShowExercisesList] = useState(false);
     const [showConfirmRemove, setShowConfirmRemove] = useState(false);
 
     // subscriptions
@@ -38,16 +46,22 @@ const TrainingExercise = () => {
         }
     }, []);  
     useEffect(() => {
-        const subscriptionAddPanel = addPanel$.subscribe(setAddPanel);
+        const subscriptionAddPanel = addPanel$.subscribe(value => setShowAddPanel(value === 'AddProgrammPanel'));
         return () => subscriptionAddPanel.unsubscribe();
     }, []);
     
     
     function onClose(){
-      
+      setAddPanel('');
     }
-    function onAdd(){
+    function onAddProgramm(){
         onClose();
+    }
+    function onAddTrainingDay(){
+      setShowAddDayPanel(false);
+    }
+    function onAddExercise(){
+      setShowExercisesList(false);
     }
     function onRemove(){
       onClose();
@@ -100,14 +114,26 @@ const TrainingExercise = () => {
                ))}
                
                 {/* add panel */}
-           {addPanel === 'AddProgrammPanel' && (
+           {showAddPanel && (
             <div style={styles(theme).addContainer}>
-              <div style={styles(theme).additionalPanel}>
+              <div style={{...styles(theme).additionalPanel,height:'70%'}}>
                 <p style={styles(theme).text}>{langIndex === 0 ? 'Новая программа' : 'New programm'}</p>
-                <div style={{display:'flex',flexDirection:'column',backgroundColor:Colors.get('background',theme),height:'70%',width:'100%',alignItems:'center'}}>
-                  <MyInput maxL={30} w='80%' h='20%' theme={theme} onChange={(value) => setName(value)} placeHolder={langIndex === 0 ? 'Название программы' : 'Programm name'}/>
-                  <MyInput maxL={200} w='80%' h='30%' theme={theme} onChange={(value) => setDescription(value)} placeHolder={langIndex === 0 ? 'Описание программы' : 'Programm description'}/>
-                  
+                <div style={{display:'flex',flexDirection:'column',backgroundColor:Colors.get('background',theme),height:'82%',width:'100%',alignItems:'center'}}>
+                  <MyInput maxL={30} w='80%' h='8%' theme={theme} onChange={(value) => setName(value)} placeHolder={langIndex === 0 ? 'Название программы' : 'Programm name'}/>
+                  <MyInput maxL={100} w='80%' h='14%' theme={theme} onChange={(value) => setDescription(value)} placeHolder={langIndex === 0 ? 'Описание программы' : 'Programm description'}/>
+                 <div style={{display:'flex',flexDirection:'column',width:'90%',height:'75%',justifyContent:'flex-start',alignItems:'center',overflowY:'scroll',marginTop:'5px',backgroundColor:Colors.get('bottomPanel',theme),borderRadius:'12px'}}>
+                    { Object.keys(days).length > 0 ? Object.keys(days).map((day,ind) => (
+                      <div key={ind} style={{display:'flex',flexDirection:'row',width:'80%',height:'10%',justifyContent:'flex-start',alignItems:'center',borderBottom:`1px solid ${Colors.get('border',theme)}`}}>
+                        <p style={styles(theme).text}>{ind + 1 + '-' + (langIndex === 0 ? 'день' : 'day') + ' : '}</p>
+                        <FaCalendarDay style={{...styles(theme).icon,fontSize:'16px',marginLeft:'5px', marginBottom:'2px'}}/>
+                        <p style={{...styles(theme).text,marginLeft:'5px'}}>{daysNames[ind]}</p>
+                      </div>
+                    )) : null}
+                    <div style={{display:'flex',flexDirection:'row',width:'80%',height:'10%',justifyContent:'flex-start',alignItems:'center'}}>
+                      <FaPlusSquare onClick={() => setShowAddDayPanel(true)} style={{...styles(theme).icon,fontSize:'24px',marginLeft:'1px'}}/>
+                      <p style={{...styles(theme).subtext,marginLeft:'15px'}}>{langIndex === 0 ? 'Добавить день' : 'Add day'}</p>
+                    </div>
+                  </div>
                 </div>
                 {/* bottom buttons */}
                 <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
@@ -117,6 +143,56 @@ const TrainingExercise = () => {
               </div>
             </div>
             )}
+            {/* add training day panel */}
+            {showAddDayPanel && (
+            <div style={styles(theme).addContainer}>
+              <div style={styles(theme).additionalPanel}>
+                <p style={styles(theme).text}>{langIndex === 0 ? 'Добавь тренировочный день' : 'Add training day'}</p>
+                <div style={{display:'flex',flexDirection:'column',backgroundColor:Colors.get('background',theme),height:'70%',width:'100%',alignItems:'center'}}>
+                  <MyInput maxL={30} w='80%' h='20%' theme={theme} onChange={(value) => setName(value)} placeHolder={langIndex === 0 ? 'Название программы' : 'Programm name'}/>
+                  <MyInput maxL={200} w='80%' h='30%' theme={theme} onChange={(value) => setDescription(value)} placeHolder={langIndex === 0 ? 'Описание программы' : 'Programm description'}/>
+                  <div style={{display:'flex',flexDirection:'column',width:'90%',height:'60%',justifyContent:'flex-start',alignItems:'center',overflowY:'scroll',marginTop:'5px',backgroundColor:Colors.get('bottomPanel',theme),borderRadius:'12px'}}>
+                    { currentExercises.length > 0 ? currentExercises.map((exercise,index) => (
+                      <div key={index} style={{display:'flex',flexDirection:'row',width:'80%',height:'20%',justifyContent:'flex-start',alignItems:'center',borderBottom:`1px solid ${Colors.get('border',theme)}`}}>
+                        <p style={styles(theme).text}>{index + 1}</p>
+                        <MdFitnessCenter style={{...styles(theme).icon,fontSize:'16px',marginLeft:'5px', marginBottom:'2px'}}/>
+                        <p style={{...styles(theme).text,marginLeft:'5px'}}>{allExercises().find(ex => ex.id === currentExercises[index])?.name[langIndex]}</p>
+                        <p style={{...styles(theme).text,marginLeft:'auto'}}>{currentSets[index] + ' x ' + currentReps[index]}</p>
+                      </div>
+                    )) : null}
+                    <div style={{display:'flex',flexDirection:'row',width:'80%',height:'20%',justifyContent:'flex-start',alignItems:'center'}}>
+                      <FaPlusSquare onClick={() => setShowAddDayPanel(true)} style={{...styles(theme).icon,fontSize:'24px',marginLeft:'1px'}}/>
+                      <p style={{...styles(theme).subtext,marginLeft:'15px'}}>{langIndex === 0 ? 'Добавить день' : 'Add day'}</p>
+                    </div>
+                  </div>
+                </div>
+                {/* bottom buttons */}
+                <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
+                <MdClose onClick={() => setShowAddDayPanel(false)} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
+                <MdDone onClick={() => onAddTrainingDay()} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
+                </div>
+              </div>
+            </div>
+            )}
+            {/* exercises list panel */}
+            {showExercisesList && (
+            <div style={styles(theme).addContainer}>
+              <div style={styles(theme).additionalPanel}>
+                <p style={styles(theme).text}>{langIndex === 0 ? 'Выбери упражнение' : 'Coose exercise'}</p>
+                <div style={{display:'flex',flexDirection:'column',backgroundColor:Colors.get('background',theme),height:'70%',width:'100%',alignItems:'center'}}>
+                  <MyInput maxL={30} w='80%' h='20%' theme={theme} onChange={(value) => setName(value)} placeHolder={langIndex === 0 ? 'Название программы' : 'Programm name'}/>
+                  <MyInput maxL={200} w='80%' h='30%' theme={theme} onChange={(value) => setDescription(value)} placeHolder={langIndex === 0 ? 'Описание программы' : 'Programm description'}/>
+                  
+                </div>
+                {/* bottom buttons */}
+                <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
+                <MdClose onClick={() => setShowExercisesList(false)} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
+                <MdDone onClick={() => onAddExercise()} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
+                </div>
+              </div>
+            </div>
+            )}
+            {/* confirm remove panel */}
             {showConfirmRemove && <div style={{position:'fixed',top:'50vh',left:'7.5vw',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',width:'85vw',height:'40vw',marginTop:'5px',borderRadius:'24px',border:`1px solid ${Colors.get('border', theme)}`,backgroundColor:Colors.get('background', theme),zIndex:'7000'}}>
               <p style={{...styles(theme).text,padding:'20px',marginLeft:'10%',marginRight:'5%'}}>{langIndex === 0 ? 'Вы уверены, что хотите удалить упражнение? ' + currentProgramName : 'Are you sure you want to delete the exercise?' + currentProgramName}</p>
               <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
