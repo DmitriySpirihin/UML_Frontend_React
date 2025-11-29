@@ -5,10 +5,12 @@ import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import { expandedCard$, setExpandedCard} from '../../StaticClasses/HabitsBus.js';
 import Colors from '../../StaticClasses/Colors'
-import { theme$ ,lang$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
 import {MdDoneAll} from 'react-icons/md'
-import {FaPlusSquare,FaTrash} from 'react-icons/fa'
+import {FaPlusSquare,FaTrash,FaPencilAlt,FaTrashAlt} from 'react-icons/fa'
 import {FaRegSquareCheck,FaRegSquare} from 'react-icons/fa6'
+import {TbDotsVertical,TbArrowMoveDownFilled,TbArrowMoveUpFilled} from 'react-icons/tb'
+
 import {MdClose,MdDone} from 'react-icons/md'
 import MyInput from '../../Helpers/MyInput';
 const dateKey = new Date().toISOString().split('T')[0];
@@ -25,14 +27,20 @@ const HabitsMain = () => {
     const [habitsCards, setHabitsCards] = React.useState([]);
     const [categories, setCategories] = React.useState([]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [fSize,setFontSize] = useState(0);
     const [hasHabits, setHasHabits] = useState(AppData.choosenHabits.length > 0);
     const [confirmationPanel,setConfirmationPanel] = useState(false);
     const [currentId, setCurrentId] = useState(0);
     const [goalName,setGoalName] = useState('');
+    
     // subscriptions
     useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
-        return () => subscription.unsubscribe();
+        const subscription2 = fontSize$.subscribe(setFontSize);
+        return () => {
+          subscription.unsubscribe();
+          subscription2.unsubscribe();
+        };
     }, []);
     useEffect(() => {
         const subscription = lang$.subscribe((lang) => {
@@ -59,12 +67,12 @@ const HabitsMain = () => {
         }
     }, [habitsCards]);
     // functions to add/remove habits at runtime
-    const addHabit = (habitId,dateString,goals) => {
+    const addHabit = (habitId,dateString,goals,isNegative,daysToForm) => {
         // Use Set to ensure no duplicates before adding
         setHabitsCards(prev => {
             const newHabits = new Set(prev);
             if (!newHabits.has(habitId)) {
-                AppData.addHabit(habitId,dateString,goals);
+                AppData.addHabit(habitId,dateString,goals,isNegative,daysToForm);
                 return [...newHabits,habitId];
             }
             return prev;
@@ -95,20 +103,38 @@ const HabitsMain = () => {
     
     removeHabitFn = removeHabit;
     addHabitFn = addHabit;
-    
+    const hasBadHabits = AppData.choosenHabitsTypes.some((v) => v);
     // render    
     return (
         <div style={styles(theme).container}>
             {!hasHabits && <div style={{...styles(theme).panel,justifyContent:'center',alignItems:'center', marginTop:'40%'}}>
-              <p style={{...styles(theme).subText,fontSize:'12px',margin:'10%',marginTop:'20%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setInfoText(langIndex)}</p>
+              <p style={{...styles(theme).subText,fontSize:fSize === 0 ? '11px' : '13px',margin:'10%',marginTop:'20%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setInfoText(langIndex)}</p>
             </div>}
             {hasHabits && <div style={styles(theme).scrollView}>
-              {buildMenu({theme, habitsCards, categories, getAllHabits: () => getAllHabits(),setConfirmationPanel,setCurrentId})}
+              {buildMenu({theme, habitsCards, categories, getAllHabits: () => getAllHabits(),setConfirmationPanel,setCurrentId,fSize})}
+              {hasBadHabits && 
+              <CategoryPanel text={['Вредные привычки','Bad habits']} theme={theme} isNegative={true}>
+                {getAllHabits().map(habit =>{
+                const isEnabled = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habit.id)];
+                return isEnabled && (
+                    <HabitCard
+                        key={habit.id}
+                        id={habit.id}
+                        text={habit.name}
+                        descr={habit.description}
+                        imgsrc={habit.src}
+                        theme={theme}
+                        setConfirmationPanel={setConfirmationPanel}
+                        setCurrentId={setCurrentId}
+                        fSize={fSize}
+                    />
+                )})}
+            </CategoryPanel>}
         </div>}
         {confirmationPanel && (
                    <div style={styles(theme).confirmContainer}>
                     <div style={styles(theme).confirmationPanel}>
-                      <p style={{...styles(theme).subText,fontSize:'12px',marginTop:'5%',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'Введите цель' : 'Enter goal'}</p>
+                      <p style={{...styles(theme).subText,fontSize:fSize === 0 ? '11px' : '13px',marginTop:'5%',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'Введите цель' : 'Enter goal'}</p>
                       <MyInput
                         w='80%'
                         h='20%'
@@ -136,15 +162,17 @@ function getAllHabits() {
     );
 }
 
-function buildMenu({ theme, habitsCards, categories,setConfirmationPanel,setCurrentId}) {
+function buildMenu({ theme, habitsCards, categories,setConfirmationPanel,setCurrentId,fSize}) {
     return categories.map(category => {
         const habitsInCategory = habitsCards
             .map(id => getAllHabits().find(h => h.id === id))
             .filter(h => h && h.category[0] === category);
 
         return (
-            <CategoryPanel key={category} text={getAllHabits().find(h => h.category[0] === category)?.category} theme={theme}>
-                {habitsInCategory.map(habit => (
+            <CategoryPanel key={category} text={getAllHabits().find(h => h.category[0] === category)?.category } theme={theme} isNegative={false}>
+                {habitsInCategory.map(habit =>{
+                const isEnabled = !AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habit.id)];
+                return isEnabled && (
                     <HabitCard
                         key={habit.id}
                         id={habit.id}
@@ -154,13 +182,15 @@ function buildMenu({ theme, habitsCards, categories,setConfirmationPanel,setCurr
                         theme={theme}
                         setConfirmationPanel={setConfirmationPanel}
                         setCurrentId={setCurrentId}
+                        fSize={fSize}
                     />
-                ))}
+                )})}
             </CategoryPanel>
         );
-    });
+    }
+);
 }
-function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Описание", "Description"], theme,setConfirmationPanel,setCurrentId}) {
+function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Описание", "Description"], theme,setConfirmationPanel,setCurrentId,fSize}) {
     const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const maxX = 100;
@@ -172,7 +202,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
     
     const [expanded, setExpanded] = useState(false);
     const [_color, setColor] = useState(cardColor);
-
+    const [showAddOptions,setShowAddOptions] = useState(false);
     const [goals,setGoals] = useState(AppData.ChoosenHabitsGoals[id].length > 0 ? AppData.ChoosenHabitsGoals[id].map(goal => goal.isDone) : []);
     
     
@@ -302,14 +332,14 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
     }
     const mainText = 
     {
-       fontSize: "14px",
+       fontSize:fSize === 0 ? "13px" : "15px",
        color: Colors.get('mainText', theme),
        marginLeft: "20px",
     }
     const subText = 
     {
        textAlign: "left",
-       fontSize: "10px",
+       fontSize: fSize === 0 ? "11px" : "13px",
        color: Colors.get('subText', theme),
        padding:'3px',
     }
@@ -360,10 +390,15 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                       <div style={subText}>{displayDescr}</div>
                       <div style={subText}>{langIndex === 0 ? 'Цели : ' : 'Goals : '}</div>
                       {AppData.ChoosenHabitsGoals[id].map((goal,index) => (
-                        <div key={index} style={{display:'flex',flexDirection:'row',alignItems:'end',width:'98%',borderBottom:`1px solid ${Colors.get('border', theme)}`,marginBottom:'5px',marginLeft:'5px'}}>
-                           <div style={{...mainText,fontSize:'12px',marginLeft:'1px'}}>{index + 1 + ': ' + goal.text}</div>
-                           {goals[index] ? <FaRegSquareCheck style={{fontSize:'24px',color:Colors.get('icons', theme),marginLeft:'auto'}} onClick={() => {AppData.ChoosenHabitsGoals[id][index].isDone = false;setGoals(prev => {const newGoals = [...prev];newGoals[index] = false;return newGoals;})}}/> :
-                            <FaRegSquare style={{fontSize:'24px',color:Colors.get('icons', theme),marginLeft:'auto'}} onClick={() => {AppData.ChoosenHabitsGoals[id][index].isDone = true;setGoals(prev => {const newGoals = [...prev];newGoals[index] = true;return newGoals;})}}/>}
+                        <div key={index} style={{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'flex-start',width:'100%',borderBottom:`1px solid ${Colors.get('border', theme)}`,marginBottom:'5px',marginLeft:'5px'}}>
+                           <div style={{...mainText,marginLeft:'1px'}}>{index + 1 + ': ' + goal.text}</div>
+                           <div style={{marginLeft:'auto',display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'center'}}>
+                            {showAddOptions && <FaPencilAlt style={{fontSize:'20px',marginRight:'5px',color:Colors.get('icons', theme)}} onClick={() => {}}/>}
+                            {showAddOptions && <FaTrashAlt style={{fontSize:'20px',marginRight:'5px',color:Colors.get('icons', theme)}} onClick={() => {}}/>}    
+                            {goals[index] ? <FaRegSquareCheck style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {AppData.ChoosenHabitsGoals[id][index].isDone = false;setGoals(prev => {const newGoals = [...prev];newGoals[index] = false;return newGoals;})}}/> :
+                             <FaRegSquare style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {AppData.ChoosenHabitsGoals[id][index].isDone = true;setGoals(prev => {const newGoals = [...prev];newGoals[index] = true;return newGoals;})}}/>}
+                            <TbDotsVertical style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {setShowAddOptions(prev => !prev);setCurrentId(id);}}/>
+                           </div>
                         </div>
                       ))}
                       <div style={{display:'flex',flexDirection:'row',justifyContent:'flex-start',alignItems:'center'}}>
@@ -375,7 +410,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
             </motion.div>
     )
 }
-function CategoryPanel({text = ["Имя", "Name"], children, theme}) {
+function CategoryPanel({text = ["Имя", "Name"], children, theme,fSize,isNegative}) {
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     
     useEffect(() => {
@@ -386,14 +421,14 @@ function CategoryPanel({text = ["Имя", "Name"], children, theme}) {
     }, []);
     
     return (
-        <div style={styles(theme).categoryPanel}>
-            {text[langIndex]}
+        <div style={styles(theme,fSize,isNegative).categoryPanel}>
+            {text[langIndex] + (isNegative ? ' 💀' : ' 😎')}
             {children}
         </div>
     )
 }
 
-const styles = (theme) =>
+const styles = (theme,fSize,isNegative) =>
 ({
     container :
    {
@@ -413,7 +448,8 @@ const styles = (theme) =>
     alignItems: "center",
     justifyContent: "center",
     borderRadius: "24px",
-    border: `1px solid ${Colors.get('border', theme)}`,
+    border: isNegative ? `1px solid ${Colors.get('categoryNegative', theme)}` : `1px solid ${Colors.get('categoryPositive', theme)}`,
+    borderTop: isNegative ? `5px solid ${Colors.get('categoryNegative', theme)}` : `5px solid ${Colors.get('categoryPositive', theme)}`,
     margin: "4px",
     background:Colors.get('panelGradient', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
@@ -423,7 +459,7 @@ const styles = (theme) =>
   text :
   {
     textAlign: "left",
-    fontSize: "10px",
+    fontSize:fSize === 0 ? "11px" : "13px",
     color: Colors.get('subText', theme),
     marginLeft: "30px",
     marginBottom:'12px'

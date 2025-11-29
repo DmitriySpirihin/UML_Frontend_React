@@ -1,6 +1,6 @@
 import React from 'react'
 import Colors from '../StaticClasses/Colors'
-import { theme$, lang$, devMessage$ ,isPasswordCorrect$ } from '../StaticClasses/HabitsBus'
+import { theme$, lang$, devMessage$ ,isPasswordCorrect$,fontSize$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
 import 'grained'
 import  {NotificationsManager,sendPassword} from '../StaticClasses/NotificationsManager'
@@ -9,6 +9,7 @@ import MyInput from '../Helpers/MyInput'
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
     const [lang, setLang] = React.useState(AppData.prefs[0]);
+    const [fSize, setFontSize] = React.useState(0);
     const [clickCount, setClickCount] = React.useState(0);
     const [clickCountUp, setClickCountUp] = React.useState(0);
     const [devConsolePanel, setDevConsolePanel] = React.useState(false);
@@ -23,9 +24,11 @@ const MainMenu = ({ onPageChange }) => {
         const langSubscription = lang$.subscribe((lang) => {
             setLang(lang === 'ru' ? 0 : 1);
         });
+        const fontSizeSubscription = fontSize$.subscribe(setFontSize);
         return () => {
             themeSubscription.unsubscribe();
             langSubscription.unsubscribe();
+            fontSizeSubscription.unsubscribe();
         };
     }, []);
     React.useEffect(() => {
@@ -92,18 +95,19 @@ const MainMenu = ({ onPageChange }) => {
             )}
             <div style={styles(theme).container}>
             <div style={{height:'20vh'}}/>
-            <h2 style={styles(theme).mainText} onClick={() => {handleClick(true)}}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
+            <h2 style={styles(theme,fSize).mainText} onClick={() => {handleClick(true)}}>{lang === 0 ? 'Выберите категорию' : 'Choose category'}</h2>
             {passwordInput && <input style={{width:'85vw',height:'2vh',fontSize:'12px',borderRadius:'12px',zIndex:1001}} type="password" onChange={(e) => checkPassword(e.target.value)} />}
             <div style={styles(theme).scrollView}>
                
                <MenuCard 
                     text={['Привычки', 'Habits']} 
                     decr={[
-                        'Приложение использует научно обоснованные методы формирования привычек, включая теорию петли привычки (Чарльз Дахигг), принципы подкрепления (Б.Ф. Скиннер) и 21-дневное правило формирования привычек (Максвелл Мальц).',
-                        'This app utilizes evidence-based habit formation techniques, including the habit loop theory (Charles Duhigg), principles of reinforcement (B.F. Skinner), and the 21-day rule of habit formation (Maxwell Maltz).'
+                        'Приложение использует научно обоснованные методы формирования привычек, включая теорию петли привычки (Чарльз Дахигг) и 21-дневное правило формирования привычек (Максвелл Мальц).',
+                        'This app utilizes evidence-based habit formation techniques, including the habit loop theory (Charles Duhigg) and the 21-day rule of habit formation (Maxwell Maltz).'
                     ]} 
                     theme={theme}  
                     lang={lang}
+                    fontSize={fSize}
                     onClick={() => {onPageChange('HabitsMain');playEffects(null);}}
                 />
                 <MenuCard 
@@ -118,6 +122,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#9de074ff" 
                     theme={theme} 
                     lang={lang}
+                    fontSize={fSize}
                     onClick={() => {onPageChange('TrainingMain');playEffects(null);}}
                 />
                <MenuCard 
@@ -129,6 +134,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#d0e074ff" 
                     theme={theme} 
                     lang={lang}
+                    fontSize={fSize}
                     onClick={() => {playEffects(null);}}
                 />
                 <MenuCard 
@@ -140,6 +146,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorSpecialLight="#e194c6ff" 
                     theme={theme} 
                     lang={lang}
+                    fontSize={fSize}
                     onClick={() => {playEffects(null);}}
                 />
                 <div style={{height:'5vh',width:'100%'}} onClick={() => {handleClick(false)}} />
@@ -152,7 +159,7 @@ const MainMenu = ({ onPageChange }) => {
 export default MainMenu
 
 function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#122636ff", colorLight = "#9cccf1ff",
-  colorSpecialDark = "#1d262dff", colorSpecialLight = "#45dff4ff", theme,lang, onClick}){
+  colorSpecialDark = "#1d262dff", colorSpecialLight = "#45dff4ff", theme,lang, onClick,fontSize}){
     const cardColor = (theme) => {
         if(theme === 'dark') return colorDark;
         else if(theme === 'specialdark') return colorSpecialDark;
@@ -178,13 +185,13 @@ function MenuCard({text = ["Категория", "Category"], decr = ["Скор�
     }
     return (
         <div id="grain" style={_style} onClick={onClick}> 
-            <h2 style={styles(theme).cardText}>{Array.isArray(text) ? text[lang] : text}</h2>
-            <p style={styles(theme).text}>{Array.isArray(decr) ? decr[lang] : decr}</p>
+            <h2 style={styles(theme,fontSize).cardText}>{Array.isArray(text) ? text[lang] : text}</h2>
+            <p style={styles(theme,fontSize).text}>{Array.isArray(decr) ? decr[lang] : decr}</p>
         </div>    
     )
 }
 
-const styles = (theme) => ({
+const styles = (theme,fontSize) => ({
     container :
    {
      backgroundColor: Colors.get('background', theme),
@@ -200,21 +207,21 @@ const styles = (theme) => ({
   {
     textAlign: "left",
     marginBottom: "5px",
-    fontSize: "14px",
+    fontSize: fontSize === 0 ? "14px" : "16px",
     color: Colors.get('mainText', theme),
   },
   cardText :
   {
     textAlign: "left",
     marginBottom: "5px",
-    fontSize: "14px",
+    fontSize: fontSize === 0 ? "14px" : "16px",
     color: Colors.get('mainText', theme),
     marginLeft: "30px"
   },
   text :
   {
     textAlign: "left",
-    fontSize: "10px",
+    fontSize: fontSize === 0 ? "10px" : "12px",
     color: Colors.get('subText', theme),
     marginLeft: "30px"
   },

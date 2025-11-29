@@ -1,3 +1,4 @@
+import { AppData } from "../StaticClasses/AppData";
 import Colors from "../StaticClasses/Colors"
 import {currentString$,keyboardNeeded$,setKeyboardNeeded,setCurrentKeyboardString} from '../StaticClasses/HabitsBus'
 import {useEffect, useState } from 'react';
@@ -120,7 +121,7 @@ const MyInput = ({
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
           overflow: 'hidden', 
-          fontSize: '12px',
+          fontSize: AppData.prefs[4] === 0 ? '13px' : '15px',
           display: 'block',            
           paddingLeft: '8px',
           textAlign: 'left',
@@ -133,7 +134,7 @@ const MyInput = ({
         <>
           {input.myString.slice(0, input.cursorPos)}
           {showCursor && (
-            <span style={{ color: Colors.get('iconsHighlited', theme), fontSize: '12px', fontWeight: 'bold' }}>|</span>
+            <span style={{ color: Colors.get('iconsHighlited', theme), fontSize: AppData.prefs[4] === 0 ? '13px' : '15px', fontWeight: 'bold' }}>|</span>
           )}
           {input.myString.slice(input.cursorPos)}
         </>
@@ -147,7 +148,7 @@ export default MyInput;
 
 const getCursorIndex = (e, myString) => {
   const paddingLeft = 8; // если есть
-  const fontSize = 12; // px
+  const fontSize = AppData.prefs[4] === 0 ? 13 : 15; // px
   const lineHeight = 18; // px
   const clickX = e.nativeEvent.offsetX - paddingLeft;
   const clickY = e.nativeEvent.offsetY;

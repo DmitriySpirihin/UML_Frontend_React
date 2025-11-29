@@ -12,7 +12,6 @@ const MainMenu = lazy(() => import('./assets/Pages/MainMenu'));
 const LoadPanel = lazy(() => import('./assets/Pages/LoadPanel'));
 const ConfirmationPanel = lazy(() => import('./assets/Pages/ConfirmationPanel'));
 const AddHabitPanel = lazy(() => import('./assets/Pages/HabitsPages/AddHabitPanel'));
-const HabitSettings = lazy(() => import('./assets/Pages/HabitsPages/HabitSettings'));
 const NotifyPanel = lazy(() => import('./assets/Pages/NotifyPanel'));
 const TrainingMain = lazy(() => import('./assets/Pages/TrainingPages/TrainingMain'));
 const TrainingMetrics = lazy(() => import('./assets/Pages/TrainingPages/TrainingMetrics'));
@@ -84,9 +83,6 @@ useEffect(() => {
       </Suspense>}
       {page === 'TrainingCurrent' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingCurrent/>
-      </Suspense>}
-      {addPanel === 'HabitSettings' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
-        <HabitSettings/>
       </Suspense>}
       {page === 'TrainingMesurments' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingMesurments/>

@@ -7,6 +7,7 @@ export const theme$ = new BehaviorSubject(THEME.DARK);
 export const lang$ = new BehaviorSubject('ru');
 export const sound$ = new BehaviorSubject(0);
 export const vibro$ = new BehaviorSubject(0);
+export const fontSize$ = new BehaviorSubject(0);
 export const globalTheme$ = new BehaviorSubject('dark');
 export const confirmationPanel$ = new BehaviorSubject(false);
 export const header$ = new BehaviorSubject('');
@@ -33,6 +34,7 @@ export const setTheme = (theme) => {
   globalTheme$.next(theme === THEME.DARK || theme === THEME.SPECIALDARK ? 'dark' : 'light');
 };
 export const setLang = (lang) => lang$.next(lang);
+export const setFontSize = (fontSize) => fontSize$.next(fontSize);
 export const updateConfirmationPanel = (text) => {
   setConfirmationPanel(true);
   header$.next(text);

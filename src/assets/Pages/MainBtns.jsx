@@ -8,7 +8,8 @@ import TelegramIcon from '@mui/icons-material/Telegram';
 import {sendBugreport} from '../StaticClasses/NotificationsManager'
 import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
-import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, setLang, lang$, vibro$, sound$} from '../StaticClasses/HabitsBus';
+import {RiFontSize2} from 'react-icons/ri'
+import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, setLang, lang$, vibro$, sound$,fontSize$,setFontSize} from '../StaticClasses/HabitsBus';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import Dark from '@mui/icons-material/DarkModeTwoTone';
@@ -27,6 +28,7 @@ const MainBtns = () => {
     const [additionalPanelNum, setAdditionalPanelNum] = useState(1);
     const [sound, setSound] = useState(0);
     const [vibro, setVibro] = useState(0);
+    const [fSize, setFSize] = useState(0);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [keyboardVisible, setKeyboardVisibleState] = useState(false);
 
@@ -48,22 +50,24 @@ const MainBtns = () => {
         });
         const subscriptionS = sound$.subscribe(setSound);
         const subscriptionV = vibro$.subscribe(setVibro);
+        const subscriptionF = fontSize$.subscribe(setFSize);
         return () => {
             subscription.unsubscribe();
             subscriptionG.unsubscribe();
             subscriptionT.unsubscribe();
             subscriptionS.unsubscribe();
             subscriptionV.unsubscribe();
+            subscriptionF.unsubscribe();
         }
     }, []);
 
     return (
         <>
-            <PopUpPanel theme={theme}  />
+            <PopUpPanel theme={theme}fSize={fSize}  />
             
             
-              (<div style={styles(theme).logoContainer}>
-                <UserPanel theme={theme} />
+              (<div style={styles(theme,fSize).logoContainer}>
+                <UserPanel theme={theme}fSize={fSize} />
                 <img src={globalTheme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={styles(theme).logo} />
                 {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon,top:'11vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null);}} />)}
                 {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon,top:'11vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null);}} />)}
@@ -82,6 +86,7 @@ const MainBtns = () => {
                 setVibro={setVibro}
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
+                fSize={fSize}
             />
             <AdditionalPanel theme={theme} langIndex={langIndex} isOpen={additionalPanel} setIsOpen={setAdditionalPanel} panelNum={additionalPanelNum}/>
             <KeyBoard/>
@@ -90,7 +95,7 @@ const MainBtns = () => {
 }
 
 export default MainBtns
-const UserPanel = ({theme}) => {
+const UserPanel = ({theme,fSize}) => {
     const _style = {
         position: "fixed",
         display: "flex",
@@ -104,7 +109,7 @@ const UserPanel = ({theme}) => {
     }
     return (
         <div style={_style}>
-            <p style={{color: Colors.get('subText', theme),fontSize: "10px",fontFamily: "Segoe UI"}}>{UserData.name}</p>
+            <p style={{color: Colors.get('subText', theme),fontSize: fSize === 0 ? "11px" : "13px",fontFamily: "Segoe UI"}}>{UserData.name}</p>
             <img 
                 src={Array.isArray(UserData.photo) ? UserData.photo[0] : UserData.photo} 
                 style={{border: "3px solid " + Colors.get('border', theme),borderRadius: "50%",objectFit: "cover",width: "6vw",margin: "10px"}} 
@@ -113,7 +118,7 @@ const UserPanel = ({theme}) => {
     )
 }
 
-const PopUpPanel = ({theme}) => {
+const PopUpPanel = ({theme,fSize}) => {
     const [show, setShow] = React.useState({show:false,header:'',isPositive:true});
     useEffect(() => {
         const subscription = showPopUpPanel$.subscribe(setShow);  
@@ -134,27 +139,27 @@ const PopUpPanel = ({theme}) => {
                         stiffness: 300,
                         damping: 25
                     }}
-                    style={popUpStyles(theme,show.isPositive).panel}
+                    style={popUpStyles(theme,show.isPositive,fSize).panel}
                 >
-                   <div style={popUpStyles(theme, show.isPositive).iconContainer}>
+                   <div style={popUpStyles(theme, show.isPositive,fSize).iconContainer}>
                         {show.isPositive ? (
                             <CheckCircleOutlineIcon 
-                                style={popUpStyles(theme, show.isPositive).icon} 
+                                style={popUpStyles(theme, show.isPositive,fSize).icon} 
                             />
                         ) : (
                             <WarningAmberIcon 
-                                style={popUpStyles(theme, show.isPositive).icon} 
+                                style={popUpStyles(theme, show.isPositive,fSize).icon} 
                             />
                         )}
                     </div>
-                    <h1 style={popUpStyles(theme).text}>{show.header}</h1>
+                    <h1 style={popUpStyles(theme,show.isPositive,fSize).text}>{show.header}</h1>
                 </motion.div>
             )}
         </AnimatePresence>
     )
 }
 
-const popUpStyles = (theme,isPositive) => {
+const popUpStyles = (theme,isPositive,fSize) => {
     return {
     panel : {
       position: "fixed",
@@ -173,7 +178,7 @@ const popUpStyles = (theme,isPositive) => {
     },
     text: {
       textAlign: "center",
-      fontSize: "14px",
+      fontSize: fSize === 0 ? "13px" : "15px",
       color: Colors.get('mainText', theme),
       margin: "20px 0"
     },
@@ -202,7 +207,7 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
             <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center",width:"50%",height:"10%",borderBottom:"1px solid " + Colors.get('border', theme)}}>
                 <TelegramIcon style={{width: "24px", height: "24px",color:'#3f86afff'}} />
                 <a href={`https://t.me/${name}`} target="_blank" rel="noopener noreferrer">
-                    <p style={styles(theme).text}>{name}</p>
+                    <p style={styles(theme,fSize).text}>{name}</p>
                 </a>
             </div>
         )
@@ -248,7 +253,7 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
 }
     
 
-const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNum,vibroIndex,soundIndex,setSound,setVibro}) => {
+const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNum,vibroIndex,soundIndex,setSound,setVibro,fSize}) => {
     const [isOpen, setIsOpen] = useState(false);
 
     // Toggle panel visibility when settings button is clicked
@@ -291,7 +296,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                     <p 
                     style={{
                         fontFamily: 'Segoe UI',
-                        fontSize: '14px',
+                        fontSize: fSize === 0 ? '13px' : '15px',
                         color: Colors.get('subText', theme),
                         marginLeft: '15%',
                         position: 'absolute',
@@ -303,7 +308,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                     <div style={settingsPanelStyles(theme).list}>
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaLanguage style={settingsPanelStyles(theme).miniIcon}/>
-                            <p style={settingsPanelStyles(theme).text} onClick={() => { 
+                            <p style={settingsPanelStyles(theme,fSize).text} onClick={() => { 
                                 changeSettings(0);
                                 playEffects(null);
                                 // Update language text immediately
@@ -316,15 +321,23 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaHighlighter style={settingsPanelStyles(theme).miniIcon}/>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(1);playEffects(null)}}>
+                            <p style={settingsPanelStyles(theme,fSize).text } onClick={() => {changeSettings(1);playEffects(null)}}>
                                  {
                                     getThemeName(langIndex,theme)
                                  }
                             </p>
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
+                            <RiFontSize2 style={settingsPanelStyles(theme).miniIcon}/>
+                            <p style={settingsPanelStyles(theme,fSize).text } onClick={() => changeSettings(4,fSize)}>
+                                 {
+                                   langIndex === 0 ? 'шрифт: '+ (fSize === 0 ? 'малый' : 'обычный') : 'font: ' + (fSize === 0 ? 'small' : 'regular')
+                                 }
+                            </p>
+                        </div>
+                        <div style={settingsPanelStyles(theme).listEl}>
                             {soundIndex === 0 ? <FaVolumeUp style={settingsPanelStyles(theme).miniIcon}/> : <FaVolumeMute style={settingsPanelStyles(theme).miniIcon}/>}
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(2);setSound(soundIndex === 0 ? 1 : 0)}}>
+                            <p style={settingsPanelStyles(theme,fSize).text } onClick={() => {changeSettings(2);setSound(soundIndex === 0 ? 1 : 0)}}>
                                  {
                                    langIndex === 0 ? 'звук: '+ (soundIndex === 0 ? 'вкл' : 'выкл') : 'sound: ' + (soundIndex === 0 ? 'on' : 'off')
                                  }
@@ -332,7 +345,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
                             {vibroIndex === 0 ? <LuVibrate style={settingsPanelStyles(theme).miniIcon}/> : <LuVibrateOff style={settingsPanelStyles(theme).miniIcon}/>}
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {changeSettings(3);setVibro(vibroIndex === 0 ? 1 : 0);playEffects(null)}}>
+                            <p style={settingsPanelStyles(theme,fSize).text } onClick={() => {changeSettings(3);setVibro(vibroIndex === 0 ? 1 : 0);playEffects(null)}}>
                                  {
                                    langIndex === 0 ? 'вибрация: '+ (vibroIndex === 0 ? 'вкл' : 'выкл') : 'vibration: ' + (vibroIndex === 0 ? 'on' : 'off')
                                  }
@@ -342,7 +355,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                     <div style={settingsPanelStyles(theme).list}>
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaBug style={settingsPanelStyles(theme).miniIcon}/>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(1)}}>
+                            <p style={settingsPanelStyles(theme,fSize).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(1)}}>
                                  {
                                     langIndex === 0 ? 'сообщить об ошибке' : 'report a bug'
                                  }
@@ -350,7 +363,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaDonate style={settingsPanelStyles(theme).miniIcon}/>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(2);playEffects(null)}}>
+                            <p style={settingsPanelStyles(theme,fSize).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(2);playEffects(null)}}>
                                  {
                                     langIndex === 0 ? 'поддержи нас' : 'support us'
                                  }
@@ -358,7 +371,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaAddressCard style={settingsPanelStyles(theme).miniIcon}/>
-                            <p style={settingsPanelStyles(theme).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(3);playEffects(null)}}>
+                            <p style={settingsPanelStyles(theme,fSize).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(3);playEffects(null)}}>
                                  {
                                    langIndex === 0 ? 'контакты разработчиков' : 'developers contacts'
                                  }
@@ -367,7 +380,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaExclamationTriangle style={settingsPanelStyles(theme).miniIcon}/>
                             <p 
-                                style={{...settingsPanelStyles(theme).text, cursor: 'pointer'}} 
+                                style={{...settingsPanelStyles(theme,fSize).text, cursor: 'pointer'}} 
                                 onClick={async () => {
                                     if (window.confirm(langIndex === 0 
                                     ? 'Вы уверены, что хотите удалить все сохранения? Это действие нельзя отменить.' 
@@ -398,7 +411,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         <div style={settingsPanelStyles(theme).listEl}>
                             <FaBackspace style={settingsPanelStyles(theme).miniIcon}/>
                             <p 
-                                style={{...settingsPanelStyles(theme).text, cursor: 'pointer'}} 
+                                style={{...settingsPanelStyles(theme,fSize).text, cursor: 'pointer'}} 
                                 onClick={() => {setIsOpen(false);playEffects(transitionSound)}}
                             >
                                 {langIndex === 0 ? 'назад' : 'back'}
@@ -409,7 +422,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                     <p 
                     style={{
                         fontFamily: 'Segoe UI',
-                        fontSize: '10px',
+                        fontSize:fSize === 0 ? '12px' : '14px',
                         color: Colors.get('subText', theme),
                         marginLeft: '210px',
                         position: 'absolute',
@@ -424,7 +437,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
         </AnimatePresence>
     )
 }
-const settingsPanelStyles = (theme) => {
+const settingsPanelStyles = (theme,fSize) => {
     return {
     panel: {
       position: 'fixed',
@@ -444,7 +457,7 @@ const settingsPanelStyles = (theme) => {
     },
     text: {
       textAlign: "left",
-      fontSize: "14px",
+      fontSize: fSize === 0 ? "13px" : "15px",
       color: Colors.get('mainText', theme),
       marginTop: '15px',
       marginLeft: "5%",
@@ -460,7 +473,7 @@ const settingsPanelStyles = (theme) => {
         flexDirection: 'row',
         alignItems: 'center',
         width: '70%',
-        marginBottom: '15px',
+        marginBottom: '5px',
         borderBottom: `1px solid ${Colors.get('border', theme)}`,
         cursor: 'pointer',
         transition: 'background-color 0.2s',
@@ -497,7 +510,7 @@ function getThemeName(langIndex,theme) {
     return langIndex === 0 ?  'тема: ' + themeName : 'theme: ' + themeName;
 }
 
-function changeSettings(prefIndex){
+function changeSettings(prefIndex,size){
     switch(prefIndex){
         case 0:
             setLang(AppData.prefs[0] == 0 ? 'en' : 'ru');
@@ -511,6 +524,10 @@ function changeSettings(prefIndex){
             break;
         case 3:
             AppData.prefs[3] == 0 ? AppData.setPrefs(3,1) : AppData.setPrefs(3,0);
+            break;
+        case 4:
+            AppData.prefs[4] == 0 ? AppData.setPrefs(4,1) : AppData.setPrefs(4,0);
+            setFontSize(size === 0 ? 1 : 0);
             break;
     }
 }
@@ -535,11 +552,11 @@ const toggleTheme = () => {
         Colors.setTheme(next);
         setGlobalTheme(next);
 };
-const styles = (theme) => {
+const styles = (theme,fSize) => {
     return {
         text: {
             color: Colors.get('mainText', theme),
-            fontSize: "14px",
+            fontSize: fSize === 0 ? "13px" : "15px",
             fontFamily: "Segoe UI",
         },
         input: {
@@ -550,7 +567,7 @@ const styles = (theme) => {
             border: `1px solid ${Colors.get('border', theme)}`,
             borderRadius: "12px",
             outline: "none",
-            fontSize: "14px",
+            fontSize: fSize === 0 ? "13px" : "15px",
             color: Colors.get('mainText', theme),
             fontFamily: "Segoe UI",
         },
@@ -582,8 +599,8 @@ const styles = (theme) => {
     boxShadow: `0px 2px 0px ${Colors.get('bottomPanelShadow', theme)}`,
     bottom:'82vh',
     left:'0vw',
-    marginTop:'6vw',
-    marginBottom:'8vw'
+    marginTop:'5vw',
+    marginBottom:'9vw'
   }
     }
 }

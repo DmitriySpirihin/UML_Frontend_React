@@ -4,12 +4,14 @@ import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
-import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$,setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
+import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$,fontSize$,setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
 import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt,FaTrashAlt} from 'react-icons/fa'
-import {MdFiberNew,MdDone,MdClose,} from 'react-icons/md'
+import {MdFiberNew,MdDone,MdClose} from 'react-icons/md'
+import {FaRegSquareCheck,FaRegSquare} from 'react-icons/fa6'
 import {FiPlus,FiMinus} from 'react-icons/fi'
 import Icons from '../../StaticClasses/Icons';
 import MyInput from '../../Helpers/MyInput';
+import Slider from '@mui/material/Slider';
 const click = new Audio('Audio/Click.wav');
 
 const getAllHabits = () => {
@@ -23,6 +25,7 @@ const AddHabitPanel = () => {
     // Theme and language state
     const [theme, setTheme] = useState(theme$.value);
     const [lang, setLang] = useState(lang$.value);
+    const [fSize,setFontSize] = useState(fontSize$.value);
     const [keyboardVisible, setKeyboardVisibleState] = useState(false);
     const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
     const [showCreatePanel,setshowCreatePanel] = useState(false);
@@ -42,6 +45,8 @@ const AddHabitPanel = () => {
     const [day,setDay] = useState(now.getDate());
     const [goals,setGoals] = useState([]);
     const [goalName,setGoalName] = useState('');
+    const [isNegative,setIsNegative] = useState(false);
+    const [daysToForm,setDaysToForm] = useState(66);
    
     // UI state
     const [habitList, setHabitList] = useState(getAllHabits());
@@ -130,11 +135,12 @@ const AddHabitPanel = () => {
     const subscription = theme$.subscribe(setTheme);
     const langSubscription = lang$.subscribe(setLang);
     const keyboardSubscription = keyboardVisible$.subscribe(setKeyboardVisibleState);
-    
+    const fontSizeSubscription = fontSize$.subscribe(setFontSize);
     return () => {
       subscription.unsubscribe();
       langSubscription.unsubscribe();
       keyboardSubscription.unsubscribe();
+      fontSizeSubscription.unsubscribe();
     };
     }, []);
     useEffect(() => {
@@ -187,7 +193,7 @@ const AddHabitPanel = () => {
           transition: 'transform 0.3s ease-in-out, background-color 0.1s ease-in-out',
         }}>
          {!showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
-           <div style={styles(theme).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
+           <div style={styles(theme,false,fSize).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
            <div style={{...styles(theme).simplePanel,height:"52vh"}}>
             <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',width:'90%'}}>
               <FaSearch style={{color:Colors.get("icons",theme),fontSize:'16px',marginTop:'10px',marginLeft:'10px'}}/>
@@ -198,7 +204,7 @@ const AddHabitPanel = () => {
               {habitList.map((habit) => !AppData.choosenHabits.includes(habit.id) && (
                 <li key={habit.id} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
                 onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(click);}}>
-                  <p style={styles(theme).text}>{habit.name[langIndex]}</p>
+                  <p style={styles(theme,false,fSize).text}>{habit.name[langIndex]}</p>
                 </li>
               ))}
            </div>
@@ -217,12 +223,12 @@ const AddHabitPanel = () => {
             <MyInput maxL={25} h="15%" w='90%' placeHolder={langIndex === 0 ? 'имя' : 'name'} theme={theme} onChange={v => handleInputValue(v,0)}/>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:'center',width:'95%'}}>
                <MyInput maxL={25} h="40%" w='50%' placeHolder={langIndex === 0 ? 'категория' : 'category'} theme={theme} onChange={v => handleInputValue(v,1)} value={habitCategory}/>
-              <select style={{...styles(theme).input,width:"48%"}} onChange={(e) => handleInputValue(e.target.value,1)}>
-                {renderCategoryOptions(theme, langIndex)}
+              <select style={{...styles(theme,false,fSize).input,width:"48%"}} onChange={(e) => handleInputValue(e.target.value,1)}>
+                {renderCategoryOptions(theme, langIndex,fSize)}
               </select>
             </div>
             <MyInput maxL={100} h="20%"w='90%' placeHolder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} theme={theme} onChange={v => handleInputValue(v,2)}/>
-            <div style={styles(theme).headerText}>{langIndex === 0 ? 'выбери иконку(опционально)' : 'choose icon(optional)'}</div>
+            <div style={styles(theme,false,fSize).headerText}>{langIndex === 0 ? 'выбери иконку(опционально)' : 'choose icon(optional)'}</div>
             <div style={{display:"flex",justifyContent:"space-between"}}>
               <div style={{width: '80%',marginLeft:'30px',padding:'5px'}}>
                <div style={styles(theme).button} onClick={() => setSelectIconPanel(selectIconPanel ? false : true)}>
@@ -297,9 +303,9 @@ const AddHabitPanel = () => {
          {confirmationPanel && (
            <div style={styles(theme).container}>
             <div style={styles(theme).confirmationPanel}>
-             <p style={styles(theme).text}>{confirmationText(langIndex,showCreatePanel,habitId,habitName)}</p>
+             <p style={styles(theme,false,fSize).text}>{confirmationText(langIndex,showCreatePanel,habitId,habitName)}</p>
              <div style={{...styles(theme).simplePanelRow,flexDirection:'column',justifyContent:'space-between',alignItems:'center',backgroundColor:Colors.get('background', theme),width:'90%',height:'80%',borderRadius:'24px'}}>
-               <p style={styles(theme).text}>{langIndex === 0 ? 'установите дату': 'set date'}</p>
+               <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'установите дату': 'set date'}</p>
                <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
                    <div {...bindYearhMinus} onClick={() => {handleDateChange(false,0)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
                    <p style={styles(theme).textDate}> {year} </p>
@@ -315,19 +321,28 @@ const AddHabitPanel = () => {
                    <p style={styles(theme).textDate}> {day} </p>
                    <div {...bindDayPlus} onClick={() => {handleDateChange(true,2)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
                </div> 
-               <p style={styles(theme).text}>{langIndex === 0 ? '(опционально) дополнительные цели' : '(optional) additional goals'}</p>
+               <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? '(опционально) дополнительные цели' : '(optional) additional goals'}</p>
                <div style={{...styles(theme).simplePanelRow,width:'70%',flexDirection:'row',justifyContent:'space-around',alignItems:'center'}}>
                 <MyInput w='80%'h='70%' maxL={50} placeHolder={langIndex === 0 ? 'новая цель' : 'new goal'} onChange={v => handleInputValue(v,3) } clear={true}/>
                 <FaPlusSquare style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}} onClick={setNewGoal}/>
                </div>
-               <div style={{marginTop:'10px',width:'60%',display:'flex',flexDirection:'column',justifyContent:'start',alignItems:'start',overflowY:'auto',height:'120%'}}>
+               <div style={{marginTop:'10px',width:'60%',display:'flex',flexDirection:'column',justifyContent:'start',alignItems:'start',overflowY:'auto',height:'90%'}}>
                   {goals.map((goal,index) => (
                     <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'100%',height:'20%'}}>
-                      <div style={styles(theme).text}>{index + 1 + ': ' + goal}</div>
+                      <div style={styles(theme,false,fSize).text}>{index + 1 + ': ' + goal}</div>
                       <FaTrashAlt style={{...styles(theme).miniIcon,fontSize:'14px',marginBottom:'20px',marginLeft:'auto'}} onClick={() => removeGoal(index)}/>
                     </div>
                   ))}
                 </div>
+                <div style={{marginTop:'5px',width:'70%',display:'flex',flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
+                  <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'положительная привычка ?' : 'is positive ?'}</p>
+                  {!isNegative && <FaRegSquareCheck onClick={() => setIsNegative(true)} style={{...styles(theme).miniIcon,fontSize:'20px',marginBottom:'5px'}}/>}
+                  {isNegative && <FaRegSquare onClick={() => setIsNegative(false)} style={{...styles(theme).miniIcon,fontSize:'20px',marginBottom:'5px'}}/>}
+                </div>
+                
+                <Slider style={styles(theme).slider} min={21} max={180} value={daysToForm} valueLabelDisplay='auto' onChange={(e) => setDaysToForm(e.target.value)} />
+                <div style={{...styles(theme,false,fSize).subtext,marginTop:'5px',width:'90%'}}>{needDaysInfo(langIndex,daysToForm,isNegative)}</div>
+                
              </div>
              
              <div style={styles(theme).simplePanelRow}>
@@ -336,8 +351,8 @@ const AddHabitPanel = () => {
                <div style={styles(theme).button} onClick={() => {
                  const curDateString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
                  const habitgoals = goals.length > 0 ? goals.map(goal => ({text: goal, isDone: false})) : [];
-                 if (showCreatePanel)createHabit(habitName, habitCategory, habitDescription, habitIcon, curDateString,habitgoals)
-                 else addHabit(habitId, habitName, false, curDateString,habitgoals);
+                 if (showCreatePanel)createHabit(habitName, habitCategory, habitDescription, habitIcon, curDateString,habitgoals,isNegative,daysToForm)
+                 else addHabit(habitId, habitName, false, curDateString,habitgoals,isNegative,daysToForm);
                  playEffects(click);
                  setConfirmationPanel(false);
                  resetDate(setDay, setMonth, setYear);
@@ -352,33 +367,33 @@ const AddHabitPanel = () => {
 export default AddHabitPanel;
 
 // Helper function to render category options
-const renderCategoryOptions = (theme, langIndex) => {
+const renderCategoryOptions = (theme, langIndex,fSize) => {
     const categories = Array.from(new Set(allHabits.map(h => h.category[langIndex])));
     return categories.map((category) => (
-        <option key={category} value={category} style={{...styles(theme).text}}>
+        <option key={category} value={category} style={{...styles(theme,false,fSize).text}}>
             {category}
         </option>
     ));
 };
 
-const addHabit =  (habitId,habitName,isCustom,dateString,goals) => {
+const addHabit =  (habitId,habitName,isCustom,dateString,goals,isNegative,daysToForm) => {
     if(AppData.IsHabitInChoosenList(habitId)) {
        setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list',2500,false);
       return;
     }
-    addHabitFn(habitId,dateString,goals);
+    addHabitFn(habitId,dateString,goals,isNegative,daysToForm);
     const message = !isCustom ? AppData.prefs[0] === 0 ? 'привычка добавлена' : 'habit added' : AppData.prefs[0] === 0 ? `привычка: ${habitName} создана и добавлена` : `habit: ${habitName} was created and added`;
     setShowPopUpPanel(message,2500,true);
 }
 
-const createHabit =  (name,category,description,icon,dateString,goals) => {
+const createHabit =  (name,category,description,icon,dateString,goals,isNegative,daysToForm) => {
     const currentAll = getAllHabits();
     const maxId = currentAll.length > 0 ? Math.max(...currentAll.map(h => h.id)) : 0;
     const habitId = maxId + 1;
     if(!AppData.IsCustomHabitExists(habitId)){
       
       AppData.AddCustomHabit(name,category,description,icon,habitId);
-      setTimeout(() => {addHabit(habitId,name,true,dateString,goals);}, 100);
+      setTimeout(() => {addHabit(habitId,name,true,dateString,goals,isNegative,daysToForm);}, 100);
     }else{
       setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка с таким названием уже существует' : 'habit with this name already exists',2500,false);
     }
@@ -399,7 +414,7 @@ const searchHabitsList = (val, habitList, setHabitList) => {
 }
 
 
-const styles = (theme, keyboardVisible) => ({
+const styles = (theme, keyboardVisible,fSize) => ({
   // Container styles
   container: {
     position: 'fixed',
@@ -442,13 +457,20 @@ const styles = (theme, keyboardVisible) => ({
     backgroundColor:Colors.get('simplePanel', theme),
     boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
     width:"85vw",
-    height:"140vw"
+    height:"170vw"
   },
   text :
   {
     textAlign: "center",
-    fontSize: "12px",
+    fontSize:fSize ? "13px" : "15px",
     color: Colors.get('mainText', theme),
+    marginBottom:'12px'
+  },
+  subtext:
+  {
+    textAlign: "center",
+    fontSize:fSize ? "11px" : "13px",
+    color: Colors.get('subText', theme),
     marginBottom:'12px'
   },
   textDate:
@@ -463,7 +485,7 @@ const styles = (theme, keyboardVisible) => ({
     textAlign: "center",
     margin:'5px',
     padding:'5px',
-    fontSize: "14px",
+    fontSize:fSize ? "13px" : "15px",
     color: Colors.get('subText', theme),
   },
   scrollView:
@@ -494,7 +516,7 @@ const styles = (theme, keyboardVisible) => ({
     borderBottom:`1px solid ${Colors.get('border', theme)}`,
     borderRadius:'12px',
     margin:'12px',
-    fontSize:'12px',
+    fontSize:fSize ? "13px" : "15px",
     fontFamily:'Segoe UI',
     color:Colors.get('subText', theme),
   },
@@ -515,7 +537,7 @@ const styles = (theme, keyboardVisible) => ({
     borderRadius:'12px',
     border:`1px solid ${Colors.get('border', theme)}`,
     marginTop:'12px',
-    fontSize:'14px',
+    fontSize:fSize ? "13px" : "15px",
     color:Colors.get('subText', theme),
     backgroundColor:Colors.get('habitCard', theme),
   },
@@ -523,7 +545,7 @@ const styles = (theme, keyboardVisible) => ({
   {
     color:Colors.get('subText', theme),
     backgroundColor:Colors.get('habitCard', theme),
-    fontSize:'8px',
+    fontSize:fSize ? "11px" : "13px",
   },
   selectPanel:
   {
@@ -570,6 +592,14 @@ const styles = (theme, keyboardVisible) => ({
     userSelect: 'none',
     touchAction: 'none',
     filter :`drop-shadow(0 0px 1px ${Colors.get('iconsShadow', theme)})`
+  },
+  slider:
+  {
+    width:'70%',
+    userSelect: 'none',
+    touchAction: 'none',
+    color:Colors.get('icons', theme),
+
   }
 })
 function playEffects(sound){
@@ -592,6 +622,14 @@ function confirmationText(lang,isCreatePanel,habitId,customHabitName)
     const name = getAllHabits().find(h => h.id === habitId).name[lang];
     return lang === 0 ? 'добавить привычку ' + name + '?':'add habit ' + name + '?';
   }
+}
+function needDaysInfo(lang,daysToForm,isNegative){
+   if(isNegative){
+    return lang === 0 ? 'мне нужно ' + daysToForm + ' дней чтобы бросить привычку':'i need ' + daysToForm + ' days to quit';
+   }
+   else{
+    return lang === 0 ? 'мне нужно ' + daysToForm + ' дней для формирования привычки':'it takes ' + daysToForm + ' days to form a habit';
+   }
 }
 function resetDate(setDay,setMonth,setYear){
   const now = new Date();

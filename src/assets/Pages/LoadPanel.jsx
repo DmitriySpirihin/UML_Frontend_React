@@ -41,7 +41,7 @@ function LoadPanel() {
                 await loadData();
                 fillEmptyDays();
                 setAllHabits();
-                
+                console.log(JSON.stringify(AppData.habitsByDate));
                 setTimeout(() => setLoading(false), 1000);
                 setTimeout(() => setPage('MainMenu'), 2600);
             } catch (error) {

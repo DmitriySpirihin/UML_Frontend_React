@@ -2,7 +2,7 @@
 import { AppData,UserData } from '../StaticClasses/AppData.js';
 import {allHabits} from '../Classes/Habit';
 import Colors from '../StaticClasses/Colors';
-import { theme$, lang$,setPage$,setShowPopUpPanel,notify$,setCurrentBottomBtn,setAddPanel,setNotifyPanel} from '../StaticClasses/HabitsBus';
+import { theme$, lang$,setPage$,setShowPopUpPanel,notify$,fontSize$,setCurrentBottomBtn,setAddPanel,setNotifyPanel} from '../StaticClasses/HabitsBus';
 import { useState , useEffect, useRef} from 'react';
 import {NotificationsManager} from '../StaticClasses/NotificationsManager';
 import {FaBackspace} from 'react-icons/fa'
@@ -12,6 +12,7 @@ const clickSound = new Audio('Audio/Click.wav');
 const NotifyPanel = () => {
     const [theme, setThemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [fSize,setFontSize] = useState(0);
     const [hour,setHour] = useState(12);
     const [minute,setMinute] = useState(0);
     const [page,setPage] = useState('Habit');
@@ -46,7 +47,10 @@ const NotifyPanel = () => {
     }, []);
     useEffect(() => {
         const subscription = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));  
-        return () => subscription.unsubscribe();
+        const subscription2 = fontSize$.subscribe(setFontSize);
+        return () => {
+          subscription.unsubscribe();
+          subscription2.unsubscribe();}
     }, []);
     useEffect(() => {
         const subscription = notify$.subscribe(setNotify);  
@@ -80,7 +84,7 @@ const NotifyPanel = () => {
     return (
         <div style={styles(theme).container}>
             <div style={styles(theme).panel}>
-               <p style={styles(theme).subText}>{getInfoText(langIndex)}</p>
+               <p style={styles(theme,false,fSize).subText}>{getInfoText(langIndex)}</p>
                {/*time picker*/}
                <div style={styles(theme).timeContainer}>
                  <div style={styles(theme).time} ref = {hoursRef} onScroll={(e) => {
@@ -94,19 +98,19 @@ const NotifyPanel = () => {
                </div>
                {/*days picker*/}
                <div style={styles(theme).daysContainer}>
-                 <div style={{backgroundColor:daysOfWeek[0] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
+                 <div style={{backgroundColor:daysOfWeek[0] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
                  onClick={() => {setDay(0)}} >{daysNames[langIndex][0]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[1] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
+                 <div style={{backgroundColor:daysOfWeek[1] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
                  onClick={() => {setDay(1)}} >{daysNames[langIndex][1]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[2] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
+                 <div style={{backgroundColor:daysOfWeek[2] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
                  onClick={() => {setDay(2)}} >{daysNames[langIndex][2]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[3] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
+                 <div style={{backgroundColor:daysOfWeek[3] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
                  onClick={() => {setDay(3)}} >{daysNames[langIndex][3]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[4] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
+                 <div style={{backgroundColor:daysOfWeek[4] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
                  onClick={() => {setDay(4)}} >{daysNames[langIndex][4]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[5] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
+                 <div style={{backgroundColor:daysOfWeek[5] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
                  onClick={() => {setDay(5)}} >{daysNames[langIndex][5]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[6] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px'}}><p style={{...styles(theme).text,fontSize:'18px'}}
+                 <div style={{backgroundColor:daysOfWeek[6] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
                  onClick={() => {setDay(6)}} >{daysNames[langIndex][6]}</p></div>
                </div>
                
@@ -126,7 +130,7 @@ const NotifyPanel = () => {
     );
 };
 export default NotifyPanel;
-const styles = (theme,isSliderOn = false) => ({
+const styles = (theme,isSliderOn = false,fSize) => ({
   // Container styles
   container: {
     position: 'fixed',
@@ -159,7 +163,7 @@ const styles = (theme,isSliderOn = false) => ({
   {
     marginTop:'12px',
     textAlign: "center",
-    fontSize: "12px",
+    fontSize:fSize === 0 ? "13px" : "15px",
     color: Colors.get('mainText', theme),
     marginBottom:'12px'
   },
@@ -168,7 +172,7 @@ const styles = (theme,isSliderOn = false) => ({
     margin:'5px',
     marginTop:'12px',
     textAlign: "center",
-    fontSize: "12px",
+    fontSize:fSize === 0 ? "11px" : "13px",
     color: Colors.get('subText', theme),
   },
   daysContainer :

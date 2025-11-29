@@ -10,16 +10,20 @@ export class Colors {
 
   static palette = {
     background: { light: "#e9f3f7ff", dark: "#131619ff", speciallight: "#ecd1cbff", specialdark: "#232020ff" },
-    mainText: { light: "#151414ff", dark: "#dfd5d5ff", speciallight: "#3e2424ff", specialdark: "#c6b1b1ff" },
-    subText: { light: "#1b1a1aff", dark: "#756e6eff", speciallight: "#744444ff", specialdark: "#8c7e7eff" },
+    mainText: { light: "#151414ff", dark: "#dfd5d5ff", speciallight: "#2c1919ff", specialdark: "#d9d2caff" },
+    subText: { light: "#161515ff", dark: "#9d9393ff", speciallight: "#482d2dff", specialdark: "#bfb4a7ff" },
     simplePanel: { light: "#c2cbd4ff", dark: "#24282dff", speciallight: "#cdb0a6ff", specialdark: "#242a24ff" },
     metricsPanel: { light: "#a9c6e1ff", dark: "#101114ff", speciallight: "#af7979ff", specialdark: "#181414ff" },
     highlitedPanel: { light: "#b4cee6ff", dark: "#282e30ff", speciallight: "#b88787ff", specialdark: "#445344ff" },
     panelGradient: { light: "linear-gradient(135deg, #f3f5f8ff 0%, #b8d0e6ff 100%)", dark: "linear-gradient(135deg, #292932ff 0%, #0e0e10ff 100%)", speciallight: "linear-gradient(135deg, #e6d2cfff 0%, #d6806bff 100%)", specialdark: "linear-gradient(135deg, #454e49ff 0%, #142018ff 100%)",},
     border: { light: "#576c7eff", dark: "#3c3e3eff", speciallight: "#e8d9d9ff", specialdark: "#d3e3d3ff" },
+
+    categoryPositive: { light: "#577e6eff", dark: "#243b32ff", speciallight: "#cde3adff", specialdark: "#a1e093ff" },
+    categoryNegative: { light: "#7e5776ff", dark: "#4b3232ff", speciallight: "#dc9e9eff", specialdark: "#dc8778ff" },
+
     shadow: { light: "#353940ff", dark: "#000000ff", speciallight: "#522323ff", specialdark: "#111512ff" },
     bottomPanel: { light: "#c8d7deff", dark: "#101316ff", speciallight: "#d5b1a9ff", specialdark: "#1f1d1dff" },
-    bottomPanelShadow: { light: "#8b9cc6ff", dark: "#64797aff", speciallight: "#fffdfcff", specialdark: "#38483dff" },
+    bottomPanelShadow: { light: "#8b9cc6ff", dark: "#383a3aff", speciallight: "#fffdfcff", specialdark: "#38483dff" },
     habitCard: { light: "#eef1f5ff", dark: "#1c1b1dff", speciallight: "#d7a1a1ff", specialdark: "#161917ff" },
     habitCardDone: { light: "#7be7d1ff", dark: "#2e5a2fff", speciallight: "#42d486ff", specialdark: "#26944dff" },
     habitCardSkipped: { light: "#f88787ff", dark: "#5c2e2eff", speciallight: "#ba4a4aff", specialdark: "#863122ff" },
@@ -34,10 +38,10 @@ export class Colors {
 
     icons:{ light: "#525e69ff", dark: "#616568ff", speciallight: "#6e4343ff", specialdark: "#546654ff" },
     iconsDisabled:{ light: "#8cabc4ff", dark: "#383f44ff", speciallight: "#e2b0b0ff", specialdark: "#2e3a2eff" },
-    iconsHighlited:{ light: "#658eb2ff", dark: "#5a8181ff", speciallight: "#b85b5bff", specialdark: "#679667ff" },
+    iconsHighlited:{ light: "#658eb2ff", dark: "#596e6eff", speciallight: "#b85b5bff", specialdark: "#679667ff" },
     iconsShadow:{ light: "#ffffffff", dark: "#5a8181ff", speciallight: "#df2c2cff", specialdark: "#679667ff" },
 
-    habitIcon:{ light: "#4f8ac2ff", dark: "#48706fff", speciallight: "#773838ff", specialdark: "#407f40ff" },
+    habitIcon:{ light: "#4f8ac2ff", dark: "#4b6060ff", speciallight: "#773838ff", specialdark: "#407f40ff" },
 
     trainingGroup:{ light: "#c7dee6ff", dark: "#101215ff", speciallight: "#e6c2baff", specialdark: "#171515ff" },
     trainingGroupSelected:{ light: "#b8e6f9ff", dark: "#171b1aff", speciallight: "#ecbbbbff", specialdark: "#282e27ff" },

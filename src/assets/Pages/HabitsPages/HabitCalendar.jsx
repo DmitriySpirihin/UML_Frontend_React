@@ -3,7 +3,7 @@ import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
-import {theme$ ,lang$, emitHabitsChanged} from '../../StaticClasses/HabitsBus'
+import {theme$ ,lang$,fontSize$, emitHabitsChanged} from '../../StaticClasses/HabitsBus'
 import Check from '@mui/icons-material/Check';
 import Close from '@mui/icons-material/Close';
 import {MdDoneAll} from 'react-icons/md'
@@ -34,13 +34,18 @@ const HabitCalendar = () => {
     const [theme, setthemeState] = React.useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [date, setDate] = useState(new Date());
+    const [fSize, setfontSize] = useState(0);
     const [currentDate, setCurrentDate] = useState(date);
     const [inFoPanelData, setInfoPanelData] = useState(false);
 
     // subscriptions
     React.useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
-        return () => subscription.unsubscribe();
+        const subscription2 = fontSize$.subscribe(setfontSize);
+        return () =>{
+           subscription.unsubscribe();
+           subscription2.unsubscribe();
+          }
     }, []);
     
     React.useEffect(() => {
@@ -84,7 +89,7 @@ const HabitCalendar = () => {
               <thead>
                 <tr>
                   {daysOfWeek[langIndex].map((day) => (
-                    <th key={day}><p style={{textAlign:'center',fontSize:'12px',color:day === 'Вс' || day === 'Sun' ? '#873535ff' : Colors.get('subText', theme)}}>{day}</p></th>
+                    <th key={day}><p style={{textAlign:'center',fontSize:fSize === 0 ? '11px' : '13px',color:day === 'Вс' || day === 'Sun' ? '#873535ff' : Colors.get('subText', theme)}}>{day}</p></th>
                   ))}
                 </tr>
               </thead>
@@ -115,7 +120,7 @@ const HabitCalendar = () => {
                         }}
                             onClick={() => {setCurrentDate(new Date(cellYear, cellMonth, day));setInfoPanelData(AppData.hasKey(formatDateKey(new Date(cellYear, cellMonth, day))));playEffects(clickSound);}}   >
                             {day}
-                            {day > 0 && <div style={{fontSize:'8px',color:Colors.get('subText', theme),lineHeight:'5px',paddingBottom:'7px'}}>{percent}</div>}
+                            {day > 0 && <div style={{fontSize:fSize === 0 ? '8px' : '10px',color:Colors.get('subText', theme),lineHeight:'5px',paddingBottom:'7px'}}>{percent}</div>}
                           </div>
                         </td>
                       )
@@ -129,10 +134,10 @@ const HabitCalendar = () => {
           {inFoPanelData && <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
             <div style={{borderTop: `1px solid ${Colors.get('border', theme)}`,}}>
                 <h1 style={{...styles(theme).header,fontSize:'22px',paddingTop:'1px',paddingBottom:'5px'}}>{currentDate.getDate() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)]}</h1>
-                <div style={{fontSize:'10px',color:Colors.get('subText', theme),lineHeight:'1px',paddingRight:'50%'}}>{habitAmountString(currentDate,langIndex)}</div>
+                <div style={{fontSize:fSize === 0 ? '10px' : '12px',color:Colors.get('subText', theme),lineHeight:'1px',paddingRight:'50%'}}>{habitAmountString(currentDate,langIndex)}</div>
             </div>
             <div style={styles(theme).scrollView}>
-              <Habit theme={theme} langIndex={langIndex} date={currentDate}/>
+              <Habit theme={theme} langIndex={langIndex} date={currentDate} fSize={fSize}/>
             </div>
           </div>}
           </div>
@@ -143,7 +148,7 @@ const HabitCalendar = () => {
 
 export default HabitCalendar
 
-const Habit = ({theme, langIndex, date}) => {
+const Habit = ({theme, langIndex, date,fSize}) => {
     const dateKey = formatDateKey(date);
     if(!AppData.hasKey(dateKey)) return null;
     const habits = Object.entries(AppData.habitsByDate[dateKey]);
@@ -161,13 +166,14 @@ const Habit = ({theme, langIndex, date}) => {
                   date={date}
                   statusInit={initStatus}
                   langIndex={langIndex}
+                  fSize={fSize}
               />
           )
         })
     )
 }
 
-const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
+const HabitRow = ({ id, name, theme, date, statusInit,langIndex ,fSize}) => {
     const [status, setStatus] = useState(statusInit);
     const [canDrag, setCanDrag] = useState(status < 2);
     const maxX = 100;
@@ -226,7 +232,7 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
             onDrag={onDrag}
             onDragEnd={onDragEnd}
         >
-            <p style={{...styles(theme).text,fontSize:'14px', paddingLeft:'30px'}}>{name}</p>
+            <p style={{...styles(theme,fSize).text, paddingLeft:'30px'}}>{name}</p>
             {status > 0 ? (
               status > 1 ? <MdDoneAll style={{...styles(theme).icon,color:'#8e972eff'}}/> : <Check style={{...styles(theme).icon,color:'#2e9741ff'}}/>
             ) : status === -1 ? (
@@ -237,7 +243,7 @@ const HabitRow = ({ id, name, theme, date, statusInit,langIndex }) => {
     );
 }
   
-const styles = (theme) =>
+const styles = (theme,fSize) =>
 ({
      container :
        {
@@ -319,13 +325,13 @@ const styles = (theme) =>
   text :
   {
     fontFamily: "Segoe UI",
-    fontSize: "14px",
+    fontSize: fSize === 0 ? '13px' : '15px',
     color: Colors.get('mainText', theme),
   },
   subText :
   {
     fontFamily: "Segoe UI",
-    fontSize: "10px",
+    fontSize: fSize === 0 ? '11px' : '13px',
     color: Colors.get('subText', theme),
   },
   scrollView:

@@ -1,6 +1,6 @@
 import React from 'react'
 import Colors from 'src/assets/StaticClasses/Colors.js'
-import { theme$ , lang$} from 'assets/StaticClasses/HabitsBus'
+import { theme$ , lang$,fontSize$} from 'assets/StaticClasses/HabitsBus'
 import { setConfirmationPanel,header$} from 'assets/StaticClasses/HabitsBus'
 import { removeHabitFn , currentId} from 'assets/Pages/HabitsPages/HabitsMain'
 import {AppData} from 'assets/StaticClasses/AppData'
@@ -16,10 +16,15 @@ const ConfirmationPanel = () => {
     const [theme, setthemeState] = React.useState('dark');
     const [lang, setLang] = React.useState('ru');
     const [header, setHeader] = React.useState('');
+    const [fSize,setFontSize] = React.useState(0);
     // subscriptions
     React.useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
-        return () => subscription.unsubscribe();
+        const subscription2 = fontSize$.subscribe(setFontSize);
+        return () => {
+          subscription.unsubscribe();
+          subscription2.unsubscribe();
+        };
     }, []);
     React.useEffect(() => {
         const subscription = lang$.subscribe(setLang);  
@@ -33,7 +38,7 @@ const ConfirmationPanel = () => {
         <div style={styles(theme).container}>
             <div style={styles(theme).panel}>
                 <FaExclamationTriangle style={styles(theme).miniIcon}/>
-                <h1 style={styles(theme).text}>{header}</h1>
+                <h1 style={styles(theme,fSize).text}>{header}</h1>
                 <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
                   <div style={styles(theme).button} onClick={() => {setConfirmationPanel(false);if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');}}><MdClose style={styles(theme).miniIcon}/></div>  
                   <div style={styles(theme).button} onClick={() => {confirmAction(); setConfirmationPanel(false);if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');}}><MdDone style={styles(theme).miniIcon}/></div>  
@@ -46,7 +51,7 @@ const ConfirmationPanel = () => {
 export default ConfirmationPanel
 
 
-const styles = (theme) =>
+const styles = (theme,fSize) =>
 ({
     container :
    {

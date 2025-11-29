@@ -1,22 +1,26 @@
 import {Habit} from "../Classes/Habit";
 import { THEME } from './Colors';
 import { habitReminder } from '../Pages/NotifyPanel';
-import {setTheme,setLang ,setSoundAndVibro,setNotify,setShowPopUpPanel} from '../StaticClasses/HabitsBus'
+import {setTheme,setLang ,setSoundAndVibro,setNotify,setShowPopUpPanel,setFontSize} from '../StaticClasses/HabitsBus'
 import { NotificationsManager } from "./NotificationsManager";
 
 export class AppData{
    static lastSave = new Date().toISOString();
    static isFirstStart = true;
    static version = "1.0.0";
-   static prefs = [0,0,0,0]; //language, theme, sound, vibro
+   static prefs = [0,0,0,0,0]; //language, theme, sound, vibro,font size main 16,14 sub 14,12
+   static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
+   //  habits 
    static CustomHabits = [];
    static ChoosenHabitsGoals = {};//{id:[{text:'',isDone:false}]}
    static choosenHabitsStartDates = [];
    static choosenHabits = [];
    static choosenHabitsNotified = {};
    static habitsByDate = {};
+   static choosenHabitsDaysToForm = [];
+   static choosenHabitsTypes = [];
    static daysToFormAHabit = 66;
-   static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
+   
 
    // training log
    static currentProgramId = null;
@@ -34,9 +38,10 @@ export class AppData{
     setLang(this.prefs[0] === 0 ? 'ru' : 'en');
     setTheme(this.prefs[1] < 2 ? this.prefs[1] === 0 ? THEME.DARK : THEME.SPECIALDARK : this.prefs[1] === 2 ? THEME.LIGHT : THEME.SPECIALLIGHT);
     setSoundAndVibro(this.prefs[2],this.prefs[3]);
+    setFontSize(this.prefs[4]);
     this.choosenHabitsStartDates = [...data.choosenHabitsStartDates];
     this.choosenHabits = [...data.choosenHabits];
-    this.ChoosenHabitsGoals = data.ChoosenHabitsGoals;
+    this.hoosenHabitsGoals = data.ChoosenHabitsGoals;
     this.choosenHabitsNotified = data.choosenHabitsNotified;
     this.daysToFormAHabit = data.daysToFormAHabit;
     this.CustomHabits = data.CustomHabits;
@@ -61,29 +66,31 @@ export class AppData{
      }
      return false;
   } 
-  static addHabit(habitId,dateString,goals){
+  static addHabit(habitId,dateString,goals,isNegative,daysToForm){
     if(!this.choosenHabits.includes(habitId)) {
        this.choosenHabits.push(habitId);
        this.ChoosenHabitsGoals[habitId] = goals;
        this.choosenHabitsStartDates.push(dateString);
        this.choosenHabitsNotified[habitId] = [false,false,false];
+       this.choosenHabitsDaysToForm.push(daysToForm);
+       this.choosenHabitsTypes.push(isNegative);
        habitReminder(this.prefs[0],this.notify[0].cron,0,0,false);
     }
-  const startDate = new Date(dateString);
-  const endDate = new Date();
-  let currentDate = startDate;
-   while (currentDate < endDate) {
+    const startDate = new Date(dateString);
+    const endDate = new Date();
+    let currentDate = startDate;
+    while (currentDate < endDate) {
     const current = currentDate.toISOString().split('T')[0];
-    if(!(current in AppData.habitsByDate)) {
-      AppData.habitsByDate[current] = {};
-      AppData.habitsByDate[current][AppData.choosenHabits[AppData.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 1 : 2; 
-    }
-    else{
-      AppData.habitsByDate[current][AppData.choosenHabits[AppData.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 1 : 2; 
-    }
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-  AppData.habitsByDate[endDate.toISOString().split('T')[0]][AppData.choosenHabits[AppData.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 0 : 2;
+    if(!(current in this.habitsByDate)) {
+      this.habitsByDate[current] = {};
+      this.habitsByDate[current][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 1 : 2; 
+     }
+     else{
+      this.habitsByDate[current][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 1 : 2; 
+     }
+     currentDate.setDate(currentDate.getDate() + 1);
+   }
+   this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 0 : 2;
   }
   static addHabitGoal(habitId,goal){
     this.ChoosenHabitsGoals[habitId].push(goal);
@@ -92,6 +99,8 @@ export class AppData{
     if(this.choosenHabits.includes(habitId)){
     const index = this.choosenHabits.indexOf(habitId);
     this.choosenHabits.splice(index,1);
+    this.choosenHabitsDaysToForm.splice(index,1);
+    this.choosenHabitsTypes.splice(index,1);
     delete this.ChoosenHabitsGoals[habitId];
     this.choosenHabitsStartDates.splice(index,1);
     delete this.choosenHabitsNotified[habitId];
@@ -176,14 +185,14 @@ export const fillEmptyDays = () => {
     currentDate.setDate(currentDate.getDate() + 1);
    }
    }
-   
-   if(!(today.toISOString().split('T')[0] in AppData.habitsByDate)){
-   AppData.habitsByDate[today.toISOString().split('T')[0]] = {};
+ }
+ const now = new Date().toISOString().split('T')[0];
+ if(!(now in AppData.habitsByDate)){
+   AppData.habitsByDate[now] = {};
    for (let index = 0; index < AppData.choosenHabits.length; index++) {
-     AppData.habitsByDate[today.toISOString().split('T')[0]][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? 0 : 2; 
+     AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? 0 : 2; 
    }
   }
- }
 }
 
 
