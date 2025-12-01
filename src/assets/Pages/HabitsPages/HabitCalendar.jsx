@@ -116,7 +116,7 @@ const HabitCalendar = () => {
                         <td key={j}>
                           <div  style={{...styles(theme).cell,
                             border:`3px solid ${isChoosen ? Colors.get('currentDateBorder', theme) : Colors.get('background', theme)}`,
-                            backgroundColor:day < 1 ? Colors.get('background', theme) : status === 1 ? Colors.get('habitCardDone', theme) : status === -1 ? Colors.get('habitCardSkipped', theme) : Colors.get('background', theme),
+                            backgroundColor:day < 1 ? Colors.get('background', theme) : status === 1 ? Colors.get('done', theme) : status === -1 ? Colors.get('skipped', theme) : Colors.get('background', theme),
                         }}
                             onClick={() => {setCurrentDate(new Date(cellYear, cellMonth, day));setInfoPanelData(AppData.hasKey(formatDateKey(new Date(cellYear, cellMonth, day))));playEffects(clickSound);}}   >
                             {day}
@@ -174,13 +174,13 @@ const Habit = ({theme, langIndex, date,fSize}) => {
 }
 
 const HabitRow = ({ id, name, theme, date, statusInit,langIndex ,fSize}) => {
+    const isNegative = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(id)];
     const [status, setStatus] = useState(statusInit);
-    const [canDrag, setCanDrag] = useState(status < 2);
+    const [canDrag, setCanDrag] = useState(status < 2 && !isNegative);
     const maxX = 100;
     const minX = -100;
     const x = useMotionValue(0);
     const constrainedX = useTransform(x, [-1, 1], [minX, maxX]);
-
     // sync local status when switching dates or when the source status changes
     useEffect(() => {
         setStatus(statusInit);
@@ -343,6 +343,7 @@ const styles = (theme,fSize) =>
     display:'flex',
     flexDirection:'column',
     alignItems:'center',
+    justifyContent:'center',
     borderRadius:'24px',
     backgroundColor:'rgba(0,0,0,0.1)'
   },

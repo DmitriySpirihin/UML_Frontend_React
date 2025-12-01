@@ -2,7 +2,7 @@
 import { Colors } from './Colors';
 import { 
   FaHeartbeat, FaAppleAlt, FaRunning, FaBook, FaBrain, FaWind,
-  FaMoon, FaSun, FaCoffee, FaMedal, FaWater,
+  FaMoon, FaSun, FaCoffee, FaMedal, FaWater,FaSkull,
   FaBed, FaUtensils, FaBookReader, FaLaptopCode, FaMusic,
   FaRegSmile, FaRegClock, FaRegCalendarAlt, FaRegStar,
   FaUsers, FaUserFriends, FaShareAlt, FaPhone, FaComment, FaHeart,
@@ -277,49 +277,59 @@ class Icons {
         'hand_point_up': FaHandPointUp,
         'hand_point_right': FaHandPointRight,
         'hand_point_left': FaHandPointLeft,
-        'hand_point_down': FaHandPointDown
+        'hand_point_down': FaHandPointDown,
+        'skull': FaSkull,
     };
     
     static getHabitIcon(habitName,props) {
       const iconMap = {
         "Пить воду": "water",
-    "Разминка утром": "stretching",
-    "Медитация": "meditation",
-    "10 000 шагов": "running",
-    "Спать 8 часов": "sleep",
-    "Без сахара": "food", // or "fruit" for a healthier alternative
-    "Принимать витамины": "health",
-    "Йога 15 минут": "yoga",
-    "Пробежка 3 км": "running",
-    "Фрукты и овощи": "fruit",
-    "Стакан воды утром": "water",
-    "Прогулка 20 минут": "walking", // Note: You might want to add a walking icon
-    "Свежий воздух": "wind", // Using wind as a placeholder for fresh air
-    "Растяжка перед сном": "stretching",
-    
-    // Learning
-    "Читать 20 страниц": "book",
-    "Английский 30 минут": "language",
-    "Кодить 1 час": "coding",
-    "Повторить слова": "language",
-    
-    // Productivity
-    "Ведение дневника": "journaling",
-    "План на день": "planning",
-    "Без соцсетей 1 час": "focus",
-    
-    // Home
-    "Убрать рабочее место": "cleaning",
-    "Заправить кровать": "bed", // You might want to add a bed icon
-    
-    // Fitness
-    "Отжимания 20 раз": "exercise",
-    
-    // Finance
-    "Проверить бюджет": "budget",
-    
-    // Relationships
-    "Позвонить близким": "phone"
+        "Хороший сон": "sleep",
+        "Двигаться каждый день": "exercise",
+        "Здоровое питание": "food",
+        "Уход за телом": "health",
+        "Силовая тренировка": "exercise",
+        "Бег": "running",
+        "Ходьба": "walking",
+        "Растяжка или йога": "yoga",
+        "Медитация и дыхание": "meditation",
+
+        // Growth / Развитие
+        "Чтение": "book",
+        "Обучение навыкам": "learning",
+        "Иностранный язык": "language",
+        "Ведение дневника": "journaling",
+        "Рефлексия": "reflection",
+
+        // Productivity / Продуктивность
+        "Планирование дня": "planning",
+        "Главная задача дня": "goal",
+        "Работа по таймеру": "focus",
+        "Разбор входящих": "inbox",
+        "Вечерний обзор": "planning",
+
+        // Relationships & Recreation / Отношения и отдых
+        "Контакт с близкими": "phone",
+        "Качественное общение": "friends",
+        "Поддержка": "helping",
+        "Активное слушание": "friends",
+        "Благодарность": "gratitude",
+        "Хобби": "hobby",
+        "Прогулка": "walking",
+        "Сознательный отдых": "meditation",
+        "Творчество": "creativity",
+        "Цифровой детокс": "focus",
+
+        // Bad habits to quit / Вредные привычки
+        "Сладкое и фастфуд": "food",
+        "Поздний отход ко сну": "bedtime",
+        "Прокрастинация": "focus",
+        "Лишний экран": "mobile",
+        "Нездоровые перекусы": "food",
+        "Игры слишком много": "game",
+        "Порно": "skull",
+        "Курение": "skull",
+        "Алкоголь": "wine"
       };
       const iconName = iconMap[habitName] || 'default';
       return this.getIcon(iconName, props);
@@ -348,3 +358,4 @@ class Icons {
 }
 
 export default Icons;
+

@@ -11,7 +11,9 @@
   margin: 0;
   padding: 0;
 }
-
+.smooth-stroke {
+  transition: stroke 1s linear;
+}
 .logo {
   height: 6em;
   padding: 1.5em;

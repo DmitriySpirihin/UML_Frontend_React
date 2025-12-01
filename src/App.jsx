@@ -3,6 +3,7 @@ import { useState,useEffect, Suspense, lazy} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
+import NotifyPanel from './assets/Pages/NotifyPanel'
 import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage,keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
@@ -11,8 +12,7 @@ const HabitsMain = lazy(() => import('./assets/Pages/HabitsPages/HabitsMain'));
 const MainMenu = lazy(() => import('./assets/Pages/MainMenu'));
 const LoadPanel = lazy(() => import('./assets/Pages/LoadPanel'));
 const ConfirmationPanel = lazy(() => import('./assets/Pages/ConfirmationPanel'));
-const AddHabitPanel = lazy(() => import('./assets/Pages/HabitsPages/AddHabitPanel'));
-const NotifyPanel = lazy(() => import('./assets/Pages/NotifyPanel'));
+const AddHabitPanel = lazy(() => import('./assets/Pages/HabitsPages/AddHabitPanel')); 
 const TrainingMain = lazy(() => import('./assets/Pages/TrainingPages/TrainingMain'));
 const TrainingMetrics = lazy(() => import('./assets/Pages/TrainingPages/TrainingMetrics'));
 const TrainingExercise = lazy(() => import('./assets/Pages/TrainingPages/TrainingExercise'));
@@ -69,7 +69,7 @@ useEffect(() => {
       </Suspense>}
       {page === 'LoadPanel' && <LoadPanel/>}
       {page === 'MainMenu' && <MainMenu onPageChange={handlePageChange}/>}
-      {page === 'HabitsMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+      {page.startsWith('Habit') && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <HabitsMain />
       </Suspense>}
       {page === 'HabitCalendar' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
@@ -87,9 +87,7 @@ useEffect(() => {
       {page === 'TrainingMesurments' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingMesurments/>
       </Suspense>}
-      {notifyPanel && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
-        <NotifyPanel/>
-      </Suspense>}
+      {notifyPanel && <NotifyPanel/>}
       {confirmationPanel && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <ConfirmationPanel/>
       </Suspense>}

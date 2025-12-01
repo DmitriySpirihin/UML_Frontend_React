@@ -1,6 +1,6 @@
 import React, {useState,useEffect} from 'react'
 import { allHabits} from '../../Classes/Habit.js'
-import { AppData } from '../../StaticClasses/AppData.js'
+import { AppData,getHabitPerformPercent } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import {FaArrowAltCircleLeft,FaArrowAltCircleRight,FaList,FaPencilAlt,FaInfoCircle} from 'react-icons/fa'
 import {IoMdArrowDropright,IoMdArrowDropleft} from 'react-icons/io'
@@ -60,11 +60,13 @@ const HabitMetrics = () => {
         setFillAmount(Math.min(currentStreak / daysToForm,1));
     }, [currentStreak,daysToForm]);
     const habits = Array.from(Object.values(AppData.habitsByDate))
+
     useEffect(() => {
       if(habitId > -1){
       let maxStreak = 0;
       let currentStreak = 0;
       let streak = 0;
+      const today = new Date().toISOString().split('T')[0];
       for(let i = 0; i < habits.length; i++){
         if(habitId in habits[i]){
           if(habits[i][habitId] > 0)streak ++;
@@ -81,9 +83,9 @@ const HabitMetrics = () => {
           else break;
         }
       }
-      if(habitId in habits[habits.length - 1]){
-        if(habits[habits.length - 1][habitId] > 0)currentStreak ++;
-      }
+      if(AppData.habitsByDate[today][habitId] > 0)currentStreak ++;
+      if(AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habitId)] && AppData.habitsByDate[today][habitId] < 1) currentStreak = 0;
+     
       setMaxStreak(maxStreak);
       setCurrentStreak(currentStreak);
     }
@@ -96,15 +98,14 @@ const HabitMetrics = () => {
          setHabitId(id);
          setDaysToForm(AppData.choosenHabitsDaysToForm[AppData.choosenHabits.indexOf(id)]);
        }else{
-          if(isArrowLeft){
-            const hId = AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) - 1 < 0 ? AppData.choosenHabits.length - 1 : AppData.choosenHabits.indexOf(habitId) - 1];
-            setHabitId(hId);
-            setDaysToForm(AppData.choosenHabitsDaysToForm[AppData.choosenHabits.indexOf(hId)]);
-          }else{
-            const hId = AppData.choosenHabits[AppData.choosenHabits.indexOf(habitId) + 1 > AppData.choosenHabits.length - 1 ? 0 : AppData.choosenHabits.indexOf(habitId) + 1];
-            setHabitId(hId);
-            setDaysToForm(AppData.choosenHabitsDaysToForm[AppData.choosenHabits.indexOf(hId)]);
-          }
+          const currentIndex = AppData.choosenHabits.indexOf(habitId);
+          const maxIndex = AppData.choosenHabits.length - 1;
+          let nextIndex = 0;
+          if(isArrowLeft)nextIndex = currentIndex - 1 < 0 ? maxIndex : currentIndex - 1;
+          else nextIndex = currentIndex + 1 > maxIndex ? 0 : currentIndex + 1;
+          const hId = AppData.choosenHabits[nextIndex];
+        setHabitId(hId);
+        setDaysToForm(AppData.choosenHabitsDaysToForm[nextIndex]);
        }
        playEffects(clickMainSound);
     }
@@ -147,7 +148,7 @@ const HabitMetrics = () => {
             {/* streaks*/}
             <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'80%',height:'7vh',marginTop:'10px'}}>
               <p style={styles(theme,fSize).text}>{langIndex === 0 ? 'максимальная серия ' + maxStreak : 'Max streak ' + maxStreak}</p>
-              {maxStreak > currentStreak && <img src={'images/Ui/Streak_Flame.png'} style={{width:'30px'}} />}
+              {maxStreak > currentStreak && <Fire style={{width:'30px',color:'#c6382eff'}} />}
               <svg width={50} height={40}>
                 <line x1={10} y1={0} x2={10} y2={40} stroke={Colors.get('icons',theme)} strokeWidth={3} />
               </svg>
@@ -155,12 +156,12 @@ const HabitMetrics = () => {
               <p style={styles(theme,fSize).text}>{langIndex === 0 ? 'текущая серия ' + currentStreak : 'Current streak ' + currentStreak}</p>
             </div>
             {/* percent filled icon*/}
-               <svg width="17vh" height="17vh" style={{zIndex:2,position:'fixed',top:'47%',filter : `drop-shadow(-2px 2px 3px ${Colors.get('shadow', theme)})`}}>
+               <svg width="17vh" height="17vh" viewBox="0 0 150 150" style={{zIndex:2,position:'fixed',top:'47%',filter : `drop-shadow(-2px 2px 3px ${Colors.get('shadow', theme)})`}}>
                 <circle stroke={Colors.get('border', theme)} fill="none" strokeWidth="15" r={radius} cx="75" cy="75"/>
                 <circle stroke={Colors.get('progressBar', theme)} fill="none" strokeWidth="14" r={radius} cx="75" cy="75"/>
-                <circle stroke={interpolateColor(Colors.get('habitCardSkipped', theme), Colors.get('habitCardDone', theme), fillAmount)} fill="none" strokeWidth="15" r={radius} cx="75" cy="75" 
+                <circle className="smooth-stroke" stroke={interpolateColor(Colors.get('skipped', theme), Colors.get('done', theme), fillAmount)} fill="none" strokeWidth="15" r={radius} cx="75" cy="75" 
                 strokeDasharray={circumference} strokeDashoffset={(circumference + (-fillAmount * circumference))} 
-                style={{transition: 'stroke-dashoffset 1s linear'}}   />
+                style={{transition: 'stroke 1s linear, stroke-dashoffset 1s linear'}}   />
                 <text x="75" y="75" textAnchor="middle" dominantBaseline="middle" fontSize="24" fill={Colors.get('mainText', theme)}>{Math.min(Math.ceil(fillAmount * 100),100)+"%"}</text>
                </svg>
                {/* texts info and days to reach goal */}
@@ -198,22 +199,13 @@ const HabitMetrics = () => {
             transition: 'all 0.5s ease-in-out',transform: showListOfHabitsPanel ? 'translate(-20%,-17%)' : 'translate(-110%,-17%)'}}>
               <div style={{display:'flex',flexDirection:'column',overflowY:'scroll',justifyContent:'start',alignItems:'center',width:'75%',height:'95%',marginTop:'4%',marginLeft:'20%'}}>
                 {AppData.choosenHabits.map((id,index) => {
-                  let currentStreak = 0;
-                  for(let i = habits.length - 2; i >= 0; i--){
-                    if(id in habits[i]){
-                      if(habits[i][id] > 0)currentStreak ++;
-                      else break;
-                    }
-                  }
-                  if(id in habits[habits.length - 1]){
-                    if(habits[habits.length - 1][id] > 0)currentStreak ++;
-                  }
+                const currentStreak = getHabitPerformPercent(id);
                 return (
                   <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'space-between',width:'100%',height:'8%',borderBottom: `1px solid ${Colors.get('border', theme)}`,
-                    backgroundColor:habitId === id ? currentStreak < daysToForm ? Colors.get('highlitedPanel', theme) : Colors.get('habitCardended', theme) : Colors.get('background', theme),borderTopRightRadius:'12px'}}
+                    backgroundColor:habitId === id ? Colors.get('highlitedPanel', theme) : Colors.get('background', theme),borderTopRightRadius:'12px'}}
                     onClick={() => {setId(id,false)}}>
                     <p style={{...styles(theme,fSize).text,marginLeft:'20px'}}>{(getAllHabits().find(h => h.id === id) || {}).name?.[langIndex] || 'Unknown Habit'}</p>
-                    {currentStreak < daysToForm && <p style={{...styles(theme,fSize).text,marginRight:'20px'}}>{Math.min(Math.ceil(currentStreak / daysToForm * 100),100) + '%'}</p>}
+                    {currentStreak < daysToForm && <p style={{...styles(theme,fSize).text,marginRight:'20px'}}>{currentStreak + '%'}</p>}
                     {currentStreak >= daysToForm && <MdDoneAll style={{width:'20px',color:'#c9af2cff',fontSize:'20px',marginTop:'15px',marginRight:'20px'}} />}
                   </div>
                 )
@@ -243,7 +235,7 @@ const styles = (theme,fSize) =>
   {
     display:'flex',
     flexDirection:'column',
-    width: "90vw",
+    width: "95vw",
     height: "160vw",
     position:'absolute',
     top:'51%',
@@ -358,9 +350,7 @@ function interpolateColor(color1, color2, factor) {
   const b = Math.round(b1 + (b2 - b1) * factor);
 
   // Convert back to hex and ensure two digits
-  return '#' + r.toString(16).padStart(2, '0') + 
-         g.toString(16).padStart(2, '0') + 
-         b.toString(16).padStart(2, '0');
+  return `rgb(${r}, ${g}, ${b})`;
 }
 const infoTextShort = (langIndex,habitId) => {
   const isNegative = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habitId)];

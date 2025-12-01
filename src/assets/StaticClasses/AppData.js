@@ -3,6 +3,7 @@ import { THEME } from './Colors';
 import { habitReminder } from '../Pages/NotifyPanel';
 import {setTheme,setLang ,setSoundAndVibro,setNotify,setShowPopUpPanel,setFontSize} from '../StaticClasses/HabitsBus'
 import { NotificationsManager } from "./NotificationsManager";
+import { getAchievements } from "../Helpers/Achievements";
 
 export class AppData{
    static lastSave = new Date().toISOString();
@@ -12,14 +13,15 @@ export class AppData{
    static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
    //  habits 
    static CustomHabits = [];
-   static ChoosenHabitsGoals = {};//{id:[{text:'',isDone:false}]}
+   static choosenHabitsGoals = {};//{id:[{text:'',isDone:false}]}
    static choosenHabitsStartDates = [];
+   static choosenHabitsLastSkip = {};
    static choosenHabits = [];
+   static choosenHabitsAchievements = {};
    static choosenHabitsNotified = {};
    static habitsByDate = {};
    static choosenHabitsDaysToForm = [];
    static choosenHabitsTypes = [];
-   static daysToFormAHabit = 66;
    
 
    // training log
@@ -40,10 +42,13 @@ export class AppData{
     setSoundAndVibro(this.prefs[2],this.prefs[3]);
     setFontSize(this.prefs[4]);
     this.choosenHabitsStartDates = [...data.choosenHabitsStartDates];
+    this.choosenHabitsLastSkip = data.choosenHabitsLastSkip;
+    this.choosenHabitsAchievements = data.choosenHabitsAchievements;
     this.choosenHabits = [...data.choosenHabits];
-    this.hoosenHabitsGoals = data.ChoosenHabitsGoals;
+    this.choosenHabitsTypes = [...data.choosenHabitsTypes];
+    this.choosenHabitsGoals = data.choosenHabitsGoals;
     this.choosenHabitsNotified = data.choosenHabitsNotified;
-    this.daysToFormAHabit = data.daysToFormAHabit;
+    this.choosenHabitsDaysToForm = data.choosenHabitsDaysToForm;
     this.CustomHabits = data.CustomHabits;
     this.habitsByDate = data.habitsByDate;
     this.notify = data.notify;
@@ -67,12 +72,17 @@ export class AppData{
      return false;
   } 
   static addHabit(habitId,dateString,goals,isNegative,daysToForm){
+    const now = new Date();
+    const habitDate = new Date(dateString);
+    const isStartDateEarlier = Date.now() - new Date(dateString).getTime() > 86400000;
     if(!this.choosenHabits.includes(habitId)) {
        this.choosenHabits.push(habitId);
-       this.ChoosenHabitsGoals[habitId] = goals;
+       this.choosenHabitsAchievements[habitId] = getAchievements(isNegative);
+       this.choosenHabitsGoals[habitId] = goals || [];
        this.choosenHabitsStartDates.push(dateString);
        this.choosenHabitsNotified[habitId] = [false,false,false];
        this.choosenHabitsDaysToForm.push(daysToForm);
+       this.choosenHabitsLastSkip[habitId] = isStartDateEarlier ? new Date(dateString).getTime()  : Date.now();
        this.choosenHabitsTypes.push(isNegative);
        habitReminder(this.prefs[0],this.notify[0].cron,0,0,false);
     }
@@ -90,18 +100,24 @@ export class AppData{
      }
      currentDate.setDate(currentDate.getDate() + 1);
    }
-   this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 0 : 2;
+   if(isNegative){
+       if(getHabitPerformPercent(habitId) < 100)this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = isStartDateEarlier ? 1 : -1;
+       else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = 2;
+   }
+   else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 0 : 2;
   }
   static addHabitGoal(habitId,goal){
-    this.ChoosenHabitsGoals[habitId].push(goal);
+    this.choosenHabitsGoals[habitId].push(goal);
   }
   static removeHabit(habitId){
     if(this.choosenHabits.includes(habitId)){
     const index = this.choosenHabits.indexOf(habitId);
     this.choosenHabits.splice(index,1);
+    delete this.choosenHabitsAchievements[habitId];
     this.choosenHabitsDaysToForm.splice(index,1);
+    delete this.choosenHabitsLastSkip[habitId];
     this.choosenHabitsTypes.splice(index,1);
-    delete this.ChoosenHabitsGoals[habitId];
+    delete this.choosenHabitsGoals[habitId];
     this.choosenHabitsStartDates.splice(index,1);
     delete this.choosenHabitsNotified[habitId];
     Object.entries(this.habitsByDate).forEach(([date, habit]) => {
@@ -174,12 +190,12 @@ export const fillEmptyDays = () => {
       AppData.habitsByDate[current] = {};
       for (let index = 0; index < AppData.choosenHabits.length; index++) {
         if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime())
-        AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? -1 : 2; 
+        AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? AppData.choosenHabitsTypes[index] ? 1 : -1 : 2; 
       }
     }else{
       for (let index = 0; index < AppData.choosenHabits.length; index++) {
         if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime())
-        if(AppData.habitsByDate[current][AppData.choosenHabits[index]] < 1)AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? -1 : 2; 
+        if(AppData.habitsByDate[current][AppData.choosenHabits[index]] < 1)AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? AppData.choosenHabitsTypes[index] ? 1 : -1 : 2; 
       }
     }
     currentDate.setDate(currentDate.getDate() + 1);
@@ -190,7 +206,7 @@ export const fillEmptyDays = () => {
  if(!(now in AppData.habitsByDate)){
    AppData.habitsByDate[now] = {};
    for (let index = 0; index < AppData.choosenHabits.length; index++) {
-     AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? 0 : 2; 
+     AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 99 ? 0 : 2; 
    }
   }
 }
@@ -215,12 +231,15 @@ export class Data{
     this.version = AppData.version,
     this.prefs = AppData.prefs,
     this.choosenHabits = AppData.choosenHabits,
+    this.choosenHabitsTypes = AppData.choosenHabitsTypes,
     this.habitsByDate = AppData.habitsByDate,
+    this.choosenHabitsAchievements = AppData.choosenHabitsAchievements,
+    this.choosenHabitsLastSkip = AppData.choosenHabitsLastSkip,
     this.choosenHabitsStartDates = AppData.choosenHabitsStartDates,
     this.choosenHabitsNotified = AppData.choosenHabitsNotified,
-    this.ChoosenHabitsGoals = AppData.ChoosenHabitsGoals,
+    this.choosenHabitsGoals = AppData.choosenHabitsGoals,
     this.CustomHabits = AppData.CustomHabits,
-    this.daysToFormAHabit = AppData.daysToFormAHabit,
+    this.choosenHabitsDaysToForm = AppData.choosenHabitsDaysToForm,
     this.notify = AppData.notify,
     this.currentProgramId = AppData.currentProgramId,
     this.exercises = AppData.exercises,
@@ -231,6 +250,8 @@ export class Data{
 
 export function getHabitPerformPercent(habitId){
   const habits = Array.from(Object.values(AppData.habitsByDate));
+  const today = new Date().toISOString().split('T')[0];
+  const isNegative = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habitId)];
   let currentStreak = 0;
   for(let i = habits.length - 2; i >= 0; i--){
       if(habitId in habits[i]){
@@ -238,8 +259,9 @@ export function getHabitPerformPercent(habitId){
           else break;
     }
   }
-  if(habitId in habits[habits.length - 1]){
-    if(habits[habits.length - 1][habitId] > 0)currentStreak ++;
-  }
-  return Math.ceil(currentStreak / AppData.daysToFormAHabit * 100) ;
+  
+  if(AppData.habitsByDate[today][habitId] > 0)currentStreak ++;
+  if(isNegative && AppData.habitsByDate[today][habitId] < 0) currentStreak = 0;
+  
+  return Math.ceil(currentStreak / AppData.choosenHabitsDaysToForm[AppData.choosenHabits.indexOf(habitId)] * 100) ;
 }

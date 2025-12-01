@@ -319,7 +319,7 @@ export function habitReminder(langIndex,_cron,hour,minute,needMessage) {
             return;
         }
         const habits = AppData.choosenHabits
-            .map(habitId => allHabits?.find(h => h.id === habitId))
+            .map(habitId => allHabits?.find(h => (h.id === habitId && !AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habitId)])))
             .filter(Boolean);
         let message = '⏰ ' + UserData.name + " ," + messages[langIndex][Math.floor(Math.random() * messages[langIndex].length)] + ': ';
         const habitNames = habits.map(h => h.name[langIndex]).join(', ');

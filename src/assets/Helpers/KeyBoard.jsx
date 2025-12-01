@@ -100,16 +100,16 @@ const KeyBoard = () => {
         {!needEmoji && <div style={styles(theme,needKeyBoard).container }>
          <div style={styles(theme).rowPanel}>
             {keys[currentKeys][0].map((key) => (
-              <div onClick={() => click(key)} key={key} style={keyStyle(theme,keys[currentKeys][0].length,currentKey,key)}>
-                <p key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
+              <div  key={key} style={keyStyle(theme,keys[currentKeys][0].length,currentKey,key)}>
+                <p onClick={() => click(key)} key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
               </div>
             ))}
          </div>
          {/*second line*/}
          <div style={styles(theme).rowPanel}>
             {keys[currentKeys][1].map((key) => (
-              <div onClick={() => click(key)} key={key} style={keyStyle(theme,keys[currentKeys][1].length,currentKey,key)}>
-                <p key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
+              <div  key={key} style={keyStyle(theme,keys[currentKeys][1].length,currentKey,key)}>
+                <p onClick={() => click(key)} key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
               </div>
             ))}
          </div>
@@ -119,8 +119,8 @@ const KeyBoard = () => {
                 <FaArrowUp style={{...styles(theme).text,color:isShift ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme)}}/>
               </div>
             {keys[currentKeys][2].map((key) => (
-              <div onClick={() => click(key)} key={key} style={keyStyle(theme,keys[currentKeys][2].length + 2,currentKey,key)}>
-                <p key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
+              <div  key={key} style={keyStyle(theme,keys[currentKeys][2].length + 2,currentKey,key)}>
+                <p onClick={() => click(key)} key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
               </div>
             ))}
             <div {...bindKey} onClick={() => click('bs')} style={{...keyStyle(theme,keys[currentKeys][2].length + 2,currentKey,'bs'),backgroundColor:Colors.get('currentDateBorder2', theme)}}>

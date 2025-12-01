@@ -1,3 +1,5 @@
+import { skip } from "rxjs";
+
 export const THEME = {
   LIGHT: "light",
   DARK: "dark",
@@ -25,8 +27,13 @@ export class Colors {
     bottomPanel: { light: "#c8d7deff", dark: "#101316ff", speciallight: "#d5b1a9ff", specialdark: "#1f1d1dff" },
     bottomPanelShadow: { light: "#8b9cc6ff", dark: "#383a3aff", speciallight: "#fffdfcff", specialdark: "#38483dff" },
     habitCard: { light: "#eef1f5ff", dark: "#1c1b1dff", speciallight: "#d7a1a1ff", specialdark: "#161917ff" },
-    habitCardDone: { light: "#7be7d1ff", dark: "#2e5a2fff", speciallight: "#42d486ff", specialdark: "#26944dff" },
-    habitCardSkipped: { light: "#f88787ff", dark: "#5c2e2eff", speciallight: "#ba4a4aff", specialdark: "#863122ff" },
+
+    habitCardDone: { light: "rgba(173, 223, 192, 0.5)", dark: "rgba(41, 61, 40, 0.5)", speciallight: "rgba(182, 223, 162, 0.5)", specialdark: "rgba(64, 96, 54, 0.5)" },
+    habitCardSkipped: { light: "rgba(231, 163, 196, 0.5)", dark: "rgba(92, 46, 46, 0.5)", speciallight: "rgba(224, 147, 147, 0.5)", specialdark: "rgba(115, 41, 29, 0.5)" },
+     
+    done: { light: "#75c5b3ff", dark: "#316444ff", speciallight: "#85d27fff", specialdark: "#2b4b30ff" },
+    skipped: { light: "#bd75c5ff", dark: "#643131ff", speciallight: "#d27fa2ff", specialdark: "#4b2b2fff" },
+
     habitCardEnded: { light: "#f2ec9cff", dark: "#3a371cff", speciallight: "#ebc880ff", specialdark: "#4b4911ff" },
     habitDoneBorder: { light: "#767e57ff", dark: "#c6c688ff", speciallight: "#e8e5d9ff", specialdark: "#d2d8a1ff" },
     inputField:{ light: "#9eaebcff", dark: "#2e2d2fff", speciallight: "#af9d89ff", specialdark: "#2f3431ff" },

@@ -31,24 +31,23 @@ function LoadPanel() {
                         AppData.prefs[1] = colorScheme === 'dark' ? 0 : 2;
                     }
                     UserData.Init(user.id,user.username, user.photo_url);
-                    setTimeout(() => setUserName(user.username), 1000);
+                    setTimeout(() => setUserName(user.username), 500);
                     setTimeout(() => setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url), 1000);
                 } else {
-                    setTimeout(() => setUserName('guest'), 1000);
-                    setTimeout(() => setUserPhoto('images/Ui/Guest.jpg'), 1000);
+                    setTimeout(() => setUserName('guest'), 500);
+                    setTimeout(() => setUserPhoto('images/Ui/Guest.jpg'), 500);
                 }
                 // Load saved data
                 await loadData();
                 fillEmptyDays();
                 setAllHabits();
-                console.log(JSON.stringify(AppData.habitsByDate));
-                setTimeout(() => setLoading(false), 1000);
-                setTimeout(() => setPage('MainMenu'), 2600);
+                setTimeout(() => setLoading(false), 500);
+                setTimeout(() => setPage('MainMenu'), 1200);
             } catch (error) {
                 console.error('Initialization error:', error);
                 // Fallback in case of error
-                setTimeout(() => setLoading(false), 1000);
-                setTimeout(() => setPage('MainMenu'), 2000);
+                setTimeout(() => setLoading(false), 500);
+                setTimeout(() => setPage('MainMenu'), 1200);
             }
         }
         

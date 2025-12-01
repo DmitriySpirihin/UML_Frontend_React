@@ -2,7 +2,7 @@ import React, {useState,useEffect} from 'react'
 import { motion , useTransform, useMotionValue,animate} from 'framer-motion'
 import Icons from '../../StaticClasses/Icons';
 import { allHabits} from '../../Classes/Habit.js'
-import { AppData } from '../../StaticClasses/AppData.js'
+import { AppData,getHabitPerformPercent } from '../../StaticClasses/AppData.js'
 import { expandedCard$, setExpandedCard} from '../../StaticClasses/HabitsBus.js';
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
@@ -10,6 +10,12 @@ import {MdDoneAll} from 'react-icons/md'
 import {FaPlusSquare,FaTrash,FaPencilAlt,FaTrashAlt} from 'react-icons/fa'
 import {FaRegSquareCheck,FaRegSquare} from 'react-icons/fa6'
 import {TbDotsVertical,TbArrowMoveDownFilled,TbArrowMoveUpFilled} from 'react-icons/tb'
+//timer
+import TimerIcon from '@mui/icons-material/TimerTwoTone';
+import TimerOffIcon from '@mui/icons-material/TimerOffTwoTone';
+import Slider from '@mui/material/Slider';
+
+
 
 import {MdClose,MdDone} from 'react-icons/md'
 import MyInput from '../../Helpers/MyInput';
@@ -17,6 +23,7 @@ const dateKey = new Date().toISOString().split('T')[0];
 const clickSound = new Audio('Audio/Click.wav');
 const skipSound = new Audio('Audio/Skip.wav');
 const isDoneSound = new Audio('Audio/IsDone.wav'); 
+const timerSound = new Audio('Audio/Timer.wav');
 export let removeHabitFn;
 export let addHabitFn;
 export let currentId;
@@ -103,7 +110,6 @@ const HabitsMain = () => {
     
     removeHabitFn = removeHabit;
     addHabitFn = addHabit;
-    const hasBadHabits = AppData.choosenHabitsTypes.some((v) => v);
     // render    
     return (
         <div style={styles(theme).container}>
@@ -112,24 +118,6 @@ const HabitsMain = () => {
             </div>}
             {hasHabits && <div style={styles(theme).scrollView}>
               {buildMenu({theme, habitsCards, categories, getAllHabits: () => getAllHabits(),setConfirmationPanel,setCurrentId,fSize})}
-              {hasBadHabits && 
-              <CategoryPanel text={['Вредные привычки','Bad habits']} theme={theme} isNegative={true}>
-                {getAllHabits().map(habit =>{
-                const isEnabled = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habit.id)];
-                return isEnabled && (
-                    <HabitCard
-                        key={habit.id}
-                        id={habit.id}
-                        text={habit.name}
-                        descr={habit.description}
-                        imgsrc={habit.src}
-                        theme={theme}
-                        setConfirmationPanel={setConfirmationPanel}
-                        setCurrentId={setCurrentId}
-                        fSize={fSize}
-                    />
-                )})}
-            </CategoryPanel>}
         </div>}
         {confirmationPanel && (
                    <div style={styles(theme).confirmContainer}>
@@ -169,10 +157,8 @@ function buildMenu({ theme, habitsCards, categories,setConfirmationPanel,setCurr
             .filter(h => h && h.category[0] === category);
 
         return (
-            <CategoryPanel key={category} text={getAllHabits().find(h => h.category[0] === category)?.category } theme={theme} isNegative={false}>
-                {habitsInCategory.map(habit =>{
-                const isEnabled = !AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habit.id)];
-                return isEnabled && (
+            <CategoryPanel key={category} text={getAllHabits().find(h => h.category[0] === category)?.category } theme={theme} isNegative={category === 'Отказ от вредного'}>
+                {habitsInCategory.map(habit => (
                     <HabitCard
                         key={habit.id}
                         id={habit.id}
@@ -184,7 +170,7 @@ function buildMenu({ theme, habitsCards, categories,setConfirmationPanel,setCurr
                         setCurrentId={setCurrentId}
                         fSize={fSize}
                     />
-                )})}
+                ))}
             </CategoryPanel>
         );
     }
@@ -193,19 +179,54 @@ function buildMenu({ theme, habitsCards, categories,setConfirmationPanel,setCurr
 function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Описание", "Description"], theme,setConfirmationPanel,setCurrentId,fSize}) {
     const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const isNegative = getAllHabits().find(h => h.id === id)?.category[0] === 'Отказ от вредного';
+    const percent = getHabitPerformPercent(id);
     const maxX = 100;
     const minX = -maxX;
     const [canDrag, setCanDrag] = useState(true);
-    let cardColor = Colors.get(status === 1 ? 'habitCardDone' : status === -1 ? 'habitCardSkipped' : 'habitCard', theme);
-    let leftColor = Colors.get(status === 0 ? 'habitCardSkipped' : status === 1 ? 'habitCard' : 'habitCardSkipped', theme);
-    let rightColor = Colors.get(status === 0 ? 'habitCardDone' : status === -1 ? 'habitCard' : 'habitCardDone', theme);
+    let cardColor = status === 0 ? 'rgba(0,0,0,0.1)' : Colors.get(status === 1 ? 'habitCardDone' : 'habitCardSkipped', theme);//Colors.get(status === 1 ? 'habitCardDone' : status === -1 ? 'habitCardSkipped' : 'habitCard', theme);
+    let leftColor = status === 1 ? 'rgba(0,0,0,0.1)' : Colors.get(status === 0 ? 'habitCardSkipped' : 'habitCardSkipped', theme);
+    let rightColor = status === -1 ? 'rgba(0,0,0,0.1)' : Colors.get(status === 0 ? 'habitCardDone' : 'habitCardDone', theme);
     
     const [expanded, setExpanded] = useState(false);
     const [_color, setColor] = useState(cardColor);
     const [showAddOptions,setShowAddOptions] = useState(false);
-    const [goals,setGoals] = useState(AppData.ChoosenHabitsGoals[id].length > 0 ? AppData.ChoosenHabitsGoals[id].map(goal => goal.isDone) : []);
+    const [goals,setGoals] = useState(AppData.choosenHabitsGoals[id]?.length > 0 ? AppData.choosenHabitsGoals[id].map(goal => goal.isDone) : []);
     
-    
+    const [showTimerSlider,setShowTimerSlider] = useState(false);
+    const [timer,setTimer] = useState(isNegative ? true : false);
+    const [maxTimer,setMaxTimer] = useState(isNegative ? 86400000 : 60000);
+    const [time,setTime] = useState(isNegative ? Math.round(Date.now() - new Date(AppData.choosenHabitsLastSkip[id])) : 60000);
+    const [lastSkip,setLastSkip] = useState(isNegative ? Date.now() : 0);
+    const [progress,setProgress] = useState(0);
+    // timer
+    useEffect(() => {
+  if (timer) {
+    let temp = 0;
+    const interval = setInterval(() => {
+    temp += 50;
+    const newProgress = ((time + temp) / maxTimer) * 100;
+    setProgress(newProgress);
+    if(temp === 1000){ setTime(prevTime => {
+      const newTime = prevTime + 1000;
+      temp = 0;
+    if(!isNegative){
+      if (newTime >= maxTimer) {
+        timerSound.play();
+        clearInterval(interval);
+        setStatus(1);
+        setTime(0);
+        setTimer(false);
+        setProgress(0);
+      }
+    }
+      return newTime;
+    });}
+    }, 50);
+
+    return () => clearInterval(interval);
+  }
+}, [time,timer, maxTimer]);
     // Handle language changes
     useEffect(() => {
         const subscription = lang$.subscribe((lang) => {
@@ -239,31 +260,42 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
     
     // Update color when theme changes
     useEffect(() => {
-        setColor(Colors.get(status === 1 ? 'habitCardDone' : status === -1 ? 'habitCardSkipped' : 'habitCard', theme));
+        setColor(status === 0 ? 'rgba(0,0,0,0.1)' : Colors.get(status === 1 ? 'habitCardDone' : 'habitCardSkipped', theme));
     }, [theme, status]);
 
     const x = useMotionValue(0);
     const constrainedX = useTransform(x,[-1,1],[minX,maxX]);
     const onDragStart = () => {
-        cardColor = Colors.get(status === 1 ? 'habitCardDone' : status === -1 ? 'habitCardSkipped' : 'habitCard', theme);
-        leftColor = Colors.get(status === 0 ? 'habitCardSkipped' : status === 1 ? 'habitCard' : 'habitCardSkipped', theme);
-        rightColor = Colors.get(status === 0 ? 'habitCardDone' : status === -1 ? 'habitCard' : 'habitCardDone', theme);
+        cardColor = status === 0 ? 'rgba(0,0,0,0.1)' : Colors.get(status === 1 ? 'habitCardDone' : 'habitCardSkipped', theme);
+        leftColor = status === 1 ? 'rgba(0,0,0,0.1)' : Colors.get(status === 0 ? 'habitCardSkipped' : 'habitCardSkipped', theme);
+        rightColor = status === -1 ? 'rgba(0,0,0,0.1)' : Colors.get(status === 0 ? 'habitCardDone' : 'habitCardDone', theme);
     }
    
         
     const handledDrag = (event,info) => {
-        if(status === 1 && info.offset.x < 0 || status !== 1) setColor(interpolateColor(cardColor,info.offset.x > 0 ? rightColor : leftColor,Math.abs(info.offset.x)/maxX));
-        if(Math.abs(info.offset.x) > maxX){
-             if(canDrag){
-                setNewStatus(info.offset.x > 0);
+        if(status === 1 && info.offset.x < 0) setColor(interpolateColor(cardColor,leftColor,Math.abs(info.offset.x)/maxX));
+        if(isNegative){
+            if(info.offset.x < minX){
+              if(canDrag){
+                setNewStatus(false);
                 animate(constrainedX, 0, { type: 'tween', duration: 0.2 });
                 setCanDrag(false);
              }
-        }
+            }
+        }else{
+            if(status === 1 && info.offset.x < 0 || status !== 1) setColor(interpolateColor(cardColor,info.offset.x > 0 ? rightColor : leftColor,Math.abs(info.offset.x)/maxX));
+            if(Math.abs(info.offset.x) > maxX){
+             if(canDrag){
+                if(status < 1 && info.offset.x > 0 || status > -1 && info.offset.x < 0) setNewStatus(info.offset.x > 0);
+                animate(constrainedX, 0, { type: 'tween', duration: 0.2 });
+                setCanDrag(false);
+             }
+          }
+        }  
     }
     const onDragEnd = () => {
         if(canDrag) animate(constrainedX, 0, { type: 'tween', duration: 0.2 });
-        setColor(Colors.get(status === 1 ? 'habitCardDone' : status === -1 ? 'habitCardSkipped' : 'habitCard', theme));
+        setColor(status === 0 ? 'rgba(0,0,0,0.1)' : Colors.get(status === 1 ? 'habitCardDone' : 'habitCardSkipped', theme));
         setCanDrag(true);
     }
     const setNewStatus = (isOverZero) => {
@@ -276,7 +308,13 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
         }
         else{
             if(status === 0)newStatus = -1;
-            else if(status === 1)newStatus = 0;
+            else if(status === 1){
+              newStatus = isNegative ? -1 : 0;
+              if(isNegative){
+                 setTime(Math.round(0));
+                 AppData.choosenHabitsLastSkip[id] = Date.now();
+              }
+            }
             else if(status === -1){
                 newStatus = -1;
                 currentId = id;
@@ -284,6 +322,10 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                 ? `Вы уверены, что хотите удалить привычку: \'${displayText}\' ?`
                 : `Are you sure you want to delete \'${displayText}\' habit?`;
                 updateConfirmationPanel(newText);
+                if(isNegative){
+                 setTime(Math.round(0));
+                 AppData.choosenHabitsLastSkip[id] = Date.now();
+              }
             }
             else{
                 currentId = id;
@@ -296,11 +338,9 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
         }
         if(newStatus === 1)playEffects(isDoneSound);
         else if(newStatus === -1)playEffects(skipSound);
-        setColor(Colors.get(newStatus === 1 ? 'habitCardDone' : newStatus === -1 ? 'habitCardSkipped' : 'habitCard', theme));
+        setColor(status === 0 ? 'rgba(0,0,0,0.2)' : Colors.get(status === 1 ? 'habitCardDone' : 'habitCardSkipped', theme));
         setStatus(newStatus);
     }
-            
-    
     const toggleIsActive = () => {
         setCurrentId(id);
         playEffects(clickSound);
@@ -317,19 +357,27 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
     }, [id]);
       
     const _style = {
-        display:'flex',
-        flexDirection:'column',
-        width:'95%',
-        borderRadius: "24px",
-        margin: "5px",
-        overflow: 'hidden',
-        borderStyle: 'solid',
-        borderWidth: 1,
-        borderColor: status < 1 ? Colors.get('border', theme) : Colors.get('habitDoneBorder', theme),
-        position: 'relative' ,
-        backgroundColor: status < 2 ? _color : Colors.get('habitCardEnded', theme),
-        x: constrainedX,
-    }
+    display: 'flex',
+    flexDirection: 'column',
+    width: '95%',
+    borderRadius: '24px',
+    margin: '5px',
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: status < 2 ? _color : Colors.get('habitCardEnded', theme),
+    border: '2px solid ' + Colors.get('border', theme), // optional base border
+    x:constrainedX
+   };
+     const progressStyle = {
+     position: 'absolute',
+     top: 0,
+     left: 0,
+     height: '2px',
+     width: `${progress}%`, 
+     backgroundColor: 'green', 
+     borderRadius: '24px 0 0 0', 
+     
+   };
     const mainText = 
     {
        fontSize:fSize === 0 ? "13px" : "15px",
@@ -344,9 +392,25 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
        padding:'3px',
     }
 
-    let newHeight = '15vh';
-    if(AppData.ChoosenHabitsGoals[id].length > 0){
-        newHeight = ((AppData.ChoosenHabitsGoals[id].length * 3) + 15) + 'vh';
+    let newHeight = '23vh';
+    if(AppData.choosenHabitsGoals[id]?.length > 0){
+        newHeight = ((AppData.choosenHabitsGoals[id].length * 3) + 23) + 'vh';
+    }
+    useEffect(() => {
+      setCanDrag(!showTimerSlider);
+    }, [showTimerSlider]);
+    const startTimer = () => {
+       if(status < 1 && !isNegative){
+        setTimer(true);
+        setTime(0);
+       }
+    }
+    const stopTimer = () => {
+      if(!isNegative){
+       setTimer(false);
+       setProgress(0);
+       setTime(0);
+      }
     }
         
     return (
@@ -364,7 +428,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                     }
                 }}
                 drag={canDrag ? 'x' : false}
-                dragConstraints={{left: minX, right: status > 0 ? 0 : maxX}} 
+                dragConstraints={{left: minX, right: status > 0 || isNegative ? 0 : maxX}} 
                 onDragStart={onDragStart} 
                 dragElastic={0} 
                 onDrag={handledDrag} 
@@ -378,25 +442,41 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                     ease: 'easeInOut'
                 }}
             >
+                <div style={progressStyle} />
+                {showTimerSlider && (
+                  <div style={{display:'flex',alignItems:'center',position: 'absolute',borderRadius:'24px',width:'100%',height:'4.5vh',zIndex: 1001,backgroundColor: Colors.get('background', theme)}}onClick={(e) => e.stopPropagation()}>
+                   <div style={{display: 'flex',flexDirection: 'row',alignItems: 'center',justifyContent: 'space-between',width: '95%',margin: '8px auto 0',}}>
+                     <div style={styles(theme).mainText}>{parsedTimeSimple(maxTimer)}</div>
+                     <Slider style={styles(theme).slider} min={1} max={59} value={maxTimer / 60000} valueLabelDisplay="off" onChange={(e) => {setMaxTimer(e.target.value * 60000);e.stopPropagation();}}/>
+                     <MdClose onClick={(e) => {e.stopPropagation();setShowTimerSlider(false);}}style={{cursor: 'pointer',color: Colors.get('icons', theme),fontSize: '24px',}}/>
+                     <MdDone onClick={(e) => {e.stopPropagation(); startTimer();setShowTimerSlider(false);}}style={{cursor: 'pointer',color: Colors.get('icons', theme),fontSize: '24px',}}/>
+                  </div>
+                </div>
+               )}
                 <div style={{display: "flex", alignItems: "flex-start", maxHeight: '40px', paddingBottom: '5px'}}>   
                     <div style={{marginLeft: '15px', marginTop: '8px'}}>
                         {getHabitIcon()}
                     </div>
                     <h2 style={mainText}>{displayText}</h2>
-                    {status > 1 && <MdDoneAll style={{...styles(theme).icon,color:'#d8e363ff',fontSize:'24px',marginLeft:'auto',marginTop:'10px',marginRight:'15px'}}/>}
+                  {status < 2 && <div style={{marginLeft:'auto',display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'center'}}>
+                    {timer &&<h2 style={mainText} >{parsedTime(time,maxTimer,isNegative)}</h2>}
+                    {!timer && <TimerOffIcon onClick={(e) => {e.stopPropagation();if(!isNegative){setShowTimerSlider(true)};}} style={{...styles(theme).icon,color:Colors.get('icons', theme),opacity:0.5,fontSize:'24px',marginTop:'10px',marginRight:'15px'}}/>}
+                    {timer  && <TimerIcon onClick={(e) => {e.stopPropagation();stopTimer()}} style={{...styles(theme).icon,color:Colors.get('icons', theme),fontSize:'24px',marginRight:'10px'}}/>}
+                   </div>}
+                    {status > 1 && <MdDoneAll style={{...styles(theme).icon,color:'#d8e363ff',fontSize:'24px',marginRight:'20px',marginTop:'10px',marginLeft:'auto'}}/>}
                 </div> 
                 {expanded && (
                     <div style={{marginLeft:'15px',width:'90%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'space-around'}}>
                       <div style={subText}>{displayDescr}</div>
                       <div style={subText}>{langIndex === 0 ? 'Цели : ' : 'Goals : '}</div>
-                      {AppData.ChoosenHabitsGoals[id].map((goal,index) => (
+                      {AppData.choosenHabitsGoals[id]?.map((goal,index) => (
                         <div key={index} style={{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'flex-start',width:'100%',borderBottom:`1px solid ${Colors.get('border', theme)}`,marginBottom:'5px',marginLeft:'5px'}}>
                            <div style={{...mainText,marginLeft:'1px'}}>{index + 1 + ': ' + goal.text}</div>
                            <div style={{marginLeft:'auto',display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'center'}}>
                             {showAddOptions && <FaPencilAlt style={{fontSize:'20px',marginRight:'5px',color:Colors.get('icons', theme)}} onClick={() => {}}/>}
                             {showAddOptions && <FaTrashAlt style={{fontSize:'20px',marginRight:'5px',color:Colors.get('icons', theme)}} onClick={() => {}}/>}    
-                            {goals[index] ? <FaRegSquareCheck style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {AppData.ChoosenHabitsGoals[id][index].isDone = false;setGoals(prev => {const newGoals = [...prev];newGoals[index] = false;return newGoals;})}}/> :
-                             <FaRegSquare style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {AppData.ChoosenHabitsGoals[id][index].isDone = true;setGoals(prev => {const newGoals = [...prev];newGoals[index] = true;return newGoals;})}}/>}
+                            {goals[index] ? <FaRegSquareCheck style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {AppData.choosenHabitsGoals[id][index].isDone = false;setGoals(prev => {const newGoals = [...prev];newGoals[index] = false;return newGoals;})}}/> :
+                             <FaRegSquare style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {AppData.choosenHabitsGoals[id][index].isDone = true;setGoals(prev => {const newGoals = [...prev];newGoals[index] = true;return newGoals;})}}/>}
                             <TbDotsVertical style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {setShowAddOptions(prev => !prev);setCurrentId(id);}}/>
                            </div>
                         </div>
@@ -405,6 +485,11 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                          <FaPlusSquare onClick={() => setConfirmationPanel(true)} style={{fontSize:'24px',color:Colors.get('icons', theme)}}/>
                          <div style={{...subText,marginLeft:'15px'}}>{langIndex === 0 ? 'Добавить цель' : 'Add goal'}</div>
                       </div> 
+                       <div style={subText}>{langIndex === 0 ? 'Достижения 🏆' : 'Achievements 🏆'}</div>
+                       {AppData.choosenHabitsAchievements[id]?.map((milestone, index) => (
+                        <Achievement key={index} index={index} milestone={milestone} habitId={id} isNegative={isNegative} percent={percent} theme={theme} fSize={fSize} langIndex={langIndex} />
+                       ))}
+                      
                     </div>
                 )}
             </motion.div>
@@ -422,7 +507,7 @@ function CategoryPanel({text = ["Имя", "Name"], children, theme,fSize,isNegat
     
     return (
         <div style={styles(theme,fSize,isNegative).categoryPanel}>
-            {text[langIndex] + (isNegative ? ' 💀' : ' 😎')}
+            {text[langIndex]}
             {children}
         </div>
     )
@@ -513,36 +598,39 @@ const styles = (theme,fSize,isNegative) =>
     flexDirection:'row',
     alignItems:'stretch',
     justifyContent:'space-around',
+  },
+  slider:
+  {
+    width:'60%',
+    userSelect: 'none',
+    touchAction: 'none',
+    color:Colors.get('icons', theme),
+
   }
 })
  function interpolateColor(color1, color2, factor) {
-  if (!color1 || !color2) return color1 || color2 || '#000000';
-  // Ensure factor is clamped between 0 and 1
   factor = Math.max(0, Math.min(1, factor));
 
-  // Remove '#' if present
-  color1 = color1.replace('#', '');
-  color2 = color2.replace('#', '');
+  const parse = (c) => {
+    const [r, g, b, a = 1] = c
+      .replace(/\s+/g, '')
+      .replace(/[^0-9.,]/g, '')
+      .split(',')
+      .map(Number);
+    return { r, g, b, a };
+  };
 
-  // Parse RGB components
-  const r1 = parseInt(color1.slice(0, 2), 16);
-  const g1 = parseInt(color1.slice(2, 4), 16);
-  const b1 = parseInt(color1.slice(4, 6), 16);
+  const c1 = parse(color1);
+  const c2 = parse(color2);
 
-  const r2 = parseInt(color2.slice(0, 2), 16);
-  const g2 = parseInt(color2.slice(2, 4), 16);
-  const b2 = parseInt(color2.slice(4, 6), 16);
+  const r = Math.round(c1.r + (c2.r - c1.r) * factor);
+  const g = Math.round(c1.g + (c2.g - c1.g) * factor);
+  const b = Math.round(c1.b + (c2.b - c1.b) * factor);
+  const a = c1.a + (c2.a - c1.a) * factor;
 
-  // Interpolate each component
-  const r = Math.round(r1 + (r2 - r1) * factor);
-  const g = Math.round(g1 + (g2 - g1) * factor);
-  const b = Math.round(b1 + (b2 - b1) * factor);
-
-  // Convert back to hex and ensure two digits
-  return '#' + r.toString(16).padStart(2, '0') + 
-         g.toString(16).padStart(2, '0') + 
-         b.toString(16).padStart(2, '0');
+  return `rgba(${r},${g},${b},${a})`;
 }
+
 function setInfoText(langIndex) {
     return langIndex === 0 ? 
     'Вы еще не добавили ни одной привычки\n\n Вы можете выбрать из списка или добавить свою привычку.\n\nВыбранные привычки будут обновляться автоматически каждый день, если вы пропустите день, привычка будет не выполнена для этого дня.\n\nВы должны выполнить свою привычку и затем свайпнуть вправо, чтобы отметить её как выполненную.\n\nЧтобы сформировать привычку, вам нужно выполнить ее 66 дней подряд.\n\nВы можете просмотреть прогресс ваших привычек в панели метрик и календаре.\n\n\n * Чтобы начать, нажмите кнопку "+" ниже' :
@@ -559,3 +647,77 @@ function playEffects(sound){
   }
   if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
+function parsedTime(time, maxTime, isNegative) {
+  // Determine the time value to work with
+  const elapsedOrRemaining = isNegative ? time : maxTime - time;
+
+  const days = Math.floor(elapsedOrRemaining / 86400000);
+  const hours = Math.floor((elapsedOrRemaining % 86400000) / 3600000);
+  const minutes = Math.floor((elapsedOrRemaining % 3600000) / 60000);
+  const seconds = Math.floor((elapsedOrRemaining % 60000) / 1000);
+
+  const names = [['д', 'd'], ['ч', 'h'], ['м', 'm']];
+  const langIndex = AppData.prefs[0];
+
+  if (days > 0) return days + names[0][langIndex];
+  if (hours > 0) return hours + names[1][langIndex];
+  if (minutes > 0){
+    if(isNegative) return minutes + names[2][langIndex];
+    else return minutes +':' + seconds.toString().padStart(2, '0');
+  }
+  return seconds.toString().padStart(2, '0');
+}
+function parsedTimeSimple(maxTimer) {
+  return (Math.floor(maxTimer / 60000) + 'm');
+}
+
+const Achievement = ({ milestone, index, habitId,isNegative, percent, theme, fSize, langIndex }) => {
+  // Find habit index safely
+  const habitIndex = AppData.choosenHabits.indexOf(habitId);
+  const daysToForm = AppData.choosenHabitsDaysToForm[habitIndex]; // total days for full habit
+  // 1. How many ACTUAL DAYS are needed for this milestone?
+  let neededDays;
+  if (isNegative) {
+    if (index === 0) neededDays = 7;
+    else if (index === 1) neededDays = 30;
+    else neededDays = 90;
+  } else {
+    if (index === 0) neededDays = Math.ceil(daysToForm / 3);
+    else if(index === 1) neededDays = Math.ceil(daysToForm / 2);
+    else neededDays = daysToForm-1;
+  }
+
+  // 2. How many days has the user completed?
+  const completedDays = Math.floor((percent / 100) * daysToForm);
+
+  // 3. Is milestone complete?
+  const isComplete = completedDays >= neededDays;
+
+  // 4. Remaining days (never negative)
+  const remainingDays = Math.max(0, neededDays - completedDays);
+
+  return (
+    <div
+      key={index}
+      style={{
+        fontSize: fSize === 0 ? '12px' : '14px',
+        color: isComplete
+          ? Colors.get('mainText', theme)
+          : Colors.get('subText', theme),
+        marginLeft: '2px'
+      }}
+    >
+      {index + 1}
+      {': '}
+      {isComplete ? (
+        milestone[langIndex]
+      ) : (
+        <>
+          {(langIndex === 0 ? 'До выполнения осталось: ' : 'Time to complete left: ')}
+          {remainingDays}
+          {langIndex === 0 ? ' дн.' : ' d.'}
+        </>
+      )}
+    </div>
+  );
+};

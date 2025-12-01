@@ -34,7 +34,7 @@ const AddHabitPanel = () => {
     
     // Habit data state
     const [habitName, setHabitName] = useState('');
-    const [habitCategory, setHabitCategory] = useState('');
+    const [habitCategory, setHabitCategory] = useState(langIndex === 0 ? 'Здоровье' : 'Health');
     const [habitDescription, setHabitDescription] = useState('');
     const [habitIcon, setHabitIcon] = useState('default');
     const [habitId, setHabitId] = useState(-1);
@@ -203,7 +203,13 @@ const AddHabitPanel = () => {
             <div style={styles(theme).scrollView}>
               {habitList.map((habit) => !AppData.choosenHabits.includes(habit.id) && (
                 <li key={habit.id} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
-                onClick={() => {setSelectedHabit(habit.id);setHabitId(habit.id);setAddButtonEnabled(true);playEffects(click);}}>
+                onClick={() => {
+                  setSelectedHabit(habit.id);
+                  setIsNegative(getAllHabits()[habit.id].category[0] === 'Отказ от вредного');
+                  setHabitId(habit.id);
+                  setAddButtonEnabled(true);
+                  playEffects(click);
+                  }}>
                   <p style={styles(theme,false,fSize).text}>{habit.name[langIndex]}</p>
                 </li>
               ))}
@@ -221,12 +227,11 @@ const AddHabitPanel = () => {
            <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
            <div style={{...styles(theme).simplePanel,height:"52vh",justifyContent:'space-around',alignItems:'center'}}>
             <MyInput maxL={25} h="15%" w='90%' placeHolder={langIndex === 0 ? 'имя' : 'name'} theme={theme} onChange={v => handleInputValue(v,0)}/>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:'center',width:'95%'}}>
-               <MyInput maxL={25} h="40%" w='50%' placeHolder={langIndex === 0 ? 'категория' : 'category'} theme={theme} onChange={v => handleInputValue(v,1)} value={habitCategory}/>
-              <select style={{...styles(theme,false,fSize).input,width:"48%"}} onChange={(e) => handleInputValue(e.target.value,1)}>
+           
+              <select style={{...styles(theme,false,fSize).input,width:"48%"}} onChange={(e) => setHabitCategory(e.target.value)}>
                 {renderCategoryOptions(theme, langIndex,fSize)}
               </select>
-            </div>
+           
             <MyInput maxL={100} h="20%"w='90%' placeHolder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} theme={theme} onChange={v => handleInputValue(v,2)}/>
             <div style={styles(theme,false,fSize).headerText}>{langIndex === 0 ? 'выбери иконку(опционально)' : 'choose icon(optional)'}</div>
             <div style={{display:"flex",justifyContent:"space-between"}}>
@@ -334,11 +339,6 @@ const AddHabitPanel = () => {
                     </div>
                   ))}
                 </div>
-                <div style={{marginTop:'5px',width:'70%',display:'flex',flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-                  <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'положительная привычка ?' : 'is positive ?'}</p>
-                  {!isNegative && <FaRegSquareCheck onClick={() => setIsNegative(true)} style={{...styles(theme).miniIcon,fontSize:'20px',marginBottom:'5px'}}/>}
-                  {isNegative && <FaRegSquare onClick={() => setIsNegative(false)} style={{...styles(theme).miniIcon,fontSize:'20px',marginBottom:'5px'}}/>}
-                </div>
                 
                 <Slider style={styles(theme).slider} min={21} max={180} value={daysToForm} valueLabelDisplay='auto' onChange={(e) => setDaysToForm(e.target.value)} />
                 <div style={{...styles(theme,false,fSize).subtext,marginTop:'5px',width:'90%'}}>{needDaysInfo(langIndex,daysToForm,isNegative)}</div>
@@ -355,6 +355,7 @@ const AddHabitPanel = () => {
                  else addHabit(habitId, habitName, false, curDateString,habitgoals,isNegative,daysToForm);
                  playEffects(click);
                  setConfirmationPanel(false);
+                 setAddPanel('');
                  resetDate(setDay, setMonth, setYear);
                  playEffects(click);setConfirmationPanel(false);resetDate(setDay,setMonth,setYear);}}><MdDone style={styles(theme).miniIcon}/></div>
              </div>
