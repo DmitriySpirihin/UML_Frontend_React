@@ -7,7 +7,7 @@ import { expandedCard$, setExpandedCard} from '../../StaticClasses/HabitsBus.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
 import {MdDoneAll} from 'react-icons/md'
-import {FaPlusSquare,FaTrash,FaPencilAlt,FaTrashAlt} from 'react-icons/fa'
+import {FaPlusSquare,FaTrash,FaPencilAlt,FaRegWindowClose,FaListAlt} from 'react-icons/fa'
 import {FaRegSquareCheck,FaRegSquare} from 'react-icons/fa6'
 import {TbDotsVertical,TbArrowMoveDownFilled,TbArrowMoveUpFilled} from 'react-icons/tb'
 //timer
@@ -36,10 +36,47 @@ const HabitsMain = () => {
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize,setFontSize] = useState(0);
     const [hasHabits, setHasHabits] = useState(AppData.choosenHabits.length > 0);
-    const [confirmationPanel,setConfirmationPanel] = useState(false);
     const [currentId, setCurrentId] = useState(0);
-    const [goalName,setGoalName] = useState('');
-    
+    const [dataVersion, setDataVersion] = useState(0);
+
+    // redact habits and goals   operation : 0 redact habit , 1 add goal, 2 redact goal, 3 delete goal, 4 move goal up, 5 move goal down
+    const [cP,setCP] = useState({
+        show:false,type:0,hId:0,gId:0,setGoals:null,hInfo:null   
+    }) 
+    const [newGoal,setNewGoal] = useState('');
+    const [newName,setNewName] = useState('');
+    const [newDescr,setNewDescr] = useState('');
+    const [newIcon,setNewIcon] = useState('');
+    const [selectIconPanel, setSelectIconPanel] = useState(false);
+    const [iconName, setIconName] = useState('default');
+
+    // move goals effect
+    useEffect(() => {
+      if(cP.type === 0){
+        setNewName(getAllHabits()[cP.hId].name[langIndex]);
+        setNewDescr(getAllHabits()[cP.hId].description[langIndex]);
+        setNewIcon(getAllHabits()[cP.hId].iconName);
+      }
+       if (cP.type === 4) {
+        if (cP.gId <= 0) return;
+        cP.setGoals(prev => {
+          const newGoals = [...prev];
+          [newGoals[cP.gId - 1], newGoals[cP.gId]] = [newGoals[cP.gId], newGoals[cP.gId - 1]];
+          AppData.choosenHabitsGoals[cP.hId] = newGoals;
+          return newGoals;
+        });
+      } 
+      else if (cP.type === 5) {
+        cP.setGoals(prev => {
+        if (cP.gId >= prev.length - 1) return prev;
+        const newGoals = [...prev];
+        [newGoals[cP.gId], newGoals[cP.gId + 1]] = [newGoals[cP.gId + 1], newGoals[cP.gId]];
+        AppData.choosenHabitsGoals[cP.hId] = newGoals;
+        return newGoals;
+      });
+    }
+    },[cP]);
+    // redact habits and goals
     // subscriptions
     useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
@@ -100,12 +137,49 @@ const HabitsMain = () => {
             setHasHabits(AppData.choosenHabits.length > 0);
         }
     };
-    const setNewGoal = () => {
-      if (goalName.length > 0) {
-        AppData.addHabitGoal(currentId,{text:goalName,isDone:false});
-        setGoalName('');
+    const onConfirmAction = () => {
+      switch (cP.type){
+        case 0 :
+          const index = AppData.CustomHabits.findIndex(h => h.id === cP.hId);
+         AppData.CustomHabits = AppData.CustomHabits.map((habit, i) =>
+              i === index
+              ? {
+              ...habit,
+            name: [newName.trim(), newName.trim()],
+            description: [newDescr.trim(), newDescr.trim()],
+            iconName: newIcon
+           }
+          : habit
+        );
+        
+         setHabitsCards(prev => [...prev]);
+         setCP(prev => ({ ...prev, show: false }));
+         cP.hInfo({name:[newName,newName],description:[newDescr,newDescr],iconName:newIcon});
+         setDataVersion(v => v + 1);
+        break;
+        case 1 :
+          if (newGoal.length > 0) {
+          cP.setGoals(prev => [...prev, { text: newGoal, isDone: false }]);
+          AppData.addHabitGoal(cP.hId,{text:newGoal,isDone:false});
+          setCP(prev => ({...prev,show:false}));
+        }
+        else setShowPopUpPanel( langIndex === 0 ? 'Введите цель' : 'Enter goal',2000,false);
+        break;
+        case 2 :
+          if (newGoal.length > 0) {
+          cP.setGoals(prev => prev.map((goal, idx) => idx === cP.gId ? { ...goal, text: newGoal.trim() } : goal));
+          AppData.choosenHabitsGoals[cP.hId][cP.gId].text = newGoal;
+          setCP(prev => ({...prev,show:false}));
+        }
+        else setShowPopUpPanel( langIndex === 0 ? 'Введите цель' : 'Enter goal',2000,false);
+        break;
+        case 3 :
+          cP.setGoals(prev => prev.filter((_, i) => i !== cP.gId));
+          AppData.choosenHabitsGoals[cP.hId].splice(cP.gId);
+          setCP(prev => ({...prev,show:false}));
+        break;
       }
-      else setShowPopUpPanel( langIndex === 0 ? 'Введите цель' : 'Enter goal',2000,false);
+      
     };
     
     removeHabitFn = removeHabit;
@@ -116,29 +190,117 @@ const HabitsMain = () => {
             {!hasHabits && <div style={{...styles(theme).panel,justifyContent:'center',alignItems:'center', marginTop:'40%'}}>
               <p style={{...styles(theme).subText,fontSize:fSize === 0 ? '11px' : '13px',margin:'10%',marginTop:'20%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setInfoText(langIndex)}</p>
             </div>}
-            {hasHabits && <div style={styles(theme).scrollView}>
-              {buildMenu({theme, habitsCards, categories, getAllHabits: () => getAllHabits(),setConfirmationPanel,setCurrentId,fSize})}
-        </div>}
-        {confirmationPanel && (
+            {hasHabits && <div style={styles(theme).scrollView} key={dataVersion}>
+              {buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize })}
+           </div>}
+        {cP.show && cP.type > 0 && cP.type < 4 && (
                    <div style={styles(theme).confirmContainer}>
-                    <div style={styles(theme).confirmationPanel}>
-                      <p style={{...styles(theme).subText,fontSize:fSize === 0 ? '11px' : '13px',marginTop:'5%',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'Введите цель' : 'Enter goal'}</p>
-                      <MyInput
+                    <div style={styles(theme).cP}>
+                      {cP.type === 1 && <p style={{...styles(theme).subText,fontSize:fSize === 0 ? '11px' : '13px',marginTop:'5%',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'Введите цель' : 'Enter goal'}</p>}
+                      {cP.type === 2 && <p style={{...styles(theme).subText,fontSize:fSize === 0 ? '11px' : '13px',marginTop:'5%',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'Введите новое имя' : 'Enter new name'}</p>}
+                      {cP.type === 3 && <p style={{...styles(theme).subText,fontSize:fSize === 0 ? '11px' : '13px',marginTop:'5%',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'Удалить цель?' : 'Delete goal?'}</p>}
+                      {cP.type !== 3 && <MyInput
                         w='80%'
                         h='20%'
                         maxL={30}
-                        onChange={value => setGoalName(value)}
+                        value={cP.type === 2 ? AppData.choosenHabitsGoals[cP.hId][cP.gId].text : ''}
+                        onChange={value => setNewGoal(value)}
                         placeholder={langIndex === 0 ? 'Введите цель' : 'Enter goal'}
                         theme={theme}
-                      />
+                      />}
                      <div style={styles(theme).simplePanelRow}>
-                       <MdClose style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setConfirmationPanel(false);}}/>
-                       <MdDone style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setNewGoal();setConfirmationPanel(false);}}/>
+                       <MdClose style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => setCP(prev => ({...prev,show:false}))}/>
+                       <MdDone style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {onConfirmAction();}}/>
                     </div>
                 </div>
               </div>
             )}
+            {cP.show && cP.type === 0 && cP.type < 4 && (
+                   <div style={styles(theme).confirmContainer}>
+                    <div style={{...styles(theme).cP,height:'50vh'}}>
+                    <p style={{...styles(theme).subText,fontSize:fSize === 0 ? '13px' : '15px',marginTop:'5%',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'Измени привычку' : 'Change habit'}</p>
+                      <MyInput w='80%'h='10%'maxL={30}
+                        value={getAllHabits().find(v => v.id === cP.hId).name[langIndex]}
+                        onChange={value => setNewName(value)}
+                        placeholder={langIndex === 0 ? 'Введите новое имя' : 'Enter new name'}
+                        theme={theme}
+                      />
+                      <MyInput w='80%'h='20%'maxL={200}
+                        value={getAllHabits().find(v => v.id === cP.hId).description[langIndex]}
+                        onChange={value => setNewDescr(value)}
+                        placeholder={langIndex === 0 ? 'Введите новое описание' : 'Enter new description'}
+                        theme={theme}
+                      />
+                      <div style={{...styles(theme).subText,fontSize:fSize === 0 ? '13px' : '15px',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'измени иконку' : 'cange icon'}</div>
+            <div style={{display:'flex',alignContent:'space-between',justifyContent:'center',width : '50%'}}>
+              <div style={{width: '80%',padding:'5px'}}>
+               <div  onClick={() => setSelectIconPanel(selectIconPanel ? false : true)}>
+                {!selectIconPanel && (<FaListAlt style={{fontSize:'24px',marginTop:'15px',color:Colors.get('icons', theme)}}/>)}{selectIconPanel && (<FaRegWindowClose style={{fontSize:'24px',marginTop:'15px',color:Colors.get('icons', theme)}}/>)}
+               </div>
+              </div>
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                width: '20%',
+                height: '100%',
+                padding: '8px'
+              }}>
+                {Icons.getIcon(newIcon, {
+                  size: 48,
+                  style: {
+                    fontSize:'30px',
+                    marginBottom:'20px',
+                    color: Colors.get("habitIcon", theme),
+                    filter: 'drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5))'
+                  }
+                })}
+              </div>
+            </div>
+                     <div style={styles(theme).simplePanelRow}>
+                       <MdClose style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => setCP(prev => ({...prev,show:false}))}/>
+                       <MdDone style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {onConfirmAction();}}/>
+                    </div>
+                </div>
+              </div>
+            )}
+         {selectIconPanel && (
+           <div style={styles(theme).selectPanel}>
+             {Object.entries(Icons.ic).map(([key]) => (
+               <div 
+                 key={key}
+                 style={{
+                   width: '15%',
+                   padding: '12px',
+                   display: 'flex',
+                   justifyContent: 'center',
+                   alignItems: 'center',
+                   cursor: 'pointer',
+                   borderRadius: '8px',
+                   transition: 'background-color 0.2s',
+                   ':hover': {
+                     backgroundColor: Colors.get('highlitedPanel', theme)
+                   }
+                 }}
+                 onClick={() => {
+                   setNewIcon(key);
+                   setSelectIconPanel(false);
+                 }}
+               >
+                 {Icons.getIcon(key, { 
+                   size: 32, 
+                   style: { 
+                     color: Colors.get('habitIcon', theme),
+                     filter: 'drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5))'
+                   } 
+                 })}
+               </div>
+             ))}
+           </div>
+         )}
         </div>
+        
     )
 }
 
@@ -150,7 +312,7 @@ function getAllHabits() {
     );
 }
 
-function buildMenu({ theme, habitsCards, categories,setConfirmationPanel,setCurrentId,fSize}) {
+function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize }) {
     return categories.map(category => {
         const habitsInCategory = habitsCards
             .map(id => getAllHabits().find(h => h.id === id))
@@ -160,15 +322,12 @@ function buildMenu({ theme, habitsCards, categories,setConfirmationPanel,setCurr
             <CategoryPanel key={category} text={getAllHabits().find(h => h.category[0] === category)?.category } theme={theme} isNegative={category === 'Отказ от вредного'}>
                 {habitsInCategory.map(habit => (
                     <HabitCard
-                        key={habit.id}
-                        id={habit.id}
-                        text={habit.name}
-                        descr={habit.description}
-                        imgsrc={habit.src}
-                        theme={theme}
-                        setConfirmationPanel={setConfirmationPanel}
-                        setCurrentId={setCurrentId}
-                        fSize={fSize}
+                      key={habit.id}
+                    id={habit.id}
+                   theme={theme}
+                    setCP={setCP}
+                   setCurrentId={setCurrentId}
+                   fSize={fSize}
                     />
                 ))}
             </CategoryPanel>
@@ -176,12 +335,20 @@ function buildMenu({ theme, habitsCards, categories,setConfirmationPanel,setCurr
     }
 );
 }
-function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Описание", "Description"], theme,setConfirmationPanel,setCurrentId,fSize}) {
+function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
     const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-    const isNegative = getAllHabits().find(h => h.id === id)?.category[0] === 'Отказ от вредного';
+    const habit = getAllHabits().find(h => h.id === id);
+
+    const [habitInfo, setHabitInfo] = useState({
+  name: habit?.name || ["", ""],
+  descr: habit?.description || ["", ""],
+  icon: habit?.iconName || "default"
+});
+      
+    const isNegative = habit.category[0] === 'Отказ от вредного';
     const percent = getHabitPerformPercent(id);
-    const maxX = 100;
+    const maxX = 120;
     const minX = -maxX;
     const [canDrag, setCanDrag] = useState(true);
     let cardColor = status === 0 ? 'rgba(0,0,0,0.1)' : Colors.get(status === 1 ? 'habitCardDone' : 'habitCardSkipped', theme);//Colors.get(status === 1 ? 'habitCardDone' : status === -1 ? 'habitCardSkipped' : 'habitCard', theme);
@@ -191,8 +358,9 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
     const [expanded, setExpanded] = useState(false);
     const [_color, setColor] = useState(cardColor);
     const [showAddOptions,setShowAddOptions] = useState(false);
-    const [goals,setGoals] = useState(AppData.choosenHabitsGoals[id]?.length > 0 ? AppData.choosenHabitsGoals[id].map(goal => goal.isDone) : []);
-    
+    const [showHabitAddOptions,setShowHabitAddOptions] = useState(false);
+    const [habitsGoals,setHabitGoals] = useState(AppData.choosenHabitsGoals[id]);
+    const [currentGoal,setCurrentGoal] = useState(0);
     const [showTimerSlider,setShowTimerSlider] = useState(false);
     const [timer,setTimer] = useState(isNegative ? true : false);
     const [maxTimer,setMaxTimer] = useState(isNegative ? 86400000 : 60000);
@@ -240,23 +408,21 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
 
     // Get the appropriate icon based on whether it's a custom habit or not
     const getHabitIcon = () => {
-        const habit = getAllHabits().find(h => h.id === id);
-        if (!habit) return Icons.getIcon(iconName, {style: {color: Colors.get("habitIcon", theme)}});
-        
-        if (habit.isCustom && habit.iconName) {
-            // For custom habits, use the iconName with theme color
-            return Icons.getIcon(habit.iconName, { style:{color: Colors.get('habitIcon', theme)} });
-        } else {
-            // For default habits, use the habit name to get the appropriate icon with theme color
-            const icon = Icons.getHabitIcon(habit.name[0],{ style:{color: Colors.get('habitIcon', theme)}});
-            // Since getHabitIcon already applies theme color, we don't need to set it again
-            return icon;
-        }
-    };
-    
-    // Get localized text
-    const displayText = Array.isArray(text) ? text[langIndex] : text;
-    const displayDescr = Array.isArray(descr) ? descr[langIndex] : descr;
+  const habit = getAllHabits().find(h => h.id === id);
+  
+  // ✅ Full safety: check habit AND habit.name
+  if (!habit || !habit.name || !Array.isArray(habit.name) || habit.name.length === 0) {
+    return Icons.getIcon('default', { style: { color: Colors.get("habitIcon", theme) } });
+  }
+
+  if (habit.isCustom && habit.iconName) {
+    return Icons.getIcon(habit.iconName, { style: { color: Colors.get('habitIcon', theme) } });
+  } else {
+    // Use first name entry safely
+    const nameForIcon = habit.name[0] || 'default';
+    return Icons.getHabitIcon(nameForIcon, { style: { color: Colors.get('habitIcon', theme) } });
+  }
+};
     
     // Update color when theme changes
     useEffect(() => {
@@ -318,21 +484,10 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
             else if(status === -1){
                 newStatus = -1;
                 currentId = id;
-                const newText = AppData.prefs[0] === 0 
-                ? `Вы уверены, что хотите удалить привычку: \'${displayText}\' ?`
-                : `Are you sure you want to delete \'${displayText}\' habit?`;
-                updateConfirmationPanel(newText);
                 if(isNegative){
                  setTime(Math.round(0));
                  AppData.choosenHabitsLastSkip[id] = Date.now();
               }
-            }
-            else{
-                currentId = id;
-                const newText = AppData.prefs[0] === 0 
-                ? `Вы уверены, что хотите удалить выполненную привычку:  \'${displayText}\' ?`
-                : `Are you sure you want to delete the performed habit:  \'${displayText}\' ?`;
-                updateConfirmationPanel(newText);
             }
             AppData.habitsByDate[dateKey][id] = newStatus;
         }
@@ -392,9 +547,9 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
        padding:'3px',
     }
 
-    let newHeight = '23vh';
+    let newHeight = '24vh';
     if(AppData.choosenHabitsGoals[id]?.length > 0){
-        newHeight = ((AppData.choosenHabitsGoals[id].length * 3) + 23) + 'vh';
+        newHeight = ((AppData.choosenHabitsGoals[id].length * (fSize === 0 ? 3.2 : 3.8)) + 24) + 'vh';
     }
     useEffect(() => {
       setCanDrag(!showTimerSlider);
@@ -412,7 +567,13 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
        setTime(0);
       }
     }
-        
+    const onDeleteHabit = () => {
+      currentId = id;
+      const newText = AppData.prefs[0] === 0 
+      ? `Вы уверены, что хотите удалить привычку: \'${displayText}\' ?`
+      : `Are you sure you want to delete \'${displayText}\' habit?`;
+      updateConfirmationPanel(newText);
+    }   
     return (
             <motion.div 
                 id={id} 
@@ -457,7 +618,7 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                     <div style={{marginLeft: '15px', marginTop: '8px'}}>
                         {getHabitIcon()}
                     </div>
-                    <h2 style={mainText}>{displayText}</h2>
+                    <h2 style={mainText}>{habitInfo.name[langIndex]}</h2>
                   {status < 2 && <div style={{marginLeft:'auto',display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'center'}}>
                     {timer &&<h2 style={mainText} >{parsedTime(time,maxTimer,isNegative)}</h2>}
                     {!timer && <TimerOffIcon onClick={(e) => {e.stopPropagation();if(!isNegative){setShowTimerSlider(true)};}} style={{...styles(theme).icon,color:Colors.get('icons', theme),opacity:0.5,fontSize:'24px',marginTop:'10px',marginRight:'15px'}}/>}
@@ -467,29 +628,38 @@ function HabitCard({id = 0, text = ["Название", "Name"], descr = ["Оп�
                 </div> 
                 {expanded && (
                     <div style={{marginLeft:'15px',width:'90%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'space-around'}}>
-                      <div style={subText}>{displayDescr}</div>
+                      <div style={subText}>{habitInfo.descr[langIndex]}</div>
                       <div style={subText}>{langIndex === 0 ? 'Цели : ' : 'Goals : '}</div>
-                      {AppData.choosenHabitsGoals[id]?.map((goal,index) => (
+                      {habitsGoals?.map((goal,index) => (
                         <div key={index} style={{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'flex-start',width:'100%',borderBottom:`1px solid ${Colors.get('border', theme)}`,marginBottom:'5px',marginLeft:'5px'}}>
-                           <div style={{...mainText,marginLeft:'1px'}}>{index + 1 + ': ' + goal.text}</div>
+                           <div style={{...mainText,marginLeft:'1px',overflow:'hidden'}}>{goal.text}</div>
                            <div style={{marginLeft:'auto',display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'center'}}>
-                            {showAddOptions && <FaPencilAlt style={{fontSize:'20px',marginRight:'5px',color:Colors.get('icons', theme)}} onClick={() => {}}/>}
-                            {showAddOptions && <FaTrashAlt style={{fontSize:'20px',marginRight:'5px',color:Colors.get('icons', theme)}} onClick={() => {}}/>}    
-                            {goals[index] ? <FaRegSquareCheck style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {AppData.choosenHabitsGoals[id][index].isDone = false;setGoals(prev => {const newGoals = [...prev];newGoals[index] = false;return newGoals;})}}/> :
-                             <FaRegSquare style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {AppData.choosenHabitsGoals[id][index].isDone = true;setGoals(prev => {const newGoals = [...prev];newGoals[index] = true;return newGoals;})}}/>}
-                            <TbDotsVertical style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick={() => {setShowAddOptions(prev => !prev);setCurrentId(id);}}/>
+                            {showAddOptions && currentGoal === index && index < AppData.choosenHabitsGoals[id].length - 1 && <TbArrowMoveDownFilled onClick={() => {setCP(prev => ({...prev,show:true,type:5,hId:id,gId:index,setGoals:setHabitGoals}));setCurrentGoal(prev => prev + 1);}} style={{fontSize:'18px',marginRight:'8px',color:Colors.get('icons', theme)}} />}
+                            {showAddOptions && currentGoal === index && index > 0 && <TbArrowMoveUpFilled onClick={() => {setCP(prev => ({...prev,show:true,type:4,hId:id,gId:index,setGoals:setHabitGoals}));setCurrentGoal(prev => prev - 1);}} style={{fontSize:'18px',marginRight:'8px',color:Colors.get('icons', theme)}} />}
+                            {showAddOptions && currentGoal === index && <FaPencilAlt onClick={() => setCP(prev => ({...prev,show:true,type:2,hId:id,gId:index,setGoals:setHabitGoals}))} style={{fontSize:'18px',marginRight:'8px',color:Colors.get('icons', theme)}} />}
+                            {showAddOptions && currentGoal === index && <FaTrash onClick={() => setCP(prev => ({...prev,show:true,type:3,hId:id,gId:index,setGoals:setHabitGoals}))} style={{fontSize:'18px',marginRight:'8px',color:Colors.get('icons', theme)}} />}    
+                            {habitsGoals[index].isDone ? <FaRegSquareCheck style={{fontSize:'24px',color:Colors.get('icons', theme)}}  onClick = {() => setHabitGoals(prev => {const updated = prev.map((habit, i) =>i === index ? { ...habit, isDone: false } : habit);AppData.choosenHabitsGoals[id] = updated;return updated;})}/> :
+                             <FaRegSquare style={{fontSize:'24px',color:Colors.get('icons', theme)}} onClick = {() => setHabitGoals(prev => {const updated = prev.map((habit, i) =>i === index ? { ...habit, isDone: true } : habit);AppData.choosenHabitsGoals[id] = updated;return updated;})}/>}
+                            <TbDotsVertical style={{fontSize:'18px',color:Colors.get('icons', theme),marginLeft:'8px'}} onClick={() => {setShowAddOptions(prev => prev && currentGoal === index ? false : true);setCurrentGoal(index);setCurrentId(id);}}/>
                            </div>
                         </div>
                       ))}
                       <div style={{display:'flex',flexDirection:'row',justifyContent:'flex-start',alignItems:'center'}}>
-                         <FaPlusSquare onClick={() => setConfirmationPanel(true)} style={{fontSize:'24px',color:Colors.get('icons', theme)}}/>
+                         <FaPlusSquare onClick={() => setCP({show:true,type:1,hId:id,gId:0,setGoals:setHabitGoals})} style={{fontSize:'24px',color:Colors.get('icons', theme)}}/>
                          <div style={{...subText,marginLeft:'15px'}}>{langIndex === 0 ? 'Добавить цель' : 'Add goal'}</div>
                       </div> 
                        <div style={subText}>{langIndex === 0 ? 'Достижения 🏆' : 'Achievements 🏆'}</div>
                        {AppData.choosenHabitsAchievements[id]?.map((milestone, index) => (
                         <Achievement key={index} index={index} milestone={milestone} habitId={id} isNegative={isNegative} percent={percent} theme={theme} fSize={fSize} langIndex={langIndex} />
                        ))}
-                      
+                       <div style={{display:'flex',marginLeft:'auto',flexDirection:'row',alignItems:'center'}}>
+                           
+                           {showHabitAddOptions && getAllHabits().find(f => f.id === id).isCustom && <FaPencilAlt onClick={() => setCP(prev => ({...prev,show:true,type:0,hId:id,gId:0,hInfo:setHabitInfo}))} style={{fontSize:'18px',marginRight:'10px',color:Colors.get('icons', theme)}}/>}
+                           {showHabitAddOptions && <FaTrash onClick={onDeleteHabit} style={{fontSize:'18px',marginLeft:'10px',color:Colors.get('icons', theme)}}/>}
+                           <TbDotsVertical style={{fontSize:'18px',color:Colors.get('icons', theme),marginLeft:'8px'}} onClick={() => {setShowHabitAddOptions(prev => !prev);}}/>
+                           {!isNegative && status < 1 && <FaRegSquare onClick={() => setNewStatus(true)}style={{fontSize:'24px',marginLeft:'10px',color:Colors.get('skipped', theme)}}/>}
+                           {!isNegative && status > 0 && <FaRegSquareCheck onClick={() => setNewStatus(false)} style={{fontSize:'24px',marginLeft:'10px',color:Colors.get('done', theme)}}/>}
+                       </div>
                     </div>
                 )}
             </motion.div>
@@ -563,7 +733,7 @@ const styles = (theme,fSize,isNegative) =>
     borderRadius:'24px',
     backgroundColor:'rgba(0,0,0,0.1)'
   },
-  confirmationPanel :
+  cP :
     {
       display:'flex',
       flexDirection:'column',
@@ -606,7 +776,26 @@ const styles = (theme,fSize,isNegative) =>
     touchAction: 'none',
     color:Colors.get('icons', theme),
 
-  }
+  },
+  selectPanel:
+    {
+      backgroundColor: Colors.get('habitCard', theme),
+      borderRadius: '24px',
+      border: `1px solid ${Colors.get('border', theme)}`,
+      position: 'absolute',
+      top: '30%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      display: 'flex',
+      flexWrap: 'wrap',
+      width: '77vw',
+      maxHeight: '42vh',
+      overflowY: 'auto',
+      padding: '16px',
+      gap: '8px',
+      justifyContent: 'center',
+      zIndex: 6000
+    },
 })
  function interpolateColor(color1, color2, factor) {
   factor = Math.max(0, Math.min(1, factor));
@@ -721,3 +910,4 @@ const Achievement = ({ milestone, index, habitId,isNegative, percent, theme, fSi
     </div>
   );
 };
+

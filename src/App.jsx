@@ -69,7 +69,7 @@ useEffect(() => {
       </Suspense>}
       {page === 'LoadPanel' && <LoadPanel/>}
       {page === 'MainMenu' && <MainMenu onPageChange={handlePageChange}/>}
-      {page.startsWith('Habit') && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+      {page === 'HabitsMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <HabitsMain />
       </Suspense>}
       {page === 'HabitCalendar' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>

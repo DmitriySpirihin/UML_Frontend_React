@@ -254,13 +254,13 @@ const styles = (theme,fSize) =>
          alignItems: "center",
          height: "100vh",
          width: "100vw",
-         fontFamily: "Segoe UI",
+         fontFamily: "Segoe UI"
       },
       panel :
       {
         display:'flex',
         flexDirection:'column',
-        width: "90vw",
+        width: "95vw",
         height: "160vw",
         position:'absolute',
         top:'51%',

@@ -55,6 +55,7 @@ const AddHabitPanel = () => {
     const [opacity, setOpacity] = useState(0);
     const [iconName, setIconName] = useState('default');
     const [addButtonEnabled, setAddButtonEnabled] = useState(false);
+    const [filterCategory,setfilterCategory] = useState(langIndex === 0 ? 'Здоровье' : 'Health');
    const handleDateChange = (isIncr, dateType) => {
   if (dateType === 2) {
     setDay(prevDay => {
@@ -200,9 +201,12 @@ const AddHabitPanel = () => {
               <MyInput maxL={10} w="70%" placeHolder={langIndex === 0 ? 'поиск' : 'search'} theme={theme} 
               onChange={value => searchHabitsList(value,habitList, setHabitList) }/>
             </div>
+            <select style={{...styles(theme,false,fSize).input,width:"80%",marginLeft:'10%'}} onChange={(e) => setfilterCategory(e.target.value)}>
+                {renderCategoryOptions(theme, langIndex,fSize)}
+              </select>
             <div style={styles(theme).scrollView}>
-              {habitList.map((habit) => !AppData.choosenHabits.includes(habit.id) && (
-                <li key={habit.id} style={{...styles(theme).text,borderRadius:"24px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
+              {habitList.map((habit) => !AppData.choosenHabits.includes(habit.id) && habit.category[langIndex] === filterCategory && (
+                <div key={habit.id} style={{...styles(theme).text,alignContent:'center',height:'40px',borderRadius:"12px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
                 onClick={() => {
                   setSelectedHabit(habit.id);
                   setIsNegative(getAllHabits()[habit.id].category[0] === 'Отказ от вредного');
@@ -210,8 +214,8 @@ const AddHabitPanel = () => {
                   setAddButtonEnabled(true);
                   playEffects(click);
                   }}>
-                  <p style={styles(theme,false,fSize).text}>{habit.name[langIndex]}</p>
-                </li>
+                  {habit.name[langIndex]+' '+(habit.isCustom ? ' 🔖':'')}
+                </div>
               ))}
            </div>
            </div>

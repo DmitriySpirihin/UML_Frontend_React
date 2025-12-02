@@ -4,6 +4,7 @@ import { habitReminder } from '../Pages/NotifyPanel';
 import {setTheme,setLang ,setSoundAndVibro,setNotify,setShowPopUpPanel,setFontSize} from '../StaticClasses/HabitsBus'
 import { NotificationsManager } from "./NotificationsManager";
 import { getAchievements } from "../Helpers/Achievements";
+import { saveData } from "../StaticClasses/SaveHelper";
 
 export class AppData{
    static lastSave = new Date().toISOString();
@@ -16,7 +17,7 @@ export class AppData{
    static choosenHabitsGoals = {};//{id:[{text:'',isDone:false}]}
    static choosenHabitsStartDates = [];
    static choosenHabitsLastSkip = {};
-   static choosenHabits = [];
+   static choosenHabits = []; // id array
    static choosenHabitsAchievements = {};
    static choosenHabitsNotified = {};
    static habitsByDate = {};
@@ -71,7 +72,7 @@ export class AppData{
      }
      return false;
   } 
-  static addHabit(habitId,dateString,goals,isNegative,daysToForm){
+  static async addHabit(habitId,dateString,goals,isNegative,daysToForm){
     const now = new Date();
     const habitDate = new Date(dateString);
     const isStartDateEarlier = Date.now() - new Date(dateString).getTime() > 86400000;
@@ -105,11 +106,12 @@ export class AppData{
        else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = 2;
    }
    else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 0 : 2;
+   await saveData();
   }
   static addHabitGoal(habitId,goal){
     this.choosenHabitsGoals[habitId].push(goal);
   }
-  static removeHabit(habitId){
+  static async removeHabit(habitId){
     if(this.choosenHabits.includes(habitId)){
     const index = this.choosenHabits.indexOf(habitId);
     this.choosenHabits.splice(index,1);
@@ -133,6 +135,7 @@ export class AppData{
     this.habitsByDate = {};
     NotificationsManager.sendMessage("habitoff", UserData.id);
   }else  habitReminder(this.prefs[0],this.notify[0].cron,0,0,false);
+  await saveData();
   }
   static changeStatus(day, habitId, status) {
     this.habitsByDate[day][habitId] = status;
