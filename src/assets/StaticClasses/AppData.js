@@ -9,7 +9,7 @@ import { saveData } from "../StaticClasses/SaveHelper";
 export class AppData{
    static lastSave = new Date().toISOString();
    static isFirstStart = true;
-   static version = "1.c.10.9";
+   static version = "1.c.11.0";
    static prefs = [0,0,0,0,0]; //language, theme, sound, vibro,font size main 16,14 sub 14,12
    static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
    //  habits 
