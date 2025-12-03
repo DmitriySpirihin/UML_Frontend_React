@@ -58,6 +58,8 @@ const KeyBoard = () => {
     const [currentLang,setCurrentLang] = useState(langIndex);
     const [needEmoji,setNeedEmoji] = useState(false);
     const keyboardRef = useRef();
+    const [clipboardStatus, setClipboardStatus] = useState('unknown');
+     
     useEffect(() => {
     function handleTap(event) {
     if (
@@ -90,10 +92,40 @@ const KeyBoard = () => {
     }, []);
     function click(key){
       setCurrentKeyboardString(isShift && currentKeys < 2 && key.length === 1 && key !== ' ' ? key.toUpperCase() : key);
-      setCurrentKey(key); 
+      setCurrentKey(key);
+      setIsShift(false);
       playEffects(tap);
     }
     const bindKey = useLongPress(() => click('bsall'));
+    async function handlePaste() {
+  try {
+    if (!window.Telegram?.WebApp?.readTextFromClipboard) {
+      setClipboardStatus('empty');
+      return;
+    }
+
+    const text = await window.Telegram.WebApp.readTextFromClipboard();
+    
+    if (text && text.trim()) {
+      setCurrentKeyboardString('paste'+text);
+      setClipboardStatus('hasContent');
+      playEffects(tap);
+    } else {
+      setClipboardStatus('empty');
+      // Optional: show brief message
+      if (window.Telegram?.WebApp?.showPopup) {
+        window.Telegram.WebApp.showPopup({
+          title: "Clipboard",
+          message: "No text in clipboard",
+          buttons: [{ type: "close" }]
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Clipboard read failed:', err);
+    setClipboardStatus('empty');
+  }
+    }
     return (
       
        <div style={styles(theme,needKeyBoard).container } ref={keyboardRef}>
@@ -112,6 +144,9 @@ const KeyBoard = () => {
                 <p onClick={() => click(key)} key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
               </div>
             ))}
+            {clipboardStatus !== 'empty' && (<div onClick={handlePaste} style={{...keyStyle(theme, 1, currentKey, 'paste'),width: '8%',backgroundColor: Colors.get('currentDateBorder2', theme),opacity: clipboardStatus === 'unknown' ? 0.7 : 1,}}>
+              <p style={styles(theme).text}>📋</p>
+          </div>)}
          </div>
          {/*third line*/}
          <div style={styles(theme).rowPanel}>

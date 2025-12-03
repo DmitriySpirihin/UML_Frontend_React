@@ -16,7 +16,6 @@ const MyInput = ({
   const [input, setInput] = useState({myString:'',cursorPos:0});
   const [isActive, setIsActive] = useState(false);
   const [showCursor, setShowCursor] = useState(true);
-  let spaceAmount = 1;
   
   useEffect(() => {
     setInput({myString:value,cursorPos:0});
@@ -29,9 +28,6 @@ const MyInput = ({
     };
 
     if (isActive) {
-      if (value === ' ') spaceAmount++;
-      else spaceAmount = 1;
-
       if (value === 'bs') {
         setInput(prev => {
           const chars = Array.from(prev.myString);
@@ -55,15 +51,43 @@ const MyInput = ({
             cursorPos: prev.cursorPos + 1
           };
         });
-      } else if (value.length === 1 || isEmoji(value)) {
+      }
+      else if (value.startsWith('paste')) {
+  setInput(prev => {
+    const pastedText = value.slice(5); // everything after 'paste'
+    const chars = Array.from(prev.myString);
+    const safeCursor = Math.max(0, Math.min(prev.cursorPos, chars.length));
+    
+    // How many characters can we actually add?
+    const availableSpace = Math.max(0, maxL - chars.length);
+    
+    // Truncate pasted text to fit
+    const addable = pastedText.slice(0, availableSpace);
+    
+    if (addable.length === 0) {
+      return prev; // nothing to add
+    }
+
+    const before = chars.slice(0, safeCursor).join('');
+    const after = chars.slice(safeCursor).join('');
+    const newString = before + addable + after;
+    const newCursor = safeCursor + addable.length;
+
+    return {
+      myString: newString,
+      cursorPos: newCursor
+    };
+  });
+}
+       else if (value.length === 1 || isEmoji(value)) {
         setInput(prev => {
           const chars = Array.from(prev.myString);
           const safeCursor = Math.max(0, Math.min(prev.cursorPos, chars.length));
-          const addable = value.repeat(spaceAmount).slice(0, Math.max(0, maxL - chars.length));
+          const addable = value.slice(0, Math.max(0, maxL - chars.length));
           const before = chars.slice(0, safeCursor).join('');
           const after = chars.slice(safeCursor).join('');
           const newString = before + addable + after;
-          const newCursor = Math.min(safeCursor + Array.from(addable).length, maxL);
+          const newCursor = Math.min(safeCursor + newString.length, maxL);
           return {
             myString: newString,
             cursorPos: newCursor
