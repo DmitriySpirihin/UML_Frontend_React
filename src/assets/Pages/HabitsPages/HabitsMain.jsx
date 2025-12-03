@@ -545,25 +545,25 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
        color: Colors.get('subText', theme),
        padding:'3px',
     }
-    let newHeight = fSize === 0 ? '24vh' : '26vh';
+    let newHeight = fSize === 0 ? '220px' : '238px';
     if(habitsGoals?.length > 0){
-      let addHeight = fSize === 0 ? 24 : 26;
+      let addHeight = fSize === 0 ? 220 : 238;
          for (let i = 0; i < habitsGoals.length; i++) {
-          const addH = fSize === 0 ? (habitsGoals.length < 40 ? 3.2 : 4) : (habitsGoals.length < 35 ? 3.8 : 4.4);
+          const addH = fSize === 0 ? (habitsGoals[i].length < 40 ? 15 : 30) : (habitsGoals[i].length < 35 ? 17 : 34);
           addHeight += addH;
          }
-      newHeight = addHeight + 'vh';
+      newHeight = addHeight + 'px';
     }
 
     useEffect(() => {
       if(habitsGoals?.length > 0){
-         let addHeight = fSize === 0 ? 24 : 26;
+      let addHeight = fSize === 0 ? 220 : 238;
          for (let i = 0; i < habitsGoals.length; i++) {
-          const addH = fSize === 0 ? (habitsGoals.length < 40 ? 3.2 : 4) : (habitsGoals.length < 35 ? 3.8 : 4.4);
+          const addH = fSize === 0 ? (habitsGoals[i].length < 40 ? 15 : 30) : (habitsGoals[i].length < 35 ? 17 : 34);
           addHeight += addH;
          }
-         newHeight = addHeight + 'vh';
-        }
+      newHeight = addHeight + 'px';
+    }
     }, [habitsGoals,fSize]);
     useEffect(() => {
       setCanDrag(!showTimerSlider);
@@ -609,7 +609,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
                 onDrag={handledDrag} 
                 onDragEnd={onDragEnd}
                 animate={{
-                    height: expanded ? newHeight : '4.5vh',
+                    height: expanded ? newHeight : '40px',
                 }}
                 transition={{ 
                     type: 'tween',
