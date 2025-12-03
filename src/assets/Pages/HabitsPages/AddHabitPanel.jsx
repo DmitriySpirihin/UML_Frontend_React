@@ -398,7 +398,7 @@ const createHabit =  (name,category,description,icon,dateString,goals,isNegative
     if(!AppData.IsCustomHabitExists(habitId)){
       
       AppData.AddCustomHabit(name,category,description,icon,habitId);
-      setTimeout(() => {addHabit(habitId,name,true,dateString,goals,isNegative,daysToForm);}, 100);
+      setTimeout(() => {addHabit(habitId,name,true,dateString,goals,category[0] === 'Отказ от вредного',daysToForm);}, 100);
     }else{
       setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка с таким названием уже существует' : 'habit with this name already exists',2500,false);
     }

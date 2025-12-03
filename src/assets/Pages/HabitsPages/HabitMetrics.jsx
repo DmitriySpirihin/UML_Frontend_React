@@ -165,7 +165,7 @@ const HabitMetrics = () => {
                 <text x="75" y="75" textAnchor="middle" dominantBaseline="middle" fontSize="24" fill={Colors.get('mainText', theme)}>{Math.min(Math.ceil(fillAmount * 100),100)+"%"}</text>
                </svg>
                {/* texts info and days to reach goal */}
-               <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'80%',marginTop:'10px'}}>
+               <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'80%',marginTop:'30px'}}>
                 <div style={{display:'flex',justifyContent:'center',alignItems:'center',width:'100%',height:'100%'}}>
                  <p style={{...styles(theme,fSize).text,paddingTop:'12vh'}}>{infoDaysToFormHabit(langIndex,currentStreak,daysToForm,habitId)}</p>
                  <FaPencilAlt style={{color:Colors.get('icons',theme),paddingTop:'12vh',fontSize:'14px',marginLeft:'10px',marginBottom:'5px'}} onClick={() => {setShowChangeDaysPanel(true);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}} />
