@@ -34,7 +34,7 @@ const AddHabitPanel = () => {
     
     // Habit data state
     const [habitName, setHabitName] = useState('');
-    const [habitCategory, setHabitCategory] = useState(langIndex === 0 ? 'Здоровье' : 'Health');
+    const [habitCategory, setHabitCategory] = useState(['Здоровье','Health']);
     const [habitDescription, setHabitDescription] = useState('');
     const [habitIcon, setHabitIcon] = useState('default');
     const [habitId, setHabitId] = useState(-1);
@@ -168,24 +168,22 @@ const AddHabitPanel = () => {
     const handleInputValue = (value, index) => {
       if(value.length > 0){
         if (index === 0) setHabitName(value[0].toUpperCase() + value.toLowerCase().slice(1));
-        else if (index === 1) setHabitCategory(value[0].toUpperCase() + value.toLowerCase().slice(1));
         else if (index === 2) setHabitDescription(value[0].toUpperCase() + value.toLowerCase().slice(1));
         else if (index === 3) setGoalName(value[0].toUpperCase() + value.toLowerCase().slice(1));
       }else{
         if (index === 0) setHabitName('');
-        else if (index === 1) setHabitCategory('');
         else if (index === 2) setHabitDescription('');
         else if (index === 3) setGoalName('');
       }
     };
     
     useEffect(() => {
-      if (habitName.length > 3 && habitCategory.length > 3) {
+      if (habitName.length > 3) {
         setAddButtonEnabled(true);
       } else {
         setAddButtonEnabled(false);
       }
-    }, [habitName, habitCategory, habitDescription, habitIcon, langIndex]);
+    }, [habitName, habitDescription, habitIcon, langIndex]);
     
     return (
         <div style={{...styles(theme).container,
@@ -234,7 +232,7 @@ const AddHabitPanel = () => {
            <div style={{...styles(theme).simplePanel,width:'85%',marginRight:'7.5%',height:"52vh",justifyContent:'space-around',alignItems:'center'}}>
             <MyInput maxL={25} h="15%" w='90%' placeHolder={langIndex === 0 ? 'имя' : 'name'} theme={theme} onChange={v => handleInputValue(v,0)}/>
            
-              <select style={{...styles(theme,false,fSize).input,width:"80%"}} onChange={(e) => setHabitCategory(e.target.value)}>
+              <select style={{...styles(theme,false,fSize).input,width:"80%"}} onChange={(e) => setHabitCategory(getCategory(e.target.value))}>
                 {renderCategoryOptions(theme, langIndex,fSize)}
               </select>
            
@@ -295,7 +293,7 @@ const AddHabitPanel = () => {
                    setHabitIcon(key);
                    playEffects(click);
                    setSelectIconPanel(false);
-                   if(habitName.length > 3 && habitCategory.length > 3) {
+                   if(habitName.length > 3) {
                      setAddButtonEnabled(true);
                    }
                  }}
@@ -815,4 +813,11 @@ const setGoalForDefault = (habitName,langIndex) => {
 };
 
   return habitName in  goals ? goals[habitName][langIndex] : [];
+}
+const getCategory = (value) =>{
+   if(value === 'Здоровье' || value === 'Health') return ['Здоровье','Health'];
+   else if(value === 'Развитие' || value === 'Growth') return ["Развитие","Growth"];
+   else if(value === 'Продуктивность' || value === 'Productivity') return ["Продуктивность","Productivity"];
+   else if(value === 'Отношения и отдых' || value === 'Relationships & recreation') return ["Отношения и отдых","Relationships & recreation"];
+   else if(value === 'Отказ от вредного' || value === 'Bad habits to quit') return ["Отказ от вредного","Bad habits to quit"];
 }
