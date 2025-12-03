@@ -85,7 +85,7 @@ const MainMenu = ({ onPageChange }) => {
                  <textarea style={{borderRadius:'12px',width:'85vw',height:'10vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)}/>
             <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-around'}}>
                 <input style={{borderRadius:'12px',width:'50vw',height:'3vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
-                <button onClick={() => NotificationsManager.sendMessage(devInputMessage,devMessageToAll)}>Submit</button>
+                <button onClick={() => {if(devInputMessage === 'TrainingMain'){onPageChange('TrainingMain');}else {NotificationsManager.sendMessage(devInputMessage,devMessageToAll)}}}>Submit</button>
             </div>
             <div style={{width:'90%', display:'flex',flexDirection:'row', justifyContent:'space-between'}}>
               <button onClick={() => setDevConsolePanel(false)}>Close console</button>

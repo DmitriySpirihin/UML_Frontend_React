@@ -9,7 +9,7 @@ import { saveData } from "../StaticClasses/SaveHelper";
 export class AppData{
    static lastSave = new Date().toISOString();
    static isFirstStart = true;
-   static version = "1.0.0";
+   static version = "1.c.10.6";
    static prefs = [0,0,0,0,0]; //language, theme, sound, vibro,font size main 16,14 sub 14,12
    static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
    //  habits 
@@ -35,7 +35,6 @@ export class AppData{
     if (!data) return;
     this.lastSave = data.lastSave;
     this.isFirstStart = data.isFirstStart;
-    this.version = data.version;
     if(this.isFirstStart === false)this.prefs = data.prefs;
     else this.isFirstStart = false;
     setLang(this.prefs[0] === 0 ? 'ru' : 'en');
@@ -231,7 +230,6 @@ export class Data{
   constructor(){
     this.lastSave = new Date().toISOString();
     this.isFirstStart = AppData.isFirstStart,
-    this.version = AppData.version,
     this.prefs = AppData.prefs,
     this.choosenHabits = AppData.choosenHabits,
     this.choosenHabitsTypes = AppData.choosenHabitsTypes,
@@ -262,9 +260,10 @@ export function getHabitPerformPercent(habitId){
           else break;
     }
   }
-  
-  if(AppData.habitsByDate[today][habitId] > 0)currentStreak ++;
-  if(isNegative && AppData.habitsByDate[today][habitId] < 0) currentStreak = 0;
+  if(today in AppData.habitsByDate){
+     if(AppData.habitsByDate[today][habitId] > 0)currentStreak ++;
+     if(isNegative && AppData.habitsByDate[today][habitId] < 0) currentStreak = 0;
+  }
   
   return Math.ceil(currentStreak / AppData.choosenHabitsDaysToForm[AppData.choosenHabits.indexOf(habitId)] * 100) ;
 }

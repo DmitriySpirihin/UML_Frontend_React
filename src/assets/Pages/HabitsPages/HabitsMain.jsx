@@ -23,7 +23,6 @@ const dateKey = new Date().toISOString().split('T')[0];
 const clickSound = new Audio('Audio/Click.wav');
 const skipSound = new Audio('Audio/Skip.wav');
 const isDoneSound = new Audio('Audio/IsDone.wav'); 
-const timerSound = new Audio('Audio/Timer.wav');
 export let removeHabitFn;
 export let addHabitFn;
 export let currentId;
@@ -202,8 +201,8 @@ const HabitsMain = () => {
                       {cP.type !== 3 && <MyInput
                         w='80%'
                         h='20%'
-                        maxL={30}
-                        value={cP.type === 2 ? AppData.choosenHabitsGoals[cP.hId][cP.gId].text : ''}
+                        maxL={70}
+                        value={cP.type === 2 ? AppData.choosenHabitsGoals[cP.hId][cP.gId]?.text : ''}
                         onChange={value => setNewGoal(value)}
                         placeholder={langIndex === 0 ? 'Введите цель' : 'Enter goal'}
                         theme={theme}
@@ -339,7 +338,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
     const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const habit = getAllHabits().find(h => h.id === id);
-
+    if(!habit)return null;
     const [habitInfo, setHabitInfo] = useState({
   name: habit?.name || ["", ""],
   descr: habit?.description || ["", ""],
@@ -380,7 +379,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
       temp = 0;
     if(!isNegative){
       if (newTime >= maxTimer) {
-        timerSound.play();
+        isDoneSound.play();
         clearInterval(interval);
         setStatus(1);
         setTime(0);
@@ -546,11 +545,26 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
        color: Colors.get('subText', theme),
        padding:'3px',
     }
-
-    let newHeight = '24vh';
-    if(AppData.choosenHabitsGoals[id]?.length > 0){
-        newHeight = ((AppData.choosenHabitsGoals[id].length * (fSize === 0 ? 3.2 : 3.8)) + 24) + 'vh';
+    let newHeight = fSize === 0 ? '24vh' : '26vh';
+    if(habitsGoals?.length > 0){
+      let addHeight = fSize === 0 ? 24 : 26;
+         for (let i = 0; i < habitsGoals.length; i++) {
+          const addH = fSize === 0 ? (habitsGoals.length < 40 ? 3.2 : 4) : (habitsGoals.length < 35 ? 3.8 : 4.4);
+          addHeight += addH;
+         }
+      newHeight = addHeight + 'vh';
     }
+
+    useEffect(() => {
+      if(habitsGoals?.length > 0){
+         let addHeight = fSize === 0 ? 24 : 26;
+         for (let i = 0; i < habitsGoals.length; i++) {
+          const addH = fSize === 0 ? (habitsGoals.length < 40 ? 3.2 : 4) : (habitsGoals.length < 35 ? 3.8 : 4.4);
+          addHeight += addH;
+         }
+         newHeight = addHeight + 'vh';
+        }
+    }, [habitsGoals,fSize]);
     useEffect(() => {
       setCanDrag(!showTimerSlider);
     }, [showTimerSlider]);
@@ -570,8 +584,8 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
     const onDeleteHabit = () => {
       currentId = id;
       const newText = AppData.prefs[0] === 0 
-      ? `Вы уверены, что хотите удалить привычку: \'${displayText}\' ?`
-      : `Are you sure you want to delete \'${displayText}\' habit?`;
+      ? `Вы уверены, что хотите удалить привычку: \'${habitInfo.name[0]}\' ?`
+      : `Are you sure you want to delete \'${habitInfo.name[1]}\' habit?`;
       updateConfirmationPanel(newText);
     }   
     return (
@@ -632,7 +646,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
                       <div style={subText}>{langIndex === 0 ? 'Цели : ' : 'Goals : '}</div>
                       {habitsGoals?.map((goal,index) => (
                         <div key={index} style={{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'flex-start',width:'100%',borderBottom:`1px solid ${Colors.get('border', theme)}`,marginBottom:'5px',marginLeft:'5px'}}>
-                           <div style={{...mainText,marginLeft:'1px',overflow:'hidden'}}>{goal.text}</div>
+                           <div style={{...mainText,fontSize:fSize === 0 ? '11px' : '13px',display:'flex',textAlign:'left',overflowX:'scroll',marginLeft:'1px'}}>{(index + 1) + ': ' + goal.text}</div>
                            <div style={{marginLeft:'auto',display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'center'}}>
                             {showAddOptions && currentGoal === index && index < AppData.choosenHabitsGoals[id].length - 1 && <TbArrowMoveDownFilled onClick={() => {setCP(prev => ({...prev,show:true,type:5,hId:id,gId:index,setGoals:setHabitGoals}));setCurrentGoal(prev => prev + 1);}} style={{fontSize:'18px',marginRight:'8px',color:Colors.get('icons', theme)}} />}
                             {showAddOptions && currentGoal === index && index > 0 && <TbArrowMoveUpFilled onClick={() => {setCP(prev => ({...prev,show:true,type:4,hId:id,gId:index,setGoals:setHabitGoals}));setCurrentGoal(prev => prev - 1);}} style={{fontSize:'18px',marginRight:'8px',color:Colors.get('icons', theme)}} />}
@@ -654,11 +668,11 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
                        ))}
                        <div style={{display:'flex',marginLeft:'auto',flexDirection:'row',alignItems:'center'}}>
                            
-                           {showHabitAddOptions && getAllHabits().find(f => f.id === id).isCustom && <FaPencilAlt onClick={() => setCP(prev => ({...prev,show:true,type:0,hId:id,gId:0,hInfo:setHabitInfo}))} style={{fontSize:'18px',marginRight:'10px',color:Colors.get('icons', theme)}}/>}
-                           {showHabitAddOptions && <FaTrash onClick={onDeleteHabit} style={{fontSize:'18px',marginLeft:'10px',color:Colors.get('icons', theme)}}/>}
-                           <TbDotsVertical style={{fontSize:'18px',color:Colors.get('icons', theme),marginLeft:'8px'}} onClick={() => {setShowHabitAddOptions(prev => !prev);}}/>
-                           {!isNegative && status < 1 && <FaRegSquare onClick={() => setNewStatus(true)}style={{fontSize:'24px',marginLeft:'10px',color:Colors.get('skipped', theme)}}/>}
-                           {!isNegative && status > 0 && <FaRegSquareCheck onClick={() => setNewStatus(false)} style={{fontSize:'24px',marginLeft:'10px',color:Colors.get('done', theme)}}/>}
+                           {showHabitAddOptions && getAllHabits().find(f => f.id === id).isCustom && <FaPencilAlt onClick={() => setCP(prev => ({...prev,show:true,type:0,hId:id,gId:0,hInfo:setHabitInfo}))} style={{fontSize:'18px',marginRight:'15px',color:Colors.get('icons', theme)}}/>}
+                           {showHabitAddOptions && <FaTrash onClick={onDeleteHabit} style={{fontSize:'18px',marginLeft:'15px',color:Colors.get('icons', theme)}}/>}
+                           <TbDotsVertical style={{fontSize:'18px',color:Colors.get('icons', theme),marginLeft:'14px'}} onClick={() => {setShowHabitAddOptions(prev => !prev);}}/>
+                           {!isNegative && status < 1 && <FaRegSquare onClick={() => setNewStatus(true)}style={{fontSize:'24px',marginLeft:'15px',color:Colors.get('skipped', theme)}}/>}
+                           {!isNegative && status > 0 && <FaRegSquareCheck onClick={() => setNewStatus(false)} style={{fontSize:'24px',marginLeft:'15px',color:Colors.get('done', theme)}}/>}
                        </div>
                     </div>
                 )}
@@ -745,8 +759,8 @@ const styles = (theme,fSize,isNegative) =>
       marginBottom:'35vw',
       backgroundColor:Colors.get('simplePanel', theme),
       boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
-      width:"85vw",
-      height:"40vw"
+      width:"100%",
+      height:"45vw"
     },
     confirmContainer: {
     position: 'fixed',
