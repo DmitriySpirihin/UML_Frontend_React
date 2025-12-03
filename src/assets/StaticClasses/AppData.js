@@ -19,7 +19,7 @@ export class AppData{
    static choosenHabits = []; // id array
    static choosenHabitsAchievements = {};
    static choosenHabitsNotified = {};
-   static habitsByDate = {};
+   static habitsByDate = {};// {'date':[habitId:status(integer)]}
    static choosenHabitsDaysToForm = [];
    static choosenHabitsTypes = [];
    
