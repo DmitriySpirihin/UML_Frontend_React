@@ -440,15 +440,21 @@ export async function addExercise(mgId,name,description,isBase){
     setShowPopUpPanel(AppData.prefs[0] === 0 ? 'Новое упражнение: '+ name +' успешно добавлено' : 'New exercise: '+ name +' successfully added',2000,true);
     await saveData();
 }
-
+export async function updateExercise(id,mgId,name,description,isBase){
+    const exercise = new Exercise(id,mgId,name,description,isBase,true);
+    AppData.exercises = AppData.exercises.filter(exercise => exercise.id !== id);
+    AppData.exercises.push(exercise);
+    setShowPopUpPanel(AppData.prefs[0] === 0 ? 'Изменения успешно сохранены' : 'Changes successfully saved',2000,true);
+    await saveData();
+}
 export async function removeExercise(id){
     AppData.exercises = AppData.exercises.filter(exercise => exercise.id !== id);
     setShowPopUpPanel(AppData.prefs[0] === 0 ? 'Упражнение успешно удалено' : 'Exercise successfully removed',2000,true);
     await saveData();
 }
-export async function addProgram(name,description,isCustom,days){
+export async function addProgram(name,description,isCustom,days,daysNames){
     const newId = allPrograms.length;
-    const program = new Program(newId,name,description,isCustom,days);
+    const program = new Program(newId,name,description,isCustom,days,daysNames);
     AppData.programs.push(program);
     allPrograms.push(program);
     await saveData();

@@ -7,7 +7,7 @@ import { expandedCard$, setExpandedCard} from '../../StaticClasses/HabitsBus.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
 import {MdDoneAll} from 'react-icons/md'
-import {FaPlusSquare,FaTrash,FaPencilAlt,FaRegWindowClose,FaListAlt} from 'react-icons/fa'
+import {FaPlusSquare,FaTrash,FaPencilAlt,FaRegWindowClose,FaListAlt,FaArrowUp} from 'react-icons/fa'
 import {FaRegSquareCheck,FaRegSquare} from 'react-icons/fa6'
 import {TbDotsVertical,TbArrowMoveDownFilled,TbArrowMoveUpFilled} from 'react-icons/tb'
 //timer
@@ -549,7 +549,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
     if(habitsGoals?.length > 0){
       let addHeight = fSize === 0 ? 220 : 238;
          for (let i = 0; i < habitsGoals.length; i++) {
-          const addH = fSize === 0 ? (habitsGoals[i].length < 40 ? 15 : 30) : (habitsGoals[i].length < 35 ? 17 : 34);
+          const addH = fSize === 0 ? 36 :  42;
           addHeight += addH;
          }
       newHeight = addHeight + 'px';
@@ -559,7 +559,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
       if(habitsGoals?.length > 0){
       let addHeight = fSize === 0 ? 220 : 238;
          for (let i = 0; i < habitsGoals.length; i++) {
-          const addH = fSize === 0 ? (habitsGoals[i].length < 40 ? 15 : 30) : (habitsGoals[i].length < 35 ? 17 : 34);
+          const addH = fSize === 0 ? 36 :  42;
           addHeight += addH;
          }
       newHeight = addHeight + 'px';
@@ -668,11 +668,11 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
                        ))}
                        <div style={{display:'flex',marginLeft:'auto',flexDirection:'row',alignItems:'center'}}>
                            
-                           {showHabitAddOptions && getAllHabits().find(f => f.id === id).isCustom && <FaPencilAlt onClick={() => setCP(prev => ({...prev,show:true,type:0,hId:id,gId:0,hInfo:setHabitInfo}))} style={{fontSize:'18px',marginRight:'15px',color:Colors.get('icons', theme)}}/>}
-                           {showHabitAddOptions && <FaTrash onClick={onDeleteHabit} style={{fontSize:'18px',marginLeft:'15px',color:Colors.get('icons', theme)}}/>}
-                           <TbDotsVertical style={{fontSize:'18px',color:Colors.get('icons', theme),marginLeft:'14px'}} onClick={() => {setShowHabitAddOptions(prev => !prev);}}/>
-                           {!isNegative && status < 1 && <FaRegSquare onClick={() => setNewStatus(true)}style={{fontSize:'24px',marginLeft:'15px',color:Colors.get('skipped', theme)}}/>}
-                           {!isNegative && status > 0 && <FaRegSquareCheck onClick={() => setNewStatus(false)} style={{fontSize:'24px',marginLeft:'15px',color:Colors.get('done', theme)}}/>}
+                           {getAllHabits().find(f => f.id === id).isCustom && <FaPencilAlt onClick={() => setCP(prev => ({...prev,show:true,type:0,hId:id,gId:0,hInfo:setHabitInfo}))} style={{fontSize:'18px',marginRight:'21px',color:Colors.get('icons', theme)}}/>}
+                           <FaTrash onClick={onDeleteHabit} style={{fontSize:'18px',marginLeft:'21px',color:Colors.get('icons', theme)}}/>
+                           <FaArrowUp style={{fontSize:'18px',color:Colors.get('icons', theme),marginLeft:'21px'}} onClick={() => {toggleIsActive();}}/>
+                           {!isNegative && status < 1 && <FaRegSquare onClick={() => setNewStatus(true)}style={{fontSize:'24px',marginLeft:'21px',color:Colors.get('skipped', theme)}}/>}
+                           {!isNegative && status > 0 && <FaRegSquareCheck onClick={() => setNewStatus(false)} style={{fontSize:'24px',marginLeft:'21px',color:Colors.get('done', theme)}}/>}
                        </div>
                     </div>
                 )}

@@ -21,50 +21,28 @@ const keys = {
        ['z','x','c','v','b','n','m'],
     ],
     2: [
-       ['1','2','3','4','5','6','7','8','9','0'],
-       ['!','?','/','|','#','@','%',':','+','-'],
-       ['<','>','=','*','&','^','~',':',';']
+       ['!','1','2','3','?',],
+       [':','4','5','6','-'],
+       ['7','8','9']
     ]
 };
-const emojis = [
-  "😂", "😍", "🥰", "🤣", "😊", "🙏", "💕", "😭", "😘", "🥲",
-  "😅", "👍", "😁", "😎", "🥳", "🤔", "🤗", "😏", "😇", "🙌",
-  "😉", "😋", "😜", "🤩", "😢", "😆", "🎉", "😡", "😱", "😴",
-  "❤️", "🤤", "🥺", "😬", "🤪", "😳", "😤", "💔", "😐", "😑",
-  "😒", "🙄", "😔", "😛", "🤨", "🤭", "😚", "🤫", "😝", "🤤",
-  "😥", "💖", "🥵", "🥶", "😓", "🌚", "😈", "👀", "🫠", "🥴",
-  "😯", "😮‍💨", "🥹", "😵‍💫", "😲", "😕", "💪", "😃", "😄", "🤦‍♂️",
-  "🤦‍♀️", "🙃", "🤝", "🎶", "💃", "😹", "😺", "👋", "👻", "💩",
-  "🤡", "🙈", "✨", "🔥", "🎂", "🎁", "🌸", "🌹", "🥗", "🍕",
-  "🍔", "🍣", "🥟", "🍰", "🧁", "🍉", "🍦", "☕", "🍺", "🍻",
-  "🏆", "⚽", "🏀", "🎮", "💯", "🥇", "🧠", "🫶", "👑", "😇",
-  "😷", "🤒", "🤕", "🥴", "🤧", "🤑", "🤠", "🤓", "🧐", "🙃",
-  "🥳", "🤓", "😈", "😸", "😺", "😻", "😼", "😹", "😽", "🙀",
-  "😿", "😾", "👾", "🦄", "🐶", "🐱", "🐭", "🐹", "🐰", "🦊",
-  "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "👍",
-  "👎", "👏", "👐", "🤲", "🙏", "🤝", "✌️", "🤟", "🤘", "👌",
-  "👈", "👉", "👆", "👇", "☝️", "✋", "🤚", "🖐️", "🖖", "👋",
-  "🤙", "💪", "🦾", "🦵", "🦶", "👂", "👃", "🧠", "🦷", "👀"
-];
 
 
 const KeyBoard = () => {
     const [theme, setthemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-    const [needKeyBoard,setNeedKeyBoard] = useState(false);
-    const [isShift,setIsShift] = useState(false);
+    const [needKeyBoard,setNeedKeyBoard] = useState({type:0,value:false});
+    const [isShift,setIsShift] = useState(true);
     const [currentKeys,setCurrentKeys] = useState(langIndex);
     const [currentKey,setCurrentKey] = useState('000');
     const [currentLang,setCurrentLang] = useState(langIndex);
-    const [needEmoji,setNeedEmoji] = useState(false);
     const keyboardRef = useRef();
-    const [clipboardStatus, setClipboardStatus] = useState('unknown');
      
     useEffect(() => {
     function handleTap(event) {
     if (
       keyboardRef.current &&  !keyboardRef.current.contains(event.target)) {
-      setKeyboardNeeded(false);
+      setKeyboardNeeded({type:0,value:false});
       }
     }
      window.addEventListener('mousedown', handleTap);
@@ -83,7 +61,10 @@ const KeyBoard = () => {
         const subscription = lang$.subscribe((lang) => {
             setLangIndex(lang === 'ru' ? 0 : 1);
         });
-        const subscriptionK = keyboardNeeded$.subscribe(setNeedKeyBoard);
+        const subscriptionK = keyboardNeeded$.subscribe((prev )=> {
+          setNeedKeyBoard(prev);
+          setCurrentKeys(prev.type);
+        });
         return () => {
             subscription.unsubscribe();
             subscriptionT.unsubscribe();
@@ -91,62 +72,31 @@ const KeyBoard = () => {
         }
     }, []);
     function click(key){
-      setCurrentKeyboardString(isShift && currentKeys < 2 && key.length === 1 && key !== ' ' ? key.toUpperCase() : key);
+      setCurrentKeyboardString(isShift && key.length === 1 && key !== ' ' ? key.toUpperCase() : key);
       setCurrentKey(key);
       setIsShift(false);
       playEffects(tap);
     }
     const bindKey = useLongPress(() => click('bsall'));
-    async function handlePaste() {
-  try {
-    if (!window.Telegram?.WebApp?.readTextFromClipboard) {
-      setClipboardStatus('empty');
-      return;
-    }
-
-    const text = await window.Telegram.WebApp.readTextFromClipboard();
     
-    if (text && text.trim()) {
-      setCurrentKeyboardString('paste'+text);
-      setClipboardStatus('hasContent');
-      playEffects(tap);
-    } else {
-      setClipboardStatus('empty');
-      // Optional: show brief message
-      if (window.Telegram?.WebApp?.showPopup) {
-        window.Telegram.WebApp.showPopup({
-          title: "Clipboard",
-          message: "No text in clipboard",
-          buttons: [{ type: "close" }]
-        });
-      }
-    }
-  } catch (err) {
-    console.error('Clipboard read failed:', err);
-    setClipboardStatus('empty');
-  }
-    }
     return (
       
-       <div style={styles(theme,needKeyBoard).container } ref={keyboardRef}>
-        {!needEmoji && <div style={styles(theme,needKeyBoard).container }>
+       <div style={styles(theme,needKeyBoard.value).container } ref={keyboardRef}>
+        <div style={styles(theme,needKeyBoard.value).container }>
          <div style={styles(theme).rowPanel}>
             {keys[currentKeys][0].map((key) => (
-              <div  key={key} style={keyStyle(theme,keys[currentKeys][0].length,currentKey,key)}>
-                <p onClick={() => click(key)} key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
+              <div onClick={() => click(key)} key={key} style={keyStyle(theme,keys[currentKeys][0].length,currentKey,key)}>
+                <p  key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
               </div>
             ))}
          </div>
          {/*second line*/}
          <div style={styles(theme).rowPanel}>
             {keys[currentKeys][1].map((key) => (
-              <div  key={key} style={keyStyle(theme,keys[currentKeys][1].length,currentKey,key)}>
-                <p onClick={() => click(key)} key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
+              <div onClick={() => click(key)} key={key} style={keyStyle(theme,keys[currentKeys][1].length,currentKey,key)}>
+                <p  key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
               </div>
             ))}
-            {clipboardStatus !== 'empty' && (<div onClick={handlePaste} style={{...keyStyle(theme, 1, currentKey, 'paste'),width: '8%',backgroundColor: Colors.get('currentDateBorder2', theme),opacity: clipboardStatus === 'unknown' ? 0.7 : 1,}}>
-              <p style={styles(theme).text}>📋</p>
-          </div>)}
          </div>
          {/*third line*/}
          <div style={styles(theme).rowPanel}>
@@ -154,8 +104,8 @@ const KeyBoard = () => {
                 <FaArrowUp style={{...styles(theme).text,color:isShift ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme)}}/>
               </div>
             {keys[currentKeys][2].map((key) => (
-              <div  key={key} style={keyStyle(theme,keys[currentKeys][2].length + 2,currentKey,key)}>
-                <p onClick={() => click(key)} key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
+              <div onClick={() => click(key)} key={key} style={keyStyle(theme,keys[currentKeys][2].length + 2,currentKey,key)}>
+                <p  key={key} style={styles(theme).text}>{isShift ? key.toUpperCase() : key}</p>
               </div>
             ))}
             <div {...bindKey} onClick={() => click('bs')} style={{...keyStyle(theme,keys[currentKeys][2].length + 2,currentKey,'bs'),backgroundColor:Colors.get('currentDateBorder2', theme)}}>
@@ -167,36 +117,23 @@ const KeyBoard = () => {
               <div onClick={() => {setCurrentKeys(prev => prev === 2 ? currentLang : 2);setCurrentKey('num')}} style={{...keyStyle(theme,1,currentKey,'num'),width:'10%',backgroundColor:Colors.get('currentDateBorder2', theme)}}>
                 <p style={styles(theme).text}>{currentKeys < 2 ? '?12' : 'AB'}</p>
               </div>
-              <div onClick={() => {setNeedEmoji(true);setCurrentKey('em')}} style={{...keyStyle(theme,1,currentKey,'em'),width:'6%',backgroundColor:Colors.get('currentDateBorder2', theme)}}>
-                <FaSmileWink style={styles(theme).text}/>
-              </div>
               <div onClick={() => click(',')} style={{...keyStyle(theme,1,currentKey,','),width:'9%'}}>
                 <p style={styles(theme).text}>{','}</p>
+              </div>
+              {currentKeys === 2 && <div onClick={() => click('0')} style={{...keyStyle(theme,1,currentKey,'0'),width:'22%'}}>
+                <p style={styles(theme).text}>{'0'}</p>
+              </div>}
+              {currentKeys !== 2 && <div onClick={() => click(' ')} style={{...keyStyle(theme,1,currentKey,' '),width:'51%'}}>
+                <p style={{...styles(theme).text,fontSize:'12px'}}>{'UltyMyLife'}</p>
+              </div>}
+              <div onClick={() => click('.')} style={{...keyStyle(theme,1,currentKey,'.'),width:'9%'}}>
+                <p style={styles(theme).text}>{'.'}</p>
               </div>
               <div onClick={() => {setCurrentKeys(prev => prev === 0 ? 1 : 0);setCurrentLang(prev => prev === 0 ? 1 : 0),setCurrentKey('lang')}} style={{...keyStyle(theme,1,currentKey,'lang'),width:'8%',backgroundColor:Colors.get('currentDateBorder2', theme)}}>
                 <IoLanguage style={styles(theme).text}/>
               </div>
-              <div onClick={() => click(' ')} style={{...keyStyle(theme,1,currentKey,' '),width:'41%'}}>
-                <p style={{...styles(theme).text,fontSize:'12px'}}>{'UltyMyLife'}</p>
-              </div>
-              <div onClick={() => click('.')} style={{...keyStyle(theme,1,currentKey,'.'),width:'9%'}}>
-                <p style={styles(theme).text}>{'.'}</p>
-              </div>
-              <div onClick={() => click('\n')} style={{...keyStyle(theme,1,currentKey,'\n'),width:'12%',backgroundColor:Colors.get('currentDateBorder2', theme)}}>
-                <FiCornerDownLeft style={styles(theme).text}/>
-              </div>
          </div>
-         </div>}
-         {needEmoji && <div style={styles(theme,needKeyBoard).container }>
-            <FaArrowDown onClick={() => setNeedEmoji(false)} style={styles(theme).text}/>
-            <div style={styles(theme).selectPanel}>
-                {emojis.map((emoji,index) => (
-                    <div key={index} onClick={() => click(emoji)} style={{width:'12%',height:'17%',display:'inline-flex',alignItems:'center',justifyContent:'center'}}>
-                      <p style={{fontSize:'24px'}}>{emoji}</p>
-                    </div>
-                ))}
-            </div>
-         </div>}
+         </div>
        </div>
 
     )

@@ -4,6 +4,7 @@ import {currentString$,keyboardNeeded$,setKeyboardNeeded,setCurrentKeyboardStrin
 import {useEffect, useState } from 'react';
 
 const MyInput = ({
+  keyType = 0,
   maxL = 500,
   placeHolder,
   theme,
@@ -22,11 +23,6 @@ const MyInput = ({
   }, [value]);
   useEffect(() => {
   const subscription = currentString$.subscribe(value => {
-    const isEmoji = (v) => {
-      if (v === 'bs' || v === 'bsall' || v === '\n') return false;
-      return Array.from(v).length === 1 && v.length > 1;
-    };
-
     if (isActive) {
       if (value === 'bs') {
         setInput(prev => {
@@ -40,57 +36,12 @@ const MyInput = ({
         });
       } else if (value === 'bsall') {
         setInput({ myString: '', cursorPos: 0 });
-      } else if (value === '\n') {
-        setInput(prev => {
-          if (prev.myString.length >= maxL) return prev;
-          const chars = Array.from(prev.myString);
-          const before = chars.slice(0, prev.cursorPos).join('');
-          const after = chars.slice(prev.cursorPos).join('');
-          return {
-            myString: before + '\n' + after,
-            cursorPos: prev.cursorPos + 1
-          };
-        });
       }
-      else if (value.startsWith('paste')) {
-  setInput(prev => {
-    const pastedText = value.slice(5); // everything after 'paste'
-    const chars = Array.from(prev.myString);
-    const safeCursor = Math.max(0, Math.min(prev.cursorPos, chars.length));
-    
-    // How many characters can we actually add?
-    const availableSpace = Math.max(0, maxL - chars.length);
-    
-    // Truncate pasted text to fit
-    const addable = pastedText.slice(0, availableSpace);
-    
-    if (addable.length === 0) {
-      return prev; // nothing to add
-    }
-
-    const before = chars.slice(0, safeCursor).join('');
-    const after = chars.slice(safeCursor).join('');
-    const newString = before + addable + after;
-    const newCursor = safeCursor + addable.length;
-
-    return {
-      myString: newString,
-      cursorPos: newCursor
-    };
-  });
-}
-       else if (value.length === 1 || isEmoji(value)) {
+       else if (value.length === 1) {
         setInput(prev => {
-          const chars = Array.from(prev.myString);
-          const safeCursor = Math.max(0, Math.min(prev.cursorPos, chars.length));
-          const addable = value.slice(0, Math.max(0, maxL - chars.length));
-          const before = chars.slice(0, safeCursor).join('');
-          const after = chars.slice(safeCursor).join('');
-          const newString = before + addable + after;
-          const newCursor = Math.min(safeCursor + newString.length, maxL);
           return {
-            myString: newString,
-            cursorPos: newCursor
+            myString: prev.myString.slice(0, prev.cursorPos) + value + prev.myString.slice(prev.cursorPos),
+            cursorPos: prev.cursorPos + 1
           };
         });
       }
@@ -137,7 +88,7 @@ const MyInput = ({
       onClick={(event) => {
         setCurrentKeyboardString('');
         setIsActive(true);
-        setKeyboardNeeded(true);
+        setKeyboardNeeded({type:keyType,value:true});
         setInput(prev => ({myString:prev.myString,cursorPos:getCursorIndex(event, prev.myString)}));
       }}
     >
