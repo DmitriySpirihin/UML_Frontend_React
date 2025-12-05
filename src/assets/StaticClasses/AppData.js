@@ -189,16 +189,22 @@ export const fillEmptyDays = () => {
     const current = currentDate.toISOString().split('T')[0];
     if(!(current in AppData.habitsByDate)) {
       AppData.habitsByDate[current] = {};
-      for (let index = 0; index < AppData.choosenHabits.length; index++) {
-        if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime())
-        AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? AppData.choosenHabitsTypes[index] ? 1 : -1 : 2; 
-      }
-    }else{
-      for (let index = 0; index < AppData.choosenHabits.length; index++) {
-        if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime())
-        if(AppData.habitsByDate[current][AppData.choosenHabits[index]] < 1)AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? AppData.choosenHabitsTypes[index] ? 1 : -1 : 2; 
-      }
     }
+      for (let index = 0; index < AppData.choosenHabits.length; index++) {
+        const isNegative = AppData.choosenHabitsTypes[index]; 
+        if(isNegative){
+            if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime()){
+            const isStartDateEarlier = Date.now() - AppData.choosenHabitsLastSkip[AppData.choosenHabits[index]] > 86400000;
+            AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? isStartDateEarlier ? 1 : -1 : 2; 
+          }
+        }
+        else{
+           if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime()){
+           AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? -1 : 2; 
+           }
+        }
+      }
+    
     currentDate.setDate(currentDate.getDate() + 1);
    }
    }
@@ -207,7 +213,18 @@ export const fillEmptyDays = () => {
  if(!(now in AppData.habitsByDate)){
    AppData.habitsByDate[now] = {};
    for (let index = 0; index < AppData.choosenHabits.length; index++) {
-     AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 99 ? 0 : 2; 
+    const isNegative = AppData.choosenHabitsTypes[index]; 
+     if(isNegative){
+            if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(now).getTime()){
+            const isStartDateEarlier = Date.now() - AppData.choosenHabitsLastSkip[AppData.choosenHabits[index]] > 86400000;
+            AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? isStartDateEarlier ? 1 : -1 : 2; 
+          }
+        }
+        else{
+           if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(now).getTime()){
+             AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? 0 : 2; 
+           }
+        }
    }
   }
 }

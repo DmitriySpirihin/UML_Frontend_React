@@ -40,7 +40,7 @@ const HabitsMain = () => {
 
     // redact habits and goals   operation : 0 redact habit , 1 add goal, 2 redact goal, 3 delete goal, 4 move goal up, 5 move goal down
     const [cP,setCP] = useState({
-        show:false,type:0,hId:0,gId:0,setGoals:null,hInfo:null   
+        show:false,type:-1,hId:0,gId:0,setGoals:null,hInfo:null   
     }) 
     const [newGoal,setNewGoal] = useState('');
     const [newName,setNewName] = useState('');
@@ -385,6 +385,10 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
         setTime(0);
         setTimer(false);
         setProgress(0);
+      }else{
+        if(status < 1){
+           setStatus(1);
+        }
       }
     }
       return newTime;
