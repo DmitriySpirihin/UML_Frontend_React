@@ -14,6 +14,28 @@
 .smooth-stroke {
   transition: stroke 1s linear;
 }
+@keyframes moveGradient {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  .premium-border {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    padding: 2px; /* border thickness */
+    background: linear-gradient(90deg, #00B4FF, #FF00C8, #00B4FF, #FF00C8);
+    background-size: 300% 300%;
+    animation: moveGradient 10s ease infinite;
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
 .logo {
   height: 6em;
   padding: 1.5em;

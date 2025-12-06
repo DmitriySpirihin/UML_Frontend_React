@@ -76,10 +76,10 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,notify})
           {page === 'HabitsMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setNotifyPanel(false);setCurrentBottomBtn(-1);}} />)}
           <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('HabitMetrics');setAddPanel('');setNotifyPanel(false);playEffects(switchSound);}} />
           
-          <Add style={{...styles(theme,currentBtn,9,true,addPanel === '' && page !== 'HabitsMain').btnstyle,fontSize:'40px'}} onClick={() => {if(page === 'HabitsMain'){setCurrentBottomBtn(2);setAddPanel('AddHabitPanel');setNotifyPanel(false);playEffects(switchSound);}}} />
+          <Add style={{...styles(theme,currentBtn,9,true,addPanel === '' && page !== 'HabitsMain').btnstyle,fontSize:page !== 'HabitsMain' ? '30px':'40px'}} onClick={() => {if(page === 'HabitsMain'){setCurrentBottomBtn(2);setAddPanel('AddHabitPanel');setNotifyPanel(false);playEffects(switchSound);}}} />
           <Calendar style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('HabitCalendar');setAddPanel('');setNotifyPanel(false);playEffects(switchSound);}} />
-          {page.startsWith('H') && (notify[0].enabled ? <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} /> 
-              : <FaBellSlash style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} />)}
+          {page.startsWith('H') && <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} /> }
+              
         </div>
     )
 }

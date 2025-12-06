@@ -5,6 +5,7 @@ import {setTheme,setLang ,setSoundAndVibro,setNotify,setShowPopUpPanel,setFontSi
 import { NotificationsManager } from "./NotificationsManager";
 import { getAchievements } from "../Helpers/Achievements";
 import { saveData } from "../StaticClasses/SaveHelper";
+import {exercises,programs} from "../Classes/TrainingData";
 
 export class AppData{
    static lastSave = new Date().toISOString();
@@ -54,8 +55,8 @@ export class AppData{
     setNotify(this.notify);
 
     this.currentProgramId = data.currentProgramId;
-    this.exercises = data.exercises;
-    this.programs = data.programs;
+    this.exercises = data.exercises?.length > 0 ? data.exercises : exercises;
+    this.programs = data.programs?.length > 0 ? data.programs : programs;
     this.trainingLog = data.trainingLog;
   }
   static setPrefs(ind,value){
@@ -200,7 +201,7 @@ export const fillEmptyDays = () => {
         }
         else{
            if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime()){
-           AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? -1 : 2; 
+           AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? 1 : 2; 
            }
         }
       }
@@ -234,6 +235,7 @@ export class UserData {
    static id = null;
    static name = 'guest';
    static photo = null;
+   static hasPremium = false;
 
    static Init(id,name,photo){
       this.id = id;

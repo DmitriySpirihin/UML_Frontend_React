@@ -123,7 +123,7 @@ const MainMenu = ({ onPageChange }) => {
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
-                    //onClick={() => {onPageChange('TrainingMain');playEffects(null);}}
+                    onClick={() => {onPageChange('TrainingMain');playEffects(null);}}
                 />
                <MenuCard 
                     text={['Список задач', 'Simple task manager']} 

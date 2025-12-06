@@ -30,7 +30,6 @@ const MainBtns = () => {
     const [vibro, setVibro] = useState(0);
     const [fSize, setFSize] = useState(0);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [keyboardVisible, setKeyboardVisibleState] = useState(false);
 
     useEffect(() => {
         const handleToggle = () => setIsSettingsOpen(prev => !prev);
@@ -102,18 +101,22 @@ const UserPanel = ({theme,fSize}) => {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        top: "10vh",
+        top: "9.5vh",
         left: "80vw",
-        width: "35px",
         zIndex: 1000,
     }
     return (
         <div style={_style}>
-            <p style={{color: Colors.get('subText', theme),fontSize: fSize === 0 ? "11px" : "13px",fontFamily: "Segoe UI"}}>{UserData.name}</p>
-            <img 
-                src={Array.isArray(UserData.photo) ? UserData.photo[0] : UserData.photo} 
-                style={{border: "3px solid " + Colors.get('border', theme),borderRadius: "50%",objectFit: "cover",width: "6vw",margin: "10px"}} 
-            /> 
+            <div style={{display: 'flex',flexDirection: 'column'}}>
+              {UserData.hasPremium && <div style={{color:'#f69e1ab4',fontSize: "8px",fontFamily: "Segoe UI"}}>premium</div>}
+              <div style={{color: Colors.get('subText', theme),fontSize: fSize === 0 ? "11px" : "13px",fontFamily: "Segoe UI"}}>{UserData.name}</div>
+            </div>
+            <div style={{position: 'relative',width: '30px',height: '30px',margin: '10px',borderRadius: '50%',overflow: 'hidden',border: UserData.hasPremium ? 'none' : `3px solid ${Colors.get('border', theme)}`,boxSizing: 'border-box',}}>
+             {/* User Photo */}
+             <img style={{position: 'absolute',top: 0,left: 0, width: '100%',height: '100%',objectFit: 'cover',borderRadius: '50%',zIndex: 1,}}src={Array.isArray(UserData.photo) ? UserData.photo[0] : UserData.photo} alt="images/Ui/Guest.jpg"/>
+             {/* Premium Border Overlay (only if hasPremium) */}
+             {UserData.hasPremium && (<img style={{position: 'absolute',top: 0,left: 0,width: '100%',height: '100%',objectFit: 'contain',zIndex: 2,}}src={'images/Ui/premiumborder.png'}/>)}
+            </div>
         </div>
     )
 }

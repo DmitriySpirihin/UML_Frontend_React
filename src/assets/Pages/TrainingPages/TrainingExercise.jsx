@@ -4,9 +4,8 @@ import Colors from '../../StaticClasses/Colors.js'
 import { theme$ ,lang$,fontSize$,addPanel$,setShowPopUpPanel} from '../../StaticClasses/HabitsBus.js'
 import {IoIosArrowDown,IoIosArrowUp} from 'react-icons/io'
 import {allExercises,MuscleIcon,addExercise,removeExercise,updateExercise} from '../../Classes/TrainingData.jsx'
-import { FaRegSquare, FaRegCheckSquare,FaTrash,FaPencilAlt } from 'react-icons/fa';
+import { FaRegSquare, FaRegCheckSquare,FaTrash,FaPencilAlt ,FaPlusSquare} from 'react-icons/fa';
 import {TbDotsVertical} from 'react-icons/tb'
-import {IoMdArrowDropdown,IoMdArrowDropup,IoMdList} from 'react-icons/io'
 import {MdDone,MdClose} from 'react-icons/md'
 import MyInput from '../../Helpers/MyInput';
 
@@ -19,13 +18,11 @@ const TrainingExercise = () => {
     const [currentMuscleGroupId, setCurrentMuscleGroupId] = useState(-1);
     const [currentExerciseId, setCurrentExerciseId] = useState(-1);
     const [currentExerciseName, setCurrentExerciseName] = useState('');
-    const [showMuscleList, setShowMuscleList] = useState(false);
     const [showConfirmRemove, setShowConfirmRemove] = useState(false);
     const [showAddOptions, setShowAddOptions] = useState(false);
     const [showRedakt, setShowRedakt] = useState(false);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [muscleGroupId, setMuscleGroupId] = useState(0);
     const [isBase, setIsBase] = useState(true);
     // subscriptions
     useEffect(() => {
@@ -49,7 +46,10 @@ const TrainingExercise = () => {
     function setMuscleGroup(id){
         playEffects(null);
         setCurrentMuscleGroupId(currentMuscleGroupId == id ? -1 : id);
-        if(currentMuscleGroupId === -1) setCurrentExerciseId(-1);
+        //setMuscleGroup(id);
+        if(currentMuscleGroupId === -1){
+          setCurrentExerciseId(-1);
+        }
     }
     function setExercise(id){
         playEffects(null);
@@ -57,11 +57,9 @@ const TrainingExercise = () => {
     }
     function onClose(){
         playEffects(null);
-        setShowMuscleList(false);
         setAddPanel('');
         setName('');
         setDescription('');
-        setMuscleGroupId(0);
         setIsBase(true);
     }
     function onAdd(){
@@ -112,23 +110,23 @@ const TrainingExercise = () => {
                           <div key={exercise.id} style={styles(theme).panel}>
                             <div style={{...styles(theme,false,currentExerciseId == exercise.id).exercisePanel,width:'98%',flexDirection:'row'}} onClick={() => setExercise(prev => prev === exercise.id ? -1 : exercise.id)}>
                               {currentExerciseId == exercise.id ? <IoIosArrowUp style={{...styles(theme).icon,marginLeft:'7%',width:'10px',marginTop:'7px'}}/> : <IoIosArrowDown style={{...styles(theme).icon,marginLeft:'7%',width:'10px',marginTop:'7px'}}/>}
-                              <p style={{...styles(theme,false,false,fSize).text,marginLeft:'5%'}}>{exercise.name[langIndex] + (exercise.isCustom ? ' 🔖' : '')}</p>
+                              <p style={{...styles(theme,false,false,fSize).text,marginLeft:'5%'}}>{exercise.name[langIndex]}</p>
                               <p style={{...styles(theme,false,false,fSize).subtext,marginLeft: 'auto',marginRight:'5%',color:exercise.isBase ? Colors.get('trainingBaseFont',theme) : Colors.get('trainingIsolatedFont',theme)}}>{exercise.isBase ? langIndex === 0 ? 'Базовое' : 'Base' : langIndex === 0 ? 'Изолированное' : 'Isolated'}</p>
                             </div>
                             {currentExerciseId == exercise.id ? (
                                     <div style={{...styles(theme).panel,flexDirection:'row',marginLeft:'6%',width:'86%'}}>
                                         <p style={styles(theme,false,false,fSize).subtext}>{exercise.description[langIndex]}</p>
-                                        {exercise.isCustom && 
                                           <div style={{display:'flex',flexDirection:'row',alignItems:'center',marginLeft:'auto',justifyContent:'center'}}>
                                             {showAddOptions && <FaPencilAlt onClick={() => {setCurrentExerciseName(exercise.name[langIndex]);onRedaktStart()}} style={{...styles(theme).icon,fontSize:'18px'}}/>}
                                             {showAddOptions && <FaTrash onClick={() => {setCurrentExerciseName(exercise.name[langIndex]);setShowConfirmRemove(true);}} style={{...styles(theme).icon,fontSize:'18px'}}/>}
                                             <TbDotsVertical onClick={() => {setShowAddOptions(!showAddOptions)}} style={{...styles(theme).icon,fontSize:'18px'}}/>
                                           </div>
-                                        }
                                     </div>
                                 ) : null}
                         </div>))}
-
+                        <div style={{...styles(theme).exercisePanel,width:'98%',flexDirection:'row',alignItems:'center',justifyContent:'center'}} >
+                              <FaPlusSquare onClick={() => {playEffects(null);setAddPanel('AddExercisePanel')}} style={{...styles(theme).icon,fontSize:'24px'}}/>
+                            </div>
                       </div>
                    ) : null}
                 </div>
@@ -143,9 +141,7 @@ const TrainingExercise = () => {
                   <MyInput maxL={40} w='80%' h='20%' theme={theme} onChange={(value) => setName(value)} placeHolder={langIndex === 0 ? 'Название упражнения' : 'Exercise name'}/>
                   <MyInput maxL={300} w='80%' h='30%' theme={theme} onChange={(value) => setDescription(value)} placeHolder={langIndex === 0 ? 'Описание упражнения' : 'Exercise description'}/>
                   <div style={{display:'flex',flexDirection:'row',width:'70%',justifyContent:'space-around',alignItems:'center',marginTop:'5%'}}>
-                    {MuscleIcon.get(muscleGroupId,langIndex,theme,false)}
-                    <IoMdList style={{...styles(theme).icon,fontSize:'32px'}}/>
-                    {!showMuscleList ? <IoMdArrowDropup onClick={() => setShowMuscleList(true)} style={{...styles(theme).icon,fontSize:'32px'}}/> : <IoMdArrowDropdown onClick={() => setShowMuscleList(false)} style={{...styles(theme).icon,fontSize:'32px'}}/>}
+                    {MuscleIcon.get(currentMuscleGroupId,langIndex,theme,false)}
                   </div>
                   <div style={{display:'flex',flexDirection:'row',width:'50%',justifyContent:'space-around',alignItems:'center',marginTop:'5%'}}>
                     <p style={styles(theme,false,false,fSize).text}>{langIndex === 0 ? 'Базовое упражнение' : 'Base exercise'}</p>
@@ -161,15 +157,6 @@ const TrainingExercise = () => {
               </div>
             </div>
             )}
-            {showMuscleList && <div style={{position:'fixed',top:'15vh',left:'7.5vw',display:'flex',flexWrap: 'wrap',width:'85vw',height:'80vw',justifyContent:'center',marginTop:'5px',borderRadius:'24px',border:`1px solid ${Colors.get('border', theme)}`,backgroundColor:Colors.get('background', theme),zIndex:'7000'}}>
-              {Object.keys(MuscleIcon.muscleIconsSrc).map((key) => (
-                  <div key={key}
-                  onClick={() => {setMuscleGroupId(key);setShowMuscleList(false);}}
-                  style={{margin:'5px',marginTop:'15px',width:'55px',height:'45px'}}>
-                  {MuscleIcon.getForList(key,langIndex,theme)}
-                </div>
-              ))}
-            </div>}
             {showConfirmRemove && <div style={{position:'fixed',top:'50vh',left:'7.5vw',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',width:'85vw',height:'40vw',marginTop:'5px',borderRadius:'24px',border:`1px solid ${Colors.get('border', theme)}`,backgroundColor:Colors.get('background', theme),zIndex:'7000'}}>
               <p style={{...styles(theme,false,false,fSize).text,padding:'20px',marginLeft:'10%',marginRight:'5%'}}>{langIndex === 0 ? 'Вы уверены, что хотите удалить упражнение? ' + currentExerciseName : 'Are you sure you want to delete the exercise?' + currentExerciseName}</p>
               <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>

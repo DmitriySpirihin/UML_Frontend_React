@@ -1,10 +1,10 @@
 import React, {useState,useEffect} from 'react'
 import { allHabits} from '../../Classes/Habit.js'
-import { AppData,getHabitPerformPercent } from '../../StaticClasses/AppData.js'
+import { AppData,getHabitPerformPercent,UserData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import {FaArrowAltCircleLeft,FaArrowAltCircleRight,FaList,FaPencilAlt,FaInfoCircle} from 'react-icons/fa'
 import {IoMdArrowDropright,IoMdArrowDropleft} from 'react-icons/io'
-import { theme$ ,lang$,fontSize$} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$,setPage} from '../../StaticClasses/HabitsBus'
 import Fire from '@mui/icons-material/LocalFireDepartment';
 import {MdDoneAll} from 'react-icons/md'
 import {MdDone,MdClose} from 'react-icons/md'
@@ -176,6 +176,13 @@ const HabitMetrics = () => {
                </div>
                
           </div>}
+          {
+             !UserData.hasPremium && <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'95vw',height:'160vw',top:'15.5%',borderRadius:'24px',backdropFilter:'blur(12px)',zIndex:2}}>
+                 <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? 'Подробная статистика 📊' : 'Detailed statistics 📊'} </p>
+                 <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'} </p>
+                 <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn,margin:'10px'}} >{langIndex === 0 ? 'Стать премиум' : 'Get premium'}</button>
+              </div>
+          }
           {showInfo && <div onClick={() => {setShowInfo(false);if(AppData.prefs[3] == 0)navigator.vibrate?.(50);}} style={{position:'fixed',top:'0',left:'0',width:'100vw',height:'100vh',justifyContent:'center',alignItems:'center',backgroundColor:'rgba(0,0,0,0.5)'}}>
             <div style={{display:'flex',flexDirection:'column',overflowY:'scroll',marginLeft:'5vw',marginTop:'15vh',justifyContent:'center',alignItems:'center',paddingRight:'5px',width:'90vw',height:'72vh',backgroundColor:Colors.get('background', theme),borderRadius:'24px'}}>
               <p style={{...styles(theme,fSize).subText,padding:'10px',textAlign:'left',whiteSpace:'pre-line',textIndent:'12px'}}>{infoTextLong(langIndex,habitId)}</p>
@@ -281,6 +288,15 @@ const styles = (theme,fSize) =>
     touchAction: 'none',
     color:Colors.get('icons', theme),
 
+  },
+  btn:
+  {
+     width:'70%',
+     height:'40px',
+     borderRadius:'12px',
+     fontSize: fSize === 0 ? '13px' : '14px',
+     color:Colors.get('mainText', theme),
+     backgroundColor:Colors.get('simplePanel',theme)
   }
 })
 

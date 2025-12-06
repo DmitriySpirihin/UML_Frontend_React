@@ -19,6 +19,7 @@ const TrainingExercise = lazy(() => import('./assets/Pages/TrainingPages/Trainin
 const TrainingProgramm = lazy(() => import('./assets/Pages/TrainingPages/TrainingProgramms'));
 const TrainingCurrent = lazy(() => import('./assets/Pages/TrainingPages/TrainingCurrent'));
 const TrainingMesurments = lazy(() => import('./assets/Pages/TrainingPages/TrainingMesurments'));
+const Premium = lazy(() => import('./assets/Pages/Premium'));
 
 
 function App() {
@@ -102,6 +103,9 @@ useEffect(() => {
       </Suspense>}
       {page === 'TrainingProgramm' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingProgramm/>
+      </Suspense>}
+      {page === 'premium' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <Premium/>
       </Suspense>}
       {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
       {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}

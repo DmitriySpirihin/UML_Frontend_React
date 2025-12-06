@@ -26,6 +26,7 @@ export const isPasswordCorrect$ = new BehaviorSubject(false);
 export const trainingAddPanelNum$ = new BehaviorSubject(-1);
 export const currentString$ = new BehaviorSubject('');
 export const keyboardNeeded$ = new BehaviorSubject({type:0,value:false});
+export const lastPage$ = new BehaviorSubject('MainMenu');
 
 export const setConfirmationPanel = (state) => confirmationPanel$.next(state);
 export const setTheme = (theme) => {
@@ -44,6 +45,7 @@ export function setShowPopUpPanel(text,duration,isPositive ) {
   setTimeout(() => showPopUpPanel$.next({show:false,header:'',isPositive}), duration);
 }
 export const setPage = (page) => {
+  lastPage$.next(setPage$.value);
   setPage$.next(page);
   if(page.startsWith('Habit')) bottomBtnPanel$.next('BtnsHabits');
   else if(page.startsWith('Training')) bottomBtnPanel$.next('BtnsTraining');

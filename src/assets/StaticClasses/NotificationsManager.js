@@ -2,13 +2,15 @@ import {AppData, UserData } from './AppData';
 import { allHabits } from '../Classes/Habit';
 import { setDevMessage, setIsPasswordCorrect } from './HabitsBus';
 
+const BASE_URL = 'https://ultymylife.ru/api/notifications';
+
 export class NotificationsManager {
     // Updated to use your SmartApe server
-    static BASE_URL = 'https://ultymylife.ru/api/notifications';
+    
 
     static async sendMessage(type, message) {
         try {
-            const response = await fetch(this.BASE_URL, {
+            const response = await fetch(BASE_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -50,4 +52,28 @@ export const sendPassword = (password) => {
 
 export const sendBugreport = (message) => {
     return NotificationsManager.sendMessage("bugreport", message);
+}
+
+export async function isUserHasPremium(uid){
+    try {
+            const response = await fetch(BASE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    type: 'premiumcheck',
+                    message: '',
+                    userId: uid,
+                    metadata: {} // any additional data
+                })
+            });
+            if (!response.ok)return false;
+            const data = await response.json();
+            return data.message === 'true' ? true : false;
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
 }

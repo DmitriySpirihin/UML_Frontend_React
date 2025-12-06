@@ -203,7 +203,7 @@ const AddHabitPanel = () => {
                 {renderCategoryOptions(theme, langIndex,fSize)}
               </select>
             <div style={styles(theme).scrollView}>
-              {habitList.map((habit) => !AppData.choosenHabits.includes(habit.id) && habit.category[langIndex] === filterCategory && (
+              {habitList.slice().sort((a,b) => a.name[langIndex].length - b.name[langIndex].length).map((habit) => !AppData.choosenHabits.includes(habit.id) && habit.category[langIndex] === filterCategory && (
                 <div key={habit.id} style={{...styles(theme).text,alignContent:'center',height:'40px',borderRadius:"12px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
                 onClick={() => {
                   setSelectedHabit(habit.id);

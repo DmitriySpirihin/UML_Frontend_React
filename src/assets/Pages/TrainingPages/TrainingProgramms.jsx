@@ -4,8 +4,7 @@ import Colors from '../../StaticClasses/Colors.js'
 import { theme$ ,lang$,fontSize$,addPanel$,setShowPopUpPanel,setAddPanel} from '../../StaticClasses/HabitsBus.js'
 import {IoIosArrowDown,IoIosArrowUp} from 'react-icons/io'
 import {allExercises,allPrograms, MuscleIcon,MuscleView,addProgram,updateProgram,removeProgram} from '../../Classes/TrainingData.jsx'
-import {FaCalendarDay,FaPlusSquare} from 'react-icons/fa';
-import {FaTrash,FaPencilAlt } from 'react-icons/fa';
+import {FaCalendarDay,FaPlusSquare,FaPlus,FaTrash,FaPencilAlt} from 'react-icons/fa';
 import {TbDotsVertical,TbArrowMoveDownFilled,TbArrowMoveUpFilled} from 'react-icons/tb'
 import {MdBook} from 'react-icons/md'
 import {MdDone,MdClose,MdFitnessCenter} from 'react-icons/md'
@@ -96,7 +95,7 @@ const TrainingExercise = () => {
       setShowAddDayPanel(false);
     }
     function onAddExercise(){
-      if(!dayIndex in days)days[dayIndex] = [];
+      if(!(dayIndex in days))days[dayIndex] = [];
       days[dayIndex].push({exId:currentExId,sets:currentSet + 'x' + currentRepMin + '-' + currentRepMax});
       setShowMoreOptions(false);
       setShowStarategyPanel(false);
@@ -160,18 +159,33 @@ const TrainingExercise = () => {
                         <p style={styles(theme,false,false,fSize).text}>{program.name[langIndex]}</p>
                         <p style={{...styles(theme,false,false,fSize).subtext,marginRight:'5px',marginLeft:'auto'}}>{program.creationDate}</p>
                     </div>
-                    {currentId === program.id && <div style={styles(theme).panel}>
-                        <div style={{...styles(theme,false,false,fSize).subtext,marginRight:'15px',marginLeft:'15px'}}>{program.description[langIndex]}</div>
+                    {currentId === program.id && <div style={{...styles(theme).panel}}>
+                        <div style={{...styles(theme,false,false,fSize).subtext,marginRight:'15px',marginLeft:'15px'}}>{currentDay === -1 && program.description[langIndex]}</div>
+                        
                           <div style={{display:'flex',flexDirection:'row',width:'100%',justifyContent:'center'}}>
-                          <div style={{display:'flex',flexDirection:'column',width:'68vw'}}>
+                            {currentDay === -1 && <div style={{...styles(theme,false,false,fSize).dayPanel,width:'98%',justifyContent:'space-around',flexDirection:'row'}}>
+                              <FaPlusSquare  onClick={() => setShowAddDayPanel(true)} style={{...styles(theme).icon,fontSize:'14px'}}/> 
+                              <FaPencilAlt  onClick={() => setShowAddDayPanel(true)} style={{...styles(theme).icon,fontSize:'14px'}}/> 
+                              <FaTrash  onClick={() => setShowAddDayPanel(true)} style={{...styles(theme).icon,fontSize:'14px'}}/>
+                             </div>}
+                          </div>
+                          <div style={{display:'flex',flexDirection:'column',width:'100%'}}>
                           {Object.keys(program.days).map((day,index) => (
                             <div key={index}>
                              <div style={{...styles(theme,false,currentDay === index).dayPanel,width:'98%',flexDirection:'row'}} onClick={() => setCurrentDay(prev => prev === index ? -1 : index)}>
                                {currentDay === index ? <IoIosArrowUp style={{...styles(theme).icon,marginLeft:'2%',width:'10px',marginTop:'7px'}}/> : <IoIosArrowDown style={{...styles(theme).icon,marginLeft:'2%',width:'10px',marginTop:'7px'}}/>}
                                <FaCalendarDay style={{...styles(theme).icon,marginRight:'5px',marginLeft:'5px',fontSize:'14px'}}/>
                                <p style={styles(theme,false,false,fSize).text}>{langIndex === 0 ? (index + 1) + '-день :  ' +  ' ' + program.daysNames[index][0] : (index + 1) + '-day :  ' +  ' ' + program.daysNames[index][1]}</p>
+                               <div style={{display:'flex',flexDirection:'row',justifyContent:'center',marginLeft:'auto'}}>
+                                 <TbArrowMoveDownFilled style={{...styles(theme).icon,fontSize:'14px'}}/>
+                                 <TbArrowMoveUpFilled style={{...styles(theme).icon,fontSize:'14px'}}/>
+                                 <FaPencilAlt  onClick={() => setShowAddDayPanel(true)} style={{...styles(theme).icon,fontSize:'14px'}}/>
+                                 <FaTrash  onClick={() => setShowAddDayPanel(true)} style={{...styles(theme).icon,fontSize:'14px'}}/>
+                                 <TbDotsVertical style={{...styles(theme).icon,fontSize:'14px'}}/>
+                               </div>
                              </div>
                              {currentDay === index && ( <div style={{display:'flex',flexDirection:'column',width:'100%'}}>
+                              
                                 {program.days[day].map((item, i) => {
                                     const exercise = allExercises().find(ex => ex.id === item.exId);
                                     if (!exercise) return null;
@@ -184,18 +198,22 @@ const TrainingExercise = () => {
                                     </div>
                                   );
                                 })}
+                                
                            </div>
+                           
                           )}
                             </div>
                           ))}
-                          </div>
-                         <MuscleView programmId={program.id} theme={theme} langIndex={langIndex}/>
+                         
                        </div>
+                       <MuscleView programmId={program.id} theme={theme} langIndex={langIndex}/>
                     </div>}
                 </div>
                 
                ))}
-               
+               {currentId === -1 && <div onClick={() => setShowAddPanel(true)} style={{...styles(theme).groupPanel,height:'5%',justifyContent:'center'}} >
+                  <FaPlusSquare style={{...styles(theme).icon,fontSize:'24px'}}/>     
+               </div>}
                 {/* add panel */}
            {showAddPanel && (
             <div style={styles(theme).addContainer}>
@@ -374,6 +392,7 @@ const styles = (theme,isCurrentGroup,isCurrentExercise,fSize) =>
     width: "100vW",
     height:'4vh',
     backgroundColor:isCurrentExercise ? Colors.get('trainingGroupSelected', theme) : Colors.get('background', theme),
+    borderBottom:`1px solid ${Colors.get('border', theme)}`,
     alignItems: "center",
     justifyContent: "left"
   },
@@ -383,6 +402,7 @@ const styles = (theme,isCurrentGroup,isCurrentExercise,fSize) =>
     flexDirection:'column',
     width: "100%",
     alignItems: "center",
+    justifyItems: "center",
   },
   text :
   {

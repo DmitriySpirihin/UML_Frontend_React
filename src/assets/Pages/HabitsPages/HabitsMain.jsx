@@ -2,10 +2,10 @@ import React, {useState,useEffect} from 'react'
 import { motion , useTransform, useMotionValue,animate} from 'framer-motion'
 import Icons from '../../StaticClasses/Icons';
 import { allHabits} from '../../Classes/Habit.js'
-import { AppData,getHabitPerformPercent } from '../../StaticClasses/AppData.js'
+import { AppData,getHabitPerformPercent,UserData } from '../../StaticClasses/AppData.js'
 import { expandedCard$, setExpandedCard} from '../../StaticClasses/HabitsBus.js';
 import Colors from '../../StaticClasses/Colors'
-import { theme$ ,lang$,fontSize$, updateConfirmationPanel,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$, updateConfirmationPanel,setShowPopUpPanel,setPage} from '../../StaticClasses/HabitsBus'
 import {MdDoneAll} from 'react-icons/md'
 import {FaPlusSquare,FaTrash,FaPencilAlt,FaRegWindowClose,FaListAlt,FaArrowUp} from 'react-icons/fa'
 import {FaRegSquareCheck,FaRegSquare} from 'react-icons/fa6'
@@ -632,6 +632,13 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
                   </div>
                 </div>
                )}
+               { !UserData.hasPremium && expanded &&
+                  <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'96%',left:'2%',height:'60%',top:'25%',backdropFilter:'blur(8px)',zIndex:1002}}>
+                    <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? 'Цели и достижения 🎯🏅' : 'Goals and achievements 🎯🏅'} </p>
+                    <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'} </p>
+                    <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn,margin:'10px'}} >{langIndex === 0 ? 'Стать премиум' : 'Get premium'}</button>
+                  </div>
+               }
                 <div style={{display: "flex", alignItems: "flex-start", maxHeight: '40px', paddingBottom: '5px'}}>   
                     <div style={{marginLeft: '15px', marginTop: '8px'}}>
                         {getHabitIcon()}
@@ -814,6 +821,15 @@ const styles = (theme,fSize,isNegative) =>
       justifyContent: 'center',
       zIndex: 6000
     },
+      btn:
+      {
+         width:'70%',
+         height:'40px',
+         borderRadius:'12px',
+         fontSize: fSize === 0 ? '13px' : '14px',
+         color:Colors.get('mainText', theme),
+         backgroundColor:Colors.get('simplePanel',theme)
+      }
 })
  function interpolateColor(color1, color2, factor) {
   factor = Math.max(0, Math.min(1, factor));

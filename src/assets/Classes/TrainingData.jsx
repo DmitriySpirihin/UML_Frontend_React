@@ -119,7 +119,7 @@ export const MuscleView = ({programmId,theme,langIndex}) =>{
 
 
     return (
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',width:'25vw',height:'25vw',margin:'2%'}}>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',width:'35vw',height:'35vw',margin:'2%'}}>
         <div style={{fontSize:'6px',marginBottom:'2px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Анализ мышц' : 'Muscle analysis'}</div>
         <div style={{position:'relative',display: 'block',width:'95%',height:'95%'}}>
             <img src={baseSrc} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
@@ -133,25 +133,23 @@ export const MuscleView = ({programmId,theme,langIndex}) =>{
 }
 
 export class Exercise{
-    constructor(id,mgId,name,description,isBase,isCustom = false){
+    constructor(id,mgId,name,description,isBase){
         this.id = id;
         this.mgId = mgId;
         this.name = typeof name === 'string' ? [name,name] : name;
         this.description = typeof description === 'string' ? [description,description] : description;
         this.isBase = isBase;
-        this.isCustom = isCustom;
     }
 }
 
 export class Program{
-    constructor(id,name,description,isCustom,days,daysNames){
+    constructor(id,name,description,days,daysNames){
         this.id = id;
         this.name = typeof name === 'string' ? [name,name] : name;
         this.description = typeof description === 'string' ? [description,description] : description;
-        this.isCustom = isCustom;
         this.days = days;
         this.daysNames = daysNames;
-        isCustom ? this.creationDate = new Date().toISOString() : this.creationDate = '2025-11-20';
+        new Date().toISOString();
     }
 }
 
@@ -163,7 +161,7 @@ export class TrainingDay{
         this.exercises = exercises;
     }
 }
-const exercises = [
+export const exercises = [
     // chest 0
     new Exercise(0,0,['Жим штанги лежа', 'Barbell Bench Press'],
     ['Упражнение для развития грудных мышц. Лягте на скамью, возьмитесь за штангу хватом чуть шире плеч, плавно опустите её к груди и выжмите вверх.',
@@ -370,13 +368,12 @@ const exercises = [
     'Exercise for the soleus muscle of the calf. Sit, place feet on a platform, rest weight on your knees, lift your heels up, then lower down.'
     ],false)
 ];
-const programs = [
+export const programs = [
     new Program(
         0,
         ['Трёхдневная классическая программа', '3 days classic'],
         ['Программа тренировок, рассчитанная на три дня в неделю, включает основные упражнения для всех групп мышц. После каждого тренировочного дня рекомендуется делать 1 или 2 дня отдыха для оптимального восстановления мышц и предотвращения перенапряжения.',
         'A training program designed for three days a week, includes basic exercises for all muscle groups. After each training day, it is recommended to take 1 or 2 rest days for optimal muscle recovery and injury prevention.'],
-        false,
         {
            1:[{exId:34,sets:'3x12'},{exId:37,sets:'2x12'},{exId:7,sets:'3x12'},{exId:9,sets:'2x12'},{exId:27,sets:'2x15'}],
            2:[{exId:0,sets:'3x12'},{exId:3,sets:'2x12'},{exId:23,sets:'3x12'},{exId:26,sets:'2x12'},{exId:31,sets:'2x12'}],
@@ -391,7 +388,6 @@ const programs = [
           'Четырёхдневная программа, разделяющая тренировки по основным группам мышц для более целенаправленной нагрузки и восстановления.',
           'A four-day program that splits workouts by major muscle groups for more focused loading and recovery.'
         ],
-        false,
         {
           1: [ { exId: 0, sets: '3x8-10' }, { exId: 2, sets: '3x10-12' }, { exId: 4, sets: '2x12-15' }, { exId: 22, sets: '3x8-10' }, { exId: 23, sets: '2x10-12' } ],
           2: [ { exId: 12, sets: '3x8-10' }, { exId: 15, sets: '3x8-10' }, { exId: 14, sets: '2x10-12' }, { exId: 16, sets: '3x8-10' }, { exId: 21, sets: '2x10-12' } ],
@@ -406,15 +402,14 @@ const programs = [
           'Фуллбоди-программа на одну тренировку в неделю с акцентом на базовые упражнения для всех основных групп мышц.',
           'Full body routine performed once per week focusing on compound lifts for all major muscle groups.'
         ],
-        false,
         {
           1: [{ exId: 34, sets: '4x6-10' },{ exId: 0,  sets: '3x6-10' },{ exId: 15, sets: '3x6-10' },{ exId: 7,  sets: '3x8-12' }, { exId: 21, sets: '2x8-12' } ]
         },
         [['Фуллбоди','Full body']])
 ];
 
-export const allExercises = () => [...exercises,...AppData.exercises]; 
-export const allPrograms = () => [...programs,...AppData.programs];
+export const allExercises = () => [...AppData.exercises]; 
+export const allPrograms = () => [...AppData.programs];
 
 export async function setTrainingDay(startDate,endDate,pId,exercises){
     const trainingDay = new TrainingDay(startDate,endDate,pId,exercises);
@@ -452,9 +447,9 @@ export async function removeExercise(id){
     setShowPopUpPanel(AppData.prefs[0] === 0 ? 'Упражнение успешно удалено' : 'Exercise successfully removed',2000,true);
     await saveData();
 }
-export async function addProgram(name,description,isCustom,days,daysNames){
+export async function addProgram(name,description,days,daysNames){
     const newId = allPrograms.length;
-    const program = new Program(newId,name,description,isCustom,days,daysNames);
+    const program = new Program(newId,name,description,days,daysNames);
     AppData.programs.push(program);
     allPrograms.push(program);
     await saveData();
@@ -463,8 +458,8 @@ export async function removeProgram(id){
     AppData.programs.filter(program => program.id !== id);
     await saveData();
 }
-export async function updateProgram(id,name,description,isCustom,days){
-    const program = new Program(id,name,description,isCustom,days);
+export async function updateProgram(id,name,description,days){
+    const program = new Program(id,name,description,days);
     AppData.programs.map(program => program.id === id ? program : program);
     await saveData();
 }
