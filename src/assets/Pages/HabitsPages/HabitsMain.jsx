@@ -378,14 +378,16 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
       const newTime = prevTime + 1000;
       temp = 0;
     if(!isNegative){
-      if (newTime >= maxTimer) {
+       {
         isDoneSound.play();
         clearInterval(interval);
         setStatus(1);
         setTime(0);
         setTimer(false);
         setProgress(0);
-      }else{
+      }
+    }else{
+      if (newTime >= maxTimer){
         if(status < 1){
            setStatus(1);
         }
