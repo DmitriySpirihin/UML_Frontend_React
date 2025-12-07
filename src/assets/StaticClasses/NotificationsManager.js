@@ -75,7 +75,7 @@ export async function isUserHasPremium(uid){
             const data = await response.json();
             const dataArray = Array.from(data).split(',');
             UserData.hasPremium = dataArray[0] === 'true' ? true : false;
-            UserData.premiumEndDate = dataArray[2];
+            UserData.premiumEndDate = new Date(dataArray[1]);
             setPremium(dataArray[0] === 'true' ? true : false);
             return  data.message;
         } catch (error) {

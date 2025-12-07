@@ -1,8 +1,9 @@
 import { useState, useEffect} from 'react';
 import { AppData , UserData} from '../StaticClasses/AppData.js';
 import Colors from '../StaticClasses/Colors';
-import { lastPage$, setPage,theme$,lang$,premium$,fontSize$,setPremium} from '../StaticClasses/HabitsBus';
+import { lastPage$, setPage,theme$,lang$,premium$,fontSize$,setPremium, setShowPopUpPanel} from '../StaticClasses/HabitsBus';
 import {FaBrain,FaChartBar,FaAd,FaBan,FaFlask} from 'react-icons/fa'
+import {initiateSbpPayment} from '../StaticClasses/PaymentService';
 const futureDate = new Date();
 futureDate.setDate(futureDate.getDate() + 365);
 const monthNames = [
@@ -51,6 +52,13 @@ const Premium = () => {
       return `${day} ${monthNames[langIndex][monthIndex]} ${year} `;
     }
     function getPremium() {
+       /* if(UserData.userId === null) {
+            setShowPopUpPanel(langIndex === 0 ? 'Пользовательский ID не найден. Попробуйте снова.' : 'User ID not found. Please try again.',2000,false);
+            return;
+        }
+        initiateSbpPayment( UserData.userId, plan).catch(err => {
+        setShowPopUpPanel(langIndex === 0 ? 'Не возможно запустить оплату. Попробуйте снова.' : 'Could not start payment. Please try again.',2000,false);
+      });*/
         UserData.hasPremium = true;
         UserData.premiumEndDate = endDate;
         setCurrentEndDate(endDate);
@@ -71,7 +79,7 @@ const Premium = () => {
         <div style={{...styles(theme).container}}>
            {!hasPremium && <div style={{...styles(theme).panel}}>
             <img src={theme === 'dark' || theme === "specialdark" ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={{width:'50%'}} />
-            <div style={{...styles(theme).subtext}}>{'premium'}</div>
+            <div style={{...styles(theme).subtext,fontSize:'22px'}}>{'premium'}</div>
              <div style={{display:'flex',flexDirection:'column',width:'70vw',height:'22%',alignItems:'flex-start',justifyContent:'center'}}>
              <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyItems:'center',height:'35px'}}>
                <FaBrain style={{...styles(theme).miniIcon}}/>
@@ -120,8 +128,8 @@ const Premium = () => {
                 <div style={{...styles(theme).text,marginLeft:'12px',fontSize:'28px'}}>{langIndex === 0 ? '1 месяц' : '1 month'}</div>
                   <div style={{...styles(theme).text,marginRight:'12px',fontSize:'24px'}}>{'169 ₽'}</div>
              </div>
-             <button style={{...styles(theme).button,backgroundColor:'#154fecff'}} onClick={() => {getPremium();}}>{langIndex === 0 ? 'Получить премиум' : 'Get premium'}</button>    
-             <button style={{...styles(theme).button,border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setPage(lastPage$.value)}>{langIndex === 0 ? 'Оформлю позднее' : 'I will do it later'}</button>    
+             < PremiumButton langIndex={langIndex} getPremium={getPremium}  theme={theme}/>
+             <button style={{...styles(theme).button,height:'40px',borderRadius:'20px',border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setPage(lastPage$.value)}>{langIndex === 0 ? 'Оформлю позднее' : 'I will do it later'}</button>    
 
              <div style={{display: 'flex',flexDirection: 'row',justifyContent: 'center',alignItems: 'center',gap: '12px',marginTop: '16px',padding: '0 10px',}}>
              {/* Карта */}
@@ -174,9 +182,9 @@ const Premium = () => {
              </div>}
 
              <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',gap:'5px',marginBottom:'12px',marginTop:'auto'}}>
-              {needToChangeSubscription && <button style={{...styles(theme).button,backgroundColor:'#154fecff'}} onClick={() => {extendPremium()}}>{langIndex === 0 ? 'Подтвердить' : 'Confirm'}</button> }
-              {!needToChangeSubscription  && <button style={{...styles(theme).button,backgroundColor:'#154fecff'}} onClick={() => {setNeedToChangeSubscription(true)}}>{langIndex === 0 ? 'Продлить подписку' : 'Extend subscription'}</button> }
-              <button style={{...styles(theme).button,border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setPage(lastPage$.value)}>{langIndex === 0 ? 'Закрыть' : 'Close'}</button>    
+              {needToChangeSubscription && <button style={{...styles(theme).button,height:'60px',backgroundColor:'#154fecff'}} onClick={() => {extendPremium()}}>{langIndex === 0 ? 'Подтвердить' : 'Confirm'}</button> }
+              {!needToChangeSubscription  && <button style={{...styles(theme).button,height:'60px',backgroundColor:'#154fecff'}} onClick={() => {setNeedToChangeSubscription(true)}}>{langIndex === 0 ? 'Продлить подписку' : 'Extend subscription'}</button> }
+              <button style={{...styles(theme).button,height:'60px',border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setPage(lastPage$.value)}>{langIndex === 0 ? 'Закрыть' : 'Close'}</button>    
              </div>
           </div>}
         </div>
@@ -228,12 +236,12 @@ const styles = (theme, keyboardVisible,fSize) => ({
   button:
   {
     width:'85vw',
-    height:'60px',
-    marginTop:'2px',
+    height:'80px',
+    marginTop:'5px',
     color: Colors.get('mainText', theme),
     backgroundColor:Colors.get('background', theme),
     borderRadius:"30px",
-    marginBottom:'2px',
+    marginBottom:'5px',
     fontSize:fSize ? "13px" : "15px",
   },
   miniIcon: {
@@ -253,5 +261,109 @@ function playEffects(sound){
     sound.play();
   }
   if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
+}
+
+const SparkleIcon = () => (
+  <span style={{ marginRight: '8px',marginLeft: '8px',marginBottom:'8px', fontSize: '1.2em' }}>👑</span>
+);
+
+ function PremiumButton({ langIndex, getPremium, theme}) {
+  return (
+    <button
+      style={{
+        ...styles(theme).button,
+        position: 'relative',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '14px 32px',
+        fontSize: '17px',
+        fontWeight: '700',
+        color: '#ffffff',
+        backgroundColor: 'transparent',
+        border: 'none',
+        borderRadius: '30px',
+        cursor: 'pointer',
+        overflow: 'hidden',
+        zIndex: 1,
+        boxShadow: '0 6px 20px rgba(21, 79, 236, 0.4)',
+        transition: 'transform 0.3s ease, box-shadow 0.3s ease, filter 0.2s ease',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 8px 28px rgba(21, 79, 236, 0.6)';
+        e.currentTarget.style.filter = 'brightness(1.05)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 6px 20px rgba(21, 79, 236, 0.4)';
+        e.currentTarget.style.filter = 'brightness(1)';
+      }}
+      onClick={getPremium}
+    >
+      {/* Animated Gradient Layer */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '-50%',
+          left: '-50%',
+          width: '200%',
+          height: '200%',
+          background: 'linear-gradient(45deg, #154fec, #4e73f2, #154fec, #6a82fb, #154fec)',
+          backgroundSize: '300% 300%',
+          animation: 'premiumGradient 4s ease infinite',
+          zIndex: -1,
+        }}
+      />
+
+      {/* Inner Fill (for crisp edge) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(10, 15, 40, 0.4)',
+          borderRadius: '30px',
+          zIndex: -1,
+        }}
+      />
+
+      {/* Content */}
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+        <SparkleIcon />
+        {langIndex === 0 ? 'Получить премиум' : 'Get Premium'}
+        <SparkleIcon />
+      </span>
+
+      {/* Glow Effect */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '2px',
+          left: '2px',
+          right: '2px',
+          bottom: '2px',
+          borderRadius: '26px',
+          boxShadow: 'inset 0 0 12px rgba(255, 255, 255, 0.2)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Animation Style Tag */}
+      <style>{`
+        @keyframes premiumGradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        button {
+          will-change: transform, filter;
+        }
+      `}</style>
+    </button>
+  );
 }
 

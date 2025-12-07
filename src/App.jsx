@@ -6,6 +6,8 @@ import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
 import NotifyPanel from './assets/Pages/NotifyPanel'
 import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage,keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
+import { checkPendingPaymentOnStartup,fetchUserPremiumStatus } from './assets/StaticClasses/PaymentService';
+import PaymentPendingScreen from './assets/Helpers/CheckPaymentScreen';
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
 const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'));
 const HabitsMain = lazy(() => import('./assets/Pages/HabitsPages/HabitsMain'));
@@ -30,7 +32,32 @@ function App() {
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
+  const [showPendingScreen, setShowPendingScreen] = useState(true);
+  useEffect(() => {
+   // checkPendingPaymentOnStartup();
+  }, []);
+ useEffect(() => {
+    // Check if we just returned from payment
+    if (localStorage.getItem('pendingPaymentId')) {
+      setShowPendingScreen(true);
+    }
+  }, []);
 
+  const handlePendingComplete = async (result) => {
+    try {
+      if (result === 'success' && UserData.userId) {
+        //Refresh premium status from backend
+        const status = await fetchUserPremiumStatus(UserData.userId);
+        UserData.hasPremium = status.hasPremium;
+        UserData.premiumEndDate = status.premiumEndDate;
+      } else if (result === 'failed' || result === 'timeout') {
+      }
+    } catch (err) {
+      console.warn('Failed to refresh premium status after payment:', err);
+    }
+
+   setShowPendingScreen(false);
+  };
   useEffect(() => {
           const subscription = confirmationPanel$.subscribe(setConfirmationPanel);  
           return () => subscription.unsubscribe();
@@ -63,6 +90,9 @@ useEffect(() => {
     const subscription = keyboardVisible$.subscribe(setKeyboardVisibleState);  
     return () => subscription.unsubscribe();
 }, []);
+if (showPendingScreen) {
+    return <PaymentPendingScreen onStatusFinalized={handlePendingComplete} />;
+}
   return (
     <>
       {page !== 'LoadPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
