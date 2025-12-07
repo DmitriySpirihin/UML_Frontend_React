@@ -179,8 +179,7 @@ const HabitMetrics = () => {
                </div>
                
           </div>}
-          {
-             !hasPremium && <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'95vw',height:'160vw',top:'15.5%',borderRadius:'24px',backdropFilter:'blur(12px)',zIndex:2}}>
+          { habitId > -1 &&  !hasPremium && <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'95vw',height:'160vw',top:'15.5%',borderRadius:'24px',backdropFilter:'blur(12px)',zIndex:2}}>
                  <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? 'Подробная статистика 📊' : 'Detailed statistics 📊'} </p>
                  <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'} </p>
                  <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn,margin:'10px'}} >{langIndex === 0 ? 'Стать премиум' : 'Get premium'}</button>

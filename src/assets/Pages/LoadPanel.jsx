@@ -41,11 +41,6 @@ function LoadPanel() {
                     setTimeout(() => setUserPhoto('images/Ui/Guest.jpg'), 500);
                 }
                 // Load saved data
-                UserData.hasPremium = true;
-                const futureDate = new Date();
-                futureDate.setDate(futureDate.getDate() + 30);
-                UserData.premiumEndDate = futureDate;
-                setPremium(false); 
                 await loadData();
                 fillEmptyDays();
                 setAllHabits();
