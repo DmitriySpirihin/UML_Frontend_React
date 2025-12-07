@@ -4,7 +4,7 @@ import { AppData,getHabitPerformPercent,UserData } from '../../StaticClasses/App
 import Colors from '../../StaticClasses/Colors'
 import {FaArrowAltCircleLeft,FaArrowAltCircleRight,FaList,FaPencilAlt,FaInfoCircle} from 'react-icons/fa'
 import {IoMdArrowDropright,IoMdArrowDropleft} from 'react-icons/io'
-import { theme$ ,lang$,fontSize$,setPage} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$,premium$,setPage} from '../../StaticClasses/HabitsBus'
 import Fire from '@mui/icons-material/LocalFireDepartment';
 import {MdDoneAll} from 'react-icons/md'
 import {MdDone,MdClose} from 'react-icons/md'
@@ -24,6 +24,7 @@ const HabitMetrics = () => {
     const [theme, setthemeState] = React.useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setfontSize] = useState(0);
+    const [hasPremium,setHasPremium] = useState(UserData.hasPremium);
     const [fillAmount, setFillAmount] = useState(0.0);
     const [maxStreak, setMaxStreak] = useState(0);
     const [currentStreak, setCurrentStreak] = useState(0);
@@ -45,9 +46,11 @@ const HabitMetrics = () => {
     useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
         const subscription2 = fontSize$.subscribe(setfontSize);
+        const subscription3 = premium$.subscribe(setHasPremium);
         return () => {
             subscription.unsubscribe();
             subscription2.unsubscribe();
+            subscription3.unsubscribe();
           }
     }, []);
     useEffect(() => {
@@ -177,7 +180,7 @@ const HabitMetrics = () => {
                
           </div>}
           {
-             !UserData.hasPremium && <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'95vw',height:'160vw',top:'15.5%',borderRadius:'24px',backdropFilter:'blur(12px)',zIndex:2}}>
+             !hasPremium && <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'95vw',height:'160vw',top:'15.5%',borderRadius:'24px',backdropFilter:'blur(12px)',zIndex:2}}>
                  <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? 'Подробная статистика 📊' : 'Detailed statistics 📊'} </p>
                  <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'} </p>
                  <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn,margin:'10px'}} >{langIndex === 0 ? 'Стать премиум' : 'Get premium'}</button>

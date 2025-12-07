@@ -190,7 +190,7 @@ export const fillEmptyDays = () => {
     const current = currentDate.toISOString().split('T')[0];
     if(!(current in AppData.habitsByDate)) {
       AppData.habitsByDate[current] = {};
-    }
+    
       for (let index = 0; index < AppData.choosenHabits.length; index++) {
         const isNegative = AppData.choosenHabitsTypes[index]; 
         if(isNegative){
@@ -205,10 +205,12 @@ export const fillEmptyDays = () => {
            }
         }
       }
-    
+    }
     currentDate.setDate(currentDate.getDate() + 1);
    }
-   }
+   
+  }
+   
  }
  const now = new Date().toISOString().split('T')[0];
  if(!(now in AppData.habitsByDate)){
@@ -236,6 +238,8 @@ export class UserData {
    static name = 'guest';
    static photo = null;
    static hasPremium = false;
+   static premiumEndDate = new Date();
+
 
    static Init(id,name,photo){
       this.id = id;

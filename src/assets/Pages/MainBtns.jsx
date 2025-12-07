@@ -6,10 +6,10 @@ import Colors, { THEME } from "../StaticClasses/Colors";
 import { clearAllSaves } from '../StaticClasses/SaveHelper'
 import TelegramIcon from '@mui/icons-material/Telegram';
 import {sendBugreport} from '../StaticClasses/NotificationsManager'
-import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle} from 'react-icons/fa'
+import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle,FaCrown} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
 import {RiFontSize2} from 'react-icons/ri'
-import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, setLang, lang$, vibro$, sound$,fontSize$,setFontSize} from '../StaticClasses/HabitsBus';
+import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$,premium$, setLang, lang$, vibro$, sound$,fontSize$,setFontSize,setPage} from '../StaticClasses/HabitsBus';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import Dark from '@mui/icons-material/DarkModeTwoTone';
@@ -66,11 +66,14 @@ const MainBtns = () => {
             
             
               (<div style={styles(theme,fSize).logoContainer}>
-                <UserPanel theme={theme}fSize={fSize} />
                 <img src={globalTheme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={styles(theme).logo} />
-                {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon,top:'11vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null);}} />)}
-                {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon,top:'11vh',left:'6vh'}} onClick={() => {toggleTheme();playEffects(null);}} />)}
-                <Menu  style={{...styles(theme).icon,top:'11vh',left:'2vh'}} onClick={() => {toggleSettings();playEffects(null);}} />
+                <div  style={{marginLeft: '50%',top:'10.5vh',left:'-50%',position:'absolute',width:'100%',height:'25%',display:'flex',justifyContent:'flex-start',alignItems:'center'}}>
+                    <Menu  style={{...styles(theme).icon,marginLeft:'15px'}} onClick={() => {toggleSettings();playEffects(null);}} />
+                    {globalTheme === 'dark' && (<Dark  style={{...styles(theme).icon}} onClick={() => {toggleTheme();playEffects(null);}} />)}
+                    {globalTheme !== 'dark' && (<Light  style={{...styles(theme).icon}} onClick={() => {toggleTheme();playEffects(null);}} />)}
+                    <UserPanel theme={theme}fSize={fSize} />
+                 </div>
+                
               </div>)
             
             
@@ -95,27 +98,30 @@ const MainBtns = () => {
 
 export default MainBtns
 const UserPanel = ({theme,fSize}) => {
+    const [hasPremium, setHasPremium] = React.useState(false);
+    useEffect(() => {
+        const subscription = premium$.subscribe(setHasPremium);
+        return () => subscription.unsubscribe();
+    }, []);
     const _style = {
-        position: "fixed",
+        marginLeft: 'auto',
+        marginRight: '10px',
         display: "flex",
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
-        top: "9.5vh",
-        left: "80vw",
-        zIndex: 1000,
+        justifyContent: "center"
     }
     return (
         <div style={_style}>
             <div style={{display: 'flex',flexDirection: 'column'}}>
-              {UserData.hasPremium && <div style={{color:'#f69e1ab4',fontSize: "8px",fontFamily: "Segoe UI"}}>premium</div>}
+              {hasPremium && <div style={{color:'#c7903db4',fontSize: "8px",fontFamily: "Segoe UI"}}>premium</div>}
               <div style={{color: Colors.get('subText', theme),fontSize: fSize === 0 ? "11px" : "13px",fontFamily: "Segoe UI"}}>{UserData.name}</div>
             </div>
-            <div style={{position: 'relative',width: '30px',height: '30px',margin: '10px',borderRadius: '50%',overflow: 'hidden',border: UserData.hasPremium ? 'none' : `3px solid ${Colors.get('border', theme)}`,boxSizing: 'border-box',}}>
+            <div style={{position: 'relative',width: '30px',height: '30px',margin: '10px',borderRadius: '50%',overflow: 'hidden',border: hasPremium ? 'none' : `3px solid ${Colors.get('border', theme)}`,boxSizing: 'border-box',}}>
              {/* User Photo */}
              <img style={{position: 'absolute',top: 0,left: 0, width: '100%',height: '100%',objectFit: 'cover',borderRadius: '50%',zIndex: 1,}}src={Array.isArray(UserData.photo) ? UserData.photo[0] : UserData.photo} alt="images/Ui/Guest.jpg"/>
              {/* Premium Border Overlay (only if hasPremium) */}
-             {UserData.hasPremium && (<img style={{position: 'absolute',top: 0,left: 0,width: '100%',height: '100%',objectFit: 'contain',zIndex: 2,}}src={'images/Ui/premiumborder.png'}/>)}
+             {hasPremium && (<img style={{position: 'absolute',top: 0,left: 0,width: '100%',height: '100%',objectFit: 'contain',zIndex: 2,}}src={'images/Ui/premiumborder.png'}/>)}
             </div>
         </div>
     )
@@ -365,10 +371,10 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                             </p>
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
-                            <FaDonate style={settingsPanelStyles(theme).miniIcon}/>
-                            <p style={settingsPanelStyles(theme,fSize).text } onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(2);playEffects(null)}}>
+                            <FaCrown style={settingsPanelStyles(theme).miniIcon}/>
+                            <p style={settingsPanelStyles(theme,fSize).text } onClick={() => {setPage('premium');setAdditionalPanelNum(2);playEffects(null)}}>
                                  {
-                                    langIndex === 0 ? 'поддержи нас' : 'support us'
+                                    langIndex === 0 ? 'премиум подписка' : 'premium subscription'
                                  }
                             </p>
                         </div>
@@ -582,11 +588,8 @@ const styles = (theme,fSize) => {
             color: Colors.get('mainText', theme),
         },
         icon: {
-        position: "fixed",
-        top: "12vh",
-        left: "4vw",
+        marginLeft: '5px',
         width: "35px",
-        zIndex: 1000,
         filter: 'drop-shadow(0px 0px 1px ' + Colors.get('shadow', theme) + ')',
         color: Colors.get('icons', theme),
        },

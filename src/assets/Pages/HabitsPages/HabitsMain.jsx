@@ -5,7 +5,7 @@ import { allHabits} from '../../Classes/Habit.js'
 import { AppData,getHabitPerformPercent,UserData } from '../../StaticClasses/AppData.js'
 import { expandedCard$, setExpandedCard} from '../../StaticClasses/HabitsBus.js';
 import Colors from '../../StaticClasses/Colors'
-import { theme$ ,lang$,fontSize$, updateConfirmationPanel,setShowPopUpPanel,setPage} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$,premium$, updateConfirmationPanel,setShowPopUpPanel,setPage,} from '../../StaticClasses/HabitsBus'
 import {MdDoneAll} from 'react-icons/md'
 import {FaPlusSquare,FaTrash,FaPencilAlt,FaRegWindowClose,FaListAlt,FaArrowUp} from 'react-icons/fa'
 import {FaRegSquareCheck,FaRegSquare} from 'react-icons/fa6'
@@ -337,6 +337,7 @@ function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize 
 function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
     const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
     const habit = getAllHabits().find(h => h.id === id);
     if(!habit)return null;
     const [habitInfo, setHabitInfo] = useState({
@@ -366,6 +367,11 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
     const [time,setTime] = useState(isNegative ? Math.round(Date.now() - new Date(AppData.choosenHabitsLastSkip[id])) : 60000);
     const [lastSkip,setLastSkip] = useState(isNegative ? Date.now() : 0);
     const [progress,setProgress] = useState(0);
+    // premium status
+    useEffect(() => {
+      const subscription = premium$.subscribe(setHasPremium);
+      return () => subscription.unsubscribe();
+    }, []);
     // timer
     useEffect(() => {
   if (timer) {
@@ -634,7 +640,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
                   </div>
                 </div>
                )}
-               { !UserData.hasPremium && expanded &&
+               { !hasPremium && expanded &&
                   <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'96%',left:'2%',height:'60%',top:'25%',backdropFilter:'blur(8px)',zIndex:1002}}>
                     <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? 'Цели и достижения 🎯🏅' : 'Goals and achievements 🎯🏅'} </p>
                     <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'} </p>

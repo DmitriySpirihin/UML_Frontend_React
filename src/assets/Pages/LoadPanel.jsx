@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { AppData, UserData ,fillEmptyDays} from '../StaticClasses/AppData';
-import { theme$, lang$, setPage} from '../StaticClasses/HabitsBus'
+import { theme$, lang$, setPage,setPremium} from '../StaticClasses/HabitsBus'
 import Colors from '../StaticClasses/Colors'
 import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud,loadData } from '../StaticClasses/SaveHelper';
@@ -32,16 +32,20 @@ function LoadPanel() {
                         AppData.prefs[1] = colorScheme === 'dark' ? 0 : 2;
                     }
                     UserData.Init(user.id,user.username, user.photo_url || 'images/Ui/Guest.jpg');
-                    UserData.hasPremium = await isUserHasPremium(user.id);
+                    await isUserHasPremium(user.id);
                     setTimeout(() => setUserName(user.username), 500);
                     setTimeout(() => setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url), 1000);
                 } else {
-                    UserData.hasPremium = false;
                     UserData.Init(0,AppData.prefs[0] === 0 ? 'гость' : 'guest', 'images/Ui/Guest.jpg');
                     setTimeout(() => setUserName('guest'), 500);
                     setTimeout(() => setUserPhoto('images/Ui/Guest.jpg'), 500);
                 }
                 // Load saved data
+                UserData.hasPremium = true;
+                const futureDate = new Date();
+                futureDate.setDate(futureDate.getDate() + 30);
+                UserData.premiumEndDate = futureDate;
+                setPremium(false); 
                 await loadData();
                 fillEmptyDays();
                 setAllHabits();
@@ -57,6 +61,7 @@ function LoadPanel() {
         
         initializeApp();
     }, []);
+    
     React.useEffect(() => {
         const themeSubscription = theme$.subscribe(setTheme);
         const langSubscription = lang$.subscribe((lang) => setLang(lang === 'ru' ? 0 : 1));

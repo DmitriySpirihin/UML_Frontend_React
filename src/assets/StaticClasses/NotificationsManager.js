@@ -1,6 +1,6 @@
 import {AppData, UserData } from './AppData';
 import { allHabits } from '../Classes/Habit';
-import { setDevMessage, setIsPasswordCorrect } from './HabitsBus';
+import { setDevMessage, setIsPasswordCorrect,setPremium } from './HabitsBus';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
 
@@ -69,9 +69,15 @@ export async function isUserHasPremium(uid){
                     metadata: {} // any additional data
                 })
             });
-            if (!response.ok)return false;
+            if (!response.ok){
+               UserData.hasPremium = false;
+            }
             const data = await response.json();
-            return data.message === 'true' ? true : false;
+            const dataArray = Array.from(data).split(',');
+            UserData.hasPremium = dataArray[0] === 'true' ? true : false;
+            UserData.premiumEndDate = dataArray[2];
+            setPremium(dataArray[0] === 'true' ? true : false);
+            return  data.message;
         } catch (error) {
             console.error('Error:', error);
             throw error;
