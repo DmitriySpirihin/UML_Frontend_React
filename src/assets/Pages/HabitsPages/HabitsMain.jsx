@@ -641,10 +641,11 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
                 </div>
                )}
                { !hasPremium && expanded &&
-                  <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'96%',left:'2%',height:'60%',top:'25%',backdropFilter:'blur(8px)',zIndex:1002}}>
-                    <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? 'Цели и достижения 🎯🏅' : 'Goals and achievements 🎯🏅'} </p>
-                    <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'} </p>
-                    <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn,margin:'10px'}} >{langIndex === 0 ? 'Стать премиум' : 'Get premium'}</button>
+                  <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',
+                   width:'90%',left:'5%',height:(parseInt(newHeight.slice(0,-2)) - 110 )+'px',top:'80px',backdropFilter:'blur(8px)',zIndex:1002}}>
+                    <div style={{...styles(theme,fSize).text}}> {langIndex === 0 ? 'Цели и достижения 🎯🏅' : 'Goals and achievements 🎯🏅'} </div>
+                    <div style={{...styles(theme,fSize).text}}> {langIndex === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'} </div>
+                    <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn,marginBottom:'30px'}} >{langIndex === 0 ? 'Стать премиум' : 'Get premium'}</button>
                   </div>
                }
                 <div style={{display: "flex", alignItems: "flex-start", maxHeight: '40px', paddingBottom: '5px'}}>   
@@ -687,11 +688,11 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
                        ))}
                        <div style={{display:'flex',marginLeft:'auto',flexDirection:'row',alignItems:'center'}}>
                            
-                           {getAllHabits().find(f => f.id === id).isCustom && <FaPencilAlt onClick={() => setCP(prev => ({...prev,show:true,type:0,hId:id,gId:0,hInfo:setHabitInfo}))} style={{fontSize:'18px',marginRight:'21px',color:Colors.get('icons', theme)}}/>}
-                           <FaTrash onClick={onDeleteHabit} style={{fontSize:'18px',marginLeft:'21px',color:Colors.get('icons', theme)}}/>
-                           <FaArrowUp style={{fontSize:'18px',color:Colors.get('icons', theme),marginLeft:'21px'}} onClick={() => {toggleIsActive();}}/>
-                           {!isNegative && status < 1 && <FaRegSquare onClick={() => setNewStatus(true)}style={{fontSize:'24px',marginLeft:'21px',color:Colors.get('skipped', theme)}}/>}
-                           {!isNegative && status > 0 && <FaRegSquareCheck onClick={() => setNewStatus(false)} style={{fontSize:'24px',marginLeft:'21px',color:Colors.get('done', theme)}}/>}
+                           {getAllHabits().find(f => f.id === id).isCustom && <FaPencilAlt onClick={() => setCP(prev => ({...prev,show:true,type:0,hId:id,gId:0,hInfo:setHabitInfo}))} style={{fontSize:'18px',zIndex:1003,marginRight:'21px',color:Colors.get('icons', theme)}}/>}
+                           <FaTrash onClick={onDeleteHabit} style={{fontSize:'18px',zIndex:1003,marginLeft:'21px',color:Colors.get('icons', theme)}}/>
+                           <FaArrowUp style={{fontSize:'18px',color:Colors.get('icons', theme),zIndex:1003,marginLeft:'21px'}} onClick={() => {toggleIsActive();}}/>
+                           {!isNegative && status < 1 && <FaRegSquare onClick={() => setNewStatus(true)}style={{fontSize:'24px',zIndex:1003,marginLeft:'21px',color:Colors.get('skipped', theme)}}/>}
+                           {!isNegative && status > 0 && <FaRegSquareCheck onClick={() => setNewStatus(false)} style={{fontSize:'24px',marginLeft:'21px',zIndex:1003,color:Colors.get('done', theme)}}/>}
                        </div>
                     </div>
                 )}
