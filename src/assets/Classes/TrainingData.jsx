@@ -1,5 +1,6 @@
 
 import {AppData} from "../StaticClasses/AppData";
+import { useState } from "react";
 import { saveData } from "../StaticClasses/SaveHelper";
 import {setShowPopUpPanel} from "../StaticClasses/HabitsBus";
 import Colors from "../StaticClasses/Colors";
@@ -82,55 +83,85 @@ export class MuscleIcon{
         );
     }
 }
-export const MuscleView = ({programmId,theme,langIndex}) =>{
-    const baseSrc = 'images/BodyIcons/Full.png';
-    const muscleIconsSrc = {
-        0:'images/BodyIcons/Full_0.png',
-        1:'images/BodyIcons/Full_1.png',
-        2:'images/BodyIcons/Full_2.png',
-        3:'images/BodyIcons/Full_3.png',
-        4:'images/BodyIcons/Full_4.png',
-        5:'images/BodyIcons/Full_5.png',
-        6:'images/BodyIcons/Full_6.png',
-        7:'images/BodyIcons/Full_7.png',
-        8:'images/BodyIcons/Full_8.png',
-        9:'images/BodyIcons/Full_9.png',
-        10:'images/BodyIcons/Full_10.png',
-        11:'images/BodyIcons/Full_11.png',
-        12:'images/BodyIcons/Full_12.png',
-        13:'images/BodyIcons/Full_13.png'
-    }
-    const programs = allPrograms();
-    const exercises = allExercises();
-    const program = programs[programmId];
-    const categoryArray = [];
-    Object.keys(program.days || {}).forEach((dayKey) => {
-    const dayExercises = program.days[dayKey];
-    if (!Array.isArray(dayExercises) || !dayExercises.length) return;
-    dayExercises.forEach(({ exId }) => {
-      const exercise = exercises.find((ex) => ex.id === exId);
-      if (!exercise) return;
-      const muscleGroup = exercise.mgId;
-      if (!categoryArray.includes(muscleGroup)) {
-        categoryArray.push(muscleGroup);
+export const MuscleView = ({ programmId, theme, langIndex, programs }) => {
+  const baseSrc = 'images/BodyIcons/Full.png';
+  const muscleIconsSrc = {
+    0: 'images/BodyIcons/Full_0.png',
+    1: 'images/BodyIcons/Full_1.png',
+    2: 'images/BodyIcons/Full_2.png',
+    3: 'images/BodyIcons/Full_3.png',
+    4: 'images/BodyIcons/Full_4.png',
+    5: 'images/BodyIcons/Full_5.png',
+    6: 'images/BodyIcons/Full_6.png',
+    7: 'images/BodyIcons/Full_7.png',
+    8: 'images/BodyIcons/Full_8.png',
+    9: 'images/BodyIcons/Full_9.png',
+    10: 'images/BodyIcons/Full_10.png',
+    11: 'images/BodyIcons/Full_11.png',
+    12: 'images/BodyIcons/Full_12.png',
+    13: 'images/BodyIcons/Full_13.png'
+  };
+
+  const exercises = allExercises();
+  const program = programs.find(p => p.id === programmId);
+
+  // Safely handle missing program
+  if (!program) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '35vw', height: '35vw' }}>
+        <div style={{ color: Colors.get('subText', theme), fontSize: '6px' }}>
+          {langIndex === 0 ? 'Программа не найдена' : 'Program not found'}
+        </div>
+      </div>
+    );
+  }
+
+  // 🔁 Collect unique muscle groups from ALL exercises in ALL days
+  const categorySet = new Set(); // Use Set to avoid duplicates automatically
+
+  program.schedule.forEach(day => {
+    if (!Array.isArray(day.exercises)) return;
+    day.exercises.forEach(({ exId }) => {
+      const exercise = exercises.find(ex => ex.id === exId);
+      if (exercise && exercise.mgId != null) {
+        categorySet.add(exercise.mgId);
       }
     });
-   });
+  });
 
+  const categoryArray = Array.from(categorySet);
 
-    return (
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',width:'35vw',height:'35vw',margin:'2%'}}>
-        <div style={{fontSize:'6px',marginBottom:'2px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Анализ мышц' : 'Muscle analysis'}</div>
-        <div style={{position:'relative',display: 'block',width:'95%',height:'95%'}}>
-            <img src={baseSrc} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-            {categoryArray.map((category,index) => (
-                <img key={index} src={muscleIconsSrc[category]} style={{position:'absolute',top:'0',left:'0',width:'100%',height:'100%',objectFit:'cover',zIndex:'1'}}/>
-            ))}
-            
-        </div>
-        </div>
-    )
-}
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '35vw', height: '35vw', margin: '2%' }}>
+      <div style={{ fontSize: '6px', marginBottom: '2px', color: Colors.get('subText', theme) }}>
+        {langIndex === 0 ? 'Анализ мышц' : 'Muscle analysis'}
+      </div>
+      <div style={{ position: 'relative', display: 'block', width: '95%', height: '95%' }}>
+        <img
+          src={baseSrc}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          alt="Body base"
+        />
+        {categoryArray.map((category, index) => (
+          <img
+            key={index}
+            src={muscleIconsSrc[category]}
+            style={{
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: '1'
+            }}
+            alt={`Muscle group ${category}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export class Exercise{
     constructor(id,mgId,name,description,isBase){
@@ -142,25 +173,15 @@ export class Exercise{
     }
 }
 
-export class Program{
-    constructor(id,name,description,days,daysNames){
-        this.id = id;
-        this.name = typeof name === 'string' ? [name,name] : name;
-        this.description = typeof description === 'string' ? [description,description] : description;
-        this.days = days;
-        this.daysNames = daysNames;
-        new Date().toISOString();
-    }
+export class Program {
+  constructor(id, name, description, schedule) {
+    this.id = id;
+    this.name = typeof name === 'string' ? [name, name] : name;
+    this.description = typeof description === 'string' ? [description, description] : description;
+    this.schedule = schedule || []; // array of { name, exercises }
+  }
 }
 
-export class TrainingDay{
-    constructor(startDate,endDate,pId,exercises){
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.programId = pId;
-        this.exercises = exercises;
-    }
-}
 export const exercises = [
     // chest 0
     new Exercise(0,0,['Жим штанги лежа', 'Barbell Bench Press'],
@@ -298,7 +319,7 @@ export const exercises = [
     'Compound basic exercise for the entire posterior chain, including the lower back. Grab the barbell, keep your back flat, lift it up until fully upright, then lower smoothly.'
     ],true),
     //Abs
-    new Exercise(31,7,['Подъем ног в висе','Hanging Leg Raise'],
+    new Exercise(47,7,['Подъем ног в висе','Hanging Leg Raise'],
     ['Эффективное упражнение для развития мышц пресса. Повисните на турнике, держась руками, на выдохе поднимайте прямые ноги вверх, почувствуйте сокращение пресса, затем плавно опускайте ноги.',
     'Effective abs exercise. Hang from a pull-up bar with arms extended, raise straight legs up while exhaling to contract the abs, then slowly lower your legs back down.'
     ],false),
@@ -374,42 +395,15 @@ export const programs = [
         ['Трёхдневная классическая программа', '3 days classic'],
         ['Программа тренировок, рассчитанная на три дня в неделю, включает основные упражнения для всех групп мышц. После каждого тренировочного дня рекомендуется делать 1 или 2 дня отдыха для оптимального восстановления мышц и предотвращения перенапряжения.',
         'A training program designed for three days a week, includes basic exercises for all muscle groups. After each training day, it is recommended to take 1 or 2 rest days for optimal muscle recovery and injury prevention.'],
-        {
-           1:[{exId:34,sets:'3x12'},{exId:37,sets:'2x12'},{exId:7,sets:'3x12'},{exId:9,sets:'2x12'},{exId:27,sets:'2x15'}],
-           2:[{exId:0,sets:'3x12'},{exId:3,sets:'2x12'},{exId:23,sets:'3x12'},{exId:26,sets:'2x12'},{exId:31,sets:'2x12'}],
-           3:[{exId:31,sets:'1x12'},{exId:12,sets:'3x12'},{exId:17,sets:'3x12'},{exId:21,sets:'3x12'},{exId:45,sets:'3x15'}]
-        },
-        [['Ноги и плечи','Legs & shoulders'],['Грудь,трицепсы','Chest & triceps'],['Спина,бицепсы','Back & biceps']]),
-
-        new Program(
-        1, 
-        ['4-дневная сплит-программа', '4-day split program'],
         [
-          'Четырёхдневная программа, разделяющая тренировки по основным группам мышц для более целенаправленной нагрузки и восстановления.',
-          'A four-day program that splits workouts by major muscle groups for more focused loading and recovery.'
-        ],
-        {
-          1: [ { exId: 0, sets: '3x8-10' }, { exId: 2, sets: '3x10-12' }, { exId: 4, sets: '2x12-15' }, { exId: 22, sets: '3x8-10' }, { exId: 23, sets: '2x10-12' } ],
-          2: [ { exId: 12, sets: '3x8-10' }, { exId: 15, sets: '3x8-10' }, { exId: 14, sets: '2x10-12' }, { exId: 16, sets: '3x8-10' }, { exId: 21, sets: '2x10-12' } ],
-          3: [ { exId: 34, sets: '3x8-10' }, { exId: 36, sets: '3x10-12' }, { exId: 40, sets: '3x8-10' }, { exId: 44, sets: '3x12-15' }, { exId: 45, sets: '2x12-15' } ],
-          4: [ { exId: 7,  sets: '3x8-10' }, { exId: 9,  sets: '3x10-12' }, { exId: 11, sets: '2x12-15' }, { exId: 27, sets: '3x10-12' }, { exId: 31, sets: '3x8-10' } ]
-        }, 
-        [['Грудь,трицепс','Chest & triceps'],['Спина,бицепс','Back & biceps'],['Ноги','Legs'],['Плечи','Shoulders']]),
-        new Program(
-        2,
-        ['Фулбоди раз в неделю', 'Full Body Once a Week'],
-        [
-          'Фуллбоди-программа на одну тренировку в неделю с акцентом на базовые упражнения для всех основных групп мышц.',
-          'Full body routine performed once per week focusing on compound lifts for all major muscle groups.'
-        ],
-        {
-          1: [{ exId: 34, sets: '4x6-10' },{ exId: 0,  sets: '3x6-10' },{ exId: 15, sets: '3x6-10' },{ exId: 7,  sets: '3x8-12' }, { exId: 21, sets: '2x8-12' } ]
-        },
-        [['Фуллбоди','Full body']])
+           { name: ['Ноги и плечи', 'Legs & shoulders'], exercises:[{exId:34,sets:'3x12'},{exId:37,sets:'2x12'},{exId:7,sets:'3x12'},{exId:9,sets:'2x12'},{exId:27,sets:'2x15'}]},
+           { name: ['Грудь,трицепсы','Chest & triceps'], exercises:[{exId:0,sets:'3x12'},{exId:3,sets:'2x12'},{exId:23,sets:'3x12'},{exId:26,sets:'2x12'},{exId:31,sets:'2x12'}]},
+           { name: ['Спина,бицепсы','Back & biceps'], exercises:[{exId:31,sets:'1x12'},{exId:12,sets:'3x12'},{exId:17,sets:'3x12'},{exId:21,sets:'3x12'},{exId:45,sets:'3x15'}]}
+        ]),
+        
 ];
 
 export const allExercises = () => [...AppData.exercises]; 
-export const allPrograms = () => [...AppData.programs];
 
 export async function setTrainingDay(startDate,endDate,pId,exercises){
     const trainingDay = new TrainingDay(startDate,endDate,pId,exercises);
@@ -430,7 +424,7 @@ export async function updateTrainingDay(startDate,endDate,pId,exercises){
 
 export async function addExercise(mgId,name,description,isBase){
     const newId = allExercises().length;
-    const exercise = new Exercise(newId,mgId,name,description,isBase,true);
+    const exercise = new Exercise(newId,mgId,name,description,isBase);
     AppData.exercises.push(exercise);
     setShowPopUpPanel(AppData.prefs[0] === 0 ? 'Новое упражнение: '+ name +' успешно добавлено' : 'New exercise: '+ name +' successfully added',2000,true);
     await saveData();
@@ -447,19 +441,109 @@ export async function removeExercise(id){
     setShowPopUpPanel(AppData.prefs[0] === 0 ? 'Упражнение успешно удалено' : 'Exercise successfully removed',2000,true);
     await saveData();
 }
-export async function addProgram(name,description,days,daysNames){
-    const newId = allPrograms.length;
-    const program = new Program(newId,name,description,days,daysNames);
+export async function addProgram(name,description){
+    const newId = AppData.programs.length;
+    const descr = description.length > 3 ? description : AppData.prefs[0] === 0 ? 'Новая программа' : 'New program';
+    const program = new Program(newId,name,descr,[]);
     AppData.programs.push(program);
-    allPrograms.push(program);
+    setShowPopUpPanel(AppData.prefs[0] === 0 ? 'Новая программа: '+ name +' успешно добавлена' : 'New program: '+ name +' successfully added',2000,true);
+    await saveData();
+}
+export async function redactProgram(id,name,description){
+    const index = AppData.programs.findIndex((program) => program.id === id);
+    AppData.programs[index].name = name;
+    AppData.programs[index].description = description;
     await saveData();
 }
 export async function removeProgram(id){
-    AppData.programs.filter(program => program.id !== id);
+    const index = AppData.programs.findIndex((program) => program.id === id);
+    AppData.programs.splice(index,1);
     await saveData();
 }
-export async function updateProgram(id,name,description,days){
-    const program = new Program(id,name,description,days);
-    AppData.programs.map(program => program.id === id ? program : program);
-    await saveData();
+export async function addDayToProgram(pId, dayName) {
+  const program = AppData.programs.find(p => p.id === pId);
+  program.schedule.push({
+    name: typeof dayName === 'string' ? [dayName, dayName] : dayName,
+    exercises: []
+  });
+
+  await saveData();
+}
+export async function redactDayInProgram(pId, dayIndex, dayName) {
+  const program = AppData.programs.find(p => p.id === pId);
+  program.schedule[dayIndex].name = typeof dayName === 'string'? [dayName, dayName]: dayName;
+  await saveData();
+}
+export async function removeDayFromProgram(pId, dayIndex) {
+  const program = AppData.programs.find(p => p.id === pId);
+  if (!program) {
+    throw new Error(`Program with id ${pId} not found.`);
+  }
+  if (dayIndex < 0 || dayIndex >= program.schedule.length) {
+    throw new Error(`Invalid day index ${dayIndex}.`);
+  }
+  program.schedule.splice(dayIndex, 1);
+  await saveData();
+}
+
+export async function switchPosition(pId, type, switchType, index, exIndex = null) {
+  const program = AppData.programs.find(p => p.id === pId);
+  if (type === 0) {
+    const schedule = program.schedule;
+    const len = schedule.length;
+    if (index < 0 || index >= len) return;
+
+    if (switchType === 0) {
+      const target = index + 1;
+      if (target >= len) return;
+      [schedule[index], schedule[target]] = [schedule[target], schedule[index]];
+    } else if (switchType === 1) {
+      const target = index - 1;
+      if (target < 0) return;
+      [schedule[index], schedule[target]] = [schedule[target], schedule[index]];
+    }
+
+   } else if (type === 1) {
+
+    const day = program.schedule[index];
+    if (!day) return;
+
+    const exercises = day.exercises;
+    const len = exercises.length;
+
+    if (exIndex < 0 || exIndex >= len) return;
+
+    if (switchType === 0) {
+      // Move exercise DOWN
+      const target = exIndex + 1;
+      if (target >= len) return;
+      [exercises[exIndex], exercises[target]] = [exercises[target], exercises[exIndex]];
+    } else if (switchType === 1) {
+      // Move exercise UP
+      const target = exIndex - 1;
+      if (target < 0) return;
+      [exercises[exIndex], exercises[target]] = [exercises[target], exercises[exIndex]];
+    }
+  }
+  console.log(JSON.stringify(program.schedule));
+  await saveData();
+}
+
+export async function addExerciseToSchedule(pId, dayIndex, exerciseId, strategy = '3x10-12') {
+  const program = AppData.programs.find(p => p.id === pId);
+  const existing = program.schedule[dayIndex].exercises.find(ex => ex.exId === exerciseId);
+  program.schedule[dayIndex].exercises.push({
+    exId: exerciseId,
+    sets: strategy
+  });
+  await saveData();
+}
+export async function removeExerciseFromSchedule(pId, dayIndex, exerciseId) {
+  const program = AppData.programs.find(p => p.id === pId);
+  const exercises = program.schedule[dayIndex].exercises;
+  const index = exercises.findIndex(ex => ex.exId === exerciseId);
+  if (index !== -1) {
+    exercises.splice(index, 1);
+  }
+  await saveData();
 }

@@ -32,7 +32,7 @@ function App() {
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
-  const [showPendingScreen, setShowPendingScreen] = useState(true);
+  const [showPendingScreen, setShowPendingScreen] = useState(false);
   useEffect(() => {
    // checkPendingPaymentOnStartup();
   }, []);
@@ -129,7 +129,7 @@ if (showPendingScreen) {
         <TrainingMetrics/>
       </Suspense>}
       {page === 'TrainingExercise' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
-        <TrainingExercise/>
+        <TrainingExercise needToAdd={false}/>
       </Suspense>}
       {page === 'TrainingProgramm' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingProgramm/>

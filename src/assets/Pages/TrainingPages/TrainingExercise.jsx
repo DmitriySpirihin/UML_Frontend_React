@@ -4,12 +4,12 @@ import Colors from '../../StaticClasses/Colors.js'
 import { theme$ ,lang$,fontSize$,addPanel$,setShowPopUpPanel} from '../../StaticClasses/HabitsBus.js'
 import {IoIosArrowDown,IoIosArrowUp} from 'react-icons/io'
 import {allExercises,MuscleIcon,addExercise,removeExercise,updateExercise} from '../../Classes/TrainingData.jsx'
-import { FaRegSquare, FaRegCheckSquare,FaTrash,FaPencilAlt ,FaPlusSquare} from 'react-icons/fa';
+import { FaRegSquare, FaRegCheckSquare,FaTrash,FaPencilAlt ,FaPlusSquare,FaPlusCircle} from 'react-icons/fa';
 import {TbDotsVertical} from 'react-icons/tb'
 import {MdDone,MdClose} from 'react-icons/md'
 import MyInput from '../../Helpers/MyInput';
 
-const TrainingExercise = () => {
+const TrainingExercise = ({needToAdd,setEx}) => {
     // states
     const [theme, setthemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
@@ -65,7 +65,7 @@ const TrainingExercise = () => {
     function onAdd(){
       if(name.length > 3){
         playEffects(null);
-        addExercise(muscleGroupId,name,description.length > 3 ? description : (langIndex === 0 ? 'Своё упражнение' : 'Custom exercise'),isBase);
+        addExercise(currentMuscleGroupId,capitalizeName(name),description.length > 3 ? capitalizeName(description) : (langIndex === 0 ? 'Своё упражнение' : 'Custom exercise'),isBase);
         onClose();
       }else{
         if(name.length < 3){
@@ -85,7 +85,7 @@ const TrainingExercise = () => {
     }
     function onRedakt(){
       playEffects(null);
-      updateExercise(currentExerciseId,muscleGroupId,name,description.length > 3 ? description : (langIndex === 0 ? 'Своё упражнение' : 'Custom exercise'),isBase);
+      updateExercise(currentExerciseId,currentMuscleGroupId,capitalizeName(name),description.length > 3 ? capitalizeName(description) : (langIndex === 0 ? 'Своё упражнение' : 'Custom exercise'),isBase);
       setShowRedakt(false);
     }
     function onRemove(){
@@ -108,10 +108,13 @@ const TrainingExercise = () => {
                     <div style={styles(theme).panel}>
                         {allExercises().filter((exercise) => exercise.mgId == key).map((exercise) => (
                           <div key={exercise.id} style={styles(theme).panel}>
-                            <div style={{...styles(theme,false,currentExerciseId == exercise.id).exercisePanel,width:'98%',flexDirection:'row'}} onClick={() => setExercise(prev => prev === exercise.id ? -1 : exercise.id)}>
-                              {currentExerciseId == exercise.id ? <IoIosArrowUp style={{...styles(theme).icon,marginLeft:'7%',width:'10px',marginTop:'7px'}}/> : <IoIosArrowDown style={{...styles(theme).icon,marginLeft:'7%',width:'10px',marginTop:'7px'}}/>}
-                              <p style={{...styles(theme,false,false,fSize).text,marginLeft:'5%'}}>{exercise.name[langIndex]}</p>
-                              <p style={{...styles(theme,false,false,fSize).subtext,marginLeft: 'auto',marginRight:'5%',color:exercise.isBase ? Colors.get('trainingBaseFont',theme) : Colors.get('trainingIsolatedFont',theme)}}>{exercise.isBase ? langIndex === 0 ? 'Базовое' : 'Base' : langIndex === 0 ? 'Изолированное' : 'Isolated'}</p>
+                            <div style={{...styles(theme,false,currentExerciseId == exercise.id).exercisePanel,width:'100%',flexDirection:'row'}} onClick={() => setExercise(prev => prev === exercise.id ? -1 : exercise.id)}>
+                              {currentExerciseId == exercise.id ? <IoIosArrowUp style={{...styles(theme).icon,marginLeft:'5%',width:'10px',marginTop:'7px'}}/> : <IoIosArrowDown style={{...styles(theme).icon,marginLeft:'7%',width:'10px',marginTop:'7px'}}/>}
+                              <p style={{...styles(theme,false,false,fSize).text,marginLeft:'6px'}}>{exercise.name[langIndex]}</p>
+                              <div style={{display:'flex',flexDirection:'row',alignItems:'center',marginLeft:'auto',justifyContent:'center'}}>
+                                <p style={{...styles(theme,false,false,fSize).subtext,marginRight:'5px',color:exercise.isBase ? Colors.get('trainingBaseFont',theme) : Colors.get('trainingIsolatedFont',theme)}}>{exercise.isBase ? langIndex === 0 ? 'Базовое' : 'Base' : langIndex === 0 ? 'Изолированное' : 'Isolated'}</p>
+                                {needToAdd && <FaPlusCircle onClick={() => {setEx(exercise.id)}} style={{...styles(theme).icon,fontSize:'20px',marginRight:'35px'}}/>}
+                              </div>
                             </div>
                             {currentExerciseId == exercise.id ? (
                                     <div style={{...styles(theme).panel,flexDirection:'row',marginLeft:'6%',width:'86%'}}>
@@ -297,3 +300,7 @@ function playEffects(sound){
   }
   if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
+const capitalizeName = (str) => {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};

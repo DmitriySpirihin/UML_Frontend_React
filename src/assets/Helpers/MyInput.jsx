@@ -19,7 +19,7 @@ const MyInput = ({
   const [showCursor, setShowCursor] = useState(true);
   
   useEffect(() => {
-    setInput({myString:value,cursorPos:0});
+    setInput({myString:value,cursorPos:value.length});
   }, [value]);
   useEffect(() => {
   const subscription = currentString$.subscribe(value => {
@@ -65,7 +65,7 @@ const MyInput = ({
 
   useEffect(() => {
     const subscription = keyboardNeeded$.subscribe(value => {
-      if(value === false){
+      if(value.value === false){
         setIsActive(false);
         if(clear)setInput({myString:'',cursorPos:0});
       }
