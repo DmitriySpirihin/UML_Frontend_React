@@ -27,8 +27,8 @@ export class AppData{
 
    // training log
    static currentProgramId = null;
-   static exercises = [];
-   static programs = [];
+   static exercises = exercises;
+   static programs = programs;
    static trainingLog = [];
   // methods
   static init(data) {
@@ -55,8 +55,8 @@ export class AppData{
     setNotify(this.notify);
 
     this.currentProgramId = data.currentProgramId;
-    this.exercises = data.exercises?.length > 0 ? data.exercises : exercises;
-    this.programs = data.programs?.length > 0 ? data.programs : programs;
+    if(data.exercises?.length > 0)this.exercises = data.exercises;
+    if(data.programs?.length > 0)this.programs = data.programs;
     this.trainingLog = data.trainingLog;
   }
   static setPrefs(ind,value){
