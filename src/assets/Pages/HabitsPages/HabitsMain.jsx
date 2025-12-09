@@ -899,7 +899,7 @@ function parsedTime(time, maxTime, isNegative) {
   }
   return seconds.toString().padStart(2, '0');
 }
-function parsedTimeSimple(maxTimer) {
+export function parsedTimeSimple(maxTimer) {
   return (Math.floor(maxTimer / 60000) + 'm');
 }
 

@@ -25,7 +25,7 @@ export async function initializeTelegramSDK(opts = {}) {
 
     // Setup back button handler
     if (window.Telegram?.WebApp?.BackButton) {
-      window.Telegram.WebApp.BackButton.show();
+      window.Telegram.WebApp.BackButton.hide();
       window.Telegram.WebApp.onEvent('backButtonClicked', () => {
         saveData();
         Telegram.WebApp.close();

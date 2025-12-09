@@ -23,7 +23,7 @@ export const currentBottomBtn$ = new BehaviorSubject(0);
 export const keyboardVisible$ = new BehaviorSubject(false);
 export const devMessage$ = new BehaviorSubject('');
 export const isPasswordCorrect$ = new BehaviorSubject(false);
-export const trainingAddPanelNum$ = new BehaviorSubject(-1);
+export const trainInfo$ = new BehaviorSubject({mode:'new',dayKey:'',dInd:0});
 export const currentString$ = new BehaviorSubject('');
 export const keyboardNeeded$ = new BehaviorSubject({type:0,value:false});
 export const lastPage$ = new BehaviorSubject('MainMenu');
@@ -62,7 +62,7 @@ export const setDevMessage = (message) => devMessage$.next(message);
 export const setIsPasswordCorrect = (state) => isPasswordCorrect$.next(state === "true");
 export const setNotifyPanel = (state) => notifyPanel$.next(state);
 export const setNotify = (state) => notify$.next(state);
-export const setTrainingAddPanelNum = (num) => trainingAddPanelNum$.next(num);
+export const setTrainInfo = (state) => trainInfo$.next(state);
 export const setKeyboardNeeded = (state) => keyboardNeeded$.next(state);
 
 export const setCurrentKeyboardString = (str) => {

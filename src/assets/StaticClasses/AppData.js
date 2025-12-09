@@ -29,7 +29,50 @@ export class AppData{
    static currentProgramId = null;
    static exercises = exercises;
    static programs = programs;
-   static trainingLog = [];
+   static trainingLog = {
+    "2025-12-05": [{ 
+    programId: 0,                                 
+    dayIndex: 0,                                  
+    completed: true,                              
+    startTime: "2025-12-05T18:22:15.432Z",        
+    endTime: "2025-12-05T19:08:47.109Z",          
+    duration: 2700000,                            
+    tonnage: 100,                               
+    exercises: {
+      0 : {                                    
+        mgId: 0,                                
+        sets: [
+          { type: 0, reps: 12, weight: 35 },   
+          { type: 1, reps: 8, weight: 65 },
+        ],
+        totalTonnage: 100,                         
+        completed:true                           
+      },                                          
+    }
+  }
+ ],
+  "2025-12-08": [{ 
+    programId: 0,                                 
+    dayIndex: 0,                                  
+    completed: true,                              
+    startTime: "2025-12-08T18:22:15.432Z",        
+    endTime: "2025-12-08T19:08:47.109Z",          
+    duration: 2700000,                            
+    tonnage: 100,                               
+    exercises: {
+      0 : {                                    
+        mgId: 0,                                
+        sets: [
+          { type: 0, reps: 15, weight: 40 },   
+          { type: 1, reps: 10, weight: 60 },
+        ],
+        totalTonnage: 100,                         
+        completed:true                           
+      },                                          
+    }
+  }
+ ]
+}
   // methods
   static init(data) {
     if (!data) return;
@@ -57,7 +100,7 @@ export class AppData{
     this.currentProgramId = data.currentProgramId;
     if(data.exercises?.length > 0)this.exercises = data.exercises;
     if(data.programs?.length > 0)this.programs = data.programs;
-    this.trainingLog = data.trainingLog;
+    //this.trainingLog = data.trainingLog;
   }
   static setPrefs(ind,value){
     this.prefs[ind] = value;
@@ -266,8 +309,8 @@ export class Data{
     this.notify = AppData.notify,
     this.currentProgramId = AppData.currentProgramId,
     this.exercises = AppData.exercises,
-    this.programs = AppData.programs,
-    this.trainingLog = AppData.trainingLog
+    this.programs = AppData.programs
+    //this.trainingLog = AppData.trainingLog
   }
 }
 

@@ -7,7 +7,7 @@ import Programs from '@mui/icons-material/MenuBookTwoTone';
 import FaBellSlash from '@mui/icons-material/NotificationsOffTwoTone';
 import FaBell from '@mui/icons-material/NotificationsActiveTwoTone';
 import Add from '@mui/icons-material/AddCircleOutlineTwoTone';
-import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurrentBottomBtn,setNotifyPanel,notify$} from '../../StaticClasses/HabitsBus'
+import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurrentBottomBtn,setNotifyPanel,notify$,setTrainInfo} from '../../StaticClasses/HabitsBus'
 import Colors from '../../StaticClasses/Colors'
 import {useState,useEffect} from 'react'
 import {AppData} from '../../StaticClasses/AppData'

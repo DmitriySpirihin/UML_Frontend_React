@@ -1,10 +1,20 @@
 import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
-import Colors, { THEME } from '../../StaticClasses/Colors'
-import { theme$ ,lang$, globalTheme$} from '../../StaticClasses/HabitsBus'
+import Colors from '../../StaticClasses/Colors'
+import { theme$ ,lang$,fontSize$,setPage,setTrainInfo} from '../../StaticClasses/HabitsBus'
+import {getTrainingSummary} from '../../StaticClasses/TrainingLogHelper.js'
+import { BsJournalText } from "react-icons/bs";
 
 // Monday-based weekday index helper (Mon=0 ... Sun=6)
+const formatDateKey = (d) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+};
+// Monday-based weekday index helper (Mon=0 ... Sun=6)
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
+const dateKey = formatDateKey(new Date());
 const clickSound = new Audio('Audio/Click.wav');
 
 
@@ -15,20 +25,22 @@ const TrainingMain = () => {
        const [date, setDate] = useState(new Date());
        const [currentDate, setCurrentDate] = useState(date);
        const [trainingAmount, setTrainingAmount] = useState(0);
-   
+       const [fSize, setFSize] = useState(AppData.prefs[4]);   
        // subscriptions
-       React.useEffect(() => {
-           const subscription = theme$.subscribe(setthemeState);  
-           return () => subscription.unsubscribe();
-       }, []);
-       
-       React.useEffect(() => {
-           const subscription = lang$.subscribe((lang) => {
-               setLangIndex(lang === 'ru' ? 0 : 1);
-           });
-           return () => subscription.unsubscribe();
-       }, []);
-       
+       useEffect(() => {
+          const subscription = theme$.subscribe(setthemeState); 
+          const subscription2 = lang$.subscribe((lang) => {
+          setLangIndex(lang === 'ru' ? 0 : 1);
+          }); 
+          const subscription3 = fontSize$.subscribe((fontSize) => {
+          setFSize(fontSize);
+          });
+          return () => {
+          subscription.unsubscribe();
+          subscription2.unsubscribe();
+          subscription3.unsubscribe();
+          }
+        }, []); 
        const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
        const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
        const daysInMonth = lastDayOfMonth.getDate();
@@ -69,29 +81,61 @@ const TrainingMain = () => {
                  </thead>
                  <tbody>
                      {weeks.map((week,i)=>(
-                       <tr key={i}>
-                         {week.map((day,j)=>{
-                          const isChoosen = day === currentDate.getDate() && date.getMonth() === currentDate.getMonth() && date.getFullYear() === currentDate.getFullYear();
-                           return(
-                           <td key={j}>
-                             <div  style={{...styles(theme).cell,
-                               border:`3px solid ${isChoosen ? Colors.get('currentDateBorder', theme) : Colors.get('background', theme)}`,
-                               backgroundColor:Colors.get('background', theme)
-                           }}
-                               onClick={() => {setCurrentDate(new Date(date.getFullYear(), date.getMonth(), day));playEffects(clickSound);}}   >
-                               {day}
-                             </div>
-                           </td>
-                         )
-                       })}
-                       </tr>
-                     ))}
+                    <tr key={i}>
+                      {week.map((day,j)=>{
+                        const cellMonth = date.getMonth();
+                        const cellYear = date.getFullYear();
+                        const isChoosen = day === currentDate.getDate() && cellMonth === currentDate.getMonth() && cellYear === currentDate.getFullYear();
+                        const dayKey = formatDateKey(new Date(cellYear,cellMonth,day));
+                        const trAmount = dayKey in AppData.trainingLog ? AppData.trainingLog[dayKey].length : 0;
+                        let pendingAmount = 0;
+                        let doneAmount = 0;
+                        if(trAmount > 0){
+                          AppData.trainingLog[dayKey].forEach(tr => {
+                             if(!tr.completed)pendingAmount++;
+                             else doneAmount++;
+                          });
+                        }
+                        
+                        return(
+                        <td key={j}>
+                          <div  style={{...styles(theme).cell,border:`3px solid ${isChoosen ? Colors.get('currentDateBorder', theme) : Colors.get('background', theme)}`, backgroundColor:Colors.get('background', theme),}}
+                            onClick={() => {setCurrentDate(new Date(cellYear, cellMonth, day));setTrainingAmount(trAmount);playEffects(clickSound);}}   >
+                            {day}
+                            {trAmount > 0 && 
+                              <div style={{display:'flex',flexDirection:'row',marginTop:'10px'}}>
+                                {pendingAmount > 0 && <div style={{fontSize:'10px',color:Colors.get('done', theme),lineHeight:'5px'}}>{'⏳'}</div>}
+                                {pendingAmount > 0 && <div style={{fontSize:'11px',color:Colors.get('subText', theme),lineHeight:'5px'}}>{pendingAmount}</div>}
+                                {doneAmount > 0 && <div style={{fontSize:'10px',color:Colors.get('done', theme),lineHeight:'5px'}}>{'🏋️‍♂️'}</div>}
+                                {doneAmount > 0 && <div style={{fontSize:'11px',color:Colors.get('subText', theme),lineHeight:'5px'}}>{doneAmount}</div>}
+                              </div>
+                            }
+                          </div>
+                        </td>
+                      )
+                    })}
+                    </tr>
+                  ))}
                    </tbody>
                </table>
              </div>
-             <div style={{height:'15vh'}}>
-              <h1 style={{...styles(theme).subtext,fontSize:'16px'}}>{currentDate.getDate() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)] + ' / ' + trainingAmountText(trainingAmount,langIndex) }</h1>
-              
+             <div style={{height:'30vh',width:'95%',display:'flex',flexDirection:'column',alignContent:'center'}}>
+              <h1 style={{...styles(theme).subtext,fontSize:'18px',textAlign: "center"}}>{currentDate.getDate() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)] + ' / ' + trainingAmountText(trainingAmount,langIndex) }</h1>
+              {trainingAmount > 0 && <div style={styles(theme).scrollView}>
+                {AppData.trainingLog[formatDateKey(new Date(currentDate))].map((training,index) =>(
+                  <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'flex-start',alignItems:'center',width:'100%',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
+                    <p style={{...styles(theme).mainText,marginBottom:'10px',fontSize:'16px'}}>{(index + 1)}</p>
+                    <p style={{...styles(theme).mainText,marginBottom:'10px',fontSize:'16px'}}>{training.completed ? '✅' : '⏳'}</p>
+                    <div style={{display:'flex',flexDirection:'column'}}>
+                      <div style={styles(theme).mainText}>{AppData.programs.find(p => p.id === training.programId).name[langIndex]}</div>
+                      <div style={styles(theme).mainText}>{(langIndex === 0 ? 'День ' : 'Day ') + (index + 1) + ': ' + AppData.programs.find(p => p.id === training.programId).schedule[training.dayIndex].name[langIndex]}</div>
+                       {training.completed && <div style={{...styles(theme).subtext,marginBottom:'10px'}}>{`${Math.round(training.duration / 60000)}${langIndex === 0 ? ' мин' : ' min'}  /  ${training.tonnage * 0.001} ${langIndex === 0 ? ' тонн' : ' tons'}${getTrainingSummary(training,langIndex)}`}</div>}
+                    </div>
+                    <BsJournalText onClick={()=>{setTrainInfo({mode:training.completed ? 'redact' : 'new',dayKey:formatDateKey(new Date(currentDate)),dInd:training.dayIndex});setPage('TrainingCurrent')}} style={{...styles(theme).subtext,width:'18px',height:'18px',marginLeft:'auto',marginRight:'10px'}}/>
+                  </div>
+                ))}
+                
+              </div>}
              </div>
            </div>
        )
@@ -101,7 +145,7 @@ export default TrainingMain
 
 
 
-const styles = (theme) =>
+const styles = (theme,fSize) =>
 ({
     container :
    {
@@ -125,20 +169,32 @@ const styles = (theme) =>
     justifyContent: "start",
     borderBottom:`1px solid ${Colors.get('border', theme)}`,
   },
+  scrollView :
+  {
+    display:'flex',
+    flexDirection:'column',
+    alignItems:'flex-start',
+    justifyContent:'flex-start',
+    width:'100%',
+    height:'100%',
+    overflowY:'scroll',
+    backgroundColor:Colors.get('trainingGroup', theme),
+    borderRadius:'12px'
+  },
   mainText :
   {
     textAlign: "left",
-    fontSize: "10px",
+    fontSize: fSize === 0 ? '13px' : '15px',
     color: Colors.get('mainText', theme),
-    marginLeft: "30px",
-    marginBottom:'12px'
+    marginLeft: "10px",
+    marginBottom:'2px'
   },
   subtext :
   {
     textAlign: "left",
-    fontSize: "8px",
+    fontSize: fSize === 0 ? '11px' : '13px',
     color: Colors.get('subText', theme),
-    marginLeft: "30px",
+    marginLeft: "10px",
     marginBottom:'12px'
   },
   calendarHead:
@@ -179,7 +235,7 @@ const styles = (theme) =>
        width:'13vw',
        height:'13vw',
        borderRadius:'12px',
-       fontSize:'14px',
+       fontSize:'16px',
        fontWeight:'bold',
        color: Colors.get('mainText', theme),
        fontFamily: "Segoe UI",
@@ -200,6 +256,6 @@ function playEffects(sound){
 const trainingAmountText = (trainingAmount,langIndex) => {
   if(trainingAmount == 0) return langIndex == 0 ? 'нет тренировок' : 'no trainings';
   if(trainingAmount == 1) return langIndex == 0 ? '1 тренировка' : '1 training';
-  if(trainingAmount > 1 && trainingAmount < 5) return langIndex == 0 ? '2 тренировки' : '2 trainings';
+  if(trainingAmount > 1 && trainingAmount < 5) return trainingAmount + (langIndex == 0 ? ' тренировки' : ' trainings');
   return trainingAmount + (langIndex == 0 ? ' тренировок' : ' trainings');
 }
