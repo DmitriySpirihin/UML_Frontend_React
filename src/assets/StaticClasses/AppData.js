@@ -29,50 +29,7 @@ export class AppData{
    static currentProgramId = null;
    static exercises = exercises;
    static programs = programs;
-   static trainingLog = {
-    "2025-12-05": [{ 
-    programId: 0,                                 
-    dayIndex: 0,                                  
-    completed: true,                              
-    startTime: "2025-12-05T18:22:15.432Z",        
-    endTime: "2025-12-05T19:08:47.109Z",          
-    duration: 2700000,                            
-    tonnage: 100,                               
-    exercises: {
-      0 : {                                    
-        mgId: 0,                                
-        sets: [
-          { type: 0, reps: 12, weight: 35 },   
-          { type: 1, reps: 8, weight: 65 },
-        ],
-        totalTonnage: 100,                         
-        completed:true                           
-      },                                          
-    }
-  }
- ],
-  "2025-12-08": [{ 
-    programId: 0,                                 
-    dayIndex: 0,                                  
-    completed: true,                              
-    startTime: "2025-12-08T18:22:15.432Z",        
-    endTime: "2025-12-08T19:08:47.109Z",          
-    duration: 2700000,                            
-    tonnage: 100,                               
-    exercises: {
-      0 : {                                    
-        mgId: 0,                                
-        sets: [
-          { type: 0, reps: 15, weight: 40 },   
-          { type: 1, reps: 10, weight: 60 },
-        ],
-        totalTonnage: 100,                         
-        completed:true                           
-      },                                          
-    }
-  }
- ]
-}
+   static trainingLog = {};
   // methods
   static init(data) {
     if (!data) return;
@@ -105,6 +62,24 @@ export class AppData{
   static setPrefs(ind,value){
     this.prefs[ind] = value;
   }
+  static getLastProgramId() {
+  const todayKey = formatDateKey(new Date());
+  
+  if (!this.trainingLog[todayKey]?.length) return 0;
+  
+  const lastSession = this.trainingLog[todayKey][this.trainingLog[todayKey].length - 1];
+  return lastSession.programId ?? 0;
+}
+
+  static getLastTrainingDayIndex() {
+    const todayKey = formatDateKey(new Date()); // LOCAL today
+  
+    if (!this.trainingLog[todayKey]?.length) return 0;
+  
+    const lastSession = this.trainingLog[todayKey][this.trainingLog[todayKey].length - 1];
+    return lastSession.dayIndex ?? 0;
+  }
+  
   static hasKey(key) {
     return Object.prototype.hasOwnProperty.call(this.habitsByDate, key);
   }
@@ -244,7 +219,7 @@ export const fillEmptyDays = () => {
         }
         else{
            if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime()){
-           AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? 1 : 2; 
+           AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? -1 : 2; 
            }
         }
       }
@@ -331,4 +306,12 @@ export function getHabitPerformPercent(habitId){
   }
   
   return Math.ceil(currentStreak / AppData.choosenHabitsDaysToForm[AppData.choosenHabits.indexOf(habitId)] * 100) ;
+}
+
+function formatDateKey(date) {
+  const d = new Date(date);
+  const y = d.getFullYear(); // LOCAL year
+  const m = String(d.getMonth() + 1).padStart(2, '0'); // LOCAL month
+  const day = String(d.getDate()).padStart(2, '0'); // LOCAL day
+  return `${y}-${m}-${day}`;
 }

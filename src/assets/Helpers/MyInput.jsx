@@ -108,9 +108,7 @@ const MyInput = ({
       {(input.myString.length > 0 || isActive) ? (
         <>
           {input.myString.slice(0, input.cursorPos)}
-          {showCursor && (
-            <span style={{ color: Colors.get('iconsHighlited', theme), fontSize: AppData.prefs[4] === 0 ? '13px' : '15px', fontWeight: 'bold' }}>|</span>
-          )}
+          <span style={{display: 'inline-block', width: '2px', color: showCursor && isActive ? Colors.get('iconsHighlited', theme)  : 'transparent', fontSize: '15px', marginLeft: '2px', verticalAlign: 'middle' }}>{'|'}</span>
           {input.myString.slice(input.cursorPos)}
         </>
       ) : placeHolder}

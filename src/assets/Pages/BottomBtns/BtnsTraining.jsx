@@ -11,6 +11,7 @@ import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurre
 import Colors from '../../StaticClasses/Colors'
 import {useState,useEffect} from 'react'
 import {AppData} from '../../StaticClasses/AppData'
+import { addNewDay } from '../TrainingPages/TrainingMain';
 const switchSound = new Audio('Audio/Click.wav');
 
 const BtnsTraining = () => {
@@ -80,7 +81,7 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,
           <Programs style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('TrainingProgramm');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
             <Add style={{...styles(theme,currentBtn,9,true,page !== 'TrainingMain').btnstyle,fontSize:page !== 'TrainingMain' ? '30px':'40px'}} 
           onClick={() => {
-            if(page === 'TrainingMain'){setAddPanel('AddTrainingDayPanel');}
+            if(page === 'TrainingMain'){addNewDay();}
             setCurrentBottomBtn(0);setNotifyPanel(false);playEffects(switchSound);}} />
           <Exercises style={styles(theme,currentBtn,2,true,false).btnstyle} onClick={() => {setCurrentBottomBtn(2);setPage('TrainingExercise');playEffects(switchSound);setNotifyPanel(false);}} />
           <MonitorWeightIcon style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setNotifyPanel(false);setPage('TrainingMesurments');playEffects(switchSound);}} />

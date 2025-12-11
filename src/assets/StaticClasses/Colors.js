@@ -14,6 +14,7 @@ export class Colors {
     background: { light: "#e9f3f7ff", dark: "#131619ff", speciallight: "#ecd1cbff", specialdark: "#232020ff" },
     mainText: { light: "#151414ff", dark: "#dfd5d5ff", speciallight: "#2c1919ff", specialdark: "#d9d2caff" },
     subText: { light: "#161515ff", dark: "#9d9393ff", speciallight: "#482d2dff", specialdark: "#bfb4a7ff" },
+    prevTrainingText: { light: "#302d2dff", dark: "#302d2dff", speciallight: "#654343ff", specialdark: "#797167ff" },
     simplePanel: { light: "#c2cbd4ff", dark: "#24282dff", speciallight: "#cdb0a6ff", specialdark: "#242a24ff" },
     metricsPanel: { light: "#a9c6e1ff", dark: "#101114ff", speciallight: "#af7979ff", specialdark: "#181414ff" },
     highlitedPanel: { light: "#b4cee6ff", dark: "#282e30ff", speciallight: "#b88787ff", specialdark: "#445344ff" },
