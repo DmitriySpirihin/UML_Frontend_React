@@ -10,6 +10,13 @@ const TrainingMetrics = () => {
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize,setFSize] = useState(AppData.prefs[4]);   
   
+  const chartData = [
+  { date: "2025-11-12", value: 240 },
+  { date: "2025-11-13", value: 300 },
+  { date: "2025-11-14", value: 180 },
+  { date: "2025-11-15", value: 270 },
+  { date: "2025-11-16", value: 220 }
+];
     // subscriptions
     useEffect(() => {
       const subscription = theme$.subscribe(setthemeState); 
@@ -29,7 +36,7 @@ const TrainingMetrics = () => {
   return (
     <div style={styles(theme).container}>
       <div style={styles(theme).panel}>
-        
+         <BarChart  theme={theme}  data={chartData} mark={'kg'} color={'#ca854cff'}/>
       </div>
     </div>
   )

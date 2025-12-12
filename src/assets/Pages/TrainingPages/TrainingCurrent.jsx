@@ -284,19 +284,19 @@ return (
       {showAddNewSetPanel && <div  style={styles(theme).confirmContainer}>
          <div style={{...styles(theme).cP,height:'60%'}}>
            <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Добавьте повторы" : "Add reps"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
               <FaMinus {...bindRepsMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev - 1 > 1 ? prev - 1 : 1)}}/>
               <MyNumInput theme={theme} w={'100px'} h={'40px'}fSize={28} placeholder={'0'} value={reps} onChange={(value) => {setReps(parseInt(value))}}/>
               <FaPlus {...bindRepsPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev + 1)}}/>
            </div>
            <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Добавьте вес" : "Add weight"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
               <FaMinus {...bindWeightMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev - 0.25 > 0.25 ? prev -0.25 : 0.25)}}/>
               <MyNumInput theme={theme} w={'100px'} h={'40px'}afterPointer={langIndex === 0 ? 'кг' : 'kg'} fSize={28} placeholder={'0'} value={weight} onChange={(value) => {setWeight(parseFloat(value))}}/>
               <FaPlus {...bindWeightPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev + 0.25)}}/>
            </div>
            <div style={styles(theme,fSize).text}>{langIndex === 0 ? "Время выполнения(опционально)" : "Performance time (optional)"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
               <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 10000)}}/>
               <div style={{...styles(theme,fSize).text,fontSize:'28px'}}>{formatDurationMs(exTime)}</div>
               <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000 < 3600000 ? prev + 10000 : 3600000)}}/>
@@ -321,19 +321,19 @@ return (
       {showRedactSetPanel && <div  style={styles(theme).confirmContainer}>
          <div style={{...styles(theme).cP,height:'60%'}}>
            <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Измените повторы" : "Change reps"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
               <FaMinus {...bindRepsMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev - 1 > 1 ? prev - 1 : 1)}}/>
               <MyNumInput theme={theme} w={'100px'} h={'40px'}fSize={28} placeholder={'0'} value={reps} onChange={(value) => {setReps(parseInt(value))}}/>
               <FaPlus {...bindRepsPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev + 1)}}/>
            </div>
            <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Измените вес" : "Change weight"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
               <FaMinus {...bindWeightMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev - 0.25 > 0.25 ? prev -0.25 : 0.25)}}/>
               <MyNumInput theme={theme} w={'100px'} h={'40px'}afterPointer={langIndex === 0 ? 'кг' : 'kg'} fSize={28} placeholder={'0'} value={weight} onChange={(value) => {setWeight(parseFloat(value))}}/>
               <FaPlus {...bindWeightPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev + 0.25)}}/>
            </div>
            <div style={styles(theme,fSize).text}>{langIndex === 0 ? "Измените время выполнения" : "Change performance time"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
               <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 10000)}}/>
               <div style={{...styles(theme,fSize).text,fontSize:'28px'}}>{formatDurationMs(exTime)}</div>
               <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000 < 3600000 ? prev + 10000 : 3600000)}}/>
