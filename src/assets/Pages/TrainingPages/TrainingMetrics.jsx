@@ -2,6 +2,7 @@ import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$} from '../../StaticClasses/HabitsBus'
+import BarChart from '../../Helpers/BarChart.jsx'
 
 const TrainingMetrics = () => {
     // states
@@ -28,7 +29,7 @@ const TrainingMetrics = () => {
   return (
     <div style={styles(theme).container}>
       <div style={styles(theme).panel}>
-        <h1>training graphs</h1>
+        
       </div>
     </div>
   )

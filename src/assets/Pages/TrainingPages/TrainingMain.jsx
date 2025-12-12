@@ -1,14 +1,13 @@
 import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
-import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel,addNewTrainingDay$} from '../../StaticClasses/HabitsBus'
 import {getTrainingSummary,addNewSession,addPreviousSession,deleteSession} from '../../StaticClasses/TrainingLogHelper.js'
 import { FaTrash } from "react-icons/fa"
 import {useLongPress} from '../../Helpers/LongPress.js'
 import {MdClose,MdDone} from 'react-icons/md'
 import {FiMinus,FiPlus} from 'react-icons/fi'
 
-export let addNewDay = () => {};
 // Monday-based weekday index helper (Mon=0 ... Sun=6)
 const formatDateKey = (d) => {
     const y = d.getFullYear();
@@ -83,7 +82,10 @@ const TrainingMain = () => {
        } 
        const prevMonth = () => {setDate(new Date(date.getFullYear(), date.getMonth() - 1));playEffects(clickSound);};
        const nextMonth = () =>{  setDate(new Date(date.getFullYear(), date.getMonth() + 1));playEffects(clickSound);};
-
+       useEffect(() => {
+        const subscription = addNewTrainingDay$.subscribe(onAddNewDay);
+        return () => subscription.unsubscribe();
+       }, []);
        const onAddNewDay = () => {
         const today = new Date();
        if (currentDate > today) return;
@@ -96,7 +98,6 @@ const TrainingMain = () => {
          setShowPreviousSessionPanel(true);
        }
      };
-       addNewDay = onAddNewDay;
        const onSessionStart = () => {
           addNewSession(new Date(),programId,dayIndex);
           setShowNewSessionPanel(false);

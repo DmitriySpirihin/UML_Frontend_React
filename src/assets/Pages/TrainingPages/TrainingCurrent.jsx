@@ -53,7 +53,7 @@ const TrainingCurrent = () => {
     const [exerciseToRemove,setExerciseToRemove] = useState(null);
     //timer
     const [timer,setTimer] = useState(false);
-    const [maxTimer,setMaxTimer] = useState(60000);
+    const [maxTimer,setMaxTimer] = useState(120000);
     const [currTimer,setCurrTimer] = useState(0);
     const [time,setTime] = useState(Date.now());
     const [progress,setProgress] = useState(0);
@@ -138,6 +138,7 @@ const addset = () => {
    setShowAddNewSetPanel(false);
    setTonnage(getTonnage(trainInfo.dayKey, trainInfo.dInd));
    setAllReps(getAllReps(trainInfo.dayKey, trainInfo.dInd));
+   setTimer(true);
 }
 const onRedactSet = (exId,setIndex) => {
   setCurrentExId(exId,setIndex);
