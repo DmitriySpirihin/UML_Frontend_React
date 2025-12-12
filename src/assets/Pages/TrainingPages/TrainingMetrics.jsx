@@ -1,33 +1,37 @@
 import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
-import Colors, { THEME } from '../../StaticClasses/Colors'
-import { theme$ ,lang$} from '../../StaticClasses/HabitsBus'
+import Colors from '../../StaticClasses/Colors'
+import { theme$ ,lang$,fontSize$} from '../../StaticClasses/HabitsBus'
 
 const TrainingMetrics = () => {
     // states
-    const [theme, setthemeState] = React.useState('dark');
+    const [theme, setthemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [fSize,setFSize] = useState(AppData.prefs[4]);   
   
     // subscriptions
-    React.useEffect(() => {
-        const subscription = theme$.subscribe(setthemeState);  
-        return () => subscription.unsubscribe();
-    }, []);
-    
-    React.useEffect(() => {
-        const subscription = lang$.subscribe((lang) => {
-            setLangIndex(lang === 'ru' ? 0 : 1);
-        });
-        return () => subscription.unsubscribe();
+    useEffect(() => {
+      const subscription = theme$.subscribe(setthemeState); 
+      const subscription2 = lang$.subscribe((lang) => {
+      setLangIndex(lang === 'ru' ? 0 : 1);
+      }); 
+      const subscription3 = fontSize$.subscribe((fontSize) => {
+      setFSize(fontSize);
+      });
+      return () => {
+      subscription.unsubscribe();
+      subscription2.unsubscribe();
+      subscription3.unsubscribe();
+      }
     }, []);     
-       // render    
-       return (
-           <div style={styles(theme).container}>
-             <div style={styles(theme).panel}>
-               <h1>training graphs</h1>
-             </div>
-           </div>
-       )
+  // render    
+  return (
+    <div style={styles(theme).container}>
+      <div style={styles(theme).panel}>
+        <h1>training graphs</h1>
+      </div>
+    </div>
+  )
 }
 
 export default TrainingMetrics

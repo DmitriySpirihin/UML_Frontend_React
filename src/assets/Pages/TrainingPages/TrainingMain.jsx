@@ -2,7 +2,7 @@ import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
-import {getTrainingSummary,addNewSession,addPreviousSession} from '../../StaticClasses/TrainingLogHelper.js'
+import {getTrainingSummary,addNewSession,addPreviousSession,deleteSession} from '../../StaticClasses/TrainingLogHelper.js'
 import { FaTrash } from "react-icons/fa"
 import {useLongPress} from '../../Helpers/LongPress.js'
 import {MdClose,MdDone} from 'react-icons/md'
@@ -32,10 +32,12 @@ const TrainingMain = () => {
        const [fSize, setFSize] = useState(AppData.prefs[4]); 
        const [showNewSessionPanel, setShowNewSessionPanel] = useState(false);  
        const [showPreviousSessionPanel, setShowPreviousSessionPanel] = useState(false);  
+       const [showConfirmPanel,setShowConfirmPanel] = useState(false);
        const [programId,setProgrammId] = useState(AppData.getLastProgramId());
        const [dayIndex,setDayIndex] = useState(AppData.getLastTrainingDayIndex());
        const [startTime, setStartTime] = useState(16 * 3600000); 
        const [endTime, setEndTime] = useState(17 * 3600000);
+       const [sessionToDelete,setSessionToDelete] = useState({date:'',key:0});
        const STEP = 10 * 60 * 1000; 
        const DAY_MS = 24 * 3600000;
        // subscriptions
@@ -119,6 +121,14 @@ const TrainingMain = () => {
           setTrainInfo({mode:'redact',dayKey:dayKey,dInd:sessionIndex});
           setPage('TrainingCurrent');
        }
+       const onDelete = (_date,dayIndex) => {
+          setSessionToDelete({date:_date,key:dayIndex});
+       }
+       const onConfirmDelete = () => {
+         deleteSession(sessionToDelete.date,sessionToDelete.key);
+         setShowConfirmPanel(false);
+         setShowPopUpPanel(langIndex === 0 ? "Тренировка удалена" : "Session deleted",2000,true);
+       }
        // render    
        return (
            <div style={styles(theme).container}>
@@ -180,23 +190,31 @@ const TrainingMain = () => {
               <h1 style={{...styles(theme).subtext,fontSize:'18px',textAlign: "center"}}>{currentDate.getDate() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)] + ' / ' + trainingAmountText(trainingAmount,langIndex) }</h1>
               <div style={styles(theme).scrollView}>
                 {AppData.trainingLog[formatDateKey(currentDate)]?.map((training,index) =>(
-                  <div 
-                  onClick={()=>{setTrainInfo({mode:training.completed ? 'redact' : 'new',dayKey:formatDateKey(new Date(currentDate)),dInd:training.dayIndex});setPage('TrainingCurrent')}}
-                  key={index} style={{display:'flex',flexDirection:'row',justifyContent:'flex-start',alignItems:'center',width:'100%',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
+                  <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'flex-start',alignItems:'center',width:'100%',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
                     <p style={{...styles(theme).mainText,marginBottom:'10px',fontSize:'16px'}}>{(index + 1)}</p>
                     <p style={{...styles(theme).mainText,marginBottom:'10px',fontSize:'16px'}}>{training.completed ? '✅' : '⏳'}</p>
                     <div style={{display:'flex',flexDirection:'column'}}>
-                      <div style={styles(theme).mainText}>{AppData.programs.find(p => p.id === training.programId).name[langIndex]}</div>
+                      <div 
+                      onClick={()=>{setTrainInfo({mode:training.completed ? 'redact' : 'new',dayKey:formatDateKey(new Date(currentDate)),dInd:training.dayIndex});setPage('TrainingCurrent')}}
+                      style={styles(theme).mainText}>{AppData.programs.find(p => p.id === training.programId).name[langIndex]}</div>
                       <div style={styles(theme).mainText}>{(langIndex === 0 ? 'День ' : 'Day ') + (index + 1) + ': ' + AppData.programs.find(p => p.id === training.programId).schedule[training.dayIndex].name[langIndex]}</div>
                        {training.completed && <div style={{...styles(theme).subtext,marginBottom:'10px'}}>{`${Math.round(training.duration / 60000)}${langIndex === 0 ? ' мин' : ' min'}  /  ${training.tonnage * 0.001} ${langIndex === 0 ? ' тонн' : ' tons'}${getTrainingSummary(training,langIndex)}`}</div>}
                     </div>
-                    <FaTrash style={{...styles(theme).subtext,width:'18px',height:'18px',marginLeft:'auto',marginRight:'10px'}}/>
+                    <FaTrash onClick={()=>{onDelete(formatDateKey(new Date(currentDate)),training.dayIndex);setShowConfirmPanel(true);}} style={{...styles(theme).subtext,width:'18px',height:'18px',marginLeft:'auto',marginRight:'10px'}}/>
                   </div>
                 ))}
                 
               </div>
              </div>
-
+        {showConfirmPanel && <div  style={styles(theme).confirmContainer}>
+          <div style={{...styles(theme).cP,height:'20%'}}>
+          <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Удалить тренировку?" : "Delete session?"}</div>
+            <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+              <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => setShowConfirmPanel(false)}/>
+              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {onConfirmDelete()}}/>
+            </div>
+          </div>
+        </div>}
         {showNewSessionPanel && <div  style={styles(theme).confirmContainer}>
          <div style={{...styles(theme).cP,height:'50%'}}>
           <p style={{...styles(theme,fSize).mainText,marginBottom:'10px'}}>{langIndex === 0 ? 'Начать тренировку?' : 'Start training?'}</p>
@@ -226,18 +244,18 @@ const TrainingMain = () => {
           {/* Start Time */}
           <p style={{...styles(theme,fSize).mainText,marginBottom:'10px'}}>{langIndex === 0 ? 'Начало тренировки' : 'Training start time'}</p>
           <div style={{...styles(theme).simplePanelRow, width:'70%'}}>
-           <div {...bindStartMinus}  onClick={() => setStartTime(prev => (prev - STEP + DAY_MS) % DAY_MS)} style={{...styles(theme).icon, fontSize:'20px', marginTop:'15px'}}>
+           <div {...bindStartMinus}  onClick={() => setStartTime(prev => (prev - STEP + DAY_MS) % DAY_MS)} style={{...styles(theme).icon, fontSize:'20px', marginTop:'15px',userSelect:'none',touchAction:'none'}}>
            <FiMinus /></div>
           <p style={{...styles(theme).text, fontSize:'20px', marginTop:'15px'}}>{formatTime(startTime)}</p>
-          <div {...bindStartPlus}  onClick={() => setStartTime(prev => (prev + STEP) % DAY_MS)} style={{...styles(theme).icon, fontSize:'20px', marginTop:'15px'}}>
+          <div {...bindStartPlus}  onClick={() => setStartTime(prev => (prev + STEP) % DAY_MS)} style={{...styles(theme).icon, fontSize:'20px', marginTop:'15px',userSelect:'none',touchAction:'none'}}>
           <FiPlus /> </div></div>
            {/* End Time */}
            <p style={{...styles(theme,fSize).mainText,marginBottom:'10px'}}>{langIndex === 0 ? 'Окончание тренировки' : 'Training end time'}</p>
           <div style={{...styles(theme).simplePanelRow, width:'70%'}}>
-           <div {...bindEndMinus}  onClick={() => {const newTime = (endTime - STEP + DAY_MS) % DAY_MS;if (newTime >= startTime) setEndTime(newTime);}} style={{...styles(theme).icon, fontSize:'20px', marginTop:'15px'}}>
+           <div {...bindEndMinus}  onClick={() => {const newTime = (endTime - STEP + DAY_MS) % DAY_MS;if (newTime >= startTime) setEndTime(newTime);}} style={{...styles(theme).icon, fontSize:'20px', marginTop:'15px',userSelect:'none',touchAction:'none'}}>
           <FiMinus />
           </div> <p style={{...styles(theme).text, fontSize:'20px', marginTop:'15px'}}> {formatTime(endTime)} </p>
-           <div  {...bindEndPlus}  onClick={() => setEndTime(prev => (prev + STEP) % DAY_MS)} style={{...styles(theme).icon, fontSize:'20px', marginTop:'15px'}}>
+           <div  {...bindEndPlus}  onClick={() => setEndTime(prev => (prev + STEP) % DAY_MS)} style={{...styles(theme).icon, fontSize:'20px', marginTop:'15px',userSelect:'none',touchAction:'none'}}>
           <FiPlus />
          </div>
         </div>

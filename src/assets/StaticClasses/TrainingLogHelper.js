@@ -9,6 +9,7 @@ import { AppData} from '../StaticClasses/AppData';
     endTime: 1702213945432,                       //fixed when finish training  Date.now()
     duration: 2700000,                            //in milliseconds  45 min is 2700000 ms  endTime - startTime
     tonnage: 100,                                 //add when finish set , adding per set
+    exerciseOrder: [],                            // Store exercise IDs in order
     exercises: {
       '0' {                                       //  list of the complited exercises , id as a key
         mgId: 0,                                  //to get muscle group id fast
@@ -99,28 +100,26 @@ export function findPreviousSimilarExercise(exId, setIndex, beforeDate, training
   return bestMatch; // null if none found
 }
 export function addNewSession(date, programId, dayIndex) {
-  
   const program = AppData.programs.find(p => p.id === programId);
   if (!program || !program.schedule[dayIndex]) {
     console.error('Invalid program or dayIndex');
     return false;
   }
-
-  // Initialize exercises from program day with empty sets
   const exercises = {};
+  const exerciseOrder = [];
   program.schedule[dayIndex].exercises.forEach(ex => {
     const exercise = AppData.exercises.find(e => e.id === ex.exId);
     if (!exercise) {
       console.warn(`Exercise ${ex.exId} not found in AppData.exercises`);
       return;
     }
-
     exercises[ex.exId] = {
-      mgId: exercise.mgId, // ✅ From Exercise class
-      sets: [], // ✅ Empty sets array
+      mgId: exercise.mgId,
+      sets: [],
       totalTonnage: 0,
       completed: false
     };
+    exerciseOrder.push(ex.exId);
   });
 
   const dateKey = formatDateKey(date);
@@ -132,8 +131,10 @@ export function addNewSession(date, programId, dayIndex) {
     endTime: null,
     duration: 0,
     tonnage: 0,
-    exercises // ✅ Pre-filled with program exercises
+    exercises,
+    exerciseOrder // ✅ Add this new field
   };
+
   if (!AppData.trainingLog[dateKey]) {
     AppData.trainingLog[dateKey] = [];
   }
@@ -155,6 +156,7 @@ export function addPreviousSession(date, programId, dayIndex, startTimeMs, endTi
   const exercises = {};
   const program = AppData.programs.find(p => p.id === programId);
   program.schedule[dayIndex].exercises.forEach(ex => {
+    const exerciseOrder = [];
     const exercise = AppData.exercises.find(e => e.id === ex.exId);
     if (!exercise) {
       console.warn(`Exercise ${ex.exId} not found in AppData.exercises`);
@@ -167,6 +169,7 @@ export function addPreviousSession(date, programId, dayIndex, startTimeMs, endTi
       totalTonnage: 0,
       completed: false
     };
+    exerciseOrder.push(ex.exId);
   });
   const newSession = {
     programId,
@@ -176,7 +179,8 @@ export function addPreviousSession(date, programId, dayIndex, startTimeMs, endTi
     endTime: sessionEndTime,
     duration,
     tonnage: 0,
-    exercises
+    exercises,
+    exerciseOrder
   };
 
   // ✅ USE LOCAL-DATE KEY (matches your calendar)
@@ -210,7 +214,9 @@ export function finishSession(date, sessionIndex) {
   session.endTime = Date.now();
   session.duration = session.endTime - session.startTime;
   session.completed = true;
-
+  Object.values(session.exercises).map(ex => {
+    ex.completed = true;
+  });
   // Recalculate total tonnage from exercises
   session.tonnage = Object.values(session.exercises).reduce(
     (sum, ex) => sum + (ex.totalTonnage || 0),
@@ -231,6 +237,7 @@ export function addExerciseToSession(date, sessionIndex, exerciseId) {
     totalTonnage: 0,
     completed: false
   };
+  session.exerciseOrder.push(exerciseId);
   return true;
 }
 export function removeExerciseFromSession(date, sessionIndex, exerciseId) {
@@ -239,11 +246,18 @@ export function removeExerciseFromSession(date, sessionIndex, exerciseId) {
   
   if (!session || !session.exercises[exerciseId]) return false;
 
-  // Subtract exercise tonnage from session
+  // 1. Subtract tonnage
   const exercise = session.exercises[exerciseId];
   session.tonnage = Math.max(0, session.tonnage - (exercise.totalTonnage || 0));
 
+  // 2. Remove from exercises object
   delete session.exercises[exerciseId];
+
+  // 3. Remove from exerciseOrder array (if exists)
+  if (session.exerciseOrder) {
+    session.exerciseOrder = session.exerciseOrder.filter(id => id !== exerciseId);
+  }
+
   return true;
 }
 export function addSet(date, sessionIndex, exerciseId, reps, weight,time, isWarmUp) {
@@ -328,4 +342,50 @@ export function finishExercise(date, sessionIndex, exerciseId) {
 
   exercise.completed = true;
   return true;
+}
+
+export function getTonnage(date,sessionIndex){
+  const dateKey = formatDateKey(date);
+  const session = AppData.trainingLog[dateKey]?.[sessionIndex];
+  return session?.tonnage || 0;
+}
+export function getAllReps(date, sessionIndex) {
+  const dateKey = formatDateKey(date);
+  const session = AppData.trainingLog[dateKey]?.[sessionIndex];
+  
+  if (!session) return 0;
+  
+  let totalReps = 0;
+  for (const exercise of Object.values(session.exercises)) {
+    for (const set of exercise.sets) {
+      totalReps += set.reps;
+    }
+  }
+  return totalReps;
+}
+export function getAllSets(date, sessionIndex) {
+  const dateKey = formatDateKey(date);
+  const session = AppData.trainingLog[dateKey]?.[sessionIndex];
+  
+  if (!session) return 0;
+  
+  let totalSets = 0;
+  for (const exercise of Object.values(session.exercises)) {
+    totalSets += exercise.sets.length;
+  }
+  return totalSets;
+}
+export function getMaxOneRep(reps, weight) {
+  if (!reps || !weight || reps < 1 || weight <= 0) return 0;
+  if (reps === 1) return weight; // If 1 rep, max = weight
+  // 1. Brzycki Formula (most accurate for 1-10 reps)
+  const brzycki = weight * (36 / (37 - reps));
+  // 2. Epley Formula (best for higher reps)
+  const epley = weight * (1 + 0.0333 * reps);
+  // 3. Lombardi Formula (good for all rep ranges)
+  const lombardi = weight * Math.pow(reps, 0.1);
+  const median = brzycki + epley + lombardi ;
+  
+  // Round to nearest 0.5 kg/lbs for practicality
+  return Math.round(median / 3);
 }

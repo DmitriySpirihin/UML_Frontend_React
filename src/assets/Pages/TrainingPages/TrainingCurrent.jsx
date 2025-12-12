@@ -3,7 +3,7 @@ import { AppData,UserData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,trainInfo$,setPage} from '../../StaticClasses/HabitsBus'
 import {findPreviousSimilarExercise, deleteSession, finishSession, addExerciseToSession,
-   removeExerciseFromSession, addSet, removeSet, finishExercise, redactSet} from '../../StaticClasses/TrainingLogHelper'
+   removeExerciseFromSession, addSet, removeSet, finishExercise, redactSet,getAllReps,getTonnage,getMaxOneRep,getAllSets} from '../../StaticClasses/TrainingLogHelper'
 import {FaTrash,FaPencilAlt,FaFlagCheckered,FaFlag,FaInfo,FaPlusCircle} from 'react-icons/fa'
 import {FaRegCircleCheck,FaRegCircle,FaPlus,FaMinus,FaStopwatch} from 'react-icons/fa6'
 import {MdClose,MdDone,MdFitnessCenter} from 'react-icons/md'
@@ -31,6 +31,8 @@ const TrainingCurrent = () => {
     const [isCompleted, setIsCompleted] = useState(false);
     //info
     const [tonnage,setTonnage] = useState(0);
+    const [allReps,setAllReps] = useState(0);
+
     // prev
     const [currentSet,setCurrentSet] = useState(3);
     const [currentExId,setCurrentExId] = useState('3');
@@ -39,13 +41,16 @@ const TrainingCurrent = () => {
     const [exTime,setExTime] = useState(0);
     const [isWarmUp,setIsWarmUp] = useState(true);
     // additionl panels
-    const [showConfirmPanel,setShowConfirmPanel] = useState(true);
-    const [showRedactSetPanel,setShowRedactSetPanel] = useState(true);
-    const [showExerciseList,setShowExerciseList] = useState(true);
+    const [showConfirmPanel,setShowConfirmPanel] = useState(false);
+    const [showConfirmExercisePanel,setShowConfirmExercisePanel] = useState(false);
+    const [showFinishPanel,setShowFinishPanel] = useState(false);
+    const [showRedactSetPanel,setShowRedactSetPanel] = useState(false);
+    const [showExerciseList,setShowExerciseList] = useState(false);
     const [showAddNewSetPanel,setShowAddNewSetPanel] = useState(false);
     const [showInfoPanel,setShowInfoPanel] = useState(false);
     const [stopWatchPanel,setStopWatchPanel] = useState(false);
     const [premiumMiniPage,setPremiumMiniPage] = useState(false);
+    const [exerciseToRemove,setExerciseToRemove] = useState(null);
     //timer
     const [timer,setTimer] = useState(false);
     const [maxTimer,setMaxTimer] = useState(60000);
@@ -131,6 +136,46 @@ const onNewset = (exId,setInd) => {
 const addset = () => {
    addSet(trainInfo.dayKey, trainInfo.dInd, currentExId, reps, weight,exTime, isWarmUp);
    setShowAddNewSetPanel(false);
+   setTonnage(getTonnage(trainInfo.dayKey, trainInfo.dInd));
+   setAllReps(getAllReps(trainInfo.dayKey, trainInfo.dInd));
+}
+const onRedactSet = (exId,setIndex) => {
+  setCurrentExId(exId,setIndex);
+  setCurrentSet(setIndex);
+  const set = AppData.trainingLog[trainInfo.dayKey][trainInfo.dInd].exercises[exId].sets[setIndex];
+  setReps(set.reps);
+  setWeight(set.weight);
+  setExTime(set.time);
+  setIsWarmUp(set.type === 0);
+  setShowRedactSetPanel(true);
+}
+const redactset = () => {
+   redactSet(trainInfo.dayKey, trainInfo.dInd, currentExId,currentSet, reps, weight,exTime, isWarmUp);
+   setShowRedactSetPanel(false);
+   setTonnage(getTonnage(trainInfo.dayKey, trainInfo.dInd));
+   setAllReps(getAllReps(trainInfo.dayKey, trainInfo.dInd));
+}
+const onFinishExercise = (exId) => {
+  finishExercise(trainInfo.dayKey, trainInfo.dInd, exId);
+}
+const onFinishSession = () => {
+  finishSession(trainInfo.dayKey, trainInfo.dInd);
+  setShowConfirmPanel(false);
+  setIsCompleted(true);
+  setShowFinishPanel(true);
+}
+const addExercise = (exId) => {
+  addExerciseToSession(trainInfo.dayKey, trainInfo.dInd, exId); 
+  setShowExerciseList(false);
+}
+const onRemoveExercise = (exId) => {
+  setExerciseToRemove(exId);
+  setShowConfirmExercisePanel(true);
+} 
+const removeexercise = () => 
+{
+  removeExerciseFromSession(trainInfo.dayKey, trainInfo.dInd, exerciseToRemove);
+  setShowConfirmExercisePanel(false);
 }
 // render    
 return (
@@ -153,20 +198,23 @@ return (
                   <div style={{...styles(theme,fSize).subtext,fontSize:'16px',marginLeft:'12px'}}>{(tonnage * 0.001) + (langIndex === 0 ? 'тон' : 'ton')}</div>
                   {!isCompleted && <div style={{marginLeft:'auto',display:'flex',alignItems:'center'}}>
                     <ParsedTime time={currTimer} maxTime={maxTimer} theme={theme}/>
-                    {!timer && <TimerOffIcon onClick={() => {setTimer(true);}} style={{fontSize:'32px',color:Colors.get('icons', theme),marginRight:'19px'}}/>}
-                    {timer && <TimerIcon onClick={() => {setTimer(false);setCurrTimer(0);setProgress(0);}} style={{fontSize:'32px',color:Colors.get('icons', theme),marginRight:'19px'}}/>}
-                     <FaFlagCheckered style={{fontSize:'24px',color:Colors.get('icons', theme),marginRight:'19px'}}/>
+                    {!timer && <TimerOffIcon onClick={() => {setTimer(true);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/>}
+                    {timer && <TimerIcon onClick={() => {setTimer(false);setCurrTimer(0);setProgress(0);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/>}
+                     <FaStopwatch onClick={() => {setStopWatchPanel(true);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/> 
+                     <FaFlagCheckered onClick={() => {setShowConfirmPanel(true);}} style={{fontSize:'24px',color:Colors.get('icons', theme),marginRight:'19px'}}/>
                   </div>}
                 </div>
               </div> 
                 {/*     header     */}
                
                <div style={styles(theme).scrollView}>
-               {session?.exercises && Object.keys(session.exercises).length > 0 &&
+               {session?.exercises && session.exerciseOrder?.length > 0 &&
                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column',width:'95%'}}>
-               {Object.entries(session.exercises).map(([exId, exercise]) => {
-                const exerciseObj = AppData.exercises.find(ex => ex.id === parseInt(exId));
-                const exerciseName = exerciseObj ? exerciseObj.name[langIndex] : `Exercise ${exId}`;
+               {session.exerciseOrder.map(exId => {
+                const exercise = session.exercises[exId];
+                const exerciseObj = AppData.exercises.find(e => e.id === parseInt(exId));
+                if (!exerciseObj || !exercise) return null;
+                const exerciseName = exerciseObj.name[langIndex];
                 return (
                  <div key={exId} style={{ display: 'flex', flexDirection: 'column' }}>
                  {/* Exercise name */}
@@ -177,9 +225,9 @@ return (
                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                    <div style={{display: 'flex',height:'25px',justifyContent: 'flex-start',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
                       <div style={{...styles(theme,fSize).subtext,width:'10%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{'№'}</div>
-                      <div style={{...styles(theme,fSize).subtext,width:'24%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Повторы' : 'Reps'}</div>
-                      <div style={{...styles(theme,fSize).subtext,width:'24%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Вес' : 'Weight'}</div>
-                       <div style={{...styles(theme,fSize).subtext,width:'24%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Время' : 'Time'}</div>
+                      <div style={{...styles(theme,fSize).subtext,width:'26%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Повторы' : 'Reps'}</div>
+                      <div style={{...styles(theme,fSize).subtext,width:'26%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Вес' : 'Weight'}</div>
+                       <div style={{...styles(theme,fSize).subtext,width:'26%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Время' : 'Time'}</div>
                    </div>
                    { exercise.sets.map((set, setIndex) => (
                   <div key={setIndex} style={{display: 'flex',height:'35px',justifyContent: 'flex-start',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
@@ -188,8 +236,7 @@ return (
                       <div style={numStyle(theme,set.type)}>{set.weight}{usePrev && <Difference exId={exId} setIndex={setIndex} beforeDate={new Date(trainInfo.dayKey)} value={set.weight} isReps={false} theme={theme} />}</div>
                       <div style={numStyle(theme,set.type)}>{formatDurationMs(set.time)}{usePrev && <Difference exId={exId} setIndex={setIndex} beforeDate={new Date(trainInfo.dayKey)} value={set.time} isReps={false}  theme={theme} isTime={true}/>}</div>
                       <div style={{marginLeft:'auto'}}>
-                        <FaPencilAlt style={styles(theme).icon}/>
-                        <FaTrash style={styles(theme).icon}/>
+                        <FaPencilAlt onClick={() => {onRedactSet(exId,setIndex)}} style={styles(theme).icon} />
                       </div>
                    </div> 
                 ))}
@@ -202,8 +249,9 @@ return (
                    </div>}
                 {/* buttons */}
                 <div style={{display: 'flex',height:'30px',borderBottomLeftRadius:'12px',borderBottomRightRadius:'12px',justifyContent: 'space-around',alignItems:'center',backgroundColor: Colors.get('bottomPanel', theme)}}>
+                  <FaTrash onClick={() => {onRemoveExercise(exId)}} style={{...styles(theme).icon,fontSize:'16px'}}/>
                   <FaPlusCircle onClick={() => {onNewset(exId,exercise.sets.length)}} style={{...styles(theme).icon,fontSize:'16px'}}/>
-                  {!exercise.completed && <FaFlag style={{...styles(theme).icon,fontSize:'16px'}}/>}
+                  {!exercise.completed && <FaFlag onClick={() => {onFinishExercise(exId)}} style={{...styles(theme).icon,fontSize:'16px'}}/>}
                 </div>
               </div>
               
@@ -217,8 +265,8 @@ return (
           <div style={{display:'flex',width:'100%',height:'15vw',justifyContent:'space-around',alignItems:'center',backgroundColor:Colors.get('bottomPanel', theme),borderRadius:'24px'}}>
                 <FaInfo onClick={() => {setShowInfoPanel(true);}} style={{fontSize:'20px',color:Colors.get('icons', theme),marginLeft:'10px'}}/>
                 <div style={{display:'flex',flexDirection:'row'}}>
-                  <FaPlus onClick={() => {}} style={{fontSize:'20px',color:Colors.get('icons', theme),marginLeft:'10px'}}/> 
-                  <MdFitnessCenter style={{fontSize:'20px',color:Colors.get('icons', theme),marginLeft:'10px'}}/>
+                  <FaPlus onClick={() => {setShowExerciseList(true)}} style={{fontSize:'20px',color:Colors.get('icons', theme),marginLeft:'10px'}}/> 
+                  <MdFitnessCenter onClick={() => {setShowExerciseList(true)}} style={{fontSize:'20px',color:Colors.get('icons', theme),marginLeft:'10px'}}/>
                 </div>
                   <div style={{display:'flex',flexDirection:'row'}}>
                     <div style={{...styles(theme,fSize).subtext,marginRight:'5px'}}>{langIndex === 0 ? 'предыдущее' : 'previous'}</div>
@@ -236,21 +284,21 @@ return (
          <div style={{...styles(theme).cP,height:'60%'}}>
            <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Добавьте повторы" : "Add reps"}</div>
            <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-              <FaMinus {...bindRepsMinus} style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setReps(prev => prev - 1 > 1 ? prev - 1 : 1)}}/>
+              <FaMinus {...bindRepsMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev - 1 > 1 ? prev - 1 : 1)}}/>
               <MyNumInput theme={theme} w={'100px'} h={'40px'}fSize={28} placeholder={'0'} value={reps} onChange={(value) => {setReps(parseInt(value))}}/>
-              <FaPlus {...bindRepsPlus} style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setReps(prev => prev + 1)}}/>
+              <FaPlus {...bindRepsPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev + 1)}}/>
            </div>
            <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Добавьте вес" : "Add weight"}</div>
            <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-              <FaMinus {...bindWeightMinus} style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setWeight(prev => prev - 0.25 > 0.25 ? prev -0.25 : 0.25)}}/>
+              <FaMinus {...bindWeightMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev - 0.25 > 0.25 ? prev -0.25 : 0.25)}}/>
               <MyNumInput theme={theme} w={'100px'} h={'40px'}afterPointer={langIndex === 0 ? 'кг' : 'kg'} fSize={28} placeholder={'0'} value={weight} onChange={(value) => {setWeight(parseFloat(value))}}/>
-              <FaPlus {...bindWeightPlus} style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setWeight(prev => prev + 0.25)}}/>
+              <FaPlus {...bindWeightPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev + 0.25)}}/>
            </div>
            <div style={styles(theme,fSize).text}>{langIndex === 0 ? "Время выполнения(опционально)" : "Performance time (optional)"}</div>
            <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-              <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 10000)}}/>
+              <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 10000)}}/>
               <div style={{...styles(theme,fSize).text,fontSize:'28px'}}>{formatDurationMs(exTime)}</div>
-              <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setExTime(prev => prev + 10000 < 3600000 ? prev + 10000 : 3600000)}}/>
+              <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000 < 3600000 ? prev + 10000 : 3600000)}}/>
            </div>
            <div style={{...styles(theme,fSize).simplePanelRow,width:'50%'}}>
               <div onClick={() => {setStopWatchPanel(true)}} style={{...styles(theme,fSize).text,fontSize:'16px'}}>{langIndex === 0 ? "Секундомер" : "Stopwatch"}</div>
@@ -269,6 +317,39 @@ return (
            </div>
          </div>
       </div>}
+      {showRedactSetPanel && <div  style={styles(theme).confirmContainer}>
+         <div style={{...styles(theme).cP,height:'60%'}}>
+           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Измените повторы" : "Change reps"}</div>
+           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+              <FaMinus {...bindRepsMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev - 1 > 1 ? prev - 1 : 1)}}/>
+              <MyNumInput theme={theme} w={'100px'} h={'40px'}fSize={28} placeholder={'0'} value={reps} onChange={(value) => {setReps(parseInt(value))}}/>
+              <FaPlus {...bindRepsPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev + 1)}}/>
+           </div>
+           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Измените вес" : "Change weight"}</div>
+           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+              <FaMinus {...bindWeightMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev - 0.25 > 0.25 ? prev -0.25 : 0.25)}}/>
+              <MyNumInput theme={theme} w={'100px'} h={'40px'}afterPointer={langIndex === 0 ? 'кг' : 'kg'} fSize={28} placeholder={'0'} value={weight} onChange={(value) => {setWeight(parseFloat(value))}}/>
+              <FaPlus {...bindWeightPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev + 0.25)}}/>
+           </div>
+           <div style={styles(theme,fSize).text}>{langIndex === 0 ? "Измените время выполнения" : "Change performance time"}</div>
+           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+              <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 10000)}}/>
+              <div style={{...styles(theme,fSize).text,fontSize:'28px'}}>{formatDurationMs(exTime)}</div>
+              <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000 < 3600000 ? prev + 10000 : 3600000)}}/>
+           </div>
+           
+          
+           <div style={{...styles(theme,fSize).simplePanelRow,width:'50%'}}>
+              <div style={{...styles(theme,fSize).text,fontSize:'16px'}}>{langIndex === 0 ? "Рабочий подход" : "Working set"}</div>
+              {isWarmUp?<FaRegCircle  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setIsWarmUp(false)}}/> :
+                <FaRegCircleCheck  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setIsWarmUp(true)}}/>}
+           </div>
+           <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+              <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => setShowRedactSetPanel(false)}/>
+              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {redactset()}}/>
+           </div>
+         </div>
+      </div>}
       {stopWatchPanel && <div  style={styles(theme).confirmContainer}>
          <Stopwatch theme={theme} langIndex={langIndex} setTime={setExTime} setShowPanel={setStopWatchPanel}/>
       </div>}
@@ -279,6 +360,68 @@ return (
           <button onClick={() => {setPremiumMiniPage(false)}} style={{...styles(theme,fSize).btn,margin:'10px'}} >{langIndex === 0 ? 'Закрыть' : 'Close'}</button>
         </div>
       }
+      {showConfirmPanel && <div  style={styles(theme).confirmContainer}>
+         <div style={{...styles(theme).cP,height:'20%'}}>
+           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Завершить тренировку?" : "Finish session?"}</div>
+           <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+              <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => setShowConfirmPanel(false)}/>
+              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {onFinishSession()}}/>
+           </div>
+         </div>
+      </div>}
+      {showConfirmExercisePanel && <div  style={styles(theme).confirmContainer}>
+         <div style={{...styles(theme).cP,height:'20%'}}>
+           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Удалить упражнение?" : "Delete exercise?"}</div>
+           <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+              <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => setShowConfirmExercisePanel(false)}/>
+              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {removeexercise()}}/>
+           </div>
+         </div>
+      </div>}
+      {showFinishPanel && <div  style={styles(theme).confirmContainer}>
+         <div style={{...styles(theme).cP,height:'70%'}}>
+           <div style={{...styles(theme,fSize).subtext  }}>{langIndex === 0 ? "Результаты тренировки" : "Session results"}</div>
+           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', marginTop: '12px', borderBottom: `1px solid ${Colors.get('border', theme)}`}}>
+           <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+            <div style={{...styles(theme,fSize).subtext}}>{langIndex === 0 ? "Время тренировки" : "Training time"}</div>
+            <div style={{...styles(theme,fSize).text,fontSize:'24px'}}>{formatDurationMs(session.duration)}</div>
+           </div>
+           <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+            <div style={{...styles(theme,fSize).subtext}}>{langIndex === 0 ? "Тоннаж" : "Tonnage"}</div>
+            <div style={{...styles(theme,fSize).text,fontSize:'24px'}}>{tonnage * 0.001 + (langIndex === 0 ? ' т' : ' t')}</div>
+           </div>
+           <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+            <div style={{...styles(theme,fSize).subtext}}>{langIndex === 0 ? "Повторения" : "Reps"}</div>
+            <div style={{...styles(theme,fSize).text,fontSize:'24px'}}>{allReps}</div>
+           </div>
+           <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
+            <div style={{...styles(theme,fSize).subtext}}>{langIndex === 0 ? "Сеты" : "Sets"}</div>
+            <div style={{...styles(theme,fSize).text,fontSize:'24px'}}>{getAllSets(trainInfo.dayKey, trainInfo.dInd)}</div>
+           </div>
+           </div>
+           <div style={{...styles(theme,fSize).subtext  }}>{langIndex === 0 ? "Разовые максимумы" : "One rep max"}</div>
+           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', marginTop: '12px', borderBottom: `1px solid ${Colors.get('border', theme)}` }}>
+           {session.exerciseOrder.map(exId => {
+            const exercise = session.exercises[exId];
+            const exerciseObj = AppData.exercises.find(e => e.id === parseInt(exId));
+             if (!exerciseObj || !exercise) return null;
+             const bestSet = exercise.sets.reduce((best, set) =>  set.weight > best.weight ? set : best,  { weight: 0, reps: 1 });
+              const oneRepMax = getMaxOneRep(bestSet.reps, bestSet.weight);
+              return (
+             <div  key={exId}  style={{  display: 'flex', flexDirection: 'column',  alignItems: 'center', padding: '12px'}}>
+            <div style={{ ...styles(theme, fSize).subtext, fontWeight: 'bold', textAlign: 'center' }}>{exerciseObj.name[langIndex]}</div>
+              <div style={{ ...styles(theme, fSize).text, fontSize: '24px', marginTop: '8px' }}>
+               {isNaN(oneRepMax) || oneRepMax <= 0 ? '-' : `${oneRepMax} ${langIndex === 0 ? 'кг' : 'kg'}`} </div> </div>);})}</div>
+           <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {setPage('TrainingMain')}}/>
+           </div>
+         </div>
+      </div>}
+      {showExerciseList && (
+        <div style={{...styles(theme).confirmContainer}}>
+          <TrainingExercise needToAdd={true} setEx={addExercise} />
+        </div>
+      )}
     </div>
   )
 }
@@ -290,14 +433,14 @@ const numStyle = (theme,type) =>
   fontSize:'18px',
   fontWeight:'bold',
   color:type === 0 ? Colors.get('trainingIsolatedFont', theme) : Colors.get('trainingBaseFont', theme),
-  width:'24%',
+  width:'26%',
   borderRight:`1px solid ${Colors.get('border', theme)}`
 })
 const numStylePrev = (theme) =>
 ({
   fontSize:'20px',
   color:Colors.get('prevTrainingText', theme),
-  width:'24%',
+  width:'26%',
   borderRight:`1px solid ${Colors.get('border', theme)}`
 })
 const spanStyle = (theme,isMore) =>

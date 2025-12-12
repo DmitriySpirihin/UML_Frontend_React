@@ -57,7 +57,7 @@ export class AppData{
     this.currentProgramId = data.currentProgramId;
     if(data.exercises?.length > 0)this.exercises = data.exercises;
     if(data.programs?.length > 0)this.programs = data.programs;
-    //this.trainingLog = data.trainingLog;
+    this.trainingLog = data.trainingLog;
   }
   static setPrefs(ind,value){
     this.prefs[ind] = value;
@@ -285,7 +285,7 @@ export class Data{
     this.currentProgramId = AppData.currentProgramId,
     this.exercises = AppData.exercises,
     this.programs = AppData.programs
-    //this.trainingLog = AppData.trainingLog
+    this.trainingLog = AppData.trainingLog
   }
 }
 
