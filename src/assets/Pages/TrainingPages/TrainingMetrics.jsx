@@ -11,18 +11,19 @@ const TrainingMetrics = () => {
     const [fSize,setFSize] = useState(AppData.prefs[4]);   
   
   const chartData = [
-  { date: "2025-11-12", value: 240 },
-  { date: "2025-11-13", value: 60 },
-  { date: "2025-11-14", value: 180 },
-  { date: "2025-11-16", value: 220 },
-  { date: "2025-11-17", value: 220 },
-  { date: "2025-11-18", value: 20 },
-  { date: "2025-11-19", value: 260 },
-  { date: "2025-11-20", value: 250 },
-  { date: "2025-11-21", value: 250 },
-  { date: "2025-11-23", value: 250 },
-  { date: "2025-11-24", value: 250 },
-  { date: "2025-11-25", value: 250 },
+  { date: "2025-10-19", value: 47 },
+  { date: "2025-10-21", value: 67 },
+  { date: "2025-10-25", value: 69 },
+  { date: "2025-10-17", value: 72 },
+  { date: "2025-10-29", value: 70 },
+  { date: "2025-11-04", value: 73 },
+  { date: "2025-11-08", value: 75 },
+  { date: "2025-11-12", value: 78 },
+  { date: "2025-11-17", value: 80 },
+  { date: "2025-11-24", value: 82 },
+  { date: "2025-11-28", value: 82 },
+  { date: "2025-12-05", value: 85 },
+  { date: "2025-12-11", value: 106 },
 ];
     // subscriptions
     useEffect(() => {
@@ -41,9 +42,10 @@ const TrainingMetrics = () => {
     }, []);     
   // render    
   return (
-    <div style={styles(theme).container}>
+    <div style={styles(theme).container}> 
+    <p style={{...styles(theme,fSize).text,paddingTop:'10px'}}>Training Metrics</p>
       <div style={styles(theme).panel}>
-         <BarChart  theme={theme}  data={chartData} mark={'kg'} color={'#ca854cff'}/>
+         <BarChart  theme={theme}  data={chartData} mark={'rep'} color={'#ca7e4cff'}/>
       </div>
       
     </div>
@@ -54,7 +56,7 @@ export default TrainingMetrics
 
 
 
-const styles = (theme) =>
+const styles = (theme,fSize) =>
 ({
     container :
    {
@@ -81,18 +83,14 @@ const styles = (theme) =>
   text :
   {
     textAlign: "left",
-    fontSize: "10px",
-    color: Colors.get('mainText', theme),
-    marginLeft: "30px",
-    marginBottom:'12px'
+    fontSize: fSize === 0 ? '13px' : '15px',
+    color: Colors.get('mainText', theme)
   },
   subtext :
   {
     textAlign: "left",
-    fontSize: "8px",
-    color: Colors.get('subText', theme),
-    marginLeft: "30px",
-    marginBottom:'12px'
+    fontSize: fSize === 0 ? '11px' : '13px',
+    color: Colors.get('subText', theme)
   }
 })
 

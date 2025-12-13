@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
+import { FaBorderTopLeft } from 'react-icons/fa6';
 
 const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
   const TOTAL_DAYS = 60;
-  const WIDTH = 90; // % of container
+  const WIDTH = 95; // % of container
   const HEIGHT = 30; // vh
   const GAP = 2; // px between bars
   const PADDING_TOP = 5; // % top padding
-  const PADDING_BOTTOM = 15; // % bottom padding
+  const PADDING_BOTTOM = 10; // % bottom padding
   const CHART_HEIGHT = 100 - PADDING_TOP - PADDING_BOTTOM; // 80% chart area
 
   const [selectedBar, setSelectedBar] = useState(null); // {date, value, index}
@@ -39,9 +40,9 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
 
   // Calculate Y position within chart area
   const getYPosInChart = (value) => {
-    if (chartMax <= 0) return CHART_HEIGHT;
-    return ((chartMax - value) / chartMax) * CHART_HEIGHT;
-  };
+  if (chartMax <= 0) return CHART_HEIGHT; // Bottom of chart area
+  return ((value / chartMax) * CHART_HEIGHT); // 0% = bottom, 100% = top
+};
 
   // Handle bar click
   const handleBarClick = (date, value, index) => {
@@ -120,19 +121,19 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
           {hasData && (
             <>
               <div style={{
-                position: 'absolute',
-                left: '0',
-                right: '0',
-                top: `${getYPosInChart(maxValue)}%`,
-                height: '1px',
-                backgroundColor: '#e74c3c',
-                opacity: 0.7
-              }} />
+        position: 'absolute',
+        left: '0',
+        right: '0',
+        top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(maxValue)}%`,
+        height: '1px',
+        backgroundColor: '#e74c3c',
+        opacity: 0.7
+      }} />
               <div style={{
                 position: 'absolute',
                 left: '0',
                 right: '130%',
-                top: `${getYPosInChart(maxValue)}%`,
+                top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(maxValue)}%`,
                 fontSize: '6px',
                 color: '#e74c3c',
                 textAlign: 'center',
@@ -140,39 +141,39 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
               
               {validCount > 0 && (
                 <div style={{
-                  position: 'absolute',
-                  left: '0',
-                  right: '0',
-                  top: `${getYPosInChart(averageValue)}%`,
-                  height: '1px',
-                  backgroundColor: '#3498db',
-                  opacity: 0.7
-                }} />
+          position: 'absolute',
+          left: '0',
+          right: '0',
+          top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(averageValue)}%`,
+          height: '1px',
+          backgroundColor: '#6d7072ff',
+          opacity: 0.7
+        }} />
               )}
               <div style={{
                 position: 'absolute',
                 left: '0',
                 right: '130%',
-                top: `${getYPosInChart(averageValue)}%`,
+                top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(averageValue)}%`,
                 fontSize: '6px',
-                color: '#3498db',
+                color: '#6d7072ff',
                 textAlign: 'center',
               }} >{averageValue.toFixed() + mark}</div>
               
               <div style={{
-                position: 'absolute',
-                left: '0',
-                right: '0',
-                top: `${getYPosInChart(minValue)}%`,
-                height: '1px',
-                backgroundColor: '#2ecc71',
-                opacity: 0.7
-              }} />
+        position: 'absolute',
+        left: '0',
+        right: '0',
+        top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(minValue)}%`,
+        height: '1px',
+        backgroundColor: '#2ecc71',
+        opacity: 0.7
+      }} />
               <div style={{
                 position: 'absolute',
                 left: '0',
                 right: '130%',
-                top: `${getYPosInChart(minValue)}%`,
+                top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(minValue)}%`,
                 fontSize: '6px',
                 color: '#2ecc71',
                 textAlign: 'center',
@@ -196,6 +197,8 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
             const value = dataMap.get(date);
             const hasValue = value !== undefined;
             const isSelected = selectedBar?.date === date;
+            const borderTopLeftRadius = '4px';
+            const borderTopRightRadius = '4px';
             const barColor = isSelected 
               ? (theme === 'dark' ? '#5772caff' : '#ff6600') // Highlight color
               : color;
@@ -215,16 +218,16 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
                 onClick={() => handleBarClick(date, value, index)}
               >
                 <div
-                  style={{
-                    width: '80%',
-                    height: '100%',
-                    backgroundColor: hasValue ? barColor : 'transparent',
-                    borderLeft: '1px solid rgba(76, 69, 69, 0.2)',
-                    ...(hasValue && {
-                      background: `linear-gradient(to top, ${barColor} ${((value / chartMax) * 100)}%, transparent ${((value / chartMax) * 100)}%)`
-                    })
-                  }}
-                />
+  style={{
+    width: '80%',
+    height: '100%',
+    backgroundColor: hasValue ? barColor : 'transparent',
+    borderLeft: '1px solid rgba(76, 69, 69, 0.2)',
+    ...(hasValue && {
+      background: `linear-gradient(to top, ${barColor} ${((value / chartMax) * 100)}%, transparent ${((value / chartMax) * 100)}%)`
+    })
+  }}
+/>
               </div>
             );
           })}

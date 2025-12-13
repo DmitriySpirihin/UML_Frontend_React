@@ -111,7 +111,7 @@ const MainMenu = ({ onPageChange }) => {
                     onClick={() => {onPageChange('HabitsMain');playEffects(null);}}
                 />
                 <MenuCard 
-                    text={['Тренировочная дневник', 'Training diary']} 
+                    text={['Тренировочный дневник', 'Training log']} 
                     decr={[
                         'Отслеживайте свой тренировочный прогресс, ставьте цели и анализируйте результаты. Идеальный инструмент для системного подхода к физическому развитию.', 
                         'Track your workout progress, set goals, and analyze results. The perfect tool for a systematic approach to physical development.'
