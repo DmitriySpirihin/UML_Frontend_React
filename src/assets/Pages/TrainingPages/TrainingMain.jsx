@@ -230,10 +230,10 @@ const TrainingMain = () => {
          <div style={{...styles(theme).cP,height:'50%'}}>
           <p style={{...styles(theme,fSize).mainText,marginBottom:'10px'}}>{langIndex === 0 ? 'Начать тренировку?' : 'Start training?'}</p>
 
-            <select style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}} onChange={(e) => setProgrammId(e.target.value)}>
+            <select style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}} onChange={(e) => setProgrammId(Number(e.target.value))}>
                 {renderProgramOptions(theme, langIndex,fSize)}
               </select>
-              <select style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}} onChange={(e) => setDayIndex(e.target.value)}>
+              <select style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}} onChange={(e) => setDayIndex(Number(e.target.value))}>
                 {renderTrainingDaysOptions(theme, langIndex,fSize,programId)}
               </select>
             
@@ -246,10 +246,10 @@ const TrainingMain = () => {
         {showPreviousSessionPanel && <div  style={styles(theme).confirmContainer}>
          <div style={{...styles(theme).cP,height:'50%'}}>
           <p style={{...styles(theme,fSize).mainText,marginBottom:'10px'}}>{langIndex === 0 ? 'Добавить предыдущую тренировку?' : 'Add previous training?'}</p>
-          <select style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}} onChange={(e) => setProgrammId(e.target.value)}>
+          <select style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}} onChange={(e) => setProgrammId(Number(e.target.value))}>
                 {renderProgramOptions(theme, langIndex,fSize)}
               </select>
-              <select style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}} onChange={(e) => setDayIndex(e.target.value)}>
+              <select style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}} onChange={(e) => setDayIndex(Number(e.target.value))}>
                 {renderTrainingDaysOptions(theme, langIndex,fSize,programId)}
               </select>
           {/* Start Time */}

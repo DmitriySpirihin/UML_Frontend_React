@@ -56,6 +56,15 @@ export class Colors {
 
     trainingBaseFont: { light: "#341717ff", dark: "#794040ff", speciallight: "#3c0707ff", specialdark: "#903d3dff" },
     trainingIsolatedFont: { light: "#3d3923ff", dark: "#77713dff", speciallight: "#464302ff", specialdark: "#797b3aff" },
+    
+    // metrics
+    barsColorWeight:{ light: "#99723bff", dark: "#c8803cff", speciallight: "#885c42ff", specialdark: "#a88b22ff" },
+    barsColorTonnage:{ light: "#7f8520ff", dark: "#b2af4eff", speciallight: "#6e7238ff", specialdark: "#a3a318ff" },
+    barsColorMeasures:{ light: "#648f3eff", dark: "#5cb57dff", speciallight: "#4a6a34ff", specialdark: "#248a1eff" },
+    choosenColor:{ light: "#4fc5daff", dark: "#467876ff", speciallight: "#269cd2ff", specialdark: "#548a35ff" },
+    maxValColor:{ light: "#51f3b2ff", dark: "#53703bff", speciallight: "#dd3f5cff", specialdark: "#33b74dff" },
+    minValColor:{ light: "#fc72d2ff", dark: "#6f3838ff", speciallight: "#83c475ff", specialdark: "#ab492aff" },
+    linesColor:{ light: "#6f828cff", dark: "#2d3032ff", speciallight: "#673140ff", specialdark: "#293d2fff" },
   };
 
   static setTheme(theme) {

@@ -405,23 +405,6 @@ export const programs = [
 
 export const allExercises = () => [...AppData.exercises]; 
 
-export async function setTrainingDay(startDate,endDate,pId,exercises){
-    const trainingDay = new TrainingDay(startDate,endDate,pId,exercises);
-    AppData.trainingLog.push(trainingDay);
-    await saveData();
-}
-
-export async function removeTrainingDay(startDate){
-    AppData.trainingLog = AppData.trainingLog.filter(day => day.startDate !== startDate);
-    await saveData();
-}
-
-export async function updateTrainingDay(startDate,endDate,pId,exercises){
-    const trainingDay = new TrainingDay(startDate,endDate,pId,exercises);
-    AppData.trainingLog = AppData.trainingLog.map(day => day.startDate === startDate ? trainingDay : day);
-    await saveData();
-}
-
 export async function addExercise(mgId,name,description,isBase){
     const newId = allExercises().length;
     const exercise = new Exercise(newId,mgId,name,description,isBase);
@@ -466,7 +449,7 @@ export async function addDayToProgram(pId, dayName) {
     name: typeof dayName === 'string' ? [dayName, dayName] : dayName,
     exercises: []
   });
-
+  console.log(JSON.stringify(program));
   await saveData();
 }
 export async function redactDayInProgram(pId, dayIndex, dayName) {

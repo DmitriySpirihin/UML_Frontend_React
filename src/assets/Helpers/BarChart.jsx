@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FaBorderTopLeft } from 'react-icons/fa6';
 
-const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
+const BarChart = ({ data = [], mark = 'kg', barsColor = "#676767ff",linesColor,choosenColor,maxValColor,minValColor,textColor, }) => {
   const TOTAL_DAYS = 60;
   const WIDTH = 95; // % of container
   const HEIGHT = 30; // vh
@@ -63,9 +63,10 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
       position: 'relative',
       margin: '20px 0',
       display: 'flex',
+      border:`1px solid ${linesColor}`,
       justifyContent: 'center'
     }}>
-      {/* Chart Container */}
+      
       <div style={{
         width: `${WIDTH}%`,
         height: '100%',
@@ -78,7 +79,7 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
           top: `${PADDING_TOP}%`,
           bottom: `${PADDING_BOTTOM}%`,
           width: '1px',
-          backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+          backgroundColor: linesColor
         }} />
         
         {/* X-Axis Line */}
@@ -88,26 +89,12 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
           right: '0',
           bottom: `${PADDING_BOTTOM}%`,
           height: '1px',
-          backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+          backgroundColor: linesColor
         }} />
         
+        
         {/* Subtle Horizontal Grid Lines */}
-        <div style={{
-          position: 'absolute',
-          left: '0',
-          right: '0',
-          top: `${PADDING_TOP}%`,
-          height: `${CHART_HEIGHT}%`,
-          backgroundImage: `
-            linear-gradient(
-              to bottom,
-              transparent 99%,
-              ${theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'} 100%
-            )
-          `,
-          backgroundSize: '1px 10%',
-          pointerEvents: 'none'
-        }} />
+        
         
         {/* Reference Lines */}
         <div style={{
@@ -126,7 +113,7 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
         right: '0',
         top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(maxValue)}%`,
         height: '1px',
-        backgroundColor: '#e74c3c',
+        backgroundColor: maxValColor,
         opacity: 0.7
       }} />
               <div style={{
@@ -135,7 +122,7 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
                 right: '130%',
                 top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(maxValue)}%`,
                 fontSize: '6px',
-                color: '#e74c3c',
+                color: maxValColor,
                 textAlign: 'center',
               }} >{maxValue + mark}</div>
               
@@ -146,7 +133,7 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
           right: '0',
           top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(averageValue)}%`,
           height: '1px',
-          backgroundColor: '#6d7072ff',
+          backgroundColor: linesColor,
           opacity: 0.7
         }} />
               )}
@@ -156,7 +143,7 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
                 right: '130%',
                 top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(averageValue)}%`,
                 fontSize: '6px',
-                color: '#6d7072ff',
+                color: linesColor,
                 textAlign: 'center',
               }} >{averageValue.toFixed() + mark}</div>
               
@@ -166,7 +153,7 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
         right: '0',
         top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(minValue)}%`,
         height: '1px',
-        backgroundColor: '#2ecc71',
+        backgroundColor: minValColor,
         opacity: 0.7
       }} />
               <div style={{
@@ -175,7 +162,7 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
                 right: '130%',
                 top: `${PADDING_TOP + CHART_HEIGHT - getYPosInChart(minValue)}%`,
                 fontSize: '6px',
-                color: '#2ecc71',
+                color: minValColor,
                 textAlign: 'center',
               }} >{minValue + mark}</div>
             </>
@@ -197,11 +184,9 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
             const value = dataMap.get(date);
             const hasValue = value !== undefined;
             const isSelected = selectedBar?.date === date;
-            const borderTopLeftRadius = '4px';
-            const borderTopRightRadius = '4px';
             const barColor = isSelected 
-              ? (theme === 'dark' ? '#5772caff' : '#ff6600') // Highlight color
-              : color;
+              ? choosenColor // Highlight color
+              : barsColor;
             
             return (
               <div
@@ -223,6 +208,8 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
     height: '100%',
     backgroundColor: hasValue ? barColor : 'transparent',
     borderLeft: '1px solid rgba(76, 69, 69, 0.2)',
+    borderTopLeftRadius : '4px',
+    borderTopRightRadius : '4px',
     ...(hasValue && {
       background: `linear-gradient(to top, ${barColor} ${((value / chartMax) * 100)}%, transparent ${((value / chartMax) * 100)}%)`
     })
@@ -235,18 +222,18 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
 
         {/* X-Axis Labels */}
         <div style={{
-          width: '100%',
+          width: '130%',
           display: 'flex',
           justifyContent: 'space-between',
           position: 'absolute',
           bottom: '0',
-          left: 0,
+          left: -60,
           right: 0,
           height: '20px'
         }}>
           <div style={{
             fontSize: '10px',
-            color: theme === 'dark' ? '#888' : '#777',
+            color: textColor,
             textAlign: 'center',
             width: '33%'
           }}>
@@ -254,7 +241,7 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
           </div>
           <div style={{
             fontSize: '10px',
-            color: theme === 'dark' ? '#888' : '#777',
+            color: textColor,
             textAlign: 'center',
             width: '33%'
           }}>
@@ -262,7 +249,7 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
           </div>
           <div style={{
             fontSize: '10px',
-            color: theme === 'dark' ? '#888' : '#777',
+            color: textColor,
             textAlign: 'center',
             width: '33%'
           }}>
@@ -294,19 +281,19 @@ const BarChart = ({ theme, data = [], mark = 'kg', color = '#4a90e2' }) => {
               top: '10%',
               left: `${(selectedBar.index / (TOTAL_DAYS - 1)) * WIDTH + (100 - WIDTH) / 2}%`,
               transform: 'translateX(-50%)',
-              backgroundColor: theme === 'dark' ? 'rgba(30, 30, 30, 0.95)' : 'rgba(250, 250, 250, 0.95)',
-              color: theme === 'dark' ? '#fff' : '#000',
+              backgroundColor: 'rgba(30, 30, 30, 0.95)',
+              color: textColor,
               padding: '8px 12px',
               borderRadius: '6px',
               fontSize: '14px',
               fontWeight: 'bold',
               boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
               zIndex: 1,
-              border: `1px solid ${theme === 'dark' ? '#555' : '#ddd'}`
+              border: `1px solid ${linesColor}`
             }}
           >
             <div>{selectedBar.date}</div>
-            <div style={{ color: selectedBar.value > 0 ? (theme === 'dark' ? '#ff9900' : '#ff6600') : color, fontSize: '16px' }}>
+            <div style={{ color:barsColor, fontSize: '16px' }}>
               {selectedBar.value} {mark}
             </div>
           </div>
