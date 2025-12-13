@@ -196,7 +196,7 @@ return (
                </div>
                 <div style={{display:'flex',width:'100%',height:'15vw',justifyContent:'flex-start',alignItems:'center',borderTop:`1px solid ${Colors.get('border', theme)}`}}>
                   <div style={{...styles(theme,fSize).subtext,marginLeft:'12px',fontSize:'16px'}}>{isCompleted ? formatDurationMs(session.duration) : formatDurationMs(duration)}</div>
-                  <div style={{...styles(theme,fSize).subtext,fontSize:'16px',marginLeft:'12px'}}>{(tonnage * 0.001) + (langIndex === 0 ? 'тон' : 'ton')}</div>
+                  <div style={{...styles(theme,fSize).subtext,fontSize:'16px',marginLeft:'12px'}}>{(tonnage * 0.001).toFixed(2) + (langIndex === 0 ? 'тон' : 'ton')}</div>
                   {!isCompleted && <div style={{marginLeft:'auto',display:'flex',alignItems:'center'}}>
                     <ParsedTime time={currTimer} maxTime={maxTimer} theme={theme}/>
                     {!timer && <TimerOffIcon onClick={() => {setTimer(true);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/>}
@@ -389,7 +389,7 @@ return (
            </div>
            <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
             <div style={{...styles(theme,fSize).subtext}}>{langIndex === 0 ? "Тоннаж" : "Tonnage"}</div>
-            <div style={{...styles(theme,fSize).text,fontSize:'24px'}}>{tonnage * 0.001 + (langIndex === 0 ? ' т' : ' t')}</div>
+            <div style={{...styles(theme,fSize).text,fontSize:'24px'}}>{(tonnage * 0.001).toFixed(2) + (langIndex === 0 ? ' т' : ' t')}</div>
            </div>
            <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
             <div style={{...styles(theme,fSize).subtext}}>{langIndex === 0 ? "Повторения" : "Reps"}</div>

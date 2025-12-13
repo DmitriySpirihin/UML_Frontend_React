@@ -12,10 +12,17 @@ const TrainingMetrics = () => {
   
   const chartData = [
   { date: "2025-11-12", value: 240 },
-  { date: "2025-11-13", value: 300 },
+  { date: "2025-11-13", value: 60 },
   { date: "2025-11-14", value: 180 },
-  { date: "2025-11-15", value: 270 },
-  { date: "2025-11-16", value: 220 }
+  { date: "2025-11-16", value: 220 },
+  { date: "2025-11-17", value: 220 },
+  { date: "2025-11-18", value: 20 },
+  { date: "2025-11-19", value: 260 },
+  { date: "2025-11-20", value: 250 },
+  { date: "2025-11-21", value: 250 },
+  { date: "2025-11-23", value: 250 },
+  { date: "2025-11-24", value: 250 },
+  { date: "2025-11-25", value: 250 },
 ];
     // subscriptions
     useEffect(() => {
@@ -38,6 +45,7 @@ const TrainingMetrics = () => {
       <div style={styles(theme).panel}>
          <BarChart  theme={theme}  data={chartData} mark={'kg'} color={'#ca854cff'}/>
       </div>
+      
     </div>
   )
 }

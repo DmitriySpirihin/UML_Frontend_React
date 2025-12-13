@@ -1,4 +1,4 @@
-import React, {useState,useEffect} from 'react'
+import React, {useState,useEffect,useRef} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel,addNewTrainingDay$} from '../../StaticClasses/HabitsBus'
@@ -27,6 +27,7 @@ const TrainingMain = () => {
        const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
        const [date, setDate] = useState(new Date());
        const [currentDate, setCurrentDate] = useState(date);
+       const currentDateRef = useRef(currentDate);
        const [trainingAmount, setTrainingAmount] = useState(0);
        const [fSize, setFSize] = useState(AppData.prefs[4]); 
        const [showNewSessionPanel, setShowNewSessionPanel] = useState(false);  
@@ -82,22 +83,31 @@ const TrainingMain = () => {
        } 
        const prevMonth = () => {setDate(new Date(date.getFullYear(), date.getMonth() - 1));playEffects(clickSound);};
        const nextMonth = () =>{  setDate(new Date(date.getFullYear(), date.getMonth() + 1));playEffects(clickSound);};
+       
        useEffect(() => {
-        const subscription = addNewTrainingDay$.subscribe(onAddNewDay);
-        return () => subscription.unsubscribe();
-       }, []);
-       const onAddNewDay = () => {
-        const today = new Date();
-       if (currentDate > today) return;
-        const currentDateKey = formatDateKey(currentDate);
-        const todayKey = formatDateKey(today);
+        currentDateRef.current = currentDate;
+      }, [currentDate]);
 
-        if (currentDateKey === todayKey) {
-          setShowNewSessionPanel(true);
-        } else {
-         setShowPreviousSessionPanel(true);
-       }
-     };
+     useEffect(() => {
+      const subscription = addNewTrainingDay$.subscribe(() => {
+      const today = new Date();
+      const current = currentDateRef.current; // ✅ Use latest value
+      
+      if (current > today) return;
+      
+      const currentDateKey = formatDateKey(current);
+      const todayKey = formatDateKey(today);
+
+      if (currentDateKey === todayKey) {
+        setShowNewSessionPanel(true);
+      } else {
+        setShowPreviousSessionPanel(true);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+      
        const onSessionStart = () => {
           addNewSession(new Date(),programId,dayIndex);
           setShowNewSessionPanel(false);
@@ -199,7 +209,7 @@ const TrainingMain = () => {
                       onClick={()=>{setTrainInfo({mode:training.completed ? 'redact' : 'new',dayKey:formatDateKey(new Date(currentDate)),dInd:training.dayIndex});setPage('TrainingCurrent')}}
                       style={styles(theme).mainText}>{AppData.programs.find(p => p.id === training.programId).name[langIndex]}</div>
                       <div style={styles(theme).mainText}>{(langIndex === 0 ? 'День ' : 'Day ') + (index + 1) + ': ' + AppData.programs.find(p => p.id === training.programId).schedule[training.dayIndex].name[langIndex]}</div>
-                       {training.completed && <div style={{...styles(theme).subtext,marginBottom:'10px'}}>{`${Math.round(training.duration / 60000)}${langIndex === 0 ? ' мин' : ' min'}  /  ${training.tonnage * 0.001} ${langIndex === 0 ? ' тонн' : ' tons'}${getTrainingSummary(training,langIndex)}`}</div>}
+                       {training.completed && <div style={{...styles(theme).subtext,marginBottom:'10px'}}>{`${Math.round(training.duration / 60000)}${langIndex === 0 ? ' мин' : ' min'}  /  ${(training.tonnage * 0.001).toFixed(2)} ${langIndex === 0 ? ' тонн' : ' tons'}${getTrainingSummary(training,langIndex)}`}</div>}
                     </div>
                     <FaTrash onClick={()=>{onDelete(formatDateKey(new Date(currentDate)),training.dayIndex);setShowConfirmPanel(true);}} style={{...styles(theme).subtext,width:'18px',height:'18px',marginLeft:'auto',marginRight:'10px'}}/>
                   </div>

@@ -438,7 +438,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         bottom: '20px'
 
                     }}> 
-                        {langIndex === 0 ? 'версия: 1.c.12.3' : 'version: 1.c.12.3'}
+                        {langIndex === 0 ? 'версия: 1.c.13.5' : 'version: 1.c.13.5'}
                     </p>
                 </motion.div>
                 </React.Fragment>
