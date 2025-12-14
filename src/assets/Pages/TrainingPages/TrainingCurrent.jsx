@@ -37,7 +37,7 @@ const TrainingCurrent = () => {
     const [currentSet,setCurrentSet] = useState(3);
     const [currentExId,setCurrentExId] = useState('3');
     const [reps,setReps] = useState(10);
-    const [weight,setWeight] = useState(100);
+    const [weight,setWeight] = useState(0);
     const [exTime,setExTime] = useState(0);
     const [isWarmUp,setIsWarmUp] = useState(true);
     // additionl panels
@@ -52,6 +52,7 @@ const TrainingCurrent = () => {
     const [premiumMiniPage,setPremiumMiniPage] = useState(false);
     const [exerciseToRemove,setExerciseToRemove] = useState(null);
     //timer
+    const [needTimer,setNeedTimer] = useState(false);
     const [timer,setTimer] = useState(false);
     const [maxTimer,setMaxTimer] = useState(120000);
     const [currTimer,setCurrTimer] = useState(0);
@@ -138,7 +139,7 @@ const addset = () => {
    setShowAddNewSetPanel(false);
    setTonnage(getTonnage(trainInfo.dayKey, trainInfo.dInd));
    setAllReps(getAllReps(trainInfo.dayKey, trainInfo.dInd));
-   setTimer(true);
+   setTimer(needTimer);
 }
 const onRedactSet = (exId,setIndex) => {
   setCurrentExId(exId,setIndex);
@@ -301,12 +302,17 @@ return (
               <div style={{...styles(theme,fSize).text,fontSize:'28px'}}>{formatDurationMs(exTime)}</div>
               <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000 < 3600000 ? prev + 10000 : 3600000)}}/>
            </div>
-           <div style={{...styles(theme,fSize).simplePanelRow,width:'50%'}}>
+           {!isCompleted && <div style={{...styles(theme,fSize).simplePanelRow,width:'50%'}}>
               <div onClick={() => {setStopWatchPanel(true)}} style={{...styles(theme,fSize).text,fontSize:'16px'}}>{langIndex === 0 ? "Секундомер" : "Stopwatch"}</div>
               <FaStopwatch  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setStopWatchPanel(true)}}/>
-           </div>
+           </div>}
+           {!isCompleted && <div style={{...styles(theme,fSize).simplePanelRow,width:'60%'}}>
            <div style={{...styles(theme,fSize).text,fontSize:'18px'}}>{langIndex === 0 ? 'Таймер отдыха: ' : 'Rest timer: '}{Math.floor(maxTimer / 60000)}:{Math.floor((maxTimer % 60000) / 1000).toString().padStart(2, '0')}</div>
-           <Slider style={styles(theme).slider} min={10}max={600}step={10} value={maxTimer / 1000}valueLabelDisplay="off"onChange={(_, newValue) => { setMaxTimer(newValue * 1000); }}/>
+             {needTimer?<FaRegCircleCheck  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setNeedTimer(false)}}/> :
+                <FaRegCircle  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setNeedTimer(true)}}/>}
+           </div>}
+          {!isCompleted && needTimer && <Slider style={styles(theme).slider} min={10}max={600}step={10} value={maxTimer / 1000}valueLabelDisplay="off"onChange={(_, newValue) => { setMaxTimer(newValue * 1000); }}/>}
+           
            <div style={{...styles(theme,fSize).simplePanelRow,width:'50%'}}>
               <div style={{...styles(theme,fSize).text,fontSize:'16px'}}>{langIndex === 0 ? "Рабочий подход" : "Working set"}</div>
               {isWarmUp?<FaRegCircle  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setIsWarmUp(false)}}/> :

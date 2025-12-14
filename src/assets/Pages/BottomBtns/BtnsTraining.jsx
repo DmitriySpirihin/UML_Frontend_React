@@ -11,6 +11,7 @@ import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setAddNe
 import Colors from '../../StaticClasses/Colors'
 import {useState,useEffect} from 'react'
 import {AppData} from '../../StaticClasses/AppData'
+import {saveData} from '../../StaticClasses/SaveHelper'
 const switchSound = new Audio('Audio/Click.wav');
 
 const BtnsTraining = () => {
@@ -87,8 +88,11 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,
         </div>
     )
 }   
-const onBack = (page,addPanel) => {
-    if(page === 'TrainingMain' && addPanel === '') setPage('MainMenu');
+async function onBack(page,addPanel) {
+    if(page === 'TrainingMain' && addPanel === ''){
+        setPage('MainMenu');
+        await saveData();
+    }
     else{
         if(addPanel !== '') setAddPanel('');
         else setPage('TrainingMain');

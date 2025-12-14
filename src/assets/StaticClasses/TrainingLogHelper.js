@@ -1,4 +1,5 @@
 import { AppData} from '../StaticClasses/AppData';
+import {saveData} from '../StaticClasses/SaveHelper';
 /* training log structure   store in AppData.trainingLog
 {
   "2025-12-08": [{ 
@@ -7,7 +8,7 @@ import { AppData} from '../StaticClasses/AppData';
     complited: true,                              //check on app start
     startTime: 1702213815432,                     //when start new training  Date.now()
     endTime: 1702213945432,                       //fixed when finish training  Date.now()
-    duration: 2700000,                            //in milliseconds  45 min is 2700000 ms  endTime - startTime
+    duration: 2700000,                             //in milliseconds  45 min is 2700000 ms  endTime - startTime
     tonnage: 100,                                 //add when finish set , adding per set
     exerciseOrder: [],                            // Store exercise IDs in order
     exercises: {
@@ -28,31 +29,6 @@ import { AppData} from '../StaticClasses/AppData';
 export function formatDateKey(date) {
   const d = new Date(date);
   return d.toISOString().split('T')[0]; // "2025-12-08"
-}
-
-// helpers
-export function getTrainingSummary(session, langIndex) {
-  if (!session?.exercises) {
-    return (langIndex === 0 ? '0 упр./ 0 подх.' : '0 ex./ 0 sets');
-  }
-
-  let exerciseCount = 0;
-  let setCount = 0;
-
-  for (const exercise of Object.values(session.exercises)) {
-    if (exercise.completed) {
-      exerciseCount++;
-      if (Array.isArray(exercise.sets)) {
-        setCount += exercise.sets.length;
-      }
-    }
-  }
-
-  if (langIndex === 0) {
-    return ` / ${exerciseCount} упр. / ${setCount} подх.`;
-  } else {
-    return ` / ${exerciseCount} ex. / ${setCount} sets`;
-  }
 }
 
 export function findPreviousSimilarExercise(exId, setIndex, beforeDate, trainingLog) {
@@ -99,7 +75,7 @@ export function findPreviousSimilarExercise(exId, setIndex, beforeDate, training
 
   return bestMatch; // null if none found
 }
-export function addNewSession(date, programId, dayIndex) {
+export async function addNewSession(date, programId, dayIndex) {
   const program = AppData.programs.find(p => p.id === programId);
   if (!program || !program.schedule[dayIndex]) {
     console.error('Invalid program or dayIndex');
@@ -139,10 +115,10 @@ export function addNewSession(date, programId, dayIndex) {
     AppData.trainingLog[dateKey] = [];
   }
   AppData.trainingLog[dateKey].push(newSession);
-  return true;
+  await saveData();
 }
 // In TrainingLogHelper.js
-export function addPreviousSession(date, programId, dayIndex, startTimeMs, endTimeMs) {
+export async function addPreviousSession(date, programId, dayIndex, startTimeMs, endTimeMs) {
   // ✅ CREATE DATE IN LOCAL TIME (critical fix)
   const sessionDate = new Date(
     date.getFullYear(), 
@@ -154,9 +130,10 @@ export function addPreviousSession(date, programId, dayIndex, startTimeMs, endTi
   const sessionEndTime = sessionDate.getTime() + endTimeMs;
   const duration = sessionEndTime - sessionStartTime;
   const exercises = {};
+  const exerciseOrder = [];
   const program = AppData.programs.find(p => p.id === programId);
   program.schedule[dayIndex].exercises.forEach(ex => {
-    const exerciseOrder = [];
+    
     const exercise = AppData.exercises.find(e => e.id === ex.exId);
     if (!exercise) {
       console.warn(`Exercise ${ex.exId} not found in AppData.exercises`);
@@ -189,9 +166,9 @@ export function addPreviousSession(date, programId, dayIndex, startTimeMs, endTi
     AppData.trainingLog[dateKey] = [];
   }
   AppData.trainingLog[dateKey].push(newSession);
-  return true;
+  await saveData();
 }
-export function deleteSession(date, sessionIndex) {
+export async function deleteSession(date, sessionIndex) {
   const dateKey = formatDateKey(date);
   const sessions = AppData.trainingLog[dateKey];
   
@@ -203,7 +180,7 @@ export function deleteSession(date, sessionIndex) {
   if (sessions.length === 0) {
     delete AppData.trainingLog[dateKey];
   }
-  return true;
+  await saveData();
 }
 export function finishSession(date, sessionIndex) {
   const dateKey = formatDateKey(date);
@@ -388,4 +365,145 @@ export function getMaxOneRep(reps, weight) {
   
   // Round to nearest 0.5 kg/lbs for practicality
   return Math.round(median / 3);
+}
+
+// for metrics
+export function getValidExerciseIds() {
+  const twoMonthsAgo = new Date();
+  twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+  twoMonthsAgo.setHours(0, 0, 0, 0);
+  
+  const validExerciseIds = new Set();
+  
+  // Iterate through all dates in trainingLog
+  Object.entries(AppData.trainingLog).forEach(([dateKey, sessions]) => {
+    const sessionDate = new Date(dateKey);
+    
+    // Only consider sessions from last two months
+    if (sessionDate >= twoMonthsAgo) {
+      sessions.forEach(session => {
+        if (session.completed) {
+          // Check each exercise in the session
+          Object.entries(session.exercises).forEach(([exId, exercise]) => {
+            // Only include exercises that have sets (were actually performed)
+            if (Array.isArray(exercise.sets) && exercise.sets.length > 0) {
+              validExerciseIds.add(exId);
+            }
+          });
+        }
+      });
+    }
+  });
+  console.log(Array.from(validExerciseIds));
+  return Array.from(validExerciseIds);
+}
+
+export function getChartData(exId, needTonnage = false) {
+  try {
+    const twoMonthsAgo = new Date();
+    twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+    twoMonthsAgo.setHours(0, 0, 0, 0);
+    
+    const chartDataMap = new Map();
+    
+    // Iterate through all dates in trainingLog
+    Object.entries(AppData.trainingLog).forEach(([dateKey, sessions]) => {
+      const sessionDate = new Date(dateKey);
+      
+      // Only consider sessions from last two months
+      if (sessionDate >= twoMonthsAgo) {
+        let dailyBestWeight = 0;
+        let dailyTotalTonnage = 0;
+        let hasExercise = false;
+        
+        // Process all sessions for this date
+        sessions.forEach(session => {
+          if (session.completed && session.exercises?.[exId]) {
+            const exercise = session.exercises[exId];
+            
+            if (Array.isArray(exercise.sets) && exercise.sets.length > 0) {
+              hasExercise = true;
+              
+              if (needTonnage) {
+                // Sum tonnage across all sessions on the same day
+                dailyTotalTonnage += exercise.totalTonnage || 0;
+              } else {
+                // Find best weight across all sessions on the same day
+                const sessionBestWeight = Math.max(
+                  ...exercise.sets.map(set => set.weight || 0)
+                );
+                if (sessionBestWeight > dailyBestWeight) {
+                  dailyBestWeight = sessionBestWeight;
+                }
+              }
+            }
+          }
+        });
+        
+        if (hasExercise) {
+          const value = needTonnage ? dailyTotalTonnage*0.001 : dailyBestWeight;
+          chartDataMap.set(dateKey, value);
+        }
+      }
+    });
+    
+    // Convert to array and sort by date
+    return Array.from(chartDataMap.entries())
+      .map(([date, value]) => ({
+        date: date,
+        value: value
+      }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+  } catch (error) {
+    console.error('Error in getChartData:', error);
+    return [];
+  }
+}
+
+export function getBestSet(exId) {
+  let best = 0;
+  for (const date in AppData.trainingLog) {
+    const sessions = AppData.trainingLog[date];
+    for (const session of sessions) {
+      if (!session.completed) continue;
+      const exercise = session.exercises?.[exId];
+      if (!exercise?.sets) continue;
+      for (const set of exercise.sets) {
+        if (set.type === 1) {
+          const est = getMaxOneRep(set.reps, set.weight);
+          if (est > best) best = est;
+        }
+      }
+    }
+  }
+  return best; // 0 if no valid sets found
+}
+
+// Returns the best 1RM estimate from the most recent completed session that includes exId (number)
+export function lastBestSet(exId) {
+  const dates = Object.keys(AppData.trainingLog)
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+  for (const date of dates) {
+    const sessions = AppData.trainingLog[date];
+    for (const session of sessions) {
+      if (!session.completed) continue;
+      const exercise = session.exercises?.[exId];
+      if (!exercise?.sets) continue;
+
+      let sessionBest = 0;
+      for (const set of exercise.sets) {
+        if (set.type === 1) {
+          const est = getMaxOneRep(set.reps, set.weight);
+          if (est > sessionBest) sessionBest = est;
+        }
+      }
+
+      if (sessionBest > 0) {
+        return sessionBest;
+      }
+    }
+  }
+  return 0; // never trained or no working sets
 }

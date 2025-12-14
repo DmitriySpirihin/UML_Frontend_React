@@ -162,7 +162,134 @@ export const MuscleView = ({ programmId, theme, langIndex, programs }) => {
     </div>
   );
 };
+export const LastWeekMuscleView = ({ theme, langIndex }) => {
+  const baseSrc = 'images/BodyIcons/Full.png';
+  const muscleIconsSrc = {
+    0: 'images/BodyIcons/Full_0.png',
+    1: 'images/BodyIcons/Full_1.png',
+    2: 'images/BodyIcons/Full_2.png',
+    3: 'images/BodyIcons/Full_3.png',
+    4: 'images/BodyIcons/Full_4.png',
+    5: 'images/BodyIcons/Full_5.png',
+    6: 'images/BodyIcons/Full_6.png',
+    7: 'images/BodyIcons/Full_7.png',
+    8: 'images/BodyIcons/Full_8.png',
+    9: 'images/BodyIcons/Full_9.png',
+    10: 'images/BodyIcons/Full_10.png',
+    11: 'images/BodyIcons/Full_11.png',
+    12: 'images/BodyIcons/Full_12.png',
+    13: 'images/BodyIcons/Full_13.png'
+  };
 
+  // Helper function to format date key
+  const formatDateKey = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  // Get last 7 days of sessions
+  const today = new Date();
+  const lastWeekSessions = [];
+  
+  for (let i = 1; i <= 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    const dateKey = formatDateKey(date);
+    
+    if (AppData.trainingLog[dateKey]?.length) {
+      lastWeekSessions.push(...AppData.trainingLog[dateKey]);
+    }
+  }
+
+  const hasSessions = lastWeekSessions.length > 0;
+  
+  if (!hasSessions) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        width: '35vw', 
+        height: '35vw', 
+        margin: '2%',
+        color: Colors.get('subText', theme)
+      }}>
+        <div style={{ fontSize: '6px', textAlign: 'center' }}>
+          {langIndex === 0 ? 'Нет тренировок за последнюю неделю' : 'No sessions in the last week'}
+        </div>
+      </div>
+    );
+  }
+
+  // 🔸 Declare categorySet HERE (outside conditional blocks)
+  const categorySet = new Set();
+  const exercises = allExercises();
+  
+  // Collect unique muscle groups from all exercises in last week's sessions
+  lastWeekSessions.forEach(session => {
+  if (!session?.completed) return;
+  
+  Object.keys(session.exercises).forEach(exIdStr => {
+    const exId = parseInt(exIdStr);
+    const exercise = session.exercises[exIdStr];
+    
+    if (Array.isArray(exercise.sets) && exercise.sets.length > 0) {
+      const exerciseObj = exercises.find(ex => ex.id === exId);
+      if (exerciseObj?.mgId != null) {
+        categorySet.add(exerciseObj.mgId);
+      }
+    }
+  });
+});
+
+ const categoryArray = Array.from(categorySet);
+const muscleNames = categoryArray
+  .map(mgId => MuscleIcon.names[langIndex][mgId])
+  .join(', ');
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '45vw', margin: '2%' }}>
+      
+      <div style={{ position: 'relative', width: '95%', height: '45vw' }}>
+        <img
+          src={baseSrc}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          alt="Body base"
+        />
+        {categoryArray.map((category, index) => (
+          <img
+            key={index}
+            src={muscleIconsSrc[category]}
+            style={{
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: index + 1
+            }}
+            alt={`Muscle group ${category}`}
+          />
+        ))}
+      </div>
+      
+      <p style={{ 
+        fontSize: '13px', 
+        color: Colors.get('subText', theme),
+        textAlign: 'center',
+        marginTop: '4px',
+        maxHeight: '30px',
+        overflow: 'hidden'
+      }}>
+        {langIndex === 0 ? 'Мышцы:' : 'Muscles:'} {muscleNames}
+      </p>
+    </div>
+  );
+};
 export class Exercise{
     constructor(id,mgId,name,description,isBase){
         this.id = id;
@@ -449,7 +576,6 @@ export async function addDayToProgram(pId, dayName) {
     name: typeof dayName === 'string' ? [dayName, dayName] : dayName,
     exercises: []
   });
-  console.log(JSON.stringify(program));
   await saveData();
 }
 export async function redactDayInProgram(pId, dayIndex, dayName) {
@@ -508,7 +634,6 @@ export async function switchPosition(pId, type, switchType, index, exIndex = nul
       [exercises[exIndex], exercises[target]] = [exercises[target], exercises[exIndex]];
     }
   }
-  console.log(JSON.stringify(program.schedule));
   await saveData();
 }
 
@@ -530,3 +655,10 @@ export async function removeExerciseFromSchedule(pId, dayIndex, exerciseId) {
   }
   await saveData();
 }
+const formatDateKey = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+

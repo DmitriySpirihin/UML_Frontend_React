@@ -2,7 +2,7 @@ import React, {useState,useEffect,useRef} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel,addNewTrainingDay$} from '../../StaticClasses/HabitsBus'
-import {getTrainingSummary,addNewSession,addPreviousSession,deleteSession} from '../../StaticClasses/TrainingLogHelper.js'
+import {addNewSession,addPreviousSession,deleteSession} from '../../StaticClasses/TrainingLogHelper.js'
 import { FaTrash } from "react-icons/fa"
 import {useLongPress} from '../../Helpers/LongPress.js'
 import {MdClose,MdDone} from 'react-icons/md'
@@ -91,13 +91,13 @@ const TrainingMain = () => {
      useEffect(() => {
       const subscription = addNewTrainingDay$.subscribe(() => {
       const today = new Date();
-      const current = currentDateRef.current; // ✅ Use latest value
+      const current = currentDateRef.current;
       
       if (current > today) return;
       
       const currentDateKey = formatDateKey(current);
       const todayKey = formatDateKey(today);
-
+      
       if (currentDateKey === todayKey) {
         setShowNewSessionPanel(true);
       } else {
@@ -113,9 +113,9 @@ const TrainingMain = () => {
           setShowNewSessionPanel(false);
           setTimeout(() => {
            const today = new Date();
-           const dayKey = formatDateKey(today);
-           const sessionIndex = AppData.trainingLog[dayKey].length - 1;
-           setTrainInfo({mode:'new',dayKey:formatDateKey(new Date()),dInd:sessionIndex});
+           const daykey = formatDateKey(today);
+           const sessionIndex = AppData.trainingLog[daykey].length - 1;
+           setTrainInfo({mode:'new',dayKey:daykey,dInd:sessionIndex});
            setPage('TrainingCurrent');
           },100);
        }
@@ -463,3 +463,25 @@ const formatTime = (ms) => {
   const minutes = totalMinutes % 60;
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
+
+export function getTrainingSummary(session, langIndex) {
+  if (!session?.exercises) {
+    return (langIndex === 0 ? '0 упр./ 0 подх.' : '0 ex./ 0 sets');
+  }
+  
+  let exerciseCount = 0;
+  let setCount = 0;
+
+  for (const exercise of Object.values(session.exercises)) {
+      exerciseCount++;
+      if (Array.isArray(exercise.sets)) {
+        setCount += exercise.sets.length;
+      }
+  }
+
+  if (langIndex === 0) {
+    return ` / ${exerciseCount} упр. / ${setCount} подх.`;
+  } else {
+    return ` / ${exerciseCount} ex. / ${setCount} sets`;
+  }
+}

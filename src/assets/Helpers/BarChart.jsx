@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { FaBorderTopLeft } from 'react-icons/fa6';
 
-const BarChart = ({ data = [], mark = 'kg', barsColor = "#676767ff",linesColor,choosenColor,maxValColor,minValColor,textColor, }) => {
+const BarChart = ({ data = [], mark = 'kg', barsColor = "#676767ff",linesColor,choosenColor,maxValColor,minValColor,textColor,langIndex }) => {
   const TOTAL_DAYS = 60;
   const WIDTH = 95; // % of container
-  const HEIGHT = 30; // vh
+  const HEIGHT = 25; // vh
   const GAP = 2; // px between bars
   const PADDING_TOP = 5; // % top padding
   const PADDING_BOTTOM = 10; // % bottom padding
@@ -57,6 +57,7 @@ const BarChart = ({ data = [], mark = 'kg', barsColor = "#676767ff",linesColor,c
   };
 
   return (
+    <div style={{display:'flex',flexDirection:'column',width:'100%',justifyContent:'center',alignItems:'center'}}>
     <div style={{
       width: '100%',
       height: `${HEIGHT}vh`,
@@ -124,7 +125,7 @@ const BarChart = ({ data = [], mark = 'kg', barsColor = "#676767ff",linesColor,c
                 fontSize: '6px',
                 color: maxValColor,
                 textAlign: 'center',
-              }} >{maxValue + mark}</div>
+              }} >{Number.isInteger(maxValue) ? maxValue : maxValue.toFixed(2) + mark}</div>
               
               {validCount > 0 && (
                 <div style={{
@@ -145,7 +146,7 @@ const BarChart = ({ data = [], mark = 'kg', barsColor = "#676767ff",linesColor,c
                 fontSize: '6px',
                 color: linesColor,
                 textAlign: 'center',
-              }} >{averageValue.toFixed() + mark}</div>
+              }} >{Number.isInteger(averageValue) ? averageValue : averageValue.toFixed(2) + mark}</div>
               
               <div style={{
         position: 'absolute',
@@ -164,7 +165,7 @@ const BarChart = ({ data = [], mark = 'kg', barsColor = "#676767ff",linesColor,c
                 fontSize: '6px',
                 color: minValColor,
                 textAlign: 'center',
-              }} >{minValue + mark}</div>
+              }} >{Number.isInteger(minValue) ? minValue : minValue.toFixed(2) + mark}</div>
             </>
           )}
         </div>
@@ -269,7 +270,6 @@ const BarChart = ({ data = [], mark = 'kg', barsColor = "#676767ff",linesColor,c
               left: 0,
               right: 0,
               bottom: 0,
-              zIndex: 0
             }}
             onClick={() => setSelectedBar(null)}
           />
@@ -299,6 +299,9 @@ const BarChart = ({ data = [], mark = 'kg', barsColor = "#676767ff",linesColor,c
           </div>
         </>
       )}
+      
+    </div>
+    <div style={{fontSize:'10px',color:textColor}}>{langIndex === 0 ? '*Данные за 2 месяца' : '*2 months data'}</div>
     </div>
   );
 };

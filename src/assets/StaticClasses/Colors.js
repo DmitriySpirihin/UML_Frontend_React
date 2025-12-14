@@ -59,12 +59,12 @@ export class Colors {
     
     // metrics
     barsColorWeight:{ light: "#99723bff", dark: "#c8803cff", speciallight: "#885c42ff", specialdark: "#a88b22ff" },
-    barsColorTonnage:{ light: "#7f8520ff", dark: "#b2af4eff", speciallight: "#6e7238ff", specialdark: "#a3a318ff" },
+    barsColorTonnage:{ light: "#852082ff", dark: "#b24e4eff", speciallight: "#6e7238ff", specialdark: "#a3a318ff" },
     barsColorMeasures:{ light: "#648f3eff", dark: "#5cb57dff", speciallight: "#4a6a34ff", specialdark: "#248a1eff" },
     choosenColor:{ light: "#4fc5daff", dark: "#467876ff", speciallight: "#269cd2ff", specialdark: "#548a35ff" },
-    maxValColor:{ light: "#51f3b2ff", dark: "#53703bff", speciallight: "#dd3f5cff", specialdark: "#33b74dff" },
-    minValColor:{ light: "#fc72d2ff", dark: "#6f3838ff", speciallight: "#83c475ff", specialdark: "#ab492aff" },
-    linesColor:{ light: "#6f828cff", dark: "#2d3032ff", speciallight: "#673140ff", specialdark: "#293d2fff" },
+    maxValColor:{ light: "#16704cff", dark: "#53703bff", speciallight: "#2d6442ff", specialdark: "#33b74dff" },
+    minValColor:{ light: "#9a377cff", dark: "#6f3838ff", speciallight: "rgba(145, 41, 98, 1)", specialdark: "#ab2e2aff" },
+    linesColor:{ light: "#6f828cff", dark: "#2d3032ff", speciallight: "#49343aff", specialdark: "#293d2fff" },
   };
 
   static setTheme(theme) {

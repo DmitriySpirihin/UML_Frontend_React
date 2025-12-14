@@ -1,29 +1,50 @@
 
 
 const ProgressCircle = ({ 
-  maxValue = 100, 
-  averageValue = 70, 
-  minValue = 40,
+  startValue = 50, 
+  endValue = 70,
+  mediumValue = 60,
   unit = 'kg',
-  maxColor = '#e74c3c',
-  minColor = '#2ecc71',
-  lineColor = '#3498db',
-  textColor = '#3498db',
-  size = 120 // diameter in px
+  langIndex = 0,
+  size = 120, // diameter in px
+  textColor = '#acbac3ff',
+  linesColor = '#34495e',
+  minColor = '#e74c3c',
+  maxColor = '#2ecc71',
+  mediumcolor = '#3498db',
+  baseColor = '#95a5a6',
 }) => {
+  // Calculate progress metrics
+  const isProgress = endValue > startValue;
+  const progressValue = endValue - startValue;
+  const isEven = endValue === startValue;
+  const progressSign = isProgress ? '+' : isEven ? '' : '-';
+  const progressEmoji = isProgress ? '↗️' : isEven ? '➖' : '↘️';
+  const progressColor = isProgress ? maxColor : minColor;
+  
+  // Colors
+  const trackColor = linesColor;
+  const startColor = isProgress ? minColor : maxColor;    // Neutral gray for start
+  const mediumColor = mediumcolor;   // Blue for medium
+  const endColor = isProgress ? maxColor : minColor;  // Green/red based on progress
+  
   const radius = size / 2;
   const strokeWidth = 7;
-  const spacing = strokeWidth / 2; // space between circles
+  const spacing = strokeWidth / 2;
   
-  // Circle radii (accounting for stroke width)
-  const maxRadius = radius - strokeWidth / 2;
-  const avgRadius = maxRadius - spacing - strokeWidth / 2;
-  const minRadius = avgRadius - spacing - strokeWidth / 2;
-
-  const maxCircumference = 2 * Math.PI * maxRadius;
-  const avgCircumference = 2 * Math.PI * avgRadius;
-  const minCircumference = 2 * Math.PI * minRadius;
-
+  // Circle radii (from outer to inner)
+  const startRadius = radius - strokeWidth / 2;
+  const mediumRadius = startRadius - spacing - strokeWidth / 2;
+  const endRadius = mediumRadius - spacing - strokeWidth / 2;
+  
+  // Circumferences
+  const startCirc = 2 * Math.PI * startRadius;
+  const mediumCirc = 2 * Math.PI * mediumRadius;
+  const endCirc = 2 * Math.PI * endRadius;
+  
+  // Calculate max value with 10% padding
+  const maxValue = Math.max(startValue, mediumValue, endValue) * 1.1;
+  
   return (
     <div style={{ display: 'inline-block' }}>
       <svg 
@@ -32,71 +53,74 @@ const ProgressCircle = ({
         viewBox={`0 0 ${size} ${size}`}
         style={{ transform: 'rotate(-90deg)' }} // Start from top
       >
-        {/* Max Circle (100% - full ring) */}
+        {/* Start Circle Track (Outer) */}
         <circle
           cx={radius}
           cy={radius}
-          r={maxRadius}
+          r={startRadius}
           fill="none"
-          stroke={lineColor}
+          stroke={trackColor}
           strokeWidth={strokeWidth}
         />
+        {/* Start Circle (Always 100% filled) */}
         <circle
           cx={radius}
           cy={radius}
-          r={maxRadius}
+          r={startRadius}
           fill="none"
-          stroke={maxColor} // Red for max
+          stroke={startColor}
           strokeWidth={strokeWidth}
-          strokeDasharray={maxCircumference}
-          strokeDashoffset={0}
+          strokeDasharray={startCirc}
+          strokeDashoffset={startCirc * (1 - startValue / maxValue)}
           strokeLinecap="round"
         />
 
-        {/* Average Circle */}
+        {/* Medium Circle Track */}
         <circle
           cx={radius}
           cy={radius}
-          r={avgRadius}
+          r={mediumRadius}
           fill="none"
-          stroke={lineColor}
+          stroke={trackColor}
           strokeWidth={strokeWidth}
         />
+        {/* Medium Circle (Filled proportionally) */}
         <circle
           cx={radius}
           cy={radius}
-          r={avgRadius}
+          r={mediumRadius}
           fill="none"
-          stroke={lineColor} // Blue for average
+          stroke={mediumColor}
           strokeWidth={strokeWidth}
-          strokeDasharray={avgCircumference}
-          strokeDashoffset={avgCircumference * (1 - averageValue / maxValue)}
+          strokeDasharray={mediumCirc}
+          strokeDashoffset={mediumCirc * (1 - mediumValue / maxValue)}
           strokeLinecap="round"
         />
 
-        {/* Min Circle */}
+        {/* End Circle Track (Inner) */}
         <circle
           cx={radius}
           cy={radius}
-          r={minRadius}
+          r={endRadius}
           fill="none"
-          stroke={minColor}
+          stroke={trackColor}
           strokeWidth={strokeWidth}
         />
+        {/* End Circle (Filled proportionally) */}
         <circle
           cx={radius}
           cy={radius}
-          r={minRadius}
+          r={endRadius}
           fill="none"
-          stroke={lineColor}
+          stroke={endColor}
           strokeWidth={strokeWidth}
-          strokeDasharray={minCircumference}
-          strokeDashoffset={minCircumference * (1 - minValue / maxValue)}
+          strokeDasharray={endCirc}
+          strokeDashoffset={endCirc * (1 - endValue / maxValue)}
           strokeLinecap="round"
         />
       </svg>
 
-      {/* Centered Text */}
+      {/* Centered Progress Text */}
       <div 
         style={{
           position: 'relative',
@@ -107,19 +131,32 @@ const ProgressCircle = ({
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          color: {textColor},
+          color: textColor,
           fontSize: '12px',
           fontWeight: 'bold',
           lineHeight: 1.2
         }}
       >
-        <div>MAX</div>
-        <div style={{ fontSize: '16px', color: '#e74c3c' }}>
-          {maxValue} {unit}
+        <div style={{ fontSize: '14px', opacity: 0.8,color: startColor }}>
+          {langIndex === 0 ? 'Начало:' : 'Start:'} {Number.isInteger(startValue) ? startValue : startValue.toFixed(2)} {unit}
         </div>
-        <div style={{ marginTop: '4px', fontSize: '10px' }}>
-          <span style={{ color: '#3498db' }}>Avg: {averageValue} </span>
-          <span style={{ color: '#2ecc71' }}>Min: {minValue}</span>
+        <div style={{ 
+          fontSize: '24px', 
+          color: progressColor, 
+          marginTop: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          color : isProgress ? maxColor : isEven ? textColor : minColor,
+          gap: '4px'
+        }}>
+          {progressEmoji}
+          <span>{progressSign}{Math.abs(progressValue.toFixed())} {unit}</span>
+        </div>
+        <div style={{ fontSize: '14px', color: endColor, marginTop: '4px' }}>
+          {langIndex === 0 ? 'Конец:' : 'End:'} {Number.isInteger(endValue) ? endValue : endValue.toFixed(2)} {unit}
+        </div>
+        <div style={{ fontSize: '10px', color: mediumColor, marginTop: '4px' }}>
+          {langIndex === 0 ? 'Среднее:' : 'Medium:'} {Number.isInteger(mediumValue) ? mediumValue : mediumValue.toFixed(2)} {unit}
         </div>
       </div>
     </div>

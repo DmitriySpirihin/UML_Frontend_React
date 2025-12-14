@@ -23,7 +23,13 @@ export class AppData{
    static habitsByDate = {};// {'date':[habitId:status(integer)]}
    static choosenHabitsDaysToForm = [];
    static choosenHabitsTypes = [];
-   
+   static measurments = [
+         [{date:'2025-12-01',value:63},{date:'2025-12-04',value:63},{date:'2025-12-08',value:65},{date:'2025-12-12',value:68}],  // weight
+         [{date:'2025-12-08',value:70},{date:'2025-12-12',value:72}],   // waist
+         [{date:'2025-12-08',value:105},{date:'2025-12-12',value:106}],  // chest
+         [{date:'2025-12-08',value:52},{date:'2025-12-12',value:51}],   // leg
+         [{date:'2025-12-08',value:36},{date:'2025-12-12',value:37}]   //biceps
+       ]
 
    // training log
    static currentProgramId = null;
@@ -58,6 +64,7 @@ export class AppData{
     if(data.exercises?.length > 0)this.exercises = data.exercises;
     if(data.programs?.length > 0)this.programs = data.programs;
     this.trainingLog = data.trainingLog;
+    //console.log(JSON.stringify(this.trainingLog));
   }
   static setPrefs(ind,value){
     this.prefs[ind] = value;
