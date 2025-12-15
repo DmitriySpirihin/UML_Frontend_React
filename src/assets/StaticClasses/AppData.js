@@ -23,19 +23,20 @@ export class AppData{
    static habitsByDate = {};// {'date':[habitId:status(integer)]}
    static choosenHabitsDaysToForm = [];
    static choosenHabitsTypes = [];
-   static measurments = [
-         [{date:'2025-12-01',value:63},{date:'2025-12-04',value:63},{date:'2025-12-08',value:65},{date:'2025-12-12',value:68}],  // weight
-         [{date:'2025-12-08',value:70},{date:'2025-12-12',value:72}],   // waist
-         [{date:'2025-12-08',value:105},{date:'2025-12-12',value:106}],  // chest
-         [{date:'2025-12-08',value:52},{date:'2025-12-12',value:51}],   // leg
-         [{date:'2025-12-08',value:36},{date:'2025-12-12',value:37}]   //biceps
-       ]
 
    // training log
    static currentProgramId = null;
    static exercises = exercises;
    static programs = programs;
    static trainingLog = {};
+   static pData = {filled:false,age:20,gender:0,height:180,wrist:20,goal:1};
+   static measurments = [
+         [],  // weight
+         [],   // waist
+         [],  // chest
+         [],   // leg
+         []   //biceps
+       ]
   // methods
   static init(data) {
     if (!data) return;

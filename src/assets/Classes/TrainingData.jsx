@@ -5,7 +5,7 @@ import { saveData } from "../StaticClasses/SaveHelper";
 import {setShowPopUpPanel} from "../StaticClasses/HabitsBus";
 import Colors from "../StaticClasses/Colors";
 export class MuscleIcon{
-    static muscleIconsSrc = {
+    static muscleIconsSrc = [{
         0:'images/BodyIcons/0.png',
         1:'images/BodyIcons/1.png',
         2:'images/BodyIcons/2.png',
@@ -20,7 +20,23 @@ export class MuscleIcon{
         11:'images/BodyIcons/11.png',
         12:'images/BodyIcons/12.png',
         13:'images/BodyIcons/13.png'
-    }
+    },
+  {
+    0:'images/BodyIcons/0f.png',
+        1:'images/BodyIcons/1f.png',
+        2:'images/BodyIcons/2f.png',
+        3:'images/BodyIcons/3f.png',
+        4:'images/BodyIcons/4f.png',
+        5:'images/BodyIcons/5f.png',
+        6:'images/BodyIcons/6f.png',
+        7:'images/BodyIcons/7f.png',
+        8:'images/BodyIcons/8f.png',
+        9:'images/BodyIcons/9f.png',
+        10:'images/BodyIcons/10f.png',
+        11:'images/BodyIcons/11f.png',
+        12:'images/BodyIcons/12f.png',
+        13:'images/BodyIcons/13f.png'
+  }]
     static names = [
     [
         'Грудь',
@@ -63,7 +79,7 @@ export class MuscleIcon{
             {needAmount ? <p style={{ color: Colors.get('subText',theme) ,fontSize:'12px',marginRight:'5px'}}>{allExercises().filter((exercise) => exercise.mgId == name).length + (lang === 0 ? ' упр' : ' ex')}</p> : null}
             <div style={{ width: '45px', height: '45px',border:`2px solid ${Colors.get('border',theme)}`,borderRadius:'50%',overflow:'hidden' }}>
                 <img 
-                    src={this.muscleIconsSrc[name]} 
+                    src={this.muscleIconsSrc[AppData.pData.gender][name]} 
                     style={{ width: '45px', height: '45px' }}
                 />
             </div>
@@ -75,7 +91,7 @@ export class MuscleIcon{
         return (
             <div style={{ width: '50px', height: '50px',fontSize:'12px',color:Colors.get('subText',theme)}}>
                 <img 
-                    src={this.muscleIconsSrc[name]} 
+                    src={this.muscleIconsSrc[AppData.pData.gender][name]} 
                     style={{ width: '50px'}}
                 />
                 {this.names[lang][name]}
@@ -84,8 +100,8 @@ export class MuscleIcon{
     }
 }
 export const MuscleView = ({ programmId, theme, langIndex, programs }) => {
-  const baseSrc = 'images/BodyIcons/Full.png';
-  const muscleIconsSrc = {
+  const baseSrc = AppData.pData.gender === 0 ? 'images/BodyIcons/Full.png' : 'images/BodyIcons/Fullf.png';
+  const muscleIconsSrc = [{
     0: 'images/BodyIcons/Full_0.png',
     1: 'images/BodyIcons/Full_1.png',
     2: 'images/BodyIcons/Full_2.png',
@@ -100,7 +116,23 @@ export const MuscleView = ({ programmId, theme, langIndex, programs }) => {
     11: 'images/BodyIcons/Full_11.png',
     12: 'images/BodyIcons/Full_12.png',
     13: 'images/BodyIcons/Full_13.png'
-  };
+  },
+{
+   0: 'images/BodyIcons/Full_0f.png',
+    1: 'images/BodyIcons/Full_1f.png',
+    2: 'images/BodyIcons/Full_2f.png',
+    3: 'images/BodyIcons/Full_3f.png',
+    4: 'images/BodyIcons/Full_4f.png',
+    5: 'images/BodyIcons/Full_5f.png',
+    6: 'images/BodyIcons/Full_6f.png',
+    7: 'images/BodyIcons/Full_7f.png',
+    8: 'images/BodyIcons/Full_8f.png',
+    9: 'images/BodyIcons/Full_9f.png',
+    10: 'images/BodyIcons/Full_10f.png',
+    11: 'images/BodyIcons/Full_11f.png',
+    12: 'images/BodyIcons/Full_12f.png',
+    13: 'images/BodyIcons/Full_13f.png'
+}];
 
   const exercises = allExercises();
   const program = programs.find(p => p.id === programmId);
@@ -145,7 +177,7 @@ export const MuscleView = ({ programmId, theme, langIndex, programs }) => {
         {categoryArray.map((category, index) => (
           <img
             key={index}
-            src={muscleIconsSrc[category]}
+            src={muscleIconsSrc[AppData.pData.gender][category]}
             style={{
               position: 'absolute',
               top: '0',
@@ -163,8 +195,8 @@ export const MuscleView = ({ programmId, theme, langIndex, programs }) => {
   );
 };
 export const LastWeekMuscleView = ({ theme, langIndex }) => {
-  const baseSrc = 'images/BodyIcons/Full.png';
-  const muscleIconsSrc = {
+  const baseSrc = AppData.pData.gender === 0 ? 'images/BodyIcons/Full.png' : 'images/BodyIcons/Fullf.png';
+  const muscleIconsSrc = [{
     0: 'images/BodyIcons/Full_0.png',
     1: 'images/BodyIcons/Full_1.png',
     2: 'images/BodyIcons/Full_2.png',
@@ -179,7 +211,23 @@ export const LastWeekMuscleView = ({ theme, langIndex }) => {
     11: 'images/BodyIcons/Full_11.png',
     12: 'images/BodyIcons/Full_12.png',
     13: 'images/BodyIcons/Full_13.png'
-  };
+  },
+{
+   0: 'images/BodyIcons/Full_0f.png',
+    1: 'images/BodyIcons/Full_1f.png',
+    2: 'images/BodyIcons/Full_2f.png',
+    3: 'images/BodyIcons/Full_3f.png',
+    4: 'images/BodyIcons/Full_4f.png',
+    5: 'images/BodyIcons/Full_5f.png',
+    6: 'images/BodyIcons/Full_6f.png',
+    7: 'images/BodyIcons/Full_7f.png',
+    8: 'images/BodyIcons/Full_8f.png',
+    9: 'images/BodyIcons/Full_9f.png',
+    10: 'images/BodyIcons/Full_10f.png',
+    11: 'images/BodyIcons/Full_11f.png',
+    12: 'images/BodyIcons/Full_12f.png',
+    13: 'images/BodyIcons/Full_13f.png'
+}];
 
   // Helper function to format date key
   const formatDateKey = (date) => {
@@ -262,7 +310,7 @@ const muscleNames = categoryArray
         {categoryArray.map((category, index) => (
           <img
             key={index}
-            src={muscleIconsSrc[category]}
+            src={muscleIconsSrc[AppData.pData.gender][category]}
             style={{
               position: 'absolute',
               top: '0',

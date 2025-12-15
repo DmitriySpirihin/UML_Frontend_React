@@ -466,14 +466,11 @@ export function getBestSet(exId) {
   for (const date in AppData.trainingLog) {
     const sessions = AppData.trainingLog[date];
     for (const session of sessions) {
-      if (!session.completed) continue;
       const exercise = session.exercises?.[exId];
       if (!exercise?.sets) continue;
       for (const set of exercise.sets) {
-        if (set.type === 1) {
-          const est = getMaxOneRep(set.reps, set.weight);
-          if (est > best) best = est;
-        }
+        const est = getMaxOneRep(set.reps, set.weight);
+        if (est > best) best = est;
       }
     }
   }
@@ -488,16 +485,13 @@ export function lastBestSet(exId) {
   for (const date of dates) {
     const sessions = AppData.trainingLog[date];
     for (const session of sessions) {
-      if (!session.completed) continue;
       const exercise = session.exercises?.[exId];
       if (!exercise?.sets) continue;
 
       let sessionBest = 0;
       for (const set of exercise.sets) {
-        if (set.type === 1) {
           const est = getMaxOneRep(set.reps, set.weight);
           if (est > sessionBest) sessionBest = est;
-        }
       }
 
       if (sessionBest > 0) {
@@ -507,3 +501,35 @@ export function lastBestSet(exId) {
   }
   return 0; // never trained or no working sets
 }
+
+export const getWeeklyTrainingAmount = () => {
+  try {
+    const trainingLog = AppData?.trainingLog || {};
+    const today = new Date();
+    let completedSessions = 0;
+
+    // Generate dates for the last 7 days (today + 6 past days)
+    const last7Days = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+      last7Days.push(dateStr);
+    }
+
+    // Check each date in the last 7 days
+    for (const dateStr of last7Days) {
+      const dayEntries = trainingLog[dateStr];
+      if (Array.isArray(dayEntries)) {
+        // Count how many entries on this day are completed
+        const completedOnDay = dayEntries.filter(entry => entry.completed === true).length;
+        completedSessions += completedOnDay;
+      }
+    }
+
+    return Math.min(completedSessions, 7); // Cap at 7 for safety
+  } catch (error) {
+    console.warn('Error calculating weekly training amount:', error);
+    return 0;
+  }
+};

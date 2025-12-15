@@ -98,7 +98,7 @@ const TrainingExercise = ({needToAdd,setEx}) => {
        // render    
        return (
            <div style={styles(theme).container}>
-               {Object.keys(MuscleIcon.muscleIconsSrc).map((key) => (
+               {Object.keys(MuscleIcon.muscleIconsSrc[0]).map((key) => (
                 <div key={key} style={styles(theme).panel}>
                    <div key={key} style={styles(theme,currentMuscleGroupId == key,false).groupPanel} onClick={() => setMuscleGroup(prev => prev === key ? -1 : key)}>
                        {currentMuscleGroupId == key ? <IoIosArrowUp style={styles(theme).icon}/> : <IoIosArrowDown style={styles(theme).icon}/>}

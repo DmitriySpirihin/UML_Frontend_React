@@ -253,7 +253,7 @@ return (
                 <div style={{display: 'flex',height:'30px',borderBottomLeftRadius:'12px',borderBottomRightRadius:'12px',justifyContent: 'space-around',alignItems:'center',backgroundColor: Colors.get('bottomPanel', theme)}}>
                   <FaTrash onClick={() => {onRemoveExercise(exId)}} style={{...styles(theme).icon,fontSize:'16px'}}/>
                   <FaPlusCircle onClick={() => {onNewset(exId,exercise.sets.length)}} style={{...styles(theme).icon,fontSize:'16px'}}/>
-                  {!exercise.completed && <FaFlag onClick={() => {onFinishExercise(exId)}} style={{...styles(theme).icon,fontSize:'16px'}}/>}
+                  {!isCompleted && !exercise.completed && <FaFlag onClick={() => {onFinishExercise(exId)}} style={{...styles(theme).icon,fontSize:'16px'}}/>}
                 </div>
               </div>
               

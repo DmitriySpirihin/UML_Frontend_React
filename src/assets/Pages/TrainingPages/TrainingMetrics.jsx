@@ -9,6 +9,7 @@ import {FaRegCircleCheck,FaRegCircle} from 'react-icons/fa6'
 import {getMaxOneRep,getValidExerciseIds,getChartData,getBestSet,lastBestSet} from '../../StaticClasses/TrainingLogHelper'
 import { LastWeekMuscleView } from '../../Classes/TrainingData'
 import { names } from './TrainingMesurments';
+import RecomendationTraining from '../../Helpers/RecomendationTraining.jsx'
 
 const TrainingMetrics = () => {
     // states
@@ -95,6 +96,7 @@ const TrainingMetrics = () => {
         <div style={{...styles(theme,fSize).text,color:Colors.get('mainText', theme)}}>{(langIndex === 0 ? '1️⃣Лучший разовый макс.: ' : 'Best one rep max: ') + getBestSet(currentExId) + chartMark}</div>
         <div style={{...styles(theme,fSize).text,color:Colors.get('mainText', theme)}}>{(langIndex === 0 ? '1️⃣Текущий разовый макс: ' : 'Current one rep max: ') + lastBestSet(currentExId) + chartMark}</div>
       </div>}
+      
       {chartData.length > 0 && chartType === 0 && chartSubType === 1 && <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'90%'}}>
         <div style={{...styles(theme,fSize).text,color:Colors.get('maxValColor', theme),paddingTop:'10px'}}>{(langIndex === 0 ? '🔺Максимальный тоннаж: ' : '🔺Max tonnage: ') + Math.max(...chartData.map(item => item.value)).toFixed(2)  + chartMark}</div>
         <div style={{...styles(theme,fSize).text,color:Colors.get('minValColor', theme)}}>{(langIndex === 0 ? '🔻Минимальный тоннаж: ' : '🔻Min tonnage: ') + Math.min(...chartData.map(item => item.value)).toFixed(2)  + chartMark}</div>
@@ -109,9 +111,12 @@ const TrainingMetrics = () => {
      <LastWeekMuscleView theme={theme} langIndex={langIndex}/>
      <LastWeekInfo theme={theme} langIndex={langIndex} fSize={fSize}/>
      </div>
+     {chartData.length > 0 &&  <RecomendationTraining max={lastBestSet(currentExId)}/>}
      {!hasPremium && <div onClick={(e) => {e.stopPropagation();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'100vw',height:'170vw',top:'15.5%',borderRadius:'24px',backdropFilter:'blur(12px)',zIndex:2}}>
         <p style={{...styles(theme, fSize).text,textAlign:'center'}}>
         {langIndex === 0  ? 'Детальная статистика тренировок 📊' : 'Detailed training statistics 📊'}</p>
+        <p style={{...styles(theme, fSize).text,textAlign:'center'}}>
+        {langIndex === 0  ? 'Персональные рекомендации на основании тренировок' : 'Personal recomendations based on your trainings'}</p>
         <p style={{...styles(theme, fSize).text,textAlign:'center'}}>{langIndex === 0 
          ? 'Отслеживайте прогресс в упражнениях, анализируйте недельную нагрузку и достигайте целей быстрее!' 
          : 'Track your exercise progress, analyze weekly workload, and hit your goals faster!'}</p>
