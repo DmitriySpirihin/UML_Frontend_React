@@ -142,7 +142,6 @@ const ProgressCircle = ({
         </div>
         <div style={{ 
           fontSize: '24px', 
-          color: progressColor, 
           marginTop: '4px',
           display: 'flex',
           alignItems: 'center',

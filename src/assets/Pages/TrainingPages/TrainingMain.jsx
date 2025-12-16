@@ -4,6 +4,7 @@ import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel,addNewTrainingDay$} from '../../StaticClasses/HabitsBus'
 import {addNewSession,addPreviousSession,deleteSession} from '../../StaticClasses/TrainingLogHelper.js'
 import { FaTrash } from "react-icons/fa"
+import { FaRectangleList } from "react-icons/fa6"
 import {useLongPress} from '../../Helpers/LongPress.js'
 import {MdClose,MdDone} from 'react-icons/md'
 import {FiMinus,FiPlus} from 'react-icons/fi'
@@ -149,6 +150,7 @@ const TrainingMain = () => {
                  <div onClick={prevMonth}><h1 style={styles(theme).header}>{'<'}</h1></div>
                  <div onClick={nextMonth}><h1 style={styles(theme).header}>{'>'}</h1></div>
                </div>
+               
                <table style={styles(theme).table}>
                  <thead>
                    <tr>
@@ -196,7 +198,12 @@ const TrainingMain = () => {
                   ))}
                    </tbody>
                </table>
+               
              </div>
+             <div style={{display:'flex',marginLeft:'auto',marginRight:'30px'}}>
+              <div style={styles(theme).text} >{langIndex === 0 ? 'все тренировки' : 'all trainings'}</div>
+             <FaRectangleList style={{...styles(theme).icon,marginLeft:'20px'}} onClick={() => setPage('TrainingList')} />
+              </div>
              <div style={{height:'30vh',width:'95%',display:'flex',flexDirection:'column',alignContent:'center'}}>
               <h1 style={{...styles(theme).subtext,fontSize:'18px',textAlign: "center"}}>{currentDate.getDate() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)] + ' / ' + trainingAmountText(trainingAmount,langIndex) }</h1>
               <div style={styles(theme).scrollView}>
@@ -405,6 +412,10 @@ const styles = (theme,fSize) =>
        fontWeight:'bold',
        color: Colors.get('mainText', theme),
        fontFamily: "Segoe UI",
+    },
+    icon:{
+       fontSize:'26px',
+       color: Colors.get('icons', theme),
     },
       cP :
         {

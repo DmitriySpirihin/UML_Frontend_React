@@ -21,6 +21,7 @@ const TrainingExercise = lazy(() => import('./assets/Pages/TrainingPages/Trainin
 const TrainingProgramm = lazy(() => import('./assets/Pages/TrainingPages/TrainingProgramms'));
 const TrainingCurrent = lazy(() => import('./assets/Pages/TrainingPages/TrainingCurrent'));
 const TrainingMesurments = lazy(() => import('./assets/Pages/TrainingPages/TrainingMesurments'));
+const TrainingList = lazy(() => import('./assets/Pages/TrainingPages/TrainingList'));
 const Premium = lazy(() => import('./assets/Pages/Premium'));
 
 
@@ -127,6 +128,9 @@ if (showPendingScreen) {
       </Suspense>}
       {page === 'TrainingMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingMetrics/>
+      </Suspense>}
+      {page === 'TrainingList' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingList/>
       </Suspense>}
       {page === 'TrainingExercise' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingExercise needToAdd={false}/>

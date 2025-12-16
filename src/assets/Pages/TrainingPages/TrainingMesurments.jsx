@@ -1,12 +1,13 @@
 
 import {useState,useEffect} from 'react'
 import { AppData , UserData} from '../../StaticClasses/AppData.js'
+import { saveData } from '../../StaticClasses/SaveHelper.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,premium$,setPage} from '../../StaticClasses/HabitsBus'
-import {FaPlusSquare,FaPencilAlt,FaTrash,FaArrowLeft,FaArrowRight} from 'react-icons/fa'
+import {FaPlusSquare,FaPencilAlt,FaTrash,FaCaretLeft,FaCaretRight} from 'react-icons/fa'
 import {IoIosArrowDown,IoIosArrowUp} from 'react-icons/io'
-import {FiPlus,FiMinus, FiArrowLeft} from 'react-icons/fi'
-import {IoScaleSharp,IoPersonOutline, IoPerson} from 'react-icons/io5'
+import {FiPlus,FiMinus} from 'react-icons/fi'
+import {IoScaleSharp, IoPerson} from 'react-icons/io5'
 import MyNumInput from '../../Helpers/MyNumInput'
 import {useLongPress} from '../../Helpers/LongPress'
 import {MdClose,MdDone} from 'react-icons/md'
@@ -25,7 +26,12 @@ export const names = [
 const now = new Date();
 const months =[ ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
 const goalNames = [['Сила','Strength'],['Набор массы','Mass gain'],['Потеря веса','Weight loss']]
-const icons = ['images/BodyIcons/Side.png','images/BodyIcons/Sidef.png'];
+const icons = [
+  ['images/BodyIcons/SideS.png','images/BodyIcons/SideSf.png'],
+  ['images/BodyIcons/Side.png','images/BodyIcons/Sidef.png'],
+  ['images/BodyIcons/SideL.png','images/BodyIcons/SideLf.png'],
+  ['images/BodyIcons/SideXL.png','images/BodyIcons/SideXLf.png'],
+];
 const TrainingMesurments = () => {
     // states
     const [theme, setthemeState] = useState('dark');
@@ -34,7 +40,7 @@ const TrainingMesurments = () => {
     const [hasPremium,setHasPremium] = useState(UserData.hasPremium);
     const [currentType,setCurrentType] = useState(-2); 
     const [currentInd,setCurrentInd] = useState(-1);
-    const [data,setData] = useState(AppData.measurments);
+    const [data,setData] = useState(AppData.measurements);
     const [showAddDayPanel,setShowAddDayPanel] = useState(false);
     const [showRedactPanel,setShowRedactPanel] = useState(false);
     const [showConfirmRemove,setShowConfirmRemove] = useState(false);
@@ -138,58 +144,70 @@ const TrainingMesurments = () => {
     });
   }
    };
-  const onAddDay = () => {
+const getMeasurementsCategory = (type) => {
+  if (type < 0 || type >= AppData.measurements.length) return [];
+  return AppData.measurements[type];
+};
+const onAddDay = async () => {
   if (newValue === '' || currentType === -1) return;
 
   const newDateStr = new Date(year, month, day).toISOString().split('T')[0];
   const numericValue = parseFloat(newValue);
+  if (isNaN(numericValue)) return;
+
   const newEntry = { date: newDateStr, value: numericValue };
-  setData(prev => {
-    const category = [...prev[currentType]];
-    const existingIndex = category.findIndex(entry => entry.date === newDateStr);
+  const category = [...getMeasurementsCategory(currentType)];
+  const existingIndex = category.findIndex(entry => entry.date === newDateStr);
 
-    if (existingIndex >= 0) {
-      category[existingIndex] = newEntry;
-    } else {
-      category.push(newEntry);
-    }
-    category.sort((a, b) => new Date(a.date) - new Date(b.date));
+  if (existingIndex >= 0) {
+    category[existingIndex] = newEntry;
+  } else {
+    category.push(newEntry);
+  }
 
-    const newPrev = [...prev];
-    newPrev[currentType] = category;
-    return newPrev;
-  });
+  // Sort in place
+  category.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  // Update AppData
+  AppData.measurements[currentType] = category;
+
+  await saveData(); // persist entire AppData
   setShowAddDayPanel(false);
   setNewValue('');
+  setData(AppData.measurements);
 };
-   const onRemoveConfirm = () => {
+
+const onRemoveConfirm = async () => {
   if (currentType === -1 || currentInd === -1) return;
 
-  setData(prev => {
-    const category = [...prev[currentType]];
-    category.splice(currentInd, 1); // remove 1 item at currentInd
-    const newPrev = [...prev];
-    newPrev[currentType] = category;
-    return newPrev;
-  });
+  const category = [...getMeasurementsCategory(currentType)];
+  category.splice(currentInd, 1);
 
+  AppData.measurements[currentType] = category;
+
+  await saveData();
   setShowConfirmRemove(false);
+  setData(AppData.measurements);
 };
-    const onRedactConfirm = () => {
+
+const onRedactConfirm = async () => {
   if (newValue === '' || currentType === -1 || currentInd === -1) return;
+
   const newDateStr = new Date(year, month, day).toISOString().split('T')[0];
-  const updatedEntry = { date: newDateStr, value: parseFloat(newValue) || 0 };
+  const numericValue = parseFloat(newValue);
+  if (isNaN(numericValue)) return;
 
-  setData(prev => {
-    const category = [...prev[currentType]];
-    category[currentInd] = updatedEntry;
-    const newPrev = [...prev];
-    newPrev[currentType] = category;
-    return newPrev;
-  });
+  const updatedEntry = { date: newDateStr, value: numericValue };
 
+  const category = [...getMeasurementsCategory(currentType)];
+  category[currentInd] = updatedEntry;
+
+  AppData.measurements[currentType] = category;
+
+  await saveData();
   setShowRedactPanel(false);
   setNewValue('');
+  setData(AppData.measurements);
 };
 
       const onRedact = (ind) => {
@@ -201,8 +219,9 @@ const TrainingMesurments = () => {
         setCurrentInd(ind);
         setShowConfirmRemove(true);
     }
-    const onFillConfirm = () => {
+    const onFillConfirm = async() => {
         AppData.pData = {filled:true,age,gender,height,wrist,goal};
+        await saveData();
         setFilled(true);
         setShowPersonalDataPanel(false);
     }
@@ -265,18 +284,18 @@ const TrainingMesurments = () => {
         )}</div>)}</div>))}
       {!filled && <div style={{...styles(theme,fSize).subtext,textAlign:'center',marginTop:'10vh'}}>{langIndex === 0 ? 'Заполните персональные данные для рекомендаций и статистики' : 'Fill personal data to get statistic'} </div>}
       {filled && data[0].length > 0 && currentType === -2 && <div style={{display:'flex',flexDirection:'row',justifyContent:'flex-start',alignItems:'center',width:'100%',alignSelf:'center',marginBottom:'20px'}} >
-         <img src={icons[gender]} alt="" style={{width:'30vw',height:'60vw',margin:'20px'}} />
+         <img src={icons[getBMIIndex(data,height)][gender]} alt="" style={{width:'30vw',height:'60vw',margin:'20px'}} />
          <div style={{width:'60%',display:'flex',flexDirection:'column',justifyContent:'flex-start',alignItems:'flex-start'}}>
            <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '👤Имя: ' : '👤Name: ') + UserData.name}</div>
            <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '🎂Возраст: ' : '🎂Age: ') + age + (langIndex === 0 ? ' лет' : ' yers old')}</div>
            <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '📏Рост: ' : '📏Height: ') + height + (langIndex === 0 ? ' см' : ' sm')}</div>
-           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '⚖️Вес: ' : '⚖️Weight: ') + data[0][data[0].length - 1]?.value + (langIndex === 0 ? ' кг' : ' kg')}</div>
-           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '🧈% жира: ' : '🧈% fat: ') + getFatPercent(getBMI(data?.[0][data[0].length - 1]?.value,height),age,gender).toFixed()}</div>
+           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '⚖️Вес: ' : '⚖️Weight: ') + measurmentString(data,0,langIndex)}</div>
+           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '🧈% жира: ' : '🧈% fat: ') + fatPercentString(data,height,age,gender)}</div>
            
-           <div style={{...styles(theme, fSize).subtext,marginLeft:'15px'}}>{(names[1][langIndex]) + ': ' + data[1][data[1].length - 1]?.value + (langIndex === 0 ? ' кг' : ' kg')}</div>
-           <div style={{...styles(theme, fSize).subtext,marginLeft:'15px'}}>{(names[2][langIndex]) + ': ' + data[2][data[2].length - 1]?.value + (langIndex === 0 ? ' кг' : ' kg')}</div>
-           <div style={{...styles(theme, fSize).subtext,marginLeft:'15px'}}>{(names[3][langIndex]) + ': ' + data[3][data[3].length - 1]?.value + (langIndex === 0 ? ' кг' : ' kg')}</div>
-           <div style={{...styles(theme, fSize).subtext,marginLeft:'15px'}}>{(names[4][langIndex]) + ': ' + data[4][data[4].length - 1]?.value + (langIndex === 0 ? ' кг' : ' kg')}</div>
+           <div style={{...styles(theme, fSize).subtext,marginLeft:'15px'}}>{(names[1][langIndex]) + ': ' +  measurmentString(data,1,langIndex)}</div>
+           <div style={{...styles(theme, fSize).subtext,marginLeft:'15px'}}>{(names[2][langIndex]) + ': ' +  measurmentString(data,2,langIndex)}</div>
+           <div style={{...styles(theme, fSize).subtext,marginLeft:'15px'}}>{(names[3][langIndex]) + ': ' +  measurmentString(data,3,langIndex)}</div>
+           <div style={{...styles(theme, fSize).subtext,marginLeft:'15px'}}>{(names[4][langIndex]) + ': ' +  measurmentString(data,4,langIndex)}</div>
 
            <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '🎯Цель: ' : '🎯Goal: ') + goalNames[goal][langIndex]}</div>
            <ProgressChart startWeight={data[0][0]?.value} endWeight={data[0][data[0].length-1]?.value} isGainWeight={goal < 2}
@@ -287,9 +306,9 @@ const TrainingMesurments = () => {
         <div style={{...styles(theme,fSize).text,textAlign:'center'}}>{langIndex === 0 ? '🧮Расчеты' : '🧮Calculations'}</div>
          <div style={{width:'60%',display:'flex',flexDirection:'column',justifyContent:'flex-start',alignItems:'flex-start'}}>
           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '📏 Тип телосложения: ' : '📏 Body type: ') + bodyTypesNames(getBodyType(height,wrist,gender),langIndex)}</div>
-           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '📊ИМТ: ' : '📊BMI: ') + (getBMI(data[0][data[0].length - 1]?.value,height).toFixed(1)) + ' ' + (bmiNames(getBMI(data[0][data[0].length - 1]?.value,height),langIndex))}</div>
+           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '📊ИМТ: ' : '📊BMI: ') + bmiString(data,langIndex,height)}</div>
            <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '⚖️Идеальный вес: ' : '⚖️Ideal weight: ') + (getIdealWeight(height,gender,getBodyType(height,wrist,gender)).toFixed(1)) + (langIndex === 0 ? ' кг':' kg')}</div>
-           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '🔥Базовый метаболизм: ' : '🔥Basic metabolism: ') + (getBaseMetabolism(data[0][data[0].length - 1]?.value, height, age, gender)) + (langIndex === 0 ? ' ккал':' kcal')}</div>
+           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '🔥Базовый метаболизм: ' : '🔥Basic metabolism: ') + baseMetabolismString(data,langIndex,height,age,gender)}</div>
            
          </div>
       </div>}
@@ -374,9 +393,9 @@ const TrainingMesurments = () => {
                      </div>
                       <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'ваш пол': 'your gender'}</p>
                      <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                         <FiArrowLeft  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGender(prev => prev === 1 ? 0 : 1)}}/> 
+                         <FaCaretLeft  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGender(prev => prev === 1 ? 0 : 1)}}/> 
                          <p style={{color:Colors.get('mainText',theme),fontSize:'26px'}}>{gender === 0 ? langIndex === 0 ? 'мужчина' : 'male' : langIndex === 0 ? 'женщина' : 'female'}</p>
-                         <FaArrowRight  style={{fontSize:'22px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGender(prev => prev === 1 ? 0 : 1)}}/>
+                         <FaCaretRight style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGender(prev => prev === 1 ? 0 : 1)}}/>
                      </div>
                      <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'ваш рост': 'your height'}</p>
                      <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
@@ -391,11 +410,11 @@ const TrainingMesurments = () => {
                          <MyNumInput theme={theme} w={'100px'} h={'40px'}fSize={28} placeholder={'0'} value={wrist} onChange={(value) => {setWrist(parseInt(value))}}/>
                          <FiPlus  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWrist(prev => prev + 0.5)}}/>
                      </div>
-                     <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'ваш пол': 'your gender'}</p>
+                     <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'цель тренировок': 'training goal'}</p>
                      <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                         <FiArrowLeft  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGoal(prev => prev + 1 < 3 ? prev + 1 : 0)}}/> 
+                         <FaCaretLeft  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGoal(prev => prev + 1 < 3 ? prev + 1 : 0)}}/> 
                          <p style={{color:Colors.get('mainText',theme),fontSize:'26px'}}>{goalNames[goal][langIndex]}</p>
-                         <FaArrowRight  style={{fontSize:'22px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGoal(prev => prev - 1 > -1 ? prev - 1 : 2)}}/>
+                         <FaCaretRight  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGoal(prev => prev - 1 > -1 ? prev - 1 : 2)}}/>
                      </div>
                      
                    </div>
@@ -759,3 +778,37 @@ const bodyTypesNames = (type, langIndex) => {
       return langIndex === 0 ? 'неизвестно' : 'unknown';
   }
 };
+const measurmentString = (data,ind, langIndex) => {
+  if(data[ind].length === 0)return '-';
+  const label = ind > 0 ? (langIndex === 0 ? ' кг' : ' kg') : (langIndex === 0 ? ' см' : ' sm');
+  const val  = data[ind][data[ind].length - 1].value + label;
+  return val;
+}
+const bmiString = (data,langIndex,height) => {
+  if(data[0][data[0].length - 1].value === null)return '-';
+  const bmi  = getBMI(data[0][data[0].length - 1].value,height);
+  return bmi.toFixed(1) + ' ' + bmiNames(bmi,langIndex);
+}
+const fatPercentString = (data,height,age,gender) => {
+  if(data[0][data[0].length - 1].value === null)return '-';
+  const fat  = getFatPercent(getBMI(data[0][data[0].length - 1].value,height),age,gender);
+  return fat.toFixed();
+}
+const baseMetabolismString = (data,langIndex,height,age,gender) => {
+  if(data[0][data[0].length - 1].value === null)return '-';
+  const met  = getBaseMetabolism(data[0][data[0].length - 1].value, height, age, gender);
+  return met.toFixed() + (langIndex === 0 ? ' ккал':' kcal');
+}
+const getBMIIndex = (data,height) => {
+   if(data[0][data[0].length - 1].value === null)return 1;
+   const BMI  = getBMI(data[0][data[0].length - 1].value,height);
+  if (BMI < 18.5) {
+    return 0;
+  } else if (BMI < 25) {
+    return 1;
+  } else if (BMI < 35) {
+    return 2;
+  } else {
+    return 3;
+  }
+}

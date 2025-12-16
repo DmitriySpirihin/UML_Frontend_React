@@ -30,7 +30,7 @@ export class AppData{
    static programs = programs;
    static trainingLog = {};
    static pData = {filled:false,age:20,gender:0,height:180,wrist:20,goal:1};
-   static measurments = [
+   static measurements = [
          [],  // weight
          [],   // waist
          [],  // chest
@@ -60,7 +60,8 @@ export class AppData{
     this.habitsByDate = data.habitsByDate;
     this.notify = data.notify;
     setNotify(this.notify);
-
+    this.pData = data.pData;
+    this.measurements = data.measurements;
     this.currentProgramId = data.currentProgramId;
     if(data.exercises?.length > 0)this.exercises = data.exercises;
     if(data.programs?.length > 0)this.programs = data.programs;
@@ -277,23 +278,26 @@ export class UserData {
 export class Data{
   constructor(){
     this.lastSave = new Date().toISOString();
-    this.isFirstStart = AppData.isFirstStart,
-    this.prefs = AppData.prefs,
-    this.choosenHabits = AppData.choosenHabits,
-    this.choosenHabitsTypes = AppData.choosenHabitsTypes,
-    this.habitsByDate = AppData.habitsByDate,
-    this.choosenHabitsAchievements = AppData.choosenHabitsAchievements,
-    this.choosenHabitsLastSkip = AppData.choosenHabitsLastSkip,
-    this.choosenHabitsStartDates = AppData.choosenHabitsStartDates,
-    this.choosenHabitsNotified = AppData.choosenHabitsNotified,
-    this.choosenHabitsGoals = AppData.choosenHabitsGoals,
-    this.CustomHabits = AppData.CustomHabits,
-    this.choosenHabitsDaysToForm = AppData.choosenHabitsDaysToForm,
-    this.notify = AppData.notify,
-    this.currentProgramId = AppData.currentProgramId,
-    this.exercises = AppData.exercises,
-    this.programs = AppData.programs
-    this.trainingLog = AppData.trainingLog
+    this.isFirstStart = AppData.isFirstStart;
+    this.prefs = AppData.prefs;
+    this.choosenHabits = AppData.choosenHabits;
+    this.choosenHabitsTypes = AppData.choosenHabitsTypes;
+    this.habitsByDate = AppData.habitsByDate;
+    this.choosenHabitsAchievements = AppData.choosenHabitsAchievements;
+    this.choosenHabitsLastSkip = AppData.choosenHabitsLastSkip;
+    this.choosenHabitsStartDates = AppData.choosenHabitsStartDates;
+    this.choosenHabitsNotified = AppData.choosenHabitsNotified;
+    this.choosenHabitsGoals = AppData.choosenHabitsGoals;
+    this.CustomHabits = AppData.CustomHabits;
+    this.choosenHabitsDaysToForm = AppData.choosenHabitsDaysToForm;
+    this.notify = AppData.notify;
+    this.currentProgramId = AppData.currentProgramId;
+    this.exercises = AppData.exercises;
+    this.programs = AppData.programs;
+    this.trainingLog = AppData.trainingLog;
+    this.pData = AppData.pData;
+    this.measurements = AppData.measurements;
+    
   }
 }
 

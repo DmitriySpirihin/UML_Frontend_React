@@ -5,11 +5,12 @@ import { theme$ ,lang$,fontSize$,trainInfo$,setPage} from '../../StaticClasses/H
 import {findPreviousSimilarExercise, deleteSession, finishSession, addExerciseToSession,
    removeExerciseFromSession, addSet, removeSet, finishExercise, redactSet,getAllReps,getTonnage,getMaxOneRep,getAllSets} from '../../StaticClasses/TrainingLogHelper'
 import {FaTrash,FaPencilAlt,FaFlagCheckered,FaFlag,FaInfo,FaPlusCircle} from 'react-icons/fa'
-import {FaRegCircleCheck,FaRegCircle,FaPlus,FaMinus,FaStopwatch} from 'react-icons/fa6'
+import {FaRegCircleCheck,FaRegCircle,FaPlus,FaMinus,FaStopwatch,FaCalculator} from 'react-icons/fa6'
 import {MdClose,MdDone,MdFitnessCenter} from 'react-icons/md'
 import MyNumInput from '../../Helpers/MyNumInput'
 import {useLongPress} from '../../Helpers/LongPress'
 import Stopwatch from '../../Helpers/StopWatch'
+import PlatesCalculator from '../../Helpers/PlatesCalculator'
 import TrainingExercise from './TrainingExercise'
 //timer
 import TimerIcon from '@mui/icons-material/TimerTwoTone';
@@ -51,6 +52,7 @@ const TrainingCurrent = () => {
     const [stopWatchPanel,setStopWatchPanel] = useState(false);
     const [premiumMiniPage,setPremiumMiniPage] = useState(false);
     const [exerciseToRemove,setExerciseToRemove] = useState(null);
+    const [showPlatesCalculator,setShowPlatesCalculator] = useState(false);
     //timer
     const [needTimer,setNeedTimer] = useState(false);
     const [timer,setTimer] = useState(false);
@@ -203,6 +205,7 @@ return (
                     {!timer && <TimerOffIcon onClick={() => {setTimer(true);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/>}
                     {timer && <TimerIcon onClick={() => {setTimer(false);setCurrTimer(0);setProgress(0);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/>}
                      <FaStopwatch onClick={() => {setStopWatchPanel(true);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/> 
+                     <FaCalculator onClick={() => {setShowPlatesCalculator(true);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/>
                      <FaFlagCheckered onClick={() => {setShowConfirmPanel(true);}} style={{fontSize:'24px',color:Colors.get('icons', theme),marginRight:'19px'}}/>
                   </div>}
                 </div>
@@ -359,6 +362,9 @@ return (
       </div>}
       {stopWatchPanel && <div  style={styles(theme).confirmContainer}>
          <Stopwatch theme={theme} langIndex={langIndex} setTime={setExTime} setShowPanel={setStopWatchPanel}/>
+      </div>}
+      {showPlatesCalculator && <div  style={styles(theme).confirmContainer}>
+         <PlatesCalculator theme={theme} langIndex={langIndex} fSize={fSize} setShowPanel={setShowPlatesCalculator}/>
       </div>}
       { premiumMiniPage && !UserData.hasPremium && <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'95vw',height:'160vw',top:'15.5%',borderRadius:'24px',backdropFilter:'blur(12px)',zIndex:2}}>
           <p style={{...styles(theme,fSize).text,textAlign: "center",}}> {langIndex === 0 ? '📈 Сравнивайте прогресс с прошлыми тренировками\n и отслеживайте рост в каждом подходе!' : '📈 Compare progress with past workouts\n and track gains in every set!'} </p>
