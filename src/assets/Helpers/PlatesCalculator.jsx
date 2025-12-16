@@ -90,6 +90,7 @@ const onAccept = () => {
 const onBack = async() => {
   AppData.ownPlates = ownPlates;
   AppData.platesAmount = platesAmount;
+  AppData.barWeight = barWeight;
   await saveData();
   setShowCalculator(false);
 }

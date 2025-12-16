@@ -39,6 +39,7 @@ export class AppData{
        ];
   static ownPlates = [true,true,true,true,true,true,true,true];
   static platesAmount = [10,10,10,10,10,10,10,10];
+  static barWeight = 20;
   // methods
   static init(data) {
     if (!data) return;
@@ -69,6 +70,7 @@ export class AppData{
     if(data.programs?.length > 0)this.programs = data.programs;
     if(data.ownPlates?.length > 0)this.ownPlates = data.ownPlates;
     if(data.platesAmount?.length > 0)this.platesAmount = data.platesAmount;
+    this.barWeight = data.barWeight;
     this.trainingLog = data.trainingLog;
   }
   static setPrefs(ind,value){
@@ -302,6 +304,7 @@ export class Data{
     this.measurements = AppData.measurements;
     this.ownPlates = AppData.ownPlates;
     this.platesAmount = AppData.platesAmount;
+    this.barWeight = AppData.barWeight;
   }
 }
 
