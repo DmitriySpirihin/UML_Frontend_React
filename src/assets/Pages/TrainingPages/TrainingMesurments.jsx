@@ -830,8 +830,8 @@ const bodyTypesNames = (type, langIndex) => {
 };
 const measurmentString = (data,ind, langIndex) => {
   if(data[ind].length === 0)return '-';
-  const label = ind > 0 ? (langIndex === 0 ? ' кг' : ' kg') : (langIndex === 0 ? ' см' : ' sm');
-  const val  = data[ind][data[ind].length - 1].value + label;
+  const label = ind < 1 ? (langIndex === 0 ? ' кг' : ' kg') : (langIndex === 0 ? ' см' : ' sm');
+  const val  = data[ind][data[ind].length - 1].value.toFixed(1) + label;
   return val;
 }
 const bmiString = (data,langIndex,height) => {

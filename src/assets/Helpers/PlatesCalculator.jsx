@@ -32,7 +32,7 @@ const getPlatesString = () => {
 
   // Make copies of available counts
   const available = plateWeights.map((_, i) =>
-    ownPlates[i] ? platesAmount[i] : 0
+    ownPlates[i] ? platesAmount[i] / 2 : 0
   );
 
   // Greedy: go from heaviest to lightest
