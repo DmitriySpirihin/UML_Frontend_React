@@ -48,7 +48,7 @@ const TrainingMesurments = () => {
     const [period,setPeriod] = useState(0);
     //new 
     const [year,setYear] = useState(now.getFullYear());
-    const [month,setMonth] = useState(now.getMonth() + 1);
+    const [month,setMonth] = useState(now.getMonth());
     const [day,setDay] = useState(now.getDate());
     const [newValue,setNewValue] = useState(0);
     const [progress,setProgress] = useState({start:0,end:0});
@@ -375,7 +375,7 @@ const onRedactConfirm = async () => {
                      </div>
                      <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
                          <div {...bindMonthMinus} onClick={() => {handleDateChange(false,1)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
-                         <p style={styles(theme).textDate}> {months[langIndex][month - 1]} </p>
+                         <p style={styles(theme).textDate}> {months[langIndex][month]} </p>
                          <div {...bindMonthPlus} onClick={() => {handleDateChange(true,1)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
                      </div>
                      <div style={{...styles(theme).simplePanelRow,width:'70%'}}>

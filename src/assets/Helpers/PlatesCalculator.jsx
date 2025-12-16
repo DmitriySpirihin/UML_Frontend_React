@@ -67,7 +67,7 @@ const onAccept = () => {
   let remaining = targetOneSide;
   const result = [];
   const available = PLATE_WEIGHTS.map((_, i) =>
-    ownPlates[i] ? platesAmount[i] : 0
+    ownPlates[i] ? platesAmount[i] / 2 : 0
   );
 
   for (let i = 0; i < PLATE_WEIGHTS.length; i++) {
