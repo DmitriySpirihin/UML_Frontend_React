@@ -98,14 +98,14 @@ return (
         </div>
         <div style={{display:'flex',flexDirection:'row',width:'95%',height:'10%',justifyContent:'space-around',alignItems:'center'}}>
           {platesAmount.map((size,index) => <FaCaretUp key={index} style={{fontSize:'28px',color:Colors.get('icons', theme)}}
-          onClick={() => { if(ownPlates[index]){ setPlatesAmount(prev =>  prev.map((plate, i) => (i === index ? plate + 1 < 11 ? plate + 1 : plate : plate)) );}}} />)}
+          onClick={() => { if(ownPlates[index]){ setPlatesAmount(prev =>  prev.map((plate, i) => (i === index ? plate + 2 < 30 ? plate +  2 : plate : plate)) );}}} />)}
         </div>
         <div style={{display:'flex',flexDirection:'row',width:'95%',height:'10%',justifyContent:'space-around',alignItems:'center'}}>
           {platesAmount.map((size,index) => <div key={index} style={{fontSize:'18px',color:ownPlates[index] ? Colors.get('mainText', theme) : '#363333ff'}}>{platesAmount[index]}</div>)}
         </div>
         <div style={{display:'flex',flexDirection:'row',width:'95%',height:'10%',justifyContent:'space-around',alignItems:'center'}}>
           {platesAmount.map((size,index) => <FaCaretDown key={index} style={{fontSize:'28px',color:Colors.get('icons', theme)}}
-          onClick={() => {if(ownPlates[index]){ setPlatesAmount(prev =>  prev.map((plate, i) => (i === index ? plate - 1 > 1 ? plate - 1 : 1 : plate)) );}}} />)}
+          onClick={() => {if(ownPlates[index]){ setPlatesAmount(prev =>  prev.map((plate, i) => (i === index ? plate - 2 > 2 ? plate - 2 : 2 : plate)) );}}} />)}
         </div>
         <div style={{display:'flex',flexDirection:'row',marginTop:'20px',width:'95%',height:'20%',justifyContent:'space-around',alignItems:'center'}}>
            <div style={{display:'flex',flexDirection:'row',width:'50%',height:'90%',justifyContent:'flex-start',alignItems:'center'}}>
