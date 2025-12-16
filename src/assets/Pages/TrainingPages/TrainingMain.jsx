@@ -205,7 +205,7 @@ const TrainingMain = () => {
              <FaRectangleList style={{...styles(theme).icon,marginLeft:'20px'}} onClick={() => setPage('TrainingList')} />
               </div>
              <div style={{height:'30vh',width:'95%',display:'flex',flexDirection:'column',alignContent:'center'}}>
-              <h1 style={{...styles(theme).subtext,fontSize:'18px',textAlign: "center"}}>{currentDate.getDate() + '/' + (currentDate.getMonth() + 1) + '/' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)] + ' / ' + trainingAmountText(trainingAmount,langIndex) }</h1>
+              <h1 style={{...styles(theme).subtext,fontSize:'18px',textAlign: "center"}}>{currentDate.getDate() + '-' + (currentDate.getMonth() + 1) + '-' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)] + ' • ' + trainingAmountText(trainingAmount,langIndex) }</h1>
               <div style={styles(theme).scrollView}>
                 {AppData.trainingLog[formatDateKey(currentDate)]?.map((training,index) =>(
                   <div key={index} style={{display:'flex',flexDirection:'row',justifyContent:'flex-start',alignItems:'center',width:'100%',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
@@ -296,7 +296,7 @@ const renderProgramOptions = (theme, langIndex, fSize) => {
       value={program.id} 
       style={{ ...styles(theme, false, fSize).text }}
     >
-      {program.name[langIndex]}
+      {program?.name[langIndex]}
     </option>
   ));
 };

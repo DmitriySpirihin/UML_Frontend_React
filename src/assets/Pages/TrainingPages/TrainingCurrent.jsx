@@ -364,7 +364,7 @@ return (
          <Stopwatch theme={theme} langIndex={langIndex} setTime={setExTime} setShowPanel={setStopWatchPanel}/>
       </div>}
       {showPlatesCalculator && <div  style={styles(theme).confirmContainer}>
-         <PlatesCalculator theme={theme} langIndex={langIndex} fSize={fSize} setShowPanel={setShowPlatesCalculator}/>
+         <PlatesCalculator theme={theme} langIndex={langIndex} fSize={fSize} setShowCalculator={setShowPlatesCalculator}/>
       </div>}
       { premiumMiniPage && !UserData.hasPremium && <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'95vw',height:'160vw',top:'15.5%',borderRadius:'24px',backdropFilter:'blur(12px)',zIndex:2}}>
           <p style={{...styles(theme,fSize).text,textAlign: "center",}}> {langIndex === 0 ? '📈 Сравнивайте прогресс с прошлыми тренировками\n и отслеживайте рост в каждом подходе!' : '📈 Compare progress with past workouts\n and track gains in every set!'} </p>

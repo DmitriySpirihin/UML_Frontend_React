@@ -67,9 +67,8 @@ export class AppData{
     this.currentProgramId = data.currentProgramId;
     if(data.exercises?.length > 0)this.exercises = data.exercises;
     if(data.programs?.length > 0)this.programs = data.programs;
-    this.trainingLog = data.trainingLog;
-    this.ownPlates = data.ownPlates;
-    this.platesAmount = data.platesAmount;
+    if(data.ownPlates?.length > 0)this.ownPlates = data.ownPlates;
+    if(data.platesAmount?.length > 0)this.platesAmount = data.platesAmount;
     //console.log(JSON.stringify(this.trainingLog));
   }
   static setPrefs(ind,value){

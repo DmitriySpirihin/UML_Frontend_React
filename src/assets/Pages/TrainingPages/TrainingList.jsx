@@ -131,8 +131,7 @@ const TrainingList = ({ needToAdd, setEx }) => {
               <div style={{ width: '100%', paddingLeft: '12px', paddingRight: '12px', paddingBottom: '12px' }}>
                 {/* Session Summary */}
                 <div style={styles(theme, false, false, fSize).subtext}>
-                  {formatDuration(session.duration || 0)} • 
-                  {(session.tonnage / 1000).toFixed(2)} {langIndex === 0 ? 'тонн' : 'tons'}
+                  {formatDuration(session.duration || 0)} • {(session.tonnage / 1000).toFixed(2)} {langIndex === 0 ? 'тонн' : 'tons'}
                 </div>
 
                 {/* Exercises */}
@@ -148,22 +147,20 @@ const TrainingList = ({ needToAdd, setEx }) => {
                         key={exId}
                         style={{
                           ...styles(theme, false, false, fSize).exercisesPanel,
-                          marginTop: '10px',
                           backgroundColor: Colors.get('background', theme),
-                          borderRadius: '6px',
-                          padding: '10px',
-                          width: '92vw'
+                          borderBottom:`1px solid ${Colors.get('border', theme)}`,
+                          width: '100%'
                         }}
                       >
                         <div
                           style={{
                             fontSize: fSize === 0 ? '12px' : '14px',
-                            fontWeight: '600',
                             color: Colors.get('mainText', theme),
                             marginBottom: '6px'
                           }}
                         >
                           {exerciseName}
+                          <span style={{...styles(theme,false,false,fSize).subtext,marginLeft:'20px'}}>{(ex.totalTonnage / 1000).toFixed(2)} {langIndex === 0 ? 'тонн' : 'tons'}</span>
                         </div>
 
                         {ex.sets.map((set, sIdx) => {
@@ -182,11 +179,13 @@ const TrainingList = ({ needToAdd, setEx }) => {
                                 fontSize: fSize === 0 ? '11px' : '13px',
                                 color: setColor,
                                 fontWeight: '500',
+                                borderBottom:`1px solid ${Colors.get('border', theme)}`,
                                 marginTop: '4px'
                               }}
                             >
-                              <span>Set {sIdx + 1}:</span>
-                              <span>{set.weight} kg</span>
+                              <span>{sIdx + 1}:</span>
+                              <span>{set.weight}</span>
+                              <span>{langIndex === 0 ? 'кг' : 'kg'}</span>
                               <span>×</span>
                               <span>{set.reps}</span>
                               {set.time != null && set.time > 0 && (
@@ -230,16 +229,14 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     width: '98vw',
     height: '6vh',
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'center'
   },
   exercisesPanel: {
     display: 'flex',
     flexDirection: 'column',
-    width: '90vw',
+    width: '100%',
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
-    padding: '6px',
-    borderRadius: '4px'
   },
   text: {
     textAlign: 'left',

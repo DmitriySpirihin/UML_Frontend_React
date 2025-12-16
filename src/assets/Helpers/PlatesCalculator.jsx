@@ -11,7 +11,7 @@ const PlatesCalculator = ({theme,langIndex,fSize,setShowCalculator}) => {
 const [ownPlates,setOwnPlates] = useState(AppData.ownPlates);
 const [platesAmount,setPlatesAmount] = useState(AppData.platesAmount);
 const [barWeight,setBarWeight] = useState(20);
-const [weight,setWeight] = useState(100);
+const [weight,setWeight] = useState(40);
 const [plates,setPlates] = useState([]);
 const [plateString,setPlateString] = useState('');
 
@@ -109,7 +109,9 @@ return (
           onClick={() => { if(ownPlates[index]){ setPlatesAmount(prev =>  prev.map((plate, i) => (i === index ? plate + 2 < 30 ? plate +  2 : plate : plate)) );}}} />)}
         </div>
         <div style={{display:'flex',flexDirection:'row',width:'95%',height:'10%',justifyContent:'space-around',alignItems:'center'}}>
-          {platesAmount.map((size,index) => <div key={index} style={{fontSize:'18px',color:ownPlates[index] ? Colors.get('mainText', theme) : '#363333ff'}}>{platesAmount[index]}</div>)}
+          
+          {platesAmount.map((size,index) => <div div key={index} style={{width:'10%'}}> < div style={{fontSize:'18px',color:ownPlates[index] ? Colors.get('mainText', theme) : '#363333ff'}}>{ownPlates[index] ? platesAmount[index] : 0 }</div></div>)}
+          
         </div>
         <div style={{display:'flex',flexDirection:'row',width:'95%',height:'10%',justifyContent:'space-around',alignItems:'center'}}>
           {platesAmount.map((size,index) => <FaCaretDown key={index} style={{fontSize:'28px',color:Colors.get('icons', theme)}}
@@ -204,7 +206,7 @@ const Plate = ({ index }) => {
   const plates = ['50','25','20','15','10','5','2.5','1.25'];
   const platesWidth = ['10vw','9vw','7vw','7vw','6vw','5vw','4vw','3vw'];
   const platesHeight = ['35vw','35vw','35vw','30vw','27vw','20vw','17vw','13vw'];
-  const colors = ['#2ba435ff','#a42b2bff','#a4942bff','#6c6c6cff','#2b47a4ff','#2b98a4ff','#9ca42bff','#7e2ba4ff'];
+  const colors = ['#2ba435ff','#a42b2bff','#6c6c6cff','#a4942bff','#2b47a4ff','#2b98a4ff','#2ba44dff','#7e2ba4ff'];
 
   // Safety
   if (index < 0 || index >= plates.length) return null;
@@ -227,7 +229,7 @@ const Plate = ({ index }) => {
   );
 };
 const ChoosenPlate = ({index,ownPlate,theme , onClick}) => {
-   const colors = ['#2ba435ff','#a42b2bff','#a4942bff','#6c6c6cff','#2b47a4ff','#2b98a4ff','#9ca42bff','#7e2ba4ff'];
+   const colors = ['#2ba435ff','#a42b2bff','#6c6c6cff','#a4942bff','#2b47a4ff','#2b98a4ff','#2ba44dff','#7e2ba4ff'];
    const plates = ['50','25','20','15','10','5','2.5','1.25'];
    const s = window.innerWidth / 12;
    return (

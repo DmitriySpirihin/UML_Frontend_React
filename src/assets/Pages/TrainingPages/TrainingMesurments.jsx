@@ -45,12 +45,13 @@ const TrainingMesurments = () => {
     const [showRedactPanel,setShowRedactPanel] = useState(false);
     const [showConfirmRemove,setShowConfirmRemove] = useState(false);
     const [showPersonalDataPanel,setShowPersonalDataPanel] = useState(false);
+    const [period,setPeriod] = useState(0);
     //new 
     const [year,setYear] = useState(now.getFullYear());
     const [month,setMonth] = useState(now.getMonth() + 1);
     const [day,setDay] = useState(now.getDate());
     const [newValue,setNewValue] = useState(0);
-
+    const [progress,setProgress] = useState({start:0,end:0});
     // user data
     const [filled,setFilled] = useState(AppData.pData.filled);
     const [age,setAge] = useState(AppData.pData.age);
@@ -76,7 +77,46 @@ const TrainingMesurments = () => {
       subscription3.unsubscribe();
       subscription4.unsubscribe();
       }
-    }, []);    
+    }, []);   
+const getDateRange = (period) => {
+  const now = new Date();
+  const start = new Date(now);
+
+  switch (period) {
+    case 0: // Month
+      start.setMonth(now.getMonth() - 1);
+      break;
+    case 1: // Year
+      start.setFullYear(now.getFullYear() - 1);
+      break;
+    case 2: // All Time → no filtering
+    default:
+      return null;
+  }
+
+  return { start, end: now };
+};
+useEffect(() => {
+  const weightData = data[0]; // ← this is your weight history
+
+  if (!Array.isArray(weightData) || weightData.length === 0) {
+    setProgress({ start: 0, end: 0 });
+    return;
+  }
+
+  // Optional: ensure it's sorted by date if needed
+  // const sorted = [...weightData].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (weightData.length < 2) {
+    setProgress({ start: 0, end: 0 });
+    return;
+  }
+
+  const startValue = weightData[0].value;
+  const endValue = weightData[weightData.length - 1].value;
+  setProgress({ start: startValue, end: endValue });
+
+}, [period,data]); 
 
     // bindings
     const bindYearhMinus = useLongPress(() => handleDateChange(false, 0));
@@ -269,7 +309,7 @@ const onRedactConfirm = async () => {
         {el.length > 0 ? ( el.map((day, idx) => (
             <div key={idx} style={styles(theme, fSize).panelRow}>
               <div style={styles(theme, fSize).subtext}>{day.date}:</div>
-              <span style={styles(theme, fSize).text}> {day.value + (ind === 0 ? langIndex === 0 ? ' кг' : ' kg' : langIndex === 0 ? ' см' : ' sm')}</span>
+              <span style={styles(theme, fSize).text}> {Number.isInteger(day.value) ? day.value : day.value.toFixed(1) + (ind === 0 ? langIndex === 0 ? ' кг' : ' kg' : langIndex === 0 ? ' см' : ' sm')}</span>
               <Diffrense data={data} type={ind} ind={idx} theme={theme} langIndex={langIndex}/>
               <div style={{display:'flex',flexDirection:'row',marginRight:'10px',marginLeft:'auto'}}>
                <FaPencilAlt  onClick={() => onRedact(idx)} style={{...styles(theme).icon,fontSize:'14px',marginRight:'10px'}}/> 
@@ -298,7 +338,17 @@ const onRedactConfirm = async () => {
            <div style={{...styles(theme, fSize).subtext,marginLeft:'15px'}}>{(names[4][langIndex]) + ': ' +  measurmentString(data,4,langIndex)}</div>
 
            <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '🎯Цель: ' : '🎯Goal: ') + goalNames[goal][langIndex]}</div>
-           <ProgressChart startWeight={data[0][0]?.value} endWeight={data[0][data[0].length-1]?.value} isGainWeight={goal < 2}
+           <div style={{display:'flex',flexDirection:'row',justifyContent:'center',alignItems:'center',width:'100%'}}>
+          
+              <div onClick={() => setPeriod(0)} style={{...styles(theme, fSize).text,margin:'10px',border:'1px solid ' + Colors.get('icons', theme),backgroundColor:period === 0 ? Colors.get('iconsHighlited', theme) : 'transparent',borderRadius:'5px',padding:'2px',width:'30%',textAlign:'center'}}>
+                {getPeriodName(0,langIndex)}</div>
+              <div onClick={() => setPeriod(1)} style={{...styles(theme, fSize).text,margin:'10px',border:'1px solid ' + Colors.get('icons', theme),backgroundColor:period === 1 ? Colors.get('iconsHighlited', theme) : 'transparent',borderRadius:'5px',padding:'2px',width:'30%',textAlign:'center'}}>
+                {getPeriodName(1,langIndex)}</div>
+              <div onClick={() => setPeriod(2)} style={{...styles(theme, fSize).text,margin:'10px',border:'1px solid ' + Colors.get('icons', theme),backgroundColor:period === 2 ? Colors.get('iconsHighlited', theme) : 'transparent',borderRadius:'5px',padding:'2px',width:'30%',textAlign:'center'}}>
+                {getPeriodName(2,langIndex)}</div>
+          
+          </div>
+           <ProgressChart startWeight={progress.start} endWeight={progress.end} isGainWeight={goal < 2}
            width='80%' height='70px' redColor={Colors.get('minValColor', theme)} greenColor={Colors.get('maxValColor', theme)}/>
          </div>
       </div>} 
@@ -572,7 +622,7 @@ const Diffrense = ({data,type,ind,theme,langIndex}) => {
         if(diffrense === 0)return <span style={{fontSize:'12px',color:Colors.get('subText', theme)}}>{'-'}</span>
         const sign = isProgress ? '+' : '';
         return <span style={{fontSize:'12px',color:isProgress ? Colors.get('maxValColor', theme) : Colors.get('minValColor', theme)}}>
-          {sign}{diffrense + (type === 0 ? langIndex === 0 ? ' кг' : ' kg' : langIndex === 0 ? ' см' : ' sm')}</span>
+          {sign}{Number.isInteger(diffrense) ? diffrense : diffrense.toFixed(1) + (type === 0 ? langIndex === 0 ? ' кг' : ' kg' : langIndex === 0 ? ' см' : ' sm')}</span>
     }
 }
 
@@ -810,5 +860,14 @@ const getBMIIndex = (data,height) => {
     return 2;
   } else {
     return 3;
+  }
+}
+function getPeriodName(period,langIndex){
+  if (period === 0){
+    return langIndex === 0 ? 'месяц' : 'month';
+  }else if (period === 1){
+    return langIndex === 0 ? 'год' : 'year';
+  }else if (period === 2){
+    return langIndex === 0 ? 'все' : 'all';
   }
 }
