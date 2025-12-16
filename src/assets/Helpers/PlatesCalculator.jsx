@@ -1,13 +1,15 @@
 import  {useState,useEffect} from 'react'
 import Colors from '../StaticClasses/Colors'
+import {saveData} from '../StaticClasses/SaveHelper'
 import {MdClose,MdDone} from 'react-icons/md'
 import {FaCaretLeft,FaCaretRight,FaCaretUp,FaCaretDown,FaPlus,FaMinus} from 'react-icons/fa'
 import MyNumInput from '../Helpers/MyNumInput'
+import { AppData } from '../StaticClasses/AppData'
 
 const PLATE_WEIGHTS = [50, 25, 20, 15, 10, 5, 2.5, 1.25];
 const PlatesCalculator = ({theme,langIndex,fSize,setShowCalculator}) => {
-const [ownPlates,setOwnPlates] = useState([true,true,true,true,true,true,true,true]);
-const [platesAmount,setPlatesAmount] = useState([10,10,10,10,10,10,10,10]);
+const [ownPlates,setOwnPlates] = useState(AppData.ownPlates);
+const [platesAmount,setPlatesAmount] = useState(AppData.platesAmount);
 const [barWeight,setBarWeight] = useState(20);
 const [weight,setWeight] = useState(100);
 const [plates,setPlates] = useState([]);
@@ -85,6 +87,12 @@ const onAccept = () => {
   }
   setPlateString(getPlatesString());
 };
+const onBack = async() => {
+  AppData.ownPlates = ownPlates;
+  AppData.platesAmount = platesAmount;
+  await saveData();
+  setShowCalculator(false);
+}
 
 return (
     <div style={{...styles(theme).cP,height:'80%'}}>
@@ -141,7 +149,7 @@ return (
         </div>
         
      <div style={{...styles(theme,fSize).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-        <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {setShowCalculator(false)}}/>
+        <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {onBack()}}/>
         <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {onAccept()}}/>
      </div>
     </div>

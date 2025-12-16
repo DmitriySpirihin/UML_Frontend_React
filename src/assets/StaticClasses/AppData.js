@@ -36,7 +36,9 @@ export class AppData{
          [],  // chest
          [],   // leg
          []   //biceps
-       ]
+       ];
+  static ownPlates = [true,true,true,true,true,true,true,true];
+  static platesAmount = [10,10,10,10,10,10,10,10];
   // methods
   static init(data) {
     if (!data) return;
@@ -66,6 +68,8 @@ export class AppData{
     if(data.exercises?.length > 0)this.exercises = data.exercises;
     if(data.programs?.length > 0)this.programs = data.programs;
     this.trainingLog = data.trainingLog;
+    this.ownPlates = data.ownPlates;
+    this.platesAmount = data.platesAmount;
     //console.log(JSON.stringify(this.trainingLog));
   }
   static setPrefs(ind,value){
@@ -297,7 +301,8 @@ export class Data{
     this.trainingLog = AppData.trainingLog;
     this.pData = AppData.pData;
     this.measurements = AppData.measurements;
-    
+    this.ownPlates = AppData.ownPlates;
+    this.platesAmount = AppData.platesAmount;
   }
 }
 
