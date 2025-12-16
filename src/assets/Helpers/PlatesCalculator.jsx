@@ -10,7 +10,7 @@ const PLATE_WEIGHTS = [50, 25, 20, 15, 10, 5, 2.5, 1.25];
 const PlatesCalculator = ({theme,langIndex,fSize,setShowCalculator}) => {
 const [ownPlates,setOwnPlates] = useState(AppData.ownPlates);
 const [platesAmount,setPlatesAmount] = useState(AppData.platesAmount);
-const [barWeight,setBarWeight] = useState(20);
+const [barWeight,setBarWeight] = useState(AppData.barWeight);
 const [weight,setWeight] = useState(40);
 const [plates,setPlates] = useState([]);
 const [plateString,setPlateString] = useState('');
