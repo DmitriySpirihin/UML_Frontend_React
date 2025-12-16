@@ -144,6 +144,10 @@ return (
           })}
           {plates.length > 0 &&<div style={{width:'3vw',height:'7vw',backgroundColor:'#242323ff',borderRadius:'2px'}}></div>}
           {plates.length > 0 && <div style={{width:'2vw',height:'4vw',backgroundColor:'#6c6868ff'}}></div>}
+          
+          {plates.length === 0 &&<div style={{width:'20vw',height:'3vw',backgroundColor:'#6c6868ff'}}></div>}
+            {plates.length === 0 && <div style={{width:'3vw',height:'7vw',backgroundColor:'#6c6868ff',borderRadius:'2px'}}></div>}
+          {plates.length === 0 &&   <div style={{width:'10vw',height:'4vw',backgroundColor:'#6c6868ff'}}></div>}
          </div>
          <div style={styles(theme).text}>{plateString}</div>
          
