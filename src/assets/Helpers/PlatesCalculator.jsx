@@ -53,7 +53,7 @@ const getPlatesString = () => {
       : `Not enough plates! Left: ${remaining.toFixed(2)} kg`;
   }
 
-  return result.join(' + ') || (langIndex === 0 ? 'Без пластин' : 'No plates');
+  return `${barWeight} +  ((  ${result.join(' + ')}) x 2) =   ${weight}` || (langIndex === 0 ? 'Без пластин' : 'No plates');
 };
 
 const onAccept = () => {
@@ -138,7 +138,8 @@ return (
             <FaPlus  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setWeight(prev => prev + 2.5)}}/>
           </div>
         <div style={{display:'flex',flexDirection:'row',width:'100%',height:'50%',justifyContent:'center',alignItems:'center'}}>
-          {plates.length > 0 &&<div style={{width:'4vw',height:'4vw',backgroundColor:'#6c6868ff'}}></div>}
+          {plates.length > 0 &&<div style={{width:'6vw',height:'4vw',backgroundColor:'#6c6868ff',fontSize: '8px', color: '#fffef9ff'}}>{barWeight}</div>}
+          {plates.length > 0 && <div style={{width:'3vw',height:'7vw',backgroundColor:'#6c6868ff',borderRadius:'2px'}}></div>}
           {plates.map((weightValue, idx) => {
           const plateIndex = PLATE_WEIGHTS.indexOf(weightValue);
           return plateIndex !== -1 ? <Plate key={idx} index={plateIndex} /> : null;
@@ -147,7 +148,7 @@ return (
           {plates.length > 0 && <div style={{width:'2vw',height:'4vw',backgroundColor:'#6c6868ff'}}></div>}
           
           {plates.length === 0 &&<div style={{width:'20vw',height:'3vw',backgroundColor:'#6c6868ff'}}></div>}
-            {plates.length === 0 && <div style={{width:'3vw',height:'7vw',backgroundColor:'#6c6868ff',borderRadius:'2px'}}></div>}
+          {plates.length === 0 && <div style={{width:'3vw',height:'7vw',backgroundColor:'#6c6868ff',borderRadius:'2px'}}></div>}
           {plates.length === 0 &&   <div style={{width:'10vw',height:'4vw',backgroundColor:'#6c6868ff'}}></div>}
          </div>
          <div style={styles(theme).text}>{plateString}</div>
@@ -225,6 +226,7 @@ const Plate = ({ index }) => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      margin:'1px',
       position: 'relative'
     }}>
       <div style={{ fontSize: '8px', color: '#fffef9ff' }}>
