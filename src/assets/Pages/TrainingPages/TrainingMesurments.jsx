@@ -5,7 +5,7 @@ import { saveData } from '../../StaticClasses/SaveHelper.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,premium$,setPage} from '../../StaticClasses/HabitsBus'
 import {FaPlusSquare,FaPencilAlt,FaTrash,FaCaretLeft,FaCaretRight} from 'react-icons/fa'
-import {IoIosArrowDown,IoIosArrowUp} from 'react-icons/io'
+import {IoIosArrowDown,IoIosArrowUp,IoMdMale,IoMdFemale} from 'react-icons/io'
 import {FiPlus,FiMinus} from 'react-icons/fi'
 import {IoScaleSharp, IoPerson} from 'react-icons/io5'
 import MyNumInput from '../../Helpers/MyNumInput'
@@ -432,7 +432,7 @@ const onRedactConfirm = async () => {
                )}
       {showPersonalDataPanel && (
                  <div style={styles(theme).confirmContainer}>
-                  <div style={{...styles(theme).cP,height:'82%'}}>
+                  <div style={{...styles(theme).cP,height:'82%',border:gender === 0 ? '2px solid #5fb6c6ff' : '2px solid #c65f9dff'}}>
                     
                    <div style={{...styles(theme).simplePanelRow,flexDirection:'column',justifyContent:'space-around',alignItems:'center',backgroundColor:Colors.get('background', theme),width:'95%',height:'80%',borderRadius:'24px'}}>
                      <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'ваш возраст': 'your age'}</p>
@@ -443,9 +443,10 @@ const onRedactConfirm = async () => {
                      </div>
                       <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'ваш пол': 'your gender'}</p>
                      <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                         <FaCaretLeft  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGender(prev => prev === 1 ? 0 : 1)}}/> 
-                         <p style={{color:Colors.get('mainText',theme),fontSize:'26px'}}>{gender === 0 ? langIndex === 0 ? 'мужчина' : 'male' : langIndex === 0 ? 'женщина' : 'female'}</p>
-                         <FaCaretRight style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGender(prev => prev === 1 ? 0 : 1)}}/>
+                        
+                        <IoMdMale style={{fontSize:gender === 0 ? '40px' : '30px',color:gender === 0 ? '#5fb6c6ff' : Colors.get('iconsDisabled', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGender(0)}}/>
+                        <IoMdFemale style={{fontSize:gender === 1 ? '40px' : '30px',color:gender === 1 ? '#c65f9dff' : Colors.get('iconsDisabled', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGender(1)}}/>
+                        
                      </div>
                      <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'ваш рост': 'your height'}</p>
                      <div style={{...styles(theme).simplePanelRow,width:'70%'}}>

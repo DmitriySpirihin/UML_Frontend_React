@@ -4,7 +4,7 @@ import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel,addNewTrainingDay$} from '../../StaticClasses/HabitsBus'
 import {addNewSession,addPreviousSession,deleteSession} from '../../StaticClasses/TrainingLogHelper.js'
 import { FaTrash } from "react-icons/fa"
-import { FaRectangleList } from "react-icons/fa6"
+import { FaList } from "react-icons/fa6"
 import {useLongPress} from '../../Helpers/LongPress.js'
 import {MdClose,MdDone} from 'react-icons/md'
 import {FiMinus,FiPlus} from 'react-icons/fi'
@@ -200,9 +200,9 @@ const TrainingMain = () => {
                </table>
                
              </div>
-             <div style={{display:'flex',marginLeft:'auto',marginRight:'30px'}}>
-              <div style={styles(theme).text} >{langIndex === 0 ? 'все тренировки' : 'all trainings'}</div>
-             <FaRectangleList style={{...styles(theme).icon,marginLeft:'20px'}} onClick={() => setPage('TrainingList')} />
+             <div  onClick={() => setPage('TrainingList')} style={{display:'flex',width:'100%',alignSelf:'center',justifyContent:'center',backgroundColor:Colors.get('currentDateBorder', theme),alignItems:'center'}}>
+              <div style={styles(theme).text} >{langIndex === 0 ? 'журнал' : 'journal'}</div>
+             <FaList style={{...styles(theme).icon,fontSize:'14px',marginLeft:'14px'}}  />
               </div>
              <div style={{height:'30vh',width:'95%',display:'flex',flexDirection:'column',alignContent:'center'}}>
               <h1 style={{...styles(theme).subtext,fontSize:'18px',textAlign: "center"}}>{currentDate.getDate() + '-' + (currentDate.getMonth() + 1) + '-' + currentDate.getFullYear() + ' ' + fullNames[langIndex][getMondayIndex(currentDate)] + ' • ' + trainingAmountText(trainingAmount,langIndex) }</h1>

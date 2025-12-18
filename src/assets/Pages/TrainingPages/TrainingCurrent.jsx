@@ -220,11 +220,24 @@ return (
                 const exerciseObj = AppData.exercises.find(e => e.id === parseInt(exId));
                 if (!exerciseObj || !exercise) return null;
                 const exerciseName = exerciseObj.name[langIndex];
+                let plannedSets = '';
+                const program = AppData.programs.find(p => p.id === session.programId);
+                 if (program && session.dayIndex != null) {
+                 const day = program.schedule[session.dayIndex];
+               if (day) {
+                 const dayExercise = day.exercises.find(e => e.exId === exId);
+                 if (dayExercise) {
+                   plannedSets = dayExercise.sets; // e.g., "3x12"
+                     }
+                  }
+                 }
                 return (
-                 <div key={exId} style={{ display: 'flex', flexDirection: 'column' }}>
+                 <div key={exId} onClick={() => {setCurrentExId(exId)}} style={{ display: 'flex', flexDirection: 'column' }}>
                  {/* Exercise name */}
-                <div style={{ ...styles(theme, fSize).text,marginLeft:'12px',marginTop:'12px',textAlign:'center',borderBottom:`1px solid ${Colors.get('border', theme)}`, marginBottom: '10px' }}>{exerciseName}
+                <div style={{ ...styles(theme, fSize).text,color:currentExId === exId ? Colors.get('mainText', theme) : Colors.get('subText', theme),marginTop:'12px',textAlign:'center',borderBottom:currentExId === exId ? `2px solid ${ Colors.get('iconsHighlited', theme)}` : `1px solid ${Colors.get('border', theme)}`, marginBottom: '10px' }}>
+                {exerciseName}
                 {!session.completed && <span style={{fontSize:'12px',marginLeft:'10px'}}>{exercise.completed ? '✅ ' : '⏳ '}</span>}
+                <span style={{...styles(theme,fSize).subtext,marginLeft:'30px'}}>{plannedSets}</span>
                 </div>
                  {/* Sets list */}
                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -253,11 +266,11 @@ return (
                       <div style={numStylePrev(theme)}>{prevResult(exId,exercise.sets.length,new Date(trainInfo.dayKey),false,true)}</div>
                    </div>}
                 {/* buttons */}
-                <div style={{display: 'flex',height:'30px',borderBottomLeftRadius:'12px',borderBottomRightRadius:'12px',justifyContent: 'space-around',alignItems:'center',backgroundColor: Colors.get('bottomPanel', theme)}}>
+                {currentExId === exId && <div style={{display: 'flex',height:'30px',borderBottomLeftRadius:'12px',borderBottomRightRadius:'12px',justifyContent: 'space-around',alignItems:'center',backgroundColor: Colors.get('bottomPanel', theme)}}>
                   <FaTrash onClick={() => {onRemoveExercise(exId)}} style={{...styles(theme).icon,fontSize:'16px'}}/>
                   <FaPlusCircle onClick={() => {onNewset(exId,exercise.sets.length)}} style={{...styles(theme).icon,fontSize:'16px'}}/>
                   {!isCompleted && !exercise.completed && <FaFlag onClick={() => {onFinishExercise(exId)}} style={{...styles(theme).icon,fontSize:'16px'}}/>}
-                </div>
+                </div>}
               </div>
               
             </div>
@@ -269,14 +282,15 @@ return (
           </div>
           <div style={{display:'flex',width:'100%',height:'15vw',justifyContent:'space-around',alignItems:'center',backgroundColor:Colors.get('bottomPanel', theme),borderRadius:'24px'}}>
                 <FaInfo onClick={() => {setShowInfoPanel(true);}} style={{fontSize:'20px',color:Colors.get('icons', theme),marginLeft:'10px'}}/>
-                <div style={{display:'flex',flexDirection:'row'}}>
-                  <FaPlus onClick={() => {setShowExerciseList(true)}} style={{fontSize:'20px',color:Colors.get('icons', theme),marginLeft:'10px'}}/> 
-                  <MdFitnessCenter onClick={() => {setShowExerciseList(true)}} style={{fontSize:'20px',color:Colors.get('icons', theme),marginLeft:'10px'}}/>
-                </div>
-                  <div style={{display:'flex',flexDirection:'row'}}>
-                    <div style={{...styles(theme,fSize).subtext,marginRight:'5px'}}>{langIndex === 0 ? 'предыдущее' : 'previous'}</div>
-                    {usePrev ? <FaRegCircleCheck onClick={() => needPrev(false)} style={{fontSize:'20px',color:Colors.get('icons', theme),marginRight:'5px'}}/> : <FaRegCircle onClick={() => needPrev(true)} style={{fontSize:'20px',color:Colors.get('icons', theme),marginRight:'5px'}}/>}
-                </div>
+                  
+                  <div onClick={() => {() => setShowExerciseList(true)}}
+                   style={{fontSize:'14px',width:'40%',height:'30px',alignContent:'center',alignItems:'center',marginRight:'5px',color:usePrev ? Colors.get('iconsHighlited', theme) : Colors.get('subText', theme),border:usePrev ? `2px solid ${Colors.get('iconsHighlited', theme)}` : `1px solid ${Colors.get('border', theme)}`,borderRadius:'12px'}}>
+                  {langIndex === 0 ? '+ упражнение' : '+ exercise'}</div>
+                
+                  <div onClick={() => {needPrev(prev => !prev)}}
+                   style={{fontSize:'14px',width:'40%',height:'30px',alignContent:'center',alignItems:'center',marginRight:'5px',color:usePrev ? Colors.get('iconsHighlited', theme) : Colors.get('subText', theme),border:usePrev ? `2px solid ${Colors.get('iconsHighlited', theme)}` : `1px solid ${Colors.get('border', theme)}`,borderRadius:'12px'}}>
+                  {langIndex === 0 ? 'предыдущая сессия' : 'previous session'}</div>
+                 
                 </div>
       </div>
       {showInfoPanel && <div  style={styles(theme).confirmContainer}>
@@ -286,7 +300,7 @@ return (
          </div>
       </div>}
       {showAddNewSetPanel && <div  style={styles(theme).confirmContainer}>
-         <div style={{...styles(theme).cP,height:'60%'}}>
+         <div style={{...styles(theme).cP,height:'60%',border:isWarmUp ? `4px solid ${Colors.get('trainingIsolatedFont', theme)}` : `4px solid ${Colors.get('trainingBaseFont', theme)}`}}>
            <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Добавьте повторы" : "Add reps"}</div>
            <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
               <FaMinus {...bindRepsMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev - 1 > 1 ? prev - 1 : 1)}}/>
@@ -298,6 +312,10 @@ return (
               <FaMinus {...bindWeightMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev - 0.25 > 0.25 ? prev -0.25 : 0.25)}}/>
               <MyNumInput theme={theme} w={'100px'} h={'40px'}afterPointer={langIndex === 0 ? 'кг' : 'kg'} fSize={28} placeholder={'0'} value={weight} onChange={(value) => {setWeight(parseFloat(value))}}/>
               <FaPlus {...bindWeightPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev + 0.25)}}/>
+           </div>
+           <div style={{...styles(theme,fSize).simplePanelRow,width:'80%',justifyContent:'space-around'}}>
+            <div onClick={() => {setIsWarmUp(true)}} style={{width:'40%',border:isWarmUp ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:!isWarmUp ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Разминка" : "Warm up"}</div>
+            <div onClick={() => {setIsWarmUp(false)}} style={{width:'40%',border:!isWarmUp ? `2px solid ${Colors.get('trainingBaseFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:isWarmUp ? Colors.get('subText', theme) : Colors.get('trainingBaseFont', theme)}}>{langIndex === 0 ? "Рабочий подход" : "Working set"}</div>
            </div>
            <div style={styles(theme,fSize).text}>{langIndex === 0 ? "Время выполнения(опционально)" : "Performance time (optional)"}</div>
            <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
@@ -316,11 +334,7 @@ return (
            </div>}
           {!isCompleted && needTimer && <Slider style={styles(theme).slider} min={10}max={600}step={10} value={maxTimer / 1000}valueLabelDisplay="off"onChange={(_, newValue) => { setMaxTimer(newValue * 1000); }}/>}
            
-           <div style={{...styles(theme,fSize).simplePanelRow,width:'50%'}}>
-              <div style={{...styles(theme,fSize).text,fontSize:'16px'}}>{langIndex === 0 ? "Рабочий подход" : "Working set"}</div>
-              {isWarmUp?<FaRegCircle  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setIsWarmUp(false)}}/> :
-                <FaRegCircleCheck  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setIsWarmUp(true)}}/>}
-           </div>
+           
            <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
               <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => setShowAddNewSetPanel(false)}/>
               <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {addset()}}/>
