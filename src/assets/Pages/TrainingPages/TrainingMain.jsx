@@ -133,9 +133,9 @@ const TrainingMain = () => {
           setTrainInfo({mode:'redact',dayKey:dayKey,dInd:sessionIndex});
           setPage('TrainingCurrent');
        }
-       const onDelete = (_date,dayIndex) => {
-          setSessionToDelete({date:_date,key:dayIndex});
-       }
+       const onDelete = (_date, sessionIndex) => {
+       setSessionToDelete({ date: _date, key: sessionIndex });
+     };
        const onConfirmDelete = () => {
          deleteSession(sessionToDelete.date,sessionToDelete.key);
          setShowConfirmPanel(false);
@@ -213,12 +213,14 @@ const TrainingMain = () => {
                     <p style={{...styles(theme).mainText,marginBottom:'10px',fontSize:'16px'}}>{training.completed ? '✅' : '⏳'}</p>
                     <div style={{display:'flex',flexDirection:'column'}}>
                       <div 
-                      onClick={()=>{setTrainInfo({mode:training.completed ? 'redact' : 'new',dayKey:formatDateKey(new Date(currentDate)),dInd:training.dayIndex});setPage('TrainingCurrent')}}
-                      style={styles(theme).mainText}>{AppData.programs.find(p => p.id === training.programId).name[langIndex]}</div>
-                      <div style={styles(theme).mainText}>{(langIndex === 0 ? 'День ' : 'Day ') + (index + 1) + ': ' + AppData.programs.find(p => p.id === training.programId).schedule[training.dayIndex].name[langIndex]}</div>
+                      onClick={()=>{setTrainInfo({mode:training.completed ? 'redact' : 'new',dayKey:formatDateKey(new Date(currentDate)),dInd: index});setPage('TrainingCurrent')}}
+                      style={styles(theme).mainText}>{AppData.programs[training.programId]?.name?.[langIndex] || `Program ${training.programId}`}</div>
+                      <div style={styles(theme).mainText}>{(langIndex === 0 ? 'День ' : 'Day ') +  (training.dayIndex + 1) + ': ' +  (AppData.programs[training.programId]?.schedule?.[training.dayIndex]?.name?.[langIndex] || 
+                      (langIndex === 0 ? `День ${training.dayIndex + 1}` : `Day ${training.dayIndex + 1}`))}
+                     </div>
                        {training.completed && <div style={{...styles(theme).subtext,marginBottom:'10px'}}>{`${Math.round(training.duration / 60000)}${langIndex === 0 ? ' мин' : ' min'}  /  ${(training.tonnage * 0.001).toFixed(2)} ${langIndex === 0 ? ' тонн' : ' tons'}${getTrainingSummary(training,langIndex)}`}</div>}
                     </div>
-                    <FaTrash onClick={()=>{onDelete(formatDateKey(new Date(currentDate)),training.dayIndex);setShowConfirmPanel(true);}} style={{...styles(theme).subtext,width:'18px',height:'18px',marginLeft:'auto',marginRight:'10px'}}/>
+                    <FaTrash onClick={()=>{onDelete(formatDateKey(new Date(currentDate)), index);setShowConfirmPanel(true);}} style={{...styles(theme).subtext,width:'18px',height:'18px',marginLeft:'auto',marginRight:'10px'}}/>
                   </div>
                 ))}
                 
@@ -290,30 +292,24 @@ const TrainingMain = () => {
 export default TrainingMain
 
 const renderProgramOptions = (theme, langIndex, fSize) => {
-  return AppData.programs.map((program) => (
-    <option 
-      key={program.id} 
-      value={program.id} 
-      style={{ ...styles(theme, false, fSize).text }}
-    >
-      {program?.name[langIndex]}
-    </option>
-  ));
+  return Object.entries(AppData.programs)
+    .filter(([, program]) => program.show !== false) // Only show visible programs
+    .map(([id, program]) => (
+      <option key={id} value={id} style={{ ...styles(theme, false, fSize).text }}>
+        {program?.name?.[langIndex] || `Program ${id}`}
+      </option>
+    ));
 };
 const renderTrainingDaysOptions = (theme, langIndex, fSize, programId) => {
-  const program = AppData.programs.find(p => p.id === programId);
-  
+  const program = AppData.programs[programId]; // ✅ OBJECT ACCESS
+
   if (!program || !program.schedule) {
     return [<option key="none" value="">0</option>];
   }
 
   return program.schedule.map((day, index) => (
-    <option 
-      key={index} 
-      value={index} 
-      style={{ ...styles(theme, false, fSize).text }}
-    >
-      {day.name[langIndex]}
+    <option key={index} value={index} style={{ ...styles(theme, false, fSize).text }}>
+      {day.name?.[langIndex] || `Day ${index + 1}`}
     </option>
   ));
 };

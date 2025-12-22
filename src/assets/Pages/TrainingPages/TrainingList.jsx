@@ -27,7 +27,7 @@ const colors = [
   "#ff758c", "#ff7eb3", "#4facfe", "#00f2fe"
 ];
 
-const TrainingList = ({ needToAdd, setEx }) => {
+const TrainingList = () => {
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0] === 'ru' ? 0 : 1);
   const [fSize, setFSize] = useState(AppData.prefs[1]);
@@ -40,7 +40,10 @@ const TrainingList = ({ needToAdd, setEx }) => {
   useEffect(() => {
     const subTheme = theme$.subscribe(setThemeState);
     const subLang = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
-    return () => { subLang.unsubscribe(); subTheme.unsubscribe(); };
+    return () => {
+      subLang.unsubscribe();
+      subTheme.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -86,23 +89,37 @@ const TrainingList = ({ needToAdd, setEx }) => {
     Object.values(AppData.trainingLog || {}).forEach(sessions =>
       sessions.forEach(s => ids.add(s.programId || 0))
     );
+
     return Array.from(ids)
       .map(id => {
-        const prog = AppData.programs.find(p => p.id === id);
-        return { id, name: prog?.name?.[langIndex] || `Program ${id}` };
+        const prog = AppData.programs[id]; // ✅ OBJECT ACCESS
+        return {
+          id,
+          name: prog?.name?.[langIndex] || `Program ${id}`
+        };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [langIndex]);
 
   const dayOptions = useMemo(() => {
     if (type !== 2 || pId == null) return [];
-    const program = AppData.programs.find(p => p.id === pId);
+    const program = AppData.programs[pId]; // ✅ OBJECT ACCESS
     const schedule = program?.schedule || [];
     return schedule.map((_, idx) => ({
       index: idx,
       name: schedule[idx]?.name?.[langIndex] || `Day ${idx + 1}`
     }));
   }, [type, pId, langIndex]);
+
+  // Auto-select first program/day when filter mode changes
+  useEffect(() => {
+    if ((type === 1 || type === 2) && programOptions.length > 0 && pId === 0) {
+      setPId(programOptions[0].id);
+    }
+    if (type === 2 && dayOptions.length > 0) {
+      setDayIndex(dayOptions[0].index);
+    }
+  }, [type, programOptions, dayOptions, pId]);
 
   // --- Labels ---
   const allLabel = langIndex === 0 ? 'все' : 'all';
@@ -111,52 +128,42 @@ const TrainingList = ({ needToAdd, setEx }) => {
 
   return (
     <div style={styles(theme).container}>
-      {/* === Modern Filter Toggles === */}
+      {/* === Filter Toggles === */}
       <div style={styles(theme).filterContainer}>
-        {/* Segmented Control */}
-       <div style={styles(theme).textToggles}>
-  {[{ key: 0, label: allLabel }, { key: 1, label: progLabel }, { key: 2, label: dayLabel }].map(({ key, label }) => (
-    <span
-      key={key}
-      onClick={() => {
-        setType(key);
-        if (key === 0) return;
-        if (programOptions.length > 0 && pId === 0) {
-          setPId(programOptions[0].id);
-        }
-        if (key === 2 && dayOptions.length > 0) {
-          setDayIndex(dayOptions[0]?.index || 0);
-        }
-      }}
-      style={{
-        padding: '6px 8px',
-        cursor: 'pointer',
-        fontSize: type === key 
-          ? (fSize === 0 ? '14px' : '16px') 
-          : (fSize === 0 ? '13px' : '14px'),
-        fontWeight: type === key ? '600' : '400',
-        color: type === key
-          ? Colors.get('mainText', theme)
-          : Colors.get('subText', theme),
-        opacity: type === key ? 1 : 0.8,
-        transition: 'all 0.2s ease'
-      }}
-    >
-      {label}
-      {key < 2 && (
-        <span style={{
-          margin: '0 10px',
-          color: Colors.get('border', theme),
-          fontSize: fSize === 0 ? '13px' : '15px'
-        }}>
-          |
-        </span>
-      )}
-    </span>
-  ))}
-</div>
+        <div style={styles(theme).textToggles}>
+          {[{ key: 0, label: allLabel }, { key: 1, label: progLabel }, { key: 2, label: dayLabel }].map(({ key, label }) => (
+            <span
+              key={key}
+              onClick={() => setType(key)}
+              style={{
+                padding: '6px 8px',
+                cursor: 'pointer',
+                fontSize: type === key
+                  ? (fSize === 0 ? '14px' : '16px')
+                  : (fSize === 0 ? '13px' : '14px'),
+                fontWeight: type === key ? '600' : '400',
+                color: type === key
+                  ? Colors.get('mainText', theme)
+                  : Colors.get('subText', theme),
+                opacity: type === key ? 1 : 0.8,
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {label}
+              {key < 2 && (
+                <span style={{
+                  margin: '0 10px',
+                  color: Colors.get('border', theme),
+                  fontSize: fSize === 0 ? '13px' : '15px'
+                }}>
+                  |
+                </span>
+              )}
+            </span>
+          ))}
+        </div>
 
-        {/* Program Dropdown (for Program & Day modes) */}
+        {/* Program Dropdown */}
         {(type === 1 || type === 2) && (
           <select
             value={pId}
@@ -177,7 +184,7 @@ const TrainingList = ({ needToAdd, setEx }) => {
           </select>
         )}
 
-        {/* Day Dropdown (only for Day mode) */}
+        {/* Day Dropdown */}
         {type === 2 && (
           <select
             value={dayIndex}
@@ -204,7 +211,7 @@ const TrainingList = ({ needToAdd, setEx }) => {
           const sessionKey = `${programId}-${sessionDayIndex}`;
           const borderColor = sessionColorMap.get(sessionKey) || colors[0];
 
-          const program = AppData.programs.find(pr => pr.id === programId);
+          const program = AppData.programs[programId]; // ✅ OBJECT ACCESS
           const programName = program?.name?.[langIndex] || `Program ${programId}`;
           const dayName = program?.schedule?.[sessionDayIndex]?.name?.[langIndex] || `Day ${sessionDayIndex + 1}`;
 
@@ -248,7 +255,7 @@ const TrainingList = ({ needToAdd, setEx }) => {
                     .filter(([exId, ex]) => ex?.sets?.length > 0)
                     .map(([exId, ex]) => {
                       const exIdNum = parseInt(exId, 10);
-                      const exercise = AppData.exercises.find(e => e.id === exIdNum);
+                      const exercise = AppData.exercises[exIdNum]; // ✅ CORRECT
                       const exerciseName = exercise?.name?.[langIndex] || `Exercise ${exId}`;
 
                       return (
@@ -352,24 +359,24 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     marginBottom: '16px'
   },
   textToggles: {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '4px',
-  padding: '8px 0',
-  width: '100%',
-  maxWidth: '400px',
-  userSelect: 'none'
-},
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
+    padding: '8px 0',
+    width: '100%',
+    maxWidth: '400px',
+    userSelect: 'none'
+  },
   select: {
     borderBottom: `1px solid ${Colors.get('border', theme)}`,
     backgroundColor: Colors.get('background', theme),
     color: Colors.get('subText', theme),
     fontSize: fSize === 0 ? '11px' : '13px',
     width: '80%',
-    borderTop:'none',
-    borderLeft:'none',
-    borderRight:'none',
+    borderTop: 'none',
+    borderLeft: 'none',
+    borderRight: 'none',
     outline: 'none'
   },
   sessionPanel: {

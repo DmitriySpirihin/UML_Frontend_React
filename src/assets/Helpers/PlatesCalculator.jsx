@@ -240,7 +240,7 @@ const ChoosenPlate = ({index,ownPlate,theme , onClick}) => {
    const plates = ['50','25','20','15','10','5','2.5','1.25'];
    const s = window.innerWidth / 12;
    return (
-        <div onClick={onClick} style={{width:s,height:s,backgroundColor:ownPlate ? colors[index] : '#242323ff',borderRadius:'50%',border:`2px solid  ${Colors.get('border', theme)}`,display:'flex',alignItems:'center',margin:'2px',justifyContent:'center',position:'relative'}}>
+        <div onClick={onClick} style={{width:s,height:s,backgroundColor:ownPlate ? colors[index] : '#242323ff',borderRadius:'50%',border:`2px solid  ${Colors.get('border', theme)}`,display:'flex',alignItems:'center',marginLeft:'1px',justifyContent:'center',position:'relative'}}>
             <div style={{fontSize:'18px',color:ownPlate ? '#f1ececff' : '#4e4646ff'}}>{plates[index]}</div>
         </div>
     )

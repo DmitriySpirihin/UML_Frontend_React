@@ -77,7 +77,7 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,
           {page !== 'TrainingMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
           {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
           {page === 'TrainingMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
-          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('TrainingMetrics');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
+          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('TrainingAnaliticsMain');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
           <Programs style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('TrainingProgramm');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
             <Add style={{...styles(theme,currentBtn,9,true,page !== 'TrainingMain').btnstyle,fontSize:page !== 'TrainingMain' ? '30px':'40px'}} 
           onClick={() => {setAddNewTrainingDay(); setCurrentBottomBtn(0);setNotifyPanel(false);playEffects(switchSound);}} />

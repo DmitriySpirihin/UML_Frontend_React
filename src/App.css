@@ -36,6 +36,21 @@
     pointer-events: none;
     z-index: 1;
   }
+  .muscle-load-chart :focus {
+  outline: none;
+}
+.mini-chart :focus {
+  outline: none;
+}
+.donut-chart :focus {
+  outline: none;
+}
+.myChart :focus {
+  outline: none;
+}
+.areachart :focus {
+  outline: none;
+}
 .logo {
   height: 6em;
   padding: 1.5em;

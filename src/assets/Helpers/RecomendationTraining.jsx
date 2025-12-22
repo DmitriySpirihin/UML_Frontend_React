@@ -30,65 +30,65 @@ const RecomendationTraining = ({max}) => {
 
 // render    
 return (
-    <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-start',alignItems:'center',width:'100%',alignSelf:'center',marginBottom:'20px'}}>
-      <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? 'Рекомендации для вас' : 'Personal recomendations'}</div>
-      <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-start',alignItems:'center',width:'95%',alignSelf:'center',border:'1px solid ' + Colors.get('border', theme)}}>
+    <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-start',alignItems:'center',width:'100%'}}>
+      <div style={{...styles(theme,fSize).text,marginTop:'70px'}}>{langIndex === 0 ? 'Рекомендации для вас' : 'Personal recomendations'}</div>
+      <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-start',alignItems:'center',height:'40%',width:'100%',alignSelf:'center',border:'1px solid ' + Colors.get('border', theme)}}>
        <div style={{...styles(theme,fSize).simplePanelRow,}}>
-         <div style={{...styles(theme,fSize).subtext,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).subtext,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? 'Цель' : 'Goal'}
          </div>
-         <div style={{...styles(theme,fSize).subtext,width:'40%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).subtext,width:'40%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? 'Вес-повторы' : 'Weight-reps'}
          </div>
-         <div style={{...styles(theme,fSize).subtext,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
-            {langIndex === 0 ? 'Отдых между сетами' : 'Rest between sets'}
+         <div style={{...styles(theme,fSize).subtext,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+            {langIndex === 0 ? 'Отдых' : 'Rest'}
          </div>
-         <div style={{...styles(theme,fSize).subtext,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).subtext,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? 'Восстановление' : 'Recovery'}
          </div>
         </div>
-        <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 0 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
-         <div style={{...styles(theme,fSize).text,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+        {goal === 0 && <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 0 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? 'Сила' : 'Strength'}
          </div>
-         <div style={{...styles(theme,fSize).text,width:'40%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).text,width:'40%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {`${Math.round(max * 0.85)} - ${Math.round(max * 0.95)} ${langIndex === 0 ? 'кг' : 'kg'} / 3-6 ${langIndex === 0 ? 'повт.' : 'reps'}`  }
          </div>
-         <div style={{...styles(theme,fSize).text,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? '3-5мин' : '3-5min'}
          </div>
-         <div style={{...styles(theme,fSize).text,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? '72ч' : '72h'}
          </div>
-        </div>
-        <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 1 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
-         <div style={{...styles(theme,fSize).text,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+        </div>}
+        {goal === 1 && <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 1 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? 'Набор' : 'Gain'}
          </div>
-         <div style={{...styles(theme,fSize).text,width:'40%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).text,width:'40%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {`${Math.round(max * 0.68)} - ${Math.round(max * 0.82)} ${langIndex === 0 ? 'кг' : 'kg'} / 10-12 ${langIndex === 0 ? 'повт.' : 'reps'}`  }
          </div>
-         <div style={{...styles(theme,fSize).text,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? '1.5-2мин' : '1.5-2min'}
          </div>
-         <div style={{...styles(theme,fSize).text,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? '48ч' : '48h'}
          </div>
-        </div>
-        <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 2 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
-         <div style={{...styles(theme,fSize).text,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+        </div>}
+        {goal === 2 && <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 2 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? 'Сушка' : 'Drying'}
          </div>
-         <div style={{...styles(theme,fSize).text,width:'40%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).text,width:'40%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {`${Math.round(max * 0.5)} - ${Math.round(max * 0.65)} ${langIndex === 0 ? 'кг' : 'kg'} / 14-20+ ${langIndex === 0 ? 'п.' : 'r.'}`  }
          </div>
-         <div style={{...styles(theme,fSize).text,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? '30-60сек' : '30-60sec'}
          </div>
-         <div style={{...styles(theme,fSize).text,width:'20%',height:'40px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? '24-48ч' : '24-48h'}
          </div>
-        </div>
+        </div>}
        </div>
     </div>
   )

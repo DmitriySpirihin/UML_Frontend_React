@@ -16,11 +16,11 @@ const LoadPanel = lazy(() => import('./assets/Pages/LoadPanel'));
 const ConfirmationPanel = lazy(() => import('./assets/Pages/ConfirmationPanel'));
 const AddHabitPanel = lazy(() => import('./assets/Pages/HabitsPages/AddHabitPanel')); 
 const TrainingMain = lazy(() => import('./assets/Pages/TrainingPages/TrainingMain'));
-const TrainingMetrics = lazy(() => import('./assets/Pages/TrainingPages/TrainingMetrics'));
 const TrainingExercise = lazy(() => import('./assets/Pages/TrainingPages/TrainingExercise'));
 const TrainingProgramm = lazy(() => import('./assets/Pages/TrainingPages/TrainingProgramms'));
 const TrainingCurrent = lazy(() => import('./assets/Pages/TrainingPages/TrainingCurrent'));
 const TrainingMesurments = lazy(() => import('./assets/Pages/TrainingPages/TrainingMesurments'));
+const TrainingAnaliticsMain = lazy(() => import('./assets/Pages/TrainingPages/Analitics/TrainingAnaliticsMain'));
 const TrainingList = lazy(() => import('./assets/Pages/TrainingPages/TrainingList'));
 const Premium = lazy(() => import('./assets/Pages/Premium'));
 
@@ -126,8 +126,8 @@ if (showPendingScreen) {
       {page === 'TrainingMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingMain/>
       </Suspense>}
-      {page === 'TrainingMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
-        <TrainingMetrics/>
+      {page === 'TrainingAnaliticsMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingAnaliticsMain/>
       </Suspense>}
       {page === 'TrainingList' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingList/>

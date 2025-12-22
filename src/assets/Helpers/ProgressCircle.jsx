@@ -46,7 +46,7 @@ const ProgressCircle = ({
   const maxValue = Math.max(startValue, mediumValue, endValue) * 1.1;
   
   return (
-    <div style={{ display: 'inline-block' }}>
+    <div style={{ display: 'inline-block',width:size,height:size}}>
       <svg 
         width={size} 
         height={size} 

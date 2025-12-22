@@ -1,22 +1,22 @@
 import {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
-import { theme$ ,lang$,fontSize$,addPanel$,setShowPopUpPanel,setAddPanel, setConfirmationPanel} from '../../StaticClasses/HabitsBus.js'
+import { theme$ ,lang$,fontSize$,addPanel$,setAddPanel} from '../../StaticClasses/HabitsBus.js'
 import {IoIosArrowDown,IoIosArrowUp} from 'react-icons/io'
-import {allExercises,switchPosition,addDayToProgram,redactDayInProgram,removeDayFromProgram,MuscleView,addProgram,redactProgram,removeProgram,
+import {switchPosition,addDayToProgram,redactDayInProgram,removeDayFromProgram,MuscleView,addProgram,redactProgram,removeProgram,
   addExerciseToSchedule,removeExerciseFromSchedule
 } from '../../Classes/TrainingData.jsx'
 import {FaCalendarDay,FaPlusSquare,FaTrash,FaPencilAlt, FaPlusCircle} from 'react-icons/fa';
-import {TbDotsVertical,TbArrowMoveDownFilled,TbArrowMoveUpFilled} from 'react-icons/tb'
+import {TbArrowMoveDownFilled,TbArrowMoveUpFilled} from 'react-icons/tb'
 import {MdBook} from 'react-icons/md'
 import {MdDone,MdClose,MdFitnessCenter} from 'react-icons/md'
 import MyInput from '../../Helpers/MyInput';
 import TrainingExercise from './TrainingExercise.jsx'
 
 const TrainingProgramm = () => {
-    const [programs, setPrograms] = useState([...AppData.programs]);
+    const [programs, setPrograms] = useState(AppData.programs);
     const updatePrograms = () => {
-      setPrograms([...AppData.programs]); // shallow copy to trigger re-render
+      setPrograms(AppData.programs); // shallow copy to trigger re-render
     };
     // states
     const [theme, setthemeState] = useState('dark');
@@ -72,7 +72,7 @@ const TrainingProgramm = () => {
     }, []);
     useEffect(() => {
     if (currentId === -1) return;
-    const program = programs.find((program) => program.id === currentId);
+    const program = programs[currentId];
     const daysCount = program.schedule.length;
     setDayIndex(daysCount);
     setDayName(langIndex === 0  ? `День ${daysCount + 1}`  : `Day ${daysCount + 1}`);
@@ -106,17 +106,17 @@ const TrainingProgramm = () => {
       let message = '';
       switch (type) {
         case 0:
-          const rawName = programs.find((program) => program.id === currentId).name;
+          const rawName = programs[currentId].name;
           const name = Array.isArray(rawName) ? rawName[langIndex] : rawName;
           message = langIndex === 0 ? 'Вы уверены, что хотите удалить программу : ' + name + ' ?': 'Are you sure you want to delete the program : ' + name + ' ?';
         break;
         case 1:
-          const program = programs.find((program) => program.id === currentId);
+          const program = programs[currentId];
           const dayName = program?.schedule[currentDay]?.name;
           message = langIndex === 0 ? 'Вы уверены, что хотите удалить тренировочный день : ' + dayName[langIndex] + ' ?' : 'Are you sure you want to delete the training day : ' + dayName[langIndex] + ' ?';
         break;
         case 2:
-          const exId = programs.find((program) => program.id === currentId)?.schedule[currentDay]?.exercises[currentExId]?.exId;
+          const exId = programs[currentId].schedule[currentDay]?.exercises[currentExId]?.exId;
           removeExerciseFromSchedule(currentId,currentDay,exId);
           updatePrograms();
         break;
@@ -133,18 +133,17 @@ const TrainingProgramm = () => {
        onClose();
     }
     function onRedact(type) {
-      const index = programs.findIndex((program) => program.id === currentId);
       setNeedRedact(true);
       setCurrentType(type);
       switch (type) {
         case 0:
-          const isarr = Array.isArray(programs[index].name);
-          setName(isarr ? programs[index].name[langIndex] : programs[index].name);
-          setDescription(isarr ? programs[index].description[langIndex] : programs[index].description);
+          const isarr = Array.isArray(programs[currentId].name);
+          setName(isarr ? programs[currentId].name[langIndex] : programs[currentId].name);
+          setDescription(isarr ? programs[currentId].description[langIndex] : programs[currentId].description);
           setShowAddPanel(true);
         break;
         case 1:
-          const rawName = programs[index].schedule[currentDay].name;
+          const rawName = programs[currentId].schedule[currentDay].name;
           const nameOfDay = Array.isArray(rawName) ? rawName[langIndex] : rawName;
           setDayName(nameOfDay);
           setShowAddDayPanel(true);
@@ -190,67 +189,293 @@ const TrainingProgramm = () => {
     }
        // render    
        return (
-           <div style={styles(theme).container}>
-               {programs.map((program) => (
-                <div key={program.id} style={styles(theme).panel}>
-                    <div style={styles(theme,currentId === program.id,false).groupPanel} onClick={() => {setCurrentId(prev => prev === program.id ? -1 : program.id);setCurrentDay(-1);}}>
-                        {currentId === program.id ? <IoIosArrowUp style={styles(theme).icon}/> : <IoIosArrowDown style={styles(theme).icon}/>}
-                        <MdBook style={{...styles(theme).icon,marginRight:'5px',marginLeft:'5px',fontSize:'16px'}}/>
-                        <p style={styles(theme,false,false,fSize).text}>{Array.isArray(program.name) ? program.name[langIndex] : program.name}</p>
-                        <p style={{...styles(theme,false,false,fSize).subtext,marginRight:'5px',marginLeft:'auto'}}>{program.creationDate}</p>
-                    </div>
-                    {currentId === program.id && <div style={{...styles(theme).panel}}>
-                        <div style={{...styles(theme,false,false,fSize).subtext,marginRight:'15px',marginLeft:'15px'}}>{currentDay === -1 && (Array.isArray(program.description) ? program.description[langIndex] : program.description)}</div>
-                          <div style={{display:'flex',flexDirection:'row',width:'100%',justifyContent:'center'}}>
-                            {currentDay === -1 && <div style={{...styles(theme,false,false,fSize).dayPanel,width:'98%',justifyContent:'space-around',flexDirection:'row'}}>
-                              <FaPlusSquare  onClick={() => setShowAddDayPanel(true)} style={{...styles(theme).icon,fontSize:'14px'}}/> 
-                              <FaPencilAlt  onClick={() => onRedact(0)} style={{...styles(theme).icon,fontSize:'14px'}}/> 
-                              <FaTrash  onClick={() => onRemove(0)} style={{...styles(theme).icon,fontSize:'14px'}}/>
-                             </div>}
-                          </div>
-                          <div style={{display:'flex',flexDirection:'column',width:'100%'}}>
-                          {program.schedule.map((day, index) => (<div key={index}><div style={{...styles(theme, false, currentDay === index).dayPanel,width: '98%',flexDirection: 'row'}}onClick={() => setCurrentDay(prev => prev === index ? -1 : index)}>
-                          {currentDay === index ? (<IoIosArrowUp style={{ ...styles(theme).icon, marginLeft: '2%', width: '10px', marginTop: '7px' }} />) : (
-                           <IoIosArrowDown style={{ ...styles(theme).icon, marginLeft: '2%', width: '10px', marginTop: '7px' }} />)}
-                          <FaCalendarDay style={{ ...styles(theme).icon, marginRight: '5px', marginLeft: '5px', fontSize: '14px' }} />
-                          <p style={styles(theme, false, false, fSize).text}>
-                            {langIndex === 0 ? `${index + 1}-день :  ${day.name[0]}`: `${index + 1}-day :  ${day.name[1]}`}</p>
-                          {currentDay === index && (<div onClick={(e) => e.stopPropagation()} style={{display: 'flex',flexDirection: 'row',justifyContent: 'center',marginLeft: 'auto'}}>
-                          <FaPlusCircle onClick={() => setShowExercisesList(true)} style={{ ...styles(theme).icon, fontSize: '14px' }}/>
-                          <TbArrowMoveDownFilled onClick={() => switchPositions(0, 0)} style={{ ...styles(theme).icon, fontSize: '14px' }}/>
-                          <TbArrowMoveUpFilled onClick={() => switchPositions(0, 1)} style={{ ...styles(theme).icon, fontSize: '14px' }}/>
-                          <FaPencilAlt onClick={() => onRedact(1)} style={{ ...styles(theme).icon, fontSize: '14px' }}/>
-                          <FaTrash onClick={() => onRemove(1)} style={{ ...styles(theme).icon, fontSize: '14px', marginRight: '8px' }}/></div>)}
-                       </div>
-                      {currentDay === index && (<div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                       {day.exercises.map((item, i) => {
-                       const exercise = allExercises().find(ex => ex.id === item.exId);
-                       if (!exercise) return null;
-                       return (
-                        <div key={i} onClick={() => setCurrentExId(i)} style={{ display: 'flex', flexDirection: 'row', width: '95%', marginLeft: '6px', marginRight: '5%', justifyContent: 'flex-start', alignItems: 'center'}}>
+  <div style={styles(theme).container}>
+    {Object.entries(programs)
+      .map(([idStr, program]) => ({
+        id: Number(idStr),
+        ...program
+      }))
+      .filter((program) => program.show) // показываем только видимые
+      .sort((a, b) => a.id - b.id)
+      .map((program) => (
+        <div key={program.id} style={styles(theme).panel}>
+          <div
+            style={styles(theme, currentId === program.id, false).groupPanel}
+            onClick={() => {
+              setCurrentId(prev => prev === program.id ? -1 : program.id);
+              setCurrentDay(-1);
+            }}
+          >
+            {currentId === program.id ? (
+              <IoIosArrowUp style={styles(theme).icon} />
+            ) : (
+              <IoIosArrowDown style={styles(theme).icon} />
+            )}
+            <MdBook
+              style={{
+                ...styles(theme).icon,
+                marginRight: '5px',
+                marginLeft: '5px',
+                fontSize: '16px'
+              }}
+            />
+            <p style={styles(theme, false, false, fSize).text}>
+              {Array.isArray(program.name) ? program.name[langIndex] : program.name}
+            </p>
+            <p
+              style={{
+                ...styles(theme, false, false, fSize).subtext,
+                marginRight: '5px',
+                marginLeft: 'auto'
+              }}
+            >
+              {program.creationDate}
+            </p>
+          </div>
+
+          {currentId === program.id && (
+            <div style={{ ...styles(theme).panel }}>
+              <div
+                style={{
+                  ...styles(theme, false, false, fSize).subtext,
+                  marginRight: '15px',
+                  marginLeft: '15px'
+                }}
+              >
+                {currentDay === -1 &&
+                  (Array.isArray(program.description)
+                    ? program.description[langIndex]
+                    : program.description)}
+              </div>
+
+        <div style={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'center' }}>
+          {currentDay === -1 && (
+            <div
+              style={{
+                ...styles(theme, false, false, fSize).dayPanel,
+                width: '98%',
+                justifyContent: 'space-around',
+                flexDirection: 'row'
+              }}
+            >
+              <FaPlusSquare
+                onClick={() => setShowAddDayPanel(true)}
+                style={{ ...styles(theme).icon, fontSize: '14px' }}
+              />
+              <FaPencilAlt
+                onClick={() => onRedact(0)}
+                style={{ ...styles(theme).icon, fontSize: '14px' }}
+              />
+              <FaTrash
+                onClick={() => onRemove(0)}
+                style={{ ...styles(theme).icon, fontSize: '14px' }}
+              />
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          {program.schedule.map((day, index) => (
+            <div key={index}>
+              <div
+                style={{
+                  ...styles(theme, false, currentDay === index).dayPanel,
+                  width: '98%',
+                  flexDirection: 'row'
+                }}
+                onClick={() => setCurrentDay(prev => prev === index ? -1 : index)}
+              >
+                {currentDay === index ? (
+                  <IoIosArrowUp
+                    style={{
+                      ...styles(theme).icon,
+                      marginLeft: '2%',
+                      width: '10px',
+                      marginTop: '7px'
+                    }}
+                  />
+                ) : (
+                  <IoIosArrowDown
+                    style={{
+                      ...styles(theme).icon,
+                      marginLeft: '2%',
+                      width: '10px',
+                      marginTop: '7px'
+                    }}
+                  />
+                )}
+                <FaCalendarDay
+                  style={{
+                    ...styles(theme).icon,
+                    marginRight: '5px',
+                    marginLeft: '5px',
+                    fontSize: '14px'
+                  }}
+                />
+                <p style={styles(theme, false, false, fSize).text}>
+                  {langIndex === 0
+                    ? `${index + 1}-день : ${day.name[0]}`
+                    : `${index + 1}-day : ${day.name[1]}`}
+                </p>
+
+                {currentDay === index && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      marginLeft: 'auto'
+                    }}
+                  >
+                    <FaPlusCircle
+                      onClick={() => setShowExercisesList(true)}
+                      style={{ ...styles(theme).icon, fontSize: '14px' }}
+                    />
+                    <TbArrowMoveDownFilled
+                      onClick={() => switchPositions(0, 0)}
+                      style={{ ...styles(theme).icon, fontSize: '14px' }}
+                    />
+                    <TbArrowMoveUpFilled
+                      onClick={() => switchPositions(0, 1)}
+                      style={{ ...styles(theme).icon, fontSize: '14px' }}
+                    />
+                    <FaPencilAlt
+                      onClick={() => onRedact(1)}
+                      style={{ ...styles(theme).icon, fontSize: '14px' }}
+                    />
+                    <FaTrash
+                      onClick={() => onRemove(1)}
+                      style={{
+                        ...styles(theme).icon,
+                        fontSize: '14px',
+                        marginRight: '8px'
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {currentDay === index && (
+                <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                  {day.exercises.map((item, i) => {
+                    // ✅ DIRECT ACCESS — no allExercises() needed
+                    const exercise = AppData.exercises[item.exId];
+
+                    // Skip if exercise was deleted or not found
+                    if (!exercise) {
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            width: '95%',
+                            marginLeft: '6px',
+                            marginRight: '5%',
+                            justifyContent: 'flex-start',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <p style={styles(theme, false, false, fSize).text}>{i + 1}.</p>
+                          <MdFitnessCenter
+                            style={{
+                              ...styles(theme).icon,
+                              marginRight: '5px',
+                              marginLeft: '5px',
+                              fontSize: '14px'
+                            }}
+                          />
+                          <p style={{ ...styles(theme, false, false, fSize).text, color: '#ff6b6b' }}>
+                            {langIndex === 0 ? 'Упражнение удалено' : 'Exercise deleted'}
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div
+                        key={i}
+                        onClick={() => setCurrentExId(i)}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'row',
+                          width: '95%',
+                          marginLeft: '6px',
+                          marginRight: '5%',
+                          justifyContent: 'flex-start',
+                          alignItems: 'center'
+                        }}
+                      >
                         <p style={styles(theme, false, false, fSize).text}>{i + 1}.</p>
-                        <MdFitnessCenter style={{ ...styles(theme).icon, marginRight: '5px', marginLeft: '5px', fontSize: '14px' }}/>
-                        <p style={styles(theme, false, false, fSize).text}>{exercise.name[langIndex]}</p>
-                        <p style={{ ...styles(theme, false, false, fSize).subtext, marginLeft: 'auto' }}> {item.sets}</p>
-                         
-                         {currentExId === i && (<div onClick={(e) => e.stopPropagation()} style={{display: 'flex',flexDirection: 'row',justifyContent: 'center',marginLeft: 'auto'}}>
-                          <TbArrowMoveDownFilled onClick={() => switchPositions(1, 0)} style={{ ...styles(theme).icon, fontSize: '14px' }}/>
-                          <TbArrowMoveUpFilled onClick={() => switchPositions(1, 1)} style={{ ...styles(theme).icon, fontSize: '14px' }}/>
-                          <FaTrash onClick={() => onRemove(2)} style={{ ...styles(theme).icon, fontSize: '14px', marginRight: '8px' }}/>
-                         </div>)}
-                        
+                        <MdFitnessCenter
+                          style={{
+                            ...styles(theme).icon,
+                            marginRight: '5px',
+                            marginLeft: '5px',
+                            fontSize: '14px'
+                          }}
+                        />
+                        <p style={styles(theme, false, false, fSize).text}>
+                          {exercise.name[langIndex]}
+                        </p>
+                        <p
+                          style={{
+                            ...styles(theme, false, false, fSize).subtext,
+                            marginLeft: 'auto'
+                          }}
+                        >
+                          {item.sets}
+                        </p>
+
+                        {currentExId === i && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'row',
+                              justifyContent: 'center',
+                              marginLeft: 'auto'
+                            }}
+                          >
+                            <TbArrowMoveDownFilled
+                              onClick={() => switchPositions(1, 0)}
+                              style={{ ...styles(theme).icon, fontSize: '14px' }}
+                            />
+                            <TbArrowMoveUpFilled
+                              onClick={() => switchPositions(1, 1)}
+                              style={{ ...styles(theme).icon, fontSize: '14px' }}
+                            />
+                            <FaTrash
+                              onClick={() => onRemove(2)}
+                              style={{
+                                ...styles(theme).icon,
+                                fontSize: '14px',
+                                marginRight: '8px'
+                              }}
+                            />
+                          </div>
+                        )}
                       </div>
-                     );
-                   })}
-               </div>
-               )}
-             </div>))}  
-                       </div>
-                       <MuscleView programmId={program.id} theme={theme} langIndex={langIndex} programs={programs}/>
-                    </div>}
+                    );
+                  })}
                 </div>
-                
-               ))}
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Muscle analysis for this program */}
+        <MuscleView
+          programmId={program.id}
+          theme={theme}
+          langIndex={langIndex}
+          programs={programs}
+        />
+      </div>
+    )}
+  </div>
+))}
                {currentId === -1 && <div onClick={() => setShowAddPanel(true)} style={{...styles(theme).groupPanel,height:'5%',justifyContent:'center'}} >
                   <FaPlusSquare style={{...styles(theme).icon,fontSize:'24px'}}/>     
                </div>}

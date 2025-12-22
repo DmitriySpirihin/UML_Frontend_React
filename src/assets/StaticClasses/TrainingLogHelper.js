@@ -76,7 +76,7 @@ export function findPreviousSimilarExercise(exId, setIndex, beforeDate, training
   return bestMatch; // null if none found
 }
 export async function addNewSession(date, programId, dayIndex) {
-  const program = AppData.programs.find(p => p.id === programId);
+  const program = AppData.programs[programId];
   if (!program || !program.schedule[dayIndex]) {
     console.error('Invalid program or dayIndex');
     return false;
@@ -84,7 +84,8 @@ export async function addNewSession(date, programId, dayIndex) {
   const exercises = {};
   const exerciseOrder = [];
   program.schedule[dayIndex].exercises.forEach(ex => {
-    const exercise = AppData.exercises.find(e => e.id === ex.exId);
+    // ✅ DIRECT ACCESS — NOT .find()
+    const exercise = AppData.exercises[ex.exId];
     if (!exercise) {
       console.warn(`Exercise ${ex.exId} not found in AppData.exercises`);
       return;
@@ -108,7 +109,7 @@ export async function addNewSession(date, programId, dayIndex) {
     duration: 0,
     tonnage: 0,
     exercises,
-    exerciseOrder // ✅ Add this new field
+    exerciseOrder
   };
 
   if (!AppData.trainingLog[dateKey]) {
@@ -119,7 +120,6 @@ export async function addNewSession(date, programId, dayIndex) {
 }
 // In TrainingLogHelper.js
 export async function addPreviousSession(date, programId, dayIndex, startTimeMs, endTimeMs) {
-  // ✅ CREATE DATE IN LOCAL TIME (critical fix)
   const sessionDate = new Date(
     date.getFullYear(), 
     date.getMonth(), 
@@ -131,23 +131,31 @@ export async function addPreviousSession(date, programId, dayIndex, startTimeMs,
   const duration = sessionEndTime - sessionStartTime;
   const exercises = {};
   const exerciseOrder = [];
-  const program = AppData.programs.find(p => p.id === programId);
+  const program = AppData.programs[programId];
+  
+  // ✅ Guard in case program not found
+  if (!program || !program.schedule[dayIndex]) {
+    console.error('Invalid program or dayIndex in addPreviousSession');
+    return;
+  }
+
   program.schedule[dayIndex].exercises.forEach(ex => {
-    
-    const exercise = AppData.exercises.find(e => e.id === ex.exId);
+    // ✅ DIRECT ACCESS
+    const exercise = AppData.exercises[ex.exId];
     if (!exercise) {
       console.warn(`Exercise ${ex.exId} not found in AppData.exercises`);
       return;
     }
 
     exercises[ex.exId] = {
-      mgId: exercise.mgId, // ✅ From Exercise class
-      sets: [], // ✅ Empty sets array
+      mgId: exercise.mgId,
+      sets: [],
       totalTonnage: 0,
       completed: false
     };
     exerciseOrder.push(ex.exId);
   });
+
   const newSession = {
     programId,
     dayIndex,
@@ -160,7 +168,6 @@ export async function addPreviousSession(date, programId, dayIndex, startTimeMs,
     exerciseOrder
   };
 
-  // ✅ USE LOCAL-DATE KEY (matches your calendar)
   const dateKey = formatDateKey(date); 
   if (!AppData.trainingLog[dateKey]) {
     AppData.trainingLog[dateKey] = [];
@@ -186,21 +193,54 @@ export function finishSession(date, sessionIndex) {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
   
-  if (!session || session.completed) return false;
+  if (!session || session.completed) return [];
 
   session.endTime = Date.now();
   session.duration = session.endTime - session.startTime;
   session.completed = true;
-  Object.values(session.exercises).map(ex => {
+
+  Object.values(session.exercises).forEach(ex => {
     ex.completed = true;
   });
-  // Recalculate total tonnage from exercises
+
   session.tonnage = Object.values(session.exercises).reduce(
     (sum, ex) => sum + (ex.totalTonnage || 0),
     0
   );
 
-  return true;
+  const newRmExercises = [];
+
+session.exerciseOrder.forEach(exIdStr => {
+  const exerciseData = session.exercises[exIdStr];
+  const exIdNum = Number(exIdStr);
+  const exerciseDef = AppData.exercises[exIdNum];
+
+  if (!exerciseData || !exerciseDef || !exerciseData.sets?.length) return;
+
+  const bestSet = exerciseData.sets.reduce(
+    (best, set) => (set.weight > best.weight ? set : best),
+    { weight: 0, reps: 1 }
+  );
+
+  const oneRepMax = getMaxOneRep(bestSet.reps, bestSet.weight);
+  if (isNaN(oneRepMax) || oneRepMax <= 0) return;
+
+  const previousRm = exerciseDef.rm; // ← store BEFORE update
+
+  if (oneRepMax > previousRm) {
+    exerciseDef.rm = oneRepMax;
+    exerciseDef.rmDate = dateKey;
+    const improvement = oneRepMax - previousRm;
+    newRmExercises.push({
+      exId: exIdNum,
+      newRm: oneRepMax,
+      oldRm: previousRm,
+      improvement
+    });
+  }
+});
+
+return newRmExercises;
 }
 export function addExerciseToSession(date, sessionIndex, exerciseId) {
   const dateKey = formatDateKey(date);

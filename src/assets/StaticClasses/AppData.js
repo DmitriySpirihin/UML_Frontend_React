@@ -66,12 +66,13 @@ export class AppData{
     this.pData = data.pData;
     this.measurements = data.measurements;
     this.currentProgramId = data.currentProgramId;
-    if(data.exercises?.length > 0)this.exercises = data.exercises;
-    if(data.programs?.length > 0)this.programs = data.programs;
+    if (data.exercises && typeof data.exercises === 'object' && !Array.isArray(data.exercises)) this.exercises = data.exercises;
+    if (data.programs && typeof data.programs === 'object' && !Array.isArray(data.programs)) this.programs = data.programs;
     if(data.ownPlates?.length > 0)this.ownPlates = data.ownPlates;
     if(data.platesAmount?.length > 0)this.platesAmount = data.platesAmount;
     this.barWeight = data.barWeight;
     this.trainingLog = data.trainingLog;
+    
   }
   static setPrefs(ind,value){
     this.prefs[ind] = value;
