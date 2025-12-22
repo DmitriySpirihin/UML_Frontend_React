@@ -421,7 +421,7 @@ const TrainingExercise = ({needToAdd,setEx}) => {
                
               <div  
                style={{display:'grid' ,alignContent:'center',justifyContent:'center', gridTemplateColumns: '1fr 1fr',
-                gridTemplateColumns: 'repeat(3, 1fr)',gridAutoRows: '2fr', gap: '2px',height:'33%', width: '90%', marginTop: '10px', borderBottom: `1px solid ${Colors.get('border', theme)}`}} >
+               gridAutoRows: '2fr', gap: '2px',height:'33%', width: '90%', marginTop: '10px', borderBottom: `1px solid ${Colors.get('border', theme)}`}} >
                
                {MuscleIcon.names[langIndex].map((name,index)=> 
               {
@@ -595,7 +595,7 @@ const TrainingExercise = ({needToAdd,setEx}) => {
                
               <div  
                style={{display:'grid' ,alignContent:'center',justifyContent:'center', gridTemplateColumns: '1fr 1fr',
-                gridTemplateColumns: 'repeat(3, 1fr)',gridAutoRows: '2fr', gap: '2px',height:'33%', width: '90%', marginTop: '10px', borderBottom: `1px solid ${Colors.get('border', theme)}`}} >
+                gridAutoRows: '2fr', gap: '2px',height:'33%', width: '90%', marginTop: '10px', borderBottom: `1px solid ${Colors.get('border', theme)}`}} >
                
                {MuscleIcon.names[langIndex].map((name,index)=> 
               {

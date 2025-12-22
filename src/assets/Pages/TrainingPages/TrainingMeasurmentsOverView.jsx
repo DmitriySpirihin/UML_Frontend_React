@@ -307,8 +307,8 @@ const GetWHR = ({ theme, langIndex, data }) => {
   }
 
   const bgColor = 
-    status === 'normal' ? Colors.get('minValColor', theme) :
-    status === 'elevated' ? Colors.get('maxValColor', theme) :
+    status === 'normal' ? Colors.get('maxValColor', theme) :
+    status === 'elevated' ? Colors.get('minValColor', theme) :
     Colors.get('danger', theme);
 
   return (
@@ -323,6 +323,7 @@ const GetWHR = ({ theme, langIndex, data }) => {
       <span style={{ ...styles(theme, false, false, 14).text, color: Colors.get('background', theme), fontSize: '12px' }}>
         {langIndex === 0 ? 'WHR: ' : 'WHR: '}
         {whr.toFixed(2)}
+        {label}
       </span>
     </div>
   );
@@ -345,8 +346,8 @@ const GetWHTr = ({ theme, langIndex, data,height }) => {
   else if (whtr >= 0.6) status = 'high';
 
   const bgColor = 
-    status === 'normal' ? Colors.get('minValColor', theme) :
-    status === 'elevated' ? Colors.get('maxValColor', theme) :
+    status === 'normal' ? Colors.get('maxValColor', theme) :
+    status === 'elevated' ? Colors.get('minValColor', theme) :
     Colors.get('danger', theme);
 
   return (

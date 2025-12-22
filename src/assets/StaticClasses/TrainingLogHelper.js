@@ -146,7 +146,7 @@ export async function addPreviousSession(date, programId, dayIndex, startTimeMs,
       mgId: exercise.mgId,
       sets: [], // ← You will need to populate this with { reps, weight } before RM update
       totalTonnage: 0,
-      completed: false
+      completed: true
     };
     exerciseOrder.push(ex.exId);
   });
@@ -294,7 +294,7 @@ export function removeExerciseFromSession(date, sessionIndex, exerciseId) {
 
   return true;
 }
-export function addSet(date, sessionIndex, exerciseId, reps, weight,time, isWarmUp) {
+export function addSet(date, sessionIndex, exerciseId, reps, weight, time, isWarmUp) {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
   const exercise = session?.exercises?.[exerciseId];
@@ -302,13 +302,28 @@ export function addSet(date, sessionIndex, exerciseId, reps, weight,time, isWarm
   if (!exercise) return false;
 
   const type = isWarmUp ? 0 : 1;
-  const set = { type, reps, weight ,time};
+  const set = { type, reps, weight, time };
   exercise.sets.push(set);
 
   // Update tonnage
   const setTonnage = reps * weight;
   exercise.totalTonnage = (exercise.totalTonnage || 0) + setTonnage;
   session.tonnage = (session.tonnage || 0) + setTonnage;
+
+  // 🔁 Only update 1RM if the exercise is marked as completed
+  if (
+    exercise.completed &&          // ← Only if user marked exercise as done
+    !isWarmUp &&                   // Ignore warm-up sets
+    reps > 0 && weight > 0        // Valid set
+  ) {
+    const estimated1RM = getMaxOneRep(reps, weight);
+    const currentRM = AppData.exercises[exerciseId]?.rm || 0;
+
+    if (estimated1RM > currentRM) {
+      AppData.exercises[exerciseId].rm = estimated1RM;
+      AppData.exercises[exerciseId].rmDate = formatDateKey(new Date());
+    }
+  }
 
   return true;
 }

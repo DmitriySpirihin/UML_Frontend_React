@@ -296,7 +296,7 @@ const renderProgramOptions = (theme, langIndex, fSize) => {
     .filter(([, program]) => program.show !== false) // Only show visible programs
     .map(([id, program]) => (
       <option key={id} value={id} style={{ ...styles(theme, false, fSize).text }}>
-        {program?.name?.[langIndex] || `Program ${id}`}
+        {Array.isArray(program?.name) ? program?.name?.[langIndex] : program?.name || `Program ${id}`}
       </option>
     ));
 };
