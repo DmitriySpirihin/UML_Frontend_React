@@ -330,7 +330,7 @@ const GetWHR = ({ theme, langIndex, data }) => {
 
 const GetWHTr = ({ theme, langIndex, data,height }) => {
   // WHtR = Waist-to-Height Ratio
-  const latestWaistEntry = data[0]?.[data[0]?.length - 1];
+  const latestWaistEntry = data[1]?.[data[1]?.length - 1];
 
   if (!latestWaistEntry ) {
     return null;

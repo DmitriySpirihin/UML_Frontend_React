@@ -120,19 +120,14 @@ export async function addNewSession(date, programId, dayIndex) {
 }
 // In TrainingLogHelper.js
 export async function addPreviousSession(date, programId, dayIndex, startTimeMs, endTimeMs) {
-  const sessionDate = new Date(
-    date.getFullYear(), 
-    date.getMonth(), 
-    date.getDate()
-  );
-  
+  const sessionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const sessionStartTime = sessionDate.getTime() + startTimeMs;
   const sessionEndTime = sessionDate.getTime() + endTimeMs;
   const duration = sessionEndTime - sessionStartTime;
   const exercises = {};
   const exerciseOrder = [];
   const program = AppData.programs[programId];
-  
+
   // ✅ Guard in case program not found
   if (!program || !program.schedule[dayIndex]) {
     console.error('Invalid program or dayIndex in addPreviousSession');
@@ -140,16 +135,16 @@ export async function addPreviousSession(date, programId, dayIndex, startTimeMs,
   }
 
   program.schedule[dayIndex].exercises.forEach(ex => {
-    // ✅ DIRECT ACCESS
     const exercise = AppData.exercises[ex.exId];
     if (!exercise) {
       console.warn(`Exercise ${ex.exId} not found in AppData.exercises`);
       return;
     }
 
+    // Initialize exercise entry in session
     exercises[ex.exId] = {
       mgId: exercise.mgId,
-      sets: [],
+      sets: [], // ← You will need to populate this with { reps, weight } before RM update
       totalTonnage: 0,
       completed: false
     };
@@ -168,11 +163,33 @@ export async function addPreviousSession(date, programId, dayIndex, startTimeMs,
     exerciseOrder
   };
 
-  const dateKey = formatDateKey(date); 
+  const dateKey = formatDateKey(date);
   if (!AppData.trainingLog[dateKey]) {
     AppData.trainingLog[dateKey] = [];
   }
   AppData.trainingLog[dateKey].push(newSession);
+
+  // 🔁 AFTER session is created (and sets are populated), update RM if needed
+  // ⚠️ Assumes `sets` have been filled with { reps, weight } beforehand
+  for (const exId in newSession.exercises) {
+    const exEntry = newSession.exercises[exId];
+    let bestOneRep = AppData.exercises[exId]?.rm || 0;
+
+    // Find the highest estimated 1RM from all sets in this session
+    for (const set of exEntry.sets) {
+      const estimated1RM = getMaxOneRep(set.reps, set.weight);
+      if (estimated1RM > bestOneRep) {
+        bestOneRep = estimated1RM;
+      }
+    }
+
+    // Update global exercise RM if improved
+    if (bestOneRep > (AppData.exercises[exId]?.rm || 0)) {
+      AppData.exercises[exId].rm = bestOneRep;
+      AppData.exercises[exId].rmDate = formatDateKey(new Date()); // e.g., "2025-12-23"
+    }
+  }
+
   await saveData();
 }
 export async function deleteSession(date, sessionIndex) {
