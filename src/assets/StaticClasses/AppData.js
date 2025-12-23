@@ -23,7 +23,7 @@ export class AppData{
    static habitsByDate = {};// {'date':[habitId:status(integer)]}
    static choosenHabitsDaysToForm = [];
    static choosenHabitsTypes = [];
-
+   static lastBackupDate = '';
    // training log
    static currentProgramId = null;
    static exercises = exercises;
@@ -64,6 +64,7 @@ export class AppData{
     this.notify = data.notify;
     setNotify(this.notify);
     this.pData = data.pData;
+    this.lastBackupDate = data.lastBackupDate;
     this.measurements = data.measurements;
     if (data.exercises && typeof data.exercises === 'object' && !Array.isArray(data.exercises)) this.exercises = data.exercises;
     if (data.programs && typeof data.programs === 'object' && !Array.isArray(data.programs)) this.programs = data.programs;
@@ -315,6 +316,7 @@ export class Data{
     this.ownPlates = AppData.ownPlates;
     this.platesAmount = AppData.platesAmount;
     this.barWeight = AppData.barWeight;
+    this.lastBackupDate = AppData.lastBackupDate;
   }
 }
 

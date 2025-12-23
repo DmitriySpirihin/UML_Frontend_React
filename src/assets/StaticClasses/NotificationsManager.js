@@ -85,8 +85,6 @@ export async function isUserHasPremium(uid){
         }
 }
 
-
-// back ups
 export async function cloudBackup() {
   try {
     const dataToSave = serializeData();
@@ -95,21 +93,28 @@ export async function cloudBackup() {
       return;
     }
 
-    const dataString = typeof dataToSave === 'string' ? dataToSave : JSON.stringify(dataToSave);
+    // ✅ Set the last backup timestamp in AppData BEFORE saving
+    const now = new Date();
+    AppData.lastBackupDate = now.toISOString(); // or `now.getTime()` if you prefer timestamp
+
+    const dataString = typeof dataToSave === 'string' 
+      ? dataToSave 
+      : JSON.stringify(dataToSave);
 
     const response = await NotificationsManager.sendMessage('backup', dataString);
     
-    if (response.success) {
+    if (response?.success) {
       setShowPopUpPanel('✅ Backup saved to cloud!', 2000, true);
     } else {
-      setShowPopUpPanel('❌ ' + (response.message || 'Backup failed'), 2000, false);
+      // Optional: revert lastBackupDate if save failed?
+      // But since it's client-side only, it's okay to keep it optimistic
+      setShowPopUpPanel('❌ ' + (response?.message || 'Backup failed'), 2000, false);
     }
   } catch (error) {
     console.error('Backup error:', error);
     setShowPopUpPanel('❌ Backup failed: ' + (error.message || 'unknown error'), 2000, false);
   }
 }
-
 // 📥 Manual Restore from Server
 export async function cloudRestore() {
   const confirmed = confirm('⚠️ This will overwrite your current data. Continue?');
@@ -136,5 +141,29 @@ export async function cloudRestore() {
       msg = '❌ Backup data is corrupted';
     }
     setShowPopUpPanel(msg, 2000, false);
+  }
+}
+
+export async function deleteCloudBackup() {
+  const confirmed = confirm('⚠️ Delete your cloud backup permanently? This cannot be undone.');
+  if (!confirmed) return;
+
+  try {
+    const response = await NotificationsManager.sendMessage('deleteBackup', '');
+
+    if (response?.success) {
+      // ✅ Clear local lastBackupDate
+      AppData.lastBackupDate = null;
+
+      // Optional: also save this state locally (IndexedDB)
+      // await saveData();
+
+      setShowPopUpPanel(response.message || 'Backup deleted', 2000, true);
+    } else {
+      setShowPopUpPanel('❌ ' + (response?.message || 'Delete failed'), 2000, false);
+    }
+  } catch (error) {
+    console.error('Delete backup error:', error);
+    setShowPopUpPanel('❌ Delete failed: ' + (error.message || 'unknown error'), 2000, false);
   }
 }

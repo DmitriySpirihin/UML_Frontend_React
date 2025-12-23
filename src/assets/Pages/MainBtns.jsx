@@ -17,7 +17,7 @@ import Dark from '@mui/icons-material/DarkModeTwoTone';
 import Light from '@mui/icons-material/LightModeTwoTone';
 import Menu from '@mui/icons-material/MenuTwoTone';
 import KeyBoard from '../Helpers/KeyBoard';
-import {cloudBackup, cloudRestore} from '../StaticClasses/NotificationsManager';
+import {cloudBackup, cloudRestore,deleteCloudBackup} from '../StaticClasses/NotificationsManager';
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
@@ -248,9 +248,14 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
                       <TelegramLink  name = "wakeupdemianos"/>
                    </div>}
                    {panelNum === 4 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
-                      <div style={{display:"flex",flexDirection:"row"}}><MdBackup style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Резервные копии и восстановление данных' : ' Backup and data recovery'}</p></div>
-                      <div style={{width:"70%",margin:"50px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => cloudBackup()}>{langIndex === 0 ? 'Создать резервную копию' : 'Create backup'}</div>
-                      <div style={{width:"70%",margin:"50px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => cloudRestore()}>{langIndex === 0 ? 'Восстановить данные' : 'Restore data'}</div>
+                     <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",marginBottom:"50px"}}>
+                      <div style={{display:"flex",flexDirection:"row"}}><MdBackup style={styles(theme).miniIcon}/><div style={styles(theme).text}>{langIndex === 0 ? ' Резервные копии и восстановление данных' : ' Backup and data recovery'}</div></div>
+                      <div style={styles(theme).text}>{langIndex === 0 ? 'Все ваши данные хранятся в облаке' : 'All your data is stored in the cloud'}</div>
+                      <div style={styles(theme).text}>{AppData.lastBackupDate === '' ? (langIndex === 0 ? 'Нет резервных копий' : 'No backups') : (langIndex === 0 ? `Ваша последняя резервная копия создана ${AppData.lastBackupDate}` : `Your last backup was created ${AppData.lastBackupDate}`)}</div>
+                     </div>
+                      <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => cloudBackup()}>{langIndex === 0 ? '☁️Создать резервную копию' : '☁️Create backup'}</div>
+                      <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => cloudRestore()}>{langIndex === 0 ? '↩️Восстановить данные' : '↩️Restore data'}</div>
+                      <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => deleteCloudBackup()}>{langIndex === 0 ? '🗑️Удалить резервную копию' : '🗑️Delete backup'}</div>
                    </div>}
                    {panelNum === 2 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
                       <div style={{display:"flex",flexDirection:"row"}}><FaDonate style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Здесь будет ссылка на донат' : 'Here will be a donate link'}</p></div>
@@ -454,7 +459,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         bottom: '20px'
 
                     }}> 
-                        {langIndex === 0 ? 'версия: 1.c.16.5' : 'version: 1.c.16.5'}
+                        {langIndex === 0 ? 'версия: 1.c.16.7' : 'version: 1.c.16.7'}
                     </p>
                 </motion.div>
                 </React.Fragment>
