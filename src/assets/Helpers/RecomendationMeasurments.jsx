@@ -14,8 +14,17 @@ const GOALS_CONFIG = {
     macrosRu: '1.8–2.2 г / 1 г / 4–6 г',
     macrosEn: '1.8–2.2 g / 1 g / 4–6 g',
   },
-  cut: {
+  strength: {
     id: 1,
+    titleRu: 'Набор',
+    titleEn: 'Gain',
+    kcalMinFactor: 1.1,
+    kcalMaxFactor: 1.15,
+    macrosRu: '1.8–2.2 г / 1 г / 4–6 г',
+    macrosEn: '1.8–2.2 g / 1 g / 4–6 g',
+  },
+  cut: {
+    id: 2,
     titleRu: 'Похудение',
     titleEn: 'Weight loss',
     kcalMinFactor: 0.85,
@@ -24,7 +33,7 @@ const GOALS_CONFIG = {
     macrosEn: '1.6–2 g / 0.8 g / 2–3 g',
   },
   maintain: {
-    id: 2,
+    id: 3,
     titleRu: 'Поддержание',
     titleEn: 'Maintenance',
     kcalMinFactor: 1,
@@ -127,7 +136,7 @@ const styles = (theme, fSize) => ({
     alignItems: 'center',
     width: '95%',
     alignSelf: 'center',
-    border: '1px solid ' + Colors.get('border', theme),
+    border: '1px solid ' + Colors.get('maxValColor', theme),
     borderRadius: '10px',
     overflow: 'hidden',
   },

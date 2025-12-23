@@ -5,6 +5,7 @@ import Colors from '../../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$ } from '../../../StaticClasses/HabitsBus';
 import {muscleIconComponents} from '../../../Classes/TrainingData'
 
+
 // --- Labels ---
 const labels = [
   ['7 дней', '7 days'],
@@ -255,6 +256,7 @@ const TrainingAnaliticsMuscles = () => {
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [period, setPeriod] = useState(0);
+ 
 
   useEffect(() => {
     const sub1 = theme$.subscribe(setThemeState);
@@ -324,7 +326,6 @@ const TrainingAnaliticsMuscles = () => {
 export default TrainingAnaliticsMuscles;
 
 const LoadView = ({ theme, langIndex, period = 0 }) => {
-  console.log('Full_11 type:', typeof muscleIconComponents[1][1]);
   const genderIndex = AppData.pData.gender;
   const baseSrc = genderIndex === 0 
     ? 'images/BodyIcons/Full.png' 
@@ -343,10 +344,10 @@ const LoadView = ({ theme, langIndex, period = 0 }) => {
   }, [period, langIndex]);
 
   const getTrueColor = (loadPercent) => {
-    if (loadPercent >= 85) return '#ff5252'; // red
-    if (loadPercent >= 50) return '#ff9800'; // amber
-    if (loadPercent >= 25) return '#4caf50'; // green
-    return '#2196f3'; // blue
+    if (loadPercent >= 80) return '#ff5252'; // red
+    if (loadPercent >= 40) return '#ff9800'; // amber
+    if (loadPercent >= 5) return '#4caf50'; // green
+    return '#354356ff'; // blue
   };
 
   const allMuscleIds = Array.from({ length: 13 }, (_, i) => i);
@@ -413,8 +414,8 @@ const LoadView = ({ theme, langIndex, period = 0 }) => {
         <span>🔴 {langIndex === 0 ? 'Перегрузка' : 'Overtrained'}</span>
         <span>🟡 {langIndex === 0 ? 'Норма' : 'Trained'}</span>
         <span>🟢 {langIndex === 0 ? 'Слабо' : 'Under-trained'}</span>
-        <span>🔵 {langIndex === 0 ? 'Нет' : 'None'}</span>
       </div>
     </div>
   );
 };
+

@@ -33,7 +33,7 @@ export const VolumeTabs = ({type, theme, langIndex, activeTab, onChange }) => {
       style={{
         display: 'flex',
         width: '90%',
-        marginTop: 12,
+        marginTop: 18,
         gap: 4,
         justifyContent: 'center',
         alignItems: 'center',

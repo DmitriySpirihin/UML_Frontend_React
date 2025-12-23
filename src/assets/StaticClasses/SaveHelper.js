@@ -139,7 +139,7 @@ export async function loadData() {
   }
 }
 
-function serializeData() {
+export function serializeData() {
   try {
     const newData = new Data();
     const plainData = instanceToPlain(newData);
@@ -150,7 +150,7 @@ function serializeData() {
   }
 }
 
-function deserializeData(data) {
+export function deserializeData(data) {
   try {
     const parsedData = JSON.parse(data);
     const restoredData = plainToClass(Data, parsedData);

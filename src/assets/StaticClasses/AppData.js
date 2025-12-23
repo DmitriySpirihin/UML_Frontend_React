@@ -65,7 +65,6 @@ export class AppData{
     setNotify(this.notify);
     this.pData = data.pData;
     this.measurements = data.measurements;
-    this.currentProgramId = data.currentProgramId;
     if (data.exercises && typeof data.exercises === 'object' && !Array.isArray(data.exercises)) this.exercises = data.exercises;
     if (data.programs && typeof data.programs === 'object' && !Array.isArray(data.programs)) this.programs = data.programs;
     if(data.ownPlates?.length > 0)this.ownPlates = data.ownPlates;
@@ -78,22 +77,33 @@ export class AppData{
     this.prefs[ind] = value;
   }
   static getLastProgramId() {
-  const todayKey = formatDateKey(new Date());
+  const allDates = Object.keys(this.trainingLog).filter(dateKey => this.trainingLog[dateKey]?.length > 0);
   
-  if (!this.trainingLog[todayKey]?.length) return 0;
-  
-  const lastSession = this.trainingLog[todayKey][this.trainingLog[todayKey].length - 1];
+  if (allDates.length === 0) return 0;
+
+  // Sort descending: most recent first
+  allDates.sort((a, b) => b.localeCompare(a));
+  const latestDate = allDates[0];
+  const sessions = this.trainingLog[latestDate];
+  const lastSession = sessions[sessions.length - 1];
+
   return lastSession.programId ?? 0;
 }
 
-  static getLastTrainingDayIndex() {
-    const todayKey = formatDateKey(new Date()); // LOCAL today
+static getLastTrainingDayIndex() {
+  const allDates = Object.keys(this.trainingLog).filter(dateKey => this.trainingLog[dateKey]?.length > 0);
   
-    if (!this.trainingLog[todayKey]?.length) return 0;
-  
-    const lastSession = this.trainingLog[todayKey][this.trainingLog[todayKey].length - 1];
-    return lastSession.dayIndex ?? 0;
-  }
+  if (allDates.length === 0) return 0;
+
+  allDates.sort((a, b) => b.localeCompare(a));
+  const latestDate = allDates[0];
+  const sessions = this.trainingLog[latestDate];
+  const lastSession = sessions[sessions.length - 1];
+
+  // Return next day index (so +1), but ensure it's a valid number
+  const nextDayIndex = (lastSession.dayIndex ?? -1) + 1;
+  return nextDayIndex >= 0 ? nextDayIndex : 0;
+}
   
   static hasKey(key) {
     return Object.prototype.hasOwnProperty.call(this.habitsByDate, key);
@@ -297,7 +307,6 @@ export class Data{
     this.CustomHabits = AppData.CustomHabits;
     this.choosenHabitsDaysToForm = AppData.choosenHabitsDaysToForm;
     this.notify = AppData.notify;
-    this.currentProgramId = AppData.currentProgramId;
     this.exercises = AppData.exercises;
     this.programs = AppData.programs;
     this.trainingLog = AppData.trainingLog;

@@ -162,7 +162,7 @@ export async function addPreviousSession(date, programId, dayIndex, startTimeMs,
     exercises,
     exerciseOrder
   };
-
+  
   const dateKey = formatDateKey(date);
   if (!AppData.trainingLog[dateKey]) {
     AppData.trainingLog[dateKey] = [];
@@ -318,7 +318,6 @@ export function addSet(date, sessionIndex, exerciseId, reps, weight, time, isWar
   ) {
     const estimated1RM = getMaxOneRep(reps, weight);
     const currentRM = AppData.exercises[exerciseId]?.rm || 0;
-
     if (estimated1RM > currentRM) {
       AppData.exercises[exerciseId].rm = estimated1RM;
       AppData.exercises[exerciseId].rmDate = formatDateKey(new Date());

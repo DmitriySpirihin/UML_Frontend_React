@@ -67,7 +67,7 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
       <div style={{ width: '100%', height: '240px' }}>
         <MyAreaChart
           data={chartData}
-          fillColor={Colors.get('areaChart', theme)}
+          fillColor={Colors.get(getAreaChart(goal,startValue,currentValue), theme)}
           textColor={Colors.get('subText', theme)}
           linesColor={Colors.get('border', theme)}
           backgroundColor={Colors.get('background', theme)} // only weight has goal
@@ -109,7 +109,7 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
           mediumValue={mediumValue}
           unit={getUnit(metricIndex)}
           langIndex={langIndex}
-          goal={goal}
+          goal={goal === 2 ? 1 : 0}
           size={210}
           textColor={Colors.get('mainText', theme)}
           linesColor={Colors.get('linesColor', theme)}
@@ -217,4 +217,12 @@ const PeriodTogglers = ({ theme, langIndex, fSize, periodIndex, setPeriodIndex }
       ))}
     </div>
   );
+};
+
+const getAreaChart = (goal,start,end) => {
+   if(goal === 2){
+      return start < end ? 'regress' : 'areaChart';
+   }else{
+     return start < end ? 'areaChart' : 'regress';
+   }
 };

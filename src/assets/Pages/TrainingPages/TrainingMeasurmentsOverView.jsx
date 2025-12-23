@@ -1,4 +1,5 @@
 import Colors from '../../StaticClasses/Colors'
+import { useState } from 'react'
 import { AppData , UserData} from '../../StaticClasses/AppData.js'
 import RecomendationMeasurments from '../../Helpers/RecomendationMeasurments'
 import {getWeeklyTrainingAmount} from '../../StaticClasses/TrainingLogHelper.js'
@@ -16,8 +17,10 @@ export const names = [
   ['Обхват бедра','Hip circumference'], 
 ]
 const goalNames = [['Сила','Strength'],['Набор массы','Mass gain'],['Потеря веса','Weight loss']]
+
 const TrainingMeasurmentsOveview = ({theme,langIndex,fSize,data,filled,height,age,gender,goal,wrist}) => {
 
+    const [showInfo,setShowInfo] = useState(false);
 
 
 
@@ -26,7 +29,7 @@ const TrainingMeasurmentsOveview = ({theme,langIndex,fSize,data,filled,height,ag
             {!filled && <div style={{...styles(theme,fSize).subtext,textAlign:'center',marginTop:'10vh'}}>{langIndex === 0 ? 'Заполните персональные данные для рекомендаций и статистики' : 'Fill personal data to get statistic'} </div>}
       {filled && data[0].length > 0 && <div style={{display:'flex',flexDirection:'row',justifyContent:'flex-start',alignItems:'center',width:'95%',alignSelf:'center',marginBottom:'20px'}} >
          <img src={icons[getBMIIndex(data,height)][gender]} alt="" style={{width:'30vw',height:'60vw',margin:'10px'}} />
-         <div style={{width:'70%',justifyContent:'flex-start',alignItems:'flex-start'}}>
+         <div onClick={() => setShowInfo(true)} style={{width:'70%',justifyContent:'flex-start',alignItems:'flex-start'}}>
           <div style={{border:`1px solid ${Colors.get('border', theme)}`,borderRadius:'12px',boxShadow:`0px 0px 10px ${Colors.get('shadow', theme)}`,marginTop:'10px',display:'flex',flexDirection:'column',width:'90%',justifyContent:'center',alignItems:'flex-start',padding:'10px'}}>
            
            <div style={styles(theme, fSize).text}>{(langIndex === 0 ? 'Возраст: ' : 'Age: ') + age + (langIndex === 0 ? ' лет' : ' yers old')}</div>
@@ -61,7 +64,12 @@ const TrainingMeasurmentsOveview = ({theme,langIndex,fSize,data,filled,height,ag
          </div>
          
       </div>} 
-      
+      {showInfo && <div onClick={() => setShowInfo(false)} style={{width:'100vw',top:0,height:'100vh',position:'absolute',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9000,backgroundColor:'rgba(0,0,0,0.6)'}}>
+        <div style={{width:'90%',height:'70%',backgroundColor:Colors.get('background', theme),borderRadius:'24px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around'}}>
+          <div style={{...styles(theme,fSize).text,margin:'10px',whiteSpace:'pre-wrap'}}>{infoText(langIndex)}</div>
+          <div style={{...styles(theme,fSize).subtext,margin:'10px',textAlign:'center'}}>{langIndex === 0 ? '!нажми чтобы закрыть!' : '!tap to close!'}</div>
+        </div>
+     </div>}
       {filled && data[0].length > 0 &&  <RecomendationMeasurments bmi={getBaseMetabolism(data[0][data[0].length - 1]?.value, height, age, gender)} trains={getWeeklyTrainingAmount()}/>}
         </div>
     )
@@ -365,4 +373,38 @@ const GetWHTr = ({ theme, langIndex, data,height }) => {
       </span>
     </div>
   );
+};
+
+const infoText = (langIndex) => {
+  if (langIndex === 0) {
+    return `• **ИМТ (Индекс массы тела)** — соотношение веса и роста.  
+Норма: 18.5–24.9. Выше 25 — избыточный вес, выше 30 — ожирение. ИМТ не учитывает мышечную массу.  
+
+• **WHR (Талия–бедра)** — окружность талии ÷ окружность бёдер.  
+У мужчин: <0.95 — низкий риск, >1.0 — высокий.  
+У женщин: <0.80 — низкий риск, >0.85 — высокий.  
+Высокий WHR связан с риском сердечно-сосудистых заболеваний и диабета.  
+
+• **WHtR (Талия–рост)** — окружность талии ÷ рост.  
+Здоровый уровень: <0.5. Значение ≥0.5 указывает на повышенный риск хронических заболеваний, независимо от ИМТ.  
+
+• **Базальный метаболизм (BMR)** — количество калорий, необходимых организму в покое для поддержания жизненных функций.  
+Рассчитывается по формулам (например, Миффлина–Сан Жеора) с учётом возраста, пола, веса и роста.  
+Используется как основа для расчёта суточных энергозатрат.`;
+  } else {
+    return `• **BMI (Body Mass Index)** — weight-to-height ratio.  
+Normal range: 18.5–24.9. ≥25 indicates overweight, ≥30 indicates obesity. BMI does not account for muscle mass.  
+
+• **WHR (Waist-to-Hip Ratio)** — waist circumference ÷ hip circumference.  
+Men: <0.95 = low risk, >1.0 = high risk.  
+Women: <0.80 = low risk, >0.85 = high risk.  
+High WHR is linked to increased risk of heart disease and type 2 diabetes.  
+
+• **WHtR (Waist-to-Height Ratio)** — waist circumference ÷ height.  
+Healthy target: <0.5. A value ≥0.5 suggests elevated risk of chronic diseases, regardless of BMI.  
+
+• **Basal Metabolic Rate (BMR)** — calories your body needs at rest to maintain vital functions.  
+Calculated using equations (e.g., Mifflin-St Jeor) based on age, sex, weight, and height.  
+Serves as the foundation for estimating daily calorie needs.`;
+  }
 };

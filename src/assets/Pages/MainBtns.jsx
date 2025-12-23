@@ -9,6 +9,7 @@ import {sendBugreport} from '../StaticClasses/NotificationsManager'
 import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle,FaCrown} from 'react-icons/fa'
 import {LuVibrate, LuVibrateOff} from 'react-icons/lu'
 import {RiFontSize2} from 'react-icons/ri'
+import {MdBackup} from 'react-icons/md'
 import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$,premium$, setLang, lang$, vibro$, sound$,fontSize$,setFontSize,setPage} from '../StaticClasses/HabitsBus';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -16,6 +17,7 @@ import Dark from '@mui/icons-material/DarkModeTwoTone';
 import Light from '@mui/icons-material/LightModeTwoTone';
 import Menu from '@mui/icons-material/MenuTwoTone';
 import KeyBoard from '../Helpers/KeyBoard';
+import {cloudBackup, cloudRestore} from '../StaticClasses/NotificationsManager';
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
@@ -216,7 +218,7 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
             <div style={{display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center",width:"50%",height:"10%",borderBottom:"1px solid " + Colors.get('border', theme)}}>
                 <TelegramIcon style={{width: "24px", height: "24px",color:'#3f86afff'}} />
                 <a href={`https://t.me/${name}`} target="_blank" rel="noopener noreferrer">
-                    <p style={styles(theme,fSize).text}>{name}</p>
+                    <p style={styles(theme,AppData.prefs[4]).text}>{name}</p>
                 </a>
             </div>
         )
@@ -242,8 +244,13 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
                    </div>}
                    {panelNum === 3 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
                       <div style={{display:"flex",flexDirection:"row"}}><FaAddressCard style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Наши телеграм контакты' : 'Our telegram contacts'}</p></div>
-                      <TelegramLink name = "Diiimaan777"/>
-                      <TelegramLink name = "wakeupdemianos"/>
+                      <TelegramLink  name = "Diiimaan777"/>
+                      <TelegramLink  name = "wakeupdemianos"/>
+                   </div>}
+                   {panelNum === 4 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
+                      <div style={{display:"flex",flexDirection:"row"}}><MdBackup style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Резервные копии и восстановление данных' : ' Backup and data recovery'}</p></div>
+                      <div style={{width:"70%",margin:"50px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => createBackup()}>{langIndex === 0 ? 'Создать резервную копию' : 'Create backup'}</div>
+                      <div style={{width:"70%",margin:"50px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => restoreData()}>{langIndex === 0 ? 'Восстановить данные' : 'Restore data'}</div>
                    </div>}
                    {panelNum === 2 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
                       <div style={{display:"flex",flexDirection:"row"}}><FaDonate style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Здесь будет ссылка на донат' : 'Here will be a donate link'}</p></div>
@@ -387,6 +394,15 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                             </p>
                         </div>
                         <div style={settingsPanelStyles(theme).listEl}>
+                            <MdBackup style={settingsPanelStyles(theme).miniIcon}/>
+                            <p 
+                                style={{...settingsPanelStyles(theme,fSize).text, cursor: 'pointer'}} 
+                                onClick={() => {setAdditionalPanel(true);setAdditionalPanelNum(4)}}
+                            >
+                                {langIndex === 0 ? 'Резервная копия' : 'Data backup'}
+                            </p>
+                        </div>
+                        {/* <div style={settingsPanelStyles(theme).listEl}>
                             <FaExclamationTriangle style={settingsPanelStyles(theme).miniIcon}/>
                             <p 
                                 style={{...settingsPanelStyles(theme,fSize).text, cursor: 'pointer'}} 
@@ -411,7 +427,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                             >
                                 {langIndex === 0 ? '!Удалить сохранения!' : '! Delete saves!'}
                             </p>
-                        </div>
+                        </div>*/}
                     </div>
                     <div style={settingsPanelStyles(theme).list}>
                         
@@ -438,7 +454,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         bottom: '20px'
 
                     }}> 
-                        {langIndex === 0 ? 'версия: 1.c.16.2' : 'version: 1.c.16.2'}
+                        {langIndex === 0 ? 'версия: 1.c.16.5' : 'version: 1.c.16.5'}
                     </p>
                 </motion.div>
                 </React.Fragment>

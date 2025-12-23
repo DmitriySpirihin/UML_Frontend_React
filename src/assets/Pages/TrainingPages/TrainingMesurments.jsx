@@ -26,7 +26,7 @@ export const names = [
 
 const now = new Date();
 const months =[ ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
-const goalNames = [['Набор массы','Mass gain'],['Потеря веса','Weight loss']]
+const goalNames = [['Набор массы','Mass gain'],['Сила','Strength'],['Жиросжигание','Weight loss'],['Здоровье','Health']]
 
 const TrainingMesurments = () => {
     // states
@@ -421,9 +421,9 @@ const onRedactConfirm = async () => {
                      </div>
                      <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'цель тренировок': 'training goal'}</p>
                      <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                         <FaCaretLeft  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGoal(prev => prev + 1 < 2 ? prev + 1 : 0)}}/> 
+                         <FaCaretLeft  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGoal(prev => prev + 1 < 4 ? prev + 1 : 0)}}/> 
                          <p style={{color:Colors.get('mainText',theme),fontSize:'26px'}}>{goalNames[goal][langIndex]}</p>
-                         <FaCaretRight  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGoal(prev => prev - 1 > -1 ? prev - 1 : 1)}}/>
+                         <FaCaretRight  style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setGoal(prev => prev - 1 > -1 ? prev - 1 : 3)}}/>
                      </div>
                      
                    </div>

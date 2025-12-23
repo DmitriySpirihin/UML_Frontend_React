@@ -116,34 +116,34 @@ const MainMenu = ({ onPageChange }) => {
                         'Отслеживайте свой тренировочный прогресс, ставьте цели и анализируйте результаты. Идеальный инструмент для системного подхода к физическому развитию.', 
                         'Track your workout progress, set goals, and analyze results. The perfect tool for a systematic approach to physical development.'
                     ]}
-                    colorDark="#143113ff" 
-                    colorLight="#98f9a0ff" 
-                    colorSpecialDark="#26352fff" 
-                    colorSpecialLight="#9de074ff" 
+                    colorDark="#311313ff" 
+                    colorLight="#f998c3ff" 
+                    colorSpecialDark="#352628ff" 
+                    colorSpecialLight="#e07498ff" 
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
                     onClick={() => {onPageChange('TrainingMain');playEffects(null);}}
                 />
                <MenuCard 
-                    text={['Список задач', 'Simple task manager']} 
-                    decr={['Скоро будет доступно', 'Coming soon']}
-                    colorDark="#4b3f1fff" 
-                    colorLight="#ebe58eff" 
-                    colorSpecialDark="#36341cff" 
-                    colorSpecialLight="#d0e074ff" 
+                    text={['Дыхательные практики, медитация и закаливание', 'Breathing exercises, meditation cold']} 
+                    decr={['Дыхательные практики, медитация и закаливание помогают улучшить качество сна и общее самочувствие.', 'Breathing exercises, meditation, and calming techniques help improve sleep quality and overall well-being.']} 
+                    colorDark="#1f4b49ff" 
+                    colorLight="#8eebd7ff" 
+                    colorSpecialDark="#1c3136ff" 
+                    colorSpecialLight="#74d9e0ff" 
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
                     onClick={() => {playEffects(null);}}
                 />
                 <MenuCard 
-                    text={['Хорошие новости', 'Good news']} 
+                    text={['Список задач', 'Simple task manager']}
                     decr={['Скоро будет доступно', 'Coming soon']}
-                    colorDark="#3a201bff" 
-                    colorLight="#ecae94ff" 
-                    colorSpecialDark="#4a2828ff" 
-                    colorSpecialLight="#e194c6ff" 
+                    colorDark="#2b2929ff" 
+                    colorLight="#9e9d9cff" 
+                    colorSpecialDark="#353232ff" 
+                    colorSpecialLight="#ebe9eaff" 
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
@@ -158,8 +158,8 @@ const MainMenu = ({ onPageChange }) => {
 
 export default MainMenu
 
-function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#122636ff", colorLight = "#9cccf1ff",
-  colorSpecialDark = "#1d262dff", colorSpecialLight = "#45dff4ff", theme,lang, onClick,fontSize}){
+function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#133612ff", colorLight = "#a4f19cff",
+  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#c8f445ff", theme,lang, onClick,fontSize}){
     const cardColor = (theme) => {
         if(theme === 'dark') return colorDark;
         else if(theme === 'specialdark') return colorSpecialDark;

@@ -1,6 +1,7 @@
 import {AppData, UserData } from './AppData';
+import { serializeData, deserializeData ,saveData} from './SaveHelper';
 import { allHabits } from '../Classes/Habit';
-import { setDevMessage, setIsPasswordCorrect,setPremium } from './HabitsBus';
+import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel} from './HabitsBus';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
 
@@ -82,4 +83,58 @@ export async function isUserHasPremium(uid){
             console.error('Error:', error);
             throw error;
         }
+}
+
+
+// back ups
+export async function cloudBackup() {
+  try {
+    const dataToSave = serializeData();
+    if (!dataToSave) {
+      setShowPopUpPanel('Nothing to back up', 2000, false);
+      return;
+    }
+
+    const dataString = typeof dataToSave === 'string' ? dataToSave : JSON.stringify(dataToSave);
+
+    const response = await NotificationsManager.sendMessage('backup', dataString);
+    
+    if (response.success) {
+      setShowPopUpPanel('✅ Backup saved to cloud!', 2000, true);
+    } else {
+      setShowPopUpPanel('❌ ' + (response.message || 'Backup failed'), 2000, false);
+    }
+  } catch (error) {
+    console.error('Backup error:', error);
+    setShowPopUpPanel('❌ Backup failed: ' + (error.message || 'unknown error'), 2000, false);
+  }
+}
+
+// 📥 Manual Restore from Server
+export async function cloudRestore() {
+  const confirmed = confirm('⚠️ This will overwrite your current data. Continue?');
+  if (!confirmed) return;
+
+  try {
+    const response = await NotificationsManager.sendMessage('restore', '');
+
+    if (!response.success || typeof response.message !== 'string') {
+      setShowPopUpPanel('⚠️ ' + (response.message || 'No backup found'), 2000, false);
+      return;
+    }
+
+ 
+    deserializeData(response.message);
+    await saveData();
+
+    setShowPopUpPanel('✅ Data restored from cloud!', 2000, true);
+
+  } catch (error) {
+    console.error('Restore error:', error);
+    let msg = '❌ Restore failed';
+    if (error.message?.includes('corrupt') || error.message?.includes('parse')) {
+      msg = '❌ Backup data is corrupted';
+    }
+    setShowPopUpPanel(msg, 2000, false);
+  }
 }

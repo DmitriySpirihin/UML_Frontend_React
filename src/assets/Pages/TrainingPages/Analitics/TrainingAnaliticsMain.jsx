@@ -6,6 +6,7 @@ import LoadDonut from './LoadDonut';
 import { VolumeTabs } from '../../../Helpers/TrainingAnaliticsTabs';
 import TrainingAnaliticsMuscles from './TrainingAnaliticsMuscles';
 import TrainingAnaliticsRM from './TrainingAnaliticsRM';
+import {FaInfo} from "react-icons/fa"
 
 const TrainingAnaliticsMain = () => {
   const [theme, setThemeState] = useState('dark');
@@ -19,7 +20,7 @@ const TrainingAnaliticsMain = () => {
   const [donutData, setDonutData] = useState([{ value: 0 }, { value: 0 }, { value: 0 }]);
   const [totalTonnage, setTotalTonnage] = useState(0);
   const [sessionCount, setSessionCount] = useState(0);
-  
+   const [showInfo,setShowInfo] = useState(false);
 
   // Subscriptions
   useEffect(() => {
@@ -69,12 +70,14 @@ const TrainingAnaliticsMain = () => {
       {/* Donut Chart */}
       {Object.keys(AppData.trainingLog).length > 1  ? <LoadDonut data={donutData} theme={theme} totalTonnage={totalTonnage} sessionCount={sessionCount} langIndex={langIndex}/>: <div style={styles(theme).panelRow}><div style={styles(theme,fSize).text}>{langIndex === 0 ? 'Нет данных' : 'No data'}</div></div>}
       {/* Needed Tonnage */}
-      <Tonnage theme={theme} langIndex={langIndex} targetTonnage={targetTonnage} progressPercent={progressPercent}/>
+      <Tonnage theme={theme} langIndex={langIndex} totalTonnage={totalTonnage} targetTonnage={targetTonnage} progressPercent={progressPercent}/>
       <InfoText theme={theme} langIndex={langIndex}/>
      </div>}
 
      {tab === 'muscles' && <div style={{width:'100%',display:'flex',height:'90%',alignItems:'center',justifyContent:'space-around',flexDirection:'column'}}>
-     <div style={{...styles(theme,fSize).text,marginTop:'20px'}}>{langIndex === 0 ? 'Загрузка мышечных групп' : 'Muscle load'}</div>
+     <div style={{...styles(theme,fSize).text,marginTop:'20px'}}>{langIndex === 0 ? 'Загрузка мышечных групп' : 'Muscle load'}
+      <FaInfo onClick={() => setShowInfo(true)} style={{...styles(theme,fSize).icon , marginLeft  : '10px'}}/>
+     </div>
        <TrainingAnaliticsMuscles/>
      </div>}
      {tab === 'exercises' && <div style={{width:'100%',display:'flex',height:'90%',alignItems:'center',justifyContent:'space-around',flexDirection:'column'}}>
@@ -122,6 +125,12 @@ const TrainingAnaliticsMain = () => {
           </button>
         </div>
       )}
+      {showInfo && <div onClick={() => setShowInfo(false)} style={{width:'100vw',top:0,height:'100vh',position:'absolute',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9000,backgroundColor:'rgba(0,0,0,0.6)'}}>
+        <div style={{width:'90%',height:'50%',backgroundColor:Colors.get('background', theme),borderRadius:'24px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around'}}>
+          <div style={{...styles(theme,fSize).text,margin:'10px',whiteSpace:'pre-wrap'}}>{infoText(langIndex)}</div>
+          <div style={{...styles(theme,fSize).subtext,margin:'10px',textAlign:'center'}}>{langIndex === 0 ? '!нажми чтобы закрыть!' : '!tap to close!'}</div>
+        </div>
+     </div>}
     </div>
   );
 };
@@ -473,7 +482,7 @@ Total tonnage = sum of all set tonnages.`;
   );
 }
 
-const Tonnage = ({theme,langIndex,targetTonnage,progressPercent}) => {
+const Tonnage = ({theme,langIndex,totalTonnage,targetTonnage,progressPercent}) => {
     return (
         <div style={styles(theme).panelRow}>
    <div
@@ -527,14 +536,16 @@ const Tonnage = ({theme,langIndex,targetTonnage,progressPercent}) => {
     >
       т
     </span>
-    {progressPercent > 100 && <span
+    {progressPercent >= 100 && <span
       style={{
-        fontSize: 22,
+        fontSize: 16,
+        position:'relative',
+        top:'-15px',
         fontWeight: 500,
         color: Colors.get('light', theme)
       }}
     >
-      {'+' + (progressPercent - 100)}
+      {'+' + ((totalTonnage-targetTonnage)/1000).toFixed(1)}
     </span>}
   </div>
 
@@ -602,3 +613,17 @@ const Tonnage = ({theme,langIndex,targetTonnage,progressPercent}) => {
 </div>
     )
 }
+
+const infoText = (langIndex) => {
+  if (langIndex === 0) {
+    return `Нагрузка на мышцы рассчитывается на основе тоннажа выполненных упражнений за выбранный период. Для каждого упражнения:\n` +
+           `— 70% тоннажа распределяется на основную мышечную группу,\n` +
+           `— 30% — равномерно между второстепенными группами.\n` +
+           `Затем значения нормализуются относительно самой нагруженной мышцы (100%).`;
+  } else {
+    return `Muscle load is calculated based on the tonnage of completed exercises over the selected period. For each exercise:\n` +
+           `— 70% of the tonnage is assigned to the primary muscle group,\n` +
+           `— 30% is evenly distributed among secondary muscle groups.\n` +
+           `Values are then normalized relative to the most loaded muscle (100%).`;
+  }
+};

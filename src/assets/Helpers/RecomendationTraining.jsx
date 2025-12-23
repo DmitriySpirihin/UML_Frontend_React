@@ -30,9 +30,9 @@ const RecomendationTraining = ({max}) => {
 
 // render    
 return (
-    <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-start',alignItems:'center',width:'100%'}}>
+    <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-start',alignItems:'center',width:'98%'}}>
       <div style={{...styles(theme,fSize).text,marginTop:'70px'}}>{langIndex === 0 ? 'Рекомендации для вас' : 'Personal recomendations'}</div>
-      <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-start',alignItems:'center',height:'40%',width:'100%',alignSelf:'center',border:'1px solid ' + Colors.get('border', theme)}}>
+      <div style={{display:'flex',flexDirection:'column',borderRadius:'12px',justifyContent:'flex-start',alignItems:'center',height:'50%',width:'100%',alignSelf:'center',border:'1px solid ' + Colors.get('maxValColor', theme)}}>
        <div style={{...styles(theme,fSize).simplePanelRow,}}>
          <div style={{...styles(theme,fSize).subtext,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? 'Цель' : 'Goal'}
@@ -44,10 +44,10 @@ return (
             {langIndex === 0 ? 'Отдых' : 'Rest'}
          </div>
          <div style={{...styles(theme,fSize).subtext,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
-            {langIndex === 0 ? 'Восстановление' : 'Recovery'}
+            {langIndex === 0 ? 'Восстанов.' : 'Recovery'}
          </div>
         </div>
-        {goal === 0 && <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 0 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
+        {goal === 1 && <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 0 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
          <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? 'Сила' : 'Strength'}
          </div>
@@ -61,7 +61,7 @@ return (
             {langIndex === 0 ? '72ч' : '72h'}
          </div>
         </div>}
-        {goal === 1 && <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 1 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
+        {goal === 0 && <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 1 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
          <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? 'Набор' : 'Gain'}
          </div>
@@ -87,6 +87,20 @@ return (
          </div>
          <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
             {langIndex === 0 ? '24-48ч' : '24-48h'}
+         </div>
+        </div>}
+        {goal === 3 && <div style={{...styles(theme,fSize).simplePanelRow,border: goal === 2 ? '2px solid ' + Colors.get('maxValColor', theme) : 'none'}}>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+            {langIndex === 0 ? 'Поддержание' : 'Maintenance'}
+         </div>
+         <div style={{...styles(theme,fSize).text,width:'40%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+            {`${Math.round(max * 0.6)} - ${Math.round(max * 0.7)} ${langIndex === 0 ? 'кг' : 'kg'} / 10-14 ${langIndex === 0 ? 'п.' : 'r.'}`  }
+         </div>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+            {langIndex === 0 ? '1-2мин' : '1-2min'}
+         </div>
+         <div style={{...styles(theme,fSize).text,width:'20%',height:'20px',alignContent:'center',borderRight:'1px solid ' + Colors.get('border', theme)}}>
+            {langIndex === 0 ? '72ч' : '72h'}
          </div>
         </div>}
        </div>
