@@ -2,7 +2,7 @@ import React from 'react'
 import Colors from '../StaticClasses/Colors'
 import { theme$, lang$, devMessage$ ,isPasswordCorrect$,fontSize$ } from '../StaticClasses/HabitsBus'
 import { AppData } from '../StaticClasses/AppData'
-import 'grained'
+//import 'grained'
 import  {NotificationsManager,sendPassword} from '../StaticClasses/NotificationsManager'
 import MyInput from '../Helpers/MyInput'
 
@@ -32,15 +32,7 @@ const MainMenu = ({ onPageChange }) => {
         };
     }, []);
     React.useEffect(() => {
-        window.grained('#grain', {
-            animate: true,
-            grainSize: 0.05,
-            grainDensity: 0.2,
-            grainOpacity: 0.01,
-            grainWidth: 0.9,
-            grainHeight: 0.9,
-            grainColor: "#ffffffff",
-        });
+       
         const devMessageSubscription = devMessage$.subscribe(setDevMessage);
         const isPasswordCorrectSubscription = isPasswordCorrect$.subscribe(setIsPasswordCorrect);
         return () => {
@@ -184,7 +176,7 @@ function MenuCard({text = ["Категория", "Category"], decr = ["Скор�
         position: 'relative',
     }
     return (
-        <div id="grain" style={_style} onClick={onClick}> 
+        <div className="card-with-noise" style={_style} onClick={onClick}> 
             <h2 style={styles(theme,fontSize).cardText}>{Array.isArray(text) ? text[lang] : text}</h2>
             <p style={styles(theme,fontSize).text}>{Array.isArray(decr) ? decr[lang] : decr}</p>
         </div>    

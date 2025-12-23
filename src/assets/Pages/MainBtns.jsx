@@ -249,8 +249,8 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
                    </div>}
                    {panelNum === 4 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
                       <div style={{display:"flex",flexDirection:"row"}}><MdBackup style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Резервные копии и восстановление данных' : ' Backup and data recovery'}</p></div>
-                      <div style={{width:"70%",margin:"50px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => createBackup()}>{langIndex === 0 ? 'Создать резервную копию' : 'Create backup'}</div>
-                      <div style={{width:"70%",margin:"50px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => restoreData()}>{langIndex === 0 ? 'Восстановить данные' : 'Restore data'}</div>
+                      <div style={{width:"70%",margin:"50px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => cloudBackup()}>{langIndex === 0 ? 'Создать резервную копию' : 'Create backup'}</div>
+                      <div style={{width:"70%",margin:"50px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => cloudRestore()}>{langIndex === 0 ? 'Восстановить данные' : 'Restore data'}</div>
                    </div>}
                    {panelNum === 2 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
                       <div style={{display:"flex",flexDirection:"row"}}><FaDonate style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Здесь будет ссылка на донат' : 'Here will be a donate link'}</p></div>

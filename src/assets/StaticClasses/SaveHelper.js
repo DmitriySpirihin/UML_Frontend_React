@@ -130,7 +130,7 @@ export async function loadData() {
       return { success: false, error: 'No saved data found' };
     }
 
-    console.log('Data loaded from DB');
+    //console.log(localData);
     deserializeData(localData);
     return { success: true, data: JSON.parse(localData), source: 'local' };
   } catch (e) {
