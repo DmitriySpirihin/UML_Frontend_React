@@ -190,7 +190,7 @@ return (
               {/*     timer     */}
               
               <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-start',height:'30vw',borderBottomRightRadius:'24px',borderBottomLeftRadius:'24px',width:'100%',alignItems:'center',backgroundColor: Colors.get('bottomPanel', theme)}}>
-                <div style={styles(theme,fSize).text}>{Array.isArray(program.name) ? program.name[langIndex] : program.name}</div>
+                <div style={styles(theme,fSize).text}>{Array.isArray(program?.name) ? program?.name[langIndex] : program?.name}</div>
                <div style={{...styles(theme,fSize).subtext,marginBottom:'15px'}}>{(trainInfo.mode === 'new' ? '⏳ ' : '✅ ') + (program?.schedule[dayIndex].name[langIndex])}</div>
                <div style={{ width: '100%', height: '8px', position: 'relative' }}>
                  <svg width="100%" height="8" viewBox="0 0 100 8" preserveAspectRatio="none" style={{ display: 'block' }}>

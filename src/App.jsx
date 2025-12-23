@@ -3,6 +3,7 @@ import { useState,useEffect, Suspense, lazy} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
+import BtnsRecovery from './assets/Pages/BottomBtns/BtnsRecovery'
 import NotifyPanel from './assets/Pages/NotifyPanel'
 import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage,keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
@@ -23,6 +24,7 @@ const TrainingMesurments = lazy(() => import('./assets/Pages/TrainingPages/Train
 const TrainingAnaliticsMain = lazy(() => import('./assets/Pages/TrainingPages/Analitics/TrainingAnaliticsMain'));
 const TrainingList = lazy(() => import('./assets/Pages/TrainingPages/TrainingList'));
 const Premium = lazy(() => import('./assets/Pages/Premium'));
+const RecoveryMain = lazy(() => import('./assets/Pages/Recovery/RecoveryMain'));
 
 
 function App() {
@@ -141,8 +143,12 @@ if (showPendingScreen) {
       {page === 'premium' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <Premium/>
       </Suspense>}
+      {page === 'RecoveryMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <RecoveryMain/>
+      </Suspense>}
       {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
       {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
+      {bottomBtnPanel === 'BtnsRecovery' && !keyboardVisible && <BtnsRecovery/>}
     </>
   )
 }

@@ -127,7 +127,7 @@ const MainMenu = ({ onPageChange }) => {
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
-                    onClick={() => {playEffects(null);}}
+                    onClick={() => {onPageChange('RecoveryMain');playEffects(null);}}
                 />
                 <MenuCard 
                     text={['Список задач', 'Simple task manager']}
