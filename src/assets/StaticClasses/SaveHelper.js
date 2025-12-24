@@ -190,24 +190,29 @@ export function exportDataToFile() {
   try {
     const dataStr = serializeData();
     if (!dataStr) {
-      console.error('No data to export');
+      setShowPopUpPanel('Nothing to export', 2000, false);
       return { success: false, error: 'No data to export' };
     }
 
+    const filename = 'health_app_backup.json';
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement(' a');
     a.href = url;
-    a.download = 'myapp_data.json';
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    return { success: true };
+    // ✅ Android-friendly message
+    setShowPopUpPanel('Saved to Downloads folder', 2500, true);
+
+    return { success: true, source: 'file' };
   } catch (e) {
     console.error('Export failed:', e);
-    return { success: false, error: 'Failed to export data' };
+    setShowPopUpPanel('Export failed', 2000, false);
+    return { success: false, error: 'Export failed' };
   }
 }
 
@@ -216,28 +221,69 @@ export function exportDataToFile() {
  * Returns a promise that resolves to { success, data?, error? }
  */
 export function importDataFromFile() {
+  // Warn iOS users: file picker often doesn't work in Telegram TWA
+  if (isIOS()) {
+    setShowPopUpPanel(
+      'File import may not work on iOS.\nTry pasting data instead.',
+      3500,
+      false
+    );
+    // Still attempt — some browsers allow it, but manage expectations
+  }
+
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
+    input.style.display = 'none'; // hide from view
 
     input.onchange = async (event) => {
       const file = event.target.files?.[0];
       if (!file) {
+        setShowPopUpPanel('No file selected', 2000, false);
         return resolve({ success: false, error: 'No file selected' });
       }
 
       try {
         const text = await file.text();
         const parsed = JSON.parse(text);
-        deserializeData(JSON.stringify(parsed)); // assuming deserializeData expects a string
+        // Validate: ensure it's your app's data structure (optional but recommended)
+        if (!isValidAppData(parsed)) {
+          setShowPopUpPanel('File is not a valid backup', 2500, false);
+          return resolve({ success: false, error: 'Invalid backup format' });
+        }
+
+        deserializeData(JSON.stringify(parsed));
+        setShowPopUpPanel('Data imported successfully', 2500, true);
         resolve({ success: true, data: parsed });
       } catch (e) {
         console.error('Import failed:', e);
+        setShowPopUpPanel('Invalid file format', 2500, false);
         resolve({ success: false, error: 'Invalid file format' });
+      } finally {
+        // Clean up
+        document.body.removeChild(input);
       }
     };
 
+    input.onerror = () => {
+      setShowPopUpPanel('File access denied', 2000, false);
+      resolve({ success: false, error: 'File access denied' });
+    };
+
+    document.body.appendChild(input);
     input.click();
   });
+}
+
+// Helper: Detect iOS
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+// Optional: Validate structure (adjust based on your Data class)
+function isValidAppData(obj) {
+  // Example: check for expected top-level fields
+  return obj && typeof obj === 'object' && 
+         (obj.user !== undefined || obj.version !== undefined || obj.entries !== undefined);
 }
