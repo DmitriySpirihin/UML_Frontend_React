@@ -10,6 +10,7 @@ const BreathingMain = () => {
     const [theme, setthemeState] = React.useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setFSize] = useState(AppData.prefs[4]); 
+    const [currCategory, setCurrCategory] = useState(-1);
       
     // subscriptions
     useEffect(() => {
@@ -33,14 +34,14 @@ const BreathingMain = () => {
       {breathingProtocols.map((protocol,index)=>{
         const cardColor = 'recoveryCard' + index;
         return (
-          <div key={index} style={{marginTop:'10px',border:`3px solid ${Colors.get(cardColor, theme)}`,width:'95%', borderRadius:'12px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',paddingBottom:'10px'}}>
+          <div key={index} onClick={() => {setCurrCategory(prev => prev === index ? -1 : index)}} style={{marginTop:'10px',border:`3px solid ${Colors.get(cardColor, theme)}`,width:'95%', borderRadius:'12px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',paddingBottom:'10px'}}>
           <p style={{...styles(theme,fSize).mainText,color:Colors.get(cardColor, theme),fontWeight:'bold'}}>{protocol.level[langIndex] + ' / ' + protocol.protocols.length}</p>
           <div  style={{width:'98%',display: "grid" ,gridTemplateColumns: '1fr 1fr',alignItems:'center',justifyItems:'center'}}>
-           {protocol.protocols.map((protocol,ind)=>{
+           {currCategory === index ? protocol.protocols.map((protocol,ind)=>{
              return (
-                <MenuCard key={ind} text={protocol.name[langIndex]} theme={theme} color={cardColor}  lang={langIndex} fontSize={fSize} onClick={() => {}} />   
+                <MenuCard key={ind} text={protocol.name} aim={protocol.aim} theme={theme} color={cardColor}  lang={langIndex} fSize={fSize} onClick={() => {}} />   
              )
-           })}
+           }) : null}
           </div>
        </div>
         )
@@ -95,7 +96,7 @@ const styles = (theme,fSize) =>
     },
 })
 
-function MenuCard({text, color,theme,lang, onClick,fontSize} ){
+function MenuCard({text,aim, color,theme,lang, onClick,fSize} ){
     
     const _style = {
         display:'flex',
@@ -110,7 +111,11 @@ function MenuCard({text, color,theme,lang, onClick,fontSize} ){
     }
     return (
       <div style={_style} onClick={onClick}> 
-        <p style={{...styles(theme,fontSize).subtext,fontWeight:'bold'}}>{Array.isArray(text) ? text[lang] : text}</p>
+        
+        <div style={{...styles(theme,fSize).subtext,fontWeight:'bold'}}>{Array.isArray(text) ? text[lang] : text}</div>
+        <div style={{display:'flex',flexDirection:'column',width:'100%',height:'50%',alignItems:'center',justifyContent:'flex-start',backgroundColor:'rgba(0,0,0,0.1)'}}>
+        <div style={{...styles(theme,fSize).subtext,fontSize: fSize === 0 ? '12px' : '14px',}}>{Array.isArray(aim) ? aim[lang] : aim}</div>
+        </div>
       </div>   
     )
 }
