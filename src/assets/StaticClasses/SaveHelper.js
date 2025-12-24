@@ -186,7 +186,7 @@ export async function clearAllSaves() {
 /**
  * Exports data as a downloadable JSON file
  */
-export function exportDataToFile() {
+export async function exportDataToFile() {
   try {
     const dataStr = serializeData();
     if (!dataStr) {
@@ -194,27 +194,43 @@ export function exportDataToFile() {
       return { success: false, error: 'No data to export' };
     }
 
-    const filename = 'health_app_backup.json';
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement(' a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    // ✅ Android-friendly message
-    setShowPopUpPanel('Saved to Downloads folder', 2500, true);
-
-    return { success: true, source: 'file' };
+    if (window.Telegram?.WebApp) {
+      const result = await window.Telegram.WebApp.requestWriteFile({
+        title: 'Save backup',
+        suggested_filename: 'UltyMyLife_backup.json',
+        data: dataStr, // строка JSON
+        mime_type: 'application/json',
+        thumb: '' // опционально иконка
+      });
+      
+      if (result) {
+        setShowPopUpPanel('Saved successfully', 2500, true);
+        return { success: true, source: 'telegram' };
+      } else {
+        setShowPopUpPanel('User cancelled', 2000, false);
+        return { success: false, error: 'Cancelled' };
+      }
+    } else {
+      // Fallback для обычных браузеров
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'health_app_backup.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setShowPopUpPanel('Saved to Downloads', 2500, true);
+      return { success: true, source: 'file' };
+    }
   } catch (e) {
     console.error('Export failed:', e);
     setShowPopUpPanel('Export failed', 2000, false);
-    return { success: false, error: 'Export failed' };
+    return { success: false, error: e.message };
   }
 }
+
 
 /**
  * Imports data from a user-selected JSON file

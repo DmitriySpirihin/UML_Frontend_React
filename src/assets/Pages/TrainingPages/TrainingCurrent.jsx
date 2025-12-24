@@ -258,9 +258,9 @@ return (
                   }
                  }
                 return (
-                 <div key={exId} onClick={() => {setCurrentExId(exId)}} style={{ display: 'flex', flexDirection: 'column' }}>
+                 <div key={exId}  style={{ display: 'flex', flexDirection: 'column' }}>
                  {/* Exercise name */}
-                <div style={{ ...styles(theme, fSize).text,color:currentExId === exId ? Colors.get('mainText', theme) : Colors.get('subText', theme),marginTop:'12px',textAlign:'center',borderBottom:currentExId === exId ? `2px solid ${ Colors.get('iconsHighlited', theme)}` : `1px solid ${Colors.get('border', theme)}`, marginBottom: '10px' }}>
+                <div onClick={() => {setCurrentExId(exId)}} style={{ ...styles(theme, fSize).text,height:'35px',color:currentExId === exId ? Colors.get('mainText', theme) : Colors.get('subText', theme),marginTop:'12px',textAlign:'center',borderBottom:currentExId === exId ? `3px solid ${ Colors.get('iconsHighlited', theme)}` : `1px solid ${Colors.get('border', theme)}`, marginBottom: '10px' }}>
                 {exerciseName}
                 {!session.completed && <span style={{fontSize:'12px',marginLeft:'10px'}}>{exercise.completed ? '✅ ' : '⏳ '}</span>}
                 <span style={{...styles(theme,fSize).subtext,marginLeft:'30px'}}>{plannedSets}</span>

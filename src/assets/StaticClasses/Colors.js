@@ -54,8 +54,8 @@ export class Colors {
     trainingGroup:{ light: "#c7dee6ff", dark: "#101215ff", speciallight: "#e6c2baff", specialdark: "#171515ff" },
     trainingGroupSelected:{ light: "#b8e6f9ff", dark: "#171b1aff", speciallight: "#ecbbbbff", specialdark: "#282e27ff" },
 
-    trainingBaseFont: { light: "#341717ff", dark: "#794040ff", speciallight: "#3c0707ff", specialdark: "#903d3dff" },
-    trainingIsolatedFont: { light: "#3d3923ff", dark: "#77713dff", speciallight: "#464302ff", specialdark: "#797b3aff" },
+    trainingBaseFont: { light: "#ff3b3bff", dark: "#794040ff", speciallight: "#de0d0dff", specialdark: "#903d3dff" },
+    trainingIsolatedFont: { light: "#ffe449ff", dark: "#77713dff", speciallight: "#d4cb22ff", specialdark: "#797b3aff" },
     
     // metrics
     barsColorWeight:{ light: "#99723bff", dark: "#c8803cff", speciallight: "#885c42ff", specialdark: "#a88b22ff" },
