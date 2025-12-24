@@ -168,28 +168,6 @@ export async function addPreviousSession(date, programId, dayIndex, startTimeMs,
     AppData.trainingLog[dateKey] = [];
   }
   AppData.trainingLog[dateKey].push(newSession);
-
-  // 🔁 AFTER session is created (and sets are populated), update RM if needed
-  // ⚠️ Assumes `sets` have been filled with { reps, weight } beforehand
-  for (const exId in newSession.exercises) {
-    const exEntry = newSession.exercises[exId];
-    let bestOneRep = AppData.exercises[exId]?.rm || 0;
-
-    // Find the highest estimated 1RM from all sets in this session
-    for (const set of exEntry.sets) {
-      const estimated1RM = getMaxOneRep(set.reps, set.weight);
-      if (estimated1RM > bestOneRep) {
-        bestOneRep = estimated1RM;
-      }
-    }
-
-    // Update global exercise RM if improved
-    if (bestOneRep > (AppData.exercises[exId]?.rm || 0)) {
-      AppData.exercises[exId].rm = bestOneRep;
-      AppData.exercises[exId].rmDate = formatDateKey(new Date()); // e.g., "2025-12-23"
-    }
-  }
-
   await saveData();
 }
 export async function deleteSession(date, sessionIndex) {

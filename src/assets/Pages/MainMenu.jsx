@@ -108,7 +108,7 @@ const MainMenu = ({ onPageChange }) => {
                         'Отслеживайте свой тренировочный прогресс, ставьте цели и анализируйте результаты. Идеальный инструмент для системного подхода к физическому развитию.', 
                         'Track your workout progress, set goals, and analyze results. The perfect tool for a systematic approach to physical development.'
                     ]}
-                    colorDark="#311313ff" 
+                    colorDark="#44281eff" 
                     colorLight="#f998c3ff" 
                     colorSpecialDark="#352628ff" 
                     colorSpecialLight="#e07498ff" 
@@ -120,7 +120,7 @@ const MainMenu = ({ onPageChange }) => {
                <MenuCard 
                     text={['Дыхательные практики, медитация и закаливание', 'Breathing exercises, meditation cold']} 
                     decr={['Дыхательные практики, медитация и закаливание помогают улучшить качество сна и общее самочувствие.', 'Breathing exercises, meditation, and calming techniques help improve sleep quality and overall well-being.']} 
-                    colorDark="#1f4b49ff" 
+                    colorDark="#355257ff" 
                     colorLight="#8eebd7ff" 
                     colorSpecialDark="#1c3136ff" 
                     colorSpecialLight="#74d9e0ff" 
@@ -150,7 +150,7 @@ const MainMenu = ({ onPageChange }) => {
 
 export default MainMenu
 
-function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#133612ff", colorLight = "#a4f19cff",
+function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#294128ff", colorLight = "#a4f19cff",
   colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#c8f445ff", theme,lang, onClick,fontSize}){
     const cardColor = (theme) => {
         if(theme === 'dark') return colorDark;

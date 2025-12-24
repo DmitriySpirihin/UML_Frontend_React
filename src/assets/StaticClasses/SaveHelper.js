@@ -181,3 +181,63 @@ export async function clearAllSaves() {
     throw error;
   }
 }
+
+
+/**
+ * Exports data as a downloadable JSON file
+ */
+export function exportDataToFile() {
+  try {
+    const dataStr = serializeData();
+    if (!dataStr) {
+      console.error('No data to export');
+      return { success: false, error: 'No data to export' };
+    }
+
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'myapp_data.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    return { success: true };
+  } catch (e) {
+    console.error('Export failed:', e);
+    return { success: false, error: 'Failed to export data' };
+  }
+}
+
+/**
+ * Imports data from a user-selected JSON file
+ * Returns a promise that resolves to { success, data?, error? }
+ */
+export function importDataFromFile() {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+
+    input.onchange = async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) {
+        return resolve({ success: false, error: 'No file selected' });
+      }
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        deserializeData(JSON.stringify(parsed)); // assuming deserializeData expects a string
+        resolve({ success: true, data: parsed });
+      } catch (e) {
+        console.error('Import failed:', e);
+        resolve({ success: false, error: 'Invalid file format' });
+      }
+    };
+
+    input.click();
+  });
+}

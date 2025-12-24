@@ -2,8 +2,9 @@ import React, {useState,useEffect,useRef} from 'react'
 import { AppData,UserData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,trainInfo$,setPage} from '../../StaticClasses/HabitsBus'
+import {addExerciseToSchedule} from '../../Classes/TrainingData.jsx'
 import {findPreviousSimilarExercise, finishSession, addExerciseToSession,
-   removeExerciseFromSession, addSet, removeSet, finishExercise, redactSet,getAllReps,getTonnage,getMaxOneRep,getAllSets} from '../../StaticClasses/TrainingLogHelper'
+   removeExerciseFromSession, addSet, finishExercise, redactSet,getAllReps,getTonnage,getMaxOneRep,getAllSets} from '../../StaticClasses/TrainingLogHelper'
 import {FaTrash,FaPencilAlt,FaFlagCheckered,FaFlag,FaInfo,FaPlusCircle} from 'react-icons/fa'
 import {FaRegCircleCheck,FaRegCircle,FaPlus,FaMinus,FaStopwatch,FaCalculator} from 'react-icons/fa6'
 import {MdClose,MdDone,MdFitnessCenter} from 'react-icons/md'
@@ -12,6 +13,7 @@ import {useLongPress} from '../../Helpers/LongPress'
 import Stopwatch from '../../Helpers/StopWatch'
 import PlatesCalculator from '../../Helpers/PlatesCalculator'
 import TrainingExercise from './TrainingExercise'
+import {IoIosArrowDown,IoIosArrowUp} from 'react-icons/io'
 //timer
 import TimerIcon from '@mui/icons-material/TimerTwoTone';
 import TimerOffIcon from '@mui/icons-material/TimerOffTwoTone';
@@ -54,6 +56,13 @@ const TrainingCurrent = () => {
     const [premiumMiniPage,setPremiumMiniPage] = useState(false);
     const [exerciseToRemove,setExerciseToRemove] = useState(null);
     const [showPlatesCalculator,setShowPlatesCalculator] = useState(false);
+    const [showSuggestionToAdd,setShowSuggestionToAdd] = useState(false);
+    const [showStarategyPanel, setShowStarategyPanel] = useState(false);
+    const [addExId,setAddExId] = useState(0);
+    const [sets, setSets] = useState(3);
+    const [currentRepMin, setCurrentRepMin] = useState(4);
+    const [currentRepMax, setCurrentRepMax] = useState(6);
+    const [strategy, setStrategy] = useState(0);
     //timer
     const [needTimer,setNeedTimer] = useState(false);
     const [timer,setTimer] = useState(false);
@@ -122,7 +131,7 @@ const bindRepsPlus = useLongPress(() => setReps(prev => prev + 1));
 const bindWeightMinus = useLongPress(() => setWeight(prev => prev - 0.25 > 0.25 ? prev -0.25 : 0.25));
 const bindWeightPlus = useLongPress(() => setWeight(prev => prev + 0.25));
 const bindExTimeMinus = useLongPress(() => setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 0));
-const bindExTimePlus = useLongPress(() => setExTime(prev => prev + 10000 < 360000 ? prev + 10000 : 360000));
+const bindExTimePlus = useLongPress(() => setExTime(prev => prev + 10000));
 
 function needPrev(need){
   if(!UserData.hasPremium){
@@ -171,7 +180,8 @@ const onFinishSession = () => {
   setShowFinishPanel(true);
 };;
 const addExercise = (exId) => {
-  addExerciseToSession(trainInfo.dayKey, trainInfo.dInd, exId); 
+  setAddExId(exId);
+  setShowSuggestionToAdd(true);
   setShowExerciseList(false);
 }
 const onRemoveExercise = (exId) => {
@@ -183,6 +193,20 @@ const removeexercise = () =>
   removeExerciseFromSession(trainInfo.dayKey, trainInfo.dInd, exerciseToRemove);
   setShowConfirmExercisePanel(false);
 }
+function onAddExercise(needToAdd){
+  addExerciseToSession(trainInfo.dayKey, trainInfo.dInd, addExId);
+    setShowConfirmExercisePanel(false);
+    setShowSuggestionToAdd(false);
+    if(!needToAdd){
+      return null;
+    }
+      let currentStrategy = langIndex === 0 ? 'время' : 'time' ;
+      if(strategy === 0)currentStrategy = sets + 'x' + currentRepMin + '-' + currentRepMax;
+      addExerciseToSchedule(session.programId,trainInfo.dInd,addExId,currentStrategy);
+      setShowStarategyPanel(false);
+      setShowConfirmExercisePanel(false);
+      setShowSuggestionToAdd(false);
+    }
 // render    
 return (
       <div style={styles(theme).container}>
@@ -323,7 +347,7 @@ return (
            <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
               <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 10000)}}/>
               <div style={{...styles(theme,fSize).text,fontSize:'28px'}}>{formatDurationMs(exTime)}</div>
-              <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000 < 3600000 ? prev + 10000 : 3600000)}}/>
+              <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000)}}/>
            </div>
            {!isCompleted && <div style={{...styles(theme,fSize).simplePanelRow,width:'50%'}}>
               <div onClick={() => {setStopWatchPanel(true)}} style={{...styles(theme,fSize).text,fontSize:'16px'}}>{langIndex === 0 ? "Секундомер" : "Stopwatch"}</div>
@@ -365,7 +389,7 @@ return (
            <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
               <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 10000)}}/>
               <div style={{...styles(theme,fSize).text,fontSize:'28px'}}>{formatDurationMs(exTime)}</div>
-              <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000 < 3600000 ? prev + 10000 : 3600000)}}/>
+              <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000)}}/>
            </div>
            
            <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
@@ -505,6 +529,47 @@ return (
           <TrainingExercise needToAdd={true} setEx={addExercise} />
         </div>
       )}
+      {/* strategy panel */}
+        {showStarategyPanel && <div style={styles(theme).confirmContainer}>
+                  <div style={{position:'fixed',top:'30vh',left:'4.5vw',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around',width:'90vw',height:'90vw',marginTop:'5px',borderRadius:'24px',border:`1px solid ${Colors.get('border', theme)}`,backgroundColor:Colors.get('background', theme),zIndex:'7000'}}>
+                     <p style={{...styles(theme,false,false,fSize).text,padding:'20px',marginLeft:'10%',marginRight:'5%',textAlign:'center'}}>{langIndex === 0 ? 'Установите стратегию выполнения' : 'Set performing strategy'}</p>
+                      <div style={{display:'flex',flexDirection:'row',width:'90%',justifyContent:'space-around'}}>
+                        <div onClick={() => {setStrategy(0)}} style={{width:'40%',border:strategy === 0 ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:strategy === 1 ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Повторы" : "Reps"}</div>
+                        <div onClick={() => {setStrategy(1)}} style={{width:'40%',border:strategy === 1 ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:strategy === 0 ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Время" : "Time"}</div>
+                      </div>
+                      {strategy === 0 && <div style={{display:'flex',flexDirection:'row',height:'50%',width:'60%',justifyContent:'space-around'}}>
+                        <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
+                          <IoIosArrowUp onClick={() => setSets(prev => prev + 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
+                            <div style={{...styles(theme).text,fontSize:'24px'}}>{sets}</div>
+                          <IoIosArrowDown onClick={() => setSets(prev => prev - 1 > 0 ? prev - 1 : 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
+                        </div>
+                          <p style={{...styles(theme).text,fontSize:'24px',marginTop:'30%'}}>{'x'}</p>
+                        <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
+                          <IoIosArrowUp onClick={() => setCurrentRepMin(prev => prev + 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
+                            <div style={{...styles(theme).text,fontSize:'24px'}}>{currentRepMin}</div>
+                          <IoIosArrowDown onClick={() => setCurrentRepMin(prev => prev - 1 > 0 ? prev - 1 : 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
+                        </div>
+                          <p style={{...styles(theme).text,fontSize:'24px',marginTop:'30%'}}>{'-'}</p>
+                        <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
+                          <IoIosArrowUp onClick={() => setCurrentRepMax(prev => prev + 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
+                            <div style={{...styles(theme).text,fontSize:'24px'}}>{currentRepMax}</div>
+                          <IoIosArrowDown onClick={() => setCurrentRepMax(prev => (prev - 1 > currentRepMin + 2 ? prev - 1 : currentRepMin + 2))} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
+                        </div>
+                      </div>}
+                    <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'center'}}>
+                      <MdDone onClick={() => onAddExercise(true)} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
+                      </div>
+                  </div>
+        </div>}
+    {showSuggestionToAdd && <div  style={styles(theme).confirmContainer}>
+         <div style={{...styles(theme).cP,height:'20%'}}>
+           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Добавить упражнение также в программу?" : "Add the exercise to the program too?"}</div>
+           <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+              <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => onAddExercise(false)}/>
+              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {setShowStarategyPanel(true);setShowSuggestionToAdd(false)}}/>
+           </div>
+         </div>
+      </div>}
     </div>
   )
 }

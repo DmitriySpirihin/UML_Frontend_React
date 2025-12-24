@@ -66,7 +66,7 @@ export class AppData{
     this.pData = data.pData;
     this.lastBackupDate = data.lastBackupDate;
     this.measurements = data.measurements;
-    if (data.exercises && typeof data.exercises === 'object' && !Array.isArray(data.exercises)) this.exercises = data.exercises;
+    if (data.exercises && typeof data.exercises === 'object' && Array.isArray(data.exercises)) this.exercises = data.exercises;
     if (data.programs && typeof data.programs === 'object' && !Array.isArray(data.programs)) this.programs = data.programs;
     if(data.ownPlates?.length > 0)this.ownPlates = data.ownPlates;
     if(data.platesAmount?.length > 0)this.platesAmount = data.platesAmount;

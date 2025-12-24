@@ -346,7 +346,7 @@ const TrainingExercise = ({needToAdd,setEx}) => {
     {/* Add Exercise Panel */}
     {addPanel === 'AddExercisePanel' && (
       <div style={styles(theme).addContainer}>
-        <div style={{...styles(theme).additionalPanel,height:'70%'}}>
+        <div style={{...styles(theme).additionalPanel,height:'75%'}}>
           <p style={styles(theme, false, false, fSize).text}>
             {langIndex === 0 ? 'Добавь свое упражнение' : 'Add your exercise'}
           </p>
@@ -380,26 +380,14 @@ const TrainingExercise = ({needToAdd,setEx}) => {
               style={{
                 display: 'flex',
                 flexDirection: 'row',
-                width: '50%',
+                width: '80%',
                 justifyContent: 'space-around',
                 alignItems: 'center',
                 marginTop: '5%'
               }}
             >
-              <p style={styles(theme, false, false, fSize).text}>
-                {langIndex === 0 ? 'Базовое упражнение' : 'Base exercise'}
-              </p>
-              {isBase ? (
-                <FaRegCheckSquare
-                  onClick={() => setIsBase(false)}
-                  style={{ ...styles(theme).icon, fontSize: '24px' }}
-                />
-              ) : (
-                <FaRegSquare
-                  onClick={() => setIsBase(true)}
-                  style={{ ...styles(theme).icon, fontSize: '24px' }}
-                />
-              )}
+              <div onClick={() => {setIsBase(true)}} style={{width:'40%',border:isBase ? `2px solid ${Colors.get('trainingBaseFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:!isBase  ? Colors.get('subText', theme) : Colors.get('trainingBaseFont', theme)}}>{langIndex === 0 ? "Базовое" : "Base"}</div>
+              <div onClick={() => {setIsBase(false)}} style={{width:'40%',border:!isBase ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:isBase  ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Изолированое" : "Isolated"}</div>
             </div>
             <div
               style={{...styles(theme).text,
@@ -420,7 +408,7 @@ const TrainingExercise = ({needToAdd,setEx}) => {
               style={ styles(theme, false, false, fSize).text} >{langIndex === 0 ? 'Дополнительные мышцы' : 'Additional muscles'}</div>
                
               <div  
-               style={{display:'grid' ,alignContent:'center',justifyContent:'center', gridTemplateColumns: '1fr 1fr',
+               style={{display:'grid' ,alignContent:'center',justifyContent:'center', gridTemplateColumns: '1fr 1fr 1fr ',
                gridAutoRows: '2fr', gap: '2px',height:'33%', width: '90%', marginTop: '10px', borderBottom: `1px solid ${Colors.get('border', theme)}`}} >
                
                {MuscleIcon.names[langIndex].map((name,index)=> 
@@ -518,7 +506,7 @@ const TrainingExercise = ({needToAdd,setEx}) => {
     {/* Edit Panel */}
      {showRedakt && (
       <div style={styles(theme).addContainer}>
-        <div style={{...styles(theme).additionalPanel,height:'70%'}}>
+        <div style={{...styles(theme).additionalPanel,height:'75%'}}>
           <p style={styles(theme, false, false, fSize).text}>
             {langIndex === 0 ? 'Добавь свое упражнение' : 'Add your exercise'}
           </p>
@@ -554,26 +542,14 @@ const TrainingExercise = ({needToAdd,setEx}) => {
               style={{
                 display: 'flex',
                 flexDirection: 'row',
-                width: '50%',
+                width: '80%',
                 justifyContent: 'space-around',
                 alignItems: 'center',
                 marginTop: '5%'
               }}
             >
-              <p style={styles(theme, false, false, fSize).text}>
-                {langIndex === 0 ? 'Базовое упражнение' : 'Base exercise'}
-              </p>
-              {isBase ? (
-                <FaRegCheckSquare
-                  onClick={() => setIsBase(false)}
-                  style={{ ...styles(theme).icon, fontSize: '24px' }}
-                />
-              ) : (
-                <FaRegSquare
-                  onClick={() => setIsBase(true)}
-                  style={{ ...styles(theme).icon, fontSize: '24px' }}
-                />
-              )}
+              <div onClick={() => {setIsBase(true)}} style={{width:'40%',border:isBase ? `2px solid ${Colors.get('trainingBaseFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:!isBase  ? Colors.get('subText', theme) : Colors.get('trainingBaseFont', theme)}}>{langIndex === 0 ? "Базовое" : "Base"}</div>
+              <div onClick={() => {setIsBase(false)}} style={{width:'40%',border:!isBase ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:isBase  ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Изолированое" : "Isolated"}</div>
             </div>
             <div
               style={{...styles(theme).text,
@@ -594,7 +570,7 @@ const TrainingExercise = ({needToAdd,setEx}) => {
               style={ styles(theme, false, false, fSize).text} >{langIndex === 0 ? 'Дополнительные мышцы' : 'Additional muscles'}</div>
                
               <div  
-               style={{display:'grid' ,alignContent:'center',justifyContent:'center', gridTemplateColumns: '1fr 1fr',
+               style={{display:'grid' ,alignContent:'center',justifyContent:'center', gridTemplateColumns: '1fr 1fr 1fr',
                 gridAutoRows: '2fr', gap: '2px',height:'33%', width: '90%', marginTop: '10px', borderBottom: `1px solid ${Colors.get('border', theme)}`}} >
                
                {MuscleIcon.names[langIndex].map((name,index)=> 

@@ -33,6 +33,7 @@ const TrainingProgramm = () => {
     const [currentSet, setCurrentSet] = useState(3);
     const [currentRepMin, setCurrentRepMin] = useState(4);
     const [currentRepMax, setCurrentRepMax] = useState(6);
+    const [strategy, setStrategy] = useState(0);
     const [currentExId, setCurrentExId] = useState(0);
     const [dayIndex, setDayIndex] = useState(1);
     const [dayName, setDayName] = useState(langIndex === 0 ? 'День 1' : 'Day 1');
@@ -97,7 +98,9 @@ const TrainingProgramm = () => {
       onClose();
     }
     function onAddExercise(){
-      addExerciseToSchedule(currentId,currentDay,currentExId,currentSet + 'x' + currentRepMin + '-' + currentRepMax);
+      let currentStrategy = langIndex === 0 ? 'время' : 'time' ;
+      if(strategy === 0)currentStrategy = currentSet + 'x' + currentRepMin + '-' + currentRepMax;
+      addExerciseToSchedule(currentId,currentDay,currentExId,currentStrategy);
       setShowStarategyPanel(false);
       updatePrograms();
     }
@@ -521,9 +524,13 @@ const TrainingProgramm = () => {
             )}
             {/* strategy panel */}
             {showStarategyPanel && <div style={styles(theme).addContainer}>
-            <div style={{position:'fixed',top:'30vh',left:'7.5vw',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',width:'80vw',height:'80vw',marginTop:'5px',borderRadius:'24px',border:`1px solid ${Colors.get('border', theme)}`,backgroundColor:Colors.get('background', theme),zIndex:'7000'}}>
+            <div style={{position:'fixed',top:'30vh',left:'7.5vw',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around',width:'80vw',height:'80vw',marginTop:'5px',borderRadius:'24px',border:`1px solid ${Colors.get('border', theme)}`,backgroundColor:Colors.get('background', theme),zIndex:'7000'}}>
                <p style={{...styles(theme,false,false,fSize).text,padding:'20px',marginLeft:'10%',marginRight:'5%'}}>{langIndex === 0 ? 'Установите стратегию выполнения' : 'Set performing strategy'}</p>
-                <div style={{display:'flex',flexDirection:'row',height:'50%',width:'60%',justifyContent:'space-around'}}>
+                <div style={{display:'flex',flexDirection:'row',width:'90%',justifyContent:'space-around'}}>
+                  <div onClick={() => {setStrategy(0)}} style={{width:'40%',border:strategy === 0 ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:strategy === 1 ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Повторы" : "Reps"}</div>
+                  <div onClick={() => {setStrategy(1)}} style={{width:'40%',border:strategy === 1 ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:strategy === 0 ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Время" : "Time"}</div>
+                </div>
+                {strategy === 0 && <div style={{display:'flex',flexDirection:'row',height:'50%',width:'60%',justifyContent:'space-around'}}>
                   <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
                     <IoIosArrowUp onClick={() => setCurrentSet(prev => prev + 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
                       <div style={{...styles(theme).text,fontSize:'24px'}}>{currentSet}</div>
@@ -541,7 +548,7 @@ const TrainingProgramm = () => {
                       <div style={{...styles(theme).text,fontSize:'24px'}}>{currentRepMax}</div>
                     <IoIosArrowDown onClick={() => setCurrentRepMax(prev => (prev - 1 > currentRepMin + 2 ? prev - 1 : currentRepMin + 2))} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
                   </div>
-                </div>
+                </div>}
               <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'center'}}>
                 <MdDone onClick={() => onAddExercise()} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
                 </div>

@@ -1,12 +1,9 @@
 import Home from '@mui/icons-material/HomeTwoTone';
 import Back from '@mui/icons-material/BackspaceTwoTone';
 import Metrics from '@mui/icons-material/BarChartTwoTone';
-import MonitorWeightIcon from '@mui/icons-material/MonitorWeightTwoTone';
-import Exercises from '@mui/icons-material/FitnessCenter';
-import Programs from '@mui/icons-material/MenuBookTwoTone';
-import FaBellSlash from '@mui/icons-material/NotificationsOffTwoTone';
-import FaBell from '@mui/icons-material/NotificationsActiveTwoTone';
-import Add from '@mui/icons-material/AddCircleOutlineTwoTone';
+import Recovery_0 from '/src/assets/Svg/Recovery_0'
+import Recovery_1 from '/src/assets/Svg/Recovery_1'
+import Recovery_2 from '/src/assets/Svg/Recovery_2'
 import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setAddNewTrainingDay,setCurrentBottomBtn,setNotifyPanel,notify$,setTrainInfo} from '../../StaticClasses/HabitsBus'
 import Colors from '../../StaticClasses/Colors'
 import {useState,useEffect} from 'react'
@@ -77,13 +74,11 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,
           {page !== 'TrainingMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
           {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
           {page === 'TrainingMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
+          
+          <Recovery_0 style={{...styles(theme,currentBtn,3,false,false).btnstyle,width:'30px'}} onClick={() => {setCurrentBottomBtn(4);setPage('TrainingProgramm');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
+          <Recovery_1 style={{...styles(theme,currentBtn,3,false,false).btnstyle,width:'30px'}} onClick={() => {setCurrentBottomBtn(2);setPage('TrainingExercise');playEffects(switchSound);setNotifyPanel(false);}} />
+          <Recovery_2 style={{...styles(theme,currentBtn,3,false,false).btnstyle,width:'30px'}} onClick={() => {setCurrentBottomBtn(3);setNotifyPanel(false);setPage('TrainingMesurments');playEffects(switchSound);}} />
           <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('TrainingAnaliticsMain');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
-          <Programs style={styles(theme,currentBtn,4,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(4);setPage('TrainingProgramm');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
-            <Add style={{...styles(theme,currentBtn,9,true,page !== 'TrainingMain').btnstyle,fontSize:page !== 'TrainingMain' ? '30px':'40px'}} 
-          onClick={() => {setAddNewTrainingDay(); setCurrentBottomBtn(0);setNotifyPanel(false);playEffects(switchSound);}} />
-          <Exercises style={styles(theme,currentBtn,2,true,false).btnstyle} onClick={() => {setCurrentBottomBtn(2);setPage('TrainingExercise');playEffects(switchSound);setNotifyPanel(false);}} />
-          <MonitorWeightIcon style={styles(theme,currentBtn,3,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(3);setNotifyPanel(false);setPage('TrainingMesurments');playEffects(switchSound);}} />
-          {page.startsWith('T') &&  <FaBell style={styles(theme,currentBtn,5,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(5);setNotifyPanel(true);setAddPanel('');playEffects(switchSound);}} /> }
           
         </div>
     )

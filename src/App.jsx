@@ -25,6 +25,7 @@ const TrainingAnaliticsMain = lazy(() => import('./assets/Pages/TrainingPages/An
 const TrainingList = lazy(() => import('./assets/Pages/TrainingPages/TrainingList'));
 const Premium = lazy(() => import('./assets/Pages/Premium'));
 const RecoveryMain = lazy(() => import('./assets/Pages/Recovery/RecoveryMain'));
+const BreathingMain = lazy(() => import('./assets/Pages/Recovery/BreathingMain'));
 
 
 function App() {
@@ -145,6 +146,9 @@ if (showPendingScreen) {
       </Suspense>}
       {page === 'RecoveryMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <RecoveryMain/>
+      </Suspense>}
+      {page === 'RecoveryBreath' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <BreathingMain/>
       </Suspense>}
       {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
       {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}

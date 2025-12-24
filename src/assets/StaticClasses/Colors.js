@@ -74,6 +74,10 @@ export class Colors {
 
     areaChart:{ light: "#5b98d1ff", dark: "#6eb5cfff", speciallight: "#61a3a1ff", specialdark: "#25da8bff" },
     regress:{ light: "#9b44d8ff", dark: "#c25aa4ff", speciallight: "#894c88ff", specialdark: "#914dc8ff" },
+    
+    recoveryCard0:{ light: "#68ff5aff", dark: "#4a6032ff", speciallight: "#27ff6bff", specialdark: "#2e472aff" },
+    recoveryCard1:{ light: "#ecff5aff", dark: "#5f6032ff", speciallight: "#dfff27ff", specialdark: "#45472aff" },
+    recoveryCard2:{ light: "#ffad5aff", dark: "#604132ff", speciallight: "#ff5927ff", specialdark: "#47332aff" },
   };
 
   static setTheme(theme) {

@@ -88,7 +88,8 @@ export class MuscleIcon{
         10:'images/BodyIcons/10.png',
         11:'images/BodyIcons/11.png',
         12:'images/BodyIcons/12.png',
-        13:'images/BodyIcons/13.png'
+        13:'images/BodyIcons/13.png',
+        14:'images/BodyIcons/14.png'
     },
   {
     0:'images/BodyIcons/0f.png',
@@ -104,7 +105,8 @@ export class MuscleIcon{
         10:'images/BodyIcons/10f.png',
         11:'images/BodyIcons/11f.png',
         12:'images/BodyIcons/12f.png',
-        13:'images/BodyIcons/13f.png'
+        13:'images/BodyIcons/13f.png',
+        14:'images/BodyIcons/14.png'
   }]
     static names = [
     [
@@ -121,7 +123,8 @@ export class MuscleIcon{
         'Бицепс бедра',
         'Ягодицы',
         'Икры',
-        'Шея'
+        'Шея',
+        'Кардио'
     ],
     [
         'Chest',
@@ -137,7 +140,8 @@ export class MuscleIcon{
         'Hamstrings',
         'Glutes',
         'Calves',
-        'Neck'
+        'Neck',
+        'Cardio'
     ]
 ];
    static get(mgId, lang, theme, needAmount = true,_width='80%') {
@@ -2630,6 +2634,84 @@ export const exercises = {
   description: [
     'Изолированная проработка всех отделов шеи. Используйте специальный тренажер для шеи в 4 направлениях.',
     'Complete neck isolation. Use dedicated neck machine for flexion, extension, and lateral movements.'
+  ],
+  isBase: false,
+  rm: 0,
+  rmDate: '',
+  show: true
+},
+141: {
+  mgId: 14, 
+  addMgIds: [],  
+  name: ['Беговая дорожка', 'Treadmill'],
+  description: [
+    'Кардиотренировка на беговой дорожке для улучшения выносливости, сжигания калорий и укрепления сердечно-сосудистой системы...',
+    'Cardio workout on a treadmill to improve endurance, burn calories, and strengthen the cardiovascular system...'
+  ],
+  isBase: false,
+  rm: 0,
+  rmDate: '',
+  show: true
+},
+142: {
+  mgId: 14,
+  addMgIds: [],
+  name: ['Эллиптический тренажёр', 'Elliptical'],
+  description: [
+    'Низкоударная кардиотренировка, задействующая ноги и руки для улучшения выносливости и сжигания калорий без нагрузки на суставы...',
+    'Low-impact cardio workout engaging both legs and arms to boost endurance and burn calories without joint strain...'
+  ],
+  isBase: false,
+  rm: 0,
+  rmDate: '',
+  show: true
+},
+143: {
+  mgId: 14,
+  addMgIds: [],
+  name: ['Велотренажёр', 'Exercise Bike'],
+  description: [
+    'Эффективная кардионагрузка для укрепления ног и сердечно-сосудистой системы в комфортном темпе...',
+    'Effective cardio workout to strengthen legs and improve cardiovascular health at a comfortable pace...'
+  ],
+  isBase: false,
+  rm: 0,
+  rmDate: '',
+  show: true
+},
+144: {
+  mgId: 14,
+  addMgIds: [],
+  name: ['Гребной тренажёр', 'Rowing Machine'],
+  description: [
+    'Полноценная тренировка всего тела с акцентом на кардио, развивает выносливость и координацию...',
+    'Full-body cardio-focused workout that builds endurance, power, and coordination...'
+  ],
+  isBase: false,
+  rm: 0,
+  rmDate: '',
+  show: true
+},
+145: {
+  mgId: 14,
+  addMgIds: [],
+  name: ['Скакалка', 'Jump Rope'],
+  description: [
+    'Интенсивная высокоударная кардиотренировка для сжигания калорий и улучшения координации...',
+    'High-intensity, high-impact cardio session to torch calories and sharpen coordination...'
+  ],
+  isBase: false,
+  rm: 0,
+  rmDate: '',
+  show: true
+},
+146: {
+  mgId: 14,
+  addMgIds: [],
+  name: ['Бег на улице', 'Outdoor Running'],
+  description: [
+    'Естественная кардиотренировка на свежем воздухе для укрепления сердца и улучшения настроения...',
+    'Natural outdoor cardio to strengthen your heart and boost your mood...'
   ],
   isBase: false,
   rm: 0,

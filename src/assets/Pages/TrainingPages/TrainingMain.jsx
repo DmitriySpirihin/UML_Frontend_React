@@ -35,7 +35,7 @@ const TrainingMain = () => {
        const [showPreviousSessionPanel, setShowPreviousSessionPanel] = useState(false);  
        const [showConfirmPanel,setShowConfirmPanel] = useState(false);
        const [programId,setProgrammId] = useState(AppData.getLastProgramId());
-       const [dayIndex,setDayIndex] = useState(AppData.getLastTrainingDayIndex());
+       const [dayIndex,setDayIndex] = useState(AppData.getLastTrainingDayIndex() || 0);
        const [startTime, setStartTime] = useState(16 * 3600000); 
        const [endTime, setEndTime] = useState(17 * 3600000);
        const [sessionToDelete,setSessionToDelete] = useState({date:'',key:0});
@@ -88,7 +88,9 @@ const TrainingMain = () => {
        useEffect(() => {
         currentDateRef.current = currentDate;
       }, [currentDate]);
-
+      useEffect(() => {
+        setDayIndex(0);
+      }, [programId]);
      useEffect(() => {
       const subscription = addNewTrainingDay$.subscribe(() => {
       const today = new Date();
@@ -110,18 +112,37 @@ const TrainingMain = () => {
   }, []);
       
        const onSessionStart = () => {
+          const today = new Date();
+          const daykey = formatDateKey(today);
+          if(!AppData.programs[programId]){
+            const warn = langIndex === 0 ? 'Ошибка! Программа не найдена' : 'Error! The program not found';
+            setShowPopUpPanel(warn,2000,false);
+            return null;
+          }
+          if(AppData.programs[programId].schedule.length === 0){
+            const warn = langIndex === 0 ? 'Ошибка! Программа пустая' : 'Error! The program is empty';
+            setShowPopUpPanel(warn,2000,false);
+            return null;
+          }
           addNewSession(new Date(),programId,dayIndex);
           setShowNewSessionPanel(false);
           setTimeout(() => {
-           const today = new Date();
-           const daykey = formatDateKey(today);
            const sessionIndex = AppData.trainingLog[daykey].length - 1;
            setTrainInfo({mode:'new',dayKey:daykey,dInd:sessionIndex});
            setPage('TrainingCurrent');
           },100);
        }
-       const onAddPreviousSessionAdd = () => {
-       
+       const onAddPreviousSession = () => {
+          if(!AppData.programs[programId]){
+            const warn = langIndex === 0 ? 'Ошибка! Программа не найдена' : 'Error! The program not found';
+            setShowPopUpPanel(warn,2000,false);
+            return null;
+          }
+          if(AppData.programs[programId].schedule.length === 0){
+            const warn = langIndex === 0 ? 'Ошибка! Программа пустая' : 'Error! The program is empty';
+            setShowPopUpPanel(warn,2000,false);
+            return null;
+          }
           if (endTime <= startTime) {
             setShowPopUpPanel(langIndex === 0 ? "Время окончания должно быть позже начала" : "End time must be after start time",2000,false);
           return;
@@ -281,7 +302,7 @@ const TrainingMain = () => {
         </div>
            <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
               <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => setShowPreviousSessionPanel(false)}/>
-              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {onAddPreviousSessionAdd()}}/>
+              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {onAddPreviousSession()}}/>
             </div>
          </div>
         </div>}

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react'
 import {AppData,UserData} from '../StaticClasses/AppData'
 import { motion, AnimatePresence } from 'framer-motion'
 import Colors, { THEME } from "../StaticClasses/Colors";
-import { clearAllSaves } from '../StaticClasses/SaveHelper'
+import { clearAllSaves,exportDataToFile,importDataFromFile } from '../StaticClasses/SaveHelper'
 import TelegramIcon from '@mui/icons-material/Telegram';
 import {sendBugreport} from '../StaticClasses/NotificationsManager'
 import {FaAddressCard,FaBackspace,FaLanguage,FaHighlighter,FaVolumeMute,FaVolumeUp,FaBug,FaDonate,FaExclamationTriangle,FaCrown} from 'react-icons/fa'
@@ -256,6 +256,9 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
                       <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => cloudBackup()}>{langIndex === 0 ? '☁️Создать резервную копию' : '☁️Create backup'}</div>
                       <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => cloudRestore()}>{langIndex === 0 ? '↩️Восстановить данные' : '↩️Restore data'}</div>
                       <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => deleteCloudBackup()}>{langIndex === 0 ? '🗑️Удалить резервную копию' : '🗑️Delete backup'}</div>
+                      <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => exportDataToFile()}>{langIndex === 0 ? '💾Сохранить на устройство' : '💾Upload on device'}</div>
+                      <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => importDataFromFile()}>{langIndex === 0 ? '↩️Восстановить с устройства' : '↩️Restore from device'}</div>
+                   
                    </div>}
                    {panelNum === 2 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
                       <div style={{display:"flex",flexDirection:"row"}}><FaDonate style={styles(theme).miniIcon}/><p style={styles(theme).text}>{langIndex === 0 ? ' Здесь будет ссылка на донат' : 'Here will be a donate link'}</p></div>
