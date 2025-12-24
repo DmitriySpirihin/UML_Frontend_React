@@ -76,8 +76,9 @@ export class Colors {
     regress:{ light: "#9b44d8ff", dark: "#c25aa4ff", speciallight: "#894c88ff", specialdark: "#914dc8ff" },
     
     recoveryCard0:{ light: "#68ff5aff", dark: "#4a6032ff", speciallight: "#27ff6bff", specialdark: "#2e472aff" },
-    recoveryCard1:{ light: "#ecff5aff", dark: "#5f6032ff", speciallight: "#dfff27ff", specialdark: "#45472aff" },
+    recoveryCard1:{ light: "#ecff5aff", dark: "#605b32ff", speciallight: "#dfff27ff", specialdark: "#45472aff" },
     recoveryCard2:{ light: "#ffad5aff", dark: "#604132ff", speciallight: "#ff5927ff", specialdark: "#47332aff" },
+    recoveryCard3:{ light: "#ff605aff", dark: "#603232ff", speciallight: "#ef3333ff", specialdark: "#472a2aff" },
   };
 
   static setTheme(theme) {

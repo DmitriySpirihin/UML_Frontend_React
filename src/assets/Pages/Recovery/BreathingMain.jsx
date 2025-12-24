@@ -3,7 +3,7 @@ import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage} from '../../StaticClasses/HabitsBus'
 //import BreathingTimer from './BreathingTimer'
-import {breathingProtocols,breathingLog} from '../../StaticClasses/RecoveryLogHelper'
+import {breathingProtocols, expandSteps,breathingLog} from '../../StaticClasses/RecoveryLogHelper'
 
 const BreathingMain = () => {
     // states
@@ -76,7 +76,7 @@ const styles = (theme,fSize) =>
   },
   subtext :
   {
-    textAlign: "left",
+    textAlign: "center",
     fontSize: fSize === 0 ? '12px' : '14px',
     color: Colors.get('mainText', theme),
     marginBottom:'12px'
@@ -99,19 +99,18 @@ function MenuCard({text, color,theme,lang, onClick,fontSize} ){
     
     const _style = {
         display:'flex',
-        flexDirection:'row',
+        flexDirection:'column',
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: "flex-start",
         height: "15vh",
         width:'42vw',
         borderRadius: "12px",
+        marginTop:'10px',
         backgroundColor: Colors.get(color, theme)
     }
     return (
       <div style={_style} onClick={onClick}> 
-          <div style={{width:'60%',marginLeft:'10%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center'}}>
-           <p style={{...styles(theme,fontSize).mainText,fontWeight:'bold'}}>{Array.isArray(text) ? text[lang] : text}</p>
-          </div>
+        <p style={{...styles(theme,fontSize).subtext,fontWeight:'bold'}}>{Array.isArray(text) ? text[lang] : text}</p>
       </div>   
     )
 }
