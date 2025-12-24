@@ -4,6 +4,7 @@ import { openDB } from 'idb';
 import 'reflect-metadata';
 import { instanceToPlain, plainToClass } from 'class-transformer';
 import { NotificationsManager } from '../StaticClasses/NotificationsManager';
+import {setShowPopUpPanel} from '../StaticClasses/HabitsBus';
 
 export async function initializeTelegramSDK(opts = {}) {
   try {
