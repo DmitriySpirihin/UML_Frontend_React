@@ -188,37 +188,45 @@ export async function clearAllSaves() {
  */
 export async function exportDataToFile() {
   try {
+    setShowPopUpPanel('Starting export...', 1500, false);
+    
     const dataStr = serializeData();
+    setShowPopUpPanel(`Data ready: ${dataStr ? dataStr.length + ' chars' : 'EMPTY'}`, 2000, false);
+    
     if (!dataStr) {
       setShowPopUpPanel('Nothing to export', 2000, false);
       return { success: false, error: 'No data to export' };
     }
 
     if (window.Telegram?.WebApp) {
+      setShowPopUpPanel('Telegram detected, trying WebApp save...', 2000, false);
+      
       try {
         const result = await window.Telegram.WebApp.requestWriteFile({
           title: 'Save UltyMyLife backup',
           suggested_filename: 'UltyMyLife_backup.json',
           data: dataStr,
           mime_type: 'application/json',
-          thumb: '' 
+          thumb: ''
         });
 
-        // Проверяем received вместо truthy
+        setShowPopUpPanel(`Telegram result: ${JSON.stringify(result)}`, 3000, false);
+        
         if (result?.received) {
-          setShowPopUpPanel('Saved successfully', 2500, true);
+          setShowPopUpPanel('✅ Saved via Telegram!', 2500, true);
           return { success: true, source: 'telegram' };
         } else {
-          setShowPopUpPanel('User cancelled or failed', 2000, false);
-          return { success: false, error: 'Cancelled or failed' };
+          setShowPopUpPanel('❌ Telegram cancelled/failed, using browser...', 2000, false);
         }
       } catch (telegramError) {
-        console.error('Telegram export failed:', telegramError);
-        // Fallback к браузеру
+        setShowPopUpPanel(`Telegram error: ${telegramError.message}`, 3000, false);
       }
+    } else {
+      setShowPopUpPanel('No Telegram WebApp, using browser download', 2000, false);
     }
 
-    // Fallback для браузеров (всегда работает)
+    // Всегда fallback к браузеру
+    setShowPopUpPanel('Creating browser download...', 1500, false);
     const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -229,15 +237,17 @@ export async function exportDataToFile() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    setShowPopUpPanel('Saved to Downloads', 2500, true);
+    setShowPopUpPanel('✅ Saved to Downloads!', 2500, true);
     return { success: true, source: 'browser' };
     
   } catch (e) {
-    console.error('Export failed:', e);
-    setShowPopUpPanel('Export failed: ' + e.message, 3000, false);
+    const errorMsg = `💥 Export crashed: ${e.message}`;
+    console.error(errorMsg, e);
+    setShowPopUpPanel(errorMsg, 4000, false);
     return { success: false, error: e.message };
   }
 }
+
 
 /**
  * Imports data from a user-selected JSON file
