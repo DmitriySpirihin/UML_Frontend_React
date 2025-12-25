@@ -1,0 +1,456 @@
+import { useEffect, useState,useRef,useMemo } from 'react'
+import {AppData} from '../../StaticClasses/AppData'
+import Colors from "../../StaticClasses/Colors"
+import {theme$,lang$,fontSize$} from '../../StaticClasses/HabitsBus';
+import {IoPlayCircle,IoReloadCircle,IoArrowBackCircle, IoPauseCircle,IoVolumeMute,IoVolumeHigh} from "react-icons/io5"
+import {IoMdVolumeMute, IoMdVolumeHigh} from "react-icons/io"
+import BreathAudio from "../../Helpers/BreathAudio"
+
+const startTimerDuration = 5000;
+
+const BreathingTimer = ({ show,doneSession, setShow, session,protocol }) => {
+   const safeSession = session || {
+    cycles: 1,
+    steps: [{ in: 1000 }, { hold: 1000 }, { out: 1000 }, { hold: 1000 }]
+  };
+
+  const [theme, setthemeState] = useState('dark');
+  const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+  const [fSize, setFSize] = useState(AppData.prefs[4]); 
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const { initAudio, playInhale, playExhale, playHold, playRest } = BreathAudio(audioEnabled);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [phaseProgress, setPhaseProgress] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [isStart, setIsStart] = useState(false); // Has user clicked Start?
+  const [showStartTimer, setShowStartTimer] = useState(false);
+  
+  const [seconds, setSeconds] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [renderScale, setRenderScale] = useState(1);
+  const [isFinished, setIsFinished] = useState(false);
+  const [finishMessage, setFinishMessage] = useState('');
+
+  const currentVisualScaleRef = useRef(1);
+  const phaseStartScaleRef = useRef(1);
+  const animationRef = useRef();
+  const startTimeRef = useRef(0);
+  const lastScaleRef = useRef(1); // For smooth transitions
+  
+  
+
+  // Subscriptions
+  useEffect(() => {
+            const subscription = theme$.subscribe(setthemeState); 
+            const subscription2 = lang$.subscribe((lang) => {
+            setLangIndex(lang === 'ru' ? 0 : 1);
+            }); 
+            const subscription3 = fontSize$.subscribe((fontSize) => {
+            setFSize(fontSize);
+            });
+            return () => {
+            subscription.unsubscribe();
+            subscription2.unsubscribe();
+            subscription3.unsubscribe();
+            }
+      }, []);
+//startTimer
+ useEffect(() => {
+    if (!showStartTimer) {
+      // Reset seconds if hidden (optional)
+      setSeconds(0);
+      return;
+    }
+
+    // Initialize countdown
+    const totalSeconds = Math.ceil(startTimerDuration / 1000);
+    setSeconds(totalSeconds);
+
+    const intervalId = setInterval(() => {
+      setSeconds(prev => {
+        if (prev <= 1) {
+          // Final tick: cleanup and trigger start
+          clearInterval(intervalId);
+          handleStart();
+          setShowStartTimer(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Cleanup on unmount or when showStartTimer becomes false
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [showStartTimer, startTimerDuration]);
+//steps
+  useEffect(() => {
+  if (currentStepIndex === 0) {
+    phaseStartScaleRef.current = 1.0;
+  } else {
+    // Continue from where we left off
+    phaseStartScaleRef.current = currentVisualScaleRef.current;
+  }
+  setPhaseProgress(0);
+  startTimeRef.current = 0;
+}, [currentStepIndex]);
+  // Flatten steps
+  const allSteps = useMemo(() => {
+    const steps = [];
+    for (let cycle = 0; cycle < safeSession.cycles; cycle++) {
+      safeSession.steps.forEach(step => steps.push({ ...step, cycle }));
+    }
+    return steps;
+  }, [safeSession]);
+
+  const currentStep = allSteps[currentStepIndex] || null;
+
+  // Determine phase type and color
+  const getPhaseInfo = (step) => {
+    if (!step) return { name: '', color: '#94a3b8' };
+    if (step.in !== undefined) return { name: langIndex === 0 ? 'Вдох' : 'Inhale', color: Colors.get('in', theme) };
+    if (step.out !== undefined) return { name: langIndex === 0 ? 'Выдох' : 'Exhale', color: Colors.get('out', theme) };
+    if (step.hold !== undefined) return { name: langIndex === 0 ? 'Задержка' : 'Hold', color: Colors.get('hold', theme) };
+    if (step.rest !== undefined) return { name: langIndex === 0 ? 'Отдых' : 'Rest', color: Colors.get('rest', theme) };
+    return { name: 'Rest', color: '#94a3b8' };
+  };
+
+  const { name: phaseName, color: phaseColor } = getPhaseInfo(currentStep);
+  const duration = currentStep
+    ? currentStep.in ?? currentStep.out ?? currentStep.hold ?? currentStep.rest 
+    : 1000;
+
+  // Compute target scale for current phase
+  const getTargetScale = (step, progress, prevStep) => {
+    if (!step) return 1;
+
+    // Inhale: 1.0 → 1.3
+    if (step.in !== undefined) {
+      return 1 + 0.3 * progress;
+    }
+    // Exhale: 1.0 → 0.7
+    if (step.out !== undefined) {
+      return 1 - 0.3 * progress;
+    }
+    // Hold: maintain size of previous phase
+    if (step.hold !== undefined) {
+      if (prevStep && prevStep.in !== undefined) {
+        // Hold after inhale → stay at max (1.3)
+        return 1.3;
+      } else if (prevStep && prevStep.out !== undefined) {
+        // Hold after exhale → stay at min (0.7)
+        return 0.7;
+      }
+      // Fallback (shouldn't happen in valid sequences)
+      return lastScaleRef.current;
+    }
+    return 1;
+  };
+
+  // Get previous step for hold context
+  const prevStep = allSteps[currentStepIndex - 1] || null;
+  const targetScale = getTargetScale(currentStep, phaseProgress, prevStep);
+
+  // Smoothly interpolate from last scale to target (for visual continuity)
+  // But for simplicity and performance, we'll just use targetScale directly
+  // since phases are sequential and we control transitions.
+  const scale = targetScale;
+  lastScaleRef.current = scale;
+
+  // Cycle info
+  const cycleInfo = () => {
+    if (!safeSession.steps) return '0 / 0';
+    return isStart
+      ? `${Math.floor(currentStepIndex / safeSession.steps.length) + 1} / ${safeSession.cycles}`
+      : '0';
+  };
+
+  // Timer display
+  const timeRemaining = duration * (1 - phaseProgress);
+  const displayTime = (timeRemaining / 1000).toFixed(1);
+
+ // Animation loop
+useEffect(() => {
+  if (!isRunning || !currentStep) return;
+
+  const animate = (timestamp) => {
+    if (!startTimeRef.current) startTimeRef.current = timestamp;
+
+    const elapsed = timestamp - startTimeRef.current;
+    const progress = Math.min(elapsed / duration, 1);
+    setPhaseProgress(progress);
+
+    // --- Compute scale based on phase ---
+    let currentScale;
+
+    if (currentStep.in !== undefined) {
+      // Inhale: from startScale → 1.5
+      const startScale = phaseStartScaleRef.current;
+      currentScale = startScale + (1.5 - startScale) * progress;
+    } else if (currentStep.out !== undefined) {
+      // Exhale: from startScale → 1.0
+      const startScale = phaseStartScaleRef.current;
+      currentScale = startScale + (1.1 - startScale) * progress;
+    } else if (currentStep.hold !== undefined) {
+      // Hold: stay at startScale, but add gentle pulse
+      const baseScale = phaseStartScaleRef.current;
+      const pulseAmplitude = 0.02;
+      const pulseFrequency = 0.6; // 2 pulses per second
+      const pulse = pulseAmplitude * Math.sin(2 * Math.PI * pulseFrequency * (elapsed / 1000));
+      currentScale = baseScale + pulse;
+    }  else if (currentStep.rest !== undefined) {
+      // Rest: stay neutral (e.g. scale = 1.0) with optional subtle pulse
+      const baseScale = 1.0;
+      const pulse = 0.02 * Math.sin(progress * 2 * Math.PI); // gentle
+      currentScale = baseScale + pulse;
+    }
+    else {
+      currentScale = 1.1;
+    }
+
+    // Update scale for rendering
+    currentVisualScaleRef.current = currentScale;
+    setRenderScale(currentScale);
+
+    // Phase completed?
+    if (progress >= 1) {
+      const nextIndex = currentStepIndex + 1;
+      if (nextIndex >= allSteps.length) {
+        setIsRunning(false);
+        setIsStart(true);
+        onFinishSession();
+        return;
+      }
+      setCurrentStepIndex(nextIndex);
+    } else {
+      animationRef.current = requestAnimationFrame(animate);
+    }
+  };
+
+  animationRef.current = requestAnimationFrame(animate);
+
+  return () => {
+    if (animationRef.current) cancelAnimationFrame(animationRef.current);
+  };
+}, [currentStepIndex, isRunning, duration, allSteps.length]);
+// sounds
+useEffect(() => {
+    if (!isRunning || !currentStep) return;
+
+    // Play sound only at the START of the phase (progress = 0)
+    if (phaseProgress < 0.01) {
+      if (currentStep.in !== undefined) {
+        playInhale();
+      } else if (currentStep.out !== undefined) {
+        playExhale();
+      } else if (currentStep.hold !== undefined) {
+        playHold();
+      } else if (currentStep.rest !== undefined) {
+        playRest();
+      }
+      if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('medium');
+    }
+  }, [currentStepIndex, isRunning, phaseProgress, audioEnabled]);
+  // Reset on session change OR reload
+  const resetSession = () => {
+    setCurrentStepIndex(0);
+    setPhaseProgress(0);
+    setIsRunning(false);
+    setIsStart(false);
+    setIsPaused(false);
+    startTimeRef.current = 0;
+    lastScaleRef.current = 1;
+  };
+
+  useEffect(() => {
+    currentVisualScaleRef.current = 1;
+   phaseStartScaleRef.current = 1;
+   setRenderScale(1);
+    resetSession();
+  }, [session]);
+
+
+  // Control handlers
+  const handleStart = () => {
+    initAudio(); // Required for autoplay
+    setAudioEnabled(true);
+    setIsStart(true);
+    setIsRunning(true);
+    setIsPaused(false);
+  };
+
+  const handlePause = () => {
+    setIsRunning(false);
+    setIsPaused(true);
+  };
+
+  const handleResume = () => {
+    setIsRunning(true);
+    setIsPaused(false);
+  };
+
+  const handleReload = () => {
+    resetSession();
+  };
+  const onFinishSession = () => {
+  const message = congratulations(langIndex); // 0 = RU, 1 = EN
+  setIsFinished(true);
+  setFinishMessage(message);
+ };
+ const saveResult = () => {
+    doneSession();
+ }
+  return (
+    <div style={styles(theme, show).container}>
+
+      {!isFinished && !isStart && !showStartTimer && <div  style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around',width:'90%',height:'80%'}}>
+        <div style={{width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+        <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{protocol.name[langIndex]}</p>
+        </div>
+        <div style={{width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+        <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{langIndex === 0 ? 'Цель' : 'Goal'}</p>
+        <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '13px' : '15px'}}>{protocol.aim[langIndex]}</p>
+        </div>
+        <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'space-around',width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{session.strategy}</p>
+         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '13px' : '15px'}}>{(langIndex === 0 ? 'циклов: ' : 'cycles: ') + session.cycles}</p>
+        </div>
+        <div style={{width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+        <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{langIndex === 0 ? 'Инструкция' : 'Instruction'}</p>
+        <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '13px' : '15px'}}>{protocol.instructions[langIndex]}</p>
+        </div>
+        <div style={{color:Colors.get('hold', theme),fontSize:fSize === 0 ? '10px' : '12px'}}>{disclaimer(langIndex)}</div>
+      </div>}
+
+      {!isFinished && showStartTimer && <div  style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around',width:'90%',height:'80%'}}>
+      <div style={{ fontSize: '10rem',marginTop: '180px',color:Colors.get('icons', theme), fontWeight: 'bold', lineHeight: 1}}>
+        {seconds}
+      </div>
+        <div style={{ fontSize: '2rem',marginBottom: '80px', textAlign: 'center'}}>
+        <div style={{color:Colors.get('icons', theme),marginBottom: '80px'}}>{langIndex === 0 ? 'Приготовьтесь!':'Get ready!'}</div>
+      </div>
+    </div>}
+
+      {!isFinished && isStart && <svg width="100%" height="80%" viewBox="0 0 800 800" style={{ maxWidth: '800px', maxHeight: '800px' }}>
+        <circle cx="400" cy="400" r="380" fill="none" stroke={Colors.get('border', theme)} strokeWidth="2" />
+
+        {/* Glow circle */}
+        <circle cx="400" cy="400" r="200" fill={phaseColor} opacity="0.25" transform={`scale(${renderScale})`} transformOrigin="400 400"style={{ filter: 'blur(12px)' }}/>
+        {/* Outline circle */}
+        <circle cx="400" cy="400" r="200" fill="none" stroke={phaseColor} strokeWidth="4"opacity="0.9" transform={`scale(${renderScale})`} transformOrigin="400 400" />
+        {/* Timer & Phase */}
+        <text x="420" y="410" textAnchor="middle" fill={phaseColor} fontFamily="sans-serif">
+        <tspan fontSize="150" fontWeight="bold">
+         {Math.floor(displayTime)}
+         </tspan>
+        <tspan fontSize="50" fontWeight="bold" dx="8"> {/* dx = small horizontal offset */}
+        .{Math.floor((displayTime - Math.floor(displayTime)) * 10)}
+        </tspan>
+        </text>
+        <text x="400" y="530" textAnchor="middle" fill={phaseColor} fontSize="40" fontFamily="sans-serif" opacity="0.95">
+          {phaseName}
+        </text>
+
+        {/* Cycle counter */}
+        <text x="400" y="900" textAnchor="middle" fill={Colors.get('icons', theme)} fontSize="38" fontFamily="sans-serif">
+          {(langIndex === 0 ? 'Цикл ' : 'Cycle ') + cycleInfo()}
+        </text>
+      </svg>}
+      {isFinished && <div  style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around',width:'90%',height:'80%'}}>
+        <div>
+        <img src="images/Congrat.png" style={{ width: '150px', height: '150px' }} />
+        <div style={{color:Colors.get('pause', theme),fontSize:'45px',fontWeight:'bold',fontFamily:'fantasy'}}>{langIndex === 0 ? 'Отлично!' : 'Great job!'}</div>
+        </div>
+
+         <div style={{width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+        <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{finishMessage}</p>
+        </div>
+    </div>}
+
+      {/* Controls */}
+      <div style={styles(theme, show).controls}>
+        {!isStart && !showStartTimer && <IoArrowBackCircle onClick={() => setShow(false)} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>}
+        {isFinished  && <IoArrowBackCircle onClick={() => {saveResult();setIsFinished(false); setShow(false)}} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>}
+        {!isFinished && audioEnabled ? <IoMdVolumeHigh onClick={() => setAudioEnabled(false)} style={{fontSize:'60px',color:Colors.get('icons', theme)}} /> :
+         <IoMdVolumeMute onClick={() => setAudioEnabled(true)} style={{fontSize:'60px',color:Colors.get('icons', theme)}} />}
+        {!isFinished &&!isStart && !showStartTimer &&  <IoPlayCircle onClick={() => setShowStartTimer(true)} style={{fontSize:'60px',color:Colors.get('play', theme)}} />}
+
+        {isRunning && <IoPauseCircle onClick={handlePause} style={{fontSize:'60px',color:Colors.get('pause', theme)}}/>}
+        {!isFinished && !showStartTimer && isPaused &&  <IoPlayCircle onClick={handleResume} style={{fontSize:'60px',color:Colors.get('play', theme)}}/> }
+        {!isFinished && isPaused && <IoReloadCircle onClick={handleReload} style={{fontSize:'60px',color:Colors.get('reload', theme)}}/>}
+        
+         
+      </div>
+    </div>
+  );
+};
+export default BreathingTimer
+
+const styles = (theme,show) =>
+({
+    container :
+   {
+     backgroundColor:Colors.get('background', theme),
+     display: "flex",
+     position:'fixed',
+     flexDirection: "column",
+     alignItems: "center",
+     height: "86vh",
+     transform: show ? 'translateY(0)' : 'translateY(100%)',
+     bottom: '0',
+     transition: "transform 0.2s ease-in-out",
+     width: "100vw",
+     fontFamily: "Segoe UI",
+     borderTop:`2px solid ${Colors.get('border', theme)}`,
+     borderTopLeftRadius:'12px',
+     borderTopRightRadius:'12px',
+     zIndex:2000
+  },
+  controls: {
+    display: 'flex',
+    marginTop: '30px',
+    gap: '50px',
+  }
+})
+
+const disclaimer = (langIndex) => {
+  // 0 = ru, 1 = en
+  if (langIndex === 0) {
+    return "Внимание: эти дыхательные упражнения предназначены только для общего улучшения самочувствия и не дают гарантированного эффекта. При наличии заболеваний сердца, лёгких, нарушений давления, при беременности или ухудшении самочувствия прекратите упражнения и при необходимости обратитесь к врачу."; 
+  }
+
+  return "Notice: These breathing exercises are intended only to support general well-being and do not guarantee any specific results. If you have heart or lung conditions, blood pressure issues, are pregnant, or feel unwell, stop the exercises and, if needed, seek advice from a healthcare professional."; 
+};
+const congratulations = (langIndex) => {
+  const messages = {
+    ru: [
+      'Отличная дыхательная сессия! 🌬️',
+      'Ты глубоко расслабился — молодец! 😌',
+      'Спасибо за заботу о своём дыхании. 💙',
+      'Ты дал себе момент покоя — это важно. 🕊️',
+      'Твоё дыхание стало спокойнее. Прекрасно! 🌿',
+      'Ты выполнил упражнение с осознанностью. Респект! 🙏',
+      'Глубокое дыхание — шаг к гармонии. Ты справился! 🌸',
+      'Поздравляю: ты только что поддержал своё здоровье дыханием. 💪🌱',
+      'Ты вернулся в момент — через дыхание. Отлично! ⏳➡️✨',
+      'Твоя нервная система благодарит тебя. 🧠❤️',
+    ],
+    en: [
+      'Great breathing session! 🌬️',
+      'You’ve deeply relaxed — well done! 😌',
+      'Thank you for caring for your breath. 💙',
+      'You gave yourself a moment of calm — that matters. 🕊️',
+      'Your breath has calmed. Beautiful work! 🌿',
+      'You practiced with mindfulness. Respect! 🙏',
+      'Deep breathing is a step toward balance. You did it! 🌸',
+      'Congratulations: you just supported your health with breath. 💪🌱',
+      'You returned to the present — through your breath. Perfect! ⏳➡️✨',
+      'Your nervous system thanks you. 🧠❤️',
+    ],
+  };
+
+  const list = langIndex === 0 ? messages.ru : messages.en;
+  const randomIndex = Math.floor(Math.random() * list.length);
+  return list[randomIndex];
+};

@@ -130,7 +130,7 @@ export default TrainingMeasurmentsAnalitics;
 function buildDataForChart(measurements) {
   return measurements.map(item => ({
     date: formatDateToDdMm(item.date),
-    weight: item.value // MyAreaChart expects 'weight' — you may want to generalize this or rename prop
+    weight: Math.round(item.value) // MyAreaChart expects 'weight' — you may want to generalize this or rename prop
   }));
 }
 

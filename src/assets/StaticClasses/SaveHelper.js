@@ -203,14 +203,21 @@ export async function exportDataToFile() {
       return { success: false, error: 'No data to export' };
     }
 
-    const isTelegram = !!(window.Telegram && window.Telegram.WebApp);
+    const webApp = window.Telegram && window.Telegram.WebApp;
+    const hasRequestWriteFile = !!(webApp && typeof webApp.requestWriteFile === 'function');
 
-    // === Telegram Mini App ===
-    if (isTelegram) {
+    setShowPopUpPanel(
+      `Telegram WebApp: ${webApp ? 'present' : 'none'}, requestWriteFile: ${hasRequestWriteFile ? 'yes' : 'no'}`,
+      2500,
+      false
+    );
+
+    // === Telegram Mini App с requestWriteFile ===
+    if (hasRequestWriteFile) {
       setShowPopUpPanel('Telegram detected, trying WebApp save...', 2000, false);
 
       try {
-        const result = await window.Telegram.WebApp.requestWriteFile({
+        const result = await webApp.requestWriteFile({
           title: 'Save UltyMyLife backup',
           suggested_filename: 'UltyMyLife_backup.json',
           data: dataStr,
@@ -252,8 +259,8 @@ export async function exportDataToFile() {
       }
     }
 
-    // === Обычный браузер ===
-    setShowPopUpPanel('No Telegram WebApp, using browser download', 2000, false);
+    // === Fallback: нет requestWriteFile (обычный браузер или старый Telegram) ===
+    setShowPopUpPanel('No requestWriteFile, using browser download', 2000, false);
 
     setShowPopUpPanel('Creating browser download...', 1500, false);
     const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });

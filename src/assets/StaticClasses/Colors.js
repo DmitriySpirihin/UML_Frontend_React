@@ -79,6 +79,18 @@ export class Colors {
     recoveryCard1:{ light: "#ecff5aff", dark: "#605b32ff", speciallight: "#dfff27ff", specialdark: "#45472aff" },
     recoveryCard2:{ light: "#ffad5aff", dark: "#604132ff", speciallight: "#ff5927ff", specialdark: "#47332aff" },
     recoveryCard3:{ light: "#ff605aff", dark: "#603232ff", speciallight: "#ef3333ff", specialdark: "#472a2aff" },
+    recoveryCard:{ light: "#5ab2ffff", dark: "#324660ff", speciallight: "#27cdffff", specialdark: "#2a4447ff" },
+
+    in:{ light: "#235179ff", dark: "#43ad9bff", speciallight: "#3a91abff", specialdark: "#5098cfff" },
+    out:{ light: "#665f25ff", dark: "#a4a15bff", speciallight: "#817b24ff", specialdark: "#c09848ff" },
+    hold:{ light: "#69231aff", dark: "#a7645eff", speciallight: "#782886ff", specialdark: "#c54a75ff" },
+    rest:{ light: "#5c5a5aff", dark: "#8dc6cbff", speciallight: "#565b5dff", specialdark: "#aebcbcff" },
+
+    play: { light: "#2ab35cff", dark: "#487b5bff",speciallight: "#2fb061ff", specialdark: "#42ac6dff"},
+    pause: { light: "#ecc13fff", dark: "#b09837ff", speciallight: "#a46721ff", specialdark: "#af5a2aff",},
+    reload: { light: "#5288e1ff", dark: "#49678bff", speciallight: "#244ab1ff", specialdark: "#36b3b9ff",},
+    close: {light: "#db5f5fff", dark: "#9c4e4eff",speciallight: "#a32a2aff", specialdark: "#ae3535ff",},
+
   };
 
   static setTheme(theme) {

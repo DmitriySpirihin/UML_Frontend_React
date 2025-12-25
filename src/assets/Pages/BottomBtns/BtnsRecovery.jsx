@@ -71,9 +71,9 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,
     
     return (    
         <div style={styles(theme,currentBtn).style}>
-          {page !== 'TrainingMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
+          {page !== 'RecoveryMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
           {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
-          {page === 'TrainingMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
+          {page === 'RecoveryMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
           
           <Recovery_0 style={{...styles(theme,currentBtn,3,false,false).btnstyle,width:'30px'}} onClick={() => {setCurrentBottomBtn(4);setPage('TrainingProgramm');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
           <Recovery_1 style={{...styles(theme,currentBtn,3,false,false).btnstyle,width:'30px'}} onClick={() => {setCurrentBottomBtn(2);setPage('TrainingExercise');playEffects(switchSound);setNotifyPanel(false);}} />
@@ -84,13 +84,13 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,
     )
 }   
 async function onBack(page,addPanel) {
-    if(page === 'TrainingMain' && addPanel === ''){
+    if(page === 'RecoveryMain' && addPanel === ''){
         setPage('MainMenu');
         await saveData();
     }
     else{
         if(addPanel !== '') setAddPanel('');
-        else setPage('TrainingMain');
+        else setPage('RecoveryMain');
     }
     playEffects(switchSound);
 }
