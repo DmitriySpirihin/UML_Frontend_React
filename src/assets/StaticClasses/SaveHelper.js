@@ -190,18 +190,25 @@ export async function clearAllSaves() {
 export async function exportDataToFile() {
   try {
     setShowPopUpPanel('Starting export...', 1500, false);
-    
+
     const dataStr = serializeData();
-    setShowPopUpPanel(`Data ready: ${dataStr ? dataStr.length + ' chars' : 'EMPTY'}`, 2000, false);
-    
+    setShowPopUpPanel(
+      `Data ready: ${dataStr ? dataStr.length + ' chars' : 'EMPTY'}`,
+      2000,
+      false
+    );
+
     if (!dataStr) {
       setShowPopUpPanel('Nothing to export', 2000, false);
       return { success: false, error: 'No data to export' };
     }
 
-    if (window.Telegram?.WebApp) {
+    const isTelegram = !!(window.Telegram && window.Telegram.WebApp);
+
+    // === Telegram Mini App ===
+    if (isTelegram) {
       setShowPopUpPanel('Telegram detected, trying WebApp save...', 2000, false);
-      
+
       try {
         const result = await window.Telegram.WebApp.requestWriteFile({
           title: 'Save UltyMyLife backup',
@@ -211,44 +218,77 @@ export async function exportDataToFile() {
           thumb: ''
         });
 
-        setShowPopUpPanel(`Telegram result: ${JSON.stringify(result)}`, 3000, false);
-        
-        if (result?.received) {
-          setShowPopUpPanel('✅ Saved via Telegram!', 2500, true);
+        setShowPopUpPanel(
+          `Telegram result: ${JSON.stringify(result)}`,
+          4000,
+          false
+        );
+
+        if (result && result.received) {
+          setShowPopUpPanel(
+            '✅ Backup saved.\nFind it via Telegram → Files / Downloads.',
+            4000,
+            true
+          );
           return { success: true, source: 'telegram' };
-        } else {
-          setShowPopUpPanel('❌ Telegram cancelled/failed, using browser...', 2000, false);
         }
+
+        setShowPopUpPanel(
+          '❌ User cancelled or Telegram failed.',
+          3000,
+          false
+        );
+        return { success: false, error: 'telegram_cancelled_or_failed' };
       } catch (telegramError) {
-        setShowPopUpPanel(`Telegram error: ${telegramError.message}`, 3000, false);
+        setShowPopUpPanel(
+          `Telegram error: ${telegramError && telegramError.message ? telegramError.message : String(telegramError)}`,
+          4000,
+          false
+        );
+        return {
+          success: false,
+          error: telegramError && telegramError.message ? telegramError.message : 'telegram_error'
+        };
       }
-    } else {
-      setShowPopUpPanel('No Telegram WebApp, using browser download', 2000, false);
     }
 
-    // Всегда fallback к браузеру
+    // === Обычный браузер ===
+    setShowPopUpPanel('No Telegram WebApp, using browser download', 2000, false);
+
     setShowPopUpPanel('Creating browser download...', 1500, false);
     const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement('a');
     a.href = url;
     a.download = 'UltyMyLife_backup.json';
+    a.style.display = 'none';
     document.body.appendChild(a);
-    a.click();
+
+    const clickEvent = new MouseEvent('click', {
+      view: window,
+      bubbles: true,
+      cancelable: true
+    });
+    const clicked = a.dispatchEvent(clickEvent);
+
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
-    setShowPopUpPanel('✅ Saved to Downloads!', 2500, true);
+
+    if (!clicked) {
+      setShowPopUpPanel('❌ Browser click failed', 3000, false);
+      return { success: false, error: 'browser_click_failed' };
+    }
+
+    setShowPopUpPanel('✅ Saved to browser Downloads!', 2500, true);
     return { success: true, source: 'browser' };
-    
   } catch (e) {
-    const errorMsg = `💥 Export crashed: ${e.message}`;
+    const errorMsg = `💥 Export crashed: ${e && e.message ? e.message : String(e)}`;
     console.error(errorMsg, e);
     setShowPopUpPanel(errorMsg, 4000, false);
-    return { success: false, error: e.message };
+    return { success: false, error: e && e.message ? e.message : 'unknown_error' };
   }
 }
-
 
 /**
  * Imports data from a user-selected JSON file

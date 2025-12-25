@@ -2,6 +2,7 @@ import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage} from '../../StaticClasses/HabitsBus'
+import {FaArrowRight,FaArrowLeft} from 'react-icons/fa'
 //import BreathingTimer from './BreathingTimer'
 import {breathingProtocols, expandSteps,breathingLog} from '../../StaticClasses/RecoveryLogHelper'
 
