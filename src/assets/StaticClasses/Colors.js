@@ -90,7 +90,8 @@ export class Colors {
     pause: { light: "#ecc13fff", dark: "#b09837ff", speciallight: "#a46721ff", specialdark: "#af5a2aff",},
     reload: { light: "#5288e1ff", dark: "#49678bff", speciallight: "#244ab1ff", specialdark: "#36b3b9ff",},
     close: {light: "#db5f5fff", dark: "#9c4e4eff",speciallight: "#a32a2aff", specialdark: "#ae3535ff",},
-
+    
+    mentalCategoryCard: {light: "#b6b6b6ff", dark: "#1d1d1dff",speciallight: "#9d9d9dff", specialdark: "#111010ff",},
   };
 
   static setTheme(theme) {

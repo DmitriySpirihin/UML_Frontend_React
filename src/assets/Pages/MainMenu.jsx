@@ -86,7 +86,7 @@ const MainMenu = ({ onPageChange }) => {
                 </div>
             )}
             <div style={styles(theme).container}>
-            <div style={{height:'20vh'}}/>
+            <div style={{height:'16vh'}}/>
             {passwordInput && <input style={{width:'85vw',height:'2vh',fontSize:'12px',borderRadius:'12px',zIndex:1001}} type="password" onChange={(e) => checkPassword(e.target.value)} />}
             <div style={styles(theme).scrollView}>
                
@@ -110,7 +110,7 @@ const MainMenu = ({ onPageChange }) => {
                     colorDark="#44281eff" 
                     colorLight="#f998c3ff" 
                     colorSpecialDark="#352628ff" 
-                    colorSpecialLight="#e07498ff" 
+                    colorSpecialLight="#e07474ff" 
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
@@ -129,12 +129,24 @@ const MainMenu = ({ onPageChange }) => {
                     onClick={() => {onPageChange('RecoveryMain');playEffects(null);}}
                 />
                 <MenuCard 
-                    text={['Список задач', 'Simple task manager']}
-                    decr={['Скоро будет доступно', 'Coming soon']}
-                    colorDark="#2b2929ff" 
-                    colorLight="#9e9d9cff" 
+                    text={['Ментальный фитнесс', 'Mental fitness']}
+                    decr = {['Улучшайте память, внимание и скорость мышления с помощью коротких научно обоснованных тренировок.', 'Boost memory, focus and thinking speed with short, science-based brain workouts.']}
+                    colorDark="#222121ff" 
+                    colorLight="#7c7a79ff" 
                     colorSpecialDark="#353232ff" 
-                    colorSpecialLight="#ebe9eaff" 
+                    colorSpecialLight="#bcbcbcff" 
+                    theme={theme} 
+                    lang={lang}
+                    fontSize={fSize}
+                    onClick={() => {onPageChange('MentalMain');playEffects(null);}}
+                />
+                <MenuCard 
+                    text={['Сон и восстановление', 'Sleep & Recovery']}
+                    decr = {['Помогает подобрать нагрузку и время отдыха','Helps balance training load and rest']}
+                    colorDark="#37293eff" 
+                    colorLight="#cba1d7ff" 
+                    colorSpecialDark="#382537ff" 
+                    colorSpecialLight="#eb85b8ff" 
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
@@ -150,7 +162,7 @@ const MainMenu = ({ onPageChange }) => {
 export default MainMenu
 
 function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#294128ff", colorLight = "#a4f19cff",
-  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#c8f445ff", theme,lang, onClick,fontSize}){
+  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#c8f445ff", theme,lang, onClick,fontSize,index,svgColor}){
     const cardColor = (theme) => {
         if(theme === 'dark') return colorDark;
         else if(theme === 'specialdark') return colorSpecialDark;
@@ -173,6 +185,7 @@ function MenuCard({text = ["Категория", "Category"], decr = ["Скор�
         backgroundColor: cardColor(theme),
         overflow : 'hidden',
         position: 'relative',
+        boxShadow:'0px 0px 6px ' + cardColor(theme),
     }
     return (
         <div className="card-with-noise" style={_style} onClick={onClick}> 
@@ -236,4 +249,3 @@ function playEffects(sound){
   }
   if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
-

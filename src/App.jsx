@@ -4,6 +4,7 @@ import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
 import BtnsRecovery from './assets/Pages/BottomBtns/BtnsRecovery'
+import BtnsMental from './assets/Pages/BottomBtns/BtnsMental'
 import NotifyPanel from './assets/Pages/NotifyPanel'
 import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage,keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
@@ -26,6 +27,9 @@ const TrainingList = lazy(() => import('./assets/Pages/TrainingPages/TrainingLis
 const Premium = lazy(() => import('./assets/Pages/Premium'));
 const RecoveryMain = lazy(() => import('./assets/Pages/Recovery/RecoveryMain'));
 const BreathingMain = lazy(() => import('./assets/Pages/Recovery/BreathingMain'));
+
+const MentalMain = lazy(() => import('./assets/Pages/MentalPages/MentalMain'));
+const MathMain = lazy(() => import('./assets/Pages/MentalPages/MathMain'));
 
 
 function App() {
@@ -147,12 +151,19 @@ if (showPendingScreen) {
       {page === 'RecoveryMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <RecoveryMain/>
       </Suspense>}
+      {page === 'MentalMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <MentalMain/>
+      </Suspense>}
       {page === 'RecoveryBreath' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <BreathingMain/>
+      </Suspense>}
+      {page === 'MentalMath' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <MathMain/>
       </Suspense>}
       {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
       {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
       {bottomBtnPanel === 'BtnsRecovery' && !keyboardVisible && <BtnsRecovery/>}
+      {bottomBtnPanel === 'BtnsMental' && !keyboardVisible && <BtnsMental/>}
     </>
   )
 }
