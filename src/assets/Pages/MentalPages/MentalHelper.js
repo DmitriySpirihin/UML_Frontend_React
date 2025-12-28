@@ -29,7 +29,7 @@ export const quickMathCategories = [
       'Challenging expressions with operator precedence.',
     ],
     timeLimitSec: 20,
-    operations: 'A+B, A-B, A×B, A/B, √A, LOG, A^',
+    operations: 'A+B, A-B, A×B, A/B, √A, LOG, A^, X',
   },
   {
     level: ['безумный', 'insane'],
@@ -65,3 +65,5 @@ export const quickMathCategories = [
     operations: 'A+B, A-B, A×B, A/B, √A, LOG, A^',
   },
 ];
+
+export const mentalRecords = [[500,0,0,0,3000,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]

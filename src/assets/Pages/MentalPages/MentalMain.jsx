@@ -2,6 +2,8 @@ import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage} from '../../StaticClasses/HabitsBus'
+import {FaStopwatch20,FaMemory,FaStar} from 'react-icons/fa'
+import {GiLogicGateNxor,GiTargetShot} from 'react-icons/gi'
 
 const MentalMain = () => {
     // states
@@ -38,7 +40,10 @@ const MentalMain = () => {
         lang={langIndex}
         fontSize={fSize}
         onClick={() => {setPage('MentalMath')}}
-        svgColor={"#233837ff"}
+        colorDark="#233837ff"
+        colorLight="#3ee72b62"
+        colorSpecialDark="#1d2d1dff"
+        colorSpecialLight="#25812a4d"
         index={0}
       />   
       <MenuCard 
@@ -51,7 +56,10 @@ const MentalMain = () => {
         lang={langIndex}
         fontSize={fSize}
         onClick={() => {}}
-        svgColor={"#563333ff"}
+        colorDark={"#563333ff"}
+        colorLight={"#f34f4f6e"}
+        colorSpecialDark={"#563333ff"}
+        colorSpecialLight={"#7d202054"}
         index={1}
       /> 
       <MenuCard 
@@ -64,7 +72,10 @@ const MentalMain = () => {
         lang={langIndex}
         fontSize={fSize}
         onClick={() => {}}
-        svgColor={"#355436ff"}
+        colorDark={"#355436ff"}
+        colorLight={"#90d93153"}
+        colorSpecialDark={"#355436ff"}
+        colorSpecialLight={"#2e765750"}
         index={2}
       /> 
       <MenuCard 
@@ -77,7 +88,10 @@ const MentalMain = () => {
         lang={langIndex}
         fontSize={fSize}
         onClick={() => {}}
-        svgColor={"#46452bff"}
+        colorDark={"#46452bff"}
+        colorLight={"#c6c14079"}
+        colorSpecialDark={"#46452bff"}
+        colorSpecialLight={"#79773251"}
         index={3}
       /> 
     </div>
@@ -102,6 +116,21 @@ const styles = (theme,fSize) =>
      width: "100vw",
      fontFamily: "Segoe UI",
   },
+    cardText :
+    {
+      textAlign: "left",
+      marginBottom: "5px",
+      fontSize: fSize === 0 ? "14px" : "16px",
+      color: Colors.get('mainText', theme),
+      marginLeft: "30px"
+    },
+    text :
+    {
+      textAlign: "left",
+      fontSize: fSize === 0 ? "10px" : "12px",
+      color: Colors.get('subText', theme),
+      marginLeft: "30px"
+    },
   mainText :
   {
     textAlign: "left",
@@ -130,96 +159,64 @@ const styles = (theme,fSize) =>
     },
 })
 
-function MenuCard({text, decr , theme,lang, onClick,fontSize,index,svgColor} ){
-    const bg = createSvgDataUrl(index,svgColor);
+function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#294128ff", colorLight = "#adeda640",
+  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#c8f445ff", theme,lang, onClick,fontSize,index}){
+    const cardColor = (theme) => {
+        if(theme === 'dark') return colorDark;
+        else if(theme === 'specialdark') return colorSpecialDark;
+        else if(theme === 'speciallight') return colorSpecialLight;
+        return colorLight;
+    }
+    const getIcon = (index,isBack) => {
+        if(index === 0) return <FaStopwatch20 style={isBack ? backIconStyle : iconStyle}/>
+        else if(index === 1) return <FaMemory style={isBack ? backIconStyle : iconStyle}/>
+        else if(index === 2) return <GiLogicGateNxor style={isBack ? backIconStyle : iconStyle}/>
+        else if(index === 3) return <GiTargetShot style={isBack ? backIconStyle : iconStyle}/>
+    }
     const _style = {
-        display:'flex',
-        flexDirection:'row',
         alignItems: "center",
         justifyContent: "center",
+        display:'flex',
+        flexDirection:'row',
         height: "13vh",
-        width:'90vw',
-        borderRadius: "12px",
+        borderRadius: "28px",
+        margin: "10px",
+        marginBottom:'10px',
+        backgroundColor: cardColor(theme),
+        overflow : 'hidden',
         position: 'relative',
-        backgroundImage: bg,
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-        boxShadow:'0px 0px 10px ' + Colors.get('mainText', theme),
-        backgroundColor: Colors.get('mentalCategoryCard', theme)
+        boxShadow:'3px 3px 2px rgba(0,0,0,0.3)',
+        width:'90vw',
     }
-    
+    const iconStyle = {
+        fontSize:'28px',
+        color: Colors.get('mainText', theme),
+    }
+    const backIconStyle = {
+        fontSize:'86px',
+        rotate:'-20deg',
+        position:'absolute',
+        right:'-10px',
+        top:'30%',
+        color:  Colors.get('svgColor',theme)
+    }
     return (
-      <div>
-        <div style={{display:'flex',flexDirection:'row',width:"35%",height:'15%',backgroundColor:'rgba(255, 242, 2, 0.12)',alignItems:'center',justifyContent:'center',position:'relative',
-          top:'20%',left:'63%',borderRadius:'12px',fontSize:'15px',color:Colors.get('mainText', theme),zIndex:5}}>
-           {getCategoryRecord(index)}
-        </div>
-      <div style={_style} onClick={onClick}>
-          <div style={{width:'90%',marginLeft:'10%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center'}}>
-           <p style={{...styles(theme,fontSize).mainText,fontWeight:'bold'}}>{Array.isArray(text) ? text[lang] : text}</p>
-           <p style={styles(theme,fontSize).subtext}>{Array.isArray(decr) ? decr[lang] : decr}</p>
-          </div>
+        <div style={_style} onClick={onClick}>
+        <div style={{display:'flex',flexDirection:'row',width:"15%",height:'22%',alignItems:'center',justifyContent:'center',position:'absolute',
+          top:'5%',left:'80%',fontWeight:'bold',fontSize:'16px',color:Colors.get('maxValColor', theme)}}>
+          <FaStar /> {getCategoryRecord(index)}
         </div> 
-        
-      </div>    
+        {getIcon(index,false)}
+        <div style={{width:'70%',height:'100%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center'}}>
+            <h2 style={styles(theme,fontSize).cardText}>{Array.isArray(text) ? text[lang] : text}</h2>
+            <p style={styles(theme,fontSize).text}>{Array.isArray(decr) ? decr[lang] : decr}</p>
+        </div>
+         {getIcon(index,true)}
+        </div>    
     )
 }
-const createSvgDataUrl = (index = 0, color = '#4ECDC4') => {
-  const safeColor = color.replace(/[^a-zA-Z0-9#.%]/g, '');
 
-  const patterns = [
-    // 0: Mental Math — equations, grids, structure
-    `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-      <path d="M20 20 L30 30 M30 20 L20 30 M70 70 L80 80 M80 70 L70 80"
-            stroke="${safeColor}" stroke-width="4" fill="none" opacity="0.6"/>
-      <path d="M15 85 L25 85 M20 80 L20 90" stroke="${safeColor}" stroke-width="3" fill="none" opacity="0.5"/>
-      <path d="M85 15 L85 25 M80 20 L90 20" stroke="${safeColor}" stroke-width="3" fill="none" opacity="0.5"/>
-      <path d="M0 50 L100 50 M50 0 L50 100" stroke="${safeColor}" stroke-width="1.6" opacity="0.25" fill="none"/>
-    </svg>`,
-
-    // 1: Memory in Action — flowing neural chain with clusters
-    `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-      <path d="M20 50 Q40 30, 60 50 T100 50" stroke="${safeColor}" stroke-width="4" fill="none" opacity="0.55"/>
-      <circle cx="20" cy="50" r="6" fill="${safeColor}" opacity="0.65"/>
-      <circle cx="60" cy="50" r="6" fill="${safeColor}" opacity="0.65"/>
-      <circle cx="100" cy="50" r="6" fill="${safeColor}" opacity="0.65"/>
-      <circle cx="40" cy="30" r="4" fill="${safeColor}" opacity="0.5"/>
-      <circle cx="80" cy="30" r="4" fill="${safeColor}" opacity="0.5"/>
-      <circle cx="40" cy="70" r="3" fill="${safeColor}" opacity="0.4"/>
-      <circle cx="80" cy="70" r="3" fill="${safeColor}" opacity="0.4"/>
-    </svg>`,
-
-    // 2: Number Logic — interconnected circuit with nodes & branches
-    `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-      <path d="M20 20 L50 20 L50 50 L80 50 L80 80"
-            stroke="${safeColor}" stroke-width="4.2" fill="none" opacity="0.6"/>
-      <path d="M50 20 L80 20 L80 50" stroke="${safeColor}" stroke-width="3" fill="none" opacity="0.45"/>
-      <circle cx="20" cy="20" r="6" fill="${safeColor}" opacity="0.7"/>
-      <circle cx="50" cy="50" r="6" fill="${safeColor}" opacity="0.7"/>
-      <circle cx="80" cy="80" r="6" fill="${safeColor}" opacity="0.7"/>
-      <circle cx="80" cy="20" r="4" fill="${safeColor}" opacity="0.5"/>
-      <circle cx="50" cy="20" r="4" fill="${safeColor}" opacity="0.5"/>
-    </svg>`,
-
-    // 3: Pure Focus — strong concentric target with crosshairs
-    `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-      <circle cx="50" cy="50" r="22" stroke="${safeColor}" stroke-width="4.5" fill="none" opacity="0.65"/>
-      <circle cx="50" cy="50" r="8" fill="${safeColor}" opacity="0.8"/>
-      <path d="M50 15 L50 35 M50 65 L50 85 M15 50 L35 50 M65 50 L85 50"
-            stroke="${safeColor}" stroke-width="3.6" fill="none" opacity="0.55"/>
-      <circle cx="50" cy="50" r="18" stroke="${safeColor}" stroke-width="1.4" fill="none" opacity="0.3"/>
-    </svg>`
-  ];
-
-  const svg = patterns[index % 4].trim();
-  const encoded = encodeURIComponent(svg)
-    .replace(/'/g, '%27')
-    .replace(/"/g, "'");
-
-  return `url("data:image/svg+xml;charset=utf-8,${encoded}")`;
-};
-const getCategoryRecord = (index,langIndex) => {
-    const bestScore = 0;
-    const record = langIndex === 0 ? 'рекорд: ' : 'top score: '
-    return record + bestScore;
+const getCategoryRecord = (index) => {
+    const bestScore = 1000;
+    return bestScore;
 }

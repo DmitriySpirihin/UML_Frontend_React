@@ -2,8 +2,9 @@ import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage} from '../../StaticClasses/HabitsBus'
-import {FaCaretLeft,FaCaretRight} from 'react-icons/fa'
-import {MdDone} from 'react-icons/md'
+import {FaStarHalf,FaStar,} from 'react-icons/fa'
+import {GiStarsStack,GiCrownedSkull} from 'react-icons/gi'
+import {MdConstruction} from 'react-icons/md'
 import {breathingProtocols,breathingLog,markSessionAsDone} from '../../StaticClasses/RecoveryLogHelper'
 import { themeParamsBottomBarBgColor } from '@telegram-apps/sdk'
 import BreathingTimer from './BreathingTimer'
@@ -42,29 +43,32 @@ const BreathingMain = () => {
     const doneSession = () => {
       markSessionAsDone(currentCategory,currentProtocol,currentLevel);
     }
+    let mainIndex = -1;
     return (
     <div style={styles(theme).container}>
+      <div style={styles(theme).scrollView}>
+      <div style={{display:'flex',flexDirection:'column',width:'100%',alignItems:'center',justifyItems:'center'}}>
+      <div style={{width:'100%',display: "grid" ,gridTemplateColumns: '1fr 1fr',alignItems:'center',justifyItems:'center'}}>
       {breathingProtocols.map((category,index)=>{
-        const cardColor = 'recoveryCard' + index;
+        const cardColor = 'difficulty' + index;
         return (
-          <div key={index} style={{marginTop:'10px',border:`3px solid ${Colors.get(cardColor, theme)}`,width:'95%', borderRadius:'12px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',paddingBottom:'10px'}}>
-          <p onClick={() => {setCurrentCategory(prev => prev === index ? -1 : index)}} style={{...styles(theme,fSize).mainText,color:Colors.get(cardColor, theme),fontWeight:'bold'}}>{category.level[langIndex] + getCardsAmountInProtocol(category)}</p>
-          <div  style={{width:'98%',display: "grid" ,gridTemplateColumns: '1fr 1fr',alignItems:'center',justifyItems:'center'}}>
-           {currentCategory === index ? category.protocols.map((protocol,ind)=>{
+           category.protocols.map((protocol,ind)=>{
+             mainIndex ++;
              return (
-                <MenuCard key={ind} protocol={protocol} setTimer={setShowTimer} setLevel={setCurrentLevel} theme={theme} color={cardColor}  lang={langIndex} fSize={fSize} onClick={() => {setCurrentProtocol(ind)}} />   
+                <MenuCard key={mainIndex} difficulty={index} protocol={protocol} setTimer={setShowTimer} 
+                setLevel={setCurrentLevel} theme={theme} color={Colors.get(cardColor, theme)} width='46vw'
+                lang={langIndex} fSize={fSize} onClick={() => {setCurrentProtocol(ind)}} />   
              )
-           }) : null}
-          </div>
-       </div>
+           })
         )
       })}
+      </div>
       {/* constructor  */}
-      <div style={{marginTop:'10px',border:`3px solid ${Colors.get('recoveryCard', theme)}`,width:'95%', borderRadius:'12px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',paddingBottom:'10px'}}>
-          <p onClick={() => {setCurrentCategory(prev => 4 === index ? -1 : 4)}} style={{...styles(theme,fSize).mainText,color:Colors.get('recoveryCard', theme),fontWeight:'bold'}}>{langIndex === 0 ? 'Конструктор' : 'Constructor'}</p>
-          
-       </div>
-
+      <MenuCard difficulty={4} setTimer={setShowTimer} 
+          setLevel={setCurrentLevel} theme={theme} color={Colors.get('difficulty', theme)} width='96vw'
+          lang={langIndex} fSize={fSize} onClick={() => {}} protocol={undefined}/>  
+          </div>
+      </div>
        <BreathingTimer show={showTimer} doneSession={doneSession} setShow={setShowTimer} session={currentSession} protocol={breathingProtocols[currentCategory]?.protocols[currentProtocol]|| breathingProtocols[0].protocols[0]} />
     </div>
     
@@ -87,6 +91,15 @@ const styles = (theme,fSize) =>
      paddingTop:'5vh',
      width: "100vw",
      fontFamily: "Segoe UI",
+  },
+  scrollView:
+  {
+    height: "95%",
+    width:'100%',
+    overflowY: "scroll",
+    display:'flex',
+    flexDirection:'column',
+   
   },
   mainText :
   {
@@ -113,51 +126,62 @@ const styles = (theme,fSize) =>
       alignItems:'center',
       justifyContent:'space-around',
     },
+    cardText :
+      {
+        textAlign: "left",
+        marginBottom: "5px",
+        fontSize: fSize === 0 ? "14px" : "16px",
+        color: Colors.get('mainText', theme),
+        marginLeft: "30px"
+      },
+      text :
+      {
+        textAlign: "left",
+        fontSize: fSize === 0 ? "10px" : "12px",
+        color: Colors.get('subText', theme),
+        marginLeft: "30px"
+      },
 })
 
-function MenuCard({protocol,setLevel,setTimer, color,theme,lang, onClick,fSize} ){
-
-  const [currentLevel, setCurrentLevel] = useState(setActualLevel(protocol));
-  useEffect(() => {
-    setLevel(currentLevel);
-  }, [currentLevel]);
-    
+function MenuCard({protocol,difficulty,width,setTimer, color,theme,lang, onClick,fSize} ){
+    const getIcon = () => {
+          if(difficulty === 0) return <FaStarHalf style={backIconStyle}/>
+          else if(difficulty === 1) return <FaStar style={backIconStyle}/>
+          else if(difficulty === 2) return <GiStarsStack style={backIconStyle}/>
+          else if(difficulty === 3) return <GiCrownedSkull style={backIconStyle}/>
+          else if(difficulty === 4) return <MdConstruction style={backIconStyle}/>
+      }
     const _style = {
-        display:'flex',
-        flexDirection:'column',
-        alignItems: "center",
-        justifyContent: "flex-start",
-        height: "25vh",
-        width:'42vw',
-        borderRadius: "12px",
-        marginTop:'10px',
-        border:protocol.levels[currentLevel].isDone ? '3px solid ' + Colors.get('maxValColor', theme) : '3px solid ' + 'transparent',
-        backgroundColor: Colors.get(color, theme)
-    }
+          alignItems: "center",
+          justifyContent: "center",
+          display:'flex',
+          width: width,
+          flexDirection:'row',
+          height: '12vh',
+          marginTop:'15px',
+          borderRadius: "24px",
+          backgroundColor: color,
+          overflow : 'hidden',
+          position: 'relative',
+          boxShadow:'3px 3px 2px rgba(0,0,0,0.3)',
+      }
+      const backIconStyle = {
+          fontSize:'86px',
+          rotate:'-20deg',
+          position:'absolute',
+          right:'-10px',
+          top:'30%',
+          color:  Colors.get('svgColor',theme)
+      }
     return (
-      <div style={_style} onClick={onClick}> 
+      <div style={_style} onClick={() => {onClick();setTimer(true)}}> 
         
-        <div style={{...styles(theme,fSize).subtext,fontWeight:'bold',marginTop:'5px'}}>{Array.isArray(protocol.name) ? protocol.name[lang] : protocol.name}</div>
-        <div style={{display:'flex',flexDirection:'column',width:'100%',marginTop:'5px',height:'60%',alignItems:'center',justifyContent:'space-around',backgroundColor:'rgba(0,0,0,0.1)'}}>
-        <div style={{...styles(theme,fSize).subtext,fontSize: fSize === 0 ? '12px' : '14px',}}>{Array.isArray(protocol.aim) ? protocol.aim[lang] : protocol.aim}</div>
+        <div style={{width:'90%',height:'100%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center'}}>
+              <h2 style={styles(theme,fSize).cardText}>{protocol === undefined ? (lang === 0 ? 'Конструктор' : 'Constructor') : Array.isArray(protocol.name) ? protocol.name[lang] : protocol.name}</h2>
+              <p style={styles(theme,fSize).text}>{protocol === undefined ? (lang === 0 ? 'Создай свой протокол' : 'Create your own') : Array.isArray(protocol.aim) ? protocol.aim[lang] : protocol.aim}</p>
+          </div>
+           {getIcon()}
         
-         <div style={{display:'flex',flexDirection:'column',width:'100%',alignItems:'center',justifyContent:'flex-start'}}>
-           <div style={{display:'flex',flexDirection:'row',width:'100%',alignItems:'center',justifyContent:'space-around'}}>
-            <FaCaretLeft onClick={() => {setCurrentLevel(prev => prev === 0 ? prev : prev - 1)}} style={{...styles(theme,fSize).icon,color:currentLevel === 0 ? Colors.get('icons', theme) : Colors.get('mainText', theme)}}/>
-            <p style={{...styles(theme,fSize).subtext,fontSize:'18px',}}>{currentLevel + 1}</p>
-            <FaCaretRight onClick={() => {setCurrentLevel(prev => prev === protocol.levels.length - 1 ? prev : prev + 1)}} style={{...styles(theme,fSize).icon,color:currentLevel === protocol.levels.length - 1 ? Colors.get('icons', theme) : Colors.get('mainText', theme)}}/>
-           </div>
-            <div style={{display:'flex',flexDirection:'row',marginRight:'12px',marginLeft:'auto',width:'80%',height:'33px',alignItems:'center',justifyContent:'space-around',borderRadius:'12px',backgroundColor:'rgba(0,0,0,0.3)',marginTop:'12px'}}>
-            <div style={{display:'flex',flexDirection:'column',width:'70%',alignItems:'center',justifyContent:'center'}}> 
-             <div style={{fontSize:'11px',textAlign:'left',color:Colors.get('subText', theme)}}>{protocol.levels[currentLevel].strategy}</div>  
-             <div style={{fontSize:'11px',textAlign:'left',color:Colors.get('subText', theme)}}>{(lang === 0 ? 'Циклы: ' : 'Cycles: ') + (protocol.levels[currentLevel].cycles)}</div>
-            </div> 
-            {protocol.levels[currentLevel].isDone && <MdDone style={{...styles(theme,fSize).icon,color:Colors.get('maxValColor', theme)}}/>}
-
-           </div>
-         </div>
-        </div>
-        <button onClick={() => {setTimer(true)}} style={{...styles(theme,fSize).subtext,width:'70%',borderRadius:'12px',backgroundColor:'rgba(0,0,0,0.5)',marginTop:'12px',fontSize: fSize === 0 ? '12px' : '14px',}}>{(lang === 0 ? 'Начать' : 'Start')}</button>
       </div>   
     )
 }

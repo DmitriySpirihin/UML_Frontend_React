@@ -4,7 +4,7 @@ import { theme$, lang$, devMessage$ ,isPasswordCorrect$,fontSize$ } from '../Sta
 import { AppData } from '../StaticClasses/AppData'
 //import 'grained'
 import  {NotificationsManager,sendPassword} from '../StaticClasses/NotificationsManager'
-import MyInput from '../Helpers/MyInput'
+import {FaMoon,FaBrain,FaSpa,FaBookOpen,FaRecycle} from 'react-icons/fa'
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
@@ -100,6 +100,7 @@ const MainMenu = ({ onPageChange }) => {
                     lang={lang}
                     fontSize={fSize}
                     onClick={() => {onPageChange('HabitsMain');playEffects(null);}}
+                    index={0}
                 />
                 <MenuCard 
                     text={['Тренировочный дневник', 'Training log']} 
@@ -108,49 +109,53 @@ const MainMenu = ({ onPageChange }) => {
                         'Track your workout progress, set goals, and analyze results. The perfect tool for a systematic approach to physical development.'
                     ]}
                     colorDark="#44281eff" 
-                    colorLight="#f998c3ff" 
+                    colorLight="#f998c375" 
                     colorSpecialDark="#352628ff" 
-                    colorSpecialLight="#e07474ff" 
+                    colorSpecialLight="#93292950" 
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
                     onClick={() => {onPageChange('TrainingMain');playEffects(null);}}
+                    index={1}
                 />
                <MenuCard 
-                    text={['Дыхательные практики, медитация и закаливание', 'Breathing exercises, meditation cold']} 
+                    text={['Дыхание, медитация и закаливание', 'Breathing, meditation & cold']} 
                     decr={['Дыхательные практики, медитация и закаливание помогают улучшить качество сна и общее самочувствие.', 'Breathing exercises, meditation, and calming techniques help improve sleep quality and overall well-being.']} 
                     colorDark="#355257ff" 
-                    colorLight="#8eebd7ff" 
+                    colorLight="#8eebd785" 
                     colorSpecialDark="#1c3136ff" 
-                    colorSpecialLight="#74d9e0ff" 
+                    colorSpecialLight="#4573766d" 
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
                     onClick={() => {onPageChange('RecoveryMain');playEffects(null);}}
+                    index={2}
                 />
                 <MenuCard 
                     text={['Ментальный фитнесс', 'Mental fitness']}
                     decr = {['Улучшайте память, внимание и скорость мышления с помощью коротких научно обоснованных тренировок.', 'Boost memory, focus and thinking speed with short, science-based brain workouts.']}
                     colorDark="#222121ff" 
-                    colorLight="#7c7a79ff" 
+                    colorLight="#7c7a7966" 
                     colorSpecialDark="#353232ff" 
-                    colorSpecialLight="#bcbcbcff" 
+                    colorSpecialLight="#4a3e3e4b" 
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
                     onClick={() => {onPageChange('MentalMain');playEffects(null);}}
+                    index={3}
                 />
                 <MenuCard 
                     text={['Сон и восстановление', 'Sleep & Recovery']}
                     decr = {['Помогает подобрать нагрузку и время отдыха','Helps balance training load and rest']}
                     colorDark="#37293eff" 
-                    colorLight="#cba1d7ff" 
+                    colorLight="#cba1d790" 
                     colorSpecialDark="#382537ff" 
-                    colorSpecialLight="#eb85b8ff" 
+                    colorSpecialLight="#83064550" 
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
                     onClick={() => {playEffects(null);}}
+                    index={4}
                 />
                 <div style={{height:'5vh',width:'100%'}} onClick={() => {handleClick(false)}} />
             </div>
@@ -161,36 +166,55 @@ const MainMenu = ({ onPageChange }) => {
 
 export default MainMenu
 
-function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#294128ff", colorLight = "#a4f19cff",
-  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#c8f445ff", theme,lang, onClick,fontSize,index,svgColor}){
+function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#294128ff", colorLight = "#7eff7065",
+  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#2790145c", theme,lang, onClick,fontSize,index}){
     const cardColor = (theme) => {
         if(theme === 'dark') return colorDark;
         else if(theme === 'specialdark') return colorSpecialDark;
         else if(theme === 'speciallight') return colorSpecialLight;
         return colorLight;
     }
-    const borderColor = (theme) => {
-        if(theme === 'dark') return "#9099a0ff";
-        else if(theme === 'specialdark') return "#938b8bff";
-        else if(theme === 'speciallight') return "#e0b1b1ff";
-        return "#8a8e91ff";
+    const getIcon = (index,isBack) => {
+        if(index === 0) return <FaRecycle style={isBack ? backIconStyle : iconStyle}/>
+        else if(index === 1) return <FaBookOpen style={isBack ? backIconStyle : iconStyle}/>
+        else if(index === 2) return <FaSpa style={isBack ? backIconStyle : iconStyle}/>
+        else if(index === 3) return <FaBrain style={isBack ? backIconStyle : iconStyle}/>
+        else if(index === 4) return <FaMoon style={isBack ? backIconStyle : iconStyle}/>
     }
     const _style = {
-        alignItems: "start",
-        justifyContent: "start",
-        height: "14vh",
-        borderRadius: "24px",
-        border: `2px solid ${borderColor(theme)}`,
+        alignItems: "center",
+        justifyContent: "center",
+        display:'flex',
+        flexDirection:'row',
+        height: "13vh",
+        borderRadius: "28px",
         margin: "10px",
+        marginBottom:'20px',
         backgroundColor: cardColor(theme),
         overflow : 'hidden',
         position: 'relative',
-        boxShadow:'0px 0px 6px ' + cardColor(theme),
+        boxShadow:'3px 3px 2px rgba(0,0,0,0.3)',
+    }
+    const iconStyle = {
+        fontSize:'28px',
+        color: Colors.get('mainText', theme),
+    }
+    const backIconStyle = {
+        fontSize:'86px',
+        rotate:'-20deg',
+        position:'absolute',
+        right:'-10px',
+        top:'30%',
+        color:  Colors.get('svgColor',theme)
     }
     return (
-        <div className="card-with-noise" style={_style} onClick={onClick}> 
+        <div style={_style} onClick={onClick}> 
+        {getIcon(index,false)}
+        <div style={{width:'70%',height:'100%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center'}}>
             <h2 style={styles(theme,fontSize).cardText}>{Array.isArray(text) ? text[lang] : text}</h2>
             <p style={styles(theme,fontSize).text}>{Array.isArray(decr) ? decr[lang] : decr}</p>
+        </div>
+         {getIcon(index,true)}
         </div>    
     )
 }
@@ -202,6 +226,7 @@ const styles = (theme,fontSize) => ({
      display: "flex",
      flexDirection: "column",
      justifyContent: "start",
+     overflow:'hidden',
      alignItems: "center",
      height: "100vh",
      width: "100vw",
@@ -233,7 +258,7 @@ const styles = (theme,fontSize) => ({
   {
     width: "95vw",
     maxHeight: "90vh",
-    overflowY: "auto",
+    overflowY: "scroll",
     justifyContent: 'center',
     alignItems: 'center'
   }

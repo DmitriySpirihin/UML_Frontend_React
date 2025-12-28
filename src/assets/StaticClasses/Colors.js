@@ -21,16 +21,16 @@ export class Colors {
     panelGradient: { light: "linear-gradient(135deg, #f3f5f8ff 0%, #b8d0e6ff 100%)", dark: "linear-gradient(135deg, #292932ff 0%, #0e0e10ff 100%)", speciallight: "linear-gradient(135deg, #e6d2cfff 0%, #d6806bff 100%)", specialdark: "linear-gradient(135deg, #454e49ff 0%, #142018ff 100%)",},
     border: { light: "#576c7eff", dark: "#3c3e3eff", speciallight: "#5d4747ff", specialdark: "#d3e3d3ff" },
 
-    categoryPositive: { light: "#577e6eff", dark: "#243b32ff", speciallight: "#cde3adff", specialdark: "#a1e093ff" },
-    categoryNegative: { light: "#7e5776ff", dark: "#4b3232ff", speciallight: "#dc9e9eff", specialdark: "#dc8778ff" },
+    categoryPositive: { light: "#577e6eff", dark: "#243b32ff", speciallight: "#297b2e67", specialdark: "#a1e093ff" },
+    categoryNegative: { light: "#7e5776ff", dark: "#4b3232ff", speciallight: "#9220205f", specialdark: "#dc8778ff" },
 
     shadow: { light: "#353940ff", dark: "#000000ff", speciallight: "#522323ff", specialdark: "#111512ff" },
-    bottomPanel: { light: "#c8d7deff", dark: "#101316ff", speciallight: "#d5b1a9ff", specialdark: "#1f1d1dff" },
-    bottomPanelShadow: { light: "#8b9cc6ff", dark: "#383a3aff", speciallight: "#fffdfcff", specialdark: "#38483dff" },
+    bottomPanel: { light: "#e7f8feff", dark: "#101316ff", speciallight: "#d5b1a9ff", specialdark: "#1f1d1dff" },
+    bottomPanelShadow: { light: "#8b9cc69a", dark: "#383a3aff", speciallight: "#fffdfcff", specialdark: "#38483dff" },
     habitCard: { light: "#eef1f5ff", dark: "#1c1b1dff", speciallight: "#d7a1a1ff", specialdark: "#161917ff" },
 
-    habitCardDone: { light: "rgba(173, 223, 192, 0.5)", dark: "rgba(41, 61, 40, 0.5)", speciallight: "rgba(182, 223, 162, 0.5)", specialdark: "rgba(64, 96, 54, 0.5)" },
-    habitCardSkipped: { light: "rgba(231, 163, 196, 0.5)", dark: "rgba(92, 46, 46, 0.5)", speciallight: "rgba(224, 147, 147, 0.5)", specialdark: "rgba(115, 41, 29, 0.5)" },
+    habitCardDone: { light: "rgba(173, 223, 192, 0.5)", dark: "rgba(41, 61, 40, 0.5)", speciallight: "rgba(94, 161, 61, 0.28)", specialdark: "rgba(64, 96, 54, 0.5)" },
+    habitCardSkipped: { light: "rgba(231, 163, 196, 0.5)", dark: "rgba(92, 46, 46, 0.5)", speciallight: "rgba(224, 147, 147, 0.5)", specialdark: "rgba(120, 25, 10, 0.39)" },
      
     done: { light: "#75c5b3ff", dark: "#316444ff", speciallight: "#85d27fff", specialdark: "#2b4b30ff" },
     skipped: { light: "#bd75c5ff", dark: "#643131ff", speciallight: "#d27fa2ff", specialdark: "#4b2b2fff" },
@@ -44,7 +44,7 @@ export class Colors {
     currentDateBorder2: { light: "#b3d2edff", dark: "#131d1dff", speciallight: "#d5a5b7ff", specialdark: "#232823ff" },
     progressBar:{ light: "#46555bff", dark: "#0d0f12ff", speciallight: "#6b5150ff", specialdark: "#171313ff" },
 
-    icons:{ light: "#525e69ff", dark: "#616568ff", speciallight: "#6e4343ff", specialdark: "#546654ff" },
+    icons:{ light: "#1b1c1cff", dark: "#616568ff", speciallight: "#6e4343ff", specialdark: "#546654ff" },
     iconsDisabled:{ light: "#8cabc4ff", dark: "#383f44ff", speciallight: "#e2b0b0ff", specialdark: "#2e3a2eff" },
     iconsHighlited:{ light: "#658eb2ff", dark: "#596e6eff", speciallight: "#b85b5bff", specialdark: "#679667ff" },
     iconsShadow:{ light: "#ffffffff", dark: "#5a8181ff", speciallight: "#df2c2cff", specialdark: "#679667ff" },
@@ -62,36 +62,38 @@ export class Colors {
     barsColorTonnage:{ light: "#852082ff", dark: "#b24e4eff", speciallight: "#6e7238ff", specialdark: "#a3a318ff" },
     barsColorMeasures:{ light: "#648f3eff", dark: "#5cb57dff", speciallight: "#4a6a34ff", specialdark: "#248a1eff" },
     choosenColor:{ light: "#4fc5daff", dark: "#4f94b6ff", speciallight: "#269cd2ff", specialdark: "#548a35ff" },
-    maxValColor:{ light: "#16704cff", dark: "#67ac45ff", speciallight: "#2d6442ff", specialdark: "#33b74dff" },
-    minValColor:{ light: "#9a377cff", dark: "#c45757ff", speciallight: "rgba(145, 41, 98, 1)", specialdark: "#ab2e2aff" },
+    maxValColor:{ light: "#067b4c7e", dark: "#67ac45ff", speciallight: "#094b2374", specialdark: "#33b74dff" },
+    minValColor:{ light: "#9a377ca6", dark: "#c45757ff", speciallight: "rgba(145, 41, 98, 1)", specialdark: "#970e0a8a" },
     linesColor:{ light: "#6f828cff", dark: "#2d3032ff", speciallight: "#9f979aff", specialdark: "#293d2fff" },
 
     medium:{ light: "#abb127ff", dark: "#FFB74D", speciallight: "#a77526ff", specialdark: "#a47336ff" },
     heavy:{ light: "#662142ff", dark: "#E76F51", speciallight: "rgba(145, 41, 98, 1)", specialdark: "#ab2e2aff" },
-    light:{ light: "#16704cff", dark: "#81C784", speciallight: "#2d6442ff", specialdark: "#33b74dff" },
+    light:{ light: "#2e933dda", dark: "#81C784", speciallight: "#2d6442ff", specialdark: "#33b74dff" },
     radar:{ light: "#4C8DFF", dark: "#702b2bff", speciallight: "#B65C5C", specialdark: "#6366F1" },
     radarBorder:{ light: "#10242fff", dark: "#e96d67ff", speciallight: "#494a4aff", specialdark: "#7185e9ff" },
 
     areaChart:{ light: "#5b98d1ff", dark: "#6eb5cfff", speciallight: "#61a3a1ff", specialdark: "#25da8bff" },
     regress:{ light: "#9b44d8ff", dark: "#c25aa4ff", speciallight: "#894c88ff", specialdark: "#914dc8ff" },
     
-    recoveryCard0:{ light: "#68ff5aff", dark: "#4a6032ff", speciallight: "#27ff6bff", specialdark: "#2e472aff" },
-    recoveryCard1:{ light: "#ecff5aff", dark: "#605b32ff", speciallight: "#dfff27ff", specialdark: "#45472aff" },
-    recoveryCard2:{ light: "#ffad5aff", dark: "#604132ff", speciallight: "#ff5927ff", specialdark: "#47332aff" },
-    recoveryCard3:{ light: "#ff605aff", dark: "#603232ff", speciallight: "#ef3333ff", specialdark: "#472a2aff" },
-    recoveryCard:{ light: "#5ab2ffff", dark: "#324660ff", speciallight: "#27cdffff", specialdark: "#2a4447ff" },
+    difficulty0:{ light: "#68ff5a51", dark: "#334436ff", speciallight: "#21763c57", specialdark: "#2e472aff" },
+    difficulty1:{ light: "#ecff5a4f", dark: "#534f35ff", speciallight: "#75851a71", specialdark: "#45472aff" },
+    difficulty2:{ light: "#ffad5a55", dark: "#493023ff", speciallight: "#83382276", specialdark: "#47332aff" },
+    difficulty3:{ light: "#ff605a61", dark: "#4f2828ff", speciallight: "#8d1b1b80", specialdark: "#472a2aff" },
+    difficulty:{ light: "#5ab2ff4e", dark: "#314358ff", speciallight: "#16506272", specialdark: "#2a4447ff" },
+    difficultyAdd:{ light: "#7283914e", dark: "#45484aff", speciallight: "#86868672", specialdark: "#404344ff" },
 
     in:{ light: "#235179ff", dark: "#43ad9bff", speciallight: "#3a91abff", specialdark: "#5098cfff" },
     out:{ light: "#665f25ff", dark: "#a4a15bff", speciallight: "#817b24ff", specialdark: "#c09848ff" },
     hold:{ light: "#69231aff", dark: "#a7645eff", speciallight: "#782886ff", specialdark: "#c54a75ff" },
     rest:{ light: "#5c5a5aff", dark: "#8dc6cbff", speciallight: "#565b5dff", specialdark: "#aebcbcff" },
 
-    play: { light: "#2ab35cff", dark: "#487b5bff",speciallight: "#2fb061ff", specialdark: "#42ac6dff"},
-    pause: { light: "#ecc13fff", dark: "#b09837ff", speciallight: "#a46721ff", specialdark: "#af5a2aff",},
-    reload: { light: "#5288e1ff", dark: "#49678bff", speciallight: "#244ab1ff", specialdark: "#36b3b9ff",},
-    close: {light: "#db5f5fff", dark: "#9c4e4eff",speciallight: "#a32a2aff", specialdark: "#ae3535ff",},
+    play: { light: "#21e56997", dark: "#487b5bff",speciallight: "#1d964b8b", specialdark: "#42ac6dac"},
+    pause: { light: "#e3b529a2", dark: "#b09837ff", speciallight: "#a467219a", specialdark: "#af5b2a8d",},
+    reload: { light: "#3a7eeb99", dark: "#49678bff", speciallight: "#19388d8a", specialdark: "#36b2b995",},
+    close: {light: "#ed363693", dark: "#9c4e4eff",speciallight: "#8213138f", specialdark: "#ae3535aa",},
     
-    mentalCategoryCard: {light: "#b6b6b6ff", dark: "#1d1d1dff",speciallight: "#9d9d9dff", specialdark: "#111010ff",},
+    svgColor: {light: 'rgba(39, 39, 39, 0.1)', dark: 'rgba(211, 211, 211, 0.04)',specialdark: 'rgba(143, 143, 143, 0.06)', speciallight: 'rgba(27, 27, 27, 0.11)',},
+    mathInput: { light: "#5ed4ff4f", dark: "#303439ff", speciallight: "#d5b1a9ff", specialdark: "#272d28ff" },
   };
 
   static setTheme(theme) {
