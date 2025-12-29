@@ -167,6 +167,72 @@ const BreathAudio = (isEnabled = false) => {
     activeNodesRef.current.push(bass, bassGain, mid, midGain);
   };
 
+    // === RIGHT: Gentle ascending chime (positive feedback) ===
+  const playRight = () => {
+    if (!isEnabled || !audioContextRef.current) return;
+    const ctx = audioContextRef.current;
+    const now = ctx.currentTime;
+    cleanup();
+
+    // Bright sine chime with harmonics
+    const freqs = [523, 659, 784]; // C5, E5, G5 — a bright major chord
+    const gains = [0.12, 0.06, 0.03];
+
+    freqs.forEach((f, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      gain.gain.setValueAtTime(gains[i], now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.5);
+      activeNodesRef.current.push(osc, gain);
+    });
+  };
+
+  // === WRONG: Soft descending "thud" (gentle correction) ===
+  const playWrong = () => {
+    if (!isEnabled || !audioContextRef.current) return;
+    const ctx = audioContextRef.current;
+    const now = ctx.currentTime;
+    cleanup();
+
+    // Muffled impact: low sine + noise burst
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 110; // A2 — low and soft
+    oscGain.gain.setValueAtTime(0.1, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+    // Add a tiny bit of "texture" to soften harshness
+    const noise = ctx.createBufferSource();
+    const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseData.length; i++) {
+      noiseData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.03));
+    }
+    noise.buffer = noiseBuffer;
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.08, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+    osc.connect(oscGain);
+    noise.connect(noiseGain);
+    oscGain.connect(ctx.destination);
+    noiseGain.connect(ctx.destination);
+
+    osc.start(now);
+    noise.start(now);
+    osc.stop(now + 0.4);
+    noise.stop(now + 0.3);
+
+    activeNodesRef.current.push(osc, oscGain, noise, noiseGain);
+  };
+
   useEffect(() => {
     return () => {
       cleanup();
@@ -176,7 +242,7 @@ const BreathAudio = (isEnabled = false) => {
     };
   }, []);
 
-  return { initAudio, playInhale, playExhale, playHold, playRest };
+  return { initAudio, playInhale, playExhale, playHold, playRest, playRight, playWrong };
 };
 
 export default BreathAudio;

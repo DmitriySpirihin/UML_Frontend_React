@@ -6,7 +6,6 @@ import {FaStarHalf,FaStar,} from 'react-icons/fa'
 import {GiStarsStack,GiCrownedSkull} from 'react-icons/gi'
 import {MdConstruction} from 'react-icons/md'
 import {breathingProtocols,breathingLog,markSessionAsDone} from '../../StaticClasses/RecoveryLogHelper'
-import { themeParamsBottomBarBgColor } from '@telegram-apps/sdk'
 import BreathingTimer from './BreathingTimer'
 
 const BreathingMain = () => {

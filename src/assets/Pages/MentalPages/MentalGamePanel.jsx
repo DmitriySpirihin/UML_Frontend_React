@@ -2,11 +2,12 @@ import { useEffect, useState} from 'react'
 import {AppData} from '../../StaticClasses/AppData'
 import Colors from "../../StaticClasses/Colors"
 import {theme$,lang$,fontSize$} from '../../StaticClasses/HabitsBus';
-import { getProblem,getPoints ,hasStreak} from './MathProblems';
-import {FaStar,FaFire} from 'react-icons/fa';
+import { getProblem,getPoints ,hasStreak,getPrecision} from './MathProblems';
+import BreathAudio from "../../Helpers/BreathAudio"
+import {FaStar,FaFire,FaMedal,FaStopwatch} from 'react-icons/fa';
 import {IoPlayCircle,IoReloadCircle,IoArrowBackCircle, IoPauseCircle} from "react-icons/io5"
 import MentalInput from './MentalInput';
-import { quickMathCategories } from './MentalHelper';
+import { quickMathCategories,mentalRecords } from './MentalHelper';
 
 const startTimerDuration = 3000;
 
@@ -27,10 +28,19 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
   const [finishMessage, setFinishMessage] = useState('');
   const [isPaused, setIsPaused] = useState(false);
 
+  //audio
+  const { initAudio, playRight, playWrong } = BreathAudio(AppData.prefs[2] === 0);
+
+  //cards
+  const cards = [ { id: 0, text: "aaaabb" }, { id: 1, text: "aaaaa" },];
+
   //timer
   const [timer,setTimer] = useState(false);
   const [progress,setProgress] = useState(0);
   const [currTimer,setCurrTimer] = useState(0);
+  //delay
+  const [delay,setDelay] = useState(0);
+  const [delayTimer,setDelayTimer] = useState(false);
 
   const [scores, setScores] = useState(0);
 
@@ -38,6 +48,14 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
   const [streakLength, setStreakLength] = useState(0);
   const [problem,setProblem] = useState('');
   const [answer,setAnswer] = useState('');
+  //answer handlers
+  const [message, setMessage] = useState('');
+  const [statusColor, setStatusColor] = useState('');
+  const [addScores,setAddScores] = useState(50);
+  //statistics
+  const [rightAnswers,setRightAnswers] = useState(0);
+  const [record,setRecord] = useState(mentalRecords[type][difficulty]);
+  const [time,setTime] = useState(0);
   
   //input
   useEffect(() => {
@@ -46,10 +64,27 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
     else if (input.length === 3) handleAnswer();
     setInput('');
   }, [input]);
-
+  // time
+  useEffect(() => {
+  let intervalId = null;
+  if (isRunning) {
+    intervalId = setInterval(() => {
+      setTime(prev => prev + 100); 
+    }, 100);
+  }
+  return () => {
+    if (intervalId) {
+      clearInterval(intervalId);
+    }
+  };
+}, [isRunning]);
   //timer
   useEffect(() => {
-    if (!timer || !isStart) return;
+    if (!timer || !isStart) {
+      setProgress(0);
+      setCurrTimer(0);
+      return;
+    }
     const startTime = Date.now() - currTimer; // restore actual start time of rest
     const interval = setInterval(() => {
     const elapsed = Date.now() - startTime;
@@ -57,6 +92,7 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
     setCurrTimer(newTimerValue);
     setProgress((newTimerValue / maxTimer) * 100);
       if (newTimerValue >= maxTimer - 500 ) {
+        setTimer(false);
         handleAnswer();
       }
     }, 50);
@@ -109,13 +145,39 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
       clearInterval(intervalId);
     };
   }, [showStartTimer, startTimerDuration]);
+  //delay
+  useEffect(() => {
+    if (!delayTimer) return;
+
+    const intervalId = setInterval(() => {
+      setDelay(prev => {
+        if (prev >= 900) {
+          // Final tick: cleanup and trigger start
+          clearInterval(intervalId);
+          setDelayTimer(false);
+          setScores(prev => prev + addScores);
+          setTimer(true);
+          setDelay(0);
+          return 0;
+        }
+        return prev + 100;
+      });
+    }, 100);
+
+    // Cleanup on unmount or when showStartTimer becomes false
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [delayTimer,delay]);
 
   const handleStart = () => {
+    initAudio();
     setNewProblem();
     setIsStart(true);
     setTimer(true);
     setIsRunning(true);
     setIsPaused(false);
+    setTime(0);
   };
 
   function setNewProblem(){
@@ -125,21 +187,31 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
   }
    
   const handleAnswer = () => {
-    if (handledInput.length  > 0) {
+    setTimer(false);
+    
       const points = getPoints(type, difficulty, stage, currTimer, answer, handledInput, streakLength);
-      setScores(prev => prev + points);
+      const precision = getPrecision(type, answer, handledInput);
+      playVibro(precision === 0 ? 'light':'medium');
+      let addmessage = '';
+      if (precision === 0) {
+        addmessage = getPraise(langIndex);
+        setRightAnswers(prev => prev + 1);
+      }
+      else if (precision < 0.15) addmessage = getSupport(langIndex);
+      else addmessage = langIndex === 0 ? 'Правильный ответ: ' + answer : 'Correct answer: ' + answer;
+      const col = precision === 0 ? Colors.get('maxValColor', theme) : precision < 0.15 ? Colors.get('difficulty2', theme) : Colors.get('minValColor', theme);
+      setStatusColor(col);
+      setMessage(addmessage);
+      setAddScores(points);
       setNewProblem();
       setHandledInput('');
       setStreakLength(prev => hasStreak(type,answer, handledInput) ? prev + 1 : 0);
-      setCurrTimer(0);
       setStage(prev => prev + 1 < 20 ? prev + 1 : 20);
+      precision === 0 ? playRight() : playWrong();
       if (stage === 20) onFinishSession();
-    }
-    else {
-      setNewProblem();
-      setIsStart(true);
-      setTimer(true);
-    }
+    
+    
+    setDelayTimer(true);
   };
 
   const handlePause = () => {
@@ -156,15 +228,28 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
   };
 
   const onFinishSession = () => {
-  const message = congratulations(langIndex); // 0 = RU, 1 = EN
+  const message = congratulations(langIndex, scores + addScores,rightAnswers,20,false) // 0 = RU, 1 = EN
+  setIsRunning(false);
+  setMessage(message);
   setIsFinished(true);
   setIsStart(false);
   setTimer(false);
  };
+ const onFinish = () => {
+  if (scores > record) {
+    setRecord(scores);
+    mentalRecords[type][difficulty] = scores;
+  }
+  setScores(0);
+  setStage(1);
+  setRightAnswers(0);
+  setIsFinished(false);
+  setShow(false);
+ };
  
   return (
     <div style={styles(theme, show).container}>
-      {!isStart && !showStartTimer && <div style={{display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',width:'100%',height:'80%'}}>
+      {!isStart && !showStartTimer && !isFinished && <div style={{display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',width:'100%',height:'80%'}}>
       <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'18px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{quickMathCategories[difficulty].level[langIndex]}</div>
       <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'15px',color:Colors.get('subText', theme)}}>{quickMathCategories[difficulty].description[langIndex]}</div>
       <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'15px',color:Colors.get('mainText', theme)}}>{(langIndex === 0 ? 'Сложность: ' : 'Difficulty: ') +quickMathCategories[difficulty].difficulty[langIndex]}</div>
@@ -172,9 +257,9 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',marginTop:'20px',fontSize:'15px',color:Colors.get('subText', theme)}}>{(langIndex === 0 ? 'Операции: ' : 'Operations: ') + quickMathCategories[difficulty].operations}</div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',marginTop:'50px',fontSize:'12px',color:Colors.get('subText', theme)}}>{disclaimer(langIndex)}</div>
       </div>}
-      {!isStart && !showStartTimer &&  <div style={styles(theme, show).controls}>
+      {!isStart && !showStartTimer && !isFinished && <div style={styles(theme, show).controls}>
       
-      <IoArrowBackCircle onClick={() => setShow(false)} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
+      <IoArrowBackCircle onClick={() => onFinish()} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
       <IoPlayCircle onClick={() => setShowStartTimer(true)} style={{fontSize:'60px',color:Colors.get('play', theme)}} /> 
       <IoReloadCircle onClick={handleReload} style={{fontSize:'60px',color:Colors.get('reload', theme)}}/>
       </div>}
@@ -188,12 +273,18 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
       </div>
     </div>}
     {!isFinished && isStart && <div style={styles(theme).playContainer}>
-      <div style={{...styles(theme, show).controls,width:'60%',marginLeft:'25px',gap:'20px',marginTop:'5px',marginBottom:'25px',marginRight:'auto'}}>
+      <div style={{display:'flex',flexDirection:'row' , width:'86%',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
+      <div style={{display:'flex',flexDirection:'row',marginTop:'6px',width:'60%',gap:'20px',marginRight:'auto'}}>
       <IoArrowBackCircle onClick={() => setIsStart(false)} style={{fontSize:'25px',color:Colors.get('close', theme)}}/>
       {isPaused ? <IoPlayCircle onClick={handleResume} style={{fontSize:'25px',color:Colors.get('play', theme)}} /> : <IoPauseCircle onClick={handlePause} style={{fontSize:'25px',color:Colors.get('pause', theme)}} />} 
       <IoReloadCircle onClick={handleReload} style={{fontSize:'25px',color:Colors.get('reload', theme)}}/>
       </div>
-      <div style={{display:'flex',width:'86%',flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+      <div style={{display:'flex',marginLeft:'auto',alignItems:'center',justifyContent:'center',fontSize:'20px',fontWeight:'bold',color:Colors.get('subText', theme)}}>
+        <FaStopwatch/>
+        {getParsedTime(time)}
+      </div>
+     </div>
+      <div style={{display:'flex',width:'86%',flexDirection:'row',marginTop:'20px',alignItems:'center',justifyContent:'space-between'}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:'20px',fontWeight:'bold',color:Colors.get('minValColor', theme)}}>
         <FaFire/>
         {streakLength}
@@ -212,23 +303,56 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
       {/* Background track */}
       <rect x="0" y="0" width="100" height="18" fill={Colors.get('bottomPanel', theme)}/>
       {/* Progress fill */}
-      <rect x="0" y="0" width={progress} height="18"  fill={Colors.get('skipped', theme)} /></svg>
+      <rect x="0" y="0" width={progress} height="18"  fill={interpolateColor(Colors.get('done', theme), Colors.get('skipped', theme),(progress / 100))} /></svg>
         <div style={{position:'relative',top:'-20px',color:Colors.get('subText', theme),marginBottom: '80px'}}>{Math.floor((maxTimer - currTimer)/1000 )}</div>
       </div>
 
-
-      <div style={styles(theme).problemCard}>
-        {problem}
+      <div>
+       {!delayTimer && <div style={problemCardStyle(theme,false)}>{problem}</div>}
+       {delayTimer && <div style={problemCardStyle(theme,true,statusColor)}>
+        <p style={{fontSize:'22px',fontWeight:'bold',color:addScores > 0 ? Colors.get('maxValColor', theme) : Colors.get('minValColor', theme)}}>{addScores > 0  && <FaStar/>}{addScores > 0 ? addScores : (langIndex === 0 ? 'не верно' : 'wrong answer')}</p>
+        <p style={{fontSize:'16px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{message}</p>
+        </div>}
       </div>
      
       <div style={{fontSize:'34px',fontWeight:'bold',color:Colors.get('subText', theme),marginTop:'auto'}}>{handledInput}</div>
     </div>}
     {!isFinished && isStart && <MentalInput setInput={setInput} type={type}/>}
+
+    {isFinished &&  <div style={{display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',width:'100%',height:'80%'}}>
+      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'28px',fontWeight:'bold',color:Colors.get('maxValColor', theme)}}><FaStar/>{scores}</div>
+      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'18px',fontWeight:'bold',color:Colors.get('medium', theme)}}>{getTimeInfo(langIndex,time)}</div>
+      {scores > record && <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'28px',fontWeight:'bold',color:Colors.get('medium', theme)}}><FaMedal/>{langIndex === 0 ? 'Новый рекорд!' : 'New record!'}</div>}
+      {scores <= record && <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'28px',fontWeight:'bold',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'рекорд: ' + record : 'record: ' + record }</div>}
+      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'22px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{rightAnswers + ' / ' + 20}</div>
+      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'18px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{message}</div>
+    </div>}
+    {isFinished &&  <div style={styles(theme, show).controls}>
+      <IoArrowBackCircle onClick={() => {onFinish()}} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
+      </div>}
     </div>
   );
 };
 export default MentalGamePanel
-
+const problemCardStyle = (theme,isAnswer,color) =>
+(
+   {
+     display:'flex',
+     flexDirection:'column',
+     alignItems:'center',
+     justifyContent:'center',
+     width: "95vw",
+     height: "16vh",
+     marginTop:'20px',
+     backgroundColor:Colors.get('bottomPanel', theme),
+     boxShadow : isAnswer ? '0px 0px 9px 9px' +  color : '2px 2px' +  Colors.get('shadow', theme),
+     borderRadius:'24px',
+     fontSize:'39px',
+     fontWeight:'bold',
+     color:Colors.get('mainText', theme),
+     alignContent:'center'
+  }
+)
 const styles = (theme,show) =>
 ({
     container :
@@ -265,19 +389,6 @@ const styles = (theme,show) =>
      width: "100vw",
      
   },
-  problemCard :
-   {
-     width: "95%",
-     height: "30%",
-     marginTop:'20px',
-     backgroundColor:Colors.get('bottomPanel', theme),
-     boxShadow : '2px 2px' +  Colors.get('shadow', theme),
-     borderRadius:'24px',
-     fontSize:'39px',
-     fontWeight:'bold',
-     color:Colors.get('mainText', theme),
-     alignContent:'center'
-  },
 })
 
 const disclaimer = (langIndex) => {
@@ -288,35 +399,193 @@ const disclaimer = (langIndex) => {
     return "To earn more points, answer correctly and as quickly as possible. Every mistake resets your multiplier. For every 5 correct answers in a row, your multiplier increases—up to a maximum of ×1.5.";
   }
 };
-const congratulations = (langIndex) => {
+const congratulations = (langIndex, score, rightAnswers, totalAnswers, isRecord) => {
+  const percentage = totalAnswers > 0 ? Math.round((rightAnswers / totalAnswers) * 100) : 0;
+
+  const isHigh = percentage >= 80;
+  const isModerate = percentage >= 50 && !isHigh;
+  const isLow = percentage < 50;
+
   const messages = {
-    ru: [
-      'Отличная дыхательная сессия! 🌬️',
-      'Ты глубоко расслабился — молодец! 😌',
-      'Спасибо за заботу о своём дыхании. 💙',
-      'Ты дал себе момент покоя — это важно. 🕊️',
-      'Твоё дыхание стало спокойнее. Прекрасно! 🌿',
-      'Ты выполнил упражнение с осознанностью. Респект! 🙏',
-      'Глубокое дыхание — шаг к гармонии. Ты справился! 🌸',
-      'Поздравляю: ты только что поддержал своё здоровье дыханием. 💪🌱',
-      'Ты вернулся в момент — через дыхание. Отлично! ⏳➡️✨',
-      'Твоя нервная система благодарит тебя. 🧠❤️',
-    ],
-    en: [
-      'Great breathing session! 🌬️',
-      'You’ve deeply relaxed — well done! 😌',
-      'Thank you for caring for your breath. 💙',
-      'You gave yourself a moment of calm — that matters. 🕊️',
-      'Your breath has calmed. Beautiful work! 🌿',
-      'You practiced with mindfulness. Respect! 🙏',
-      'Deep breathing is a step toward balance. You did it! 🌸',
-      'Congratulations: you just supported your health with breath. 💪🌱',
-      'You returned to the present — through your breath. Perfect! ⏳➡️✨',
-      'Your nervous system thanks you. 🧠❤️',
-    ],
+    ru: {
+      high: [
+        `🎉 Отличная работа! ${rightAnswers}/${totalAnswers} (${percentage}%) — молодец!`,
+        `✨ Потрясающе! Ты справился на ${percentage}%.`,
+        `🔥 Ты набрал(а) ${score} очков — это впечатляет!`,
+        `🚀 Вау! ${rightAnswers}/${totalAnswers} — ты в ударе!`,
+        `💯 Идеально! Так держать! (${percentage}%)`
+      ],
+      moderate: [
+        `🙂 Хорошая попытка! ${rightAnswers}/${totalAnswers} (${percentage}%).`,
+        `🌱 Ты на правильном пути! Продолжай в том же духе.`,
+        `📈 Набрано ${score} очков. Уже лучше!`,
+        `👍 Половина и больше — это прогресс! (${percentage}%)`,
+        `💪 Неплохо! С каждым разом будет лучше.`
+      ],
+      low: [
+        `🤗 Ты старался(лась) — это главное. Попробуй ещё!`,
+        `🌱 Не сдавайся! Каждая попытка — шаг вперёд.`,
+        `🌤️ Сегодня не твой день, но завтра будет лучше!`,
+        `🎯 Ты набрал(а) ${score} очков. Продолжай тренироваться!`,
+        `🌱 Даже ${rightAnswers} правильных ответов — это начало!`
+      ],
+      record: [
+        `🏆🔥 НОВЫЙ РЕКОРД! ${score} очков — поздравляем!`,
+        `🎉✨ Ты установил(а) личный рекорд: ${rightAnswers}/${totalAnswers} (${percentage}%)!`,
+        `🌟💥 Даже если было трудно — ты побил(а) рекорд! Молодец!`
+      ]
+    },
+    en: {
+      high: [
+        `🎉 Awesome! ${rightAnswers}/${totalAnswers} (${percentage}%) — well done!`,
+        `✨ Outstanding! You scored ${percentage}%.`,
+        `🔥 You got ${score} points — impressive!`,
+        `🚀 Wow! ${rightAnswers}/${totalAnswers} — you’re on fire!`,
+        `💯 Perfect! Keep it up! (${percentage}%)`
+      ],
+      moderate: [
+        `🙂 Good effort! ${rightAnswers}/${totalAnswers} (${percentage}%).`,
+        `🌱 You're making progress! Keep going.`,
+        `📈 You scored ${score} points. Getting better!`,
+        `👍 More than half right — that’s growth! (${percentage}%)`,
+        `💪 Nice try! You’ll do even better next time.`
+      ],
+      low: [
+        `🤗 You gave it your best — that matters most. Try again!`,
+        `🌱 Don’t give up! Every attempt brings you closer.`,
+        `🌤️ Not your best round, but tomorrow’s a new chance!`,
+        `🎯 You earned ${score} points. Keep practicing!`,
+        `🌱 Even ${rightAnswers} correct answers is a start!`
+      ],
+      record: [
+        `🏆🔥 NEW RECORD! ${score} points — congratulations!`,
+        `🎉✨ You set a personal best: ${rightAnswers}/${totalAnswers} (${percentage}%)!`,
+        `🌟💥 Even on a tough day — you broke your record! Amazing!`
+      ]
+    }
   };
 
-  const list = langIndex === 0 ? messages.ru : messages.en;
-  const randomIndex = Math.floor(Math.random() * list.length);
-  return list[randomIndex];
+  const lang = langIndex === 0 ? messages.ru : messages.en;
+
+  let candidates = [];
+
+  if (isRecord) {
+    candidates = [...lang.record];
+  } else if (isHigh) {
+    candidates = [...lang.high];
+  } else if (isModerate) {
+    candidates = [...lang.moderate];
+  } else {
+    candidates = [...lang.low];
+  }
+
+  if (candidates.length === 0) {
+    return langIndex === 0 ? 'Хорошо! 😊' : 'Good job! 😊';
+  }
+
+  const randomIndex = Math.floor(Math.random() * candidates.length);
+  return candidates[randomIndex];
 };
+function playVibro(type){
+  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred(type);
+}
+function interpolateColor(color1, color2, factor) {
+  if (!color1 || !color2) return color1 || color2 || '#000000';
+  // Ensure factor is clamped between 0 and 1
+  factor = Math.max(0, Math.min(1, factor));
+
+  // Remove '#' if present
+  color1 = color1.replace('#', '');
+  color2 = color2.replace('#', '');
+
+  // Parse RGB components
+  const r1 = parseInt(color1.slice(0, 2), 16);
+  const g1 = parseInt(color1.slice(2, 4), 16);
+  const b1 = parseInt(color1.slice(4, 6), 16);
+
+  const r2 = parseInt(color2.slice(0, 2), 16);
+  const g2 = parseInt(color2.slice(2, 4), 16);
+  const b2 = parseInt(color2.slice(4, 6), 16);
+
+  // Interpolate each component
+  const r = Math.round(r1 + (r2 - r1) * factor);
+  const g = Math.round(g1 + (g2 - g1) * factor);
+  const b = Math.round(b1 + (b2 - b1) * factor);
+
+  // Convert back to hex and ensure two digits
+  return `rgb(${r}, ${g}, ${b})`;
+}
+function getPraise(langIndex) {
+  const en = [
+    "Great!",
+    "Perfect!",
+    "Yes!",
+    "Exactly!",
+    "Awesome!",
+    "Brilliant!",
+    "Spot on!",
+    "Well done!",
+    "Nailed it!",
+    "Correct!"
+  ];
+
+  const ru = [
+    "Отлично!",
+    "Прекрасно!",
+    "Верно!",
+    "Точно!",
+    "Замечательно!",
+    "Идеально!",
+    "Правильно!",
+    "Молодец!",
+    "Точно в цель!",
+    "Без ошибок!"
+  ];
+
+  const list = langIndex === 0 ? ru : en;
+  return list[Math.floor(Math.random() * list.length)];
+}
+function getSupport(langIndex) {
+  const en = [
+    "Close!",
+    "Almost!",
+    "Nearly!",
+    "Keep going!",
+    "Try again!",
+    "So close!",
+    "Good attempt!",
+    "Not quite!",
+    "One more try!",
+    "You're getting there!"
+  ];
+
+  const ru = [
+    "Рядом!",
+    "Почти!",
+    "Еще чуть-чуть!",
+    "Продолжай!",
+    "Попробуй еще!",
+    "Очень близко!",
+    "Хорошая попытка!",
+    "Не совсем…",
+    "Почти получилось!",
+    "Ты на правильном пути!"
+  ];
+
+  const list = langIndex === 0 ? ru : en;
+  return list[Math.floor(Math.random() * list.length)];
+}
+function getParsedTime(time) {
+  const totalSeconds = Math.floor(time / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function getTimeInfo(langIndex, startTime) {
+  const formattedTime = getParsedTime(startTime);
+  return langIndex === 1
+    ? `Ваше время: ${formattedTime}`
+    : `Your time is: ${formattedTime}`;
+}

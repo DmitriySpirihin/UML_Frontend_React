@@ -28,8 +28,8 @@ export const quickMathCategories = [
       'Сложные выражения с приоритетами операций.',
       'Challenging expressions with operator precedence.',
     ],
-    timeLimitSec: 20,
-    operations: 'A+B, A-B, A×B, A/B, √A, LOG, A^, X',
+    timeLimitSec: 25,
+    operations: 'A+B, A-B, A×B, A/B, √A, A^',
   },
   {
     level: ['безумный', 'insane'],
@@ -38,8 +38,8 @@ export const quickMathCategories = [
       'Максимальная скорость и самые сложные примеры.',
       'Maximum speed and the toughest problems.',
     ],
-    timeLimitSec: 15,
-    operations: 'A+B, A-B, A×B, A/B, √A, LOG, A^',
+    timeLimitSec: 30,
+    operations: 'A+B, A-B, A×B, A/B, √A, LOG, A^, X',
   },
   // Endless
   {
@@ -50,7 +50,7 @@ export const quickMathCategories = [
       'Play until first mistake or time runs out.',
     ],
     timeLimitSec: null,           // или глобальный лимит
-    operations: 'A+B, A-B, A×B, A/B, √A, LOG, A^',
+    operations: 'A+B, A-B, A×B, A/B, √A, LOG, A^ , X',
   },
 
   // Relax
