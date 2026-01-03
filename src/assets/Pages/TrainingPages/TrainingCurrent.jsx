@@ -345,7 +345,7 @@ return (
            </div>
            <div style={styles(theme,fSize).text}>{langIndex === 0 ? "Время выполнения(опционально)" : "Performance time (optional)"}</div>
            <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
-              <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 10000)}}/>
+              <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 0)}}/>
               <div style={{...styles(theme,fSize).text,fontSize:'28px'}}>{formatDurationMs(exTime)}</div>
               <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000)}}/>
            </div>

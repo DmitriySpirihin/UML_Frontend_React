@@ -4,8 +4,8 @@ import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage} from '../../StaticClasses/HabitsBus'
 import {FaStarHalf,FaStar,FaInfinity,FaSpa} from 'react-icons/fa'
 import {GiStarsStack,GiCrownedSkull} from 'react-icons/gi'
-import {quickMathCategories,mentalRecords} from './MentalHelper'
-import MentalGamePanel from './MentalGamePanel.jsx'
+import {quickMathCategories} from './MentalHelper'
+import MentalGamePanel from './MentalGamePanelMath.jsx'
 
 const MathMain = () => {
     // states
@@ -157,7 +157,7 @@ function MenuCard({protocol,difficulty,click,width,color,theme,lang,fSize} ){
       <div style={_style} onClick={click}> 
         <div style={{display:'flex',flexDirection:'row',width:"65%",height:'22%',alignItems:'center',justifyContent:'flex-end',position:'absolute',
           top:'5%',left:'30%',fontWeight:'bold',fontSize:'16px',color:Colors.get('maxValColor', theme)}}>
-          <FaStar /> {mentalRecords[0][difficulty]}
+          <FaStar /> {AppData.mentalRecords[0][difficulty]}
           </div> 
         <div style={{width:'90%',height:'100%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center'}}>
               <h2 style={styles(theme,fSize).cardText}>{protocol.level[lang]}</h2>

@@ -217,6 +217,10 @@ function MenuCard({text = ["Категория", "Category"], decr = ["Скор�
 }
 
 const getCategoryRecord = (index) => {
-    const bestScore = 1000;
+    let bestScore = 0;
+    for (let i = 0; i < 4; i++) {
+      const scores = AppData.mentalRecords[index][i];
+      if (scores > bestScore)bestScore = scores;
+    }
     return bestScore;
 }

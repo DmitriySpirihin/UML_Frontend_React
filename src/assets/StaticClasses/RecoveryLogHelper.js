@@ -1,13 +1,74 @@
-export const breathingLog = {
+import { AppData } from "./AppData";
+import { saveData } from "./SaveHelper";
+/*
+const breathingLog = {
   "2025-12-08":[{
     startTime: 1702213815432, 
     endTime: 1702213895432,
-    id:0,
-    cycles:3,
     maxHold:120000
   },
 ],
 }
+const meditationLog = {
+  "2025-12-08":[{
+    startTime: 1702213815432, 
+    endTime: 1702213895432,
+  },
+],
+}
+const hardeningLog = {
+  "2025-12-08":[{
+    startTime: 1702213815432, 
+    endTime: 1702213895432,
+    timeInColdWater:120000
+  },
+],
+}
+*/
+
+const formatDate = (timestamp) => {
+  const date = new Date(timestamp);
+  return date.toISOString().split('T')[0];
+};
+
+export const saveMeditationSession = async(start, end) => {
+  const dateKey = formatDate(start);
+  if (!AppData.meditationLog[dateKey]) {
+    AppData.meditationLog[dateKey] = [];
+  }
+  AppData.meditationLog[dateKey].push({
+    startTime: start,
+    endTime: end,
+  });
+  await saveData();
+};
+
+export const saveBreathingSession = async(start, end, maxHold) => {
+  const dateKey = formatDate(start);
+  if (!AppData.breathingLog[dateKey]) {
+    AppData.breathingLog[dateKey] = [];
+  }
+  AppData.breathingLog[dateKey].push({
+    startTime: start,
+    endTime: end,
+    maxHold: maxHold,
+  });
+  await saveData();
+};
+
+export const saveHardeningSession = async(start, end, coldTime) => {
+  const dateKey = formatDate(start);
+  if (!AppData.hardeningLog[dateKey]) {
+    AppData.hardeningLog[dateKey] = [];
+  }
+  AppData.hardeningLog[dateKey].push({
+    startTime: start,
+    endTime: end,
+    timeInColdWater: coldTime,
+  });
+  await saveData();
+};
+
 
 export const breathingProtocols = [
   // ДЛЯ НОВИЧКОВ
@@ -24,7 +85,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 6,
-            isDone: false,
             strategy: '4-4-4-4',
             steps: [
               { in: 4000 },
@@ -35,7 +95,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 8,
-            isDone: false,
             strategy: '5-5-5-5',
             steps: [
               { in: 5000 },
@@ -46,7 +105,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 10,
-            isDone: false,
             strategy: '6-6-6-6',
             steps: [
               { in: 6000 },
@@ -67,7 +125,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 8,
-            isDone: false,
             strategy: '4-7-8',
             steps: [
               { in: 4000 },
@@ -77,7 +134,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 10,
-            isDone: false,
             strategy: '5-8-9',
             steps: [
               { in: 5000 },
@@ -97,7 +153,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 8,
-            isDone: false,
             strategy: '3-6 (1:2)',
             steps: [
               { in: 3000 },
@@ -106,7 +161,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 10,
-            isDone: false,
             strategy: '4-8 (1:2)',
             steps: [
               { in: 4000 },
@@ -125,7 +179,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 10,
-            isDone: false,
             strategy: '4-6',
             steps: [
               { in: 4000 },
@@ -134,7 +187,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 12,
-            isDone: false,
             strategy: '5-7',
             steps: [
               { in: 5000 },
@@ -160,7 +212,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 10,
-            isDone: false,
             strategy: '6-6',
             steps: [
               { in: 6000 },
@@ -169,7 +220,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 12,
-            isDone: false,
             strategy: '5.5-5.5',
             steps: [
               { in: 5500 },
@@ -178,7 +228,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 15,
-            isDone: false,
             strategy: '7-7',
             steps: [
               { in: 7000 },
@@ -197,7 +246,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 8,
-            isDone: false,
             strategy: '4-2-4 / 4-2-4',
             steps: [
               { in: 4000 },
@@ -210,7 +258,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 10,
-            isDone: false,
             strategy: '5-3-5 / 5-3-5',
             steps: [
               { in: 5000 },
@@ -233,7 +280,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 3,
-            isDone: false,
             strategy: '2+1-5',
             steps: [
               { in: 2000 },
@@ -244,7 +290,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 5,
-            isDone: false,
             strategy: '2.5+1-6',
             steps: [
               { in: 2500 },
@@ -265,7 +310,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 2,
-            isDone: false,
             strategy: '15×(1.5-1.5) + 60s',
             steps: [
               ...Array(15).fill(null).flatMap(() => [{ in: 1500 }, { out: 1500 }]),
@@ -278,7 +322,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 3,
-            isDone: false,
             strategy: '20×(1.2-1.2) + 90s',
             steps: [
               ...Array(20).fill(null).flatMap(() => [{ in: 1200 }, { out: 1200 }]),
@@ -291,7 +334,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 3,
-            isDone: false,
             strategy: '25×(1.1-1.1) + 120s',
             steps: [
               ...Array(25).fill(null).flatMap(() => [{ in: 1100 }, { out: 1100 }]),
@@ -304,7 +346,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 3,
-            isDone: false,
             strategy: '30×(1.0-1.0) + 180s',
             steps: [
               ...Array(30).fill(null).flatMap(() => [{ in: 1000 }, { out: 1000 }]),
@@ -334,7 +375,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 5,
-            isDone: false,
             strategy: '6-6-6',
             steps: [
               { in: 6000 },
@@ -344,7 +384,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 6,
-            isDone: false,
             strategy: '7-7-7',
             steps: [
               { in: 7000 },
@@ -364,7 +403,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 8,
-            isDone: false,
             strategy: '3-9 (1:3)',
             steps: [
               { in: 3000 },
@@ -373,7 +411,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 10,
-            isDone: false,
             strategy: '4-12 (1:3)',
             steps: [
               { in: 4000 },
@@ -392,7 +429,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 5,
-            isDone: false,
             strategy: '5×(3-1.5) + 5s',
             steps: [
               ...Array(5).fill(null).flatMap(() => [{ in: 3000 }, { out: 1500 }]),
@@ -401,7 +437,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 6,
-            isDone: false,
             strategy: '6×(2.5-1.25) + 6s',
             steps: [
               ...Array(6).fill(null).flatMap(() => [{ in: 2500 }, { out: 1250 }]),
@@ -427,7 +462,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 5,
-            isDone: false,
             strategy: '2.5+2.5-6-6-2',
             steps: [
               { in: 2500 },
@@ -439,7 +473,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 6,
-            isDone: false,
             strategy: '3+3-8-8-3',
             steps: [
               { in: 3000 },
@@ -461,7 +494,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 3,
-            isDone: false,
             strategy: '3-30-5-10',
             steps: [
               { in: 3000 },
@@ -473,7 +505,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 3,
-            isDone: false,
             strategy: '3-45-6-15',
             steps: [
               { in: 3000 },
@@ -485,7 +516,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 2,
-            isDone: false,
             strategy: '3-60-7-20',
             steps: [
               { in: 3000 },
@@ -507,7 +537,6 @@ export const breathingProtocols = [
         levels: [
           {
             cycles: 15,
-            isDone: false,
             strategy: '5.5-5.5',
             steps: [
               { in: 5500 },
@@ -516,7 +545,6 @@ export const breathingProtocols = [
           },
           {
             cycles: 18,
-            isDone: false,
             strategy: '6-6',
             steps: [
               { in: 6000 },
@@ -528,13 +556,516 @@ export const breathingProtocols = [
     ]
   }
 ];
+export const meditationProtocols = [
+  // ДЛЯ НОВИЧКОВ
+  {
+    level: ['Для новичков', 'For beginners'],
+    protocols: [
+      {
+        name: ['Осознанное дыхание', 'Mindful Breathing'],
+        aim: ['Базовая осознанность, успокоение', 'Basic mindfulness, calming'],
+        instructions: [
+          'Сядьте удобно, направьте внимание на дыхание. Замечайте вдох и выдох и мягко возвращайте внимание при отвлечении.',
+          'Sit comfortably and focus on your breath. Notice each inhale and exhale, gently returning attention when it wanders.'
+        ],
+        levels: [
+          {
+            strategy: 'Короткая сессия для старта',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 300, restSeconds: 0 } // 5 мин
+            ]
+          },
+          {
+            strategy: 'Стандартная сессия',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 600, restSeconds: 0 } // 10 мин
+            ]
+          },
+          {
+            strategy: '2 коротких подхода',
+            cycles: 2,
+            steps: [
+              { meditateSeconds: 300, restSeconds: 60 }
+            ]
+          }
+        ]
+      },
+      {
+        name: ['Сканирование тела', 'Body Scan'],
+        aim: ['Расслабление, контакт с телом', 'Relaxation, body awareness'],
+        instructions: [
+          'Медленно проводите вниманием по телу от стоп до головы, замечая ощущения без оценки.',
+          'Slowly move your attention through the body from feet to head, noticing sensations without judging.'
+        ],
+        levels: [
+          {
+            strategy: 'Краткое сканирование',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 300, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: 'Более глубокое сканирование',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 900, restSeconds: 0 } // 15 мин
+            ]
+          }
+        ]
+      }
+    ]
+  },
 
-export const markSessionAsDone = (categoryIndex, protocolIndex, levelIndex) => {
-  if (
-    breathingProtocols[categoryIndex] &&
-    breathingProtocols[categoryIndex].protocols[protocolIndex] &&
-    breathingProtocols[categoryIndex].protocols[protocolIndex].levels[levelIndex]
-  ) {
-    breathingProtocols[categoryIndex].protocols[protocolIndex].levels[levelIndex].isDone = true;
+  // ДЛЯ ЛЮБИТЕЛЕЙ
+  {
+    level: ['Для любителей', 'For amateurs'],
+    protocols: [
+      {
+        name: ['Концентрация на объекте', 'Focused Attention'],
+        aim: ['Концентрация, тренировка внимания', 'Focus, attention training'],
+        instructions: [
+          'Удерживайте внимание на одном объекте (дыхание, звук, пламя), мягко возвращаясь при отвлечении.',
+          'Keep your attention on a single object (breath, sound, flame), gently returning when distracted.'
+        ],
+        levels: [
+          {
+            strategy: '1 блок средней длительности',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 900, restSeconds: 0 } // 15 мин
+            ]
+          },
+          {
+            strategy: '2 блока с коротким отдыхом',
+            cycles: 2,
+            steps: [
+              { meditateSeconds: 600, restSeconds: 60 } // 10 + 1 мин
+            ]
+          }
+        ]
+      },
+      {
+        name: ['Практика благодарности', 'Gratitude Meditation'],
+        aim: ['Позитивный настрой, настроение', 'Positive mindset, mood'],
+        instructions: [
+          'Вспоминайте 3–5 вещей, за которые вы благодарны, стараясь прочувствовать это состояние.',
+          'Recall 3–5 things you feel grateful for and try to fully feel the gratitude.'
+        ],
+        levels: [
+          {
+            strategy: 'Короткая практика',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 300, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: 'Расширенная практика',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 600, restSeconds: 0 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  // СРЕДНИЙ УРОВЕНЬ
+  {
+    level: ['Средний уровень', 'Intermediate'],
+    protocols: [
+      {
+        name: ['Подсчёт дыханий', 'Breath Counting'],
+        aim: ['Устойчивое внимание', 'Stable attention'],
+        instructions: [
+          'Считайте выдохи от 1 до 10, затем начинайте сначала. При потере счёта просто вернитесь к 1.',
+          'Count exhales from 1 to 10 and then start again. If you lose count, just return to 1.'
+        ],
+        levels: [
+          {
+            strategy: 'Один длинный блок',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 1200, restSeconds: 0 } // 20 мин
+            ]
+          },
+          {
+            strategy: 'Два блока с паузой',
+            cycles: 2,
+            steps: [
+              { meditateSeconds: 600, restSeconds: 120 } // 10 + 2 мин
+            ]
+          }
+        ]
+      },
+      {
+        name: ['Открытое наблюдение', 'Open Monitoring'],
+        aim: ['Широкая осознанность', 'Open awareness'],
+        instructions: [
+          'Наблюдайте мысли, звуки и ощущения, не цепляясь и не оценивая.',
+          'Observe thoughts, sounds, and sensations without clinging or judging.'
+        ],
+        levels: [
+          {
+            strategy: 'Средняя сессия',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 900, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: 'Длинная сессия',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 1500, restSeconds: 0 } // 25 мин
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  // ДЛЯ ОПЫТНЫХ
+  {
+    level: ['Для опытных', 'For advanced'],
+    protocols: [
+      {
+        name: ['Глубокая одноточечная концентрация', 'Deep Single‑Point Focus'],
+        aim: ['Глубокое сосредоточение', 'Deep concentration'],
+        instructions: [
+          'Поддерживайте устойчивый фокус на одном объекте длительное время.',
+          'Maintain a steady focus on a single object for an extended period.'
+        ],
+        levels: [
+          {
+            strategy: 'Один длинный сет',
+            cycles: 1,
+            steps: [
+              { meditateSeconds: 1800, restSeconds: 0 } // 30 мин
+            ]
+          },
+          {
+            strategy: '2 интенсивных сета',
+            cycles: 2,
+            steps: [
+              { meditateSeconds: 900, restSeconds: 180 } // 15 + 3 мин
+            ]
+          }
+        ]
+      },
+      {
+        name: ['Комбинированная практика', 'Alternating Practices'],
+        aim: ['Глубокая тренировка ума', 'Deep mental training'],
+        instructions: [
+          'Чередуйте фокус на дыхании, открытое наблюдение и доброжелательность в рамках одной сессии.',
+          'Alternate breath focus, open monitoring, and loving‑kindness within a single session.'
+        ],
+        levels: [
+          {
+            strategy: '3 блока по 10 минут',
+            cycles: 3,
+            steps: [
+              { meditateSeconds: 600, restSeconds: 60 }
+            ]
+          },
+          {
+            strategy: '3 блока по 15 минут',
+            cycles: 3,
+            steps: [
+              { meditateSeconds: 900, restSeconds: 90 }
+            ]
+          }
+        ]
+      }
+    ]
   }
+];
+
+export const coldWaterProtocols = [
+  // ДЛЯ НОВИЧКОВ
+  {
+    level: ['Для новичков', 'For beginners'],
+    protocols: [
+      {
+        name: ['Контрастный душ с холодным финалом', 'Shower Finish Cold'],
+        aim: ['Мягкое знакомство с холодом', 'Gentle introduction to cold'],
+        instructions: [
+          'Примите тёплый душ, затем завершите под холодной водой, сохраняя спокойное дыхание.',
+          'Take a warm shower, then finish under cold water while keeping your breathing calm.'
+        ],
+        levels: [
+          {
+            strategy: 'Старт: короткий холодный финал',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 180, coldSeconds: 30, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: 'Увеличение холодной фазы',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 180, coldSeconds: 60, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: 'Продвинутый финал',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 180, coldSeconds: 120, restSeconds: 0 }
+            ]
+          }
+        ]
+      },
+      {
+        name: ['Чередование тёплой и холодной воды', 'Warm–Cold Alternating Shower'],
+        aim: ['Сосудистый тренинг, бодрость', 'Vascular training, alertness'],
+        instructions: [
+          'Чередуйте тёплую и холодную воду короткими отрезками, всегда заканчивайте холодной.',
+          'Alternate warm and cold water in short intervals, always ending on cold.'
+        ],
+        levels: [
+          {
+            strategy: '2 цикла по 30 с',
+            cycles: 2,
+            steps: [
+              { hotSeconds: 30, coldSeconds: 30, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: '3 цикла по 45–60 с',
+            cycles: 3,
+            steps: [
+              { hotSeconds: 45, coldSeconds: 45, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: '4 цикла, финал дольше холод',
+            cycles: 4,
+            steps: [
+              { hotSeconds: 45, coldSeconds: 45, restSeconds: 0 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  // ДЛЯ ЛЮБИТЕЛЕЙ
+  {
+    level: ['Для любителей', 'For amateurs'],
+    protocols: [
+      {
+        name: ['Полностью холодный душ', 'Full Cold Shower'],
+        aim: ['Стрессоустойчивость, энергия', 'Stress resilience, energy'],
+        instructions: [
+          'Используйте только холодную воду, начиная с конечностей и переходя к корпусу, контролируя дыхание.',
+          'Use only cold water, starting with limbs and then torso while controlling your breath.'
+        ],
+        levels: [
+          {
+            strategy: 'Короткий холодный душ',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 60, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: 'Умеренный холодный душ',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 120, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: 'Длинный холодный душ',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 300, restSeconds: 0 }
+            ]
+          }
+        ]
+      },
+      {
+        name: ['Холодный душ после разминки', 'Post‑Warmup Cold Shower'],
+        aim: ['Восстановление, психическая устойчивость', 'Recovery, mental resilience'],
+        instructions: [
+          'После лёгкой разминки или тренировки примите холодный душ, избегая задержки дыхания.',
+          'After a light warm‑up or workout, take a cold shower while avoiding breath‑holding.'
+        ],
+        levels: [
+          {
+            strategy: 'Короткий после тренировки',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 90, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: 'Стандартный',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 180, restSeconds: 0 }
+            ]
+          },
+          {
+            strategy: 'Удлинённый',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 300, restSeconds: 0 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  // СРЕДНИЙ УРОВЕНЬ
+  {
+    level: ['Средний уровень', 'Intermediate'],
+    protocols: [
+      {
+        name: ['Погружение в прохладную ванну', 'Cool Bath Immersion'],
+        aim: ['Глубжеe закаливание, восстановление', 'Deeper hardening, recovery'],
+        instructions: [
+          'Погрузите тело до пояса или груди в прохладную воду. Оставайтесь на уровне, где можете спокойно дышать.',
+          'Immerse your body up to the waist or chest in cool water, staying at an intensity where you can breathe calmly.'
+        ],
+        levels: [
+          {
+            strategy: 'Короткое погружение',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 60, restSeconds: 120 }
+            ]
+          },
+          {
+            strategy: '2 погружения',
+            cycles: 2,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 90, restSeconds: 180 }
+            ]
+          },
+          {
+            strategy: 'Длинное погружение',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 300, restSeconds: 300 }
+            ]
+          }
+        ]
+      },
+      {
+        name: ['Тёплый душ → прохладная ванна', 'Warm‑Then‑Cool Bath'],
+        aim: ['Комфортная адаптация, расслабление', 'Comfortable adaptation, relaxation'],
+        instructions: [
+          'Сначала согрейтесь под тёплым душем, затем перейдите в прохладную ванну и завершите сессию мягким согреванием.',
+          'First warm up under a warm shower, then move into a cool bath and finish with gentle rewarming.'
+        ],
+        levels: [
+          {
+            strategy: 'Короткий переход',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 180, coldSeconds: 60, restSeconds: 180 }
+            ]
+          },
+          {
+            strategy: 'Умеренный переход',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 180, coldSeconds: 180, restSeconds: 240 }
+            ]
+          },
+          {
+            strategy: 'Углублённый переход',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 180, coldSeconds: 300, restSeconds: 300 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  // ДЛЯ ОПЫТНЫХ
+  {
+    level: ['Для опытных', 'For advanced'],
+    protocols: [
+      {
+        name: ['Холодный пландж / бочка', 'Cold Plunge / Tub'],
+        aim: ['Максимальная адаптация, сила воли', 'Max adaptation, willpower'],
+        instructions: [
+          'Погружайтесь в очень холодную воду до груди или шеи. Сохраняйте спокойное дыхание и выходите до сильного онемения.',
+          'Immerse yourself in very cold water up to chest or neck. Keep breathing calmly and exit before intense numbness.'
+        ],
+        levels: [
+          {
+            strategy: 'Стартовый пландж',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 30, restSeconds: 180 }
+            ]
+          },
+          {
+            strategy: 'Умеренный пландж',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 60, restSeconds: 240 }
+            ]
+          },
+          {
+            strategy: 'Продвинутый пландж',
+            cycles: 1,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 180, restSeconds: 300 }
+            ]
+          }
+        ]
+      },
+      {
+        name: ['Повторные короткие планджи', 'Repeated Short Plunges'],
+        aim: ['Тренировка нервной системы', 'Nervous system training'],
+        instructions: [
+          'Делайте несколько коротких заходов в холодную воду с полным согреванием между циклами.',
+          'Do several short immersions in cold water with full rewarming between cycles.'
+        ],
+        levels: [
+          {
+            strategy: '2 коротких захода',
+            cycles: 2,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 30, restSeconds: 180 }
+            ]
+          },
+          {
+            strategy: '3 умеренных захода',
+            cycles: 3,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 60, restSeconds: 240 }
+            ]
+          },
+          {
+            strategy: '3 продвинутых захода',
+            cycles: 3,
+            steps: [
+              { hotSeconds: 0, coldSeconds: 120, restSeconds: 300 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+];
+
+
+export const markSessionAsDone = (type,categoryIndex, protocolIndex, levelIndex) => {
+  AppData.recoveryProtocols[type][categoryIndex][protocolIndex][levelIndex] = true;
+  
 };
+

@@ -1,7 +1,7 @@
 import React, {useState,useEffect} from 'react'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
-import { theme$ ,lang$,fontSize$,setPage} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$,setPage,setRecoveryType} from '../../StaticClasses/HabitsBus'
 import {FaRegSnowflake,FaSpa} from 'react-icons/fa'
 import {BsLungs} from 'react-icons/bs'
 
@@ -43,7 +43,7 @@ const RecoveryMain = () => {
         theme={theme}  
         lang={langIndex}
         fontSize={fSize}
-        onClick={() => {setPage('RecoveryBreath')}}
+        onClick={() => {setPage('RecoveryBreath');setRecoveryType(0)}}
         index={0}
       />   
       <MenuCard 
@@ -59,7 +59,7 @@ const RecoveryMain = () => {
         theme={theme}  
         lang={langIndex}
         fontSize={fSize}
-        onClick={() => {setPage('RecoveryMeditation')}}
+        onClick={() => {setPage('RecoveryBreath');setRecoveryType(1)}}
         index={1}
       /> 
       <MenuCard 
@@ -75,7 +75,7 @@ const RecoveryMain = () => {
         theme={theme}  
         lang={langIndex}
         fontSize={fSize}
-        onClick={() => {setPage('RecoveryCold')}}
+        onClick={() => {setPage('RecoveryBreath');setRecoveryType(2)}}
         index={2}
       />   
     </div>
@@ -144,7 +144,20 @@ const styles = (theme,fSize) =>
 })
 
 const getDaylyFinishedExercises = (index) => {
-  return '3/7';
+  const data = AppData.recoveryProtocols[index];
+  let allSessions = 0;
+  let doneSessions = 0;
+  for (let i = 0; i < data.length; i++) {
+    const protocol = data[i];
+    for (let j = 0; j < protocol.length; j++) {
+      const levels = protocol[j];
+      levels.forEach(el => {
+        allSessions++;
+        if(el === true) doneSessions++;
+      });
+    }
+  }
+  return doneSessions + '/' + allSessions;
 }
 
 function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#294128ff", colorLight = "#a4f19cff",

@@ -75,6 +75,7 @@ export class Colors {
     areaChart:{ light: "#5b98d1ff", dark: "#6eb5cfff", speciallight: "#61a3a1ff", specialdark: "#25da8bff" },
     regress:{ light: "#9b44d8ff", dark: "#c25aa4ff", speciallight: "#894c88ff", specialdark: "#914dc8ff" },
     
+    difficulty5:{ light: "#3dff7451", dark: "#2a6f4dff", speciallight: "#1c9e5d57", specialdark: "#2a884fff" },
     difficulty0:{ light: "#68ff5a51", dark: "#334436ff", speciallight: "#21763c57", specialdark: "#2e472aff" },
     difficulty1:{ light: "#ecff5a4f", dark: "#534f35ff", speciallight: "#75851a71", specialdark: "#45472aff" },
     difficulty2:{ light: "#ffad5a55", dark: "#493023ff", speciallight: "#83382276", specialdark: "#47332aff" },
@@ -85,7 +86,10 @@ export class Colors {
     in:{ light: "#235179ff", dark: "#43ad9bff", speciallight: "#3a91abff", specialdark: "#5098cfff" },
     out:{ light: "#665f25ff", dark: "#a4a15bff", speciallight: "#817b24ff", specialdark: "#c09848ff" },
     hold:{ light: "#69231aff", dark: "#a7645eff", speciallight: "#782886ff", specialdark: "#c54a75ff" },
-    rest:{ light: "#5c5a5aff", dark: "#8dc6cbff", speciallight: "#565b5dff", specialdark: "#aebcbcff" },
+    rest:{ light: "#5c5a5aff", dark: "#c6cccdff", speciallight: "#565b5dff", specialdark: "#aebcbcff" },
+    hot:{ light: "#fb4949b6", dark: "#7b2222ff", speciallight: "#e14e4e8e", specialdark: "#782d2dff" },
+    cold:{ light: "#5ecaccb9", dark: "#4d9aa8ff", speciallight: "#54b7dea2", specialdark: "#226d6dff" },
+    meditate:{ light: "#58fb70c7", dark: "#428548ff", speciallight: "#5df784bf", specialdark: "#2d8145ff" },
 
     play: { light: "#21e56997", dark: "#487b5bff",speciallight: "#1d964b8b", specialdark: "#42ac6dac"},
     pause: { light: "#e3b529a2", dark: "#b09837ff", speciallight: "#a467219a", specialdark: "#af5b2a8d",},

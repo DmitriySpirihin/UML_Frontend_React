@@ -29,6 +29,7 @@ export const keyboardNeeded$ = new BehaviorSubject({type:0,value:false});
 export const lastPage$ = new BehaviorSubject('MainMenu');
 export const premium$ = new BehaviorSubject(false);
 export const addNewTrainingDay$ =  new Subject();
+export const recoveryType$ = new BehaviorSubject(0);
 
 export const setConfirmationPanel = (state) => confirmationPanel$.next(state);
 export const setTheme = (theme) => {
@@ -53,6 +54,7 @@ export const setPage = (page) => {
   else if(page.startsWith('Training')) bottomBtnPanel$.next('BtnsTraining');
   else if(page.startsWith('Recovery')) bottomBtnPanel$.next('BtnsRecovery');
   else if(page.startsWith('Mental')) bottomBtnPanel$.next('BtnsMental');
+  else if(page.startsWith('Sleep')) bottomBtnPanel$.next('BtnsSleep');
   else bottomBtnPanel$.next('');
 }
 export const setAddPanel = (state) => addPanel$.next(state);
@@ -73,3 +75,4 @@ export const setCurrentKeyboardString = (str) => {
 }
 export const setPremium = (state) => premium$.next(state);
 export const setAddNewTrainingDay = () => addNewTrainingDay$.next();
+export const setRecoveryType = (state) => recoveryType$.next(state);

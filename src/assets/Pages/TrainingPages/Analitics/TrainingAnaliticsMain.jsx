@@ -409,7 +409,7 @@ function splitIntoCycles(sessions) {
     };
   }
 }
-function getCurrentCycleAnalysis() {
+export function getCurrentCycleAnalysis() {
   const latestSessions = getLatestProgramSessions();
   const { currentCycle, lastFullCycle } = splitIntoCycles(latestSessions);
 

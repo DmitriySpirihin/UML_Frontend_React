@@ -818,7 +818,7 @@ const getProblemRelaxMode = (stage) => {
 };
 
 export function getPoints(type, difficulty, stage, time, rightAnswer, yourAnswer, streakLength) {
-  const baseScores = [100, 200, 300, 400];
+  const baseScores = [100, 200, 300, 400,50,5];
   const base = baseScores[difficulty] || 100;
   
   // Близость

@@ -30,16 +30,21 @@ export class AppData{
    static programs = programs;
    static trainingLog = {};
    static pData = {filled:false,age:20,gender:0,height:180,wrist:20,goal:1};
-   static measurements = [
-         [],  // weight
-         [],   // waist
-         [],  // chest
-         [],   // leg
-         []   //biceps
-       ];
+   static measurements = [[],[],[],[],[]];
   static ownPlates = [true,true,true,true,true,true,true,true];
   static platesAmount = [10,10,10,10,10,10,10,10];
   static barWeight = 20;
+  // practices
+  static recoveryProtocols = [[[[true,true,false],[false,false],[false,false],[false,false]],[[false,false],[false,false],[false,false]],[[false,false,false],[false,false],[false,false],[false,false]],[[false,false],[false,false,false],[false,false]]],//breathing
+  [[[true,false,false],[false,false]],[[false,false],[false,false]],[[false,false],[false,false]],[[false,false],[false,false]]],
+  [[[true,false,false],[false,false,false]],[[true,false,false],[false,false,false]],[[true,false,false],[false,false,false]],[[true,false,false],[false,false,false]]]];
+  static breathingLog = {};
+  static meditationLog = {};
+  static hardeningLog = {};
+  //mental
+  static mentalRecords = [[0,0,0,0,0,0],[0,0,0,0,0],[0,0,0,0],[0,0,0,0]];
+  //
+  static sleepingLog = {};
   // methods
   static init(data) {
     if (!data) return;
@@ -72,8 +77,14 @@ export class AppData{
     if(data.platesAmount?.length > 0)this.platesAmount = data.platesAmount;
     this.barWeight = data.barWeight;
     this.trainingLog = data.trainingLog;
-    
-  }
+    this.recoveryProtocols = data.recoveryProtocols;
+    this.breathingLog = data.breathingLog;
+    this.meditationLog = data.meditationLog;
+    this.hardeningLog = data.hardeningLog;
+
+    this.mentalRecords = data.mentalRecords;
+    this.sleepingLog = data.sleepingLog;
+  } 
   static setPrefs(ind,value){
     this.prefs[ind] = value;
   }
@@ -317,6 +328,12 @@ export class Data{
     this.platesAmount = AppData.platesAmount;
     this.barWeight = AppData.barWeight;
     this.lastBackupDate = AppData.lastBackupDate;
+    this.recoveryProtocols = AppData.recoveryProtocols;
+    this.breathingLog = AppData.breathingLog;
+    this.meditationLog = AppData.meditationLog;
+    this.hardeningLog = AppData.hardeningLog;
+    this.mentalRecords = AppData.mentalRecords;
+    this.sleepingLog = AppData.sleepingLog;
   }
 }
 

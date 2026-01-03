@@ -1,19 +1,21 @@
 import { useEffect, useState,useRef,useMemo } from 'react'
 import {AppData} from '../../StaticClasses/AppData'
 import Colors from "../../StaticClasses/Colors"
-import {theme$,lang$,fontSize$} from '../../StaticClasses/HabitsBus';
-import {IoPlayCircle,IoReloadCircle,IoArrowBackCircle, IoPauseCircle,IoVolumeMute,IoVolumeHigh} from "react-icons/io5"
+import {theme$,lang$,fontSize$, recoveryType$} from '../../StaticClasses/HabitsBus';
+import {IoPlayCircle,IoCheckmarkCircle,IoArrowBackCircle, IoPauseCircle} from "react-icons/io5"
 import {IoMdVolumeMute, IoMdVolumeHigh} from "react-icons/io"
+import {FaCaretLeft,FaCaretRight} from "react-icons/fa"
 import BreathAudio from "../../Helpers/BreathAudio"
+import { markSessionAsDone,saveBreathingSession } from '../../StaticClasses/RecoveryLogHelper';
 
 const startTimerDuration = 5000;
 
-const BreathingTimer = ({ show,doneSession, setShow, session,protocol }) => {
-   const safeSession = session || {
+const BreathingTimer = ({ show,setShow,protocol,protocolIndex,categoryIndex }) => {
+   const [session,setSession] = useState({
     cycles: 1,
     steps: [{ in: 1000 }, { hold: 1000 }, { out: 1000 }, { hold: 1000 }]
-  };
-
+  });
+  const [level,setLevel] = useState(setActualLevel(protocolIndex,categoryIndex));
   const [theme, setthemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]); 
@@ -37,7 +39,10 @@ const BreathingTimer = ({ show,doneSession, setShow, session,protocol }) => {
   const startTimeRef = useRef(0);
   const lastScaleRef = useRef(1); // For smooth transitions
   
-  
+  //session data
+   const [startTime, setStartTime] = useState(0);
+   const [endTime,setEndTime] = useState(0);
+   const maxHoldRef = useRef(0);
 
   // Subscriptions
   useEffect(() => {
@@ -98,11 +103,11 @@ const BreathingTimer = ({ show,doneSession, setShow, session,protocol }) => {
   // Flatten steps
   const allSteps = useMemo(() => {
     const steps = [];
-    for (let cycle = 0; cycle < safeSession.cycles; cycle++) {
-      safeSession.steps.forEach(step => steps.push({ ...step, cycle }));
+    for (let cycle = 0; cycle < session.cycles; cycle++) {
+      session.steps.forEach(step => steps.push({ ...step, cycle }));
     }
     return steps;
-  }, [safeSession]);
+  }, [session]);
 
   const currentStep = allSteps[currentStepIndex] || null;
 
@@ -160,9 +165,9 @@ const BreathingTimer = ({ show,doneSession, setShow, session,protocol }) => {
 
   // Cycle info
   const cycleInfo = () => {
-    if (!safeSession.steps) return '0 / 0';
+    if (!session.steps) return '0 / 0';
     return isStart
-      ? `${Math.floor(currentStepIndex / safeSession.steps.length) + 1} / ${safeSession.cycles}`
+      ? `${Math.floor(currentStepIndex / session.steps.length) + 1} / ${session.cycles}`
       : '0';
   };
 
@@ -261,6 +266,7 @@ useEffect(() => {
     setIsPaused(false);
     startTimeRef.current = 0;
     lastScaleRef.current = 1;
+    maxHoldRef.current = 0;
   };
 
   useEffect(() => {
@@ -273,14 +279,24 @@ useEffect(() => {
 
   // Control handlers
   const handleStart = () => {
+    let maxHoldValue = 0;
+  for (const step of session.steps) {
+    if (step.hold !== undefined && step.hold > maxHoldValue) {
+      maxHoldValue = step.hold;
+    }
+  }
+  maxHoldRef.current = maxHoldValue;
     initAudio(); // Required for autoplay
+    setStartTime(Date.now());
     setAudioEnabled(true);
     setIsStart(true);
     setIsRunning(true);
     setIsPaused(false);
+    setStartTime(Date.now());
   };
 
   const handlePause = () => {
+    setEndTime(Date.now());
     setIsRunning(false);
     setIsPaused(true);
   };
@@ -293,18 +309,24 @@ useEffect(() => {
   const handleReload = () => {
     resetSession();
   };
-  const onFinishSession = () => {
-  const message = congratulations(langIndex); // 0 = RU, 1 = EN
-  setIsFinished(true);
-  setFinishMessage(message);
- };
- const saveResult = () => {
-    doneSession();
- }
+  const onFinishSession = async() => {
+      saveResult();
+      await saveBreathingSession(startTime, Date.now(),maxHoldRef.current);
+      setFinishMessage(congratulations(langIndex));
+      setIsFinished(true);
+    };
+  
+    const saveResult = () => {
+      markSessionAsDone(0, categoryIndex, protocolIndex, level);
+    };
+    const onSaveSession = async() => {
+      await saveBreathingSession(startTime, endTime);
+      resetSession();
+    };
   return (
     <div style={styles(theme, show).container}>
 
-      {!isFinished && !isStart && !showStartTimer && <div  style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around',width:'90%',height:'80%'}}>
+      {!isFinished  && !isStart && !showStartTimer && <div  style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around',width:'90%',height:'80%'}}>
         <div style={{width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{protocol.name[langIndex]}</p>
         </div>
@@ -312,9 +334,16 @@ useEffect(() => {
         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{langIndex === 0 ? 'Цель' : 'Goal'}</p>
         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '13px' : '15px'}}>{protocol.aim[langIndex]}</p>
         </div>
+        <div style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{langIndex === 0 ? 'Уровень' : 'Level'}</div>
+        <div style={{display:'flex',border:isLevelDone(categoryIndex,protocolIndex,level) ? `2px solid ${Colors.get('maxValColor', theme)}` : 'none',flexDirection:'row',alignItems:'center',justifyContent:'space-around',width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+         <FaCaretLeft onClick={() => {setLevel(prev => prev - 1 > 0 ? prev - 1 : 0)}} style={{fontSize:'24px',color:Colors.get('icons', theme)}}/>
+         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{level + 1}</p>
+         <FaCaretRight onClick={() => {setLevel(prev => prev + 1 < protocol.levels.length ? prev + 1 : protocol.levels.length - 1)}} style={{fontSize:'24px',color:Colors.get('icons', theme)}}/>
+         
+        </div>
         <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'space-around',width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{session.strategy}</p>
-         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '13px' : '15px'}}>{(langIndex === 0 ? 'циклов: ' : 'cycles: ') + session.cycles}</p>
+         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{protocol.levels[level].strategy}</p>
+         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '13px' : '15px'}}>{(langIndex === 0 ? 'циклов: ' : 'cycles: ') + protocol.levels[level].cycles}</p>
         </div>
         <div style={{width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{langIndex === 0 ? 'Инструкция' : 'Instruction'}</p>
@@ -370,15 +399,56 @@ useEffect(() => {
 
       {/* Controls */}
       <div style={styles(theme, show).controls}>
-        {!isStart && !showStartTimer && <IoArrowBackCircle onClick={() => setShow(false)} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>}
+        {!isStart && !showStartTimer && 
+          <div>
+           <IoArrowBackCircle onClick={() => setShow(false)} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
+          <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
+          </div>
+        }
         {isFinished  && <IoArrowBackCircle onClick={() => {saveResult();setIsFinished(false); setShow(false)}} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>}
-        {!isFinished && audioEnabled ? <IoMdVolumeHigh onClick={() => setAudioEnabled(false)} style={{fontSize:'60px',color:Colors.get('icons', theme)}} /> :
-         <IoMdVolumeMute onClick={() => setAudioEnabled(true)} style={{fontSize:'60px',color:Colors.get('icons', theme)}} />}
-        {!isFinished &&!isStart && !showStartTimer &&  <IoPlayCircle onClick={() => setShowStartTimer(true)} style={{fontSize:'60px',color:Colors.get('play', theme)}} />}
+        {!isFinished && audioEnabled ? 
+          <div>
+          <IoMdVolumeHigh onClick={() => setAudioEnabled(false)} style={{fontSize:'60px',color:Colors.get('icons', theme)}} />
+          <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Выкл звук' : 'Mute'}</div>
+                      </div>
+          :
+         <div>
+         <IoMdVolumeMute onClick={() => setAudioEnabled(true)} style={{fontSize:'60px',color:Colors.get('icons', theme)}} />  
+         <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Вкл звук' : 'Unmute'}</div>
+          </div>
+         }
+        {!isFinished &&!isStart && !showStartTimer && 
+        <div>
+        <IoPlayCircle onClick={() => {setShowStartTimer(true);setSession(protocol.levels[level]);}} style={{fontSize:'60px',color:Colors.get('play', theme)}} />
+        <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Начать' : 'Start'}</div>
+        </div>
+        }
 
-        {isRunning && <IoPauseCircle onClick={handlePause} style={{fontSize:'60px',color:Colors.get('pause', theme)}}/>}
-        {!isFinished && !showStartTimer && isPaused &&  <IoPlayCircle onClick={handleResume} style={{fontSize:'60px',color:Colors.get('play', theme)}}/> }
-        {!isFinished && isPaused && <IoReloadCircle onClick={handleReload} style={{fontSize:'60px',color:Colors.get('reload', theme)}}/>}
+        {!isFinished && isPaused &&
+                
+                <div>
+                <IoArrowBackCircle onClick={handleReload} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
+                <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
+                </div>    
+                }
+                {isRunning && !isFinished &&
+                <div>
+                <IoPauseCircle onClick={handlePause} style={{ fontSize: '60px', color: Colors.get('pause', theme) }} />
+                <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Пауза' : 'Pause'}</div>
+                </div>
+                }
+                {!isFinished && !showStartTimer && isPaused && 
+                <div>
+                <IoPlayCircle onClick={handleResume} style={{ fontSize: '60px', color: Colors.get('play', theme) }} />
+                <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Продолжить' : 'Resume'}</div>
+                </div>
+                }
+                {!isFinished && !showStartTimer && isPaused && 
+                <div>
+                 <IoCheckmarkCircle onClick={onSaveSession} style={{ fontSize: '60px', color: Colors.get('reload', theme) }} />
+                 <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Сохранить & выйти' : 'Save & exit'}</div>
+                </div>
+                }
         
          
       </div>
@@ -454,3 +524,19 @@ const congratulations = (langIndex) => {
   const randomIndex = Math.floor(Math.random() * list.length);
   return list[randomIndex];
 };
+
+const setActualLevel = (categoryIndex,protocolIndex) => {
+    let ind = -1;
+    const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
+     for(let i = 0; i < protocol.length; i++) {
+        if(!protocol[i]) {
+          ind = i;
+          break;
+        }
+     }
+     return ind > -1 ? ind : protocol.length - 1;
+}
+const isLevelDone = (categoryIndex,protocolIndex,levelIndex) => {
+    const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
+    return protocol[levelIndex];
+}

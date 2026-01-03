@@ -5,6 +5,7 @@ import { AppData } from '../StaticClasses/AppData'
 //import 'grained'
 import  {NotificationsManager,sendPassword} from '../StaticClasses/NotificationsManager'
 import {FaMoon,FaBrain,FaSpa,FaBookOpen,FaRecycle} from 'react-icons/fa'
+import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 
 const MainMenu = ({ onPageChange }) => {
     const [theme, setThemeState] = React.useState('dark');
@@ -154,7 +155,7 @@ const MainMenu = ({ onPageChange }) => {
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
-                    onClick={() => {playEffects(null);}}
+                    onClick={() => {onPageChange('SleepMain');playEffects(null);}}
                     index={4}
                 />
                 <div style={{height:'5vh',width:'100%'}} onClick={() => {handleClick(false)}} />
@@ -207,8 +208,13 @@ function MenuCard({text = ["Категория", "Category"], decr = ["Скор�
         top:'30%',
         color:  Colors.get('svgColor',theme)
     }
+    const info = getInfo(index);
     return (
         <div style={_style} onClick={onClick}> 
+        {info !== '' && <div style={{display:'flex',flexDirection:'row',width:"15%",height:'22%',backgroundColor:'rgba(50, 50, 50, 0.35)',alignItems:'center',justifyContent:'center',position:'absolute',
+          top:'10%',left:'80%',borderRadius:'12px',fontSize:'16px',color:Colors.get('mainText', theme)}}>
+           {info}
+        </div>}
         {getIcon(index,false)}
         <div style={{width:'70%',height:'100%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center'}}>
             <h2 style={styles(theme,fontSize).cardText}>{Array.isArray(text) ? text[lang] : text}</h2>
@@ -273,4 +279,14 @@ function playEffects(sound){
     sound.play();
   }
   if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
+}
+function getInfo(index){
+   if(index === 0) return AppData.choosenHabits.length > 0 ? AppData.choosenHabits.length : '';
+   else if(index === 1){
+    const tonnage = getCurrentCycleAnalysis().currentTonnage;
+    return tonnage > 0 ? (tonnage / 1000).toFixed(1) + (AppData.prefs[0] === 0 ? 'т' : 't') : '';
+   }
+   else if(index === 2) return '';
+   else if(index === 3) return '';
+   else if(index === 4) return '';
 }
