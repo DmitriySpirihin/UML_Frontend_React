@@ -2,7 +2,7 @@ import { useState, useEffect} from 'react';
 import { AppData , UserData} from '../StaticClasses/AppData.js';
 import Colors from '../StaticClasses/Colors';
 import { lastPage$, setPage,theme$,lang$,premium$,fontSize$,setPremium, setShowPopUpPanel} from '../StaticClasses/HabitsBus';
-import {FaBrain,FaChartBar,FaAd,FaBan,FaFlask} from 'react-icons/fa'
+import {FaBrain,FaChartBar,FaRobot,FaFlask} from 'react-icons/fa'
 import {initiateSbpPayment} from '../StaticClasses/PaymentService';
 const futureDate = new Date();
 futureDate.setDate(futureDate.getDate() + 365);
@@ -81,6 +81,10 @@ const Premium = () => {
             <img src={theme === 'dark' || theme === "specialdark" ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={{width:'50%'}} />
             <div style={{...styles(theme).subtext,fontSize:'22px'}}>{'premium'}</div>
              <div style={{display:'flex',flexDirection:'column',width:'70vw',height:'22%',alignItems:'flex-start',justifyContent:'center'}}>
+              <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyItems:'center',height:'35px'}}>
+               <FaRobot style={{...styles(theme).miniIcon}}/>
+               <div style={styles(theme).text}>{langIndex === 0 ? 'Персональная ИИ аналитика' : 'Personal AI analysis'}</div>
+             </div>
              <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyItems:'center',height:'35px'}}>
                <FaBrain style={{...styles(theme).miniIcon}}/>
                <div style={styles(theme).text}>{langIndex === 0 ? 'доступ к расширенным функциям' : 'get access to premium features'}</div>
@@ -93,13 +97,7 @@ const Premium = () => {
                <FaFlask style={{...styles(theme).miniIcon}}/>
                <div style={styles(theme).text}>{langIndex === 0 ? 'бета тестирование новых функций' : 'beta testing new features'}</div>
              </div>
-             <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyItems:'center',height:'35px'}}>
-               <div style={{position: 'relative',marginRight:'12px',display: 'inline-flex',alignItems: 'center',justifyContent: 'center',width:'1.5em',height: '1.5em'}}>
-                 <FaAd style={{ ...styles(theme).miniIcon,position: 'absolute',top: 2,left: 2,width: '80%',height: '80%', zIndex: 1 }} />
-                 <FaBan style={{ position: 'absolute',top: 0,left: 0,width: '100%',height: '100%',color: 'red',zIndex: 2,opacity: 0.8}} />
-               </div>
-               <div style={styles(theme).text}>{langIndex === 0 ? 'никакой рекламы' : 'ads free'}</div>
-             </div>
+             
              </div>
               <div style={{position: 'relative',display: 'flex',margin: '5px',width: '70vw',height: '65px',borderRadius: '12px',}}>
               {/* Animated Gradient Border */}

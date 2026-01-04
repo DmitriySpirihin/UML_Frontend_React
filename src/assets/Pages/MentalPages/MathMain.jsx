@@ -1,7 +1,7 @@
 import React, {useState,useEffect} from 'react'
-import { AppData } from '../../StaticClasses/AppData.js'
+import { AppData , UserData} from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
-import { theme$ ,lang$,fontSize$,setPage} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$,setPage,premium$} from '../../StaticClasses/HabitsBus'
 import {FaStarHalf,FaStar,FaInfinity,FaSpa} from 'react-icons/fa'
 import {GiStarsStack,GiCrownedSkull} from 'react-icons/gi'
 import {quickMathCategories} from './MentalHelper'
@@ -14,6 +14,11 @@ const MathMain = () => {
     const [fSize, setFSize] = useState(AppData.prefs[4]); 
     const [show,setShow] = useState(false);
     const [currentLevel, setCurrentLevel] = useState(0);
+    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
+        useEffect(() => {
+         const subscription = premium$.subscribe(setHasPremium);
+         return () => subscription.unsubscribe();
+        }, []); 
       
     // subscriptions
     useEffect(() => {
@@ -39,14 +44,14 @@ const MathMain = () => {
         const cardColor = 'difficulty' + ind;
         return (ind < 4 &&
           <MenuCard key={ind} width='46vw' difficulty={ind} protocol={protocol} setLevel={setCurrentLevel} color={Colors.get(cardColor,theme)}
-           theme={theme} lang={langIndex} click={() => {setCurrentLevel(ind),setShow(true)}} fSize={fSize}/>   
+           theme={theme} lang={langIndex} click={() => {setCurrentLevel(ind),setShow(true)}} fSize={fSize} hasPremium={hasPremium} needBlur={ind > 1}/>   
          )
         })}
        </div>
        <MenuCard width='96vw' difficulty={4} protocol={quickMathCategories[4]} setLevel={setCurrentLevel} color={Colors.get('difficultyAdd',theme)}
-           theme={theme} lang={langIndex} click={() => {setCurrentLevel(4),setShow(true)}} fSize={fSize}/>
+           theme={theme} lang={langIndex} click={() => {setCurrentLevel(4),setShow(true)}} fSize={fSize} hasPremium={hasPremium} needBlur={true}/>
            <MenuCard width='96vw' difficulty={5} protocol={quickMathCategories[5]} setLevel={setCurrentLevel} color={Colors.get('difficulty',theme)}
-           theme={theme} lang={langIndex} click={() => {setCurrentLevel(5),setShow(true)}} fSize={fSize}/> 
+           theme={theme} lang={langIndex} click={() => {setCurrentLevel(5),setShow(true)}} fSize={fSize} hasPremium={hasPremium} needBlur={true}/> 
       </div>
        <MentalGamePanel type={0} difficulty={currentLevel} maxTimer={quickMathCategories[currentLevel].timeLimitSec * 1000} show={show} setShow={setShow}/>      
     </div>
@@ -120,9 +125,18 @@ const styles = (theme,fSize) =>
         color: Colors.get('subText', theme),
         marginLeft: "30px"
       },
+          btn:
+          {
+            width:'70%',
+            height:'40px',
+            borderRadius:'12px',
+            fontSize: fSize === 0 ? '13px' : '14px',
+             color:Colors.get('mainText', theme),
+             backgroundColor:Colors.get('simplePanel',theme)
+        }
 })
 
-function MenuCard({protocol,difficulty,click,width,color,theme,lang,fSize} ){
+function MenuCard({protocol,difficulty,click,width,color,theme,lang,fSize,hasPremium = false,needBlur= false} ){
     const getIcon = () => {
           if(difficulty === 0) return <FaStarHalf style={backIconStyle}/>
           else if(difficulty === 1) return <FaStar style={backIconStyle}/>
@@ -155,6 +169,14 @@ function MenuCard({protocol,difficulty,click,width,color,theme,lang,fSize} ){
       }
     return (
       <div style={_style} onClick={click}> 
+      { !hasPremium && needBlur &&
+              <div onClick={(e) => {e.stopPropagation();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'space-around',alignItems:'center',
+               width:'100%',height:'100%',left:'0',top:'0',backdropFilter:'blur(8px)',zIndex:2}}>
+                <div style={{...styles(theme,fSize).mainText}}> {lang === 0 ? 'Про категория' : 'Pro category'} </div>
+          <div style={{...styles(theme,fSize).mainText}}> {lang === 0 ? '👑премиум👑' : '👑premium👑'} </div>
+                <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn}} >{lang === 0 ? 'Стать премиум' : 'Get premium'}</button>
+              </div>
+            }
         <div style={{display:'flex',flexDirection:'row',width:"65%",height:'22%',alignItems:'center',justifyContent:'flex-end',position:'absolute',
           top:'5%',left:'30%',fontWeight:'bold',fontSize:'16px',color:Colors.get('maxValColor', theme)}}>
           <FaStar /> {AppData.mentalRecords[0][difficulty]}

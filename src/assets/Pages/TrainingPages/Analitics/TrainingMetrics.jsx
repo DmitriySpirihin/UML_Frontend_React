@@ -3,7 +3,7 @@ import  {useState,useEffect} from 'react'
 import { AppData , UserData} from '../../../StaticClasses/AppData.js'
 import Colors from '../../../StaticClasses/Colors.js'
 import { theme$ ,lang$,fontSize$,premium$} from '../../../StaticClasses/HabitsBus.js'
-import MyBarChart from './MyBarChart.jsx'
+import MyBChart from './MyBarChart.jsx'
 import ProgressCircle from '../../../Helpers/ProgressCircle.jsx'
 import {FaList} from 'react-icons/fa'
 import RecomendationTraining from '../../../Helpers/RecomendationTraining.jsx'
@@ -42,7 +42,7 @@ const TrainingMetrics = ({id,closePanel}) => {
   return (
     <div style={styles(theme).container}>
       
-       <MyBarChart langIndex={langIndex} data={data} colorTon={Colors.get('heavy', theme)} colorRm={Colors.get('light', theme)}
+       <MyBChart langIndex={langIndex} data={data} colorTon={Colors.get('heavy', theme)} colorRm={Colors.get('light', theme)}
         colorStroke={Colors.get('icons', theme)} colorToolTip={Colors.get('background', theme)} colorFont={Colors.get('mainText', theme)}/>
       
       <Togglers theme={theme} period={period} setPeriod={setPeriod} langIndex={langIndex} fSize={fSize}/>

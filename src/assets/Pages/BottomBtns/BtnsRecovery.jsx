@@ -71,9 +71,9 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,
     
     return (    
         <div style={styles(theme,currentBtn).style}>
-          {page !== 'RecoveryMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
-          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
-          {page === 'RecoveryMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(0);setNotifyPanel(false);}} />)}
+          {page !== 'RecoveryMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);setNotifyPanel(false);}} />)}
+          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);setNotifyPanel(false);}} />)}
+          {page === 'RecoveryMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);setNotifyPanel(false);}} />)}
           
           <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('RecoveryAnalitics');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
           

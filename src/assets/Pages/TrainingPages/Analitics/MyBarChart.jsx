@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from "recharts";
 
-export function MyBarChart({ data,langIndex, height = 200 ,colorTon,colorRm,colorStroke,colorToolTip,colorFont}) {
+export function MyBChart({ data,langIndex, height = 200 ,colorTon,colorRm,colorStroke,colorToolTip,colorFont}) {
   const [showTonnage, setShowTonnage] = useState(true);
   const [showOneRep, setShowOneRep] = useState(true);
 
@@ -88,4 +88,4 @@ export function MyBarChart({ data,langIndex, height = 200 ,colorTon,colorRm,colo
   );
 }
 
-export default MyBarChart;
+export default MyBChart;

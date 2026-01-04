@@ -1,7 +1,7 @@
 import React, {useState,useEffect} from 'react'
-import { AppData } from '../../StaticClasses/AppData.js'
+import { AppData,UserData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
-import { theme$ ,lang$,fontSize$,recoveryType$} from '../../StaticClasses/HabitsBus.js'
+import { theme$ ,lang$,fontSize$,recoveryType$,setPage,premium$} from '../../StaticClasses/HabitsBus.js'
 import {FaStarHalf,FaStar,} from 'react-icons/fa'
 import {GiStarsStack,GiCrownedSkull} from 'react-icons/gi'
 import {MdConstruction} from 'react-icons/md'
@@ -9,6 +9,9 @@ import {breathingProtocols,meditationProtocols,coldWaterProtocols} from '../../S
 import BreathingTimer from './BreathingTimer.jsx'
 import MeditationTimer from './MeditationTimer.jsx'
 import HardeningTimer from './HardeningTimer.jsx'
+import BreathingConstructor from './BreathingConstructor.jsx'
+import MeditationConstructor from './MeditationConstructor.jsx'
+import HardeningConstructor from './HardeningConstructor.jsx'
 
 const BreathingMain = () => {
     // states
@@ -20,6 +23,14 @@ const BreathingMain = () => {
     const [categorylIndex,setCategoryIndex] = useState(0);
     const [showTimer, setShowTimer] = useState(false);
     const [structure,setStructure] = useState(breathingProtocols);
+    const [showBreathingConstructor, setShowBreathingConstructor] = useState(false);
+    const [showMeditationConstructor, setShowMeditationConstructor] = useState(false);
+    const [showHardeningConstructor, setShowHardeningConstructor] = useState(false);
+    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
+        useEffect(() => {
+         const subscription = premium$.subscribe(setHasPremium);
+         return () => subscription.unsubscribe();
+        }, []); 
     // subscriptions
     useEffect(() => {
           const subscription = theme$.subscribe(setthemeState); 
@@ -55,21 +66,25 @@ const BreathingMain = () => {
              return (
                 <MenuCard key={mainIndex} ind={ind} difficulty={index} protocol={protocol} setTimer={setShowTimer} 
                 theme={theme} color={Colors.get(cardColor, theme)} width='46vw'
-                lang={langIndex} fSize={fSize} onClick={() => {setCurrentProtocol(protocol);setProtocolIndex(ind);setCategoryIndex(index)}} />   
+                lang={langIndex} fSize={fSize} onClick={() => {setCurrentProtocol(protocol);setProtocolIndex(ind);setCategoryIndex(index) }} hasPremium={hasPremium} needBlur={index > 1}/>   
              )
            })
         )
       })}
       </div>
       {/* constructor  */}
-      <MenuCard difficulty={4} ind={-1} setTimer={setShowTimer} 
+      <MenuCard difficulty={4} ind={-1} setTimer={recoveryType$.value === 0 ? setShowBreathingConstructor : recoveryType$.value === 1 ? setShowMeditationConstructor : setShowHardeningConstructor } 
           theme={theme} color={Colors.get('difficulty', theme)} width='96vw'
-          lang={langIndex} fSize={fSize} onClick={() => {}} protocol={undefined}/>  
+          lang={langIndex} fSize={fSize} onClick={() => {setCategoryIndex(4)}} protocol={undefined} hasPremium={hasPremium} needBlur={true} />  
           </div>
       </div>
-       {recoveryType$.value === 0 && <BreathingTimer show={showTimer} setShow={setShowTimer} protocol={currentProtocol} protocolIndex={protocolIndex} categoryIndex={categorylIndex}/>}
-       {recoveryType$.value === 1 && <MeditationTimer show={showTimer} setShow={setShowTimer} protocol={currentProtocol} protocolIndex={protocolIndex} categoryIndex={categorylIndex}/>}
-       {recoveryType$.value === 2 && <HardeningTimer show={showTimer} setShow={setShowTimer} protocol={currentProtocol} protocolIndex={protocolIndex} categoryIndex={categorylIndex}/>}
+       {recoveryType$.value === 0 && <BreathingTimer show={showTimer} isCustom={categorylIndex === 4} setShow={setShowTimer} protocol={currentProtocol} protocolIndex={protocolIndex} categoryIndex={categorylIndex}/>}
+       {recoveryType$.value === 1 && <MeditationTimer show={showTimer} isCustom={categorylIndex === 4} setShow={setShowTimer} protocol={currentProtocol} protocolIndex={protocolIndex} categoryIndex={categorylIndex}/>}
+       {recoveryType$.value === 2 && <HardeningTimer show={showTimer} isCustom={categorylIndex === 4} setShow={setShowTimer} protocol={currentProtocol} protocolIndex={protocolIndex} categoryIndex={categorylIndex}/>}
+
+       <BreathingConstructor show={showBreathingConstructor} setShow={setShowBreathingConstructor} showTimer={setShowTimer} setProtocol={setCurrentProtocol} theme={theme} langIndex={langIndex} fSize={fSize}/>
+       <MeditationConstructor show={showMeditationConstructor} setShow={setShowMeditationConstructor} showTimer={setShowTimer} setProtocol={setCurrentProtocol} theme={theme} langIndex={langIndex} fSize={fSize}/>
+       <HardeningConstructor show={showHardeningConstructor} setShow={setShowHardeningConstructor} showTimer={setShowTimer} setProtocol={setCurrentProtocol} theme={theme} langIndex={langIndex} fSize={fSize}/>
     </div>
     
   )
@@ -141,9 +156,18 @@ const styles = (theme,fSize) =>
         color: Colors.get('subText', theme),
         marginLeft: "30px"
       },
+          btn:
+          {
+            width:'70%',
+            height:'40px',
+            borderRadius:'12px',
+            fontSize: fSize === 0 ? '13px' : '14px',
+             color:Colors.get('mainText', theme),
+             backgroundColor:Colors.get('simplePanel',theme)
+        }
 })
 
-function MenuCard({protocol,difficulty,ind,width,setTimer, color,theme,lang, onClick,fSize} ){
+function MenuCard({protocol,difficulty,ind,width,setTimer, color,theme,lang, onClick,fSize,hasPremium = false,needBlur= false} ){
     const getIcon = () => {
           if(difficulty === 0) return <FaStarHalf style={backIconStyle}/>
           else if(difficulty === 1) return <FaStar style={backIconStyle}/>
@@ -175,6 +199,14 @@ function MenuCard({protocol,difficulty,ind,width,setTimer, color,theme,lang, onC
       }
     return (
       <div style={_style} onClick={() => {onClick();setTimer(true)}}> 
+      { !hasPremium && needBlur &&
+        <div onClick={(e) => {e.stopPropagation();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'space-around',alignItems:'center',
+         width:'100%',height:'100%',left:'0',top:'0',backdropFilter:'blur(8px)',zIndex:2}}>
+          <div style={{...styles(theme,fSize).mainText}}> {lang === 0 ? 'Про категория' : 'Pro category'} </div>
+          <div style={{...styles(theme,fSize).mainText}}> {lang === 0 ? '👑премиум👑' : '👑premium👑'} </div>
+          <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn}} >{lang === 0 ? 'Стать премиум' : 'Get premium'}</button>
+        </div>
+      }
         {ind !== -1 && <div style={{display:'flex',flexDirection:'row',width:"15%",height:'22%',backgroundColor:'rgba(50, 50, 50, 0.35)',alignItems:'center',justifyContent:'center',position:'absolute',
           top:'1%',left:'80%',borderRadius:'12px',fontSize:'16px',color:Colors.get('mainText', theme)}}>
            {getCardsAmountInProtocol(difficulty,ind)}

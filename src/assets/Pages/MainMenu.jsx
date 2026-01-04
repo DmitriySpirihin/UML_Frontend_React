@@ -1,26 +1,30 @@
-import React from 'react'
+import {useEffect,useState} from 'react'
 import Colors from '../StaticClasses/Colors'
-import { theme$, lang$, devMessage$ ,isPasswordCorrect$,fontSize$ } from '../StaticClasses/HabitsBus'
-import { AppData } from '../StaticClasses/AppData'
+import { theme$, lang$, devMessage$ ,isPasswordCorrect$,fontSize$,premium$ ,setPage} from '../StaticClasses/HabitsBus'
+import { AppData,UserData } from '../StaticClasses/AppData'
 //import 'grained'
 import  {NotificationsManager,sendPassword} from '../StaticClasses/NotificationsManager'
 import {FaMoon,FaBrain,FaSpa,FaBookOpen,FaRecycle} from 'react-icons/fa'
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 
 const MainMenu = ({ onPageChange }) => {
-    const [theme, setThemeState] = React.useState('dark');
-    const [lang, setLang] = React.useState(AppData.prefs[0]);
-    const [fSize, setFontSize] = React.useState(0);
-    const [clickCount, setClickCount] = React.useState(0);
-    const [clickCountUp, setClickCountUp] = React.useState(0);
-    const [devConsolePanel, setDevConsolePanel] = React.useState(false);
-    const [devMessage, setDevMessage] = React.useState('');
-    const [devInputMessage, setDevInputMessage] = React.useState('');
-    const [devMessageToAll, setDevMessageToAll] = React.useState('');
-    const [isPasswordCorrect, setIsPasswordCorrect] = React.useState(false);
-    const [passwordInput, setPasswordInput] = React.useState(false);
-
-    React.useEffect(() => {
+    const [theme, setThemeState] = useState('dark');
+    const [lang, setLang] = useState(AppData.prefs[0]);
+    const [fSize, setFontSize] = useState(0);
+    const [clickCount, setClickCount] = useState(0);
+    const [clickCountUp, setClickCountUp] = useState(0);
+    const [devConsolePanel, setDevConsolePanel] = useState(false);
+    const [devMessage, setDevMessage] = useState('');
+    const [devInputMessage, setDevInputMessage] = useState('');
+    const [devMessageToAll, setDevMessageToAll] = useState('');
+    const [isPasswordCorrect, setIsPasswordCorrect] = useState(false);
+    const [passwordInput, setPasswordInput] = useState(false);
+    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
+    useEffect(() => {
+          const subscription = premium$.subscribe(setHasPremium);
+          return () => subscription.unsubscribe();
+        }, []);
+    useEffect(() => {
         const themeSubscription = theme$.subscribe(setThemeState);
         const langSubscription = lang$.subscribe((lang) => {
             setLang(lang === 'ru' ? 0 : 1);
@@ -32,7 +36,7 @@ const MainMenu = ({ onPageChange }) => {
             fontSizeSubscription.unsubscribe();
         };
     }, []);
-    React.useEffect(() => {
+    useEffect(() => {
        
         const devMessageSubscription = devMessage$.subscribe(setDevMessage);
         const isPasswordCorrectSubscription = isPasswordCorrect$.subscribe(setIsPasswordCorrect);
@@ -41,7 +45,7 @@ const MainMenu = ({ onPageChange }) => {
             isPasswordCorrectSubscription.unsubscribe();
         };
     }, []);
-    React.useEffect(() => {
+    useEffect(() => {
         if(isPasswordCorrect){
             setPasswordInput(false);
             setDevConsolePanel(true);
@@ -157,7 +161,12 @@ const MainMenu = ({ onPageChange }) => {
                     fontSize={fSize}
                     onClick={() => {onPageChange('SleepMain');playEffects(null);}}
                     index={4}
-                />
+                    hasPremium={hasPremium}
+                    needBlur={true}
+                >
+                
+
+                </MenuCard>
                 <div style={{height:'5vh',width:'100%'}} onClick={() => {handleClick(false)}} />
             </div>
           </div>
@@ -168,7 +177,7 @@ const MainMenu = ({ onPageChange }) => {
 export default MainMenu
 
 function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#294128ff", colorLight = "#7eff7065",
-  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#2790145c", theme,lang, onClick,fontSize,index}){
+  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#2790145c",fSize=1, theme,lang, onClick,fontSize,index,hasPremium = false,needBlur= false}){
     const cardColor = (theme) => {
         if(theme === 'dark') return colorDark;
         else if(theme === 'specialdark') return colorSpecialDark;
@@ -211,6 +220,14 @@ function MenuCard({text = ["Категория", "Category"], decr = ["Скор�
     const info = getInfo(index);
     return (
         <div style={_style} onClick={onClick}> 
+        { !hasPremium && needBlur &&
+                  <div onClick={(e) => {e.stopPropagation();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'space-around',alignItems:'center',
+                    width:'100%',height:'100%',left:'0',top:'0',backdropFilter:'blur(8px)',zIndex:2}}>
+                    <div style={{...styles(theme,fSize).mainText}}> {lang === 0 ? 'Сон и ИИ аналитика 🤖✨' : 'Sleep and AI analysis 🤖✨'} </div>
+                    <div style={{...styles(theme,fSize).mainText}}> {lang === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'} </div>
+                    <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn}} >{lang === 0 ? 'Стать премиум' : 'Get premium'}</button>
+                  </div>
+                }
         {info !== '' && <div style={{display:'flex',flexDirection:'row',width:"15%",height:'22%',backgroundColor:'rgba(50, 50, 50, 0.35)',alignItems:'center',justifyContent:'center',position:'absolute',
           top:'10%',left:'80%',borderRadius:'12px',fontSize:'16px',color:Colors.get('mainText', theme)}}>
            {info}
@@ -267,7 +284,16 @@ const styles = (theme,fontSize) => ({
     overflowY: "scroll",
     justifyContent: 'center',
     alignItems: 'center'
-  }
+  },
+      btn:
+      {
+         width:'70%',
+         height:'40px',
+         borderRadius:'12px',
+         fontSize: fontSize === 0 ? '13px' : '14px',
+         color:Colors.get('mainText', theme),
+         backgroundColor:Colors.get('simplePanel',theme)
+      }
 })
 function playEffects(sound){
   if(AppData.prefs[2] == 0 && sound !== null){

@@ -1,162 +1,185 @@
 import { AppData } from "../../StaticClasses/AppData";
-export const getInsight = (dateString, langIndex) => {
-  const t = (ru, en) => (langIndex === 0 ? ru : en);
+import { allHabits } from "../../Classes/Habit";
 
-  // Helper: format duration in minutes
-  const formatDuration = (ms) => Math.round(ms / 60000);
+const INSIGHT_SYSTEM_PROMPTS = [
+  // 0 — RU
+  `Ты — персональный фитнес‑аналитик. 
+Генерируй короткие, практичные инсайты по тренировкам, дыханию, медитации, закаливанию и сну за последние 7 дней.
+Отвечай на русском, структурированно и мотивирующе. Расставь переносы строки для вставки в скрипт: \n`,
+  // 1 — EN
+  `You are a personal fitness analyst.
+Generate short, actionable insights about workouts, breathing, meditation, cold exposure and sleep for the last 7 days.
+Answer in English, structured and motivating. Add \n for script`
+];
 
-  const messages = [];
-  const recommendations = [];
+export function getInsightPrompt(langIndex) {
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const user = AppData.pData || {};
+  const habitsByDate = AppData.habitsByDate || {};
+  const trainings = AppData.trainingLog || {};
+  const breathing = AppData.breathingLog || {};
+  const meditation = AppData.meditationLog || {};
+  const hardening = AppData.hardeningLog || {};
+  const sleeping = AppData.sleepingLog || {};
+  const programs = AppData.programs || {};
+  const exercises = AppData.exercises || {};
 
-  // === Breathing ===
-  const breathingSessions = AppData.breathingLog[dateString] || [];
-  if (breathingSessions.length > 0) {
-    const total = breathingSessions.reduce((sum, s) => sum + (s.endTime - s.startTime), 0);
-    const maxHoldSec = Math.max(...breathingSessions.map(s => s.maxHold || 0)) / 1000;
-    messages.push(t(
-      `Вы потратили ${formatDuration(total)} мин на дыхательные практики. Максимальная задержка: ${maxHoldSec} сек.`,
-      `You spent ${formatDuration(total)} min on breathing exercises. Max breath hold: ${maxHoldSec} sec.`
-    ));
-  } else {
-    recommendations.push(t(
-      'Попробуйте добавить дыхательную практику — даже 5 минут улучшат концентрацию и снизят стресс.',
-      'Try adding a breathing session—even 5 minutes can improve focus and reduce stress.'
-    ));
+  function isInLast7Days(dateStr) {
+    const t = new Date(dateStr).getTime();
+    return !Number.isNaN(t) && t >= sevenDaysAgo && t <= now;
   }
 
-  // === Meditation ===
-  const meditationSessions = AppData.meditationLog[dateString] || [];
-  if (meditationSessions.length > 0) {
-    const total = meditationSessions.reduce((sum, s) => sum + (s.endTime - s.startTime), 0);
-    messages.push(t(
-      `Вы медитировали ${formatDuration(total)} мин — отличный способ восстановить нервную систему!`,
-      `You meditated for ${formatDuration(total)} min — a great way to restore your nervous system!`
-    ));
-  } else {
-    recommendations.push(t(
-      'Не забывайте про медитацию: она помогает снизить тревожность и улучшить сон.',
-      'Don’t skip meditation—it reduces anxiety and improves sleep quality.'
-    ));
+  // 1. Пользователь
+  const userBlock = `
+USER:
+- age: ${user.age}
+- gender: ${user.gender}
+- height: ${user.height}
+- wrist: ${user.wrist}
+- goal: ${user.goal}
+`;
+
+  // 2. Привычки
+const allhabits = allHabits;   // массив или объект Habit
+const names = new Set();         // чтобы без дублей
+
+let habitsBlock = 'HABITS_BY_DATE (last 7 days):\n';
+
+Object.entries(habitsByDate || {}).forEach(([date, obj]) => {
+  if (!isInLast7Days(date)) return;
+
+  const arr = Array.isArray(obj)
+    ? obj
+    : Object.entries(obj).map(([habitId, status]) => ({
+        habitId: Number(habitId),
+        status
+      }));
+
+  const dayHabits = arr.map((item) => {
+    const h = allhabits[item.habitId];
+    const habitName = h && h.name
+      ? (h.name[langIndex] || h.name[0])
+      : `Habit #${item.habitId}`;
+
+    names.add(habitName);
+
+    return {
+      ...item,
+      habitName
+    };
+  });
+
+  habitsBlock += `  ${date}: ${JSON.stringify(dayHabits)}\n`;
+});
+
+  // 3. Тренировки с названиями программ и упражнений
+  let trainingsBlock = 'TRAININGS (last 7 days):\n';
+  Object.entries(trainings).forEach(([date, sessions]) => {
+    if (!isInLast7Days(date)) return;
+    trainingsBlock += `  DATE: ${date}\n`;
+    (sessions || []).forEach((s, idx) => {
+      const program = programs[s.programId];
+      const programName = program
+        ? (program.name && (program.name[langIndex] || program.name[0]))
+        : `Program #${s.programId}`;
+
+      trainingsBlock += `    [Session #${idx + 1}] program: ${programName}, dayIndex: ${s.dayIndex}, completed: ${s.complited}, duration(ms): ${s.duration}, tonnage: ${s.tonnage}\n`;
+
+      trainingsBlock += `      exercises:\n`;
+      const order = s.exerciseOrder || [];
+      order.forEach((exId) => {
+        const exData = s.exercises && s.exercises[exId];
+        const exMeta = exercises[exId];
+        const exName = exMeta
+          ? (exMeta.name && (exMeta.name[langIndex] || exMeta.name[0]))
+          : `Exercise #${exId}`;
+        if (!exData) return;
+
+        trainingsBlock += `        - ${exName} (mgId: ${exData.mgId})\n`;
+        trainingsBlock += `          sets:\n`;
+        (exData.sets || []).forEach((set, i) => {
+          trainingsBlock += `            * set ${i + 1}: type=${set.type}, reps=${set.reps}, weight=${set.weight}, time=${set.time}\n`;
+        });
+        trainingsBlock += `          totalTonnage: ${exData.totalTonnage}, completed: ${exData.complited}\n`;
+      });
+    });
+  });
+
+  // 4. Универсальный блок для дыхания/медитации/закалки
+  function buildSimpleLogBlock(title, logObj, extraFields) {
+    let block = `${title} (last 7 days):\n`;
+    Object.entries(logObj || {}).forEach(([date, arr]) => {
+      if (!isInLast7Days(date)) return;
+      block += `  ${date}:\n`;
+      (arr || []).forEach((item, i) => {
+        block += `    #${i + 1}: duration(ms): ${item.endTime - item.startTime}`;
+        (extraFields || []).forEach((f) => {
+          if (item[f] != null) block += `, ${f}: ${item[f]}`;
+        });
+        block += '\n';
+      });
+    });
+    return block;
   }
 
-  // === Hardening (Cold Exposure) ===
-  const hardeningSessions = AppData.hardeningLog[dateString] || [];
-  if (hardeningSessions.length > 0) {
-    const timeInCold = hardeningSessions.reduce((sum, s) => sum + (s.timeInColdWater || 0), 0);
-    messages.push(t(
-      `Вы провели ${Math.round(timeInCold / 1000)} сек в холодной воде — закалка укрепляет иммунитет!`,
-      `You spent ${Math.round(timeInCold / 1000)} sec in cold water — hardening boosts immunity!`
-    ));
-  } else {
-    recommendations.push(t(
-      'Хотите укрепить иммунитет? Попробуйте контрастный душ или кратковременное погружение в прохладную воду.',
-      'Want to boost immunity? Try a contrast shower or brief cold-water exposure.'
-    ));
-  }
+  const breathingBlock = buildSimpleLogBlock('BREATHING', breathing, ['maxHold']);
+  const meditationBlock = buildSimpleLogBlock('MEDITATION', meditation, []);
+  const hardeningBlock = buildSimpleLogBlock('HARDENING', hardening, ['timeInColdWater']);
 
-  // === Sleep ===
-  const sleep = AppData.sleepingLog[dateString];
-  if (sleep) {
-    const hours = (sleep.duration / (1000 * 60 * 60)).toFixed(1);
-    const moodText = t(
-      ['ужасно', 'плохо', 'нормально', 'хорошо', 'отлично'][sleep.mood - 1] || 'нормально',
-      ['terrible', 'bad', 'okay', 'good', 'great'][sleep.mood - 1] || 'okay'
-    );
-    messages.push(t(
-      `Сон: ${hours} ч. Настроение после сна: ${moodText}.`,
-      `Sleep: ${hours} hrs. Mood after waking: ${moodText}.`
-    ));
+  // 5. Сон
+  let sleepBlock = 'SLEEP (last 7 days):\n';
+  Object.entries(sleeping || {}).forEach(([date, s]) => {
+    if (!isInLast7Days(date)) return;
+    sleepBlock += `  ${date}: bedtime(ms): ${s.bedtime}, duration(ms): ${s.duration}, mood(1-5): ${s.mood}, note: "${s.note || ''}"\n`;
+  });
 
-    // Sleep-based recommendations
-    const sleepHours = parseFloat(hours);
-    if (sleepHours < 6.5) {
-      recommendations.push(t(
-        'Ваш сон короче рекомендуемой нормы (7–9 ч). Постарайтесь лечь пораньше или улучшить гигиену сна.',
-        'Your sleep is below the recommended 7–9 hours. Try going to bed earlier or improving sleep hygiene.'
-      ));
-    } else if (sleep.mood <= 2) {
-      recommendations.push(t(
-        'Несмотря на достаточную продолжительность сна, настроение низкое. Возможно, стоит проверить качество сна или уровень стресса.',
-        'Despite enough sleep duration, your mood is low. Consider checking sleep quality or stress levels.'
-      ));
-    }
-  } else {
-    recommendations.push(t(
-      'Не забудьте записать данные сна! Качественный отдых — основа физического и ментального здоровья.',
-      'Don’t forget to log your sleep! Quality rest is the foundation of physical and mental health.'
-    ));
-  }
+  const systemPrompt = INSIGHT_SYSTEM_PROMPTS[langIndex] || INSIGHT_SYSTEM_PROMPTS[0];
 
-  // === Workouts ===
-  const workouts = AppData.trainingLog?.[dateString] || [];
-  if (workouts.length > 0) {
-    const totalDuration = workouts.reduce((sum, w) => sum + (w.duration || 0), 0);
-    const totalTonnage = workouts.reduce((sum, w) => sum + (w.tonnage || 0), 0);
-    const completedExercises = workouts.reduce((count, w) =>
-      count + Object.values(w.exercises || {}).filter(e => e.complited).length, 0
-    );
-    messages.push(t(
-      `Тренировка: ${formatDuration(totalDuration)} мин, тоннаж: ${totalTonnage} кг, упражнений выполнено: ${completedExercises}.`,
-      `Workout: ${formatDuration(totalDuration)} min, tonnage: ${totalTonnage} kg, ${completedExercises} exercises completed.`
-    ));
+  const userPrompt = `
+Analyze the data below for the LAST 7 DAYS and:
 
-    // Check for short duration
-    if (totalDuration < 10 * 60000) { // < 10 min
-      recommendations.push(t(
-        'Тренировка была очень короткой. Даже 20-минутная сессия принесёт больше пользы.',
-        'Your workout was very short. Even a 20-minute session would be more beneficial.'
-      ));
-    }
-  } else {
-    recommendations.push(t(
-      'Сегодня не было тренировки. Даже лёгкая разминка поддержит тонус и настроение!',
-      'No workout today. Even light movement can boost energy and mood!'
-    ));
-  }
+1) Briefly describe the overall activity level and progress.
+2) Highlight strengths and positive trends.
+3) Point out problem areas (what is most often skipped, where there is no progress).
+4) Give 3–5 specific recommendations for the next week (maximally practical).
+5) Style of the answer: short, to the point, motivating, without fluff.
 
-  // === Habits ===
-  const habits = AppData.habitsByDate?.[dateString] || [];
-  if (habits.length > 0) {
-    const completed = habits.filter(h => h.status === 1).length;
-    const total = habits.length;
-    const completionRate = completed / total;
-    messages.push(t(
-      `Привычки: ${completed} из ${total} выполнено сегодня.`,
-      `Habits: ${completed} out of ${total} completed today.`
-    ));
+DATA:
+${userBlock}
 
-    if (completionRate < 0.5) {
-      recommendations.push(t(
-        'Меньше половины привычек выполнено. Выберите 1–2 ключевые и сосредоточьтесь на них завтра.',
-        'Less than half of your habits were completed. Pick 1–2 key ones and focus on them tomorrow.'
-      ));
-    }
-  } else {
-    recommendations.push(t(
-      'У вас нет запланированных привычек на сегодня. Создайте пару простых — например, “выпить воду утром” или “сделать 5 минут растяжки”.',
-      'You have no habits logged for today. Set up a couple of simple ones—e.g., “drink water in the morning” or “5 min of stretching”.'
-    ));
-  }
+${habitsBlock}
 
-  // === Assemble final insight ===
-  let fullMessage = '';
+${trainingsBlock}
 
-  if (messages.length > 0) {
-    fullMessage += messages.join(' ') + ' ';
-  }
+${breathingBlock}
 
-  if (recommendations.length > 0) {
-    const intro = t('Рекомендации: ', 'Recommendations: ');
-    fullMessage += intro + recommendations.slice(0, 2).join(' ') + // limit to 2 to avoid overload
-      (recommendations.length > 2 ? t(' и другие.', ' and others.') : '');
-  }
+${meditationBlock}
 
-  if (fullMessage === '') {
-    fullMessage = t(
-      'Сегодня пока нет данных о вашей активности. Начните с одной полезной привычки!',
-      'No activity data recorded for today. Start with one healthy habit!'
-    );
-  }
+${hardeningBlock}
 
-  return fullMessage.trim();
-};
+${sleepBlock}
+`;
+
+  console.log(systemPrompt + ';' + userPrompt);
+  return { systemPrompt, userPrompt };
+}
+
+// пример обёртки вызова Qwen
+export async function getInsight(langIndex) {
+  const { systemPrompt, userPrompt } = getInsightPrompt(langIndex);
+
+  const res = await fetch('/api/qwen', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ]
+    })
+  });
+
+  const data = await res.json();
+  return data;
+}

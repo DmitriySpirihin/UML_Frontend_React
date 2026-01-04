@@ -19,39 +19,27 @@ audio.volume = 0.3;
 
 const startTimerDuration = 3000; // 3 seconds
 
-const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex }) => {
-  const [session, setSession] = useState({
-    cycles: 1,
-    steps: [{ meditateSeconds: 300, restSeconds: 0 }],
-  });
-  const [level, setLevel] = useState(setActualLevel(protocolIndex, categoryIndex));
+const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex, isCustom = false }) => {
+  // UI & preferences
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [audioEnabled, setAudioEnabled] = useState(false);
 
+  // Timer control
+  const [level, setLevel] = useState(() => setActualLevel(protocolIndex, categoryIndex, isCustom));
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [phaseProgress, setPhaseProgress] = useState(0);
+  const [elapsed, setElapsed] = useState(0); // ms elapsed in current step
   const [isRunning, setIsRunning] = useState(false);
   const [isStart, setIsStart] = useState(false);
   const [showStartTimer, setShowStartTimer] = useState(false);
-
-  const [seconds, setSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [finishMessage, setFinishMessage] = useState('');
 
-  const startTimeRef = useRef(0);
-  const [visualProgress, setVisualProgress] = useState(0);
-  const accumulatedElapsedRef = useRef(0); // total time elapsed before pause
-  const [elapsed, setElapsed] = useState(0); // elapsed time in ms for current step
-  const intervalRef = useRef(null);
-  const [pauseSnapshot, setPauseSnapshot] = useState(null);
-  // snapshot = { elapsed, stepIndex, scale, phaseProgress }
-  
-  //session data
-   const [startTime, setStartTime] = useState(0);
-   const [endTime,setEndTime] = useState(0);
+  // Session timing
+  const [startTime, setStartTime] = useState(0);
+  const [endTime, setEndTime] = useState(0);
 
   // Subscriptions
   useEffect(() => {
@@ -65,7 +53,85 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
     };
   }, []);
 
-  // Start countdown
+  // Sync level when protocol changes
+  useEffect(() => {
+    setLevel(isCustom ? 0 : setActualLevel(protocolIndex, categoryIndex, false));
+  }, [protocol, protocolIndex, categoryIndex, isCustom]);
+
+  // ✅ Derive session from props — always up to date
+  const session = useMemo(() => {
+    if (!protocol?.levels?.length) {
+      return { cycles: 1, steps: [{ meditateSeconds: 300, restSeconds: 0 }] };
+    }
+    return isCustom
+      ? protocol.levels[0]
+      : protocol.levels[level] || protocol.levels[0];
+  }, [protocol, level, isCustom]);
+
+  // Flatten into linear steps: [meditate, (rest), meditate, (rest), ...]
+  const allSteps = useMemo(() => {
+    const { cycles, steps } = session;
+    if (!steps?.length) return [{ type: 'meditate', duration: 300000, cycle: 0 }]; // 5-min fallback
+
+    const { meditateSeconds, restSeconds } = steps[0];
+    const result = [];
+    for (let cycle = 0; cycle < cycles; cycle++) {
+      result.push({ type: 'meditate', duration: meditateSeconds * 1000, cycle });
+      if (restSeconds > 0 && cycle < cycles - 1) {
+        result.push({ type: 'rest', duration: restSeconds * 1000, cycle });
+      }
+    }
+    return result.length > 0 ? result : [{ type: 'meditate', duration: 300000, cycle: 0 }];
+  }, [session]);
+
+  const currentStep = allSteps[currentStepIndex] || null;
+  const duration = currentStep?.duration || 1000;
+
+  // Reset on session change
+  useEffect(() => {
+    setCurrentStepIndex(0);
+    setElapsed(0);
+    setIsRunning(false);
+    setIsStart(false);
+    setIsPaused(false);
+    setIsFinished(false);
+  }, [session]);
+
+  // Timer interval
+  useEffect(() => {
+    if (!isRunning || !currentStep) return;
+
+    const interval = setInterval(() => {
+      setElapsed((e) => {
+        const next = e + 100;
+        if (next >= duration) {
+          const nextIndex = currentStepIndex + 1;
+          if (nextIndex >= allSteps.length) {
+            setIsRunning(false);
+            onFinishSession();
+          } else {
+            setCurrentStepIndex(nextIndex);
+            return 0;
+          }
+        }
+        return next;
+      });
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isRunning, currentStepIndex, duration, allSteps.length]);
+
+  // Audio control
+  useEffect(() => {
+    if (audioEnabled && isRunning && audio.paused) {
+      audio.play().catch(() => {});
+    } else if (!isRunning || !audioEnabled) {
+      audio.pause();
+    }
+  }, [isRunning, audioEnabled]);
+
+  // Countdown timer
+  const [seconds, setSeconds] = useState(0);
   useEffect(() => {
     if (!showStartTimer) {
       setSeconds(0);
@@ -87,21 +153,7 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
     return () => clearInterval(id);
   }, [showStartTimer]);
 
-  // Flatten meditation steps
-  const allSteps = useMemo(() => {
-    if (!session.steps?.length) return [];
-    const steps = [];
-    for (let cycle = 0; cycle < session.cycles; cycle++) {
-      steps.push({ type: 'meditate', duration: session.steps[0].meditateSeconds * 1000, cycle });
-      if (session.steps[0].restSeconds > 0 && cycle < session.cycles - 1) {
-        steps.push({ type: 'rest', duration: session.steps[0].restSeconds * 1000, cycle });
-      }
-    }
-    return steps;
-  }, [session]);
-
-  const currentStep = allSteps[currentStepIndex] || null;
-
+  // Phase info
   const getPhaseInfo = (step) => {
     if (!step) return { name: '', color: '#94a3b8' };
     if (step.type === 'meditate')
@@ -112,77 +164,24 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
   };
 
   const { name: phaseName, color: phaseColor } = getPhaseInfo(currentStep);
-  const duration = currentStep?.duration || 1000;
 
+  // Cycle display
   const cycleInfo = () => {
     if (!session.steps) return '0 / 0';
-    const stepPerCycle = session.steps[0].restSeconds > 0 ? 2 : 1;
-    return isStart
-      ? `${Math.floor(currentStepIndex / stepPerCycle) + 1} / ${session.cycles}`
-      : '0';
+    const stepsPerCycle = session.steps[0].restSeconds > 0 ? 2 : 1;
+    const currentCycle = Math.floor(currentStepIndex / stepsPerCycle) + 1;
+    return isStart ? `${currentCycle} / ${session.cycles}` : '0';
   };
 
-  // Convert to mm:ss
-  const timeRemaining = (currentStep?.duration || 0) - elapsed;
-  const totalSeconds = Math.floor(timeRemaining / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const secondsLeft = totalSeconds % 60;
-  const displayTime = `${minutes.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}`;
+  // mm:ss display
+  const timeRemaining = Math.max(0, duration - elapsed);
+  const totalSecs = Math.floor(timeRemaining / 1000);
+  const displayTime = `${Math.floor(totalSecs / 60).toString().padStart(2, '0')}:${(totalSecs % 60).toString().padStart(2, '0')}`;
 
-useEffect(() => {
-  if (currentStepIndex >= 0) {
-    setElapsed(0);
-  }
-}, [currentStepIndex]);
+  // Visual progress for SVG ring (0 → 1)
+  const visualProgress = currentStep ? elapsed / currentStep.duration : 0;
 
-// Control interval based on isRunning
-useEffect(() => {
-  if (!isRunning || !currentStep) return;
-
-  const interval = setInterval(() => {
-    setElapsed(e => {
-      const next = e + 100;
-      if (next >= duration) {
-        // Move to next step
-        const nextIndex = currentStepIndex + 1;
-        if (nextIndex >= allSteps.length) {
-          setIsRunning(false);
-          onFinishSession();
-        } else {
-          setCurrentStepIndex(nextIndex);
-        }
-        return duration;
-      }
-      return next;
-    });
-  }, 100);
-
-  return () => clearInterval(interval);
-}, [isRunning, currentStepIndex, duration, allSteps.length]);
-
- //Ambient sound
-  useEffect(() => {
-  if (audioEnabled && isRunning) {
-    if(audio.paused) audio.play();
-  }
-  else audio.pause();
-}, [isRunning, audioEnabled]);
-
-
-  const resetSession = () => {
-    setCurrentStepIndex(0);
-    setPhaseProgress(0);
-    setIsRunning(false);
-    setIsStart(false);
-    setIsPaused(false);
-    setIsFinished(false);
-    setElapsed(0);
-  };
-
-  useEffect(() => {
-    resetSession();
-  }, [session]);
-
+  // ===== Handlers =====
   const handleStart = () => {
     setAudioEnabled(true);
     setStartTime(Date.now());
@@ -192,45 +191,46 @@ useEffect(() => {
   };
 
   const handlePause = () => {
-    audio.pause();
     setEndTime(Date.now());
     setIsRunning(false);
     setIsPaused(true);
-    if (startTimeRef.current) {
-    const elapsedSoFar = performance.now() - startTimeRef.current;
-    accumulatedElapsedRef.current += elapsedSoFar;
-    startTimeRef.current = 0; // reset so we know we're paused
-  }
+    audio.pause();
   };
 
   const handleResume = () => {
     setIsRunning(true);
     setIsPaused(false);
-    startTimeRef.current = performance.now();
   };
 
   const handleReload = () => {
-    resetSession();
+    setCurrentStepIndex(0);
+    setElapsed(0);
+    setIsRunning(false);
+    setIsStart(false);
+    setIsPaused(false);
+    setIsFinished(false);
   };
 
-  const onFinishSession = async() => {
-    saveResult();
+  const onFinishSession = async () => {
+    if (!isCustom) {
+      markSessionAsDone(1, categoryIndex, protocolIndex, level);
+    }
     await saveMeditationSession(startTime, Date.now());
     setFinishMessage(congratulations(langIndex));
     setIsFinished(true);
   };
 
-  const saveResult = () => {
-    markSessionAsDone(1, categoryIndex, protocolIndex, level);
-  };
-  const onSaveSession = async() => {
+  const onSaveSession = async () => {
     await saveMeditationSession(startTime, endTime);
-    resetSession();
+    handleReload();
+    setShow(false);
   };
 
+  // ===== Render =====
   return (
     <div style={styles(theme, show).container}>
-      <div style={styles(theme, show,isStart).decorLayer} />
+      <div style={styles(theme, show, isStart).decorLayer} />
+
       {/* Pre-session info */}
       {!isFinished && !isStart && !showStartTimer && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-around', width: '90%', height: '80%' }}>
@@ -245,7 +245,7 @@ useEffect(() => {
           <div
             style={{
               display: 'flex',
-              border: isLevelDone(categoryIndex, protocolIndex, level) ? `2px solid ${Colors.get('maxValColor', theme)}` : 'none',
+              border: isLevelDone(categoryIndex, protocolIndex, level, isCustom) ? `2px solid ${Colors.get('maxValColor', theme)}` : 'none',
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-around',
@@ -255,18 +255,18 @@ useEffect(() => {
             }}
           >
             <FaCaretLeft
-              onClick={() => setLevel((prev) => (prev > 0 ? prev - 1 : 0))}
+              onClick={() => setLevel((prev) => Math.max(0, prev - 1))}
               style={{ fontSize: '24px', color: Colors.get('icons', theme) }}
             />
             <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '15px' : '17px' }}>{level + 1}</p>
             <FaCaretRight
-              onClick={() => setLevel((prev) => (prev < protocol.levels.length - 1 ? prev + 1 : protocol.levels.length - 1))}
+              onClick={() => setLevel((prev) => Math.min(protocol.levels.length - 1, prev + 1))}
               style={{ fontSize: '24px', color: Colors.get('icons', theme) }}
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', width: '100%', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-            <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '15px' : '17px' }}>{protocol.levels[level].strategy}</p>
-            <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '13px' : '15px' }}>{(langIndex === 0 ? 'циклов: ' : 'cycles: ') + protocol.levels[level].cycles}</p>
+            <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '15px' : '17px' }}>{session.strategy || protocol.levels[level]?.strategy || ''}</p>
+            <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '13px' : '15px' }}>{(langIndex === 0 ? 'циклов: ' : 'cycles: ') + session.cycles}</p>
           </div>
           <div style={{ width: '100%', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
             <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '15px' : '17px' }}>{langIndex === 0 ? 'Инструкция' : 'Instruction'}</p>
@@ -286,31 +286,12 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Meditation Timer - MATCHES YOUR SCREENSHOT */}
+      {/* Active timer */}
       {!isFinished && isStart && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80%', width: '100%' }}>
           <svg width="400" height="400" viewBox="0 0 100 100">
-            {/* Background circle (filled slightly) */}
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              fill={phaseColor}
-              opacity="0.1"
-            />
-
-            {/* Outer ring */}
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              fill="none"
-              stroke={Colors.get('border', theme)}
-              strokeWidth="1"
-              opacity="0.4"
-            />
-
-            {/* Progress ring (filling) */}
+            <circle cx="50" cy="50" r="45" fill={phaseColor} opacity="0.1" />
+            <circle cx="50" cy="50" r="45" fill="none" stroke={Colors.get('border', theme)} strokeWidth="1" opacity="0.4" />
             <circle
               cx="50"
               cy="50"
@@ -322,42 +303,34 @@ useEffect(() => {
               strokeDashoffset={`${2 * Math.PI * 45 * (1 - visualProgress)}`}
               strokeLinecap="round"
             />
-
-            {/* Strategy text - full, centered, auto-sized */}
             <foreignObject x="15" y="15" width="70" height="40">
-  <div
-    xmlns="http://www.w3.org/1999/xhtml"
-    style={{
-      width: '70px',
-      height: '40px',
-      fontSize: '3.5px',
-      fontWeight: '500',
-      fontFamily: 'sans-serif',
-      color: Colors.get('mainText', theme),
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      textAlign: 'center',
-      overflow: 'hidden',
-      lineHeight: 1.3,
-    }}
-  >
-    {protocol?.instructions?.[langIndex] || ''}
-  </div>
-</foreignObject>
-
-            {/* Timer - large, bold, mm:ss */}
+              <div
+                xmlns="http://www.w3.org/1999/xhtml"
+                style={{
+                  width: '70px',
+                  height: '40px',
+                  fontSize: '1px',
+                  fontWeight: '500',
+                  fontFamily: 'sans-serif',
+                  color: Colors.get('mainText', theme),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  overflow: 'hidden',
+                  lineHeight: 1.3,
+                }}
+              >
+                {protocol?.instructions?.[langIndex] || ''}
+              </div>
+            </foreignObject>
             <text x="50" y="60" textAnchor="middle" fill={phaseColor} fontFamily="sans-serif" fontSize="16" fontWeight="bold">
               {displayTime}
             </text>
-
-            {/* Phase name */}
             <text x="50" y="80" textAnchor="middle" fill={phaseColor} fontFamily="sans-serif" fontSize="5">
               {phaseName}
             </text>
           </svg>
-
-          {/* Cycle counter */}
           <div style={{
             marginTop: '20px',
             fontSize: fSize === 0 ? '14px' : '16px',
@@ -388,69 +361,64 @@ useEffect(() => {
       <div style={styles(theme, show).controls}>
         {(!isStart || isFinished) && (
           <div>
-          <IoArrowBackCircle
-            onClick={() => {
-              if (isFinished) {
-                setIsFinished(false);
-              }
-              setShow(false);
-            }}
-            style={{ fontSize: '60px', color: Colors.get('close', theme) }}
-          />
-          <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
-        </div>
+            <IoArrowBackCircle
+              onClick={() => {
+                if (isFinished) setIsFinished(false);
+                setShow(false);
+              }}
+              style={{ fontSize: '60px', color: Colors.get('close', theme) }}
+            />
+            <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
+          </div>
         )}
+
         {isStart && !isFinished && (
           audioEnabled ? (
             <div>
-            <IoMdVolumeHigh onClick={() => setAudioEnabled(false)} style={{ fontSize: '60px', color: Colors.get('icons', theme) }} />
-            <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Выкл звук' : 'Mute'}</div>
+              <IoMdVolumeHigh onClick={() => setAudioEnabled(false)} style={{ fontSize: '60px', color: Colors.get('icons', theme) }} />
+              <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Выкл звук' : 'Mute'}</div>
             </div>
           ) : (
             <div>
-            <IoMdVolumeMute onClick={() => setAudioEnabled(true)} style={{ fontSize: '60px', color: Colors.get('icons', theme) }} />
-            <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Вкл звук' : 'Unmute'}</div>
+              <IoMdVolumeMute onClick={() => setAudioEnabled(true)} style={{ fontSize: '60px', color: Colors.get('icons', theme) }} />
+              <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Вкл звук' : 'Unmute'}</div>
             </div>
           )
         )}
+
         {!isStart && !showStartTimer && !isFinished && (
           <div>
-          <IoPlayCircle
-            onClick={() => {
-              setSession(protocol.levels[level]);
-              setShowStartTimer(true);
-            }}
-            style={{ fontSize: '60px', color: Colors.get('play', theme) }}
-          />
-          <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Начать' : 'Start'}</div>
-        </div>
+            <IoPlayCircle
+              onClick={() => setShowStartTimer(true)} // ✅ No setSession needed!
+              style={{ fontSize: '60px', color: Colors.get('play', theme) }}
+            />
+            <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Начать' : 'Start'}</div>
+          </div>
         )}
-        {!isFinished && isPaused &&
-        
-        <div>
-        <IoArrowBackCircle onClick={handleReload} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
-        <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
-        </div>    
-        }
-        {isRunning && !isFinished &&
-        <div>
-        <IoPauseCircle onClick={handlePause} style={{ fontSize: '60px', color: Colors.get('pause', theme) }} />
-        <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Пауза' : 'Pause'}</div>
-        </div>
-        }
-        {!isFinished && !showStartTimer && isPaused && 
-        <div>
-        <IoPlayCircle onClick={handleResume} style={{ fontSize: '60px', color: Colors.get('play', theme) }} />
-        <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Продолжить' : 'Resume'}</div>
-        </div>
-        }
-        {!isFinished && !showStartTimer && isPaused && 
-        <div>
-         <IoCheckmarkCircle onClick={onSaveSession} style={{ fontSize: '60px', color: Colors.get('reload', theme) }} />
-         <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Сохранить & выйти' : 'Save & exit'}</div>
-        </div>
-        }
-        
+
+        {isPaused && !isFinished && (
+          <>
+            <div>
+              <IoArrowBackCircle onClick={handleReload} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
+              <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
+            </div>
+            <div>
+              <IoPlayCircle onClick={handleResume} style={{ fontSize: '60px', color: Colors.get('play', theme) }} />
+              <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Продолжить' : 'Resume'}</div>
+            </div>
+            <div>
+              <IoCheckmarkCircle onClick={onSaveSession} style={{ fontSize: '60px', color: Colors.get('reload', theme) }} />
+              <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Сохранить & выйти' : 'Save & exit'}</div>
+            </div>
+          </>
+        )}
+
+        {isRunning && !isFinished && !isPaused && (
+          <div>
+            <IoPauseCircle onClick={handlePause} style={{ fontSize: '60px', color: Colors.get('pause', theme) }} />
+            <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Пауза' : 'Pause'}</div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -543,7 +511,8 @@ const congratulations = (langIndex) => {
   return list[randomIndex];
 };
 
-const setActualLevel = (categoryIndex,protocolIndex) => {
+const setActualLevel = (categoryIndex,protocolIndex,isCustom) => {
+  if(isCustom)return 0;
     let ind = -1;
     const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
      for(let i = 0; i < protocol.length; i++) {
@@ -554,7 +523,8 @@ const setActualLevel = (categoryIndex,protocolIndex) => {
      }
      return ind > -1 ? ind : protocol.length - 1;
 }
-const isLevelDone = (categoryIndex,protocolIndex,levelIndex) => {
+const isLevelDone = (categoryIndex,protocolIndex,levelIndex,isCustom) => {
+  if(isCustom)return false;
     const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
     return protocol[levelIndex];
 }

@@ -10,12 +10,9 @@ import { markSessionAsDone,saveBreathingSession } from '../../StaticClasses/Reco
 
 const startTimerDuration = 5000;
 
-const BreathingTimer = ({ show,setShow,protocol,protocolIndex,categoryIndex }) => {
-   const [session,setSession] = useState({
-    cycles: 1,
-    steps: [{ in: 1000 }, { hold: 1000 }, { out: 1000 }, { hold: 1000 }]
-  });
-  const [level,setLevel] = useState(setActualLevel(protocolIndex,categoryIndex));
+const BreathingTimer = ({ show,setShow,protocol,protocolIndex,categoryIndex,isCustom = false }) => {
+  
+  const [level,setLevel] = useState(setActualLevel(protocolIndex,categoryIndex,isCustom));
   const [theme, setthemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]); 
@@ -101,13 +98,29 @@ const BreathingTimer = ({ show,setShow,protocol,protocolIndex,categoryIndex }) =
   startTimeRef.current = 0;
 }, [currentStepIndex]);
   // Flatten steps
-  const allSteps = useMemo(() => {
-    const steps = [];
-    for (let cycle = 0; cycle < session.cycles; cycle++) {
-      session.steps.forEach(step => steps.push({ ...step, cycle }));
-    }
-    return steps;
-  }, [session]);
+  const effectiveLevelData = useMemo(() => {
+  if (!protocol || !protocol.levels || protocol.levels.length === 0) {
+    // Fallback
+    return {
+      cycles: 1,
+      steps: [{ in: 4000 }, { hold: 4000 }, { out: 4000 }, { hold: 4000 }]
+    };
+  }
+  if (isCustom) {
+    return protocol.levels[0]; // Custom always uses level 0
+  }
+  return protocol.levels[level] || protocol.levels[0];
+}, [protocol, level, isCustom]);
+
+
+// Then replace all `session` usage with `effectiveLevelData`
+const allSteps = useMemo(() => {
+  const steps = [];
+  for (let cycle = 0; cycle < effectiveLevelData.cycles; cycle++) {
+    effectiveLevelData.steps.forEach(step => steps.push({ ...step, cycle }));
+  }
+  return steps;
+}, [effectiveLevelData]);
 
   const currentStep = allSteps[currentStepIndex] || null;
 
@@ -165,9 +178,9 @@ const BreathingTimer = ({ show,setShow,protocol,protocolIndex,categoryIndex }) =
 
   // Cycle info
   const cycleInfo = () => {
-    if (!session.steps) return '0 / 0';
+    if (!effectiveLevelData.steps) return '0 / 0';
     return isStart
-      ? `${Math.floor(currentStepIndex / session.steps.length) + 1} / ${session.cycles}`
+      ? `${Math.floor(currentStepIndex / effectiveLevelData.steps.length) + 1} / ${effectiveLevelData.cycles}`
       : '0';
   };
 
@@ -274,26 +287,26 @@ useEffect(() => {
    phaseStartScaleRef.current = 1;
    setRenderScale(1);
     resetSession();
-  }, [session]);
+  }, [effectiveLevelData]);
 
 
   // Control handlers
   const handleStart = () => {
-    let maxHoldValue = 0;
-  for (const step of session.steps) {
+  // Use effectiveLevelData instead of session
+  let maxHoldValue = 0;
+  for (const step of effectiveLevelData.steps) {
     if (step.hold !== undefined && step.hold > maxHoldValue) {
       maxHoldValue = step.hold;
     }
   }
   maxHoldRef.current = maxHoldValue;
-    initAudio(); // Required for autoplay
-    setStartTime(Date.now());
-    setAudioEnabled(true);
-    setIsStart(true);
-    setIsRunning(true);
-    setIsPaused(false);
-    setStartTime(Date.now());
-  };
+  initAudio();
+  setStartTime(Date.now());
+  setAudioEnabled(true);
+  setIsStart(true);
+  setIsRunning(true);
+  setIsPaused(false);
+};
 
   const handlePause = () => {
     setEndTime(Date.now());
@@ -310,8 +323,8 @@ useEffect(() => {
     resetSession();
   };
   const onFinishSession = async() => {
-      saveResult();
-      await saveBreathingSession(startTime, Date.now(),maxHoldRef.current);
+      if(!isCustom){saveResult();
+      await saveBreathingSession(startTime, Date.now(),maxHoldRef.current);}
       setFinishMessage(congratulations(langIndex));
       setIsFinished(true);
     };
@@ -335,15 +348,15 @@ useEffect(() => {
         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '13px' : '15px'}}>{protocol.aim[langIndex]}</p>
         </div>
         <div style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{langIndex === 0 ? 'Уровень' : 'Level'}</div>
-        <div style={{display:'flex',border:isLevelDone(categoryIndex,protocolIndex,level) ? `2px solid ${Colors.get('maxValColor', theme)}` : 'none',flexDirection:'row',alignItems:'center',justifyContent:'space-around',width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
+        <div style={{display:'flex',border:isLevelDone(categoryIndex,protocolIndex,level,isCustom) ? `2px solid ${Colors.get('maxValColor', theme)}` : 'none',flexDirection:'row',alignItems:'center',justifyContent:'space-around',width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
          <FaCaretLeft onClick={() => {setLevel(prev => prev - 1 > 0 ? prev - 1 : 0)}} style={{fontSize:'24px',color:Colors.get('icons', theme)}}/>
          <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{level + 1}</p>
          <FaCaretRight onClick={() => {setLevel(prev => prev + 1 < protocol.levels.length ? prev + 1 : protocol.levels.length - 1)}} style={{fontSize:'24px',color:Colors.get('icons', theme)}}/>
          
         </div>
         <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyContent:'space-around',width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{protocol.levels[level].strategy}</p>
-         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '13px' : '15px'}}>{(langIndex === 0 ? 'циклов: ' : 'cycles: ') + protocol.levels[level].cycles}</p>
+         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{protocol.levels[level]?.strategy || ''}</p>
+         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '13px' : '15px'}}>{(langIndex === 0 ? 'циклов: ' : 'cycles: ') +  effectiveLevelData.cycles}</p>
         </div>
         <div style={{width:'100%',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
         <p style={{color:Colors.get('mainText', theme),fontSize:fSize === 0 ? '15px' : '17px'}}>{langIndex === 0 ? 'Инструкция' : 'Instruction'}</p>
@@ -405,7 +418,7 @@ useEffect(() => {
           <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
           </div>
         }
-        {isFinished  && <IoArrowBackCircle onClick={() => {saveResult();setIsFinished(false); setShow(false)}} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>}
+        {isFinished  && <IoArrowBackCircle onClick={() => {setIsFinished(false); setShow(false)}} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>}
         {!isFinished && audioEnabled ? 
           <div>
           <IoMdVolumeHigh onClick={() => setAudioEnabled(false)} style={{fontSize:'60px',color:Colors.get('icons', theme)}} />
@@ -419,7 +432,7 @@ useEffect(() => {
          }
         {!isFinished &&!isStart && !showStartTimer && 
         <div>
-        <IoPlayCircle onClick={() => {setShowStartTimer(true);setSession(protocol.levels[level]);}} style={{fontSize:'60px',color:Colors.get('play', theme)}} />
+        <IoPlayCircle onClick={() => {setShowStartTimer(true);}} style={{fontSize:'60px',color:Colors.get('play', theme)}} />
         <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Начать' : 'Start'}</div>
         </div>
         }
@@ -525,7 +538,8 @@ const congratulations = (langIndex) => {
   return list[randomIndex];
 };
 
-const setActualLevel = (categoryIndex,protocolIndex) => {
+const setActualLevel = (categoryIndex,protocolIndex,isCustom) => {
+  if(isCustom)return 0;
     let ind = -1;
     const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
      for(let i = 0; i < protocol.length; i++) {
@@ -536,7 +550,8 @@ const setActualLevel = (categoryIndex,protocolIndex) => {
      }
      return ind > -1 ? ind : protocol.length - 1;
 }
-const isLevelDone = (categoryIndex,protocolIndex,levelIndex) => {
+const isLevelDone = (categoryIndex,protocolIndex,levelIndex,isCustom) => {
+  if(isCustom)return false;
     const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
     return protocol[levelIndex];
 }

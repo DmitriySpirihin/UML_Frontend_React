@@ -1,8 +1,7 @@
 import Home from '@mui/icons-material/HomeTwoTone';
 import Back from '@mui/icons-material/BackspaceTwoTone';
 import Metrics from '@mui/icons-material/AnalyticsTwoTone';
-import Calendar from '@mui/icons-material/CalendarMonthTwoTone';
-import Settings from '@mui/icons-material/SettingsTwoTone';
+import { FaRobot,FaChartLine } from 'react-icons/fa';
 import Add from '@mui/icons-material/AddCircleOutlineTwoTone';
 import {MdLightbulbOutline} from 'react-icons/md'
 import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurrentBottomBtn} from '../../StaticClasses/HabitsBus'
@@ -68,13 +67,13 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,notify})
     
     return (    
         <div style={styles(theme,currentBtn).style}>
-          {page !== 'SleepMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
-          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
-          {page === 'SleepMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-2,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
+          {page !== 'SleepMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
+          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
+          {page === 'SleepMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
             <Add style={{...styles(theme,currentBtn,53,true,addPanel === '' && page !== 'SleepMain').btnstyle}} onClick={() => {if(page === 'SleepMain'){setCurrentBottomBtn(3);setAddPanel('SleepNew');playEffects(switchSound);}}} />
           
-          <MdLightbulbOutline style={styles(theme,currentBtn,2,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(2);setAddPanel('SleepInsight');playEffects(switchSound);}} />
-            <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('SleepMetrics');setAddPanel('');playEffects(switchSound);}} />
+          <FaRobot style={styles(theme,currentBtn,2,true,page !== 'SleepMain').btnstyle} onClick={() => {if(page === 'SleepMain'){setCurrentBottomBtn(2);setAddPanel('SleepInsight');playEffects(switchSound);}}} />
+            <FaChartLine style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('SleepMetrics');setAddPanel('');playEffects(switchSound);}} />
           
          
         </div>

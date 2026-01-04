@@ -47,37 +47,34 @@ const congratulations = (langIndex) => {
   return list[Math.floor(Math.random() * list.length)];
 };
 
-const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex }) => {
-  const [session, setSession] = useState({
-    cycles: 1,
-    steps: [{ hotSeconds: 180, coldSeconds: 30, restSeconds: 0 }],
-  });
-  const [level, setLevel] = useState(setActualLevel(protocolIndex, categoryIndex));
+const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex, isCustom = false }) => {
+  // UI & prefs
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [audioEnabled, setAudioEnabled] = useState(false);
 
+  // Timer state
+  const [level, setLevel] = useState(() => setActualLevel(protocolIndex, categoryIndex, isCustom));
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [phaseProgress, setPhaseProgress] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isStart, setIsStart] = useState(false);
   const [showStartTimer, setShowStartTimer] = useState(false);
-
-  const [seconds, setSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
   const [finishMessage, setFinishMessage] = useState('');
 
+  // Timing refs
   const startTimeRef = useRef(0);
   const animationRef = useRef();
+  const coldTimeRef = useRef(0);
 
-  //session data
-   const [startTime, setStartTime] = useState(0);
-   const [endTime,setEndTime] = useState(0);
-   const coldTimeRef = useRef(0);
+  // Session timing data
+  const [startTime, setStartTime] = useState(0);
+  const [endTime, setEndTime] = useState(0);
 
-  // Subscriptions
+  // Preferences subscription
   useEffect(() => {
     const sub1 = theme$.subscribe(setThemeState);
     const sub2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
@@ -89,7 +86,128 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex 
     };
   }, []);
 
-  // Start countdown
+  // Sync level on protocol change (especially for custom)
+  useEffect(() => {
+    if (isCustom) {
+      setLevel(0);
+    } else {
+      setLevel(setActualLevel(protocolIndex, categoryIndex, false));
+    }
+  }, [protocol, protocolIndex, categoryIndex, isCustom]);
+
+  // ✅ Derive session from props — always up to date
+  const session = useMemo(() => {
+    if (!protocol?.levels?.length) {
+      return { cycles: 1, steps: [{ hotSeconds: 180, coldSeconds: 30, restSeconds: 0 }] };
+    }
+    return isCustom
+      ? protocol.levels[0]
+      : protocol.levels[level] || protocol.levels[0];
+  }, [protocol, level, isCustom]);
+
+  // Flatten into linear step sequence
+  const allSteps = useMemo(() => {
+    const { cycles, steps } = session;
+    if (!steps?.length) return [];
+    const { hotSeconds, coldSeconds, restSeconds } = steps[0];
+    const result = [];
+
+    for (let cycle = 0; cycle < cycles; cycle++) {
+      if (hotSeconds > 0) {
+        result.push({ type: 'hot', duration: hotSeconds * 1000, cycle });
+      }
+      if (coldSeconds > 0) {
+        result.push({ type: 'cold', duration: coldSeconds * 1000, cycle });
+      }
+      if (restSeconds > 0 && cycle < cycles - 1) {
+        result.push({ type: 'rest', duration: restSeconds * 1000, cycle });
+      }
+    }
+    return result;
+  }, [session]);
+
+  const currentStep = allSteps[currentStepIndex] || null;
+  const duration = currentStep?.duration || 1000;
+
+  // Phase info
+  const getPhaseInfo = (step) => {
+    if (!step) return { name: '', color: '#94a3b8' };
+    if (step.type === 'hot')
+      return { name: langIndex === 0 ? 'Тёплая вода' : 'Warm Water', color: Colors.get('hot', theme) };
+    if (step.type === 'cold')
+      return { name: langIndex === 0 ? 'Холодная вода' : 'Cold Water', color: Colors.get('cold', theme) };
+    if (step.type === 'rest')
+      return { name: langIndex === 0 ? 'Отдых / Согрев' : 'Rest / Warm-up', color: Colors.get('rest', theme) };
+    return { name: '', color: '#94a3b8' };
+  };
+
+  const { name: phaseName, color: phaseColor } = getPhaseInfo(currentStep);
+
+  // Cycle counter logic
+  const cycleInfo = () => {
+    if (!session.steps) return '0 / 0';
+    const { hotSeconds, coldSeconds, restSeconds } = session.steps[0];
+    const stepsPerCycle = (hotSeconds > 0 ? 1 : 0) + (coldSeconds > 0 ? 1 : 0) + (restSeconds > 0 ? 1 : 0);
+    const currentCycle = stepsPerCycle ? Math.floor(currentStepIndex / stepsPerCycle) + 1 : 1;
+    return isStart ? `${currentCycle} / ${session.cycles}` : '0';
+  };
+
+  // Timer display (mm:ss)
+  const timeRemaining = duration * (1 - phaseProgress);
+  const totalSeconds = Math.max(0, Math.floor(timeRemaining / 1000));
+  const displayTime = `${Math.floor(totalSeconds / 60).toString().padStart(2, '0')}:${(totalSeconds % 60).toString().padStart(2, '0')}`;
+
+  // Animation loop
+  useEffect(() => {
+    if (!isRunning || !currentStep) return;
+
+    const animate = (timestamp) => {
+      if (!startTimeRef.current) startTimeRef.current = timestamp;
+      const elapsed = timestamp - startTimeRef.current;
+      const progress = Math.min(elapsed / duration, 1);
+      setPhaseProgress(progress);
+
+      if (progress >= 1) {
+        // Accumulate cold exposure time
+        if (currentStep.type === 'cold') {
+          coldTimeRef.current += currentStep.duration;
+        }
+
+        const nextIndex = currentStepIndex + 1;
+        if (nextIndex >= allSteps.length) {
+          // Session finished
+          setIsRunning(false);
+          setEndTime(Date.now());
+          onFinishSession();
+        } else {
+          setCurrentStepIndex(nextIndex);
+          startTimeRef.current = 0;
+        }
+      } else {
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [currentStepIndex, isRunning, duration, allSteps.length, currentStep]);
+
+  // Reset on session change
+  useEffect(() => {
+    setCurrentStepIndex(0);
+    setPhaseProgress(0);
+    setIsRunning(false);
+    setIsStart(false);
+    setIsPaused(false);
+    setIsFinished(false);
+    coldTimeRef.current = 0;
+    startTimeRef.current = 0;
+  }, [session]);
+
+  // Start countdown timer
+  const [seconds, setSeconds] = useState(0);
   useEffect(() => {
     if (!showStartTimer) {
       setSeconds(0);
@@ -111,111 +229,7 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex 
     return () => clearInterval(id);
   }, [showStartTimer]);
 
-  // Flatten cold water steps
-  const allSteps = useMemo(() => {
-    if (!session.steps?.length) return [];
-    const steps = [];
-    for (let cycle = 0; cycle < session.cycles; cycle++) {
-      if (session.steps[0].hotSeconds > 0) {
-        steps.push({ type: 'hot', duration: session.steps[0].hotSeconds * 1000, cycle });
-      }
-      if (session.steps[0].coldSeconds > 0) {
-        steps.push({ type: 'cold', duration: session.steps[0].coldSeconds * 1000, cycle });
-      }
-      if (session.steps[0].restSeconds > 0 && cycle < session.cycles - 1) {
-        steps.push({ type: 'rest', duration: session.steps[0].restSeconds * 1000, cycle });
-      }
-    }
-    return steps;
-  }, [session]);
-
-  const currentStep = allSteps[currentStepIndex] || null;
-
-  const getPhaseInfo = (step) => {
-    if (!step) return { name: '', color: '#94a3b8' };
-    if (step.type === 'hot')
-      return { name: langIndex === 0 ? 'Тёплая вода' : 'Warm Water', color: Colors.get('hot', theme) }; // or create 'hot' color
-    if (step.type === 'cold')
-      return { name: langIndex === 0 ? 'Холодная вода' : 'Cold Water', color: Colors.get('cold', theme) }; // icy blue
-    if (step.type === 'rest')
-      return { name: langIndex === 0 ? 'Отдых / Согрев' : 'Rest / Warm-up', color: Colors.get('rest', theme) };
-    return { name: '', color: '#94a3b8' };
-  };
-
-  const { name: phaseName, color: phaseColor } = getPhaseInfo(currentStep);
-  const duration = currentStep?.duration || 1000;
-
-  const cycleInfo = () => {
-    if (!session.steps) return '0 / 0';
-    // Estimate steps per cycle (hot + cold + optional rest)
-    const stepsPerCycle = (session.steps[0].hotSeconds > 0 ? 1 : 0) +
-                         (session.steps[0].coldSeconds > 0 ? 1 : 0) +
-                         (session.steps[0].restSeconds > 0 ? 1 : 0);
-    const cycleNum = stepsPerCycle ? Math.floor(currentStepIndex / stepsPerCycle) + 1 : 1;
-    return isStart ? `${cycleNum} / ${session.cycles}` : '0';
-  };
-
-  // mm:ss format
-  const timeRemaining = duration * (1 - phaseProgress);
-  const totalSeconds = Math.floor(timeRemaining / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const secondsLeft = totalSeconds % 60;
-  const displayTime = `${minutes.toString().padStart(2, '0')}:${secondsLeft.toString().padStart(2, '0')}`;
-
-  // Animation loop
-  useEffect(() => {
-  if (!isRunning || !currentStep) return;
-
-  const animate = (timestamp) => {
-    if (!startTimeRef.current) startTimeRef.current = timestamp;
-    const elapsed = timestamp - startTimeRef.current;
-    const progress = Math.min(elapsed / duration, 1);
-    setPhaseProgress(progress);
-
-    if (progress >= 1) {
-      // Step just finished — check if it was "cold"
-      if (currentStep.type === 'cold') {
-        coldTimeRef.current += currentStep.duration; // accumulate cold time
-        // Optional: update state if you want to display it live
-        // setTimeInColdWater(coldTimeRef.current);
-      }
-
-      const next = currentStepIndex + 1;
-      if (next >= allSteps.length) {
-        setIsRunning(false);
-        setEndTime(Date.now());
-        setTimeInColdWater(coldTimeRef.current); // finalize for saving
-        onFinishSession();
-        return;
-      }
-      setCurrentStepIndex(next);
-      startTimeRef.current = 0;
-    } else {
-      animationRef.current = requestAnimationFrame(animate);
-    }
-  };
-
-  animationRef.current = requestAnimationFrame(animate);
-  return () => {
-    if (animationRef.current) cancelAnimationFrame(animationRef.current);
-  };
-}, [currentStepIndex, isRunning, duration, allSteps.length, currentStep]);
-
-  const resetSession = () => {
-    setCurrentStepIndex(0);
-    setPhaseProgress(0);
-    setIsRunning(false);
-    setIsStart(false);
-    setIsPaused(false);
-    setIsFinished(false);
-    coldTimeRef.current = 0;
-    startTimeRef.current = 0;
-  };
-
-  useEffect(() => {
-    resetSession();
-  }, [session]);
-
+  // ===== Handlers =====
   const handleStart = () => {
     setAudioEnabled(true);
     setStartTime(Date.now());
@@ -228,6 +242,7 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex 
     setEndTime(Date.now());
     setIsRunning(false);
     setIsPaused(true);
+    if (audio && !audio.paused) audio.pause();
   };
 
   const handleResume = () => {
@@ -236,28 +251,43 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex 
   };
 
   const handleReload = () => {
-    resetSession();
+    setCurrentStepIndex(0);
+    setPhaseProgress(0);
+    setIsRunning(false);
+    setIsStart(false);
+    setIsPaused(false);
+    setIsFinished(false);
+    coldTimeRef.current = 0;
+    startTimeRef.current = 0;
   };
 
-  const onFinishSession = () => {
-    saveResult();
+  const onFinishSession = async () => {
+    if (!isCustom) {
+      markSessionAsDone(2, categoryIndex, protocolIndex, level);
+    }
+    await saveHardeningSession(startTime, Date.now(), coldTimeRef.current);
     setFinishMessage(congratulations(langIndex));
     setIsFinished(true);
   };
 
-  const saveResult = () => {
-    setEndTime(Date.now());
-    onSaveSession();
-    markSessionAsDone(2, categoryIndex, protocolIndex, level);
-  };
-  const onSaveSession = async() => {
-    await saveHardeningSession(startTime, endTime,coldTimeRef.current);
-    resetSession();
+  const onSaveSession = async () => {
+    await saveHardeningSession(startTime, endTime, coldTimeRef.current);
+    handleReload();
+    setShow(false);
   };
 
+  // ===== Render =====
   return (
     <div style={styles(theme, show).container}>
-      <div style={styles(theme, show,isStart && currentStep.type !== 'rest', currentStep.type === 'cold').decorLayer} />
+      <div 
+  style={styles(
+    theme, 
+    show, 
+    isStart && currentStep?.type !== 'rest', 
+    currentStep?.type === 'cold'
+  ).decorLayer} 
+/>
+
       {/* Pre-session info */}
       {!isFinished && !isStart && !showStartTimer && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-around', width: '90%', height: '80%' }}>
@@ -272,7 +302,7 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex 
           <div
             style={{
               display: 'flex',
-              border: isLevelDone(categoryIndex, protocolIndex, level) ? `2px solid ${Colors.get('maxValColor', theme)}` : 'none',
+              border: isLevelDone(categoryIndex, protocolIndex, level, isCustom) ? `2px solid ${Colors.get('maxValColor', theme)}` : 'none',
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'space-around',
@@ -282,18 +312,18 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex 
             }}
           >
             <FaCaretLeft
-              onClick={() => setLevel((prev) => (prev > 0 ? prev - 1 : 0))}
+              onClick={() => setLevel((prev) => Math.max(0, prev - 1))}
               style={{ fontSize: '24px', color: Colors.get('icons', theme) }}
             />
             <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '15px' : '17px' }}>{level + 1}</p>
             <FaCaretRight
-              onClick={() => setLevel((prev) => (prev < protocol.levels.length - 1 ? prev + 1 : protocol.levels.length - 1))}
+              onClick={() => setLevel((prev) => Math.min(protocol.levels.length - 1, prev + 1))}
               style={{ fontSize: '24px', color: Colors.get('icons', theme) }}
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', width: '100%', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-            <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '15px' : '17px' }}>{protocol.levels[level].strategy}</p>
-            <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '13px' : '15px' }}>{(langIndex === 0 ? 'циклов: ' : 'cycles: ') + protocol.levels[level].cycles}</p>
+            <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '15px' : '17px' }}>{session.strategy || protocol.levels[level]?.strategy || ''}</p>
+            <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '13px' : '15px' }}>{(langIndex === 0 ? 'циклов: ' : 'cycles: ') + session.cycles}</p>
           </div>
           <div style={{ width: '100%', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
             <p style={{ color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '15px' : '17px' }}>{langIndex === 0 ? 'Инструкция' : 'Instruction'}</p>
@@ -313,17 +343,12 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex 
         </div>
       )}
 
-      {/* Cold Water Timer UI */}
+      {/* Active timer */}
       {!isFinished && isStart && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80%', width: '100%' }}>
           <svg width="400" height="400" viewBox="0 0 100 100">
-            {/* Subtle fill */}
             <circle cx="50" cy="50" r="45" fill={phaseColor} opacity="0.1" />
-
-            {/* Outer ring */}
             <circle cx="50" cy="50" r="45" fill="none" stroke={Colors.get('border', theme)} strokeWidth="1" opacity="0.4" />
-
-            {/* Progress ring */}
             <circle
               cx="50"
               cy="50"
@@ -335,15 +360,13 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex 
               strokeDashoffset={`${2 * Math.PI * 45 * (1 - phaseProgress)}`}
               strokeLinecap="round"
             />
-
-            {/* Strategy text - full, centered, auto-sized */}
-                        <foreignObject x="15" y="15" width="70" height="40">
+            <foreignObject x="15" y="15" width="70" height="40">
               <div
                 xmlns="http://www.w3.org/1999/xhtml"
                 style={{
                   width: '70px',
                   height: '40px',
-                  fontSize: '3.5px',
+                  fontSize: '1px',
                   fontWeight: '500',
                   fontFamily: 'sans-serif',
                   color: Colors.get('mainText', theme),
@@ -358,19 +381,13 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex 
                 {protocol?.instructions?.[langIndex] || ''}
               </div>
             </foreignObject>
-            
-                        {/* Timer - large, bold, mm:ss */}
-                        <text x="50" y="60" textAnchor="middle" fill={phaseColor} fontFamily="sans-serif" fontSize="16" fontWeight="bold">
-                          {displayTime}
-                        </text>
-            
-                        {/* Phase name */}
-                        <text x="50" y="80" textAnchor="middle" fill={phaseColor} fontFamily="sans-serif" fontSize="5">
-                          {phaseName}
-                        </text>
+            <text x="50" y="60" textAnchor="middle" fill={phaseColor} fontFamily="sans-serif" fontSize="16" fontWeight="bold">
+              {displayTime}
+            </text>
+            <text x="50" y="80" textAnchor="middle" fill={phaseColor} fontFamily="sans-serif" fontSize="5">
+              {phaseName}
+            </text>
           </svg>
-
-          {/* Cycle counter */}
           <div style={{
             marginTop: '20px',
             fontSize: fSize === 0 ? '14px' : '16px',
@@ -398,73 +415,68 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex 
       )}
 
       {/* Controls */}
-            <div style={styles(theme, show).controls}>
-              {(!isStart || isFinished) && (
-                <div>
-                <IoArrowBackCircle
-                  onClick={() => {
-                    if (isFinished) {
-                      setIsFinished(false);
-                    }
-                    setShow(false);
-                  }}
-                  style={{ fontSize: '60px', color: Colors.get('close', theme) }}
-                />
-                <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
-              </div>
-              )}
-              {isStart && !isFinished && (
-                audioEnabled ? (
-                  <div>
-                  <IoMdVolumeHigh onClick={() => setAudioEnabled(false)} style={{ fontSize: '60px', color: Colors.get('icons', theme) }} />
-                  <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Выкл звук' : 'Mute'}</div>
-                  </div>
-                ) : (
-                  <div>
-                  <IoMdVolumeMute onClick={() => setAudioEnabled(true)} style={{ fontSize: '60px', color: Colors.get('icons', theme) }} />
-                  <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Вкл звук' : 'Unmute'}</div>
-                  </div>
-                )
-              )}
-              {!isStart && !showStartTimer && !isFinished && (
-                <div>
-                <IoPlayCircle
-                  onClick={() => {
-                    setSession(protocol.levels[level]);
-                    setShowStartTimer(true);
-                  }}
-                  style={{ fontSize: '60px', color: Colors.get('play', theme) }}
-                />
-                <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Начать' : 'Start'}</div>
-              </div>
-              )}
-              {!isFinished && isPaused &&
-              
-              <div>
-              <IoArrowBackCircle onClick={handleReload} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
-              <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
-              </div>    
-              }
-              {isRunning && !isFinished &&
-              <div>
-              <IoPauseCircle onClick={handlePause} style={{ fontSize: '60px', color: Colors.get('pause', theme) }} />
-              <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Пауза' : 'Pause'}</div>
-              </div>
-              }
-              {!isFinished && !showStartTimer && isPaused && 
-              <div>
-              <IoPlayCircle onClick={handleResume} style={{ fontSize: '60px', color: Colors.get('play', theme) }} />
-              <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Продолжить' : 'Resume'}</div>
-              </div>
-              }
-              {!isFinished && !showStartTimer && isPaused && 
-              <div>
-               <IoCheckmarkCircle onClick={onSaveSession} style={{ fontSize: '60px', color: Colors.get('reload', theme) }} />
-               <div style={{fontSize:'9px',color:Colors.get('subText',theme)}}>{langIndex === 0 ? 'Сохранить & выйти' : 'Save & exit'}</div>
-              </div>
-              }
-              
+      <div style={styles(theme, show).controls}>
+        {(!isStart || isFinished) && (
+          <div>
+            <IoArrowBackCircle
+              onClick={() => {
+                if (isFinished) setIsFinished(false);
+                setShow(false);
+              }}
+              style={{ fontSize: '60px', color: Colors.get('close', theme) }}
+            />
+            <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
+          </div>
+        )}
+
+        {isStart && !isFinished && (
+          audioEnabled ? (
+            <div>
+              <IoMdVolumeHigh onClick={() => setAudioEnabled(false)} style={{ fontSize: '60px', color: Colors.get('icons', theme) }} />
+              <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Выкл звук' : 'Mute'}</div>
             </div>
+          ) : (
+            <div>
+              <IoMdVolumeMute onClick={() => setAudioEnabled(true)} style={{ fontSize: '60px', color: Colors.get('icons', theme) }} />
+              <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Вкл звук' : 'Unmute'}</div>
+            </div>
+          )
+        )}
+
+        {!isStart && !showStartTimer && !isFinished && (
+          <div>
+            <IoPlayCircle
+              onClick={() => setShowStartTimer(true)} // ✅ No setSession needed!
+              style={{ fontSize: '60px', color: Colors.get('play', theme) }}
+            />
+            <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Начать' : 'Start'}</div>
+          </div>
+        )}
+
+        {isPaused && !isFinished && (
+          <>
+            <div>
+              <IoArrowBackCircle onClick={handleReload} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
+              <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Выйти' : 'Exit'}</div>
+            </div>
+            <div>
+              <IoPlayCircle onClick={handleResume} style={{ fontSize: '60px', color: Colors.get('play', theme) }} />
+              <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Продолжить' : 'Resume'}</div>
+            </div>
+            <div>
+              <IoCheckmarkCircle onClick={onSaveSession} style={{ fontSize: '60px', color: Colors.get('reload', theme) }} />
+              <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Сохранить & выйти' : 'Save & exit'}</div>
+            </div>
+          </>
+        )}
+
+        {isRunning && !isFinished && !isPaused && (
+          <div>
+            <IoPauseCircle onClick={handlePause} style={{ fontSize: '60px', color: Colors.get('pause', theme) }} />
+            <div style={{ fontSize: '9px', color: Colors.get('subText', theme) }}>{langIndex === 0 ? 'Пауза' : 'Pause'}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -514,7 +526,8 @@ const styles = (theme, show,isStart,isCold) => ({
   },
 });
 
-const setActualLevel = (categoryIndex,protocolIndex) => {
+const setActualLevel = (categoryIndex,protocolIndex,isCustom) => {
+  if(isCustom)return 0;
     let ind = -1;
     const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
      for(let i = 0; i < protocol.length; i++) {
@@ -525,7 +538,8 @@ const setActualLevel = (categoryIndex,protocolIndex) => {
      }
      return ind > -1 ? ind : protocol.length - 1;
 }
-const isLevelDone = (categoryIndex,protocolIndex,levelIndex) => {
+const isLevelDone = (categoryIndex,protocolIndex,levelIndex,isCustom) => {
+  if(isCustom)return false;
     const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
     return protocol[levelIndex];
 }
