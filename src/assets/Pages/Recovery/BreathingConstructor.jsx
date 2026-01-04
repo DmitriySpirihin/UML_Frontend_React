@@ -210,10 +210,10 @@ function onDelete(index) {
             <div style={{ display: 'flex', justifyContent:'space-evenly', alignItems: 'center',width:'90%' }}>
               <span style={styles(theme,fSize).text}>{langIndex === 0 ? "циклов" : 'cycles'}</span>
              <div onClick={(e) => {e.stopPropagation();setCycles(prev => prev-1 > 1 ? prev-1 : 1);}} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center',userSelect: 'none',touchAction: 'none' }}>
-               <FaCaretLeft style={{fontSize:'24px',color:Colors.get('icons', theme)}}/></div> 
+               <FaCaretLeft style={{fontSize:'34px',color:Colors.get('icons', theme)}}/></div> 
                  <span style={styles(theme,fSize).text}>{cycles}</span>
                  <div   onClick={(e) => {e.stopPropagation();setCycles(prev => prev+1);}} style={{ cursor: 'pointer',userSelect: 'none',touchAction: 'none', display: 'flex', alignItems: 'center' }}>
-                 <FaCaretRight style={{fontSize:'24px',color:Colors.get('icons', theme)}}/></div> </div>
+                 <FaCaretRight style={{fontSize:'34px',color:Colors.get('icons', theme)}}/></div> </div>
             <div style={{
                 width: '90%',
                 height: '65%',
@@ -262,7 +262,7 @@ function onDelete(index) {
             }} 
             style={{ cursor: 'pointer', userSelect: 'none', touchAction: 'none' }}
           >
-            <FaCaretLeft style={{ fontSize: '24px', color: Colors.get('icons', theme) }} />
+            <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
           </div>
           <div style={styles(theme, fSize).text}>
             {isInOut ? (value.duration / 1000).toFixed(1) : (value / 1000).toFixed(1)}s
@@ -275,7 +275,7 @@ function onDelete(index) {
             }}
             style={{ cursor: 'pointer', userSelect: 'none', touchAction: 'none' }}
           >
-            <FaCaretRight style={{ fontSize: '24px', color: Colors.get('icons', theme) }} />
+            <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
           </div>
         </div>
 
@@ -290,7 +290,7 @@ function onDelete(index) {
               }}
               style={{ cursor: 'pointer', userSelect: 'none', touchAction: 'none' }}
             >
-              <FaCaretLeft style={{ fontSize: '20px', color: Colors.get('icons', theme) }} />
+              <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
             </div>
             <div style={styles(theme, fSize).text}>
               ×{value.amount}
@@ -303,7 +303,7 @@ function onDelete(index) {
               }}
               style={{ cursor: 'pointer', userSelect: 'none', touchAction: 'none' }}
             >
-              <FaCaretRight style={{ fontSize: '20px', color: Colors.get('icons', theme) }} />
+              <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
             </div>
           </div>
         )}

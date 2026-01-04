@@ -44,7 +44,7 @@ USER:
 const allhabits = allHabits;   // массив или объект Habit
 const names = new Set();         // чтобы без дублей
 
-let habitsBlock = 'HABITS_BY_DATE (last 7 days):\n';
+let habitsBlock = 'HABITS_BY_DATE (last 7 days) , if habit is negative type as smoking for example and status === 1 it means user abstains and 0 means failure :\n';
 
 Object.entries(habitsByDate || {}).forEach(([date, obj]) => {
   if (!isInLast7Days(date)) return;
