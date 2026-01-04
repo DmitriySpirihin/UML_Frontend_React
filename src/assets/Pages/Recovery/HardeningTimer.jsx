@@ -346,6 +346,22 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
       {/* Active timer */}
       {!isFinished && isStart && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80%', width: '100%' }}>
+           <div
+               
+                style={{
+                  fontSize: '15px',
+                  fontFamily: 'sans-serif',
+                  color: Colors.get('mainText', theme),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  overflow: 'hidden',
+                  lineHeight: 1.3,
+                }}
+              >
+                {protocol?.instructions?.[langIndex] || ''}
+              </div>
           <svg width="400" height="400" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="45" fill={phaseColor} opacity="0.1" />
             <circle cx="50" cy="50" r="45" fill="none" stroke={Colors.get('border', theme)} strokeWidth="1" opacity="0.4" />
@@ -360,28 +376,10 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
               strokeDashoffset={`${2 * Math.PI * 45 * (1 - phaseProgress)}`}
               strokeLinecap="round"
             />
-            <foreignObject x="15" y="15" width="70" height="40">
-              <div
-                xmlns="http://www.w3.org/1999/xhtml"
-                style={{
-                  width: '70px',
-                  height: '40px',
-                  fontSize: '1px',
-                  fontWeight: '500',
-                  fontFamily: 'sans-serif',
-                  color: Colors.get('mainText', theme),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                  overflow: 'hidden',
-                  lineHeight: 1.3,
-                }}
-              >
-                {protocol?.instructions?.[langIndex] || ''}
-              </div>
-            </foreignObject>
-            <text x="50" y="60" textAnchor="middle" fill={phaseColor} fontFamily="sans-serif" fontSize="16" fontWeight="bold">
+            
+             
+            
+            <text x="50" y="55" textAnchor="middle" fill={phaseColor} fontFamily="sans-serif" fontSize="16" fontWeight="bold">
               {displayTime}
             </text>
             <text x="50" y="80" textAnchor="middle" fill={phaseColor} fontFamily="sans-serif" fontSize="5">
