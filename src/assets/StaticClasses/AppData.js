@@ -42,6 +42,7 @@ export class AppData{
   static meditationLog = {};
   static hardeningLog = {};
   //mental
+  static mentalLog = {};
   static mentalRecords = [[0,0,0,0,0,0],[0,0,0,0,0],[0,0,0,0],[0,0,0,0]];
   //
   static sleepingLog = {};
@@ -81,7 +82,7 @@ export class AppData{
     this.breathingLog = data.breathingLog;
     this.meditationLog = data.meditationLog;
     this.hardeningLog = data.hardeningLog;
-
+    this.mentalLog = data.mentalLog;
     this.mentalRecords = data.mentalRecords;
     this.sleepingLog = data.sleepingLog;
   } 
@@ -334,6 +335,7 @@ export class Data{
     this.hardeningLog = AppData.hardeningLog;
     this.mentalRecords = AppData.mentalRecords;
     this.sleepingLog = AppData.sleepingLog;
+    this.mentalLog = AppData.mentalLog;
   }
 }
 

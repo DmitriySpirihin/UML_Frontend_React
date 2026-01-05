@@ -184,7 +184,7 @@ export async function deleteSession(date, sessionIndex) {
   }
   await saveData();
 }
-export function finishSession(date, sessionIndex) {
+export async function finishSession(date, sessionIndex) {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
   
@@ -234,10 +234,10 @@ session.exerciseOrder.forEach(exIdStr => {
     });
   }
 });
-
+await saveData();
 return newRmExercises;
 }
-export function addExerciseToSession(date, sessionIndex, exerciseId) {
+export async function addExerciseToSession(date, sessionIndex, exerciseId) {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
   
@@ -250,9 +250,10 @@ export function addExerciseToSession(date, sessionIndex, exerciseId) {
     completed: false
   };
   session.exerciseOrder.push(exerciseId);
+  await saveData();
   return true;
 }
-export function removeExerciseFromSession(date, sessionIndex, exerciseId) {
+export async function removeExerciseFromSession(date, sessionIndex, exerciseId) {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
   
@@ -269,10 +270,10 @@ export function removeExerciseFromSession(date, sessionIndex, exerciseId) {
   if (session.exerciseOrder) {
     session.exerciseOrder = session.exerciseOrder.filter(id => id !== exerciseId);
   }
-
+  await saveData();
   return true;
 }
-export function addSet(date, sessionIndex, exerciseId, reps, weight, time, isWarmUp) {
+export async function addSet(date, sessionIndex, exerciseId, reps, weight, time, isWarmUp) {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
   const exercise = session?.exercises?.[exerciseId];
@@ -301,10 +302,10 @@ export function addSet(date, sessionIndex, exerciseId, reps, weight, time, isWar
       AppData.exercises[exerciseId].rmDate = formatDateKey(new Date());
     }
   }
-
+  await saveData();
   return true;
 }
-export function redactSet(date, sessionIndex, exerciseId, setIndex, newReps, newWeight,newTime, isWarmUp) {
+export async function redactSet(date, sessionIndex, exerciseId, setIndex, newReps, newWeight,newTime, isWarmUp) {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
   const exercise = session?.exercises?.[exerciseId];
@@ -340,10 +341,10 @@ export function redactSet(date, sessionIndex, exerciseId, setIndex, newReps, new
   const newTonnage = newReps * newWeight;
   exercise.totalTonnage = (exercise.totalTonnage || 0) + newTonnage;
   session.tonnage = (session.tonnage || 0) + newTonnage;
-
+  await saveData();
   return true;
 }
-export function removeSet(date, sessionIndex, exerciseId, setIndex) {
+export async function removeSet(date, sessionIndex, exerciseId, setIndex) {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
   const exercise = session?.exercises?.[exerciseId];
@@ -356,10 +357,10 @@ export function removeSet(date, sessionIndex, exerciseId, setIndex) {
   // Update tonnage
   exercise.totalTonnage = Math.max(0, (exercise.totalTonnage || 0) - setTonnage);
   session.tonnage = Math.max(0, (session.tonnage || 0) - setTonnage);
-
+  await saveData();
   return true;
 }
-export function finishExercise(date, sessionIndex, exerciseId) {
+export async function finishExercise(date, sessionIndex, exerciseId) {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
   const exercise = session?.exercises?.[exerciseId];
@@ -367,6 +368,7 @@ export function finishExercise(date, sessionIndex, exerciseId) {
   if (!exercise) return false;
 
   exercise.completed = true;
+  await saveData();
   return true;
 }
 

@@ -55,7 +55,7 @@ const MentalMain = () => {
         theme={theme}  
         lang={langIndex}
         fontSize={fSize}
-        onClick={() => {}}
+        onClick={() => {setPage('MentalMemory')}}
         colorDark={"#563333ff"}
         colorLight={"#f34f4f6e"}
         colorSpecialDark={"#563333ff"}
@@ -71,7 +71,7 @@ const MentalMain = () => {
         theme={theme}  
         lang={langIndex}
         fontSize={fSize}
-        onClick={() => {}}
+        onClick={() => {setPage('MentalLogic')}}
         colorDark={"#355436ff"}
         colorLight={"#90d93153"}
         colorSpecialDark={"#355436ff"}
@@ -87,7 +87,7 @@ const MentalMain = () => {
         theme={theme}  
         lang={langIndex}
         fontSize={fSize}
-        onClick={() => {}}
+        onClick={() => {setPage('MentalFocus')}}
         colorDark={"#46452bff"}
         colorLight={"#c6c14079"}
         colorSpecialDark={"#46452bff"}

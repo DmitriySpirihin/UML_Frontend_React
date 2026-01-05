@@ -2,136 +2,139 @@ import { useEffect, useState} from 'react'
 import {AppData} from '../../StaticClasses/AppData'
 import Colors from "../../StaticClasses/Colors"
 import {theme$,lang$,fontSize$} from '../../StaticClasses/HabitsBus';
-import { getProblem,getPoints ,hasStreak,getPrecision} from './MathProblems';
+import { getProblem,getPoints ,hasStreak,getPrecision, getRoundConfig} from './MemoryProblems';
 import BreathAudio from "../../Helpers/BreathAudio"
 import {FaStar,FaFire,FaMedal,FaStopwatch} from 'react-icons/fa';
 import {IoPlayCircle,IoReloadCircle,IoArrowBackCircle, IoPauseCircle} from "react-icons/io5"
 import MentalInput from './MentalInput';
-import { quickMathCategories} from './MentalHelper';
+import { memorySequenceLevels, saveSessionDuration} from './MentalHelper';
 
 const startTimerDuration = 3000;
 
-const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
+const MentalGamePanel = ({ show,type,difficulty,setShow }) => {
    
-
-  const [theme, setthemeState] = useState('dark');
+const [theme, setthemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-  const [fSize, setFSize] = useState(AppData.prefs[4]); 
+  const [fSize, setFSize] = useState(AppData.prefs[4]);
+
+  // Game Flow
+  const [charShowMs, setCharShowMs] = useState(600);
+const [retentionDelayMs, setRetentionDelayMs] = useState(2000);
   const [input, setInput] = useState('');
   const [handledInput, setHandledInput] = useState('');
   const [isRunning, setIsRunning] = useState(false);
   const [isStart, setIsStart] = useState(false);
   const [showStartTimer, setShowStartTimer] = useState(false);
-  const [addValue,setAddValue] = useState(0);
-  
-  const [seconds, setSeconds] = useState(0);
+  const [phase, setPhase] = useState('memorize'); // 'memorize' → 'recall' → 'feedback'
+  const [recallStartTime, setRecallStartTime] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [startTime, setStartTime] = useState(0);
-
-  //audio
+   const [finishAfterFeedback, setFinishAfterFeedback] = useState(false);
+    const [pendingStage, setPendingStage] = useState(1);
+  // Audio
   const { initAudio, playRight, playWrong } = BreathAudio(AppData.prefs[2] === 0);
 
-  //cards
-  const cards = [ { id: 0, text: "aaaabb" }, { id: 1, text: "aaaaa" },];
+  // Delay after feedback
+  const [delay, setDelay] = useState(0);
+  const [delayTimer, setDelayTimer] = useState(false);
 
-  //timer
-  const [timer,setTimer] = useState(false);
-  const [progress,setProgress] = useState(0);
-  const [currTimer,setCurrTimer] = useState(0);
-  //delay
-  const [delay,setDelay] = useState(0);
-  const [delayTimer,setDelayTimer] = useState(false);
-
+  // Scoring & Progress
   const [scores, setScores] = useState(0);
-
   const [stage, setStage] = useState(1);
   const [streakLength, setStreakLength] = useState(0);
-  const [problem,setProblem] = useState('');
-  const [answer,setAnswer] = useState('');
-  //answer handlers
+  const [answer, setAnswer] = useState(''); // Full target sequence
+  const [isReverse, setIsReverse] = useState(false);
+  const [charIndex, setCharIndex] = useState(0); // Index of currently shown character
+
+  // Feedback
   const [message, setMessage] = useState('');
   const [statusColor, setStatusColor] = useState('');
-  const [addScores,setAddScores] = useState(0);
-  //statistics
-  const [rightAnswers,setRightAnswers] = useState(0);
-  const [record,setRecord] = useState(AppData.mentalRecords[type][difficulty]);
-  const [time,setTime] = useState(0);
-  
-  //input
+  const [addScores, setAddScores] = useState(0);
+
+  // Statistics
+  const [rightAnswers, setRightAnswers] = useState(0);
+  const [record, setRecord] = useState(AppData.mentalRecords[type]?.[difficulty] || 0);
+  const [time, setTime] = useState(0);
+
+  // Countdown before start
+  const [seconds, setSeconds] = useState(0);
+
+  // === Input Handling ===
   useEffect(() => {
-    if (input.length === 1)setHandledInput(prev => prev.length < 6 ? prev + input : prev);
-    else if (input.length === 2)setHandledInput(prev => prev.length > 0 ? prev.slice(0,prev.length - 1) : '');
-    else if (input.length === 3) handleAnswer();
-    setInput('');
-  }, [input]);
-  // time
-  useEffect(() => {
-  let intervalId = null;
-  if (isRunning) {
-    intervalId = setInterval(() => {
-      setTime(prev => prev + 100); 
-    }, 100);
-  }
-  return () => {
-    if (intervalId) {
-      clearInterval(intervalId);
-    }
-  };
-}, [isRunning]);
-  //timer
-  useEffect(() => {
-    if (!timer || !isStart || difficulty === 5) {
-      setProgress(0);
-      setCurrTimer(0);
+    if (!isStart || isFinished || phase !== 'recall') {
+      setInput('');
       return;
     }
-    const startTime = Date.now() - currTimer; // restore actual start time of rest
-    const interval = setInterval(() => {
-    const elapsed = Date.now() - startTime;
-    const newTimerValue = Math.min(elapsed, maxTimer);
-    setCurrTimer(newTimerValue);
-    setProgress((newTimerValue / (maxTimer - addValue)) * 100);
-      if (newTimerValue >= (maxTimer - addValue) - 500 ) {
-        setTimer(false);
-        handleAnswer();
-      }
-    }, 50);
-  
-    return () => clearInterval(interval);
-  }, [timer, isStart, maxTimer, currTimer]);
 
-  // Subscriptions
+    if (input === 'CC') {
+      setHandledInput((prev) => (prev.length > 0 ? prev.slice(0, -1) : ''));
+    } else if (input === '>>>') {
+      handleAnswer();
+    } else if (input.length === 1) {
+      setHandledInput((prev) => (prev.length < answer.length ? prev + input : prev));
+    }
+    setInput('');
+  }, [input, isStart, isFinished, phase, answer.length]);
+
   useEffect(() => {
-            const subscription = theme$.subscribe(setthemeState); 
-            const subscription2 = lang$.subscribe((lang) => {
-            setLangIndex(lang === 'ru' ? 0 : 1);
-            }); 
-            const subscription3 = fontSize$.subscribe((fontSize) => {
-            setFSize(fontSize);
-            });
-            return () => {
-            subscription.unsubscribe();
-            subscription2.unsubscribe();
-            subscription3.unsubscribe();
-            }
-      }, []);
-//startTimer
- useEffect(() => {
+    if (!isStart || isFinished || delayTimer || phase !== 'recall') return;
+    if (handledInput.length === answer.length) {
+      handleAnswer();
+    }
+  }, [handledInput, answer.length, phase, isStart, isFinished, delayTimer]);
+
+  // === Global Session Timer ===
+  useEffect(() => {
+    let intervalId = null;
+    if (isRunning) {
+      intervalId = setInterval(() => setTime((prev) => prev + 100), 100);
+    }
+    return () => clearInterval(intervalId);
+  }, [isRunning]);
+  useEffect(() => {
+  if (phase !== 'memorize' || !answer || answer.length === 0) return;
+
+  const total = answer.length;
+  const charShow = charShowMs;           // e.g., 600
+  const retentionDelay = retentionDelayMs; // e.g., 2000
+
+  if (charIndex < total) {
+    const id = setTimeout(() => setCharIndex(c => c + 1), charShow);
+    return () => clearTimeout(id);
+  } else {
+    const id = setTimeout(() => {
+      setPhase('recall');
+      setRecallStartTime(Date.now());
+    }, retentionDelay);
+    return () => clearTimeout(id);
+  }
+}, [phase, answer, charIndex, charShowMs, retentionDelayMs]);
+  // === Preferences Subscriptions ===
+  useEffect(() => {
+    const sub1 = theme$.subscribe(setthemeState);
+    const sub2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
+    const sub3 = fontSize$.subscribe(setFSize);
+    return () => {
+      sub1.unsubscribe();
+      sub2.unsubscribe();
+      sub3.unsubscribe();
+    };
+  }, []);
+
+  // === Pre-Start Countdown ===
+  useEffect(() => {
     if (!showStartTimer) {
-      // Reset seconds if hidden (optional)
       setSeconds(0);
       return;
     }
 
-    // Initialize countdown
     const totalSeconds = Math.ceil(startTimerDuration / 1000);
     setSeconds(totalSeconds);
 
     const intervalId = setInterval(() => {
-      setSeconds(prev => {
+      setSeconds((prev) => {
         if (prev <= 1) {
-          // Final tick: cleanup and trigger start
           clearInterval(intervalId);
           handleStart();
           setShowStartTimer(false);
@@ -141,84 +144,131 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
       });
     }, 1000);
 
-    // Cleanup on unmount or when showStartTimer becomes false
-    return () => {
-      clearInterval(intervalId);
-    };
+    return () => clearInterval(intervalId);
   }, [showStartTimer, startTimerDuration]);
-  //delay
+
+  // === Feedback Delay (after answer) ===
   useEffect(() => {
     if (!delayTimer) return;
 
     const intervalId = setInterval(() => {
-      setDelay(prev => {
+      setDelay((prev) => {
         if (prev >= 900) {
-          // Final tick: cleanup and trigger start
           clearInterval(intervalId);
           setDelayTimer(false);
-          setScores(prev => prev + addScores / 2);
-          setAddScores(0);
-          setTimer(true);
           setDelay(0);
+
+          const nextScore = scores + addScores;
+          setScores(nextScore);
+          setAddScores(0);
+          setHandledInput('');
+
+          if (finishAfterFeedback) {
+            onFinishSession(nextScore);
+          } else {
+            setStage(pendingStage);
+            setNewProblem(pendingStage);
+          }
           return 0;
         }
         return prev + 100;
       });
     }, 100);
 
-    // Cleanup on unmount or when showStartTimer becomes false
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [delayTimer,delay]);
+    return () => clearInterval(intervalId);
+  }, [delayTimer, scores, addScores, finishAfterFeedback, pendingStage]);
 
+  // === Serial Character Presentation + Memory Delay ===
+  useEffect(() => {
+    if (phase !== 'memorize' || !answer || answer.length === 0) {
+      return;
+    }
+
+    const totalChars = answer.length;
+
+    if (charIndex < totalChars) {
+      // Show current character for CHAR_SHOW_TIME ms
+      const timeoutId = setTimeout(() => {
+        setCharIndex((prev) => prev + 1);
+      }, 600); // ← Time each character is visible (e.g., 600ms)
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      // ✅ All characters shown → long delay to test memory
+      const recallTimeout = setTimeout(() => {
+        setPhase('recall');
+        setRecallStartTime(Date.now());
+      }, 2000); // ← Memory retention delay (e.g., 2000ms)
+
+      return () => clearTimeout(recallTimeout);
+    }
+  }, [phase, answer, charIndex]);
+
+  // === Game Controls ===
   const handleStart = () => {
     initAudio();
-    setNewProblem();
+    setScores(0);
+    setStage(1);
+    setRightAnswers(0);
+    setStreakLength(0);
+    setHandledInput('');
+    setMessage('');
+    setNewProblem(1);
     setIsStart(true);
-    setTimer(true);
     setIsRunning(true);
     setIsPaused(false);
     setTime(0);
     setStartTime(Date.now());
   };
 
-  function setNewProblem(){
-    const newProblem = getProblem(type,difficulty,stage);
-    setProblem(newProblem[0]);
-    setAnswer(newProblem[1]);
-  }
-   
+  const setNewProblem = (nextStage = stage) => {
+  const [prompt, forwardSeq, reverseFlag] = getProblem(type, difficulty, nextStage);
+  const levelConfig = memorySequenceLevels[difficulty];
+  
+  setAnswer(forwardSeq || '');
+  setIsReverse(reverseFlag);
+  setCharIndex(0);
+  setPhase('memorize');
+  setCharShowMs(levelConfig.charShowMs);        // ← Store in state or pass directly
+  setRetentionDelayMs(levelConfig.retentionDelayMs);
+    setHandledInput('');
+    setMessage('');
+    setPendingStage(nextStage + 1);
+    setFinishAfterFeedback(false);
+  };
+
   const handleAnswer = () => {
-    setTimer(false);
-    
-      const points = getPoints(type, difficulty, stage, currTimer, answer, handledInput, streakLength);
-      const precision = getPrecision(type, answer, handledInput);
-      playVibro(precision === 0 ? 'light':'medium');
-      let addmessage = '';
-      if (precision === 0) {
-        addmessage = getPraise(langIndex);
-        setRightAnswers(prev => prev + 1);
-      }
-      else if (precision < 0.15) addmessage = getSupport(langIndex);
-      else addmessage = langIndex === 0 ? 'Правильный ответ: ' + answer : 'Correct answer: ' + answer;
-      const col = precision === 0 ? Colors.get('maxValColor', theme) : precision < 0.15 ? Colors.get('difficulty2', theme) : Colors.get('minValColor', theme);
-      setStatusColor(col);
-      setMessage(addmessage);
-      setAddScores(points);
-      setNewProblem();
-      setHandledInput('');
-      setStreakLength(prev => hasStreak(type,answer, handledInput) ? prev + 1 : 0);
-      setStage(prev => prev + 1 < 20 ? prev + 1 : 20);
-      precision === 0 ? playRight() : playWrong();
-      if (stage === 20) onFinishSession();
-      if (difficulty === 4 && stage%5 === 0) {
-        setAddValue(prev => prev + 2000);
-      }
-      if (difficulty === 4 && precision > 0.15) {
-        onFinishSession();
-      }
-    
+    if (phase !== 'recall') return;
+    const expectedAnswer = isReverse ? answer.split('').reverse().join('') : answer;
+    const answerTime = recallStartTime > 0 ? Date.now() - recallStartTime : 0;
+    const points = getPoints(type, difficulty, stage, answerTime, expectedAnswer, handledInput, streakLength);
+    const precision = getPrecision(type, expectedAnswer, handledInput);
+    playVibro(precision === 0 ? 'light' : 'medium');
+
+    let addmessage = '';
+    if (precision === 0) {
+      addmessage = getPraise(langIndex);
+      setRightAnswers((prev) => prev + 1);
+    } else if (precision < 0.15) {
+      addmessage = getSupport(langIndex);
+    } else {
+      addmessage = (langIndex === 0 ? 'Правильный ответ: ' : 'Correct answer: ') + expectedAnswer;
+    }
+
+    const col = precision === 0
+      ? Colors.get('maxValColor', theme)
+      : precision < 0.15
+      ? Colors.get('difficulty2', theme)
+      : Colors.get('minValColor', theme);
+
+    setStatusColor(col);
+    setMessage(addmessage);
+    setAddScores(points);
+    setStreakLength((prev) => (hasStreak(type,expectedAnswer, handledInput) ? prev + 1 : 0));
+    precision === 0 ? playRight() : playWrong();
+
+    setFinishAfterFeedback(stage >= 20);
+    setPhase('feedback');
     setDelayTimer(true);
   };
 
@@ -231,56 +281,171 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
     setIsRunning(true);
     setIsPaused(false);
   };
+
   const handleReload = () => {
-    setTimer(false);
-    setCurrTimer(0);
-    setProgress(0);
     setScores(0);
     setStage(1);
     setRightAnswers(0);
     setStreakLength(0);
     setHandledInput('');
     setMessage('');
-    setAddValue(0);
     setNewProblem();
     setStartTime(Date.now());
-    setTimer(true);
   };
 
-  const onFinishSession = () => {
+  const onFinishSession = (totalScore) => {
     const endTime = Date.now();
-    const duration = Math.round((endTime - startTime) / 1000); // Duration in seconds
+    const duration = Math.round((endTime - startTime) / 1000);
     saveSessionDuration(duration);
-    const message = congratulations(difficulty === 4, difficulty === 5, langIndex, scores + addScores, rightAnswers, 20, false);
+    const isRecord = totalScore > record;
+    const msg = congratulations(false, langIndex, totalScore, rightAnswers, 20, isRecord, false);
     setIsRunning(false);
-    setMessage(message);
+    setMessage(msg);
     setIsFinished(true);
     setIsStart(false);
-    setTimer(false);
   };
- const onFinish = () => {
-  if (scores > record) {
-    setRecord(scores);
-    AppData.mentalRecords[type][difficulty] = scores;
-  }
-  setScores(0);
-  setAddValue(0);
-  setStage(1);
-  setRightAnswers(0);
-  setIsFinished(false);
-  setShow(false);
- };
+
+  const onFinish = () => {
+    if (scores > record) {
+      setRecord(scores);
+      if (!AppData.mentalRecords[type]) AppData.mentalRecords[type] = {};
+      AppData.mentalRecords[type][difficulty] = scores;
+    }
+    setScores(0);
+    setStage(1);
+    setRightAnswers(0);
+    setIsFinished(false);
+    setShow(false);
+  };
  
   return (
     <div style={styles(theme, show).container}>
-      {!isStart && !showStartTimer && !isFinished && <div style={{display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',width:'100%',height:'80%'}}>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'18px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{quickMathCategories[difficulty].level[langIndex]}</div>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'15px',color:Colors.get('subText', theme)}}>{quickMathCategories[difficulty].description[langIndex]}</div>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'15px',color:Colors.get('mainText', theme)}}>{(langIndex === 0 ? 'Сложность: ' : 'Difficulty: ') +quickMathCategories[difficulty].difficulty[langIndex]}</div>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'15px',color:Colors.get('subText', theme)}}>{(langIndex === 0 ? 'Ограничение времени: ' : 'Time limit: ') + quickMathCategories[difficulty].timeLimitSec}</div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',marginTop:'20px',fontSize:'15px',color:Colors.get('subText', theme)}}>{(langIndex === 0 ? 'Операции: ' : 'Operations: ') + quickMathCategories[difficulty].operations}</div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',marginTop:'50px',fontSize:'12px',color:Colors.get('subText', theme)}}>{disclaimer(langIndex)}</div>
-      </div>}
+      {!isStart && !showStartTimer && !isFinished && (
+  <div
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'column',
+      width: '100%',
+      height: '80%',
+    }}
+  >
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginTop: '20px',
+        justifyContent: 'center',
+        fontSize: '18px',
+        fontWeight: 'bold',
+        color: Colors.get('mainText', theme),
+      }}
+    >
+      {memorySequenceLevels[difficulty].level[langIndex]}
+    </div>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginTop: '12px',
+        justifyContent: 'center',
+        fontSize: '15px',
+        color: Colors.get('subText', theme),
+      }}
+    >
+      {memorySequenceLevels[difficulty].title[langIndex]}
+    </div>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginTop: '12px',
+        justifyContent: 'center',
+        fontSize: '15px',
+        color: Colors.get('subText', theme),
+      }}
+    >
+      {memorySequenceLevels[difficulty].description[langIndex]}
+    </div>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginTop: '12px',
+        justifyContent: 'center',
+        fontSize: '15px',
+        color: Colors.get('mainText', theme),
+      }}
+    >
+      {(langIndex === 0 ? 'Длина: ' : 'Length: ') +
+        memorySequenceLevels[difficulty].elementsRange[0] +
+        '–' +
+        memorySequenceLevels[difficulty].elementsRange[1]}
+    </div>
+
+    {/* ✅ Updated timing info */}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginTop: '12px',
+        justifyContent: 'center',
+        fontSize: '15px',
+        color: Colors.get('subText', theme),
+      }}
+    >
+      {langIndex === 0
+        ? `Показ: ${memorySequenceLevels[difficulty].charShowMs} мс/символ`
+        : `Flash: ${memorySequenceLevels[difficulty].charShowMs} ms/char`}
+    </div>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        marginTop: '8px',
+        justifyContent: 'center',
+        fontSize: '15px',
+        color: Colors.get('subText', theme),
+      }}
+    >
+      {langIndex === 0
+        ? `Пауза перед ответом: ${memorySequenceLevels[difficulty].retentionDelayMs} мс`
+        : `Recall delay: ${memorySequenceLevels[difficulty].retentionDelayMs} ms`}
+    </div>
+
+    {/* ✅ Reverse mode indicator (if applicable) */}
+    {memorySequenceLevels[difficulty].reverse && (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          marginTop: '8px',
+          justifyContent: 'center',
+          fontSize: '15px',
+          color: Colors.get('maxValColor', theme),
+          fontStyle: 'italic',
+        }}
+      >
+        {langIndex === 0 ? 'Обратный порядок' : 'Reverse order'}
+      </div>
+    )}
+
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: '50px',
+        fontSize: '12px',
+        color: Colors.get('subText', theme),
+      }}
+    >
+      {disclaimer(langIndex)}
+    </div>
+  </div>
+)}
+      
       {!isStart && !showStartTimer && !isFinished && <div style={styles(theme, show).controls}>
       
       <IoArrowBackCircle onClick={() => onFinish()} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
@@ -314,7 +479,7 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
         {streakLength}
       </div>  
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:'20px',fontWeight:'bold',color:Colors.get('difficulty', theme)}}>
-        {difficulty > 3 ? stage :stage + '/ 20'}
+        {stage + '/ 20'}
       </div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:'20px',fontWeight:'bold',color:Colors.get('maxValColor', theme)}}>
         <FaStar/>
@@ -322,17 +487,23 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
       </div>
       </div>
       
-      <div style={{ width: '86%', height: '18px', position: 'relative',marginTop:'66px' }}>
-      <svg width="100%" height="18" viewBox="0 0 100 18" preserveAspectRatio="none" style={{ display: 'block' }}>
-      {/* Background track */}
-      <rect x="0" y="0" width="100" height="18" fill={Colors.get('bottomPanel', theme)}/>
-      {/* Progress fill */}
-      <rect x="0" y="0" width={progress} height="18"  fill={interpolateColor(Colors.get('done', theme), Colors.get('skipped', theme),(progress / 100))} /></svg>
-        <div style={{position:'relative',top:'-20px',color:Colors.get('subText', theme),marginBottom: '80px'}}>{Math.floor(((maxTimer - addValue) - currTimer)/1000 )}</div>
-      </div>
+      
 
-      <div>
-       {!delayTimer && <div style={problemCardStyle(theme,false)}>{problem}</div>}
+      <div >
+       {phase === 'recall' && !delayTimer && (
+  <div style={{...problemCardStyle(theme, false),fontSize:'16px'}}>
+    {isReverse 
+      ? (langIndex === 0 ? 'Повтори в обратном порядке' : 'Repeat in reverse')
+      : (langIndex === 0 ? 'Повтори' : 'Repeat')}
+  </div>
+)}
+       {phase === 'memorize' && (
+  <div style={problemCardStyle(theme, false)}>
+    {charIndex < answer.length 
+      ? answer[charIndex] 
+      : '⏳'} {/* Show hourglass during retention delay */}
+  </div>
+)}
        {delayTimer && <div style={problemCardStyle(theme,true,statusColor)}>
         <p style={{fontSize:'22px',fontWeight:'bold',color:addScores > 0 ? Colors.get('maxValColor', theme) : Colors.get('minValColor', theme)}}>{addScores > 0  && <FaStar/>}{addScores > 0 ? addScores : (langIndex === 0 ? 'не верно' : 'wrong answer')}</p>
         <p style={{fontSize:'16px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{message}</p>
@@ -341,8 +512,7 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
      
       <div style={{fontSize:'34px',fontWeight:'bold',color:Colors.get('subText', theme),marginTop:'auto'}}>{handledInput}</div>
     </div>}
-    {!isFinished && isStart && <MentalInput setInput={setInput} type={type}/>}
-
+    {!isFinished && isStart && phase === 'recall' && <MentalInput setInput={setInput} type={type}/>}
     {isFinished &&  <div style={{display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',width:'100%',height:'80%'}}>
       <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'28px',fontWeight:'bold',color:Colors.get('maxValColor', theme)}}><FaStar/>{scores}</div>
       <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'18px',fontWeight:'bold',color:Colors.get('medium', theme)}}>{getTimeInfo(langIndex,time)}</div>
@@ -418,9 +588,9 @@ const styles = (theme,show) =>
 const disclaimer = (langIndex) => {
   // 0 = ru, 1 = en
   if (langIndex === 0) {
-    return "Чтобы получить больше очков, отвечайте правильно и как можно быстрее. Каждая ошибка сбрасывает множитель. За каждые 5 правильных ответов подряд множитель повышается, достигая максимума ×1.5.";
+    return "Отвечайте правильно и быстро, чтобы получить максимум очков. Каждая ошибка сбрасывает множитель подряд идущих ответов. За каждые 5 правильных ответов подряд множитель растёт (макс. ×1.5). На сложных уровнях последовательность нужно воспроизводить в обратном порядке — тренируйте рабочую память!";
   } else {
-    return "To earn more points, answer correctly and as quickly as possible. Every mistake resets your multiplier. For every 5 correct answers in a row, your multiplier increases—up to a maximum of ×1.5.";
+    return "Answer correctly and quickly to maximize your score. Every mistake resets your streak multiplier. For every 5 correct answers in a row, the multiplier increases (up to ×1.5). On harder levels, repeat the sequence in reverse — train your working memory under pressure!";
   }
 };
 const congratulations = (isEndlessMode, langIndex, score, rightAnswers, totalAnswers, isRecord, isRelaxMode = false) => {

@@ -1,4 +1,7 @@
 // math
+import { saveData } from "../../StaticClasses/SaveHelper";
+import { AppData } from "../../StaticClasses/AppData";
+
 export const quickMathCategories = [
   // Обычные уровни
   {
@@ -71,48 +74,56 @@ export const memorySequenceLevels = [
     id: 'easy',
     level: ['легко', 'easy'],
     title: ['разогрев памяти', 'memory warm-up'],
-    elementsRange: [3, 4],
-    memorizeTimeSecRange: [10, 4],
+    elementsRange: [3, 4],           // Short sequences
+    charShowMs: 1100,                 // Each char shown for 800ms
+    retentionDelayMs: 500,          // 1s to recall after
     description: [
-      'Короткие последовательности для лёгкого разогрева.',
-      'Short sequences to gently warm up your memory.',
+      'Короткие последовательности с медленным показом и короткой паузой.',
+      'Short sequences, slow character display, short memory gap.'
     ],
+    reverse: false,
   },
   {
     id: 'medium',
     level: ['средний', 'medium'],
     title: ['удерживаю и обновляю', 'hold and update'],
-    elementsRange: [5, 8],
-    memorizeTimeSecRange: [12, 8],
+    elementsRange: [4, 6],
+    charShowMs: 900,
+    retentionDelayMs: 1500,
     description: [
-      'Более длинные цепочки и несколько повторов для тренировки удержания.',
-      'Longer chains and multiple repeats to train holding information.',
+      'Средние цепочки, умеренная скорость и пауза для тренировки рабочей памяти.',
+      'Medium-length chains, moderate speed and delay to train working memory.'
     ],
+    reverse: false,
   },
   {
     id: 'hard',
     level: ['сложно', 'hard'],
     title: ['сложные цепочки', 'complex chains'],
     elementsRange: [6, 12],
-    memorizeTimeSecRange: [8, 6],
+    charShowMs: 800,                 // Faster flashes
+    retentionDelayMs: 3000,          // Longer retention challenge
     description: [
-      'Длинные последовательности с помехами и усложнённым повтором.',
-      'Long sequences with interference and more demanding repetition.',
+      'Длинные последовательности с быстрым показом и длительной паузой.',
+      'Long sequences, fast character flashes, and a long retention gap.'
     ],
+    reverse: true,
   },
   {
     id: 'max',
     level: ['про-режим', 'max pro'],
     title: ['PRO-режим', 'pro mode'],
-    elementsRange: [8, 16],
-    memorizeTimeSecRange: [5, 3],
+    elementsRange: [8, 14],
+    charShowMs: 700,                 // Very fast — almost subliminal
+    retentionDelayMs: 4000,          // Max retention demand
     description: [
-      'Максимальная нагрузка: длинные цепочки, реверс и помехи.',
-      'Maximum load: long chains, reverse input and interference.',
+      'Максимальная нагрузка: молниеносный показ и долгая пауза без подсказок.',
+      'Maximum load: rapid character flashes and extended silent retention.'
     ],
+    reverse: true,
   },
 ];
-export const logicOddOneOutLevels = [
+export const logicOddOneOutLevels = [ 
   {
     id: 'easy',
     level: ['легко', 'easy'],
@@ -149,14 +160,14 @@ export const logicOddOneOutLevels = [
     title: ['сложные закономерности', 'complex patterns'],
     itemsCountRange: [6, 7],
     rules: [
-      'Комбинированные правила (цвет + позиция, чётность + интервал), один элемент не вписывается.',
-      'Combined rules (color + position, parity + step), one item does not fit.',
+      'Цвет и число связаны правилом: чётность, чередование, шаг. Найди нарушителя.',
+  'Color and number follow a joint rule: parity, alternation, or step. Find the outlier.'
     ],
     timeLimitSec: 25,
     description: [
-      'Многоуровневые последовательности, где нужно удержать сразу несколько признаков.',
-      'Multi-layer patterns where several features must be tracked at once.',
-    ],
+  'Цвет и число связаны правилом: чётность, чередование, шаг. Найди нарушителя.',
+  'Color and number follow a joint rule: parity, alternation, or step. Find the outlier.'
+],
   },
   {
     id: 'max',
@@ -179,48 +190,79 @@ export const focusTrainingLevels = [
     id: 'easy',
     level: ['легко', 'easy'],
     title: ['фокус на цели', 'target focus'],
-    targetsPerRoundRange: [1, 2],      // сколько целевых стимулов
-    itemsOnScreenRange: [4, 6],        // всего стимулов
-    timeLimitSec: 20,
+    targetSymbol: '★',
+    targetsPerRoundRange: [2, 4],          // ↑ more targets
+    totalItemsRange: [8, 12],              // ↑↑↑ was [4,6]
+    timeLimitSec: 25,
+    roundTimeSec: 10,
+    presentation: 'static',
+    distractorMotion: false,
+    ruleShiftInterval: 0,
     description: [
-      'Найди один-два целевых символа среди небольшого числа отвлекающих.',
-      'Find one or two target symbols among a few distractors.',
+      'Найди все ★ среди большого количества символов.',
+      'Find all ★ among many symbols.'
     ],
   },
   {
     id: 'medium',
     level: ['средний', 'medium'],
     title: ['борьба с помехами', 'fight distractions'],
-    targetsPerRoundRange: [1, 3],
-    itemsOnScreenRange: [6, 9],
-    timeLimitSec: 20,
+    targetSymbol: '★',
+    targetsPerRoundRange: [3, 5],
+    totalItemsRange: [14, 18],             // ↑↑↑ was [6,9]
+    timeLimitSec: 30,
+    roundTimeSec: 9,
+    presentation: 'sequential',
+    distractorMotion: false,
+    ruleShiftInterval: 0,
     description: [
-      'Больше отвлекающих элементов, выше скорость появления стимулов.',
-      'More distractors and higher stimulus appearance speed.',
+      'Еще больше символов. Сосредоточься, не теряй ★ из виду.',
+      'Even more symbols. Stay focused—don’t lose track of ★.'
     ],
   },
   {
     id: 'hard',
     level: ['сложно', 'hard'],
     title: ['устойчивый фокус', 'sustained focus'],
-    targetsPerRoundRange: [2, 4],
-    itemsOnScreenRange: [8, 12],
-    timeLimitSec: 15,
+    targetSymbol: '★',
+    targetsPerRoundRange: [4, 7],
+    totalItemsRange: [22, 28],             // ↑↑↑ was [8,12] → now very dense
+    timeLimitSec: 35,
+    roundTimeSec: 8,
+    presentation: 'static',
+    distractorMotion: true,
+    ruleShiftInterval: 0,
     description: [
-      'Быстрые сменяющиеся стимулы, нужно удерживать внимание и не кликать по лишним.',
-      'Rapidly changing stimuli; keep attention and avoid clicking wrong ones.',
+      'Высокая плотность символов. Только ★ статичны.',
+      'High symbol density. Only ★ stay still.'
     ],
   },
   {
     id: 'max',
     level: ['про-режим', 'max pro'],
     title: ['фокус под давлением', 'focus under pressure'],
-    targetsPerRoundRange: [3, 5],
-    itemsOnScreenRange: [10, 14],
-    timeLimitSec: 15,
+    targetSymbol: '★',
+    targetsPerRoundRange: [5, 9],          // up to 9 targets!
+    totalItemsRange: [26, 36],             // ↑↑↑ was [10,14] → now 32 max!
+    timeLimitSec: 40,
+    roundTimeSec: 7,
+    presentation: 'sequential',
+    distractorMotion: true,
+    ruleShiftInterval: 3,
     description: [
-      'Максимум помех, перемена правил и высокая скорость появления целей.',
-      'Maximum interference, rule shifts and very fast target appearance.',
+      'Экстремальная нагрузка: до 32 символов! Цель может смениться.',
+      'Extreme load: up to 32 symbols! Target may change mid-session.'
     ],
   },
 ];
+
+export async function saveSessionDuration(duration) {
+  const today = new Date().toISOString().split('T')[0];
+  
+  if (AppData.mentalLog[today]) {
+    AppData.mentalLog[today] += duration;
+  } else {
+    AppData.mentalLog[today] = duration;
+  }
+   await saveData();
+}

@@ -32,6 +32,9 @@ const RecoveryAnalytics = lazy(() => import('./assets/Pages/Recovery/RecoveryAna
 
 const MentalMain = lazy(() => import('./assets/Pages/MentalPages/MentalMain'));
 const MathMain = lazy(() => import('./assets/Pages/MentalPages/MathMain'));
+const MemoryMain = lazy(() => import('./assets/Pages/MentalPages/MemoryMain'));
+const LogicMain = lazy(() => import('./assets/Pages/MentalPages/LogicMain'));
+const FocusMain = lazy(() => import('./assets/Pages/MentalPages/FocusMain'));
 
 const SleepMetrics = lazy(() => import('./assets/Pages/SleepPages/SleepMetrics'));
 const SleepMain = lazy(() => import('./assets/Pages/SleepPages/SleepMain'));
@@ -167,6 +170,15 @@ if (showPendingScreen) {
         </Suspense>}
       {page === 'MentalMath' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <MathMain/>
+      </Suspense>}
+      {page === 'MentalMemory' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <MemoryMain/>
+      </Suspense>}
+      {page === 'MentalLogic' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <LogicMain/>
+      </Suspense>}
+      {page === 'MentalFocus' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <FocusMain/>
       </Suspense>}
       {page === 'SleepMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <SleepMain/>

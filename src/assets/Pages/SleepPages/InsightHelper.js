@@ -5,7 +5,8 @@ const INSIGHT_SYSTEM_PROMPTS = [
   // 0 — RU
   `Ты — персональный фитнес‑аналитик. 
 Генерируй короткие, практичные инсайты по тренировкам, дыханию, медитации, закаливанию и сну за последние 7 дней.
-Отвечай на русском, структурированно и мотивирующе. Расставь переносы строки для вставки в скрипт: \n`,
+Отвечай на русском, структурированно и мотивирующе. Каждый пункт — с новой строки. Не используй Markdown.`
+  ,
   // 1 — EN
   `You are a personal fitness analyst.
 Generate short, actionable insights about workouts, breathing, meditation, cold exposure and sleep for the last 7 days.
@@ -22,6 +23,8 @@ export function getInsightPrompt(langIndex) {
   const meditation = AppData.meditationLog || {};
   const hardening = AppData.hardeningLog || {};
   const sleeping = AppData.sleepingLog || {};
+  const mentalLog = AppData.mentalLog || {};
+  const mentalRecords = AppData.mentalRecords || [];
   const programs = AppData.programs || {};
   const exercises = AppData.exercises || {};
 
@@ -84,7 +87,7 @@ Object.entries(habitsByDate || {}).forEach(([date, obj]) => {
         ? (program.name && (program.name[langIndex] || program.name[0]))
         : `Program #${s.programId}`;
 
-      trainingsBlock += `    [Session #${idx + 1}] program: ${programName}, dayIndex: ${s.dayIndex}, completed: ${s.complited}, duration(ms): ${s.duration}, tonnage: ${s.tonnage}\n`;
+      trainingsBlock += `    [Session #${idx + 1}] program: ${programName}, dayIndex: ${s.dayIndex}, completed: ${s.completed}, duration(ms): ${s.duration}, tonnage: ${s.tonnage}\n`;
 
       trainingsBlock += `      exercises:\n`;
       const order = s.exerciseOrder || [];
@@ -101,7 +104,7 @@ Object.entries(habitsByDate || {}).forEach(([date, obj]) => {
         (exData.sets || []).forEach((set, i) => {
           trainingsBlock += `            * set ${i + 1}: type=${set.type}, reps=${set.reps}, weight=${set.weight}, time=${set.time}\n`;
         });
-        trainingsBlock += `          totalTonnage: ${exData.totalTonnage}, completed: ${exData.complited}\n`;
+        trainingsBlock += `          totalTonnage: ${exData.totalTonnage}, completed: ${exData.completed}\n`;
       });
     });
   });
@@ -126,6 +129,67 @@ Object.entries(habitsByDate || {}).forEach(([date, obj]) => {
   const breathingBlock = buildSimpleLogBlock('BREATHING', breathing, ['maxHold']);
   const meditationBlock = buildSimpleLogBlock('MEDITATION', meditation, []);
   const hardeningBlock = buildSimpleLogBlock('HARDENING', hardening, ['timeInColdWater']);
+
+  // 5. Mental
+  let mentalBlock = 'MENTAL (last 7 days):\n';
+  let mentalTotalSeconds = 0;
+  let mentalDaysCount = 0;
+  Object.entries(mentalLog || {}).forEach(([date, durationSeconds]) => {
+    if (!isInLast7Days(date)) return;
+    const dur = Number(durationSeconds) || 0;
+    mentalTotalSeconds += dur;
+    mentalDaysCount += 1;
+    mentalBlock += `  ${date}: duration(sec): ${dur}, duration(min): ${Math.round((dur / 60) * 10) / 10}\n`;
+  });
+  mentalBlock += `  total(sec): ${mentalTotalSeconds}, total(min): ${Math.round((mentalTotalSeconds / 60) * 10) / 10}, days: ${mentalDaysCount}\n`;
+
+  const mentalCategoryNames = [
+    ['Быстрый счёт', 'Mental math'],
+    ['Память в действии', 'Memory'],
+    ['Числовая логика', 'Number logic'],
+    ['Чистый фокус', 'Pure focus']
+  ];
+
+  let mentalRecordsBlock = 'MENTAL_RECORDS (best scores):\n';
+  (mentalRecords || []).forEach((arr, idx) => {
+    const name = mentalCategoryNames[idx] ? mentalCategoryNames[idx][langIndex] : `Category #${idx}`;
+    const scoresArr = Array.isArray(arr) ? arr : [];
+    const parsed = scoresArr.map((v) => Number(v) || 0);
+    const best = parsed.length ? Math.max(...parsed) : 0;
+    const nonZero = parsed.filter((v) => v > 0);
+    const avg = nonZero.length ? Math.round((nonZero.reduce((a, b) => a + b, 0) / nonZero.length) * 10) / 10 : 0;
+    mentalRecordsBlock += `  ${name}: best=${best}, avg(nonZero)=${avg}, byDifficulty=${JSON.stringify(scoresArr)}\n`;
+  });
+
+  function estimateMaxMathSessionScore(difficulty) {
+    const baseScores = [100, 200, 300, 400];
+    const base = baseScores[difficulty] || 100;
+
+    let total = 0;
+    for (let stage = 1; stage <= 20; stage++) {
+      const stageMultiplier = Math.min(1 + stage * 0.02, 1.3);
+      const timeMultiplier = 1.6;
+      const streakLength = stage - 1;
+      const streakMultiplier = streakLength >= 5
+        ? Math.min(1 + 0.1 * Math.min(streakLength / 10, 4), 1.5)
+        : 1;
+      total += Math.round(base * stageMultiplier * timeMultiplier * streakMultiplier);
+    }
+    return total;
+  }
+
+  const mathDifficultyNames = [
+    ['начальный', 'novice'],
+    ['средний', 'intermediate'],
+    ['продвинутый', 'advanced'],
+    ['безумный', 'insane']
+  ];
+
+  let mentalScoreHintBlock = 'MENTAL_SCORE_HINTS (math scale, estimated max for perfect 20 questions):\n';
+  for (let d = 0; d < 4; d++) {
+    const label = mathDifficultyNames[d] ? mathDifficultyNames[d][langIndex] : `difficulty ${d}`;
+    mentalScoreHintBlock += `  ${label}: estimatedMax≈${estimateMaxMathSessionScore(d)}\n`;
+  }
 
   // 5. Сон
   let sleepBlock = 'SLEEP (last 7 days):\n';
@@ -158,28 +222,41 @@ ${meditationBlock}
 
 ${hardeningBlock}
 
+${mentalBlock}
+
+${mentalRecordsBlock}
+
+${mentalScoreHintBlock}
+
 ${sleepBlock}
 `;
 
-  console.log(systemPrompt + ';' + userPrompt);
   return { systemPrompt, userPrompt };
 }
 
-// пример обёртки вызова Qwen
 export async function getInsight(langIndex) {
-  const { systemPrompt, userPrompt } = getInsightPrompt(langIndex);
+  try {
+    const { systemPrompt, userPrompt } = getInsightPrompt(langIndex);
 
-  const res = await fetch('/api/qwen', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ]
-    })
-  });
+    const res = await fetch('/api/insight', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ]
+      })
+    });
 
-  const data = await res.json();
-  return data;
+    if (!res.ok) {
+      throw new Error(`Insight API error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to get insight:', error);
+    throw error; // or return fallback
+  }
 }
