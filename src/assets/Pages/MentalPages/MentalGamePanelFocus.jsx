@@ -307,11 +307,9 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
   const duration = Math.round((endTime - startTime) / 1000); // Duration in seconds
   saveSessionDuration(duration,scores + addScores > record,type,difficulty,scores + addScores);
   setScores(0);
-  setAddValue(0);
+  setAddScores(0);
   setStage(1);
   setRightAnswers(0);
-  setIsFinished(false);
-  setShow(false);
  };
 
   // === Render Symbols ===
@@ -397,7 +395,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
 
       {!isStart && !showStartTimer && !isFinished && (
         <div style={styles(theme, show).controls}>
-          <IoArrowBackCircle onClick={() => setShow(false)} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
+          <IoArrowBackCircle onClick={() => {setShow(false);setIsFinished(false);}} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
           <IoPlayCircle onClick={() => setShowStartTimer(true)} style={{ fontSize: '60px', color: Colors.get('play', theme) }} />
           <IoReloadCircle onClick={handleReload} style={{ fontSize: '60px', color: Colors.get('reload', theme) }} />
         </div>
@@ -469,12 +467,37 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
 
       {/* Finish Screen */}
       {isFinished && (
-        <div style={finishScreenStyle(theme, langIndex, scores, record, time, rightAnswers, message)} />
-      )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', width: '100%', height: '80%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px', justifyContent: 'center', fontSize: '28px', fontWeight: 'bold', color: Colors.get('maxValColor', theme) }}>
+                  <FaStar />
+                  {scores}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold', color: Colors.get('medium', theme) }}>
+                  {getTimeInfo(langIndex, time)}
+                </div>
+                {scores > record && (
+                  <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px', justifyContent: 'center', fontSize: '28px', fontWeight: 'bold', color: Colors.get('medium', theme) }}>
+                    <FaMedal />
+                    {langIndex === 0 ? 'Новый рекорд!' : 'New record!'}
+                  </div>
+                )}
+                {scores <= record && (
+                  <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px', justifyContent: 'center', fontSize: '28px', fontWeight: 'bold', color: Colors.get('subText', theme) }}>
+                    {langIndex === 0 ? 'рекорд: ' + record : 'record: ' + record}
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px', justifyContent: 'center', fontSize: '22px', fontWeight: 'bold', color: Colors.get('mainText', theme) }}>
+                  {difficulty < 4 ? rightAnswers + ' / ' + 20 : rightAnswers}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', marginTop: '20px', justifyContent: 'center', fontSize: '18px', fontWeight: 'bold', color: Colors.get('mainText', theme) }}>
+                  {message}
+                </div>
+              </div>
+            )}
 
       {isFinished && (
         <div style={styles(theme, show).controls}>
-          <IoArrowBackCircle onClick={() => setShow(false)} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
+          <IoArrowBackCircle onClick={() => {setShow(false);setIsFinished(false);}} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
         </div>
       )}
     </div>
@@ -597,5 +620,11 @@ const getPraise = (langIndex) => {
   const list = langIndex === 0 ? ru : en;
   return list[Math.floor(Math.random() * list.length)];
 };
+function getTimeInfo(langIndex, startTime) {
+  const formattedTime = getParsedTime(startTime);
+  return langIndex === 0
+    ? `Ваше время: ${formattedTime}`
+    : `Your time is: ${formattedTime}`;
+}
 
 export default MentalGamePanelFocus;

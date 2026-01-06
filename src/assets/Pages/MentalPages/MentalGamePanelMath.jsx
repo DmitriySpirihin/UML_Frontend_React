@@ -269,8 +269,7 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
   setAddValue(0);
   setStage(1);
   setRightAnswers(0);
-  setIsFinished(false);
-  setShow(false);
+ 
  };
  
   return (
@@ -285,7 +284,7 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
       </div>}
       {!isStart && !showStartTimer && !isFinished && <div style={styles(theme, show).controls}>
       
-      <IoArrowBackCircle onClick={() => setShow(false)} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
+      <IoArrowBackCircle onClick={() => {setShow(false);setIsFinished(false);}} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
       <IoPlayCircle onClick={() => setShowStartTimer(true)} style={{fontSize:'60px',color:Colors.get('play', theme)}} /> 
       <IoReloadCircle onClick={handleReload} style={{fontSize:'60px',color:Colors.get('reload', theme)}}/>
       </div>}
@@ -352,7 +351,7 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
       <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'18px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{message}</div>
     </div>}
     {isFinished &&  <div style={styles(theme, show).controls}>
-      <IoArrowBackCircle onClick={() => {onFinishSession()}} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
+      <IoArrowBackCircle onClick={() => {setShow(false);setIsFinished(false);}} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
       </div>}
     </div>
   );

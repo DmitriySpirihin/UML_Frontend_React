@@ -270,11 +270,9 @@ useEffect(() => {
   const duration = Math.round((endTime - startTime) / 1000); // Duration in seconds
   saveSessionDuration(duration,scores + addScores > record,type,difficulty,scores + addScores);
   setScores(0);
-  setAddValue(0);
+  setAddScores(0);
   setStage(1);
   setRightAnswers(0);
-  setIsFinished(false);
-  setShow(false);
  };
 const getContrastColor = (hex) => {
   // Simple brightness check
@@ -457,7 +455,7 @@ const getContrastColor = (hex) => {
 
       {!isStart && !showStartTimer && !isFinished && (
         <div style={styles(theme, show).controls}>
-          <IoArrowBackCircle onClick={() => setShow(false)} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
+          <IoArrowBackCircle onClick={() => {setShow(false);setIsFinished(false);}} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
           <IoPlayCircle onClick={() => setShowStartTimer(true)} style={{ fontSize: '60px', color: Colors.get('play', theme) }} />
           <IoReloadCircle onClick={handleReload} style={{ fontSize: '60px', color: Colors.get('reload', theme) }} />
         </div>
@@ -571,7 +569,7 @@ const getContrastColor = (hex) => {
 
       {isFinished && (
         <div style={styles(theme, show).controls}>
-          <IoArrowBackCircle onClick={() => setShow(false)} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
+          <IoArrowBackCircle onClick={() => {setShow(false);setIsFinished(false);}} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
         </div>
       )}
     </div>
