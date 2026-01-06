@@ -78,7 +78,9 @@ export class AppData{
     if(data.platesAmount?.length > 0)this.platesAmount = data.platesAmount;
     this.barWeight = data.barWeight;
     this.trainingLog = data.trainingLog;
-    //this.recoveryProtocols = data.recoveryProtocols;
+    if(data.recoveryProtocols[0][1].length > 2){
+      this.recoveryProtocols = data.recoveryProtocols;
+    }
     this.breathingLog = data.breathingLog;
     this.meditationLog = data.meditationLog;
     this.hardeningLog = data.hardeningLog;
