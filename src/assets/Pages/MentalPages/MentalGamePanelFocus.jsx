@@ -5,7 +5,7 @@ import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
 import { getProblem, getPoints, hasStreak, getPrecision } from './FocusProblems';
 import BreathAudio from "../../Helpers/BreathAudio";
 import { FaStar, FaFire, FaMedal, FaStopwatch } from 'react-icons/fa';
-import { IoPlayCircle, IoReloadCircle, IoArrowBackCircle, IoPauseCircle } from "react-icons/io5";
+import { IoPlayCircle, IoReloadCircle, IoArrowBackCircle } from "react-icons/io5";
 import { focusTrainingLevels, saveSessionDuration } from './MentalHelper';
 
 const startTimerDuration = 3000;
@@ -289,9 +289,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
   };
 
   const onFinishSession = (totalScore) => {
-    const endTime = Date.now();
-    const duration = Math.round((endTime - startTime) / 1000);
-    saveSessionDuration(duration,scores > record,type,difficulty,scores + addScores);
+    onFinish();
     const isRecord = totalScore > record;
     const msg = congratulations(false, langIndex, totalScore, rightAnswers, 20, isRecord, false);
     setIsRunning(false);
@@ -301,8 +299,20 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
   };
 
   const onFinish = () => {
-    setShow(false);
-  };
+  if (scores + addScores > record) {
+    setRecord(scores + addScores);
+    AppData.mentalRecords[type][difficulty] = scores + addScores;
+  }
+  const endTime = Date.now();
+  const duration = Math.round((endTime - startTime) / 1000); // Duration in seconds
+  saveSessionDuration(duration,scores + addScores > record,type,difficulty,scores + addScores);
+  setScores(0);
+  setAddValue(0);
+  setStage(1);
+  setRightAnswers(0);
+  setIsFinished(false);
+  setShow(false);
+ };
 
   // === Render Symbols ===
   const renderProblemItems = () => {
@@ -387,7 +397,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
 
       {!isStart && !showStartTimer && !isFinished && (
         <div style={styles(theme, show).controls}>
-          <IoArrowBackCircle onClick={() => onFinish()} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
+          <IoArrowBackCircle onClick={() => setShow(false)} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
           <IoPlayCircle onClick={() => setShowStartTimer(true)} style={{ fontSize: '60px', color: Colors.get('play', theme) }} />
           <IoReloadCircle onClick={handleReload} style={{ fontSize: '60px', color: Colors.get('reload', theme) }} />
         </div>
@@ -410,13 +420,8 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
         <div style={styles(theme).playContainer}>
           <div style={{ display: 'flex', flexDirection: 'row', width: '86%', borderBottom: `1px solid ${Colors.get('border', theme)}` }}>
             <div style={{ display: 'flex', flexDirection: 'row', marginTop: '6px', width: '60%', gap: '20px', marginRight: 'auto' }}>
-              <IoArrowBackCircle onClick={() => setIsStart(false)} style={{ fontSize: '25px', color: Colors.get('close', theme) }} />
-              {isPaused ? (
-                <IoPlayCircle onClick={handleResume} style={{ fontSize: '25px', color: Colors.get('play', theme) }} />
-              ) : (
-                <IoPauseCircle onClick={handlePause} style={{ fontSize: '25px', color: Colors.get('pause', theme) }} />
-              )}
-              <IoReloadCircle onClick={handleReload} style={{ fontSize: '25px', color: Colors.get('reload', theme) }} />
+              <IoArrowBackCircle onClick={() => onFinishSession(scores + addScores)} style={{ fontSize: '25px', color: Colors.get('close', theme) }} />
+             
             </div>
             <div style={{ display: 'flex', marginLeft: 'auto', alignItems: 'center', justifyContent: 'center', fontSize: '20px', fontWeight: 'bold', color: Colors.get('subText', theme) }}>
               <FaStopwatch />
@@ -469,7 +474,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
 
       {isFinished && (
         <div style={styles(theme, show).controls}>
-          <IoArrowBackCircle onClick={() => onFinish()} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
+          <IoArrowBackCircle onClick={() => setShow(false)} style={{ fontSize: '60px', color: Colors.get('close', theme) }} />
         </div>
       )}
     </div>
