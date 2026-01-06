@@ -2,7 +2,7 @@ import { useState, useEffect} from 'react';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { MdClose , MdDone } from 'react-icons/md';
-import { FaCaretLeft, FaCaretRight ,FaTrashAlt } from 'react-icons/fa';
+import { FaCaretLeft, FaCaretRight ,FaTrash } from 'react-icons/fa';
 import { useLongPress } from '../../Helpers/LongPress.js';
 
 
@@ -209,13 +209,13 @@ function onDelete(index) {
             
             <div style={{ display: 'flex', justifyContent:'space-evenly', alignItems: 'center',width:'90%' }}>
               <span style={styles(theme,fSize).text}>{langIndex === 0 ? "циклов" : 'cycles'}</span>
-             <div onClick={(e) => {e.stopPropagation();setCycles(prev => prev-1 > 1 ? prev-1 : 1);}} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center',userSelect: 'none',touchAction: 'none' }}>
-               <FaCaretLeft style={{fontSize:'34px',color:Colors.get('icons', theme)}}/></div> 
+             <div onClick={(e) => {e.stopPropagation();setCycles(prev => prev-1 > 1 ? prev-1 : 1);}} style={{  display: 'flex', alignItems: 'center',userSelect: 'none',touchAction: 'none' }}>
+               <FaCaretLeft style={{fontSize:'54px',color:Colors.get('icons', theme)}}/></div> 
                  <span style={styles(theme,fSize).text}>{cycles}</span>
-                 <div   onClick={(e) => {e.stopPropagation();setCycles(prev => prev+1);}} style={{ cursor: 'pointer',userSelect: 'none',touchAction: 'none', display: 'flex', alignItems: 'center' }}>
-                 <FaCaretRight style={{fontSize:'34px',color:Colors.get('icons', theme)}}/></div> </div>
+                 <div   onClick={(e) => {e.stopPropagation();setCycles(prev => prev+1);}} style={{ userSelect: 'none',touchAction: 'none', display: 'flex', alignItems: 'center' }}>
+                 <FaCaretRight style={{fontSize:'54px',color:Colors.get('icons', theme)}}/></div> </div>
             <div style={{
-                width: '90%',
+                width: '99%',
                 height: '65%',
                 overflowY: 'scroll',
                 overflowX:'hidden',
@@ -232,37 +232,39 @@ function onDelete(index) {
                 {steps.map((step, index) => {
   const [type, value] = Object.entries(step)[0];
   const isInOut = type.includes('вдох/выдох') || type.includes('inhale/exhale');
-
+  // color here
   return (
     <div 
       key={index} 
       style={{ 
         display: 'flex', 
         flexDirection: 'row',
-        width: '97%',
+        width: '100%',
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        marginBottom: 14,
         backgroundColor: activeStepIndex === index ? Colors.get('backgroundLight', theme) : 'transparent',
-        padding: '4px 12px',
         borderRadius: '4px'
       }}
       onClick={() => setActiveStepIndex(index === activeStepIndex ? null : index)}
     >
+      <FaTrash 
+        onClick={() => onDelete(index)} 
+        style={{ fontSize: '15px', color: Colors.get('icons', theme), marginRight:'16px' }} 
+      />
       <div style={styles(theme, fSize).text}>{type}</div>
 
-      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'row', width: '50%', alignItems: 'center',justifyContent: 'space-between' }}>
         {/* Duration control */}
-        <div style={{ display: 'flex', alignItems: 'center', width: '100px',justifyContent:'space-between', }}>
+        <div style={{ display: 'flex', alignItems: 'center',width:'100%' ,justifyContent: 'space-between'}}>
           <div 
             {...decBind} 
             onClick={(e) => {
               e.stopPropagation();
               addTime(index, 'down', 'duration');
             }} 
-            style={{ cursor: 'pointer', userSelect: 'none', touchAction: 'none' }}
+            style={{ userSelect: 'none', touchAction: 'none' }}
           >
-            <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+            <FaCaretLeft style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
           </div>
           <div style={styles(theme, fSize).text}>
             {isInOut ? (value.duration / 1000).toFixed(1) : (value / 1000).toFixed(1)}s
@@ -273,24 +275,29 @@ function onDelete(index) {
               e.stopPropagation();
               addTime(index, 'up', 'duration');
             }}
-            style={{ cursor: 'pointer', userSelect: 'none', touchAction: 'none' }}
+            style={{  userSelect: 'none', touchAction: 'none' }}
           >
-            <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+            <FaCaretRight style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
           </div>
         </div>
 
+        
+      </div>
+      
+        
+
         {/* Amount control — only for in/out */}
-        {isInOut && (
-          <div style={{ display: 'flex', alignItems: 'center',justifyContent:'space-between', width: '100px' }}>
+        {isInOut ? (
+          <div style={{ display: 'flex', alignItems: 'center',width:'30%' ,justifyContent: 'space-between'}}>
             <div 
               {...decBind}
               onClick={(e) => {
                 e.stopPropagation();
                 addTime(index, 'down', 'amount');
               }}
-              style={{ cursor: 'pointer', userSelect: 'none', touchAction: 'none' }}
+              style={{  userSelect: 'none', touchAction: 'none' }}
             >
-              <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+              <FaCaretLeft style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
             </div>
             <div style={styles(theme, fSize).text}>
               ×{value.amount}
@@ -301,19 +308,16 @@ function onDelete(index) {
                 e.stopPropagation();
                 addTime(index, 'up', 'amount');
               }}
-              style={{ cursor: 'pointer', userSelect: 'none', touchAction: 'none' }}
+              style={{ userSelect: 'none', touchAction: 'none' }}
             >
-              <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+              <FaCaretRight style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
             </div>
           </div>
-        )}
-      </div>
-
-      <FaTrashAlt 
-        onClick={() => onDelete(index)} 
-        style={{ fontSize: '15px', color: Colors.get('icons', theme), cursor: 'pointer' }} 
-      />
+        ) : (null)}
+    
+      
     </div>
+    
   );
 })}
             </div>

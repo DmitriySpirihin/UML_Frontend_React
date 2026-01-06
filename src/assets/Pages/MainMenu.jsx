@@ -66,7 +66,7 @@ const MainMenu = ({ onPageChange }) => {
     }
 
     const checkPassword = (value) => {
-        if(value.length > 5){
+        if(value.length === 16){
             sendPassword(value);
         }
     }

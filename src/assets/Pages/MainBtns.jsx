@@ -256,8 +256,8 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
                       <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => cloudBackup()}>{langIndex === 0 ? '☁️Создать резервную копию' : '☁️Create backup'}</div>
                       <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => cloudRestore()}>{langIndex === 0 ? '↩️Восстановить данные' : '↩️Restore data'}</div>
                       <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => deleteCloudBackup()}>{langIndex === 0 ? '🗑️Удалить резервную копию' : '🗑️Delete backup'}</div>
-                      <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => exportDataToFile()}>{langIndex === 0 ? '💾Сохранить на устройство' : '💾Upload on device'}</div>
-                      <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => importDataFromFile()}>{langIndex === 0 ? '↩️Восстановить с устройства' : '↩️Restore from device'}</div>
+                      {/*<div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => exportDataToFile()}>{langIndex === 0 ? '💾Сохранить на устройство' : '💾Upload on device'}</div>
+                      <div style={{width:"70%",margin:"20px",borderBottom:"1px solid " + Colors.get('border', theme)}} onClick={async () => importDataFromFile()}>{langIndex === 0 ? '↩️Восстановить с устройства' : '↩️Restore from device'}</div>*/}
                    
                    </div>}
                    {panelNum === 2 && <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",width:"80%",height:"80%"}}>
@@ -462,7 +462,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         bottom: '20px'
 
                     }}> 
-                        {langIndex === 0 ? 'версия: 1.c.19.5' : 'version: 1.c.19.5'}
+                        {langIndex === 0 ? 'версия: 1.c.20' : 'version: 1.c.20'}
                     </p>
                 </motion.div>
                 </React.Fragment>

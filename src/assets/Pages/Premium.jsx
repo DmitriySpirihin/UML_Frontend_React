@@ -1,8 +1,9 @@
 import { useState, useEffect} from 'react';
 import { AppData , UserData} from '../StaticClasses/AppData.js';
 import Colors from '../StaticClasses/Colors';
-import { lastPage$, setPage,theme$,lang$,premium$,fontSize$,setPremium, setShowPopUpPanel} from '../StaticClasses/HabitsBus';
+import { lastPage$, setPage,theme$,lang$,premium$,fontSize$, setShowPopUpPanel} from '../StaticClasses/HabitsBus';
 import {FaBrain,FaChartBar,FaRobot,FaFlask} from 'react-icons/fa'
+import {saveData} from '../StaticClasses/SaveHelper';
 import {initiateSbpPayment} from '../StaticClasses/PaymentService';
 const futureDate = new Date();
 futureDate.setDate(futureDate.getDate() + 365);
@@ -18,10 +19,15 @@ const Premium = () => {
     const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
     const [chosenCard,setChosenCard] = useState(1);
     const [currentEndDate,setCurrentEndDate] = useState(UserData.premiumEndDate);
-    const [endDate,setEndDate] = useState(futureDate);
 
     const [needToChangeSubscription,setNeedToChangeSubscription] = useState(false);
-
+    const getInitialEndDate = () => {
+  const days = chosenCard === 3 ? 30 : chosenCard === 2 ? 90 : 365;
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date;
+};
+const [endDate, setEndDate] = useState(getInitialEndDate());
     useEffect(() => {
         const daysAmount = chosenCard === 3 ? 30 : chosenCard === 2 ? 90 : 365;
         const futureDate = new Date();
@@ -51,28 +57,52 @@ const Premium = () => {
       const monthIndex = parseInt(endDate.slice(5, 7), 10) - 1; // "12" → 11
       return `${day} ${monthNames[langIndex][monthIndex]} ${year} `;
     }
-    function getPremium() {
-       /* if(UserData.userId === null) {
-            setShowPopUpPanel(langIndex === 0 ? 'Пользовательский ID не найден. Попробуйте снова.' : 'User ID not found. Please try again.',2000,false);
-            return;
-        }
-        initiateSbpPayment( UserData.userId, plan).catch(err => {
-        setShowPopUpPanel(langIndex === 0 ? 'Не возможно запустить оплату. Попробуйте снова.' : 'Could not start payment. Please try again.',2000,false);
-      });*/
-        UserData.hasPremium = true;
-        UserData.premiumEndDate = endDate;
-        setCurrentEndDate(endDate);
-        setPremium(true);
-    }
-    function extendPremium() {
-        const daysAmount = chosenCard === 3 ? 30 : chosenCard === 2 ? 90 : 365;
-        const futureDate = currentEndDate;
-        futureDate.setDate(futureDate.getDate() + daysAmount);
-        UserData.premiumEndDate = futureDate;
-        setCurrentEndDate(futureDate);
-        setEndDate(futureDate);
-        setNeedToChangeSubscription(false);
-    }
+    async function getPremium() {
+  if (UserData.userId === null) {
+    setShowPopUpPanel(langIndex === 0 ? 'Пользовательский ID не найден...' : 'User ID not found...', 2000, false);
+    return;
+  }
+  try {
+    // Save plan for use in payment flow
+    localStorage.setItem('selectedPlan', chosenCard);
+    await initiateSbpPayment(UserData.userId, chosenCard);
+    // ✅ Do NOT update UserData here – wait for confirmation!
+  } catch (err) {
+    setShowPopUpPanel(langIndex === 0 ? 'Не возможно запустить оплату...' : 'Could not start payment...', 2000, false);
+  }
+}
+    async function extendSubscription() {
+  if (UserData.userId === null) {
+    setShowPopUpPanel(
+      langIndex === 0 
+        ? 'Пользовательский ID не найден. Попробуйте снова.' 
+        : 'User ID not found. Please try again.',
+      2000,
+      false
+    );
+    return;
+  }
+
+  // Save the selected plan for use after redirect
+  localStorage.setItem('selectedPlan', chosenCard.toString());
+
+  try {
+    // Initiate payment — same as getPremium, but conceptually for extension
+    await initiateSbpPayment(UserData.userId, chosenCard);
+    
+    // ✅ Do NOT update UserData.premiumEndDate here!
+    // The actual date extension happens in `getPaymentStatus` after success.
+    
+  } catch (err) {
+    setShowPopUpPanel(
+      langIndex === 0 
+        ? 'Не возможно запустить оплату. Попробуйте снова.' 
+        : 'Could not start payment. Please try again.',
+      2000,
+      false
+    );
+  }
+}
     
     
     return (
@@ -180,7 +210,7 @@ const Premium = () => {
              </div>}
 
              <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',gap:'5px',marginBottom:'12px',marginTop:'auto'}}>
-              {needToChangeSubscription && <button style={{...styles(theme).button,height:'60px',backgroundColor:'#154fecff'}} onClick={() => {extendPremium()}}>{langIndex === 0 ? 'Подтвердить' : 'Confirm'}</button> }
+              {needToChangeSubscription && <button style={{...styles(theme).button,height:'60px',backgroundColor:'#154fecff'}} onClick={() => {extendSubscription()}}>{langIndex === 0 ? 'Подтвердить' : 'Confirm'}</button> }
               {!needToChangeSubscription  && <button style={{...styles(theme).button,height:'60px',backgroundColor:'#154fecff'}} onClick={() => {setNeedToChangeSubscription(true)}}>{langIndex === 0 ? 'Продлить подписку' : 'Extend subscription'}</button> }
               <button style={{...styles(theme).button,height:'60px',border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setPage(lastPage$.value)}>{langIndex === 0 ? 'Закрыть' : 'Close'}</button>    
              </div>

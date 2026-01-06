@@ -64,7 +64,7 @@ function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,
           {page !== 'MentalMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);setNotifyPanel(false);}} />)}
           {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);setNotifyPanel(false);}} />)}
           {page === 'MentalMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);setNotifyPanel(false);}} />)}
-          <FaMedal style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
+          <FaMedal style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('MentalRecords');playEffects(switchSound);setNotifyPanel(false);}} />
           
           
         </div>

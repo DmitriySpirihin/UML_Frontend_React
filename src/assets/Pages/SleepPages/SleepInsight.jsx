@@ -3,7 +3,7 @@ import { useState, useEffect} from 'react';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { addPanel$ ,theme$,lang$,fontSize$,setAddPanel} from '../../StaticClasses/HabitsBus';
-import { getInsight , getInsightPrompt} from './InsightHelper.js';
+import { getInsight } from './InsightHelper.js';
 import { MdClose } from 'react-icons/md';
 
 const click = new Audio('Audio/Click.wav');
@@ -18,6 +18,29 @@ const SleepInsight = () => {
     const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
     const [addPanelState,setAddPanelState] = useState(addPanel$.value);
     const [opacity, setOpacity] = useState(0);
+
+    const [insight,setInsight] = useState('');
+    const [loading, setLoading] = useState(true);
+    
+    useEffect(() => {
+  const fetchInsight = async () => {
+    try {
+      const result = await getInsight(langIndex); // ← pass langIndex!
+      setInsight(result.insight); // ✅ extract the string
+    } catch (err) {
+      // Fallback message
+      const fallback = langIndex === 0 
+        ? 'Не удалось загрузить инсайт. Попробуйте позже.' 
+        : 'Failed to load insight. Please try again.';
+      setInsight(fallback);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchInsight();
+}, [langIndex]);
+
 
     useEffect(() => {
     const subscription = theme$.subscribe(setTheme);
@@ -58,10 +81,18 @@ const SleepInsight = () => {
            <div style={{width:'90%',height:'80%',overflowY:'scroll',borderTop:`1px solid ${Colors.get('border', theme)}`,
            borderBottom:`1px solid ${Colors.get('border', theme)}`,padding:'16px', fontSize:fSize === 0 ? '14px' : '16px',color:Colors.get('mainText', theme),textAlign:'left'}}>
            {
-           //getInsightPrompt(langIndex).systemPrompt
-           //'Weekly Fitness Snapshot (Dec 29 – Jan 4)Overall Activity: Low physical activity—only one recorded meditation and three logged sleep nights. No structured workouts, breathing, or cold exposure. Walking was inconsistent (0 = skipped, –1 = partial), and smoking occurred daily.Strengths:One solid meditation session (nearly 2 minutes)—a great start!One excellent night of sleep (8.5 hrs, mood 5)—proof you can recover well.Problem Areas:Zero structured workouts and no breathing/cold exposure logged.Walking habit missed or incomplete 4 out of 7 days.Daily smoking contradicts fitness and recovery goals.Inconsistent sleep tracking—only 3 nights logged; two were under 7 hours.Action Plan for Next Week:Walk 20 min daily—even if just around the block. Mark it done before bed.Add 2 short (5-min) breathing sessions—morning and post-walk. Use a free app if needed.Protect sleep: Aim for 7.5–8 hrs. Set a bedtime alarm for 11 PM.Replace one smoking urge with a 2-min meditation—use your Jan 3 success as a template.Log every night’s sleep—even if rough. Awareness drives improvement.You’ve got the foundation—now build consistency, not perfection. Every small win compounds! 💪'
-           'Отличная работа над собой за последнюю неделю!;Активность пока низкая: ходьба выполнена лишь 3 из 7 дней, тренировок, дыхания и закаливания не зафиксировано. Однако сон и отказ от курения — твои сильные стороны.Ты полностью удерживаешь отказ от курения — это мощный прогресс! Сон в последние два дня стал качественнее (настроение 5/5), а значит, восстановление улучшается.;Проблемы: ходьба пропущена в 4 днях подряд, нет данных по тренировкам, дыханию, медитации (кроме одного дня) и закаливанию. Это ключевые зоны роста.;Рекомендации на неделю:Гуляй каждый день — даже 20 минут после ужина.Добавь 5‑минутную дыхательную практику утром (например, 4‑7‑8).Стабилизируй отход ко сну — ложись до 23:30, чтобы закрепить высокое качество сна.Попробуй 1 короткую тренировку (10–15 мин) на этой неделе — хоть раз!Повтори медитацию в спокойный вечер — даже 5 минут улучшат фокус и отдых.Ты уже на пути — теперь добавь немного движения, и результаты придут быстрее!'
-           }
+  loading ? (
+    langIndex === 0 
+      ? 'Формирую инсайт... 🤖' 
+      : 'Forming insight... 🤖'
+  ) : (
+    <div>
+      {insight.split('\n').map((line, i) => (
+        <p key={i} style={{ margin: '0.5em 0' }}>{line}</p>
+      ))}
+    </div>
+  )
+}
            </div>
           <div>
           <MdClose onClick={() => {setAddPanel('')}} style={{fontSize:'42px',color:Colors.get('icons', theme)}}/>

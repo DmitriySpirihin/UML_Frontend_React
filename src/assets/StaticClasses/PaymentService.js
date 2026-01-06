@@ -40,33 +40,40 @@ export async function getPaymentStatus(paymentId) {
   const res = await fetch(`${API_BASE}/api/payment-status/${paymentId}`);
   if (!res.ok) throw new Error('Failed to fetch payment status');
 
-  const data = await res.json(); // { success, payment: {...} }
+  const data = await res.json();
 
   if (data.success && data.payment) {
     const { status, plan, uid } = data.payment;
 
     if (status === 'succeeded') {
+      // ✅ Always set hasPremium = true (even if already premium)
       UserData.hasPremium = true;
+
       let daysToAdd;
       switch (plan) {
-        case 1: daysToAdd = 30; break;
-        case 2: daysToAdd = 90; break;
-        case 3: daysToAdd = 365; break;
+        case 1: daysToAdd = 365; break; // ⚠️ Fix: 1 = 1 year (your UI uses 1=year)
+        case 2: daysToAdd = 90;  break; // 2 = 3 months
+        case 3: daysToAdd = 30;  break; // 3 = 1 month
         default: daysToAdd = 30;
       }
 
+      // ✅ Base date = now, unless current premium is active → extend from there
+      const now = new Date();
       let baseDate = now;
+
       if (UserData.premiumEndDate) {
         const currentEnd = new Date(UserData.premiumEndDate);
-        if (!isNaN(currentEnd) && currentEnd > now) {
-          baseDate = currentEnd;
+        if (!isNaN(currentEnd.getTime()) && currentEnd > now) {
+          baseDate = currentEnd; // Extend from current end date
         }
       }
 
-      UserData.premiumEndDate = new Date(
-        baseDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000
-      );
+      // ✅ Calculate new end date
+      const newEndDate = new Date(baseDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+      UserData.premiumEndDate = newEndDate;
 
+      // Optional: persist to disk if you have saveData()
+      await saveData();
     }
   }
 

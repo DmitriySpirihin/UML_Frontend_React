@@ -12,7 +12,7 @@ const startTimerDuration = 5000;
 
 const BreathingTimer = ({ show,setShow,protocol,protocolIndex,categoryIndex,isCustom = false }) => {
   
-  const [level,setLevel] = useState(setActualLevel(protocolIndex,categoryIndex,isCustom));
+  const [level,setLevel] = useState(setActualLevel(categoryIndex,protocolIndex,isCustom));
   const [theme, setthemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]); 
@@ -541,7 +541,7 @@ const congratulations = (langIndex) => {
 const setActualLevel = (categoryIndex,protocolIndex,isCustom) => {
   if(isCustom)return 0;
     let ind = -1;
-    const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
+    const protocol = AppData.recoveryProtocols[0][categoryIndex][protocolIndex];
      for(let i = 0; i < protocol.length; i++) {
         if(!protocol[i]) {
           ind = i;
@@ -552,6 +552,6 @@ const setActualLevel = (categoryIndex,protocolIndex,isCustom) => {
 }
 const isLevelDone = (categoryIndex,protocolIndex,levelIndex,isCustom) => {
   if(isCustom)return false;
-    const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
+    const protocol = AppData.recoveryProtocols[0][categoryIndex][protocolIndex];
     return protocol[levelIndex];
 }

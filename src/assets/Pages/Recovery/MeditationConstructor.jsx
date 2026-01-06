@@ -73,12 +73,12 @@ const MeditationConstructor = ({ theme, langIndex, fSize, setProtocol, show, set
             <span style={styles(theme, fSize).text}>
               {langIndex === 0 ? 'Медитация' : 'Meditate'}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width:'50%',justifyContent:'space-between' }}>
               <div
                 onClick={() => decrement(setMeditateSeconds, meditateSeconds, 60)}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretLeft style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
               <span style={styles(theme, fSize).text}>
                 {formatTime(meditateSeconds)}
@@ -87,7 +87,7 @@ const MeditationConstructor = ({ theme, langIndex, fSize, setProtocol, show, set
                 onClick={() => increment(setMeditateSeconds, meditateSeconds, 60)}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretRight style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
             </div>
           </div>
@@ -97,12 +97,12 @@ const MeditationConstructor = ({ theme, langIndex, fSize, setProtocol, show, set
             <span style={styles(theme, fSize).text}>
               {langIndex === 0 ? 'Отдых' : 'Rest'}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width:'50%',justifyContent:'space-between' }}>
               <div
                 onClick={() => decrement(setRestSeconds, restSeconds, 0)}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretLeft style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
               <span style={styles(theme, fSize).text}>
                 {formatTime(restSeconds)}
@@ -111,7 +111,7 @@ const MeditationConstructor = ({ theme, langIndex, fSize, setProtocol, show, set
                 onClick={() => increment(setRestSeconds, restSeconds, 0, 600)}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretRight style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
             </div>
           </div>
@@ -121,19 +121,19 @@ const MeditationConstructor = ({ theme, langIndex, fSize, setProtocol, show, set
             <span style={styles(theme, fSize).text}>
               {langIndex === 0 ? 'Циклы' : 'Cycles'}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width:'50%',justifyContent:'space-between' }}>
               <div
                 onClick={() => setCycles(prev => Math.max(1, prev - 1))}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretLeft style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
               <span style={styles(theme, fSize).text}>{cycles}</span>
               <div
                 onClick={() => setCycles(prev => Math.min(10, prev + 1))}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretRight style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
             </div>
           </div>

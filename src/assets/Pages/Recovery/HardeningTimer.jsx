@@ -55,7 +55,7 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
   const [audioEnabled, setAudioEnabled] = useState(false);
 
   // Timer state
-  const [level, setLevel] = useState(() => setActualLevel(protocolIndex, categoryIndex, isCustom));
+  const [level, setLevel] = useState(setActualLevel(categoryIndex,protocolIndex,isCustom));
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [phaseProgress, setPhaseProgress] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -91,7 +91,7 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
     if (isCustom) {
       setLevel(0);
     } else {
-      setLevel(setActualLevel(protocolIndex, categoryIndex, false));
+      setLevel(setActualLevel(categoryIndex,protocolIndex,isCustom));
     }
   }, [protocol, protocolIndex, categoryIndex, isCustom]);
 

@@ -3,19 +3,50 @@ import { allHabits } from "../../Classes/Habit";
 
 const INSIGHT_SYSTEM_PROMPTS = [
   // 0 — RU
-  `Ты — персональный фитнес‑аналитик. 
-Генерируй короткие, практичные инсайты по тренировкам, дыханию, медитации, закаливанию и сну за последние 7 дней.
-Отвечай на русском, структурированно и мотивирующе. Каждый пункт — с новой строки. Не используй Markdown.`
-  ,
+  `Ты — персональный фитнес-аналитик. Проанализируй данные за последние 7 дней и дай краткий, практичный отчёт на русском языке.`,
   // 1 — EN
-  `You are a personal fitness analyst.
-Generate short, actionable insights about workouts, breathing, meditation, cold exposure and sleep for the last 7 days.
-Answer in English, structured and motivating. Add \n for script`
+  `You are a personal fitness analyst. Analyze the data from the last 7 days and provide a short, practical report in English.`
+];
+
+const INSIGHT_USER_PROMPT_TEMPLATES = [
+  // 0 — RU
+  `Требования к ответу:
+1) Кратко опиши общий уровень активности и прогресс за неделю.
+2) Отметь сильные стороны и позитивные тренды.
+3) Укажи проблемные зоны (что чаще всего пропускалось, где нет прогресса).
+4) Дай 3–5 конкретных и выполнимых рекомендаций на следующую неделю.
+5) Стиль: коротко, по делу, мотивирующе, без "воды". Каждый пункт — с новой строки. Не используй Markdown, списки или жирный шрифт.
+
+Примечание по привычкам:
+- Для положительных привычек (например, "Ходьба"): status = -1 → выполнено, status = 0 → пропущено.
+- Для отрицательных привычек (например, "Курение"): status = 1 → успех (воздержался), status = 0 → срыв.
+
+Данные для анализа:`,
+  // 1 — EN
+  `Requirements for your response:
+1) Briefly describe the overall activity level and progress over the past week.
+2) Highlight strengths and positive trends.
+3) Point out problem areas (what is most often skipped or shows no progress).
+4) Give 3–5 specific, actionable recommendations for next week.
+5) Style: short, to the point, motivating, no fluff. Each point on a new line. Do not use Markdown, bullets, or bold text.
+
+Habit status note:
+- For positive habits (e.g., "Walking"): status = -1 → completed, status = 0 → skipped.
+- For negative habits (e.g., "Smoking"): status = 1 → success (abstained), status = 0 → relapse.
+
+Data to analyze:`
 ];
 
 export function getInsightPrompt(langIndex) {
-  const now = Date.now();
-  const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+  // Generate list of last 7 calendar days (YYYY-MM-DD)
+  const today = new Date();
+  const last7Days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    last7Days.push(d.toISOString().split('T')[0]); // e.g. "2026-01-06"
+  }
+
   const user = AppData.pData || {};
   const habitsByDate = AppData.habitsByDate || {};
   const trainings = AppData.trainingLog || {};
@@ -27,144 +58,165 @@ export function getInsightPrompt(langIndex) {
   const mentalRecords = AppData.mentalRecords || [];
   const programs = AppData.programs || {};
   const exercises = AppData.exercises || {};
+  const allhabits = allHabits || {};
 
-  function isInLast7Days(dateStr) {
-    const t = new Date(dateStr).getTime();
-    return !Number.isNaN(t) && t >= sevenDaysAgo && t <= now;
-  }
+  // Helper: format a section or show "No data"
+  const formatSection = (title, contentLines) => {
+    if (contentLines.length === 0) return `${title} (last 7 days):\n  No data\n`;
+    return `${title} (last 7 days):\n${contentLines.join('\n')}\n`;
+  };
 
-  // 1. Пользователь
+  // 1. USER BLOCK
   const userBlock = `
 USER:
-- age: ${user.age}
-- gender: ${user.gender}
-- height: ${user.height}
-- wrist: ${user.wrist}
-- goal: ${user.goal}
-`;
+- age: ${user.age || 'unknown'}
+- gender: ${user.gender !== undefined ? user.gender : 'unknown'}
+- height: ${user.height || 'unknown'} cm
+- wrist: ${user.wrist || 'unknown'} cm
+- goal: ${user.goal || 'unknown'}
+`.trim();
 
-  // 2. Привычки
-const allhabits = allHabits;   // массив или объект Habit
-const names = new Set();         // чтобы без дублей
+  // 2. HABITS
+  const habitLines = [];
+  last7Days.forEach(date => {
+    const dayData = habitsByDate[date];
+    if (!dayData) return;
 
-let habitsBlock = 'HABITS_BY_DATE (last 7 days) , if habit is negative type as smoking for example and status === 1 it means user abstains and 0 means failure :\n';
+    const arr = Array.isArray(dayData)
+      ? dayData
+      : Object.entries(dayData).map(([habitId, status]) => ({
+          habitId: Number(habitId),
+          status: status
+        }));
 
-Object.entries(habitsByDate || {}).forEach(([date, obj]) => {
-  if (!isInLast7Days(date)) return;
+    const dayHabits = arr.map(item => {
+      const h = allhabits[item.habitId];
+      const name = h?.name
+        ? (h.name[langIndex] || h.name[0] || `Habit #${item.habitId}`)
+        : `Habit #${item.habitId}`;
+      return {
+        habitId: item.habitId,
+        status: item.status,
+        habitName: name
+      };
+    });
 
-  const arr = Array.isArray(obj)
-    ? obj
-    : Object.entries(obj).map(([habitId, status]) => ({
-        habitId: Number(habitId),
-        status
-      }));
-
-  const dayHabits = arr.map((item) => {
-    const h = allhabits[item.habitId];
-    const habitName = h && h.name
-      ? (h.name[langIndex] || h.name[0])
-      : `Habit #${item.habitId}`;
-
-    names.add(habitName);
-
-    return {
-      ...item,
-      habitName
-    };
+    if (dayHabits.length > 0) {
+      habitLines.push(`  ${date}: ${JSON.stringify(dayHabits)}`);
+    }
   });
+  const habitsBlock = formatSection(
+    langIndex === 0
+      ? 'ПРИВЫЧКИ (за последние 7 дней)'
+      : 'HABITS_BY_DATE',
+    habitLines
+  );
 
-  habitsBlock += `  ${date}: ${JSON.stringify(dayHabits)}\n`;
-});
+  // 3. TRAININGS
+  const trainingLines = [];
+  last7Days.forEach(date => {
+    const sessions = trainings[date];
+    if (!sessions || !sessions.length) return;
 
-  // 3. Тренировки с названиями программ и упражнений
-  let trainingsBlock = 'TRAININGS (last 7 days):\n';
-  Object.entries(trainings).forEach(([date, sessions]) => {
-    if (!isInLast7Days(date)) return;
-    trainingsBlock += `  DATE: ${date}\n`;
-    (sessions || []).forEach((s, idx) => {
+    trainingLines.push(`  DATE: ${date}`);
+    sessions.forEach((s, idx) => {
       const program = programs[s.programId];
-      const programName = program
-        ? (program.name && (program.name[langIndex] || program.name[0]))
+      const programName = program?.name
+        ? (program.name[langIndex] || program.name[0] || `Program #${s.programId}`)
         : `Program #${s.programId}`;
 
-      trainingsBlock += `    [Session #${idx + 1}] program: ${programName}, dayIndex: ${s.dayIndex}, completed: ${s.completed}, duration(ms): ${s.duration}, tonnage: ${s.tonnage}\n`;
+      trainingLines.push(`    [Session #${idx + 1}] program: ${programName}, dayIndex: ${s.dayIndex}, completed: ${s.completed}, duration(ms): ${s.duration || 0}, tonnage: ${s.tonnage || 0}`);
+      trainingLines.push(`      exercises:`);
 
-      trainingsBlock += `      exercises:\n`;
       const order = s.exerciseOrder || [];
-      order.forEach((exId) => {
-        const exData = s.exercises && s.exercises[exId];
+      order.forEach(exId => {
+        const exData = s.exercises?.[exId];
         const exMeta = exercises[exId];
-        const exName = exMeta
-          ? (exMeta.name && (exMeta.name[langIndex] || exMeta.name[0]))
+        const exName = exMeta?.name
+          ? (exMeta.name[langIndex] || exMeta.name[0] || `Exercise #${exId}`)
           : `Exercise #${exId}`;
+
         if (!exData) return;
 
-        trainingsBlock += `        - ${exName} (mgId: ${exData.mgId})\n`;
-        trainingsBlock += `          sets:\n`;
+        trainingLines.push(`        - ${exName} (mgId: ${exData.mgId || 'N/A'})`);
+        trainingLines.push(`          sets:`);
         (exData.sets || []).forEach((set, i) => {
-          trainingsBlock += `            * set ${i + 1}: type=${set.type}, reps=${set.reps}, weight=${set.weight}, time=${set.time}\n`;
+          trainingLines.push(`            * set ${i + 1}: type=${set.type || 'N/A'}, reps=${set.reps || 0}, weight=${set.weight || 0}, time=${set.time || 0}`);
         });
-        trainingsBlock += `          totalTonnage: ${exData.totalTonnage}, completed: ${exData.completed}\n`;
+        trainingLines.push(`          totalTonnage: ${exData.totalTonnage || 0}, completed: ${exData.completed || false}`);
       });
     });
   });
+  const trainingsBlock = formatSection(langIndex === 0 ? 'ТРЕНИРОВКИ' : 'TRAININGS', trainingLines);
 
-  // 4. Универсальный блок для дыхания/медитации/закалки
-  function buildSimpleLogBlock(title, logObj, extraFields) {
-    let block = `${title} (last 7 days):\n`;
-    Object.entries(logObj || {}).forEach(([date, arr]) => {
-      if (!isInLast7Days(date)) return;
-      block += `  ${date}:\n`;
-      (arr || []).forEach((item, i) => {
-        block += `    #${i + 1}: duration(ms): ${item.endTime - item.startTime}`;
-        (extraFields || []).forEach((f) => {
-          if (item[f] != null) block += `, ${f}: ${item[f]}`;
+  // 4. Simple logs: breathing, meditation, hardening
+  const buildSimpleLog = (logObj, extraFields = []) => {
+    const lines = [];
+    last7Days.forEach(date => {
+      const arr = logObj[date];
+      if (!arr || !arr.length) return;
+      lines.push(`  ${date}:`);
+      arr.forEach((item, i) => {
+        const durationMs = (item.endTime || 0) - (item.startTime || 0);
+        let line = `    #${i + 1}: duration(ms): ${durationMs}`;
+        extraFields.forEach(f => {
+          if (item[f] != null) line += `, ${f}: ${item[f]}`;
         });
-        block += '\n';
+        lines.push(line);
       });
     });
-    return block;
-  }
+    return lines;
+  };
 
-  const breathingBlock = buildSimpleLogBlock('BREATHING', breathing, ['maxHold']);
-  const meditationBlock = buildSimpleLogBlock('MEDITATION', meditation, []);
-  const hardeningBlock = buildSimpleLogBlock('HARDENING', hardening, ['timeInColdWater']);
+  const breathingBlock = formatSection(langIndex === 0 ? 'ДЫХАНИЕ' : 'BREATHING', buildSimpleLog(breathing, ['maxHold']));
+  const meditationBlock = formatSection(langIndex === 0 ? 'МЕДИТАЦИЯ' : 'MEDITATION', buildSimpleLog(meditation));
+  const hardeningBlock = formatSection(langIndex === 0 ? 'ЗАКАЛИВАНИЕ' : 'HARDENING', buildSimpleLog(hardening, ['timeInColdWater']));
 
-  // 5. Mental
-  let mentalBlock = 'MENTAL (last 7 days):\n';
+  // 5. MENTAL ACTIVITY
+  const mentalLines = [];
   let mentalTotalSeconds = 0;
   let mentalDaysCount = 0;
-  Object.entries(mentalLog || {}).forEach(([date, durationSeconds]) => {
-    if (!isInLast7Days(date)) return;
-    const dur = Number(durationSeconds) || 0;
+  last7Days.forEach(date => {
+    const durSec = mentalLog[date];
+    if (durSec == null) return;
+    const dur = Number(durSec) || 0;
     mentalTotalSeconds += dur;
-    mentalDaysCount += 1;
-    mentalBlock += `  ${date}: duration(sec): ${dur}, duration(min): ${Math.round((dur / 60) * 10) / 10}\n`;
+    mentalDaysCount++;
+    mentalLines.push(`  ${date}: duration(sec): ${dur}, duration(min): ${Math.round((dur / 60) * 10) / 10}`);
   });
-  mentalBlock += `  total(sec): ${mentalTotalSeconds}, total(min): ${Math.round((mentalTotalSeconds / 60) * 10) / 10}, days: ${mentalDaysCount}\n`;
+  if (mentalLines.length > 0) {
+    mentalLines.push(`  total(sec): ${mentalTotalSeconds}, total(min): ${Math.round((mentalTotalSeconds / 60) * 10) / 10}, days: ${mentalDaysCount}`);
+  }
+  const mentalBlock = formatSection(langIndex === 0 ? 'МЕНТАЛЬНАЯ АКТИВНОСТЬ' : 'MENTAL', mentalLines);
 
+  // 6. MENTAL RECORDS
   const mentalCategoryNames = [
     ['Быстрый счёт', 'Mental math'],
     ['Память в действии', 'Memory'],
     ['Числовая логика', 'Number logic'],
     ['Чистый фокус', 'Pure focus']
   ];
-
-  let mentalRecordsBlock = 'MENTAL_RECORDS (best scores):\n';
+  const mentalRecordLines = [];
   (mentalRecords || []).forEach((arr, idx) => {
-    const name = mentalCategoryNames[idx] ? mentalCategoryNames[idx][langIndex] : `Category #${idx}`;
-    const scoresArr = Array.isArray(arr) ? arr : [];
-    const parsed = scoresArr.map((v) => Number(v) || 0);
-    const best = parsed.length ? Math.max(...parsed) : 0;
-    const nonZero = parsed.filter((v) => v > 0);
+    const name = mentalCategoryNames[idx]?.[langIndex] || `Category ${idx}`;
+    const scores = (Array.isArray(arr) ? arr : []).map(v => Number(v) || 0);
+    const best = scores.length ? Math.max(...scores) : 0;
+    const nonZero = scores.filter(v => v > 0);
     const avg = nonZero.length ? Math.round((nonZero.reduce((a, b) => a + b, 0) / nonZero.length) * 10) / 10 : 0;
-    mentalRecordsBlock += `  ${name}: best=${best}, avg(nonZero)=${avg}, byDifficulty=${JSON.stringify(scoresArr)}\n`;
+    mentalRecordLines.push(`  ${name}: best=${best}, avg(nonZero)=${avg}, byDifficulty=${JSON.stringify(scores)}`);
   });
+  const mentalRecordsBlock = mentalRecordLines.length
+    ? (langIndex === 0
+        ? `РЕЗУЛЬТАТЫ МЕНТАЛЬНЫХ ТРЕНИРОВОК (лучшие):\n${mentalRecordLines.join('\n')}\n`
+        : `MENTAL_RECORDS (best scores):\n${mentalRecordLines.join('\n')}\n`)
+    : (langIndex === 0
+        ? `РЕЗУЛЬТАТЫ МЕНТАЛЬНЫХ ТРЕНИРОВОК:\n  Нет данных\n`
+        : `MENTAL_RECORDS:\n  No data\n`);
 
+  // 7. MENTAL SCORE HINTS
   function estimateMaxMathSessionScore(difficulty) {
     const baseScores = [100, 200, 300, 400];
     const base = baseScores[difficulty] || 100;
-
     let total = 0;
     for (let stage = 1; stage <= 20; stage++) {
       const stageMultiplier = Math.min(1 + stage * 0.02, 1.3);
@@ -184,52 +236,41 @@ Object.entries(habitsByDate || {}).forEach(([date, obj]) => {
     ['продвинутый', 'advanced'],
     ['безумный', 'insane']
   ];
+  const scoreHintLines = mathDifficultyNames.map((labels, d) =>
+    `  ${labels[langIndex] || labels[0]}: estimatedMax≈${estimateMaxMathSessionScore(d)}`
+  );
+  const mentalScoreHintBlock = (langIndex === 0
+    ? `ПОДСКАЗКИ ПО МАКС. БАЛЛАМ (масштаб математики, максимум при идеальном решении 20 вопросов):\n${scoreHintLines.join('\n')}\n`
+    : `MENTAL_SCORE_HINTS (math scale, estimated max for perfect 20 questions):\n${scoreHintLines.join('\n')}\n`);
 
-  let mentalScoreHintBlock = 'MENTAL_SCORE_HINTS (math scale, estimated max for perfect 20 questions):\n';
-  for (let d = 0; d < 4; d++) {
-    const label = mathDifficultyNames[d] ? mathDifficultyNames[d][langIndex] : `difficulty ${d}`;
-    mentalScoreHintBlock += `  ${label}: estimatedMax≈${estimateMaxMathSessionScore(d)}\n`;
-  }
-
-  // 5. Сон
-  let sleepBlock = 'SLEEP (last 7 days):\n';
-  Object.entries(sleeping || {}).forEach(([date, s]) => {
-    if (!isInLast7Days(date)) return;
-    sleepBlock += `  ${date}: bedtime(ms): ${s.bedtime}, duration(ms): ${s.duration}, mood(1-5): ${s.mood}, note: "${s.note || ''}"\n`;
+  // 8. SLEEP
+  const sleepLines = [];
+  last7Days.forEach(date => {
+    const s = sleeping[date];
+    if (!s) return;
+    sleepLines.push(`  ${date}: bedtime(ms): ${s.bedtime || 0}, duration(ms): ${s.duration || 0}, mood(1-5): ${s.mood || 'N/A'}, note: "${s.note || ''}"`);
   });
+  const sleepBlock = formatSection(langIndex === 0 ? 'СОН' : 'SLEEP', sleepLines);
 
-  const systemPrompt = INSIGHT_SYSTEM_PROMPTS[langIndex] || INSIGHT_SYSTEM_PROMPTS[0];
+  // 9. Final prompts
+  const systemPrompt = (INSIGHT_SYSTEM_PROMPTS[langIndex] || INSIGHT_SYSTEM_PROMPTS[0]).trim();
+  const instructionBlock = (INSIGHT_USER_PROMPT_TEMPLATES[langIndex] || INSIGHT_USER_PROMPT_TEMPLATES[0]).trim();
 
   const userPrompt = `
-Analyze the data below for the LAST 7 DAYS and:
+${instructionBlock}
 
-1) Briefly describe the overall activity level and progress.
-2) Highlight strengths and positive trends.
-3) Point out problem areas (what is most often skipped, where there is no progress).
-4) Give 3–5 specific recommendations for the next week (maximally practical).
-5) Style of the answer: short, to the point, motivating, without fluff.
-
-DATA:
 ${userBlock}
 
 ${habitsBlock}
-
 ${trainingsBlock}
-
 ${breathingBlock}
-
 ${meditationBlock}
-
 ${hardeningBlock}
-
 ${mentalBlock}
-
 ${mentalRecordsBlock}
-
 ${mentalScoreHintBlock}
-
 ${sleepBlock}
-`;
+`.trim();
 
   return { systemPrompt, userPrompt };
 }

@@ -35,15 +35,15 @@ export class AppData{
   static platesAmount = [10,10,10,10,10,10,10,10];
   static barWeight = 20;
   // practices
-  static recoveryProtocols = [[[[true,true,false],[false,false],[false,false],[false,false]],[[false,false],[false,false],[false,false]],[[false,false,false],[false,false],[false,false],[false,false]],[[false,false],[false,false,false],[false,false]]],//breathing
-  [[[true,false,false],[false,false]],[[false,false],[false,false]],[[false,false],[false,false]],[[false,false],[false,false]]],
-  [[[true,false,false],[false,false,false]],[[true,false,false],[false,false,false]],[[true,false,false],[false,false,false]],[[true,false,false],[false,false,false]]]];
+  static recoveryProtocols = [[[[false,false,false],[false,false],[false,false],[false,false]],[[false,false],[false,false],[false,false],[false,false,false,false]],[[false,false,false],[false,false],[false,false],[false,false]],[[false,false],[false,false,false],[false,false]]],//breathing
+  [[[false,false,false],[false,false]],[[false,false],[false,false]],[[false,false],[false,false]],[[false,false],[false,false]]],
+  [[[false,false,false],[false,false,false]],[[false,false,false],[false,false,false]],[[false,false,false],[false,false,false]],[[false,false,false],[false,false,false]]]];
   static breathingLog = {};
   static meditationLog = {};
   static hardeningLog = {};
   //mental
   static mentalLog = {};
-  static mentalRecords = [[0,0,0,0,0,0],[0,0,0,0,0],[0,0,0,0],[0,0,0,0]];
+  static mentalRecords = [[0,0,0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
   //
   static sleepingLog = {};
   // methods
@@ -78,7 +78,7 @@ export class AppData{
     if(data.platesAmount?.length > 0)this.platesAmount = data.platesAmount;
     this.barWeight = data.barWeight;
     this.trainingLog = data.trainingLog;
-    this.recoveryProtocols = data.recoveryProtocols;
+    //this.recoveryProtocols = data.recoveryProtocols;
     this.breathingLog = data.breathingLog;
     this.meditationLog = data.meditationLog;
     this.hardeningLog = data.hardeningLog;

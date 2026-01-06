@@ -35,6 +35,7 @@ const MathMain = lazy(() => import('./assets/Pages/MentalPages/MathMain'));
 const MemoryMain = lazy(() => import('./assets/Pages/MentalPages/MemoryMain'));
 const LogicMain = lazy(() => import('./assets/Pages/MentalPages/LogicMain'));
 const FocusMain = lazy(() => import('./assets/Pages/MentalPages/FocusMain'));
+const Records = lazy(() => import('./assets/Pages/MentalPages/Records'));
 
 const SleepMetrics = lazy(() => import('./assets/Pages/SleepPages/SleepMetrics'));
 const SleepMain = lazy(() => import('./assets/Pages/SleepPages/SleepMain'));
@@ -50,7 +51,7 @@ function App() {
   const [notifyPanel, setNotifyPanelState] = useState(false);
   const [showPendingScreen, setShowPendingScreen] = useState(false);
   useEffect(() => {
-   // checkPendingPaymentOnStartup();
+   checkPendingPaymentOnStartup();
   }, []);
  useEffect(() => {
     // Check if we just returned from payment
@@ -179,6 +180,9 @@ if (showPendingScreen) {
       </Suspense>}
       {page === 'MentalFocus' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <FocusMain/>
+      </Suspense>}
+      {page === 'MentalRecords' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <Records/>
       </Suspense>}
       {page === 'SleepMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <SleepMain/>

@@ -27,7 +27,7 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
   const [audioEnabled, setAudioEnabled] = useState(false);
 
   // Timer control
-  const [level, setLevel] = useState(() => setActualLevel(protocolIndex, categoryIndex, isCustom));
+  const [level, setLevel] = useState(setActualLevel(categoryIndex,protocolIndex,isCustom));
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0); // ms elapsed in current step
   const [isRunning, setIsRunning] = useState(false);
@@ -55,7 +55,7 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
 
   // Sync level when protocol changes
   useEffect(() => {
-    setLevel(isCustom ? 0 : setActualLevel(protocolIndex, categoryIndex, false));
+    setLevel(isCustom ? 0 : setActualLevel(categoryIndex,protocolIndex,isCustom));
   }, [protocol, protocolIndex, categoryIndex, isCustom]);
 
   // ✅ Derive session from props — always up to date
@@ -511,7 +511,7 @@ const congratulations = (langIndex) => {
 const setActualLevel = (categoryIndex,protocolIndex,isCustom) => {
   if(isCustom)return 0;
     let ind = -1;
-    const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
+    const protocol = AppData.recoveryProtocols[1][categoryIndex][protocolIndex];
      for(let i = 0; i < protocol.length; i++) {
         if(!protocol[i]) {
           ind = i;
@@ -522,6 +522,6 @@ const setActualLevel = (categoryIndex,protocolIndex,isCustom) => {
 }
 const isLevelDone = (categoryIndex,protocolIndex,levelIndex,isCustom) => {
   if(isCustom)return false;
-    const protocol = AppData.recoveryProtocols[recoveryType$.value][categoryIndex][protocolIndex];
+    const protocol = AppData.recoveryProtocols[1][categoryIndex][protocolIndex];
     return protocol[levelIndex];
 }

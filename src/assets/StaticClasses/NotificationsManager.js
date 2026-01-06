@@ -45,6 +45,11 @@ export class NotificationsManager {
             throw error;
         }
     }
+
+    static async getMentalRecordsGlobal() {
+    const response = await this.sendMessage('getmentalrecords', '');
+    return response.message; // directly returns [{name, data}, ...]
+  }
 }
 
 export const sendPassword = (password) => {

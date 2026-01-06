@@ -7,7 +7,7 @@ import BreathAudio from "../../Helpers/BreathAudio"
 import {FaStar,FaFire,FaMedal,FaStopwatch} from 'react-icons/fa';
 import {IoPlayCircle,IoReloadCircle,IoArrowBackCircle, IoPauseCircle} from "react-icons/io5"
 import MentalInput from './MentalInput';
-import { quickMathCategories} from './MentalHelper';
+import { quickMathCategories,saveSessionDuration} from './MentalHelper';
 
 const startTimerDuration = 3000;
 
@@ -213,7 +213,7 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
       precision === 0 ? playRight() : playWrong();
       if (stage === 20) onFinishSession();
       if (difficulty === 4 && stage%5 === 0) {
-        setAddValue(prev => prev + 2000);
+        setAddValue(prev => prev + 1000);
       }
       if (difficulty === 4 && precision > 0.15) {
         onFinishSession();
@@ -250,7 +250,7 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
   const onFinishSession = () => {
     const endTime = Date.now();
     const duration = Math.round((endTime - startTime) / 1000); // Duration in seconds
-    saveSessionDuration(duration);
+    saveSessionDuration(duration,scores > record,type,difficulty,scores + addScores);
     const message = congratulations(difficulty === 4, difficulty === 5, langIndex, scores + addScores, rightAnswers, 20, false);
     setIsRunning(false);
     setMessage(message);

@@ -254,7 +254,7 @@ useEffect(() => {
   const onFinishSession = (totalScore) => {
     const endTime = Date.now();
     const duration = Math.round((endTime - startTime) / 1000);
-    saveSessionDuration(duration);
+    saveSessionDuration(duration,scores > record,type,difficulty,scores + addScores);
     const isRecord = totalScore > record;
     const msg = congratulations(false, langIndex, totalScore, rightAnswers, 20, isRecord, false);
     setIsRunning(false);
@@ -264,11 +264,6 @@ useEffect(() => {
   };
 
   const onFinish = () => {
-    if (scores > record) {
-      setRecord(scores);
-      if (!AppData.mentalRecords[type]) AppData.mentalRecords[type] = {};
-      AppData.mentalRecords[type][difficulty] = scores;
-    }
     setScores(0);
     setStage(1);
     setRightAnswers(0);

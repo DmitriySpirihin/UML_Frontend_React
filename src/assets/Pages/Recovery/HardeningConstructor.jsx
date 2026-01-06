@@ -77,12 +77,12 @@ const HardeningConstructor = ({ theme, langIndex, fSize, setProtocol, show, setS
             <span style={styles(theme, fSize).text}>
               {langIndex === 0 ? 'Тёплая вода' : 'Warm Water'}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width:'50%',justifyContent:'space-between' }}>
               <div
                 onClick={() => decrement(setHotSeconds, hotSeconds, 0)}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretLeft style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
               <span style={styles(theme, fSize).text}>
                 {formatTime(hotSeconds)}
@@ -91,7 +91,7 @@ const HardeningConstructor = ({ theme, langIndex, fSize, setProtocol, show, setS
                 onClick={() => increment(setHotSeconds, hotSeconds, 0, 600)}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretRight style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
             </div>
           </div>
@@ -101,12 +101,12 @@ const HardeningConstructor = ({ theme, langIndex, fSize, setProtocol, show, setS
             <span style={styles(theme, fSize).text}>
               {langIndex === 0 ? 'Холодная вода' : 'Cold Water'}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width:'50%',justifyContent:'space-between' }}>
               <div
                 onClick={() => decrement(setColdSeconds, coldSeconds, 10)}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretLeft style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
               <span style={styles(theme, fSize).text}>
                 {formatTime(coldSeconds)}
@@ -115,7 +115,7 @@ const HardeningConstructor = ({ theme, langIndex, fSize, setProtocol, show, setS
                 onClick={() => increment(setColdSeconds, coldSeconds, 10, 300)}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretRight style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
             </div>
           </div>
@@ -125,12 +125,12 @@ const HardeningConstructor = ({ theme, langIndex, fSize, setProtocol, show, setS
             <span style={styles(theme, fSize).text}>
               {langIndex === 0 ? 'Отдых / Согрев' : 'Rest / Warm-up'}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width:'50%',justifyContent:'space-between' }}>
               <div
                 onClick={() => decrement(setRestSeconds, restSeconds, 0)}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretLeft style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
               <span style={styles(theme, fSize).text}>
                 {formatTime(restSeconds)}
@@ -139,7 +139,7 @@ const HardeningConstructor = ({ theme, langIndex, fSize, setProtocol, show, setS
                 onClick={() => increment(setRestSeconds, restSeconds, 0, 600)}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretRight style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
             </div>
           </div>
@@ -149,19 +149,19 @@ const HardeningConstructor = ({ theme, langIndex, fSize, setProtocol, show, setS
             <span style={styles(theme, fSize).text}>
               {langIndex === 0 ? 'Циклы' : 'Cycles'}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width:'50%',justifyContent:'space-between' }}>
               <div
                 onClick={() => setCycles(prev => Math.max(1, prev - 1))}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretLeft style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretLeft style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
               <span style={styles(theme, fSize).text}>{cycles}</span>
               <div
                 onClick={() => setCycles(prev => Math.min(10, prev + 1))}
                 style={{ cursor: 'pointer' }}
               >
-                <FaCaretRight style={{ fontSize: '34px', color: Colors.get('icons', theme) }} />
+                <FaCaretRight style={{ fontSize: '54px', color: Colors.get('icons', theme) }} />
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 // math
 import { saveData } from "../../StaticClasses/SaveHelper";
 import { AppData } from "../../StaticClasses/AppData";
+import { NotificationsManager } from "../../StaticClasses/NotificationsManager";
 
 export const quickMathCategories = [
   // Обычные уровни
@@ -256,7 +257,11 @@ export const focusTrainingLevels = [
   },
 ];
 
-export async function saveSessionDuration(duration) {
+export async function saveSessionDuration(duration,hasRecord,cat,ind,record) {
+  if (hasRecord) {
+    AppData.mentalRecords[cat][ind] = record;
+    NotificationsManager.sendMessage('setmentalrecords',JSON.stringify(AppData.mentalRecords))
+  }
   const today = new Date().toISOString().split('T')[0];
   
   if (AppData.mentalLog[today]) {
