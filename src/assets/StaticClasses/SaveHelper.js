@@ -11,17 +11,17 @@ export async function initializeTelegramSDK(opts = {}) {
     await init();
     if (miniApp.ready.isAvailable()) {
       await miniApp.ready();
-      const platform = Telegram.WebApp.platform;
+     // const platform = Telegram.WebApp.platform;
       // Note: condition was incorrect before — fixed logic
-      if (platform !== 'desktop' && platform !== 'web') {
-        if (viewport.mount?.isAvailable?.()) {
-          await viewport.mount();
-          viewport.expand();
-          if (viewport.requestFullscreen?.isAvailable?.()) {
+     // if (platform !== 'desktop' && platform !== 'web') {
+      //  if (viewport.mount?.isAvailable?.()) {
+      //    await viewport.mount();
+       //   viewport.expand();
+       //   if (viewport.requestFullscreen?.isAvailable?.()) {
             //await viewport.requestFullscreen();
-          }
-        }
-      }
+        //  }
+      //  }
+     // }
     }
 
     // Setup back button handler
