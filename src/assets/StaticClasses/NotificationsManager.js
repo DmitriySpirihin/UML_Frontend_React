@@ -60,34 +60,42 @@ export const sendBugreport = (message) => {
     return NotificationsManager.sendMessage("bugreport", message);
 }
 
-export async function isUserHasPremium(uid){
-    try {
-            const response = await fetch(BASE_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    type: 'premiumcheck',
-                    message: '',
-                    userId: uid,
-                    metadata: {} // any additional data
-                })
-            });
-            if (!response.ok){
-               UserData.hasPremium = false;
-            }
-            const data = await response.json();
-            const dataArray = Array.from(data).split(',');
-            UserData.hasPremium = dataArray[0] === 'true' ? true : false;
-            UserData.premiumEndDate = new Date(dataArray[1]);
-            setPremium(dataArray[0] === 'true' ? true : false);
-            return  data.message;
-        } catch (error) {
-            console.error('Error:', error);
-            throw error;
-        }
+export async function isUserHasPremium(uid) {
+  try {
+    const response = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        type: 'premiumcheck',
+        message: '',
+        userId: uid,
+        metadata: {}
+      })
+    });
+
+    if (!response.ok) {
+      UserData.hasPremium = false;
+      return 'Error';
+    }
+
+    const textData = await response.text(); // ← get raw string
+    const dataArray = textData.split(',');
+
+    const hasPremium = dataArray[0] === 'true';
+    const premiumEndDate = dataArray[1] ? new Date(dataArray[1]) : null;
+
+    UserData.hasPremium = hasPremium;
+    UserData.premiumEndDate = premiumEndDate;
+    setPremium(hasPremium);
+
+    return textData; // or return a structured object if preferred
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
 }
 
 export async function cloudBackup() {
