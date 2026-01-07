@@ -78,22 +78,26 @@ export async function isUserHasPremium(uid) {
 
     if (!response.ok) {
       UserData.hasPremium = false;
-      return 'Error';
+      setPremium(false);
+      return 'Network error';
     }
 
-    const textData = await response.text(); // ← get raw string
-    const dataArray = textData.split(',');
+    // ✅ Parse as JSON (not text!)
+    const data = await response.json();
 
-    const hasPremium = dataArray[0] === 'true';
-    const premiumEndDate = dataArray[1] ? new Date(dataArray[1]) : null;
+    // Ensure the structure matches your backend response
+    const hasPremium = data.success && data.hasPremium === true;
+    const premiumEndDate = data.premiumEndDate ? new Date(data.premiumEndDate) : null;
 
     UserData.hasPremium = hasPremium;
     UserData.premiumEndDate = premiumEndDate;
     setPremium(hasPremium);
 
-    return textData; // or return a structured object if preferred
+    return data;
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error checking premium status:', error);
+    UserData.hasPremium = false;
+    setPremium(false);
     throw error;
   }
 }
