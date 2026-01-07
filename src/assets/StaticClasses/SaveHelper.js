@@ -18,7 +18,7 @@ export async function initializeTelegramSDK(opts = {}) {
           await viewport.mount();
           viewport.expand();
           if (viewport.requestFullscreen?.isAvailable?.()) {
-            await viewport.requestFullscreen();
+            //await viewport.requestFullscreen();
           }
         }
       }

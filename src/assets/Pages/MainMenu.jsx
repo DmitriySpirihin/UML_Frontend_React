@@ -94,7 +94,7 @@ const MainMenu = ({ onPageChange }) => {
             <div style={{height:'16vh'}}/>
             {passwordInput && <input style={{width:'85vw',height:'2vh',fontSize:'12px',borderRadius:'12px',zIndex:1001}} type="password" onChange={(e) => checkPassword(e.target.value)} />}
             <div style={styles(theme).scrollView}>
-               
+               <div style={{height:'1vh',width:'100%'}} onClick={() => {handleClick(true)}} />
                <MenuCard 
                     text={['Привычки', 'Habits']} 
                     decr={[
@@ -167,7 +167,7 @@ const MainMenu = ({ onPageChange }) => {
                 
 
                 </MenuCard>
-                <div style={{height:'5vh',width:'100%'}} onClick={() => {handleClick(false)}} />
+                <div style={{height:'1vh',width:'100%'}} onClick={() => {handleClick(false)}} />
             </div>
           </div>
           </>
