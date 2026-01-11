@@ -32,7 +32,6 @@ function LoadPanel() {
                         AppData.prefs[1] = colorScheme === 'dark' ? 0 : 2;
                     }
                     UserData.Init(user.id,user.username, user.photo_url || 'images/Ui/Guest.jpg');
-                    await isUserHasPremium(user.id);
                     setTimeout(() => setUserName(user.username), 500);
                     setTimeout(() => setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url), 1000);
                 } else {
@@ -52,9 +51,11 @@ function LoadPanel() {
                 setTimeout(() => setLoading(false), 500);
                 setTimeout(() => setPage('MainMenu'), 1200);
             }
+            await isUserHasPremium(UserData.id);
         }
         
         initializeApp();
+        
     }, []);
     
     React.useEffect(() => {
