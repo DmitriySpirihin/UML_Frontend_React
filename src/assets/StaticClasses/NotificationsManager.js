@@ -62,29 +62,45 @@ export const sendBugreport = (message) => {
 
 export async function isUserHasPremium(uid) {
   try {
-    // ✅ Call the REST endpoint directly
-    const response = await fetch(`https://ultymylife.ru/api/user/premium/${uid}`);
+    const response = await fetch(BASE_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        type: 'premiumcheck',
+        message: '',
+        userId: uid,
+        metadata: {}
+      })
+    });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      UserData.hasPremium = false;
+      setPremium(false);
+      return 'Network error';
     }
 
+    // ✅ Parse as JSON (not text!)
     const data = await response.json();
+     if (data.success) {
+      const hasPremium = data.hasPremium === true;
+      const premiumEndDate = data.premiumEndDate ? new Date(data.premiumEndDate) : null;
 
-    // ✅ Now data has: { success, hasPremium, premiumEndDate }
-    const hasPremium = data.success && data.hasPremium === true;
-    const premiumEndDate = data.premiumEndDate ? new Date(data.premiumEndDate) : null;
+      UserData.hasPremium = hasPremium;
+      UserData.premiumEndDate = premiumEndDate;
+      setPremium(hasPremium);
 
-    UserData.hasPremium = hasPremium;
-    UserData.premiumEndDate = premiumEndDate;
-    setPremium(hasPremium);
-
-    return data;
+      return { hasPremium, premiumEndDate };
+    } else {
+      throw new Error(data.error || 'Unknown error');
+    }
   } catch (error) {
     console.error('Error checking premium status:', error);
     UserData.hasPremium = false;
     setPremium(false);
-    return null;
+    throw error;
   }
 }
 
