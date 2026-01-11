@@ -25,7 +25,7 @@ export async function initiateSbpPayment(userId, plan) {
 // Original invoice creation 
 async function createSbpInvoice(userId, plan) {
   try {
-    const res = await fetch(`${API_BASE}/api/sbp-invoice`, {
+    const res = await fetch('https://ultymylife.ru/api/sbp-invoice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, plan }),
