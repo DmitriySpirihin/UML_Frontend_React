@@ -1,5 +1,6 @@
 import './App.css'
 import { useState,useEffect, Suspense, lazy} from 'react';
+import { useNavigate } from 'react-router-dom';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
@@ -40,8 +41,11 @@ const Records = lazy(() => import('./assets/Pages/MentalPages/Records'));
 const SleepMetrics = lazy(() => import('./assets/Pages/SleepPages/SleepMetrics'));
 const SleepMain = lazy(() => import('./assets/Pages/SleepPages/SleepMain'));
 
+const tg = window.Telegram?.WebApp;
+
 
 function App() {
+  
   const [page, setPageState] = useState('LoadPanel');
   const [addPanel, setAddPanel] = useState('');
   const [confirmationPanel, setConfirmationPanel] = useState(false);
@@ -50,35 +54,57 @@ function App() {
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
   const [showPendingScreen, setShowPendingScreen] = useState(false);
-  useEffect(() => {
-   checkPendingPaymentOnStartup();
-  }, []);
- useEffect(() => {
-    // Check if we just returned from payment
-    if (localStorage.getItem('pendingPaymentId')) {
+  const checkForPendingPayment = async () => {
+    const pendingId = localStorage.getItem('pendingPaymentId');
+    if (pendingId) {
+      localStorage.removeItem('pendingPaymentId'); // consume it
       setShowPendingScreen(true);
-    }
-  }, []);
 
-  const handlePendingComplete = async (result) => {
-    try {
-      if (result === 'success' && UserData.userId) {
-        //Refresh premium status from backend
-        const status = await fetchUserPremiumStatus(UserData.userId);
-        UserData.hasPremium = status.hasPremium;
-        UserData.premiumEndDate = status.premiumEndDate;
-      } else if (result === 'failed' || result === 'timeout') {
+      try {
+        const result = await getPaymentStatus(pendingId);
+        if (result.success && result.payment?.status === 'succeeded') {
+          // Refresh premium status
+          const status = await fetchUserPremiumStatus();
+          UserData.hasPremium = status.hasPremium;
+          UserData.premiumEndDate = status.premiumEndDate;
+          // Optionally save or trigger UI update
+        }
+      } catch (err) {
+        console.warn('Payment check failed:', err);
+      } finally {
+        setShowPendingScreen(false);
       }
-    } catch (err) {
-      console.warn('Failed to refresh premium status after payment:', err);
     }
-
-   setShowPendingScreen(false);
   };
+
   useEffect(() => {
-          const subscription = confirmationPanel$.subscribe(setConfirmationPanel);  
-          return () => subscription.unsubscribe();
-      }, []);
+    // Check on initial load
+    checkForPendingPayment();
+
+    // ✅ Listen for "resume" event (when user returns from browser)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // App became visible — likely returned from payment
+        checkForPendingPayment();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Optional: also listen to Telegram's viewport state (more reliable)
+    const handleViewportChange = () => {
+      if (tg?.isExpanded || tg?.isStateStable) {
+        checkForPendingPayment();
+      }
+    };
+
+    tg?.onEvent('viewportChanged', handleViewportChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      tg?.offEvent('viewportChanged', handleViewportChange);
+    };
+  }, []);
   useEffect(() => {
         const subscription = addPanel$.subscribe(setAddPanel);  
         return () => subscription.unsubscribe();

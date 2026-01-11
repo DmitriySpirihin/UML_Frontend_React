@@ -137,7 +137,7 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
               <div style={{position: 'relative',display: 'flex',margin: '5px',width: '70vw',height: '65px',borderRadius: '12px',}}>
               {/* Animated Gradient Border */}
               <div className="premium-border" />
-                <div onClick={() => {setChosenCard(3);}}
+                <div onClick={() => {setChosenCard(1);}}
                 id={1} style={{position: 'relative',display: 'flex',flexDirection: 'row',alignItems: 'center',justifyContent: 'space-between',backgroundColor:chosenCard === 1 ? '#6197cdff' : Colors.get('simplePanel', theme),borderRadius: '12px',width: '100%',height: '100%',paddingLeft: '12px',paddingRight: '12px',zIndex: 2,}}>
                 <div style={{ ...styles(theme).text, fontSize: '28px' }}>{langIndex === 0 ? '1 год' : '1 year'}</div>
                 <div style={{display: 'flex',flexDirection: 'column',alignItems: 'flex-end',}}>
@@ -156,7 +156,7 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
                   <div style={{...styles(theme).text,marginRight:'12px',fontSize:'14px'}}>{'130₽/' + (langIndex === 0 ? 'мес' : 'mon')}</div>
                 </div>
              </div>
-             <div onClick={() => {setChosenCard(1);}}
+             <div onClick={() => {setChosenCard(3);}}
               id={3} style={{display:'flex',margin:'5px',flexDirection:'row',borderRadius:'12px',alignItems:'center',backgroundColor:chosenCard === 3 ? '#6197cdff' : Colors.get('simplePanel', theme),justifyContent:'space-between',width:'70vw',height:'65px'}}>
                 <div style={{...styles(theme).text,marginLeft:'12px',fontSize:'28px'}}>{langIndex === 0 ? '1 месяц' : '1 month'}</div>
                   <div style={{...styles(theme).text,marginRight:'12px',fontSize:'24px'}}>{'169 ₽'}</div>
