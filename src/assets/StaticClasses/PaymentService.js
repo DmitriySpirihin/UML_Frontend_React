@@ -24,6 +24,7 @@ export async function initiateSbpPayment(userId, plan) {
 
 // Original invoice creation 
 async function createSbpInvoice(userId, plan) {
+  console.log('Sending payment payload:', { userId, plan, type_uid: typeof userId, type_plan: typeof plan });
   try {
     const res = await fetch('https://ultymylife.ru/api/sbp-invoice', {
       method: 'POST',
