@@ -1,5 +1,5 @@
 import { UserData } from './AppData';
-const API_BASE = 'https://ultymylife.ru';
+const API_BASE = 'https://ultymylife.ru'
 const now = new Date();
 
 // Create invoice + redirect
@@ -24,20 +24,26 @@ export async function initiateSbpPayment(userId, plan) {
 
 // Original invoice creation 
 async function createSbpInvoice(userId, plan) {
-  const res = await fetch(`${API_BASE}/api/sbp-invoice`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, plan }),
-  });
+  try {
+    const res = await fetch(`${API_BASE}/api/sbp-invoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, plan }),
+    });
 
-  if (!res.ok) throw new Error('Failed to create invoice');
-  return res.json(); // { success, paymentId, confirmation, ... }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    // Network error (DNS, CORS, invalid URL, etc.)
+    console.error('Network error in createSbpInvoice:', err);
+    throw new Error('Network error: could not reach payment server');
+  }
 }
 
 
 // payment status check + local premium update
 export async function getPaymentStatus(paymentId) {
-  const res = await fetch(`${API_BASE}/api/payment-status/${paymentId}`);
+  const res = await fetch(`${API_BASE}/api/payment-status`);
   if (!res.ok) throw new Error('Failed to fetch payment status');
 
   const data = await res.json();

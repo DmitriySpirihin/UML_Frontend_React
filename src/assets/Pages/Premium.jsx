@@ -49,14 +49,19 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
                 premiumSubscription.unsubscribe();
             };
         }, []);
-
-    function getEndDate() {
-      const endDate = currentEndDate.toISOString().split('T')[0]
-      const year = endDate.slice(0, 4);
-      const day = parseInt(endDate.slice(8), 10);
-      const monthIndex = parseInt(endDate.slice(5, 7), 10) - 1; // "12" → 11
-      return `${day} ${monthNames[langIndex][monthIndex]} ${year} `;
-    }
+  useEffect(() => {
+  setCurrentEndDate(UserData.premiumEndDate);
+}, [UserData.premiumEndDate]);
+   function getEndDate() {
+  if (!currentEndDate) {
+    return langIndex === 0 ? 'Нет подписки' : 'No subscription';
+  }
+  const endDateStr = new Date(currentEndDate).toISOString().split('T')[0];
+  const year = endDateStr.slice(0, 4);
+  const day = parseInt(endDateStr.slice(8), 10);
+  const monthIndex = parseInt(endDateStr.slice(5, 7), 10) - 1;
+  return `${day} ${monthNames[langIndex][monthIndex]} ${year}`;
+}
     async function getPremium() {
   if (UserData.userId === null) {
     setShowPopUpPanel(langIndex === 0 ? 'Пользовательский ID не найден...' : 'User ID not found...', 2000, false);
