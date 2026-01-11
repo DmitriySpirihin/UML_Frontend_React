@@ -1,6 +1,6 @@
 import { useEffect , useState } from 'react';
 import { AppData, UserData ,fillEmptyDays} from '../StaticClasses/AppData';
-import { theme$, lang$, setPage,setPremium} from '../StaticClasses/HabitsBus'
+import { theme$, lang$, setPage} from '../StaticClasses/HabitsBus'
 import Colors from '../StaticClasses/Colors'
 import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud,loadData } from '../StaticClasses/SaveHelper';
