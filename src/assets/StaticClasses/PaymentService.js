@@ -4,6 +4,7 @@ const now = new Date();
 
 // Create invoice + redirect
 export async function initiateSbpPayment(userId, plan) {
+  console.log('User ID:', JSON.stringify(UserData));
   console.log('Sending payment payload:', { userId, plan, type_uid: typeof userId, type_plan: typeof plan });
   try {
     const invoice = await createSbpInvoice(userId, plan);
