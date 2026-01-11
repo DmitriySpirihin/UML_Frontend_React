@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect , useState } from 'react';
 import { AppData, UserData ,fillEmptyDays} from '../StaticClasses/AppData';
 import { theme$, lang$, setPage,setPremium} from '../StaticClasses/HabitsBus'
 import Colors from '../StaticClasses/Colors'
