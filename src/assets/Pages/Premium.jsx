@@ -63,21 +63,21 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
   return `${day} ${monthNames[langIndex][monthIndex]} ${year}`;
 }
     async function getPremium() {
-  if (UserData.userId === null) {
+  if (UserData.id === null) {
     setShowPopUpPanel(langIndex === 0 ? 'Пользовательский ID не найден...' : 'User ID not found...', 2000, false);
     return;
   }
   try {
     // Save plan for use in payment flow
     localStorage.setItem('selectedPlan', chosenCard);
-    await initiateSbpPayment(UserData.userId, chosenCard);
+    await initiateSbpPayment(UserData.id, chosenCard);
     // ✅ Do NOT update UserData here – wait for confirmation!
   } catch (err) {
     setShowPopUpPanel(langIndex === 0 ? 'Не возможно запустить оплату...' : 'Could not start payment...', 2000, false);
   }
 }
     async function extendSubscription() {
-  if (UserData.userId === null) {
+  if (UserData.id === null) {
     setShowPopUpPanel(
       langIndex === 0 
         ? 'Пользовательский ID не найден. Попробуйте снова.' 
@@ -93,7 +93,7 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
 
   try {
     // Initiate payment — same as getPremium, but conceptually for extension
-    await initiateSbpPayment(UserData.userId, chosenCard);
+    await initiateSbpPayment(UserData.id, chosenCard);
     
     // ✅ Do NOT update UserData.premiumEndDate here!
     // The actual date extension happens in `getPaymentStatus` after success.
