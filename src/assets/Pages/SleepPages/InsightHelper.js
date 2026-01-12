@@ -295,7 +295,8 @@ export async function getInsight(langIndex) {
     }
 
     const data = await res.json();
-    return data;
+    console.log('Insight API response:', data.message);
+    return data.message;
   } catch (error) {
     console.error('Failed to get insight:', error);
     throw error; // or return fallback

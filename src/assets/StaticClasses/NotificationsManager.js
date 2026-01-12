@@ -84,10 +84,8 @@ export async function isUserHasPremium(uid) {
     // ✅ Parse as JSON (not text!)
     const data = await response.json();
      if (data.success) {
-      console.log(`data : ${data}, type :  ${typeof(data)}`) ;
       const hasPremium = data.message.hasPremium === true;
-      const premiumEndDate = data.message.premiumEndDate ? new Date(data.premiumEndDate) : null;
-      setShowPopUpPanel(`Premium status: ${`hasPremium : ${hasPremium}, type :  ${typeof(hasPremium)} , premium end data : ${premiumEndDate} , type :  ${typeof(premiumEndDate)}`} `, 2000, true);
+      const premiumEndDate = data.message.premiumEndDate ? new Date(data.message.premiumEndDate) : null;
       UserData.hasPremium = hasPremium;
       UserData.premiumEndDate = premiumEndDate;
       setPremium(hasPremium);
