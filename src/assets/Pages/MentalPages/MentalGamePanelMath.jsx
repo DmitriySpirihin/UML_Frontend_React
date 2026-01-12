@@ -156,7 +156,7 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
           // Final tick: cleanup and trigger start
           clearInterval(intervalId);
           setDelayTimer(false);
-          setScores(prev => prev + addScores / 2);
+          setScores(prev => Math.round(prev + addScores / 2));
           setAddScores(0);
           setTimer(true);
           setDelay(0);
@@ -250,7 +250,7 @@ const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
   const onFinishSession = () => {
     onFinish();
     const isRecord = scores + addScores > record;
-    const message = congratulations(difficulty === 4, difficulty === 5, langIndex, scores + addScores, rightAnswers, 20, isRecord, false);
+    const message = congratulations(difficulty === 4,  langIndex, scores + addScores, rightAnswers, 20, isRecord, difficulty === 5);
     setIsRunning(false);
     setMessage(message);
     setIsFinished(true);

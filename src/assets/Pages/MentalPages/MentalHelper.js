@@ -259,7 +259,7 @@ export const focusTrainingLevels = [
 
 export async function saveSessionDuration(duration,hasRecord,cat,ind,record) {
   if (hasRecord) {
-    AppData.mentalRecords[cat][ind] = record;
+    AppData.mentalRecords[cat][ind] = Math.round(record);
     NotificationsManager.sendMessage('setmentalrecords',JSON.stringify(AppData.mentalRecords))
   }
   const today = new Date().toISOString().split('T')[0];

@@ -5,7 +5,7 @@ import { allHabits} from '../../Classes/Habit.js'
 import { AppData,getHabitPerformPercent,UserData } from '../../StaticClasses/AppData.js'
 import { expandedCard$, setExpandedCard} from '../../StaticClasses/HabitsBus.js';
 import Colors from '../../StaticClasses/Colors'
-import { theme$ ,lang$,fontSize$,premium$, updateConfirmationPanel,setShowPopUpPanel,setPage,} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$,premium$,confirmationPanel$, updateConfirmationPanel,setShowPopUpPanel,setPage,} from '../../StaticClasses/HabitsBus'
 import {MdDoneAll} from 'react-icons/md'
 import {FaPlusSquare,FaTrash,FaPencilAlt,FaRegWindowClose,FaListAlt,FaArrowUp} from 'react-icons/fa'
 import {FaRegSquareCheck,FaRegSquare} from 'react-icons/fa6'
@@ -19,6 +19,8 @@ import Slider from '@mui/material/Slider';
 
 import {MdClose,MdDone} from 'react-icons/md'
 import MyInput from '../../Helpers/MyInput';
+import { set } from 'animejs';
+import { del } from 'idb-keyval';
 const dateKey = new Date().toISOString().split('T')[0];
 const clickSound = new Audio('Audio/Click.wav');
 const skipSound = new Audio('Audio/Skip.wav');
@@ -47,7 +49,10 @@ const HabitsMain = () => {
     const [newDescr,setNewDescr] = useState('');
     const [newIcon,setNewIcon] = useState('');
     const [selectIconPanel, setSelectIconPanel] = useState(false);
-    const [iconName, setIconName] = useState('default');
+
+    const [habitTodelete, setHabitToDelete] = useState(null);
+    const [confirmMessage, setConfirmMessage] = useState('');
+    const [needConfirmation, setNeedConfirmation] = useState(false);
 
     // move goals effect
     useEffect(() => {
@@ -80,9 +85,11 @@ const HabitsMain = () => {
     useEffect(() => {
         const subscription = theme$.subscribe(setthemeState);  
         const subscription2 = fontSize$.subscribe(setFontSize);
+        const subscription3 = confirmationPanel$.subscribe(setNeedConfirmation);
         return () => {
           subscription.unsubscribe();
           subscription2.unsubscribe();
+          subscription3.unsubscribe();
         };
     }, []);
     useEffect(() => {
@@ -186,11 +193,22 @@ const HabitsMain = () => {
     // render    
     return (
         <div style={styles(theme).container}>
+          {
+            needConfirmation && <div style={styles(theme).confirmContainer}>
+              <div style={styles(theme).cP}>
+                <div style={styles(theme,fSize).mainText}>{confirmMessage}</div>
+                <div style={styles(theme).buttonsContainer}>
+                  <MdClose style={styles(theme).icon} onClick={() => setNeedConfirmation(false)} />
+                  <MdDone style={styles(theme).icon} onClick={() =>{removeHabit(habitTodelete);setNeedConfirmation(false)}} />
+                </div>
+              </div>
+            </div>
+          }
             {!hasHabits && <div style={{...styles(theme).panel,justifyContent:'center',alignItems:'center', marginTop:'40%'}}>
               <p style={{...styles(theme).subText,fontSize:fSize === 0 ? '11px' : '13px',margin:'10%',marginTop:'20%',whiteSpace:'pre-line',color:Colors.get('subText', theme)}}>{setInfoText(langIndex)}</p>
             </div>}
             {hasHabits && <div style={styles(theme).scrollView} key={dataVersion}>
-              {buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize })}
+              {buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize,setNeedConfirmation,setConfirmMessage,setHabitToDelete })}
            </div>}
         {cP.show && cP.type > 0 && cP.type < 4 && (
                    <div style={styles(theme).confirmContainer}>
@@ -311,14 +329,17 @@ function getAllHabits() {
     );
 }
 
-function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize }) {
+function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize,setNeedConfirmation,setConfirmMessage,setHabitToDelete }) {
     return categories.map(category => {
         const habitsInCategory = habitsCards
             .map(id => getAllHabits().find(h => h.id === id))
             .filter(h => h && h.category[0] === category);
 
         return (
-            <CategoryPanel key={category} text={getAllHabits().find(h => h.category[0] === category)?.category } theme={theme} isNegative={category === 'Отказ от вредного'}>
+            <CategoryPanel key={category} text={getAllHabits().find(h => h.category[0] === category)?.category } theme={theme} isNegative={category === 'Отказ от вредного'}
+            setConfirmMessage={setConfirmMessage}
+                   setNeedConfirmation= {setNeedConfirmation}
+                   setHabitToDelete={setHabitToDelete}>
                 {habitsInCategory.map(habit => (
                     <HabitCard
                       key={habit.id}
@@ -327,6 +348,9 @@ function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize 
                     setCP={setCP}
                    setCurrentId={setCurrentId}
                    fSize={fSize}
+                   setConfirmMessage={setConfirmMessage}
+                   setNeedConfirmation= {setNeedConfirmation}
+                   setHabitToDelete={setHabitToDelete}
                     />
                 ))}
             </CategoryPanel>
@@ -334,7 +358,7 @@ function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize 
     }
 );
 }
-function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
+function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize ,setNeedConfirmation,setConfirmMessage,setHabitToDelete}) {
     const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
@@ -593,12 +617,13 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
        setTime(0);
       }
     }
-    const onDeleteHabit = () => {
-      currentId = id;
+    const onDeleteHabit = (id) => {
+      setHabitToDelete(id);
+      setNeedConfirmation(true);
       const newText = AppData.prefs[0] === 0 
-      ? `Вы уверены, что хотите удалить привычку: \'${habitInfo.name[0]}\' ?`
-      : `Are you sure you want to delete \'${habitInfo.name[1]}\' habit?`;
-      updateConfirmationPanel(newText);
+      ? `⚠️  Вы уверены, что хотите удалить привычку: \'${habitInfo.name[0]}\' ?`
+      : `⚠️  Are you sure you want to delete \'${habitInfo.name[1]}\' habit?`;
+      setConfirmMessage(newText);
     }   
     return (
             <motion.div 
@@ -689,7 +714,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize }) {
                        <div style={{display:'flex',marginLeft:'auto',flexDirection:'row',alignItems:'center'}}>
                            
                            {getAllHabits().find(f => f.id === id).isCustom && <FaPencilAlt onClick={() => setCP(prev => ({...prev,show:true,type:0,hId:id,gId:0,hInfo:setHabitInfo}))} style={{fontSize:'18px',zIndex:1003,marginRight:'21px',color:Colors.get('icons', theme)}}/>}
-                           <FaTrash onClick={onDeleteHabit} style={{fontSize:'18px',zIndex:1003,marginLeft:'21px',color:Colors.get('icons', theme)}}/>
+                           <FaTrash onClick={() => onDeleteHabit(id)} style={{fontSize:'18px',zIndex:1003,marginLeft:'21px',color:Colors.get('icons', theme)}}/>
                            <FaArrowUp style={{fontSize:'18px',color:Colors.get('icons', theme),zIndex:1003,marginLeft:'21px'}} onClick={() => {toggleIsActive();}}/>
                            {!isNegative && status < 1 && <FaRegSquare onClick={() => setNewStatus(true)}style={{fontSize:'24px',zIndex:1003,marginLeft:'21px',color:Colors.get('skipped', theme)}}/>}
                            {!isNegative && status > 0 && <FaRegSquareCheck onClick={() => setNewStatus(false)} style={{fontSize:'24px',marginLeft:'21px',zIndex:1003,color:Colors.get('done', theme)}}/>}
@@ -838,7 +863,18 @@ const styles = (theme,fSize,isNegative) =>
          fontSize: fSize === 0 ? '13px' : '14px',
          color:Colors.get('mainText', theme),
          backgroundColor:Colors.get('simplePanel',theme)
-      }
+      },
+    buttonsContainer:{
+      width:'100%',
+      display:'flex',
+      flexDirection:'row',
+      alignItems:'center',
+      justifyContent:'space-around'
+    },
+    icon:{
+      color:Colors.get('icons', theme),
+      fontSize: '36px'
+    }
 })
  function interpolateColor(color1, color2, factor) {
   factor = Math.max(0, Math.min(1, factor));

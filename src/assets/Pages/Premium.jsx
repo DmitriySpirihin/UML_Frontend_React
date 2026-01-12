@@ -3,7 +3,6 @@ import { AppData , UserData} from '../StaticClasses/AppData.js';
 import Colors from '../StaticClasses/Colors';
 import { lastPage$, setPage,theme$,lang$,premium$,fontSize$, setShowPopUpPanel} from '../StaticClasses/HabitsBus';
 import {FaBrain,FaChartBar,FaRobot,FaFlask} from 'react-icons/fa'
-import {saveData} from '../StaticClasses/SaveHelper';
 import {initiateSbpPayment} from '../StaticClasses/PaymentService';
 const futureDate = new Date();
 futureDate.setDate(futureDate.getDate() + 365);
@@ -20,7 +19,7 @@ const Premium = () => {
     const [chosenCard,setChosenCard] = useState(1);
     const [currentEndDate,setCurrentEndDate] = useState(UserData.premiumEndDate);
 
-    const [needToChangeSubscription,setNeedToChangeSubscription] = useState(false);
+    const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
     const getInitialEndDate = () => {
   const days = chosenCard === 3 ? 30 : chosenCard === 2 ? 90 : 365;
   const date = new Date();
@@ -52,6 +51,41 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
   useEffect(() => {
   setCurrentEndDate(UserData.premiumEndDate);
 }, [UserData.premiumEndDate]);
+
+useEffect(() => {
+  const checkPayment = async () => {
+    const pendingId = localStorage.getItem('pendingPaymentId');
+    if (pendingId) {
+      setIsVerifyingPayment(true); // ✅ Show "checking" state
+      try {
+        let attempts = 0;
+        const maxAttempts = 20;
+        while (attempts < maxAttempts) {
+          const result = await getPaymentStatus(pendingId);
+          if (result.success && result.payment?.status === 'succeeded') {
+            // Refresh premium status
+            const status = await fetchUserPremiumStatus();
+            UserData.hasPremium = status.hasPremium;
+            UserData.premiumEndDate = status.premiumEndDate;
+            // Update local state
+            setHasPremium(status.hasPremium);
+            setCurrentEndDate(status.premiumEndDate);
+            break;
+          }
+          await new Promise(r => setTimeout(r, 3000));
+          attempts++;
+        }
+      } catch (err) {
+        console.warn('Payment verification failed:', err);
+      } finally {
+        setIsVerifyingPayment(false);
+        localStorage.removeItem('pendingPaymentId'); // clean up
+      }
+    }
+  };
+
+  checkPayment();
+}, []);
    function getEndDate() {
   if (!currentEndDate) {
     return langIndex === 0 ? 'Нет подписки' : 'No subscription';
@@ -112,7 +146,7 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
     
     return (
         <div style={{...styles(theme).container}}>
-           {!hasPremium && <div style={{...styles(theme).panel}}>
+           {!hasPremium && !needToShowUserInfo && <div style={{...styles(theme).panel}}>
             <img src={theme === 'dark' || theme === "specialdark" ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={{width:'50%'}} />
             <div style={{...styles(theme).subtext,fontSize:'22px'}}>{'premium'}</div>
              <div style={{display:'flex',flexDirection:'column',width:'70vw',height:'22%',alignItems:'flex-start',justifyContent:'center'}}>
@@ -172,7 +206,7 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
              
             </div>
           </div>}
-          {hasPremium && <div style={{...styles(theme).panel}}>
+          {hasPremium && !needToShowUserInfo && <div style={{...styles(theme).panel}}>
               <img src={theme === 'dark' || theme === "specialdark" ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={{width:'50%'}} />
               <div style={{position: 'relative',width: '60px',height: '60px',margin: '10px',borderRadius: '50%',overflow: 'hidden',border: UserData.hasPremium ? 'none' : `3px solid ${Colors.get('border', theme)}`,boxSizing: 'border-box',}}>
                 {/* User Photo */}
@@ -184,42 +218,34 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
               <p style={styles(theme).text}>{langIndex === 0 ? '👑 премиум подписка активна 👑' : '👑 premium subscription active 👑'}</p>
               <div style={styles(theme).text}>{langIndex === 0 ? 'действует до ' + getEndDate() : 'active until ' + getEndDate()}</div>
 
-              {needToChangeSubscription && <div style={{position: 'relative',display: 'flex',margin: '5px',marginTop:'35px',width: '70vw',height: '65px',borderRadius: '12px',}}>
-              {/* Animated Gradient Border */}
-              <div className="premium-border" />
-                <div onClick={() => {setChosenCard(3);}}
-                id={3} style={{position: 'relative',display: 'flex',flexDirection: 'row',alignItems: 'center',justifyContent: 'space-between',backgroundColor:chosenCard === 3 ? '#6197cdff' : Colors.get('simplePanel', theme),borderRadius: '12px',width: '100%',height: '100%',paddingLeft: '12px',paddingRight: '12px',zIndex: 2,}}>
-                <div style={{ ...styles(theme).text, fontSize: '28px' }}>{langIndex === 0 ? '1 год' : '1 year'}</div>
-                <div style={{display: 'flex',flexDirection: 'column',alignItems: 'flex-end',}}>
-                 <div style={{ ...styles(theme).text, fontSize: '24px' }}>{'999 ₽'}</div>
-                 <div style={{ ...styles(theme).text, fontSize: '14px' }}>{'83₽/' + (langIndex === 0 ? 'мес' : 'mon')}</div>
-               </div>
-              </div>
-             {/* Centered "HIT" badge */}
-             <div style={{position: 'absolute',top: '-8px',left: '50%',transform: 'translateX(-50%)',background: 'linear-gradient(90deg, #00B4FF, #FF00C8)',color: 'white',fontSize: '12px',fontWeight: 'bold',padding: '2px 10px',borderRadius: '12px',boxShadow: '0 2px 4px rgba(0,0,0,0.2)',zIndex: 3,whiteSpace: 'nowrap',}}>{langIndex === 0 ? 'ХИТ' : 'HIT'}</div>
-             </div>}
-
-              {needToChangeSubscription && <div onClick={() => {setChosenCard(2);}}
-              id={2} style={{display:'flex',margin:'5px',flexDirection:'row',borderRadius:'12px',alignItems:'center',backgroundColor:chosenCard === 2 ? '#6197cdff' : Colors.get('simplePanel', theme),justifyContent:'space-between',width:'70vw',height:'65px'}}>
-                <div style={{...styles(theme).text,marginLeft:'12px',fontSize:'28px'}}>{langIndex === 0 ? '3 месяца' : '3 month'}</div>
-                <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyItems:'center'}}>
-                  <div style={{...styles(theme).text,marginRight:'12px',fontSize:'24px'}}>{'390 ₽'}</div>
-                  <div style={{...styles(theme).text,marginRight:'12px',fontSize:'14px'}}>{'130₽/' + (langIndex === 0 ? 'мес' : 'mon')}</div>
-                </div>
-             </div>}
-
-              {needToChangeSubscription && <div onClick={() => {setChosenCard(1);}}
-              id={1} style={{display:'flex',margin:'5px',flexDirection:'row',borderRadius:'12px',alignItems:'center',backgroundColor:chosenCard === 1 ? '#6197cdff' : Colors.get('simplePanel', theme),justifyContent:'space-between',width:'70vw',height:'65px'}}>
-                <div style={{...styles(theme).text,marginLeft:'12px',fontSize:'28px'}}>{langIndex === 0 ? '1 месяц' : '1 month'}</div>
-                  <div style={{...styles(theme).text,marginRight:'12px',fontSize:'24px'}}>{'169 ₽'}</div>
-             </div>}
-
-             <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',gap:'5px',marginBottom:'12px',marginTop:'auto'}}>
-              {needToChangeSubscription && <button style={{...styles(theme).button,height:'60px',backgroundColor:'#154fecff'}} onClick={() => {extendSubscription()}}>{langIndex === 0 ? 'Подтвердить' : 'Confirm'}</button> }
-              {!needToChangeSubscription  && <button style={{...styles(theme).button,height:'60px',backgroundColor:'#154fecff'}} onClick={() => {setNeedToChangeSubscription(true)}}>{langIndex === 0 ? 'Продлить подписку' : 'Extend subscription'}</button> }
-              <button style={{...styles(theme).button,height:'60px',border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setPage(lastPage$.value)}>{langIndex === 0 ? 'Закрыть' : 'Close'}</button>    
-             </div>
+              
           </div>}
+          {isVerifyingPayment && (
+  <div style={{
+    position: 'fixed',
+    top: '10px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: theme === 'dark' ? '#2a2a2a' : '#f0f0f0',
+    color: theme === 'dark' ? '#e0e0e0' : '#333',
+    padding: '10px 16px',
+    borderRadius: '12px',
+    border: `1px solid ${Colors.get('border', theme)}`,
+    zIndex: 1000,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '14px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+  }}>
+    <span>⏳</span>
+    <span>
+      {langIndex === 0
+        ? 'Проверяем оплату... Это может занять до 2 минут.'
+        : 'Verifying payment... This may take up to 2 minutes.'}
+    </span>
+  </div>
+)}
         </div>
     )
 }

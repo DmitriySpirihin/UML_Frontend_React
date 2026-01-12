@@ -9,18 +9,20 @@ const { WebApp } = window.Telegram;
 export async function initiateSbpPayment(userId, plan) {
   try {
     const invoice = await createSbpInvoice(userId, plan);
-    if (!invoice.success || !invoice.confirmation?.confirmation_url) {
-      throw new Error('Invalid payment response');
+    
+    if (!invoice.success || !invoice.confirmation?.confirmation_url || !invoice.paymentId) {
+      throw new Error('Invalid payment response: missing paymentId or URL');
     }
 
-    const paymentUrl = invoice.confirmation.confirmation_url;
+    // ✅ CRITICAL: Save paymentId for later verification
+    localStorage.setItem('pendingPaymentId', invoice.paymentId);
 
-    // Open in Telegram's in-app browser
-    if (WebApp?.openLink) {
-      WebApp.openLink(paymentUrl, { try_instant_view: false });
+    // Open in Telegram Mini App browser
+    if (window.Telegram?.WebApp?.openLink) {
+      window.Telegram.WebApp.openLink(invoice.confirmation.confirmation_url);
     } else {
-      // Fallback: only for debugging outside Telegram
-      window.open(paymentUrl, '_blank');
+      // Fallback for dev/testing
+      window.open(invoice.confirmation.confirmation_url, '_blank');
     }
   } catch (error) {
     console.error('Failed to start payment:', error);

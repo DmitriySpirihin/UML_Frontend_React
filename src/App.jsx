@@ -153,9 +153,7 @@ useEffect(() => {
     const subscription = keyboardVisible$.subscribe(setKeyboardVisibleState);  
     return () => subscription.unsubscribe();
 }, []);
-if (showPendingScreen) {
-    return <PaymentPendingScreen onStatusFinalized={handlePendingComplete} />;
-}
+
   return (
     <>
       {page !== 'LoadPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
