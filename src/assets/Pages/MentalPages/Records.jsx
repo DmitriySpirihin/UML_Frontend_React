@@ -140,7 +140,7 @@ const Records = () => {
   const fetchGlobalData = async () => {
     try {
       const data = await NotificationsManager.getMentalRecordsGlobal();
-      setGlobalData(data);
+      setGlobalData(data.message);
     } catch (err) {
       // Fallback to local user data only
       setGlobalData([{ name: UserData?.name, data: AppData.mentalRecords }]);
