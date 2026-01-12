@@ -91,7 +91,7 @@ export async function isUserHasPremium(uid) {
       UserData.hasPremium = hasPremium;
       UserData.premiumEndDate = premiumEndDate;
       setPremium(hasPremium);
-      console.log(hasPremium + '/' + premiumEndDate) ; 
+      console.log(`hasPremium : ${hasPremium}, type :  ${typeof(hasPremium)} , premium end data : ${premiumEndDate} , type :  ${typeof(premiumEndDate)}`) ; 
       return { hasPremium, premiumEndDate };
     } else {
       throw new Error(data.error || 'Unknown error');
