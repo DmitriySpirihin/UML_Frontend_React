@@ -26,7 +26,7 @@ const SleepInsight = () => {
   const fetchInsight = async () => {
     try {
       const result = await getInsight(langIndex); // ← pass langIndex!
-      setInsight(result.insight); // ✅ extract the string
+      setInsight(result.message); // ✅ extract the string
     } catch (err) {
       // Fallback message
       const fallback = langIndex === 0 
