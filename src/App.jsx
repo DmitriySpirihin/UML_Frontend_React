@@ -42,10 +42,9 @@ const SleepMetrics = lazy(() => import('./assets/Pages/SleepPages/SleepMetrics')
 const SleepMain = lazy(() => import('./assets/Pages/SleepPages/SleepMain'));
 
 const tg = window.Telegram?.WebApp;
-checkPendingPaymentOnStartup();
+
 
 function App() {
-  
   const [page, setPageState] = useState('LoadPanel');
   const [addPanel, setAddPanel] = useState('');
   const [confirmationPanel, setConfirmationPanel] = useState(false);
@@ -54,105 +53,81 @@ function App() {
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
   const [showPendingScreen, setShowPendingScreen] = useState(false);
+
+  // ✅ Define the function ONCE
   const checkForPendingPayment = async () => {
-  const pendingId = localStorage.getItem('pendingPaymentId');
-  if (!pendingId) return;
+    const pendingId = localStorage.getItem('pendingPaymentId');
+    if (pendingId) {
+      localStorage.removeItem('pendingPaymentId'); // consume it
+      setShowPendingScreen(true);
 
-  localStorage.removeItem('pendingPaymentId'); // consume immediately to avoid duplicate checks
-  setShowPendingScreen(true);
-
-  let attempts = 0;
-  const maxAttempts = 20; // ~60 seconds with 3s delay
-  const delay = (ms) => new Promise(res => setTimeout(res, ms));
-
-  try {
-    while (attempts < maxAttempts) {
-      attempts++;
-      const result = await getPaymentStatus(pendingId);
-
-      if (result.success && result.payment) {
-        const { status } = result.payment;
-
-        // Final states
-        if (status === 'succeeded' || status === 'canceled' || status === 'expired') {
-          if (status === 'succeeded') {
-            const premiumStatus = await fetchUserPremiumStatus();
-            UserData.hasPremium = premiumStatus.hasPremium;
-            UserData.premiumEndDate = premiumStatus.premiumEndDate;
-          }
-          break; // Exit loop
+      try {
+        const result = await getPaymentStatus(pendingId);
+        if (result.success && result.payment?.status === 'succeeded') {
+          const status = await fetchUserPremiumStatus();
+          UserData.hasPremium = status.hasPremium;
+          UserData.premiumEndDate = status.premiumEndDate;
+          // Note: you may want to trigger a global update or notify Premium screen
         }
-
-        // Still pending – wait and retry
-        await delay(3000); // Wait 3 seconds
-      } else {
-        // Unexpected error – maybe retry or break
-        await delay(3000);
+      } catch (err) {
+        console.warn('Payment check failed:', err);
+      } finally {
+        setShowPendingScreen(false);
       }
     }
-  } catch (err) {
-    console.warn('Payment polling failed:', err);
-  } finally {
-    setShowPendingScreen(false);
-  }
-};
+  };
 
+  // ✅ ONE useEffect for payment verification
   useEffect(() => {
-    // Check on initial load
-    checkForPendingPayment();
+    const safeCheck = () => {
+      if (showPendingScreen) return;
+      checkForPendingPayment();
+    };
 
-    // ✅ Listen for "resume" event (when user returns from browser)
+    safeCheck();
+
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // App became visible — likely returned from payment
-        checkForPendingPayment();
+        setTimeout(safeCheck, 1000);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Optional: also listen to Telegram's viewport state (more reliable)
-    const handleViewportChange = () => {
-      if (tg?.isExpanded || tg?.isStateStable) {
-        checkForPendingPayment();
-      }
-    };
-
-    tg?.onEvent('viewportChanged', handleViewportChange);
-
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      tg?.offEvent('viewportChanged', handleViewportChange);
     };
-  }, []);
+  }, [showPendingScreen]);
+
+  // ... rest of your useEffects (subscriptions) — keep these
   useEffect(() => {
-        const subscription = addPanel$.subscribe(setAddPanel);  
-        return () => subscription.unsubscribe();
-    }, []);
-    function handlePageChange(page){
-    setPageState(page);
-    setPage(page);
-  }
- useEffect(() => {
+    const subscription = addPanel$.subscribe(setAddPanel);  
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     const subscription = notifyPanel$.subscribe(setNotifyPanelState);  
     return () => subscription.unsubscribe();
-}, []);
+  }, []);
+
   useEffect(() => {
     const subscription = setPage$.subscribe(setPageState);  
     return () => subscription.unsubscribe();
-}, []);
-useEffect(() => {
+  }, []);
+
+  useEffect(() => {
     const subscription = theme$.subscribe(setTheme);  
     return () => subscription.unsubscribe();
-}, []);
-useEffect(() => {
+  }, []);
+
+  useEffect(() => {
     const subscription = bottomBtnPanel$.subscribe(setBottomBtnPanel);  
     return () => subscription.unsubscribe();
-}, []);
-useEffect(() => {
+  }, []);
+
+  useEffect(() => {
     const subscription = keyboardVisible$.subscribe(setKeyboardVisibleState);  
     return () => subscription.unsubscribe();
-}, []);
+  }, []);
 
   return (
     <>

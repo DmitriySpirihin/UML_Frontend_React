@@ -228,7 +228,7 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
             {isOpen && (
                 <motion.div
                     initial={{ x: '110%'}}
-                    animate={{ x: '0%'}}
+                    animate={{ x: '-10%'}}
                     exit={{ x: '110%'}}
                     transition={{
                         type: 'tween',
@@ -462,7 +462,7 @@ const SettingsPanel = ({theme, langIndex,setAdditionalPanel,setAdditionalPanelNu
                         bottom: '20px'
 
                     }}> 
-                        {langIndex === 0 ? 'версия: 1.c.35.a' : 'version: 1.c.35.a'}
+                        {langIndex === 0 ? 'версия: 1.c.36.a' : 'version: 1.c.36.a'}
                     </p>
                 </motion.div>
                 </React.Fragment>

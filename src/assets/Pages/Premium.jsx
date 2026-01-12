@@ -52,22 +52,21 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
   setCurrentEndDate(UserData.premiumEndDate);
 }, [UserData.premiumEndDate]);
 
+// ✅ Enhanced: check on mount AND when user returns from external browser
 useEffect(() => {
   const checkPayment = async () => {
     const pendingId = localStorage.getItem('pendingPaymentId');
     if (pendingId) {
-      setIsVerifyingPayment(true); // ✅ Show "checking" state
+      setIsVerifyingPayment(true);
       try {
         let attempts = 0;
         const maxAttempts = 20;
         while (attempts < maxAttempts) {
           const result = await getPaymentStatus(pendingId);
           if (result.success && result.payment?.status === 'succeeded') {
-            // Refresh premium status
             const status = await fetchUserPremiumStatus();
             UserData.hasPremium = status.hasPremium;
             UserData.premiumEndDate = status.premiumEndDate;
-            // Update local state
             setHasPremium(status.hasPremium);
             setCurrentEndDate(status.premiumEndDate);
             break;
@@ -79,13 +78,29 @@ useEffect(() => {
         console.warn('Payment verification failed:', err);
       } finally {
         setIsVerifyingPayment(false);
-        localStorage.removeItem('pendingPaymentId'); // clean up
+        localStorage.removeItem('pendingPaymentId');
       }
     }
   };
 
+  // Initial check
   checkPayment();
+
+  // Re-check when user returns to the app (e.g. from SberBank)
+  const handleVisibilityChange = () => {
+    if (!document.hidden) {
+      // Small delay to ensure browser context is stable
+      setTimeout(checkPayment, 1000);
+    }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  return () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  };
 }, []);
+
    function getEndDate() {
   if (!currentEndDate) {
     return langIndex === 0 ? 'Нет подписки' : 'No subscription';
@@ -102,10 +117,8 @@ useEffect(() => {
     return;
   }
   try {
-    // Save plan for use in payment flow
     localStorage.setItem('selectedPlan', chosenCard);
     await initiateSbpPayment(UserData.id, chosenCard);
-    // ✅ Do NOT update UserData here – wait for confirmation!
   } catch (err) {
     setShowPopUpPanel(langIndex === 0 ? 'Не возможно запустить оплату...' : 'Could not start payment...', 2000, false);
   }
@@ -122,16 +135,10 @@ useEffect(() => {
     return;
   }
 
-  // Save the selected plan for use after redirect
   localStorage.setItem('selectedPlan', chosenCard.toString());
 
   try {
-    // Initiate payment — same as getPremium, but conceptually for extension
     await initiateSbpPayment(UserData.id, chosenCard);
-    
-    // ✅ Do NOT update UserData.premiumEndDate here!
-    // The actual date extension happens in `getPaymentStatus` after success.
-    
   } catch (err) {
     setShowPopUpPanel(
       langIndex === 0 
@@ -241,8 +248,8 @@ useEffect(() => {
     <span>⏳</span>
     <span>
       {langIndex === 0
-        ? 'Проверяем оплату... Это может занять до 2 минут.'
-        : 'Verifying payment... This may take up to 2 minutes.'}
+        ? 'Проверяем оплату... Это может занять несколько минут.'
+        : 'Verifying payment... This may take several minutes.'}
     </span>
   </div>
 )}
