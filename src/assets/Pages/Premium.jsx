@@ -146,7 +146,7 @@ useEffect(() => {
     
     return (
         <div style={{...styles(theme).container}}>
-           {!hasPremium && !needToShowUserInfo && <div style={{...styles(theme).panel}}>
+           {!hasPremium &&  <div style={{...styles(theme).panel}}>
             <img src={theme === 'dark' || theme === "specialdark" ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={{width:'50%'}} />
             <div style={{...styles(theme).subtext,fontSize:'22px'}}>{'premium'}</div>
              <div style={{display:'flex',flexDirection:'column',width:'70vw',height:'22%',alignItems:'flex-start',justifyContent:'center'}}>
@@ -206,7 +206,7 @@ useEffect(() => {
              
             </div>
           </div>}
-          {hasPremium && !needToShowUserInfo && <div style={{...styles(theme).panel}}>
+          {hasPremium && <div style={{...styles(theme).panel}}>
               <img src={theme === 'dark' || theme === "specialdark" ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={{width:'50%'}} />
               <div style={{position: 'relative',width: '60px',height: '60px',margin: '10px',borderRadius: '50%',overflow: 'hidden',border: UserData.hasPremium ? 'none' : `3px solid ${Colors.get('border', theme)}`,boxSizing: 'border-box',}}>
                 {/* User Photo */}
