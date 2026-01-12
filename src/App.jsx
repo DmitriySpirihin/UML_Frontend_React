@@ -135,7 +135,7 @@ function App() {
         <MainBtns/>
       </Suspense>}
       {page === 'LoadPanel' && <LoadPanel/>}
-      {page === 'MainMenu' && <MainMenu onPageChange={handlePageChange}/>}
+      {page === 'MainMenu' && <MainMenu/>}
       {page === 'HabitsMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <HabitsMain />
       </Suspense>}
