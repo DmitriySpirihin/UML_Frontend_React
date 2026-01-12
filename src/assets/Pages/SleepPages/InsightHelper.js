@@ -1,6 +1,6 @@
 import { AppData } from "../../StaticClasses/AppData";
 import { allHabits } from "../../Classes/Habit";
-const BASE_URL = 'https://ultymylife.ru/api/insight';
+const API_BASE = 'https://ultymylife.ru/api/insight';
 
 const INSIGHT_SYSTEM_PROMPTS = [
   // 0 — RU
