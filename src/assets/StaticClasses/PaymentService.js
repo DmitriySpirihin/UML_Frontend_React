@@ -4,13 +4,24 @@ const now = new Date();
 // Create invoice + redirect
 const API_BASE = 'https://ultymylife.ru'; // ✅ CLEAN
 
+const { WebApp } = window.Telegram;
+
 export async function initiateSbpPayment(userId, plan) {
   try {
     const invoice = await createSbpInvoice(userId, plan);
     if (!invoice.success || !invoice.confirmation?.confirmation_url) {
       throw new Error('Invalid payment response');
     }
-    window.open(invoice.confirmation.confirmation_url, '_blank');
+
+    const paymentUrl = invoice.confirmation.confirmation_url;
+
+    // Open in Telegram's in-app browser
+    if (WebApp?.openLink) {
+      WebApp.openLink(paymentUrl, { try_instant_view: false });
+    } else {
+      // Fallback: only for debugging outside Telegram
+      window.open(paymentUrl, '_blank');
+    }
   } catch (error) {
     console.error('Failed to start payment:', error);
     throw error;

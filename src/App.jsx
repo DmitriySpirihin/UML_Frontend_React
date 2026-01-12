@@ -42,7 +42,7 @@ const SleepMetrics = lazy(() => import('./assets/Pages/SleepPages/SleepMetrics')
 const SleepMain = lazy(() => import('./assets/Pages/SleepPages/SleepMain'));
 
 const tg = window.Telegram?.WebApp;
-
+checkPendingPaymentOnStartup();
 
 function App() {
   
@@ -55,27 +55,47 @@ function App() {
   const [notifyPanel, setNotifyPanelState] = useState(false);
   const [showPendingScreen, setShowPendingScreen] = useState(false);
   const checkForPendingPayment = async () => {
-    const pendingId = localStorage.getItem('pendingPaymentId');
-    if (pendingId) {
-      localStorage.removeItem('pendingPaymentId'); // consume it
-      setShowPendingScreen(true);
+  const pendingId = localStorage.getItem('pendingPaymentId');
+  if (!pendingId) return;
 
-      try {
-        const result = await getPaymentStatus(pendingId);
-        if (result.success && result.payment?.status === 'succeeded') {
-          // Refresh premium status
-          const status = await fetchUserPremiumStatus();
-          UserData.hasPremium = status.hasPremium;
-          UserData.premiumEndDate = status.premiumEndDate;
-          // Optionally save or trigger UI update
+  localStorage.removeItem('pendingPaymentId'); // consume immediately to avoid duplicate checks
+  setShowPendingScreen(true);
+
+  let attempts = 0;
+  const maxAttempts = 20; // ~60 seconds with 3s delay
+  const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+  try {
+    while (attempts < maxAttempts) {
+      attempts++;
+      const result = await getPaymentStatus(pendingId);
+
+      if (result.success && result.payment) {
+        const { status } = result.payment;
+
+        // Final states
+        if (status === 'succeeded' || status === 'canceled' || status === 'expired') {
+          if (status === 'succeeded') {
+            const premiumStatus = await fetchUserPremiumStatus();
+            UserData.hasPremium = premiumStatus.hasPremium;
+            UserData.premiumEndDate = premiumStatus.premiumEndDate;
+          }
+          break; // Exit loop
         }
-      } catch (err) {
-        console.warn('Payment check failed:', err);
-      } finally {
-        setShowPendingScreen(false);
+
+        // Still pending – wait and retry
+        await delay(3000); // Wait 3 seconds
+      } else {
+        // Unexpected error – maybe retry or break
+        await delay(3000);
       }
     }
-  };
+  } catch (err) {
+    console.warn('Payment polling failed:', err);
+  } finally {
+    setShowPendingScreen(false);
+  }
+};
 
   useEffect(() => {
     // Check on initial load
