@@ -1,5 +1,6 @@
 import { AppData } from "../../StaticClasses/AppData";
 import { allHabits } from "../../Classes/Habit";
+const BASE_URL = 'https://ultymylife.ru/api/insight';
 
 const INSIGHT_SYSTEM_PROMPTS = [
   // 0 — RU
@@ -279,7 +280,7 @@ export async function getInsight(langIndex) {
   try {
     const { systemPrompt, userPrompt } = getInsightPrompt(langIndex);
 
-    const res = await fetch('/api/insight', {
+    const res = await fetch(API_BASE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
