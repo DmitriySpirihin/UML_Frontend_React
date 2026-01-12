@@ -12,27 +12,28 @@ const INSIGHT_SYSTEM_PROMPTS = [
 const INSIGHT_USER_PROMPT_TEMPLATES = [
   // 0 — RU
   `Требования к ответу:
-1) Кратко опиши общий уровень активности и прогресс за неделю.
-2) Отметь сильные стороны и позитивные тренды.
-3) Укажи проблемные зоны (что чаще всего пропускалось, где нет прогресса).
-4) Дай 3–5 конкретных и выполнимых рекомендаций на следующую неделю.
-5) Стиль: коротко, по делу, мотивирующе, без "воды". Каждый пункт — с новой строки. Не используй Markdown, списки или жирный шрифт.
+1) Кратко опиши общий уровень активности и прогресс за неделю. Используй 📊 или 🔍.
+2) Отметь сильные стороны и питивные тренды. Добавь ✅, 🌟 или 💪.
+3) Укажи проблемные зоны (что чаще всего пропускалось, где нет прогресса). Используй ⚠️ или 🚧.
+4) Дай 3–5 конкретных и выполнимых рекомендаций на следующую неделю. Начинай каждую с 💡, 🎯 или 📅.
+5) Стиль: коротко, по делу, мотивирующе, без "воды". Каждый пункт — с новой строки. НЕ используй Markdown, списки, жирный шрифт или дефисы в начале строк. Используй только текст и эмодзи для акцента.
 
 Примечание по привычкам:
-- Для положительных привычек (например, "Ходьба"): status = -1 → выполнено, status = 0 → пропущено.
+- Для положительных привычек (например, "Ходьба"): status = -2 → completed, status = 0 → skipped.
 - Для отрицательных привычек (например, "Курение"): status = 1 → успех (воздержался), status = 0 → срыв.
 
 Данные для анализа:`,
+
   // 1 — EN
   `Requirements for your response:
-1) Briefly describe the overall activity level and progress over the past week.
-2) Highlight strengths and positive trends.
-3) Point out problem areas (what is most often skipped or shows no progress).
-4) Give 3–5 specific, actionable recommendations for next week.
-5) Style: short, to the point, motivating, no fluff. Each point on a new line. Do not use Markdown, bullets, or bold text.
+1) Briefly describe the overall activity level and progress over the past week. Use 📊 or 🔍.
+2) Highlight strengths and positive trends. Add ✅, 🌟, or 💪.
+3) Point out problem areas (what is most often skipped or shows no progress). Use ⚠️ or 🚧.
+4) Give 3–5 specific, actionable recommendations for next week. Start each with 💡, 🎯, or 📅.
+5) Style: short, to the point, motivating, no fluff. Each point on a new line. DO NOT use Markdown, bullets, bold text, or leading dashes. Use only plain text and emojis for visual emphasis.
 
 Habit status note:
-- For positive habits (e.g., "Walking"): status = -1 → completed, status = 0 → skipped.
+- For positive habits (e.g., "Walking"): status = -2 → completed, status = 0 → skipped.
 - For negative habits (e.g., "Smoking"): status = 1 → success (abstained), status = 0 → relapse.
 
 Data to analyze:`

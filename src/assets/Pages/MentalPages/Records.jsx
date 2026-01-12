@@ -139,8 +139,8 @@ const Records = () => {
   useEffect(() => {
   const fetchGlobalData = async () => {
     try {
-      const data = await NotificationsManager.getMentalRecordsGlobal();
-      setGlobalData(data.message);
+      const data = await NotificationsManager.getMentalRecordsGlobal() || [{ name: UserData?.name, data: AppData.mentalRecords }];
+      setGlobalData(data);
     } catch (err) {
       // Fallback to local user data only
       setGlobalData([{ name: UserData?.name, data: AppData.mentalRecords }]);
