@@ -1,6 +1,6 @@
 import {AppData, UserData } from './AppData';
 import { serializeData, deserializeData ,saveData} from './SaveHelper';
-import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel} from './HabitsBus';
+import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel,setValidation} from './HabitsBus';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
 
@@ -91,6 +91,7 @@ export async function isUserHasPremium(uid) {
       UserData.premiumEndDate = premiumEndDate;
       UserData.isValidation = isValidation;
       setPremium(hasPremium);
+      setValidation(isValidation);
       console.log(`hasPremium : ${hasPremium} , premium end data : ${premiumEndDate} , isValidation : ${isValidation}` ) ; 
       return { hasPremium, premiumEndDate , isValidation };
     } else {
