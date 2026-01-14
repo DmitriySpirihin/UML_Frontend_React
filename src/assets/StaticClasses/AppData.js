@@ -46,6 +46,7 @@ export class AppData{
   static mentalRecords = [[0,0,0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
   //
   static sleepingLog = {};
+  static todoList = [];
   // methods
   static init(data) {
     if (!data) return;
@@ -87,6 +88,7 @@ export class AppData{
     this.mentalLog = data.mentalLog;
     this.mentalRecords = data.mentalRecords;
     this.sleepingLog = data.sleepingLog;
+    this.todoList = data.todoList;
   } 
   static setPrefs(ind,value){
     this.prefs[ind] = value;
@@ -297,7 +299,7 @@ export class UserData {
    static photo = null;
    static hasPremium = false;
    static premiumEndDate = new Date();
-
+   static isValidation = false;
 
    static Init(id,name,photo){
       this.id = id;
@@ -338,6 +340,7 @@ export class Data{
     this.mentalRecords = AppData.mentalRecords;
     this.sleepingLog = AppData.sleepingLog;
     this.mentalLog = AppData.mentalLog;
+    this.todoList = AppData.todoList;
   }
 }
 

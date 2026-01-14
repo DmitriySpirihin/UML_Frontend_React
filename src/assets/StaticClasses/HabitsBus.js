@@ -30,6 +30,9 @@ export const lastPage$ = new BehaviorSubject('MainMenu');
 export const premium$ = new BehaviorSubject(false);
 export const addNewTrainingDay$ =  new Subject();
 export const recoveryType$ = new BehaviorSubject(0);
+export const isValidation$ = new BehaviorSubject(false);
+
+export const setValidation = (state) => isValidation$.next(state);
 
 export const setConfirmationPanel = (state) => confirmationPanel$.next(state);
 export const setTheme = (theme) => {
@@ -55,6 +58,7 @@ export const setPage = (page) => {
   else if(page.startsWith('Recovery')) bottomBtnPanel$.next('BtnsRecovery');
   else if(page.startsWith('Mental')) bottomBtnPanel$.next('BtnsMental');
   else if(page.startsWith('Sleep')) bottomBtnPanel$.next('BtnsSleep');
+  else if(page.startsWith('ToDo')) bottomBtnPanel$.next('BtnsToDo');
   else bottomBtnPanel$.next('');
 }
 export const setAddPanel = (state) => addPanel$.next(state);

@@ -1,17 +1,16 @@
 import './App.css'
+import { UserData } from './assets/StaticClasses/AppData';
 import { useState,useEffect, Suspense, lazy} from 'react';
-import { useNavigate } from 'react-router-dom';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
 import BtnsRecovery from './assets/Pages/BottomBtns/BtnsRecovery'
 import BtnsMental from './assets/Pages/BottomBtns/BtnsMental'
 import BtnsSleep from './assets/Pages/BottomBtns/BtnsSleep'
+import BtnsToDo from './assets/Pages/BottomBtns/ToDoBtns'
 import NotifyPanel from './assets/Pages/NotifyPanel'
-import { confirmationPanel$ ,addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage,keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
+import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage,keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
-import { checkPendingPaymentOnStartup,fetchUserPremiumStatus } from './assets/StaticClasses/PaymentService';
-import PaymentPendingScreen from './assets/Helpers/CheckPaymentScreen';
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
 const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'));
 const HabitsMain = lazy(() => import('./assets/Pages/HabitsPages/HabitsMain'));
@@ -30,6 +29,7 @@ const Premium = lazy(() => import('./assets/Pages/Premium'));
 const RecoveryMain = lazy(() => import('./assets/Pages/Recovery/RecoveryMain'));
 const BreathingMain = lazy(() => import('./assets/Pages/Recovery/RecoveryCategories'));
 const RecoveryAnalytics = lazy(() => import('./assets/Pages/Recovery/RecoveryAnalitics')); 
+const ToDoMain = lazy(() => import('./assets/Pages/ToDoPages/ToDoMain'));
 
 const MentalMain = lazy(() => import('./assets/Pages/MentalPages/MentalMain'));
 const MathMain = lazy(() => import('./assets/Pages/MentalPages/MathMain'));
@@ -37,6 +37,7 @@ const MemoryMain = lazy(() => import('./assets/Pages/MentalPages/MemoryMain'));
 const LogicMain = lazy(() => import('./assets/Pages/MentalPages/LogicMain'));
 const FocusMain = lazy(() => import('./assets/Pages/MentalPages/FocusMain'));
 const Records = lazy(() => import('./assets/Pages/MentalPages/Records'));
+
 
 const SleepMetrics = lazy(() => import('./assets/Pages/SleepPages/SleepMetrics'));
 const SleepMain = lazy(() => import('./assets/Pages/SleepPages/SleepMain'));
@@ -52,51 +53,6 @@ function App() {
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
-  const [showPendingScreen, setShowPendingScreen] = useState(false);
-
-  // ✅ Define the function ONCE
-  const checkForPendingPayment = async () => {
-    const pendingId = localStorage.getItem('pendingPaymentId');
-    if (pendingId) {
-      localStorage.removeItem('pendingPaymentId'); // consume it
-      setShowPendingScreen(true);
-
-      try {
-        const result = await getPaymentStatus(pendingId);
-        if (result.success && result.payment?.status === 'succeeded') {
-          const status = await fetchUserPremiumStatus();
-          UserData.hasPremium = status.hasPremium;
-          UserData.premiumEndDate = status.premiumEndDate;
-          // Note: you may want to trigger a global update or notify Premium screen
-        }
-      } catch (err) {
-        console.warn('Payment check failed:', err);
-      } finally {
-        setShowPendingScreen(false);
-      }
-    }
-  };
-
-  // ✅ ONE useEffect for payment verification
-  useEffect(() => {
-    const safeCheck = () => {
-      if (showPendingScreen) return;
-      checkForPendingPayment();
-    };
-
-    safeCheck();
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        setTimeout(safeCheck, 1000);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [showPendingScreen]);
 
   // ... rest of your useEffects (subscriptions) — keep these
   useEffect(() => {
@@ -209,11 +165,15 @@ function App() {
       {page === 'SleepMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <SleepMetrics/>
       </Suspense>}
+      {page === 'ToDoMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <ToDoMain/>
+      </Suspense>}
       {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
       {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
       {bottomBtnPanel === 'BtnsRecovery' && !keyboardVisible && <BtnsRecovery/>}
       {bottomBtnPanel === 'BtnsMental' && !keyboardVisible && <BtnsMental/>}
       {bottomBtnPanel === 'BtnsSleep' && !keyboardVisible && <BtnsSleep/>}
+      {bottomBtnPanel === 'BtnsToDo' && !keyboardVisible && <BtnsToDo/>}
     </>
   )
 }

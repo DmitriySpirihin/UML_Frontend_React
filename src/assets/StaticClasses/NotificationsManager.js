@@ -86,11 +86,13 @@ export async function isUserHasPremium(uid) {
      if (data.success) {
       const hasPremium = data.message.hasPremium === true;
       const premiumEndDate = data.message.premiumEndDate ? new Date(data.message.premiumEndDate) : null;
+      const isValidation = data.message.isValidation || false;
       UserData.hasPremium = hasPremium;
       UserData.premiumEndDate = premiumEndDate;
+      UserData.isValidation = isValidation;
       setPremium(hasPremium);
       console.log(`hasPremium : ${hasPremium}, type :  ${typeof(hasPremium)} , premium end data : ${premiumEndDate} , type :  ${typeof(premiumEndDate)}`) ; 
-      return { hasPremium, premiumEndDate };
+      return { hasPremium, premiumEndDate , isValidation };
     } else {
       throw new Error(data.error || 'Unknown error');
     }

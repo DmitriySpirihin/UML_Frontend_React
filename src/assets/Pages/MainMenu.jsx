@@ -1,13 +1,15 @@
 import {useEffect,useState} from 'react'
 import Colors from '../StaticClasses/Colors'
-import { theme$, lang$, devMessage$ ,isPasswordCorrect$,fontSize$,premium$ ,setPage} from '../StaticClasses/HabitsBus'
+import { theme$, lang$, devMessage$ ,isPasswordCorrect$,fontSize$,premium$,isValidation$ ,setPage} from '../StaticClasses/HabitsBus'
 import { AppData,UserData } from '../StaticClasses/AppData'
 //import 'grained'
 import  {NotificationsManager,sendPassword} from '../StaticClasses/NotificationsManager'
-import {FaMoon,FaBrain,FaSpa,FaBookOpen,FaRecycle} from 'react-icons/fa'
+import {FaMoon,FaBrain,FaSpa,FaBookOpen,FaRecycle,FaListAlt,FaCodeBranch} from 'react-icons/fa'
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
+import { PremiumButton } from './Premium'
+import { sendReferalLink } from '../StaticClasses/PaymentService'
 
-const MainMenu = ({ onPageChange }) => {
+const MainMenu = () => {
     const [theme, setThemeState] = useState('dark');
     const [lang, setLang] = useState(AppData.prefs[0]);
     const [fSize, setFontSize] = useState(0);
@@ -20,9 +22,15 @@ const MainMenu = ({ onPageChange }) => {
     const [isPasswordCorrect, setIsPasswordCorrect] = useState(false);
     const [passwordInput, setPasswordInput] = useState(false);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
+    const [isValidation, setIsValidation] = useState(UserData.isValidation);
     useEffect(() => {
           const subscription = premium$.subscribe(setHasPremium);
-          return () => subscription.unsubscribe();
+          const subscription2 = isValidation$.subscribe(setIsValidation);
+          return () => 
+          {
+            subscription.unsubscribe();
+            subscription2.unsubscribe();
+          }
         }, []);
     useEffect(() => {
         const themeSubscription = theme$.subscribe(setThemeState);
@@ -82,7 +90,7 @@ const MainMenu = ({ onPageChange }) => {
                  <textarea style={{borderRadius:'12px',width:'85vw',height:'10vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)}/>
             <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-around'}}>
                 <input style={{borderRadius:'12px',width:'50vw',height:'3vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
-                <button onClick={() => {if(devInputMessage === 'TrainingMain'){onPageChange('TrainingMain');}else {NotificationsManager.sendMessage(devInputMessage,devMessageToAll)}}}>Submit</button>
+                <button onClick={() => {if(devInputMessage === 'TrainingMain'){setPage('TrainingMain');}else {NotificationsManager.sendMessage(devInputMessage,devMessageToAll)}}}>Submit</button>
             </div>
             <div style={{width:'90%', display:'flex',flexDirection:'row', justifyContent:'space-between'}}>
               <button onClick={() => setDevConsolePanel(false)}>Close console</button>
@@ -95,16 +103,18 @@ const MainMenu = ({ onPageChange }) => {
             {passwordInput && <input style={{width:'85vw',height:'2vh',fontSize:'12px',borderRadius:'12px',zIndex:1001}} type="password" onChange={(e) => checkPassword(e.target.value)} />}
             <div style={styles(theme).scrollView}>
                <div style={{height:'1vh',width:'100%'}} onClick={() => {handleClick(true)}} />
+               {!hasPremium && !isValidation && < PremiumButton onClick={() => {sendReferalLink()}}  w = {'95%'} h={'55px'} fSize={'16px'} br={"24px"}
+                langIndex={lang} getPremium={() => {}}  theme={theme} textToShow = {[ 'Пригласи друга 👥 и получи месяц премиум ✨' , 'Invite a friend 👥 and get a month of premium ✨']}  needSparcle={false}/>}
                <MenuCard 
                     text={['Привычки', 'Habits']} 
                     decr={[
-                        'Приложение использует научно обоснованные методы формирования привычек, включая теорию петли привычки (Чарльз Дахигг) и 21-дневное правило формирования привычек (Максвелл Мальц).',
-                        'This app utilizes evidence-based habit formation techniques, including the habit loop theory (Charles Duhigg) and the 21-day rule of habit formation (Maxwell Maltz).'
+                        'Приложение использует научно обоснованные методы формирования привычек, включая теорию петли привычки (Чарльз Дахигг).',
+                        'This app utilizes evidence-based habit formation techniques, including the habit loop theory (Charles Duhigg).'
                     ]} 
                     theme={theme}  
                     lang={lang}
                     fontSize={fSize}
-                    onClick={() => {onPageChange('HabitsMain');playEffects(null);}}
+                    onClick={() => {setPage('HabitsMain');playEffects(null);}}
                     index={0}
                 />
                 <MenuCard 
@@ -120,7 +130,7 @@ const MainMenu = ({ onPageChange }) => {
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
-                    onClick={() => {onPageChange('TrainingMain');playEffects(null);}}
+                    onClick={() => {setPage('TrainingMain');playEffects(null);}}
                     index={1}
                 />
                <MenuCard 
@@ -133,7 +143,7 @@ const MainMenu = ({ onPageChange }) => {
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
-                    onClick={() => {onPageChange('RecoveryMain');playEffects(null);}}
+                    onClick={() => {setPage('RecoveryMain');playEffects(null);}}
                     index={2}
                 />
                 <MenuCard 
@@ -146,7 +156,7 @@ const MainMenu = ({ onPageChange }) => {
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
-                    onClick={() => {onPageChange('MentalMain');playEffects(null);}}
+                    onClick={() => {setPage('MentalMain');playEffects(null);}}
                     index={3}
                 />
                 <MenuCard 
@@ -159,7 +169,7 @@ const MainMenu = ({ onPageChange }) => {
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
-                    onClick={() => {onPageChange('SleepMain');playEffects(null);}}
+                    onClick={() => {setPage('SleepMain');playEffects(null);}}
                     index={4}
                     hasPremium={hasPremium}
                     needBlur={true}
@@ -167,6 +177,25 @@ const MainMenu = ({ onPageChange }) => {
                 
 
                 </MenuCard>
+                <MenuCard 
+  text={['Список задач', 'To do list']} // filled empty first element
+  decr={[
+    'Помогает организовать список дел, установить приоритеты и следить за прогрессом.',
+    'Helps organize a to-do list, set priorities, and track progress.'
+  ]}
+  colorDark="#5a5a5a"        // neutral dark gray instead of purple
+  colorLight="#d3d3d380"     // light gray with transparency
+  colorSpecialDark="#4a4a4a"
+  colorSpecialLight="#c0c0c060"
+  theme={theme} 
+  lang={lang}
+  fontSize={fSize}
+  onClick={() => {setPage('ToDoMain');playEffects(null);}}         // optionally show tooltip or alert
+  index={5}
+  hasPremium={hasPremium}
+  needBlur={false}
+  inDevelopment={true}
+/>
                 <div style={{height:'1vh',width:'100%'}} onClick={() => {handleClick(false)}} />
             </div>
           </div>
@@ -177,7 +206,7 @@ const MainMenu = ({ onPageChange }) => {
 export default MainMenu
 
 function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#294128ff", colorLight = "#7eff7065",
-  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#2790145c",fSize=1, theme,lang, onClick,fontSize,index,hasPremium = false,needBlur= false}){
+  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#2790145c",fSize=1, theme,lang, onClick,fontSize,index,hasPremium = false,needBlur= false,inDevelopment = false}){
     const cardColor = (theme) => {
         if(theme === 'dark') return colorDark;
         else if(theme === 'specialdark') return colorSpecialDark;
@@ -190,6 +219,7 @@ function MenuCard({text = ["Категория", "Category"], decr = ["Скор�
         else if(index === 2) return <FaSpa style={isBack ? backIconStyle : iconStyle}/>
         else if(index === 3) return <FaBrain style={isBack ? backIconStyle : iconStyle}/>
         else if(index === 4) return <FaMoon style={isBack ? backIconStyle : iconStyle}/>
+        else if(index === 5) return <FaListAlt style={isBack ? backIconStyle : iconStyle}/>
     }
     const _style = {
         alignItems: "center",
@@ -238,6 +268,7 @@ function MenuCard({text = ["Категория", "Category"], decr = ["Скор�
             <p style={styles(theme,fontSize).text}>{Array.isArray(decr) ? decr[lang] : decr}</p>
         </div>
          {getIcon(index,true)}
+         {inDevelopment && <div style={{position:'absolute',color: Colors.get('medium', theme),right:'10px',top:'10px'}}><FaCodeBranch style={{fontSize:'16px',color: Colors.get('medium', theme)}}/>{lang === 0 ? ' находться в разработке' : ' In development'}</div>}
         </div>    
     )
 }
@@ -315,4 +346,5 @@ function getInfo(index){
    else if(index === 2) return '';
    else if(index === 3) return '';
    else if(index === 4) return '';
+   else if(index === 5) return '';
 }

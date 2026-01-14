@@ -15,53 +15,80 @@ function LoadPanel() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function initializeApp() {
-      try {
-        // 1. Initialize core systems
-        await initDBandCloud();
-        const outsideTelegram = typeof window !== 'undefined' ? !window.Telegram?.WebApp : true;
-        await initializeTelegramSDK({ mock: outsideTelegram });
+  async function initializeApp() {
+    try {
+      // Initialize core systems
+      await initDBandCloud();
+      const outsideTelegram = typeof window !== 'undefined' ? !window.Telegram?.WebApp : true;
+      await initializeTelegramSDK({ mock: outsideTelegram });
 
-        const { user, languageCode, colorScheme } = getTelegramContext();
+      const { user, languageCode, colorScheme } = getTelegramContext();
 
-        // 2. Set user data
-        if (user) {
-          if (AppData.isFirstStart) {
-            AppData.prefs[0] = languageCode === 'ru' ? 0 : 1;
-            AppData.prefs[1] = colorScheme === 'dark' ? 0 : 2;
-          }
-          UserData.Init(user.id, user.username, user.photo_url || 'images/Ui/Guest.jpg');
-          setUserName(user.username);
-          setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url);
-        } else {
-          UserData.Init(0, AppData.prefs[0] === 0 ? 'гость' : 'guest', 'images/Ui/Guest.jpg');
-          setUserName(AppData.prefs[0] === 0 ? 'гость' : 'guest');
-          setUserPhoto('images/Ui/Guest.jpg');
+      // Set user data
+      if (user) {
+        if (AppData.isFirstStart) {
+          AppData.prefs[0] = languageCode === 'ru' ? 0 : 1;
+          AppData.prefs[1] = colorScheme === 'dark' ? 0 : 2;
         }
-
-        // 3. Load saved app data
-        await loadData();
-        fillEmptyDays();
-        setAllHabits();
-
-        // ✅ 4. CHECK PREMIUM STATUS BEFORE SHOWING MAIN UI
-        if (UserData.id !== 0) {
-          await isUserHasPremium(UserData.id);
-        }
-
-        // ✅ 5. Only now show the app
-        setLoading(false);
-        setTimeout(() => setPage('MainMenu'), 300); // short fade-in
-
-      } catch (error) {
-        console.error('Initialization error:', error);
-        setLoading(false);
-        setTimeout(() => setPage('MainMenu'), 300);
+        UserData.Init(user.id, user.username, user.photo_url || 'images/Ui/Guest.jpg');
+        setUserName(user.username);
+        setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url);
+      } else {
+        UserData.Init(0, AppData.prefs[0] === 0 ? 'гость' : 'guest', 'images/Ui/Guest.jpg');
+        setUserName(AppData.prefs[0] === 0 ? 'гость' : 'guest');
+        setUserPhoto('images/Ui/Guest.jpg');
       }
-    }
 
-    initializeApp();
-  }, []);
+      // Load saved app data
+      await loadData();
+      fillEmptyDays();
+      setAllHabits();
+
+      //HANDLE REFERRAL (only if user is valid and not guest)
+      if (UserData.id !== 0 && UserData.id !== null) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const referrerId = urlParams.get('ref');
+
+        if (referrerId && !isNaN(referrerId) && Number(referrerId) !== UserData.id) {
+          const refKey = `ref_processed_${referrerId}`;
+          if (!localStorage.getItem(refKey)) {
+            try {
+              // Send referral to backend
+              await fetch('/api/record-referral', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  referrerId: Number(referrerId),
+                  newUserId: UserData.id
+                }),
+              });
+              // Mark as processed (prevent duplicate calls)
+              localStorage.setItem(refKey, '1');
+            } catch (err) {
+              console.warn('Referral submission failed:', err);
+            }
+          }
+        }
+      }
+
+      // CHECK PREMIUM STATUS
+      if (UserData.id !== 0) {
+        await isUserHasPremium(UserData.id);
+      }
+
+      // SHOW APP
+      setLoading(false);
+      setTimeout(() => setPage('MainMenu'), 300);
+
+    } catch (error) {
+      console.error('Initialization error:', error);
+      setLoading(false);
+      setTimeout(() => setPage('MainMenu'), 300);
+    }
+  }
+
+  initializeApp();
+}, []);
 
   // Subscribe to theme/lang changes
   useEffect(() => {

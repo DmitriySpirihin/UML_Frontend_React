@@ -1,4 +1,5 @@
-import { UserData } from './AppData';
+import { UserData } from "./AppData";
+
 const now = new Date();
 
 // Create invoice + redirect
@@ -45,92 +46,82 @@ async function createSbpInvoice(userId, plan) {
   }
 }
 
-export async function getPaymentStatus(paymentId) {
-  // ✅ FIXED: include paymentId in URL
-  const res = await fetch(`${API_BASE}/api/payment-status/${paymentId}`);
-  if (!res.ok) throw new Error('Failed to fetch payment status');
-
-  const data = await res.json();
-  if (data.success && data.payment) {
-    const { status, plan, uid } = data.payment;
-
-    if (status === 'succeeded') {
-      UserData.hasPremium = true;
-
-      // ✅ Validate plan
-      if (![1, 2, 3].includes(plan)) {
-        console.error('Unknown plan in payment:', plan);
-        return data;
-      }
-
-      const daysToAdd = plan === 1 ? 365 : plan === 2 ? 90 : 30;
-      const now = new Date();
-      let baseDate = now;
-
-      if (UserData.premiumEndDate) {
-        const currentEnd = new Date(UserData.premiumEndDate);
-        if (!isNaN(currentEnd.getTime()) && currentEnd > now) {
-          baseDate = currentEnd;
-        }
-      }
-
-      const newEndDate = new Date(baseDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-      UserData.premiumEndDate = newEndDate;
-      await saveData?.(); // optional chaining in case saveData is undefined
-    }
+export async function initiateTgStarsPayment(userId, plan) {
+  if (!window.Telegram?.WebApp) {
+    alert('Telegram Stars payments are only available inside Telegram.');
+    return;
   }
-  return data;
-}
-
-export function checkPendingPaymentOnStartup() {
-  const pendingId = localStorage.getItem('pendingPaymentId');
-  if (!pendingId) return;
-
-  localStorage.removeItem('pendingPaymentId');
-
-  const pollStatus = async (attempts = 0) => {
-    if (attempts > 10) return;
-    try {
-      const result = await getPaymentStatus(pendingId);
-      if (result.success && result.payment) {
-        const { status } = result.payment;
-        if (status === 'succeeded') {
-          console.log('✅ Premium activated!');
-          return;
-        }
-        if (['canceled', 'failed'].includes(status)) {
-          console.log('❌ Payment was not completed.');
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn('Polling error (retrying):', err.message);
-    }
-    setTimeout(() => pollStatus(attempts + 1), 3000);
-  };
-
-  pollStatus();
-}
-
-export async function fetchUserPremiumStatus() {
-  const userId = UserData.id;
-  if (!userId) return { hasPremium: false, premiumEndDate: null };
 
   try {
-    const response = await fetch(`${API_BASE}/api/user/premium/${userId}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
-    const data = await response.json();
-    if (data.success) {
-      return {
-        hasPremium: data.hasPremium,
-        premiumEndDate: data.premiumEndDate ? new Date(data.premiumEndDate) : null
-      };
-    } else {
-      throw new Error(data.error);
-    }
-  } catch (error) {
-    console.warn('Failed to fetch premium status:', error);
-    return { hasPremium: false, premiumEndDate: null };
+    const res = await fetch('/api/tg-stars-invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, plan }),
+    });
+
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to create Stars invoice');
+
+    // Use Telegram WebApp to open the invoice (better UX)
+    window.Telegram.WebApp.openTelegramLink(data.invoice_link);
+  } catch (err) {
+    console.error('Stars payment error:', err);
+    alert('Не удалось создать счёт Telegram Stars. Попробуйте позже.');
+    throw err;
   }
 }
+
+export async function initiateTONPayment(userId, plan) {
+  try {
+    const res = await fetch('/api/ton-invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, plan }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to create TON invoice');
+
+    const { address, amount, comment } = data;
+
+    // Build ton:// URL (amount in nanotons)
+    const amountInNano = Math.round(amount * 1e9);
+    const encodedComment = encodeURIComponent(comment);
+    const tonUrl = `ton://transfer/${address}?amount=${amountInNano}&text=${encodedComment}`;
+
+    // Open directly in Telegram Wallet (mobile-friendly!)
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.openTelegramLink(tonUrl);
+    } else {
+      // Fallback: open in browser (will prompt Tonkeeper or Telegram)
+      window.open(tonUrl, '_blank');
+    }
+  } catch (err) {
+    console.error('TON payment error:', err);
+    alert('Не удалось открыть платеж TON. Попробуйте позже.');
+    throw err;
+  }
+}
+
+// frontend/utils/referrals.js
+export async function sendReferalLink() {
+  if (!window.Telegram?.WebApp) {
+    alert('Available only in Telegram');
+    return;
+  }
+
+  const uid = UserData.id;
+  if (!uid) {
+    alert('User ID not found');
+    return;
+  }
+
+  const referalLink = `${window.location.origin}/?ref=${uid}`;
+
+  // Open Telegram share sheet (best UX)
+  window.Telegram.WebApp.openTelegramLink(
+    `https://t.me/share/url?url=${encodeURIComponent(referalLink)}&text=${encodeURIComponent(
+      'Привет! Присоединяйся к UltyMyLife и получим оба по месяцу Premium бесплатно! 🎁'
+    )}`
+  );
+}
+
