@@ -108,7 +108,6 @@ export async function sendReferalLink() {
     alert('Available only in Telegram');
     return;
   }
-
   const uid = UserData.id;
   if (!uid) {
     alert('User ID not found');

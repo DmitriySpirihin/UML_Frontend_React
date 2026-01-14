@@ -87,7 +87,6 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
     return;
   }
   try {
-
     if (currentPaymentMethod === 1) await initiateSbpPayment(UserData.id, chosenCard);
     else if (currentPaymentMethod === 2) await initiateTgStarsPayment(UserData.id, chosenCard);
     else if (currentPaymentMethod === 3) await initiateTONPayment(UserData.id, chosenCard);
@@ -142,7 +141,7 @@ useEffect(() => {
                  <div style={{...styles(theme).text,alignSelf:'start',fontStyle:'italic',textDecoration:'underline',paddingLeft:'10px'}} onClick={() => setNeedToShowPaymentPolicy(true)}>{langIndex === 0 ? 'Читать весь текст' : 'Read all text'}</div>
                </div>
                <div>
-               < PremiumButton onClick={() => getPremium()} langIndex={langIndex} getPremium={() => {}}  theme={theme} textToShow = {[ 'Оплатить' + ' ' + tarifs[currentPaymentMethod - 1][chosenCard - 1] , 'Pay'+ ' ' + tarifs[currentPaymentMethod - 1][chosenCard - 1]]}  needSparcle={false}/>
+               < PremiumButton clickHandler={() => getPremium()} langIndex={langIndex}  theme={theme} textToShow = {[ 'Оплатить' + ' ' + tarifs[currentPaymentMethod - 1][chosenCard - 1] , 'Pay'+ ' ' + tarifs[currentPaymentMethod - 1][chosenCard - 1]]}  needSparcle={false}/>
                
                <button style={{...styles(theme).button,height:'40px',marginTop:'30px',borderRadius:'20px',border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setNeedAgreement(false)}>{langIndex === 0 ? 'Назад' : 'Back'}</button>    
              </div>
@@ -223,7 +222,7 @@ useEffect(() => {
               
               </div>
 
-             < PremiumButton langIndex={langIndex} getPremium={setNeedAgreement}  theme={theme} needSparcle={true}/>
+             < PremiumButton langIndex={langIndex} clickHandler={() => setNeedAgreement(true)}  theme={theme} needSparcle={true}/>
              <button style={{...styles(theme).button,height:'40px',borderRadius:'20px',border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setPage(lastPage$.value)}>{langIndex === 0 ? 'Оформлю позднее' : 'I will do it later'}</button>    
 
              <div style={{display: 'flex',flexDirection: 'row',justifyContent: 'center',alignItems: 'center',gap: '12px',marginTop: '16px',padding: '0 10px',}}>
@@ -357,9 +356,10 @@ function playEffects(sound){
   if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
 
-export function PremiumButton({ langIndex, getPremium, theme,w = '90%',h='87px',fSize='20px',br="30px", textToShow = [ 'Получить премиум' , 'Get Premium'] , needSparcle}) {
+export function PremiumButton({ langIndex, clickHandler, theme,w = '90%',h='87px',fSize='20px',br="30px", textToShow = [ 'Получить премиум' , 'Get Premium'] , needSparcle}) {
   return (
     <button
+     onClick ={clickHandler}
       style={{
         ...styles(theme).button,
         position: 'relative',
@@ -369,17 +369,14 @@ export function PremiumButton({ langIndex, getPremium, theme,w = '90%',h='87px',
         padding: '14px 32px',
         fontSize: '17px',
         fontWeight: '700',
-        color: '#ffffff',
         backgroundColor: 'transparent',
         border: 'none',
-        borderRadius: '30px',
         cursor: 'pointer',
         overflow: 'hidden',
         width:w,
         height:h,
          marginTop:'5px',
         color: Colors.get('mainText', theme),
-        backgroundColor:Colors.get('background', theme),
         borderRadius:br,
         marginBottom:'5px',
         zIndex: 1,
@@ -396,7 +393,6 @@ export function PremiumButton({ langIndex, getPremium, theme,w = '90%',h='87px',
         e.currentTarget.style.boxShadow = '0 6px 20px rgba(21, 79, 236, 0.4)';
         e.currentTarget.style.filter = 'brightness(1)';
       }}
-      onClick={() => getPremium(true)}
     >
       {/* Animated Gradient Layer */}
       <div

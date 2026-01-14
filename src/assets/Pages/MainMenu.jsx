@@ -103,8 +103,8 @@ const MainMenu = () => {
             {passwordInput && <input style={{width:'85vw',height:'2vh',fontSize:'12px',borderRadius:'12px',zIndex:1001}} type="password" onChange={(e) => checkPassword(e.target.value)} />}
             <div style={styles(theme).scrollView}>
                <div style={{height:'1vh',width:'100%'}} onClick={() => {handleClick(true)}} />
-               {!hasPremium && !isValidation && < PremiumButton onClick={() => {sendReferalLink()}}  w = {'95%'} h={'55px'} fSize={'16px'} br={"24px"}
-                langIndex={lang} getPremium={() => {}}  theme={theme} textToShow = {[ 'Пригласи друга 👥 и получи месяц премиум ✨' , 'Invite a friend 👥 and get a month of premium ✨']}  needSparcle={false}/>}
+               {!hasPremium && !isValidation && < PremiumButton clickHandler={() => sendReferalLink()}  w = {'95%'} h={'55px'} fSize={'16px'} br={"24px"}
+                langIndex={lang}  theme={theme} textToShow = {[ 'Пригласи друга 👥 и получи месяц премиум ✨' , 'Invite a friend 👥 and get a month of premium ✨']}  needSparcle={false}/>}
                <MenuCard 
                     text={['Привычки', 'Habits']} 
                     decr={[
