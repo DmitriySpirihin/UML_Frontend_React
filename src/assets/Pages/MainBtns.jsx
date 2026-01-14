@@ -227,9 +227,9 @@ const AdditionalPanel = ({theme,langIndex,isOpen,setIsOpen,panelNum}) => {
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    initial={{ x: '110%'}}
-                    animate={{ x: '-10%'}}
-                    exit={{ x: '110%'}}
+                    initial={{ x: '100%'}}
+                    animate={{ x: '0%'}}
+                    exit={{ x: '100%'}}
                     transition={{
                         type: 'tween',
                         duration: 0.2

@@ -102,29 +102,37 @@ const lastValidationTimeRef = useRef(0);
 useEffect(() => {
   if (!needToValidatePayment) return;
 
-  const now = Date.now();
-  if (now - lastValidationTimeRef.current < 20000) {
-    // Skip: validated less than 20s ago
-    return;
-  }
+  // Schedule validation after 50 seconds
+  const timer = setTimeout(async () => {
+    const now = Date.now();
+    // Double-check cooldown (in case state changed during wait)
+    if (now - lastValidationTimeRef.current < 50000) {
+      return;
+    }
 
-  lastValidationTimeRef.current = now;
+    lastValidationTimeRef.current = now;
 
-  const validate = async () => {
     try {
       const { hasPremium, premiumEndDate, isValidation } = await isUserHasPremium(UserData.id);
       if (hasPremium || (!hasPremium && !isValidation)) {
-        setShowPopUpPanel(langIndex === 0 ? 'Поздравляем! Подписка активирована!' : ' Congratulations! Subscription activated!', 4000, true);
+        setShowPopUpPanel(
+          langIndex === 0 
+            ? 'Поздравляем! Подписка активирована!' 
+            : 'Congratulations! Subscription activated!',
+          4000,
+          true
+        );
         setNeedToValidatePayment(false);
         setValidation(false);
       }
     } catch (error) {
       console.error('Validation failed:', error);
     }
-  };
+  }, 50000); // Wait 50 seconds before validating
 
-  validate();
-}, [needToValidatePayment]);
+  // Cleanup timeout if dependency changes or component unmounts
+  return () => clearTimeout(timer);
+}, [needToValidatePayment, langIndex, UserData.id]);
     
     
     return (

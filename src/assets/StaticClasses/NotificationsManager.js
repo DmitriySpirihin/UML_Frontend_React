@@ -91,7 +91,7 @@ export async function isUserHasPremium(uid) {
       UserData.premiumEndDate = premiumEndDate;
       UserData.isValidation = isValidation;
       setPremium(hasPremium);
-      console.log(`hasPremium : ${hasPremium}, type :  ${typeof(hasPremium)} , premium end data : ${premiumEndDate} , type :  ${typeof(premiumEndDate)}`) ; 
+      console.log(`hasPremium : ${hasPremium} , premium end data : ${premiumEndDate} , isValidation : ${isValidation}` ) ; 
       return { hasPremium, premiumEndDate , isValidation };
     } else {
       throw new Error(data.error || 'Unknown error');
