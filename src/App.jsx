@@ -1,5 +1,5 @@
 import './App.css'
-import { UserData } from './assets/StaticClasses/AppData';
+import { AppData, UserData } from './assets/StaticClasses/AppData';
 import { useState,useEffect, Suspense, lazy} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
@@ -53,6 +53,8 @@ function App() {
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
+  const lang = AppData.prefs[0];
+  const isTechicalWorks = true;
 
   // ... rest of your useEffects (subscriptions) — keep these
   useEffect(() => {
@@ -87,6 +89,13 @@ function App() {
 
   return (
     <>
+      {
+        isTechicalWorks && 
+        <div onClick={(e) => {e.stopPropagation();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'space-around',alignItems:'center',
+          width:'100%',height:'100%',left:'0',top:'0',backgroundColor:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)',zIndex:9999}}>
+          <div style={{...styles(theme).mainText,fontSize:'20px',whiteSpace:'pre-line',textAlign:'center'}}>{lang === 0 ? '🔧 Технические работы на сервере \n скоро исправим \n пожалуйста, попробуйте позже' : '🔧 Technical works is underway on the server \n will be fixed soon \n please try again later'}</div>
+        </div> 
+      }
       {page !== 'LoadPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <MainBtns/>
       </Suspense>}
@@ -204,3 +213,57 @@ const SuspenseSpinner = ({theme}) => {
 }
 
 export default App
+
+const styles = (theme,fontSize) => ({
+    container :
+   {
+     backgroundColor: Colors.get('background', theme),
+     display: "flex",
+     flexDirection: "column",
+     justifyContent: "start",
+     overflow:'hidden',
+     alignItems: "center",
+     height: "100vh",
+     width: "100vw",
+     fontFamily: "Segoe UI",
+  },
+  mainText :
+  {
+    textAlign: "left",
+    marginBottom: "5px",
+    fontSize: fontSize === 0 ? "14px" : "16px",
+    color: Colors.get('mainText', theme),
+  },
+  cardText :
+  {
+    textAlign: "left",
+    marginBottom: "5px",
+    fontSize: fontSize === 0 ? "14px" : "16px",
+    color: Colors.get('mainText', theme),
+    marginLeft: "30px"
+  },
+  text :
+  {
+    textAlign: "left",
+    fontSize: fontSize === 0 ? "10px" : "12px",
+    color: Colors.get('subText', theme),
+    marginLeft: "30px"
+  },
+  scrollView:
+  {
+    width: "95vw",
+    maxHeight: "90vh",
+    overflowY: "scroll",
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+      btn:
+      {
+         width:'70%',
+         height:'40px',
+         borderRadius:'12px',
+         fontSize: fontSize === 0 ? '13px' : '14px',
+         color:Colors.get('mainText', theme),
+         backgroundColor:Colors.get('simplePanel',theme)
+      }
+})

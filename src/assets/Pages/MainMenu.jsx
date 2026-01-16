@@ -169,7 +169,7 @@ const MainMenu = () => {
                     theme={theme} 
                     lang={lang}
                     fontSize={fSize}
-                    onClick={() => {setPage('SleepMain');playEffects(null);}}
+                    onClick={() => {}}
                     index={4}
                     hasPremium={hasPremium}
                     needBlur={true}
@@ -268,8 +268,14 @@ function MenuCard({text = ["Категория", "Category"], decr = ["Скор�
             <p style={styles(theme,fontSize).text}>{Array.isArray(decr) ? decr[lang] : decr}</p>
         </div>
          {getIcon(index,true)}
-         {inDevelopment && <div style={{position:'absolute',color: Colors.get('medium', theme),right:'10px',top:'10px'}}><FaCodeBranch style={{fontSize:'16px',color: Colors.get('medium', theme)}}/>{lang === 0 ? ' находться в разработке' : ' In development'}</div>}
-        </div>    
+         {
+           inDevelopment && 
+                  <div onClick={(e) => {e.stopPropagation();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'space-around',alignItems:'center',
+                    width:'100%',height:'100%',left:'0',top:'0',backdropFilter:'blur(8px)',zIndex:2}}>
+                    <div style={{...styles(theme,fSize).mainText}}><FaCodeBranch style={{fontSize:'16px',color: Colors.get('medium', theme)}}/>{lang === 0 ? ' находться в разработке' : ' In development'}</div>
+                    <div style={{...styles(theme,fSize).text}}> {lang === 0 ? 'Список дел и цели, тест будет доступен в ближайшее время для премиум пользователей' : 'Todo list and goals , Test will be available soon for premium users'} </div>
+        </div>   }
+        </div> 
     )
 }
 
