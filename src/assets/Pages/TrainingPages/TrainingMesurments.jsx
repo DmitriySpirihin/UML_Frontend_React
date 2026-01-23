@@ -12,83 +12,11 @@ import { MeasurmentsIcon } from '../../Helpers/MeasurmentsIcons.jsx'
 import TrainingMeasurmentsOveview from './TrainingMeasurmentsOverView.jsx'
 import TrainingMeasurmentsAnalitics from './TrainingMeasurmentsAnalitics.jsx'
 import { VolumeTabs } from '../../Helpers/TrainingAnaliticsTabs';
+import ScrollPicker from '../../Helpers/ScrollPicker.jsx'
 
 // --- SCROLL PICKER COMPONENT ---
 const ITEM_HEIGHT = 40;
 
-const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '60px' }) => {
-  const scrollRef = useRef(null);
-  const [isScrolling, setIsScrolling] = useState(false);
-
-  // Scroll to initial value on mount or when value updates externally
-  useEffect(() => {
-    if (scrollRef.current) {
-      const selectedIndex = items.findIndex(item => item === value);
-      if (selectedIndex !== -1) {
-        scrollRef.current.scrollTop = selectedIndex * ITEM_HEIGHT;
-      }
-    }
-  }, [value, items]); // Add dependencies to sync if external state changes
-
-  const handleScroll = (e) => {
-    // We utilize scroll snapping via CSS, but we need to update state when scroll stops
-    // Using a timeout to detect "scroll end" is a common React pattern, 
-    // but for simple snapping, we can calculate based on position.
-    const scrollTop = e.target.scrollTop;
-    const index = Math.round(scrollTop / ITEM_HEIGHT);
-    const validIndex = Math.max(0, Math.min(index, items.length - 1));
-    
-    // Only trigger onChange if we are close to the snap point (optional optimization)
-    if (items[validIndex] !== value) {
-        // Debouncing this might be necessary for heavy apps, but fine here
-        onChange(items[validIndex]);
-    }
-  };
-
-  return (
-    <div style={{ position: 'relative', height: ITEM_HEIGHT * 3, width: width, overflow: 'hidden' }}>
-      {/* Selection Highlight Bar */}
-      <div style={{
-        position: 'absolute',
-        top: ITEM_HEIGHT, left: 0, right: 0, height: ITEM_HEIGHT,
-        borderRadius: '8px',
-        backgroundColor: Colors.get('iconsHighlited', theme),
-        opacity: 0.15, pointerEvents: 'none', zIndex: 0
-      }} />
-      
-      {/* Scrollable Container */}
-      <div 
-        ref={scrollRef}
-        onScroll={handleScroll}
-        style={{
-          height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory',
-          scrollbarWidth: 'none', msOverflowStyle: 'none',
-          paddingTop: ITEM_HEIGHT, paddingBottom: ITEM_HEIGHT,
-          scrollBehavior: 'smooth'
-        }}
-        className="no-scrollbar"
-      >
-        {items.map((item, i) => (
-          <div 
-            key={i} 
-            style={{
-              height: ITEM_HEIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              scrollSnapAlign: 'center', // Changed to center for better snapping
-              fontSize: item === value ? '18px' : '14px',
-              fontWeight: item === value ? 'bold' : 'normal',
-              color: item === value ? Colors.get('mainText', theme) : Colors.get('subText', theme),
-              opacity: item === value ? 1 : 0.4,
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {item}{suffix}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
 
 // --- CONSTANTS & HELPERS ---
 const names = [
@@ -100,7 +28,7 @@ const names = [
 ]
 
 const now = new Date();
-const months = [['янв', 'фев', 'март', 'апр', 'май', 'июнь', 'июль', 'авг', 'сент', 'окт', 'нояб', 'дек'], ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']];
+const months = [['янв', 'фев', 'март', 'апр', 'май', 'июнь', 'июль', 'авг', 'сент', 'окт', 'нояб', 'дек','',''], ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec','','']];
 const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health'], ['', ''], ['','']]
 
 const generateRange = (start, end, step = 1) => {
@@ -149,11 +77,11 @@ const TrainingMesurments = () => {
     const [goal, setGoal] = useState(AppData.pData.goal);
 
     // --- GENERATED LISTS FOR PICKERS ---
-    const yearsList = useMemo(() => generateRange(1950, now.getFullYear() + 1), []);
+    const yearsList = useMemo(() => generateRange(2010, now.getFullYear() + 1), []);
     // Dynamic days list based on month/year would be ideal, but static 1-31 with clamping is safer for scroll
-    const daysList = useMemo(() => generateRange(1, 31), []); 
+    const daysList = useMemo(() => generateRange(1, 33), []); 
     const intList = useMemo(() => generateRange(0, 300), []);
-    const decList = useMemo(() => generateRange(0, 9), []);
+    const decList = useMemo(() => generateRange(0, 11), []);
     
     // Personal Data Lists
     const agesList = useMemo(() => generateRange(10, 100), []);
