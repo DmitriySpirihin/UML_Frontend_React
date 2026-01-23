@@ -40,8 +40,8 @@ const styles = (theme, fSize) => ({
     flexDirection: 'column',
     justifyContent: 'start',
     alignItems: 'center',
-    height: '88vh',
-    marginTop:'110px',
+    height: '89vh',
+    marginTop:'120px',
     width: '100vw',
     fontFamily: 'Segoe UI',
   }
