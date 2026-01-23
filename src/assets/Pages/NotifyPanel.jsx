@@ -1,256 +1,327 @@
-
-import { AppData,UserData } from '../StaticClasses/AppData.js';
-import {allHabits} from '../Classes/Habit';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion'; // Анимации
+import { AppData, UserData } from '../StaticClasses/AppData.js';
+import { allHabits } from '../Classes/Habit';
 import Colors from '../StaticClasses/Colors';
-import { theme$, lang$,setPage$,setShowPopUpPanel,notify$,fontSize$,setCurrentBottomBtn,setAddPanel,setNotifyPanel} from '../StaticClasses/HabitsBus';
-import { useState , useEffect, useRef} from 'react';
-import {NotificationsManager} from '../StaticClasses/NotificationsManager';
-import {FaBackspace} from 'react-icons/fa'
-import {MdDone} from 'react-icons/md'
+import { theme$, lang$, setPage$, setShowPopUpPanel, notify$, fontSize$, setCurrentBottomBtn, setAddPanel, setNotifyPanel } from '../StaticClasses/HabitsBus';
+import { NotificationsManager } from '../StaticClasses/NotificationsManager';
+import { MdDone, MdClose, MdCheck } from 'react-icons/md';
 
 const clickSound = new Audio('Audio/Click.wav');
+
+// --- СТИЛИ (Наверху) ---
+const styles = (theme, isSliderOn = false, fSize = 0) => {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const activeColor = isLight ? '#007AFF' : '#0A84FF';
+    const panelBg = isLight ? '#FFFFFF' : '#1C1C1E';
+    const subTextCol = Colors.get('subText', theme);
+
+    return {
+        container: {
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', // Чуть темнее фон
+            backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 3000, padding: '20px',
+        },
+        panel: {
+            display: 'flex', flexDirection: 'column',
+            alignItems: "center", justifyContent: "space-between",
+            borderRadius: "36px", // Более скругленные углы
+            border: isLight ? '1px solid rgba(255,255,255,0.8)' : `1px solid ${Colors.get('border', theme)}`,
+            backgroundColor: panelBg,
+            boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+            width: "90vw", maxWidth: '360px', height: "auto", minHeight: '480px',
+            overflow: 'hidden', paddingBottom: '20px'
+        },
+        
+        // --- БАРАБАН ВРЕМЕНИ ---
+        timePickerWrapper: {
+            position: 'relative',
+            display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+            height: '220px', width: '100%',
+            // Градиентная маска для эффекта 3D барабана
+            maskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)',
+        },
+        highlightBar: {
+            position: 'absolute', top: '50%', left: '15%', right: '15%', height: '60px',
+            transform: 'translateY(-50%)',
+            backgroundColor: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.08)',
+            borderRadius: '16px', pointerEvents: 'none',
+            border: isLight ? '1px solid rgba(0,0,0,0.05)' : 'none'
+        },
+        scroller: {
+            height: '100%', width: '80px', overflowY: 'auto',
+            scrollbarWidth: 'none', msOverflowStyle: 'none',
+            scrollSnapType: 'y mandatory',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            padding: '0'
+        },
+        timeItem: {
+            height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '36px', fontWeight: '600', scrollSnapAlign: 'center',
+            color: Colors.get('mainText', theme), transition: 'all 0.2s ease',
+            flexShrink: 0, fontVariantNumeric: 'tabular-nums' // Чтобы цифры не прыгали по ширине
+        },
+
+        // --- ДНИ НЕДЕЛИ ---
+        daysContainer: {
+            display: 'flex', flexDirection: 'row', justifyContent: 'space-between',
+            width: '90%', padding: '10px 0', gap: '6px', marginBottom: '15px'
+        },
+        dayCircle: {
+            width: '38px', height: '38px', borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+            transition: 'all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+        },
+
+        // --- НОВАЯ НИЖНЯЯ ПАНЕЛЬ (ISLAND) ---
+        bottomIsland: {
+            display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+            width: '90%', height: '70px',
+            backgroundColor: isLight ? '#F2F4F6' : '#2C2C2E', // Выделенный блок
+            borderRadius: '28px',
+            padding: '0 10px',
+            boxSizing: 'border-box'
+        },
+        
+        // Кнопка закрытия (Круглая)
+        closeBtn: {
+            width: '50px', height: '50px', borderRadius: '25px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backgroundColor: isLight ? '#FFFFFF' : '#3A3A3C',
+            color: Colors.get('icons', theme), cursor: 'pointer',
+            boxShadow: isLight ? '0 4px 10px rgba(0,0,0,0.05)' : 'none'
+        },
+
+        // Свитчер (по центру)
+        switchWrapper: {
+            display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1
+        },
+        switch: {
+            position: 'relative', width: '56px', height: '34px',
+            backgroundColor: isSliderOn ? activeColor : (isLight ? '#E5E5EA' : '#48484A'),
+            borderRadius: '20px', cursor: 'pointer', transition: 'background-color 0.3s ease'
+        },
+        switchKnob: {
+            position: 'absolute', top: '3px', left: isSliderOn ? '25px' : '3px',
+            width: '28px', height: '28px', borderRadius: '50%',
+            backgroundColor: '#FFFFFF',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+            transition: 'left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)' // Пружинистый эффект
+        },
+
+        // Кнопка сохранения (Большая, яркая)
+        saveBtn: {
+            width: '50px', height: '50px', borderRadius: '25px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backgroundColor: activeColor,
+            color: '#FFFFFF', cursor: 'pointer',
+            boxShadow: `0 4px 15px ${activeColor}55`
+        }
+    }
+}
+
 const NotifyPanel = () => {
     const [theme, setThemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-    const [fSize,setFontSize] = useState(0);
-    const [hour,setHour] = useState(12);
-    const [minute,setMinute] = useState(0);
-    const [page,setPage] = useState('Habit');
-    const [notify,setNotify] = useState(AppData.notify);
-    const [daysOfWeek,setDaysOfWeek] = useState([true,true,true,true,true,false,false]);
-    const [cron,setCron] = useState('10 12 * * 1,2,3,4,5');
-    const [isSliderOn,setIsSliderOn] = useState(false);
-    const daysNames = [['пн','вт','ср','чт','пт','сб','вс'],['mon','tue','wed','thu','fri','sat','sun']];
+    const [fSize, setFontSize] = useState(0);
+    const [hour, setHour] = useState(12);
+    const [minute, setMinute] = useState(0);
+    const [page, setPage] = useState('Habit');
+    const [notify, setNotify] = useState(AppData.notify);
+    const [daysOfWeek, setDaysOfWeek] = useState([true, true, true, true, true, false, false]);
+    const [cron, setCron] = useState('10 12 * * 1,2,3,4,5');
+    const [isSliderOn, setIsSliderOn] = useState(false);
+    
+    const daysNames = [['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'], ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']];
+    const hours = Array.from({ length: 24 }, (_, i) => i);
+    const minutes = Array.from({ length: 60 }, (_, i) => i);
 
-    const hours = Array.from({length: 24}, (_, i) => i);
-    const minutes = Array.from({length: 60}, (_, i) => i);
-    const scrollToSelect = (ref,value) => {
-      if(ref.current){
-        const itemHeight = 70;
-        ref.current.scrollTop = value * itemHeight;
-        setCron(getCronExpression(daysOfWeek,hour,minute));
-      }
-    };
     const hoursRef = useRef(null);
     const minutesRef = useRef(null);
+
+    // --- ЛОГИКА СКРОЛЛА (БЕЗ ЛАГОВ) ---
+    const itemHeight = 60; 
+
+    // Функция только для начальной установки позиции
+    const setInitialScroll = () => {
+        if(hoursRef.current) hoursRef.current.scrollTop = hour * itemHeight;
+        if(minutesRef.current) minutesRef.current.scrollTop = minute * itemHeight;
+    };
+
     useEffect(() => {
-      scrollToSelect(hoursRef,hour);
-      scrollToSelect(minutesRef,minute);
-    }, [hour,minute]);
-    useEffect(() => {
-        const subscription = setPage$.subscribe(setPage);  
-        return () => subscription.unsubscribe();
-    }, []);
-    useEffect(() => {
-        const subscription = theme$.subscribe(setThemeState);  
-        return () => subscription.unsubscribe();
-    }, []);
-    useEffect(() => {
-        const subscription = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));  
-        const subscription2 = fontSize$.subscribe(setFontSize);
-        return () => {
-          subscription.unsubscribe();
-          subscription2.unsubscribe();}
-    }, []);
-    useEffect(() => {
-        const subscription = notify$.subscribe(setNotify);  
-        return () => subscription.unsubscribe();
+        // Парсим крон при старте
+        stringToCron(page, setCron, setHour, setMinute, setDaysOfWeek, setIsSliderOn);
+        
+        // Скроллим 1 раз через 50мс
+        setTimeout(() => {
+            setInitialScroll();
+        }, 50);
     }, []); 
-    
-  const setDay = (index) => {
-    const updatedDays = [...daysOfWeek];
-    updatedDays[index] = !updatedDays[index];
-  
-    let falseCount = updatedDays.filter(day => !day).length;
-    if (falseCount === 6 && daysOfWeek[index]) return;
-  
-    const newDays = [...updatedDays];
-    setDaysOfWeek(newDays);
-    setCron(getCronExpression(newDays, hour, minute));
-  };
-    const setNotification = () => {
-      /////
-      if(page.startsWith("H"))habitReminder(langIndex,cron,hour,minute,true);
-      if(page.startsWith("T"))trainingReminder(langIndex,cron,hour,minute);
+
+    // Обновляем только CRON, не трогаем скролл (чтобы не было конфликта с пальцем)
+    useEffect(() => {
+        setCron(getCronExpression(daysOfWeek, hour, minute));
+    }, [hour, minute, daysOfWeek]);
+
+    useEffect(() => { const sub = setPage$.subscribe(p => { if(typeof p === 'string') setPage(p); }); return () => sub.unsubscribe(); }, []);
+    useEffect(() => { const sub = theme$.subscribe(setThemeState); return () => sub.unsubscribe(); }, []);
+    useEffect(() => { const sub = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1)); const sub2 = fontSize$.subscribe(setFontSize); return () => { sub.unsubscribe(); sub2.unsubscribe(); } }, []);
+    useEffect(() => { const sub = notify$.subscribe(setNotify); return () => sub.unsubscribe(); }, []);
+
+    const setDay = (index) => {
+        const updatedDays = [...daysOfWeek];
+        updatedDays[index] = !updatedDays[index];
+        let falseCount = updatedDays.filter(day => !day).length;
+        if (falseCount === 7) return; 
+        setDaysOfWeek(updatedDays);
+    };
+
+    const handleSave = () => {
+        if (page.startsWith("H")) habitReminder(langIndex, cron, hour, minute, true);
+        if (page.startsWith("T")) trainingReminder(langIndex, cron, hour, minute);
+        closePanel();
     }
+
     const closePanel = () => {
-      setAddPanel('');
-      setCurrentBottomBtn(0);
-      setNotifyPanel(false);
+        setAddPanel('');
+        setCurrentBottomBtn(0);
+        setNotifyPanel(false);
     }
-      useEffect(() => {
-      stringToCron(page, setCron, setHour, setMinute, setDaysOfWeek,setIsSliderOn);
-    }, []);
+
+    // Обработчик скролла (плавный)
+    const handleScroll = (e, setTimeFn, max) => {
+        const scrollTop = e.target.scrollTop;
+        const index = Math.round(scrollTop / itemHeight);
+        if (index >= 0 && index < max) {
+            setTimeFn(index);
+        }
+    };
+
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const activeColor = isLight ? '#007AFF' : '#0A84FF';
+
     return (
         <div style={styles(theme).container}>
-            <div style={styles(theme).panel}>
-               <p style={styles(theme,false,fSize).subText}>{getInfoText(langIndex)}</p>
-               {/*time picker*/}
-               <div style={styles(theme).timeContainer}>
-                 <div style={styles(theme).time} ref = {hoursRef} onScroll={(e) => {
-                  const newHour = Math.round(e.target.scrollTop / 70);
-                  if(newHour != hour) setHour(newHour);
-                 }}> {hours.map((h) => <div key={h} style={{height:'70',lineHeight:'70px',fontSize:'28px',scrollSnapAlign:'start',color:Colors.get('mainText', theme)}}>{h.toString()}</div>)}</div>
-                 <div style={{...styles(theme).time,borderLeft:`2px solid ${Colors.get('border', theme)}`}} ref = {minutesRef} onScroll={(e) => {
-                  const newMinute = Math.round(e.target.scrollTop / 70);
-                  if(newMinute != minute) setMinute(newMinute);
-                 }}> {minutes.map((m) => <div key={m} style={{height:'70',lineHeight:'70px',fontSize:'28px',scrollSnapAlign:'start',color:Colors.get('mainText', theme)}}>{m.toString().padStart(2, '0')}</div>)}</div>
-               </div>
-               {/*days picker*/}
-               <div style={styles(theme).daysContainer}>
-                 <div style={{backgroundColor:daysOfWeek[0] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => {setDay(0)}} >{daysNames[langIndex][0]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[1] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => {setDay(1)}} >{daysNames[langIndex][1]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[2] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => {setDay(2)}} >{daysNames[langIndex][2]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[3] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => {setDay(3)}} >{daysNames[langIndex][3]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[4] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => {setDay(4)}} >{daysNames[langIndex][4]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[5] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => {setDay(5)}} >{daysNames[langIndex][5]}</p></div>
-                 <div style={{backgroundColor:daysOfWeek[6] ? Colors.get('iconsDisabled', theme) : "transparent",display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'21px',width:'42px',height:'42px',fontWeight:'bold'}}><p style={{...styles(theme).text,fontSize:'18px'}}
-                 onClick={() => {setDay(6)}} >{daysNames[langIndex][6]}</p></div>
-               </div>
-               
-               <div style={{display:'flex',width:'90%',flexDirection:'row',alignItems:'space-between',justifyContent:'center'}}>
-                <FaBackspace onClick={() => {closePanel();}} style={{fontSize:'28px',width:'30%',color:Colors.get('icons', theme)}}></FaBackspace>
-                <MdDone onClick={() => {setNotification();}} style={{fontSize:'28px',width:'30%',color:Colors.get('icons', theme),paddingRight:'18px'}}></MdDone>
-                <label style={{...styles(theme).switch}}>
-                  <input type="checkbox" style={styles(theme).input} checked={isSliderOn} onChange={() => {setIsSliderOn(!isSliderOn);toggleNotify(page,!isSliderOn,langIndex,cron,hour,minute);}} />
-                  <span style={styles(theme,isSliderOn).slider}></span>
-                  <span style={styles(theme,isSliderOn).sliderBefore}></span>
-                </label>
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                style={styles(theme).panel}
+            >
                 
-               </div>
-               
-            </div>
+                {/* Заголовок */}
+                <div style={{padding: '25px 20px 0 20px', width: '100%', boxSizing: 'border-box'}}>
+                    <p style={styles(theme, false, fSize).subText}>{getInfoText(langIndex)}</p>
+                </div>
+
+                {/* БАРАБАН */}
+                <div style={styles(theme).timePickerWrapper}>
+                    <div style={styles(theme).highlightBar} />
+                    
+                    {/* Часы */}
+                    <div style={styles(theme).scroller} ref={hoursRef} onScroll={(e) => handleScroll(e, setHour, 24)}>
+                        <div style={{height: 80, flexShrink: 0}} /> 
+                        {hours.map((h) => (
+                            <div key={h} style={{
+                                ...styles(theme).timeItem, 
+                                opacity: h === hour ? 1 : 0.3, 
+                                transform: h === hour ? 'scale(1.1)' : 'scale(0.9)',
+                            }}>
+                                {h.toString().padStart(2, '0')}
+                            </div>
+                        ))}
+                        <div style={{height: 80, flexShrink: 0}} />
+                    </div>
+
+                    <div style={{fontSize: '32px', fontWeight: '700', paddingBottom: '4px', zIndex: 2, color: Colors.get('mainText', theme), opacity: 0.8}}>:</div>
+
+                    {/* Минуты */}
+                    <div style={styles(theme).scroller} ref={minutesRef} onScroll={(e) => handleScroll(e, setMinute, 60)}>
+                        <div style={{height: 80, flexShrink: 0}} />
+                        {minutes.map((m) => (
+                            <div key={m} style={{
+                                ...styles(theme).timeItem, 
+                                opacity: m === minute ? 1 : 0.3, 
+                                transform: m === minute ? 'scale(1.1)' : 'scale(0.9)',
+                            }}>
+                                {m.toString().padStart(2, '0')}
+                            </div>
+                        ))}
+                        <div style={{height: 80, flexShrink: 0}} />
+                    </div>
+                </div>
+
+                {/* ДНИ НЕДЕЛИ */}
+                <div style={styles(theme).daysContainer}>
+                    {daysNames[langIndex].map((dayName, i) => (
+                        <motion.div 
+                            key={i} 
+                            whileTap={{ scale: 0.85 }}
+                            onClick={() => setDay(i)}
+                            style={{
+                                ...styles(theme).dayCircle,
+                                backgroundColor: daysOfWeek[i] ? activeColor : (isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)'),
+                                color: daysOfWeek[i] ? '#FFF' : Colors.get('subText', theme),
+                                boxShadow: daysOfWeek[i] ? `0 4px 10px ${activeColor}40` : 'none'
+                            }}
+                        >
+                            {dayName}
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* --- НОВАЯ ПАНЕЛЬ КНОПОК --- */}
+                <div style={styles(theme).bottomIsland}>
+                    
+                    {/* Кнопка Закрыть */}
+                    <motion.div 
+                        whileTap={{ scale: 0.9 }}
+                        onClick={closePanel} 
+                        style={styles(theme).closeBtn}
+                    >
+                        <MdClose size={26} />
+                    </motion.div>
+
+                    {/* Свитчер */}
+                    <div style={styles(theme).switchWrapper}>
+                        <div 
+                            style={styles(theme, isSliderOn).switch} 
+                            onClick={() => {
+                                const newState = !isSliderOn;
+                                setIsSliderOn(newState);
+                                toggleNotify(page, newState, langIndex, cron, hour, minute);
+                            }}
+                        >
+                            <div style={styles(theme, isSliderOn).switchKnob} />
+                        </div>
+                    </div>
+
+                    {/* Кнопка Сохранить */}
+                    <motion.div 
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleSave} 
+                        style={styles(theme).saveBtn}
+                    >
+                        <MdCheck size={28} />
+                    </motion.div>
+
+                </div>
+
+            </motion.div>
         </div>
     );
 };
+
 export default NotifyPanel;
-const styles = (theme,isSliderOn = false,fSize) => ({
-  // Container styles
-  container: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-    padding: '20px',
-  },
-  panel :
-  {
-    display:'flex',
-    flexDirection:'column',
-    marginTop:'30vh',
-    alignItems: "center",
-    justifyContent: "space-around",
-    borderRadius: "24px",
-    border: `1px solid ${Colors.get('border', theme)}`,
-    backgroundColor:Colors.get('background', theme),
-    boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
-    width: "90vw",
-    height: "45vh",
-  },
-  text :
-  {
-    marginTop:'12px',
-    textAlign: "center",
-    fontSize:fSize === 0 ? "13px" : "15px",
-    color: Colors.get('mainText', theme),
-    marginBottom:'12px'
-  },
-  subText :
-  {
-    margin:'5px',
-    marginTop:'12px',
-    textAlign: "center",
-    fontSize:fSize === 0 ? "11px" : "13px",
-    color: Colors.get('subText', theme),
-  },
-  daysContainer :
-  {
-    backgroundColor:'rgba(0,0,0,0.5)',
-    padding:'5px',
-    marginTop:'10%',
-    borderRadius:'24px',
-    display:'flex',
-    flexDirection:'row',
-    width:'95%',
-    height:'15%',
-    margin:'5px',
-    alignItems:'center',
-    justifyContent:'space-between',
-  },
-  timeContainer :
-  {
-    padding:'5px',
-    borderBottom:'2px solid ' + Colors.get('border', theme),
-    borderTop:'2px solid ' + Colors.get('border', theme),
-    marginTop:'10%',
-    display:'flex',
-    flexDirection:'row',
-    width:'55%',
-    height:'25%',
-    margin:'5px',
-    alignItems:'center',
-    justifyContent:'space-around',
-  },
-  time :
-  {
-    display:'flex',
-    flexDirection:'column',
-    overflowY:'scroll',
-    textAlign:'center',
-    scrollBehavior:'auto',
-    scrollbarWidth:'none',
-    scrollSnapType:'y mandatory',
-    width:'50%',
-    height:'70%'
-  },switch :
-  {
-    marginTop:'4px',
-    position:'relative',
-    display:'inline-block',
-    width:'60px',
-    height:'24px',
-  },input :
-  {
-    opacity:0,
-    width:'0',
-    height:'0',
-  },slider :
-  {
-    position:'absolute',
-    cursor:'pointer',
-    top:0,
-    left:0,
-    right:0,
-    bottom:0,
-    backgroundColor: isSliderOn ? Colors.get('habitCardDone', theme) : Colors.get('habitCardSkipped', theme),
-    transition:'0.4s',
-    borderRadius:'24px',
-  },
-  sliderBefore :
-  {
-    position:'absolute',
-    content:'""',
-    height:'20px',
-    width:'20px',
-    left: isSliderOn ? '38px' : '2px',
-    bottom:'2px',
-    backgroundColor: Colors.get('mainText', theme),
-    transition:'0.4s',
-    borderRadius:'50%',
-  }
-})
+
+
+
+
 function getInfoText(langIndex) {
   return langIndex === 0 ? 
   'Установите время и дни недели, чтобы бот отправлял вам уведомления' : 

@@ -1,127 +1,256 @@
+import React, { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import Colors from '../../StaticClasses/Colors'
-import { useState } from 'react'
-import { AppData , UserData} from '../../StaticClasses/AppData.js'
+import { AppData, UserData } from '../../StaticClasses/AppData.js'
 import RecomendationMeasurments from '../../Helpers/RecomendationMeasurments'
-import {getWeeklyTrainingAmount} from '../../StaticClasses/TrainingLogHelper.js'
+import { getWeeklyTrainingAmount } from '../../StaticClasses/TrainingLogHelper.js'
+import { FaWeight, FaRulerVertical, FaInfoCircle, FaFire, FaBullseye, FaHeartbeat } from 'react-icons/fa'
+import { IoBody, IoAccessibility } from 'react-icons/io5'
+import { MdClose } from 'react-icons/md'
+
+// --- CONSTANTS (Kept Intact) ---
 const icons = [
-  ['images/BodyIcons/SideS.png','images/BodyIcons/SideSf.png'],
-  ['images/BodyIcons/Side.png','images/BodyIcons/Sidef.png'],
-  ['images/BodyIcons/SideL.png','images/BodyIcons/SideLf.png'],
-  ['images/BodyIcons/SideXL.png','images/BodyIcons/SideXLf.png'],
+    ['images/BodyIcons/SideS.png', 'images/BodyIcons/SideSf.png'],
+    ['images/BodyIcons/Side.png', 'images/BodyIcons/Sidef.png'],
+    ['images/BodyIcons/SideL.png', 'images/BodyIcons/SideLf.png'],
+    ['images/BodyIcons/SideXL.png', 'images/BodyIcons/SideXLf.png'],
 ];
 export const names = [
-  ['Вес тела','Body weight'],
-  ['Обхват талии','Waist circumference'],
-  ['Обхват бицепса','Biceps circumference'],
-  ['Обхват груди','Chest circumference'],
-  ['Обхват бедра','Hip circumference'], 
+    ['Вес тела', 'Body weight'],
+    ['Обхват талии', 'Waist circumference'],
+    ['Обхват бицепса', 'Biceps circumference'],
+    ['Обхват груди', 'Chest circumference'],
+    ['Обхват бедра', 'Hip circumference'],
 ]
-const goalNames = [['Набор массы','Mass gain'],['Сила','Strength'],['Жиросжигание','Weight loss'],['Здоровье','Health']]
+const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health']]
 
-const TrainingMeasurmentsOveview = ({theme,langIndex,fSize,data,filled,height,age,gender,goal,wrist}) => {
+const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, height, age, gender, goal, wrist }) => {
+    const [showInfo, setShowInfo] = useState(false);
 
-    const [showInfo,setShowInfo] = useState(false);
+    // Helper Styles
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const cardBg = isLight ? 'rgba(255,255,255,0.7)' : 'rgba(30,30,30,0.6)';
+    const borderColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)';
+    const textColor = Colors.get('mainText', theme);
+    const subTextColor = Colors.get('subText', theme);
 
+    if (!filled) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '60vh', opacity: 0.6 }}>
+                <IoBody size={60} color={subTextColor} />
+                <div style={{ ...styles(theme, fSize).subtext, textAlign: 'center', marginTop: '20px', maxWidth: '80%' }}>
+                    {langIndex === 0 ? 'Заполните персональные данные для рекомендаций и статистики' : 'Fill personal data to get statistics'}
+                </div>
+            </div>
+        );
+    }
 
+    const currentBMIColor = getBMIColor(theme, data, height);
+    const currentWeight = data[0].length > 0 ? data[0][data[0].length - 1].value : 0;
 
     return (
-        <div style={{width:'100%',display:'flex',flexDirection:'column'}}>
-            {!filled && <div style={{...styles(theme,fSize).subtext,textAlign:'center',marginTop:'10vh'}}>{langIndex === 0 ? 'Заполните персональные данные для рекомендаций и статистики' : 'Fill personal data to get statistic'} </div>}
-      {filled && data[0].length > 0 && <div style={{display:'flex',flexDirection:'row',justifyContent:'flex-start',alignItems:'center',width:'95%',alignSelf:'center',marginBottom:'20px'}} >
-         <img src={icons[getBMIIndex(data,height)][gender]} alt="" style={{width:'30vw',height:'60vw',margin:'10px'}} />
-         <div onClick={() => setShowInfo(true)} style={{width:'70%',justifyContent:'flex-start',alignItems:'flex-start'}}>
-          <div style={{border:`1px solid ${Colors.get('border', theme)}`,borderRadius:'12px',boxShadow:`0px 0px 10px ${Colors.get('shadow', theme)}`,marginTop:'10px',display:'flex',flexDirection:'column',width:'90%',justifyContent:'center',alignItems:'flex-start',padding:'10px'}}>
-           
-           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? 'Возраст: ' : 'Age: ') + age + (langIndex === 0 ? ' лет' : ' yers old')}</div>
-           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? 'Рост: ' : 'Height: ') + height + (langIndex === 0 ? ' см' : ' sm')}</div>
-           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? 'Вес: ' : 'Weight: ') + measurmentString(data,0,langIndex)}</div>
-           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? '% жира: ' : '% fat: ') + fatPercentString(data,height,age,gender)}</div>
+        <div style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '15px', padding: '0 10px 100px 10px' }}>
+            
+            {/* --- HERO SECTION --- */}
+            <div style={{ display: 'flex', gap: '15px', height: '220px' }}>
+                {/* Body Visual Card */}
+                <div style={{
+                    flex: '0 0 35%',
+                    backgroundColor: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                    position: 'relative'
+                }}>
+                    <img 
+                        src={icons[getBMIIndex(data, height)][gender]} 
+                        alt="Body Type" 
+                        style={{ height: '90%', objectFit: 'contain', opacity: 0.9, filter: isLight ? 'none' : 'brightness(0.9)' }} 
+                    />
+                    <div onClick={() => setShowInfo(true)} style={{ position: 'absolute', top: 10, right: 10, cursor: 'pointer', opacity: 0.6 }}>
+                        <FaInfoCircle color={textColor} />
+                    </div>
+                </div>
 
-           <div style={{...styles(theme, fSize).text,color:Colors.get('light', theme)}}>{(langIndex === 0 ? 'Цель: ' : 'Goal: ') + goalNames[goal][langIndex]}</div>
-          </div>
+                {/* Primary Stats Card */}
+                <div style={{
+                    flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                    backgroundColor: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`, padding: '20px'
+                }}>
+                    <div>
+                        <div style={{ fontSize: '12px', color: subTextColor, textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>
+                            {langIndex === 0 ? 'Профиль' : 'Profile'}
+                        </div>
+                        <div style={{ fontSize: '28px', fontWeight: '800', color: textColor, lineHeight: '1.1' }}>
+                            {age} <span style={{ fontSize: '14px', fontWeight: '500' }}>{langIndex === 0 ? 'лет' : 'y.o.'}</span>
+                        </div>
+                    </div>
 
-          <div style={{border:`1px solid ${Colors.get('border', theme)}`,borderRadius:'12px',boxShadow:`0px 0px 10px ${Colors.get('shadow', theme)}`,display:'flex',flexDirection:'column',width:'90%',justifyContent:'center',alignItems:'flex-start',padding:'10px',marginTop:'8px'}}>
-            <div style={{...styles(theme, fSize).text,width:'90%',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Пропорции' : 'Proportions'}</div>
-            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-between',alignItems:'center',width:'90%'}}>
-              <GetWHR theme={theme} langIndex={langIndex} data={data}/>
-              <GetWHTr theme={theme} langIndex={langIndex} data={data} height={AppData.pData.height}/>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <StatRow icon={<FaRulerVertical />} label={langIndex === 0 ? 'Рост' : 'Height'} value={`${height} cm`} theme={theme} />
+                        <StatRow icon={<FaBullseye />} label={langIndex === 0 ? 'Цель' : 'Goal'} value={goalNames[goal][langIndex]} theme={theme} highlight />
+                    </div>
+                </div>
             </div>
-            <div style={styles(theme, fSize).text}>{(langIndex === 0 ? 'Талия: ' : 'Waist: ') + measurmentString(data,1,langIndex)}</div>
-            <div style={styles(theme, fSize).text}>{(langIndex === 0 ? 'Бедра: ' : 'Hip: ') + measurmentString(data,4,langIndex)}</div>
-            <div style={styles(theme, fSize).text}>{(langIndex === 0 ? 'Грудь: ' : 'Chest: ') + measurmentString(data,3,langIndex)}</div>
-            
-          </div>
 
-           <div style={{border:`1px solid ${Colors.get('border', theme)}`,borderRadius:'12px',boxShadow:`0px 0px 10px ${Colors.get('shadow', theme)}`,display:'flex',flexDirection:'column',width:'90%',justifyContent:'center',alignItems:'flex-start',padding:'10px',marginTop:'8px'}}>
-            <div style={{...styles(theme, fSize).text,width:'90%',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Расчеты' : 'Calculations'}</div>
-             <div style={styles(theme, fSize).text}>{(langIndex === 0 ? 'Тип телосложения: ' : 'Body type: ') + bodyTypesNames(getBodyType(height,wrist,gender),langIndex)}</div>
-           <div style={{...styles(theme, fSize).text,color:getBMIColor(theme,data, AppData.pData.height)}}>{(langIndex === 0 ? 'ИМТ: ' : 'BMI: ') + bmiString(data,langIndex,height)}</div>
-           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? 'Идеальный вес: ' : 'Ideal weight: ') + (getIdealWeight(height,gender,getBodyType(height,wrist,gender)).toFixed(1)) + (langIndex === 0 ? ' кг':' kg')}</div>
-           <div style={styles(theme, fSize).text}>{(langIndex === 0 ? 'Базовый метаболизм: ' : 'Basic metabolism: ') + baseMetabolismString(data,langIndex,height,age,gender)}</div>
-            
-          </div>
+            {/* --- BENTO GRID (METRICS) --- */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <MetricCard 
+                    title={langIndex === 0 ? 'Вес' : 'Weight'} 
+                    value={measurmentString(data, 0, langIndex)} 
+                    icon={<FaWeight />} 
+                    color={Colors.get('currentDateBorder', theme)} 
+                    theme={theme} 
+                />
+                <MetricCard 
+                    title={langIndex === 0 ? 'Жир' : 'Body Fat'} 
+                    value={fatPercentString(data, height, age, gender)} 
+                    icon={<IoAccessibility />} 
+                    color="#FF9F43" 
+                    theme={theme} 
+                />
+                <MetricCard 
+                    title={langIndex === 0 ? 'ИМТ' : 'BMI'} 
+                    value={bmiString(data, langIndex, height)} 
+                    icon={<FaHeartbeat />} 
+                    color={currentBMIColor} 
+                    theme={theme} 
+                />
+                <MetricCard 
+                    title={langIndex === 0 ? 'Метаболизм' : 'Metabolism'} 
+                    value={baseMetabolismString(data, langIndex, height, age, gender)} 
+                    icon={<FaFire />} 
+                    color="#FF6B6B" 
+                    theme={theme} 
+                />
+            </div>
 
-         </div>
-         
-      </div>} 
-      {showInfo && <div onClick={() => setShowInfo(false)} style={{width:'100vw',top:0,height:'100vh',position:'absolute',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9000,backgroundColor:'rgba(0,0,0,0.6)'}}>
-        <div style={{width:'90%',height:'70%',backgroundColor:Colors.get('background', theme),borderRadius:'24px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around'}}>
-          <div style={{...styles(theme,fSize).text,margin:'10px',whiteSpace:'pre-wrap'}}>{infoText(langIndex)}</div>
-          <div style={{...styles(theme,fSize).subtext,margin:'10px',textAlign:'center'}}>{langIndex === 0 ? '!нажми чтобы закрыть!' : '!tap to close!'}</div>
-        </div>
-     </div>}
-      {filled && data[0].length > 0 &&  <RecomendationMeasurments bmi={getBaseMetabolism(data[0][data[0].length - 1]?.value, height, age, gender)} trains={getWeeklyTrainingAmount()}/>}
+            {/* --- DETAILS & CALCULATIONS --- */}
+            <div style={{ backgroundColor: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`, padding: '20px' }}>
+                <SectionHeader title={langIndex === 0 ? 'Анализ Тела' : 'Body Analysis'} theme={theme} />
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
+                    <DetailRow label={langIndex === 0 ? 'Тип тела' : 'Body Type'} value={bodyTypesNames(getBodyType(height, wrist, gender), langIndex)} theme={theme} />
+                    <DetailRow label={langIndex === 0 ? 'Идеальный вес' : 'Ideal Weight'} value={`${getIdealWeight(height, gender, getBodyType(height, wrist, gender)).toFixed(1)} ${langIndex === 0 ? 'кг' : 'kg'}`} theme={theme} />
+                    
+                    <div style={{ height: '1px', backgroundColor: borderColor, margin: '5px 0' }} />
+                    
+                    {/* Proportions Components rendered here */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <GetWHR theme={theme} langIndex={langIndex} data={data} />
+                        <GetWHTr theme={theme} langIndex={langIndex} data={data} height={height} />
+                    </div>
+                </div>
+            </div>
+
+            {/* --- MEASUREMENTS LIST --- */}
+            <div style={{ backgroundColor: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`, padding: '20px' }}>
+                <SectionHeader title={langIndex === 0 ? 'Обхваты' : 'Measurements'} theme={theme} />
+                <div style={{ marginTop: '15px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                    <MeasurementBox label={langIndex === 0 ? 'Талия' : 'Waist'} value={measurmentString(data, 1, langIndex)} theme={theme} />
+                    <MeasurementBox label={langIndex === 0 ? 'Грудь' : 'Chest'} value={measurmentString(data, 3, langIndex)} theme={theme} />
+                    <MeasurementBox label={langIndex === 0 ? 'Бедра' : 'Hips'} value={measurmentString(data, 4, langIndex)} theme={theme} />
+                </div>
+            </div>
+
+            {/* --- INFO MODAL --- */}
+            <AnimatePresence>
+                {showInfo && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        style={{ position: 'fixed', inset: 0, zIndex: 9000, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+                        onClick={() => setShowInfo(false)}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                            style={{ backgroundColor: Colors.get('background', theme), borderRadius: '30px', padding: '30px', maxWidth: '500px', width: '100%', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 20px 50px rgba(0,0,0,0.5)' }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <h3 style={{ margin: 0, color: textColor }}>{langIndex === 0 ? 'Информация' : 'Information'}</h3>
+                                <MdClose size={24} color={subTextColor} onClick={() => setShowInfo(false)} style={{ cursor: 'pointer' }} />
+                            </div>
+                            <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: fSize === 0 ? '14px' : '16px', color: textColor }}>
+                                {infoText(langIndex)}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* --- RECOMMENDATIONS --- */}
+            {filled && data[0].length > 0 && (
+                <RecomendationMeasurments bmi={getBaseMetabolism(currentWeight, height, age, gender)} trains={getWeeklyTrainingAmount()} />
+            )}
         </div>
     )
 }
-export default TrainingMeasurmentsOveview;
-const styles = (theme,fSize,isCurrentGroup = false) =>
-({
-    panel :
-        {
-      display:'flex',
-      flexDirection:'column',
-      width: "100%",
-      alignItems: "center",
-      justifyItems: "center",
+
+// --- SUB COMPONENTS ---
+
+const StatRow = ({ icon, label, value, theme, highlight }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ color: highlight ? Colors.get('currentDateBorder', theme) : Colors.get('subText', theme), fontSize: '14px' }}>
+            {icon}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '10px', color: Colors.get('subText', theme), textTransform: 'uppercase' }}>{label}</span>
+            <span style={{ fontSize: '14px', fontWeight: '700', color: Colors.get('mainText', theme) }}>{value}</span>
+        </div>
+    </div>
+)
+
+const MetricCard = ({ title, value, icon, color, theme }) => (
+    <div style={{
+        backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(30,30,30,0.6)',
+        borderRadius: '20px', padding: '15px', border: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)'}`,
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '100px'
+    }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: Colors.get('subText', theme) }}>{title}</span>
+            <div style={{ backgroundColor: `${color}20`, padding: '6px', borderRadius: '10px', color: color }}>
+                {icon}
+            </div>
+        </div>
+        <div style={{ fontSize: '18px', fontWeight: '800', color: Colors.get('mainText', theme) }}>
+            {value}
+        </div>
+    </div>
+)
+
+const DetailRow = ({ label, value, theme }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '14px', color: Colors.get('subText', theme) }}>{label}</span>
+        <span style={{ fontSize: '15px', fontWeight: '600', color: Colors.get('mainText', theme) }}>{value}</span>
+    </div>
+)
+
+const SectionHeader = ({ title, theme }) => (
+    <div style={{ fontSize: '13px', fontWeight: '800', color: Colors.get('subText', theme), textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '10px' }}>
+        {title}
+    </div>
+)
+
+const MeasurementBox = ({ label, value, theme }) => (
+    <div style={{ backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderRadius: '14px', padding: '10px', textAlign: 'center' }}>
+        <div style={{ fontSize: '11px', color: Colors.get('subText', theme), marginBottom: '4px' }}>{label}</div>
+        <div style={{ fontSize: '15px', fontWeight: '700', color: Colors.get('mainText', theme) }}>{value}</div>
+    </div>
+)
+
+
+const styles = (theme, fSize) => ({
+    text: {
+        textAlign: "left",
+        fontSize: fSize === 0 ? '13px' : '15px',
+        color: Colors.get('mainText', theme),
     },
-  panelRow:
-  {
-    display:'flex',
-    width:'90%',
-    alignItems:'center',
-    justifyContent:'flex-start',
-    marginTop:'10px',
-    gap:'10px',
-    borderBottom:`1px solid ${Colors.get('border', theme)}`,
-  },
-  textDate:
-    {
-      textAlign: "center",
-      fontSize: "18px",
-      color: Colors.get('mainText', theme),
-      marginBottom:'4px'
-    },
-  text :
-  {
-    textAlign: "left",
-    fontSize: fSize === 0 ? '13px' : '15px',
-    color: Colors.get('mainText', theme),
-    margin:'2px'
-  },
-  subtext :
-  {
-    textAlign: "left",
-    fontSize: fSize === 0 ? '11px' : '13px',
-    color: Colors.get('subText', theme)
-  },
-  icon:
-  {
-    fontSize: '18px',
-    marginLeft:'15px',
-    color: Colors.get('icons', theme)
-  }
+    subtext: {
+        textAlign: "left",
+        fontSize: fSize === 0 ? '11px' : '13px',
+        color: Colors.get('subText', theme)
+    }
 })
+export default TrainingMeasurmentsOveview;
+
 
 const getBMI = (weight, height) => {
   if (weight <= 0 || height <= 0) return null;
@@ -315,20 +444,18 @@ const GetWHR = ({ theme, langIndex, data }) => {
   }
 
   const bgColor = 
-    status === 'normal' ? Colors.get('maxValColor', theme) :
-    status === 'elevated' ? Colors.get('minValColor', theme) :
-    Colors.get('danger', theme);
+    status === 'normal' ? Colors.get('difficulty0', theme) :
+   Colors.get('difficulty5', theme)
 
   return (
     <div style={{
       display: 'flex',
       justifyContent: 'flex-start',
       alignItems: 'center',
-      backgroundColor: bgColor,
       borderRadius: '5px',
       minWidth: '45%'
     }}>
-      <span style={{ ...styles(theme, false, false, 14).text, color: Colors.get('background', theme), fontSize: '12px' }}>
+      <span style={{ ...styles(theme, false, false, 14).text, color: bgColor, fontSize: '12px' }}>
         {langIndex === 0 ? 'WHR: ' : 'WHR: '}
         {whr.toFixed(2)}
         {label}
@@ -354,20 +481,18 @@ const GetWHTr = ({ theme, langIndex, data,height }) => {
   else if (whtr >= 0.6) status = 'high';
 
   const bgColor = 
-    status === 'normal' ? Colors.get('maxValColor', theme) :
-    status === 'elevated' ? Colors.get('minValColor', theme) :
-    Colors.get('danger', theme);
+    status === 'normal' ? Colors.get('difficulty0', theme) :
+    Colors.get('difficulty5', theme)
 
   return (
     <div style={{
       display: 'flex',
       justifyContent: 'flex-start',
       alignItems: 'center',
-      backgroundColor: bgColor,
       borderRadius: '5px',
       minWidth: '45%'
     }}>
-      <span style={{ ...styles(theme, false, false, 14).text, color: Colors.get('background', theme), fontSize: '12px' }}>
+      <span style={{ ...styles(theme, false, false, 14).text, color: bgColor, fontSize: '12px' }}>
         {langIndex === 0 ? 'WHtR: ' : 'WHtR: '}
         {whtr.toFixed(2)}
       </span>

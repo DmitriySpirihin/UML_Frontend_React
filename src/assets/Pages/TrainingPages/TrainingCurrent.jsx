@@ -5,11 +5,9 @@ import { theme$ ,lang$,fontSize$,trainInfo$,setPage} from '../../StaticClasses/H
 import {addExerciseToSchedule} from '../../Classes/TrainingData.jsx'
 import {findPreviousSimilarExercise, finishSession, addExerciseToSession,
    removeExerciseFromSession, addSet, finishExercise, redactSet,getAllReps,getTonnage,getMaxOneRep,getAllSets} from '../../StaticClasses/TrainingLogHelper'
-import {FaTrash,FaPencilAlt,FaFlagCheckered,FaFlag,FaInfo,FaPlusCircle} from 'react-icons/fa'
-import {FaRegCircleCheck,FaRegCircle,FaPlus,FaMinus,FaStopwatch,FaCalculator} from 'react-icons/fa6'
-import {MdClose,MdDone,MdFitnessCenter} from 'react-icons/md'
-import MyNumInput from '../../Helpers/MyNumInput'
-import {useLongPress} from '../../Helpers/LongPress'
+import {FaTrash,FaPencilAlt,FaFlagCheckered,FaFlag,FaInfo,FaPlusCircle,FaDumbbell} from 'react-icons/fa'
+import {FaRegCircleCheck,FaRegCircle,FaPlus,FaMinus,FaStopwatch,FaCalculator,FaClock, FaListCheck} from 'react-icons/fa6'
+import {MdClose,MdDone,MdFitnessCenter, MdOutlineHistory} from 'react-icons/md'
 import Stopwatch from '../../Helpers/StopWatch'
 import PlatesCalculator from '../../Helpers/PlatesCalculator'
 import TrainingExercise from './TrainingExercise'
@@ -18,8 +16,16 @@ import {IoIosArrowDown,IoIosArrowUp} from 'react-icons/io'
 import TimerIcon from '@mui/icons-material/TimerTwoTone';
 import TimerOffIcon from '@mui/icons-material/TimerOffTwoTone';
 import Slider from '@mui/material/Slider';
+import ScrollPicker from '../../Helpers/ScrollPicker.jsx'
 
 const timerSound = new Audio('Audio/Timer.wav');
+
+// Arrays for Pickers
+const repsRange = Array.from({ length: 102 }, (_, i) => i ); // 1 to 100
+const weightIntRange = Array.from({ length: 500 }, (_, i) => i - 1); // 0 to 499
+const weightDecRange = [0, 0, 0.25, 0.5, 0.75, 1 , 1]; // Fractional kg
+const minutesRange = Array.from({ length: 60 }, (_, i) => i - 1); // 0 to 59
+const secondsRange = Array.from({ length: 12 }, (_, i) => (i - 1) * 5); // 0, 5, 10... 55 (Step 5 for easier UX)
 
 const TrainingCurrent = () => {
     // states
@@ -125,13 +131,6 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 }, [timer, isCompleted, maxTimer, currTimer]);
-// long press bibdings
-const bindRepsMinus = useLongPress(() => setReps(prev => prev - 1 > 1 ? prev - 1 : 1));
-const bindRepsPlus = useLongPress(() => setReps(prev => prev + 1));
-const bindWeightMinus = useLongPress(() => setWeight(prev => prev - 0.25 > 0.25 ? prev -0.25 : 0.25));
-const bindWeightPlus = useLongPress(() => setWeight(prev => prev + 0.25));
-const bindExTimeMinus = useLongPress(() => setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 0));
-const bindExTimePlus = useLongPress(() => setExTime(prev => prev + 10000));
 
 function needPrev(need){
   if(!UserData.hasPremium){
@@ -211,36 +210,69 @@ function onAddExercise(needToAdd){
 return (
       <div style={styles(theme).container}>
         <div style={styles(theme).panel}>
-              {/*     timer     */}
-              
-              <div style={{display:'flex',flexDirection:'column',justifyContent:'flex-start',height:'30vw',borderBottomRightRadius:'24px',borderBottomLeftRadius:'24px',width:'100%',alignItems:'center',backgroundColor: Colors.get('bottomPanel', theme)}}>
-                <div style={styles(theme,fSize).text}>{Array.isArray(program?.name) ? program?.name[langIndex] : program?.name}</div>
-               <div style={{...styles(theme,fSize).subtext,marginBottom:'15px'}}>{(trainInfo.mode === 'new' ? '⏳ ' : '✅ ') + (program?.schedule[dayIndex].name[langIndex])}</div>
-               <div style={{ width: '100%', height: '8px', position: 'relative' }}>
-                 <svg width="100%" height="8" viewBox="0 0 100 8" preserveAspectRatio="none" style={{ display: 'block' }}>
-                {/* Background track */}
-                <rect x="0" y="0" width="100" height="8" fill={Colors.get('background', theme)}/>
-                {/* Progress fill */}
-                <rect x="0" y="0" width={progress} height="8"  fill={Colors.get('skipped', theme)} /></svg>
-               </div>
-                <div style={{display:'flex',width:'100%',height:'15vw',justifyContent:'flex-start',alignItems:'center',borderTop:`1px solid ${Colors.get('border', theme)}`}}>
-                  <div style={{...styles(theme,fSize).subtext,marginLeft:'12px',fontSize:'16px'}}>{isCompleted ? formatDurationMs(session.duration) : formatDurationMs(duration)}</div>
-                  <div style={{...styles(theme,fSize).subtext,fontSize:'16px',marginLeft:'12px'}}>{(tonnage * 0.001).toFixed(2) + (langIndex === 0 ? 'тон' : 'ton')}</div>
-                  {!isCompleted && <div style={{marginLeft:'auto',display:'flex',alignItems:'center'}}>
-                    <ParsedTime time={currTimer} maxTime={maxTimer} theme={theme}/>
-                    {!timer && <TimerOffIcon onClick={() => {setTimer(true);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/>}
-                    {timer && <TimerIcon onClick={() => {setTimer(false);setCurrTimer(0);setProgress(0);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/>}
-                     <FaStopwatch onClick={() => {setStopWatchPanel(true);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/> 
-                     <FaCalculator onClick={() => {setShowPlatesCalculator(true);}} style={{fontSize:'28px',color:Colors.get('icons', theme),marginRight:'19px'}}/>
-                     <FaFlagCheckered onClick={() => {setShowConfirmPanel(true);}} style={{fontSize:'24px',color:Colors.get('icons', theme),marginRight:'19px'}}/>
-                  </div>}
+            {/* --- DASHBOARD HEADER --- */}
+            <div style={styles(theme).headerCard}>
+                
+                {/* Title & Status */}
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', width:'100%', marginBottom:'10px'}}>
+                    <div style={{display:'flex', flexDirection:'column'}}>
+                         <div style={{...styles(theme,fSize).text, fontWeight:'bold', fontSize:'18px', marginBottom:0}}>
+                            {Array.isArray(program?.name) ? program?.name[langIndex] : program?.name}
+                         </div>
+                         <div style={{...styles(theme,fSize).subtext, opacity:0.7, marginTop:'4px'}}>
+                            {(trainInfo.mode === 'new' ? '⏳ ' : '✅ ') + (program?.schedule[dayIndex].name[langIndex])}
+                         </div>
+                    </div>
+                    {/* Main Session Timer */}
+                    <div style={{backgroundColor:'rgba(0,0,0,0.2)', padding:'5px 12px', borderRadius:'20px'}}>
+                        <div style={{...styles(theme,fSize).subtext, fontSize:'16px', fontWeight:'600', color:Colors.get('mainText', theme)}}>
+                            {isCompleted ? formatDurationMs(session.duration) : formatDurationMs(duration)}
+                        </div>
+                    </div>
                 </div>
-              </div> 
-                {/*     header     */}
-               
-               <div style={styles(theme).scrollView}>
+
+                {/* Progress Bar */}
+                <div style={{ width: '100%', height: '6px', position: 'relative', borderRadius:'3px', overflow:'hidden', backgroundColor:'rgba(255,255,255,0.1)', marginBottom:'12px' }}>
+                     <div style={{ width: `${progress}%`, height: '100%', backgroundColor: Colors.get('skipped', theme), transition:'width 0.5s linear' }} />
+                </div>
+
+                {/* Stats & Tools Row */}
+                <div style={{display:'flex', width:'100%', justifyContent:'space-between', alignItems:'center'}}>
+                    <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                        <MdFitnessCenter style={{color:Colors.get('icons', theme)}}/>
+                        <div style={{...styles(theme,fSize).subtext, fontWeight:'bold', fontSize:'14px'}}>
+                            {(tonnage * 0.001).toFixed(2) + (langIndex === 0 ? ' т' : ' t')}
+                        </div>
+                    </div>
+
+                    {!isCompleted && (
+                        <div style={{display:'flex', alignItems:'center', gap:'16px'}}>
+                             <ParsedTime time={currTimer} maxTime={maxTimer} theme={theme}/>
+                             
+                             <div style={styles(theme).toolIconWrapper} onClick={() => {timer ? (setTimer(false), setCurrTimer(0), setProgress(0)) : setTimer(true)}}>
+                                {timer ? <TimerIcon style={styles(theme).headerIcon}/> : <TimerOffIcon style={styles(theme).headerIcon}/>}
+                             </div>
+
+                             <div style={styles(theme).toolIconWrapper} onClick={() => {setStopWatchPanel(true)}}>
+                                <FaStopwatch style={styles(theme).headerIcon}/>
+                             </div>
+
+                             <div style={styles(theme).toolIconWrapper} onClick={() => {setShowPlatesCalculator(true)}}>
+                                <FaCalculator style={styles(theme).headerIcon}/>
+                             </div>
+
+                             <div style={{...styles(theme).toolIconWrapper, backgroundColor:Colors.get('done', theme)}} onClick={() => {setShowConfirmPanel(true)}}>
+                                <FaFlagCheckered style={{fontSize:'18px', color:'#fff'}}/>
+                             </div>
+                        </div>
+                    )}
+                </div>
+            </div> 
+
+            {/* --- EXERCISE LIST (SCROLLVIEW) --- */}
+            <div style={styles(theme).scrollView}>
                {session?.exercises && session.exerciseOrder?.length > 0 &&
-               <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column',width:'95%'}}>
+               <div style={{ display: 'flex', flexDirection: 'column', width:'97%', gap:'12px', paddingBottom:'20px'}}>
                {session.exerciseOrder.map(exId => {
                 const exercise = session.exercises[exId];
                 const exerciseObj = AppData.exercises[exId];
@@ -253,220 +285,462 @@ return (
                if (day) {
                  const dayExercise = day.exercises.find(e => e.exId === exId);
                  if (dayExercise) {
-                   plannedSets = dayExercise.sets; // e.g., "3x12"
+                   plannedSets = dayExercise.sets; 
                      }
                   }
                  }
+                
+                // EXERCISE CARD
                 return (
-                 <div key={exId}  style={{ display: 'flex', flexDirection: 'column' }}>
-                 {/* Exercise name */}
-                <div onClick={() => {setCurrentExId(exId)}} style={{ ...styles(theme, fSize).text,height:'35px',color:currentExId === exId ? Colors.get('mainText', theme) : Colors.get('subText', theme),marginTop:'12px',textAlign:'center',borderBottom:currentExId === exId ? `3px solid ${ Colors.get('iconsHighlited', theme)}` : `1px solid ${Colors.get('border', theme)}`, marginBottom: '10px' }}>
-                {exerciseName}
-                {!session.completed && <span style={{fontSize:'12px',marginLeft:'10px'}}>{exercise.completed ? '✅ ' : '⏳ '}</span>}
-                <span style={{...styles(theme,fSize).subtext,marginLeft:'30px'}}>{plannedSets}</span>
-                </div>
-                 {/* Sets list */}
-                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                   <div style={{display: 'flex',height:'25px',justifyContent: 'flex-start',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
-                      <div style={{...styles(theme,fSize).subtext,width:'10%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{'№'}</div>
-                      <div style={{...styles(theme,fSize).subtext,width:'26%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Повторы' : 'Reps'}</div>
-                      <div style={{...styles(theme,fSize).subtext,width:'26%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Вес' : 'Weight'}</div>
-                       <div style={{...styles(theme,fSize).subtext,width:'26%',borderRight:`1px solid ${Colors.get('border', theme)}`}}>{langIndex === 0 ? 'Время' : 'Time'}</div>
-                   </div>
+                 <div key={exId} style={{ 
+                     display: 'flex', 
+                     flexDirection: 'column', 
+                     backgroundColor: Colors.get('bottomPanel', theme),
+                     borderRadius: '16px',
+                     padding: '12px',
+                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                     border: currentExId === exId ? `1px solid ${Colors.get('iconsHighlited', theme)}` : 'none'
+                 }}>
+                 
+                 {/* Card Header */}
+                 <div onClick={() => {setCurrentExId(prev => prev === exId ? -1 : exId)}} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px', borderBottom:`1px solid ${Colors.get('border', theme)}`, paddingBottom:'8px' }}>
+                    <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                        <div style={{...styles(theme, fSize).text, fontWeight:'bold', fontSize:'16px', marginBottom:0, color: currentExId === exId ? Colors.get('iconsHighlited', theme) : Colors.get('mainText', theme)}}>
+                            {exerciseName}
+                        </div>
+                        <span style={{fontSize:'12px'}}>{exercise.completed ? '✅' : ''}</span>
+                    </div>
+                    <div style={{...styles(theme,fSize).subtext, backgroundColor:'rgba(0,0,0,0.1)', padding:'2px 8px', borderRadius:'8px'}}>
+                        {plannedSets}
+                    </div>
+                 </div>
+
+                 {/* Table Header */}
+                  {currentExId === exId && <div style={{display: 'flex', marginBottom:'6px', paddingLeft:'4px', opacity:0.6}}>
+                      <div style={{...styles(theme,fSize).subtext, width:'10%'}}>#</div>
+                      <div style={{...styles(theme,fSize).subtext, width:'25%'}}>{langIndex === 0 ? 'Повт' : 'Reps'}</div>
+                      <div style={{...styles(theme,fSize).subtext, width:'25%'}}>{langIndex === 0 ? 'Вес' : 'Kg'}</div>
+                      <div style={{...styles(theme,fSize).subtext, width:'25%'}}>{langIndex === 0 ? 'Время' : 'Time'}</div>
+                  </div>}
+
+                 {/* Sets Rows */}
+                 {currentExId === exId && <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                    { exercise.sets.map((set, setIndex) => (
-                  <div key={setIndex} style={{display: 'flex',height:'35px',justifyContent: 'flex-start',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
-                      <div style={{...numStyle(theme,set.type),width:'10%'}}>{setIndex + 1}</div>
-                      <div style={numStyle(theme,set.type)}>{set.reps}{usePrev && <Difference exId={exId} setIndex={setIndex} beforeDate={new Date(trainInfo.dayKey)} value={set.reps} isReps={true} theme={theme} />}</div>
-                      <div style={numStyle(theme,set.type)}>{set.weight}{usePrev && <Difference exId={exId} setIndex={setIndex} beforeDate={new Date(trainInfo.dayKey)} value={set.weight} isReps={false} theme={theme} />}</div>
-                      <div style={numStyle(theme,set.type)}>{formatDurationMs(set.time)}{usePrev && <Difference exId={exId} setIndex={setIndex} beforeDate={new Date(trainInfo.dayKey)} value={set.time} isReps={false}  theme={theme} isTime={true}/>}</div>
+                  <div key={setIndex} style={{
+                      display: 'flex', 
+                      alignItems:'center', 
+                      padding:'8px', 
+                      backgroundColor: setIndex % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent', 
+                      borderRadius:'8px'
+                  }}>
+                      <div style={{...numStyle(theme,set.type), width:'10%', border: 'none'}}>{setIndex + 1}</div>
+                      
+                      <div style={{...numStyle(theme,set.type), border: 'none'}}>
+                          {set.reps}
+                          {usePrev && <Difference exId={exId} setIndex={setIndex} beforeDate={new Date(trainInfo.dayKey)} value={set.reps} isReps={true} theme={theme} />}
+                      </div>
+                      
+                      <div style={{...numStyle(theme,set.type), border: 'none'}}>
+                          {set.weight}
+                          {usePrev && <Difference exId={exId} setIndex={setIndex} beforeDate={new Date(trainInfo.dayKey)} value={set.weight} isReps={false} theme={theme} />}
+                      </div>
+                      
+                      <div style={{...numStyle(theme,set.type), border: 'none'}}>
+                          {formatDurationMs(set.time)}
+                          {usePrev && <Difference exId={exId} setIndex={setIndex} beforeDate={new Date(trainInfo.dayKey)} value={set.time} isReps={false}  theme={theme} isTime={true}/>}
+                      </div>
+                      
                       <div style={{marginLeft:'auto'}}>
-                        <FaPencilAlt onClick={() => {onRedactSet(exId,setIndex)}} style={styles(theme).icon} />
+                         <div onClick={() => {onRedactSet(exId,setIndex)}} style={{padding:'6px', borderRadius:'50%', backgroundColor:'rgba(255,255,255,0.05)'}}>
+                            <FaPencilAlt style={{fontSize:'12px', color:Colors.get('icons', theme)}} />
+                         </div>
                       </div>
                    </div> 
                 ))}
-                {/* prev reference */}
-                {usePrev && currentExId === exId && <div style={{display: 'flex',height:'25px',justifyContent: 'flex-start',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
-                      <div style={{...numStylePrev(theme),width:'10%'}}>{exercise.sets.length + 1}</div>
-                      <div style={numStylePrev(theme)}>{prevResult(exId,exercise.sets.length,new Date(trainInfo.dayKey),true)}</div>
-                      <div style={numStylePrev(theme)}>{prevResult(exId,exercise.sets.length,new Date(trainInfo.dayKey),false)}</div>
-                      <div style={numStylePrev(theme)}>{prevResult(exId,exercise.sets.length,new Date(trainInfo.dayKey),false,true)}</div>
-                   </div>}
-                {/* buttons */}
-                {currentExId === exId && <div style={{display: 'flex',height:'30px',borderBottomLeftRadius:'12px',borderBottomRightRadius:'12px',justifyContent: 'space-around',alignItems:'center',backgroundColor: Colors.get('bottomPanel', theme)}}>
-                  <FaTrash onClick={() => {onRemoveExercise(exId)}} style={{...styles(theme).icon,fontSize:'16px'}}/>
-                  <FaPlusCircle onClick={() => {onNewset(exId,exercise.sets.length)}} style={{...styles(theme).icon,fontSize:'16px'}}/>
-                  {!isCompleted && !exercise.completed && <FaFlag onClick={() => {onFinishExercise(exId)}} style={{...styles(theme).icon,fontSize:'16px'}}/>}
-                </div>}
-              </div>
-              
-            </div>
-            );
-           })}
-           <div style={{width:'100vw',height:'30vh'}}/>
-          </div>}
-          
-          </div>
-          <div style={{display:'flex',width:'100%',height:'15vw',justifyContent:'space-around',alignItems:'center',backgroundColor:Colors.get('bottomPanel', theme),borderRadius:'24px'}}>
-                <FaInfo onClick={() => {setShowInfoPanel(true);}} style={{fontSize:'20px',color:Colors.get('icons', theme),marginLeft:'10px'}}/>
-                  
-                  <div onClick={() => {setShowExerciseList(true)}}
-                   style={{fontSize:'14px',width:'40%',height:'30px',alignContent:'center',alignItems:'center',marginRight:'5px',color:Colors.get('subText', theme),border:`1px solid ${Colors.get('border', theme)}`,borderRadius:'12px'}}>
-                  {langIndex === 0 ? '+ упражнение' : '+ exercise'}</div>
+
+                {/* Prev Reference Row */}
+                {usePrev &&  
+                   <div style={{display: 'flex', alignItems:'center', padding:'8px', borderTop:`1px dashed ${Colors.get('border', theme)}`, opacity:0.7}}>
+                      <div style={{...numStylePrev(theme), width:'10%', border:'none'}}>{exercise.sets.length + 1}</div>
+                      <div style={{...numStylePrev(theme), border:'none'}}>{prevResult(exId,exercise.sets.length,new Date(trainInfo.dayKey),true)}</div>
+                      <div style={{...numStylePrev(theme), border:'none'}}>{prevResult(exId,exercise.sets.length,new Date(trainInfo.dayKey),false)}</div>
+                      <div style={{...numStylePrev(theme), border:'none'}}>{prevResult(exId,exercise.sets.length,new Date(trainInfo.dayKey),false,true)}</div>
+                   </div>
+                }
                 
-                  <div onClick={() => {needPrev(prev => !prev)}}
-                   style={{fontSize:'14px',width:'40%',height:'30px',alignContent:'center',alignItems:'center',marginRight:'5px',color:usePrev ? Colors.get('iconsHighlited', theme) : Colors.get('subText', theme),border:usePrev ? `2px solid ${Colors.get('iconsHighlited', theme)}` : `1px solid ${Colors.get('border', theme)}`,borderRadius:'12px'}}>
-                  {langIndex === 0 ? 'предыдущая сессия' : 'previous session'}</div>
+                {/* Action Bar (Only on selected) */}
                  
-                </div>
-      </div>
+                  <div style={{display: 'flex', marginTop:'12px', paddingTop:'8px', borderTop:`1px solid ${Colors.get('border', theme)}`, justifyContent: 'space-around'}}>
+                     <button style={styles(theme).actionBtnSmall} onClick={() => {onRemoveExercise(exId)}}>
+                        <FaTrash style={{fontSize:'14px', color:Colors.get('skipped', theme)}}/>
+                     </button>
+                     <button style={{...styles(theme).actionBtnSmall, width:'40%', backgroundColor:Colors.get('iconsHighlited', theme)}} onClick={() => {onNewset(exId,exercise.sets.length)}}>
+                        <FaPlus style={{fontSize:'16px', color:Colors.get('background', theme)}}/> <span style={{marginLeft:'5px', color:Colors.get('background', theme), fontWeight:'bold'}}>{langIndex===0? 'Сет':'Set'}</span>
+                     </button>
+                     {!isCompleted && !exercise.completed && 
+                     <button style={styles(theme).actionBtnSmall} onClick={() => {onFinishExercise(exId)}}>
+                        <FaFlag style={{fontSize:'14px', color:Colors.get('done', theme)}}/>
+                     </button>}
+                  </div>
+                
+                </div>}
+               </div>
+              );
+             })}
+            
+            <div style={{width:'100vw',height:'20vh'}}/>
+             </div>}
+        </div>
+        </div>
+
+        {/* --- BOTTOM FLOATING MENU --- */}
+        <div style={styles(theme).floatingMenu}>
+             <div onClick={() => {setShowInfoPanel(true);}} style={styles(theme).menuIconBtn}>
+                <FaInfo style={{fontSize:'20px', color:Colors.get('icons', theme)}}/>
+             </div>
+             
+             <div onClick={() => {setShowExerciseList(true)}} style={styles(theme).menuPillBtn}>
+               <FaPlus style={{fontSize:'14px', marginRight:'6px'}}/>
+               {langIndex === 0 ? 'Упражнение' : 'Exercise'}
+             </div>
+           
+             <div onClick={() => {needPrev(prev => !prev)}} 
+                  style={{...styles(theme).menuPillBtn, 
+                          backgroundColor: usePrev ? Colors.get('barsColorMeasures', theme) : theme === 'dark' ? 'rgba(28, 28, 28, 0.85)' : 'rgba(235, 235, 235, 0.46)',
+                          color: usePrev ? Colors.get('background', theme) : Colors.get('subText', theme),
+                          border: usePrev ? 'none' : `1px solid ${Colors.get('border', theme)}`
+                  }}>
+               <MdOutlineHistory style={{fontSize:'16px', marginRight:'6px'}}/>
+               {langIndex === 0 ? 'История' : 'History'}
+             </div>
+        </div>
+
+
       {showInfoPanel && <div  style={styles(theme).confirmContainer}>
-         <div style={{...styles(theme).cP,height:'70%'}}>
-           <div style={{...styles(theme,fSize).subtext,textAlign:'left',whiteSpace: 'pre-line'}}>{howToUse(langIndex)}</div>
-           <div onClick={() => setShowInfoPanel(false)}  style={styles(theme,fSize).subtext}>{langIndex === 0 ? "Нажмите для закрытия" : "Tap to close"}</div>
+         <div style={{...styles(theme).modalCard, height:'auto', padding:'25px'}}>
+           <div style={{...styles(theme,fSize).subtext,textAlign:'left',whiteSpace: 'pre-line', fontSize:'14px', lineHeight:'1.5'}}>{howToUse(langIndex)}</div>
+           <button onClick={() => setShowInfoPanel(false)} style={styles(theme).primaryBtn}>{langIndex === 0 ? "Закрыть" : "Close"}</button>
          </div>
       </div>}
-      {showAddNewSetPanel && <div  style={styles(theme).confirmContainer}>
-         <div style={{...styles(theme).cP,height:'60%',border:isWarmUp ? `4px solid ${Colors.get('trainingIsolatedFont', theme)}` : `4px solid ${Colors.get('trainingBaseFont', theme)}`}}>
-           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Добавьте повторы" : "Add reps"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
-              <FaMinus {...bindRepsMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev - 1 > 1 ? prev - 1 : 1)}}/>
-              <MyNumInput theme={theme} w={'100px'} h={'40px'}fSize={28} placeholder={'0'} value={reps} onChange={(value) => {setReps(parseInt(value))}}/>
-              <FaPlus {...bindRepsPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev + 1)}}/>
-           </div>
-           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Добавьте вес" : "Add weight"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
-              <FaMinus {...bindWeightMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev - 0.25 > 0.25 ? prev -0.25 : 0.25)}}/>
-              <MyNumInput theme={theme} w={'100px'} h={'40px'}afterPointer={langIndex === 0 ? 'кг' : 'kg'} fSize={28} placeholder={'0'} value={weight} onChange={(value) => {setWeight(parseFloat(value))}}/>
-              <FaPlus {...bindWeightPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev + 0.25)}}/>
-           </div>
-           <div style={{...styles(theme,fSize).simplePanelRow,width:'80%',justifyContent:'space-around'}}>
-            <div onClick={() => {setIsWarmUp(true)}} style={{width:'40%',border:isWarmUp ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:!isWarmUp ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Разминка" : "Warm up"}</div>
-            <div onClick={() => {setIsWarmUp(false)}} style={{width:'40%',border:!isWarmUp ? `2px solid ${Colors.get('trainingBaseFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:isWarmUp ? Colors.get('subText', theme) : Colors.get('trainingBaseFont', theme)}}>{langIndex === 0 ? "Рабочий подход" : "Working set"}</div>
-           </div>
-           <div style={styles(theme,fSize).text}>{langIndex === 0 ? "Время выполнения(опционально)" : "Performance time (optional)"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
-              <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 0)}}/>
-              <div style={{...styles(theme,fSize).text,fontSize:'28px'}}>{formatDurationMs(exTime)}</div>
-              <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000)}}/>
-           </div>
-           {!isCompleted && <div style={{...styles(theme,fSize).simplePanelRow,width:'50%'}}>
-              <div onClick={() => {setStopWatchPanel(true)}} style={{...styles(theme,fSize).text,fontSize:'16px'}}>{langIndex === 0 ? "Секундомер" : "Stopwatch"}</div>
-              <FaStopwatch  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setStopWatchPanel(true)}}/>
-           </div>}
-           {!isCompleted && <div style={{...styles(theme,fSize).simplePanelRow,width:'60%'}}>
-           <div style={{...styles(theme,fSize).text,fontSize:'18px'}}>{langIndex === 0 ? 'Таймер отдыха: ' : 'Rest timer: '}{Math.floor(maxTimer / 60000)}:{Math.floor((maxTimer % 60000) / 1000).toString().padStart(2, '0')}</div>
-             {needTimer?<FaRegCircleCheck  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setNeedTimer(false)}}/> :
-                <FaRegCircle  style={{fontSize:'28px',color:Colors.get('icons', theme)}} onClick={() => {setNeedTimer(true)}}/>}
-           </div>}
-          {!isCompleted && needTimer && <Slider style={styles(theme).slider} min={10}max={600}step={10} value={maxTimer / 1000}valueLabelDisplay="off"onChange={(_, newValue) => { setMaxTimer(newValue * 1000); }}/>}
-           
-           
-           <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-              <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => setShowAddNewSetPanel(false)}/>
-              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {addset()}}/>
-           </div>
-         </div>
-      </div>}
-      {showRedactSetPanel && <div  style={styles(theme).confirmContainer}>
-         <div style={{...styles(theme).cP,height:'60%',border:isWarmUp ? `4px solid ${Colors.get('trainingIsolatedFont', theme)}` : `4px solid ${Colors.get('trainingBaseFont', theme)}`}}>
-           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Измените повторы" : "Change reps"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
-              <FaMinus {...bindRepsMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev - 1 > 1 ? prev - 1 : 1)}}/>
-              <MyNumInput theme={theme} w={'100px'} h={'40px'}fSize={28} placeholder={'0'} value={reps} onChange={(value) => {setReps(parseInt(value))}}/>
-              <FaPlus {...bindRepsPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setReps(prev => prev + 1)}}/>
-           </div>
-           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Измените вес" : "Change weight"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
-              <FaMinus {...bindWeightMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev - 0.25 > 0.25 ? prev -0.25 : 0.25)}}/>
-              <MyNumInput theme={theme} w={'100px'} h={'40px'}afterPointer={langIndex === 0 ? 'кг' : 'kg'} fSize={28} placeholder={'0'} value={weight} onChange={(value) => {setWeight(parseFloat(value))}}/>
-              <FaPlus {...bindWeightPlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setWeight(prev => prev + 0.25)}}/>
-           </div>
-           <div style={{...styles(theme,fSize).simplePanelRow,width:'80%',justifyContent:'space-around'}}>
-            <div onClick={() => {setIsWarmUp(true)}} style={{width:'40%',border:isWarmUp ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:!isWarmUp ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Разминка" : "Warm up"}</div>
-            <div onClick={() => {setIsWarmUp(false)}} style={{width:'40%',border:!isWarmUp ? `2px solid ${Colors.get('trainingBaseFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:isWarmUp ? Colors.get('subText', theme) : Colors.get('trainingBaseFont', theme)}}>{langIndex === 0 ? "Рабочий подход" : "Working set"}</div>
-           </div>
-           <div style={styles(theme,fSize).text}>{langIndex === 0 ? "Измените время выполнения" : "Change performance time"}</div>
-           <div style={{...styles(theme,fSize).simplePanelRow,backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px',userSelect:'none',touchAction:'none'}}>
-              <FaMinus {...bindExTimeMinus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev - 10000 > 0 ? prev - 10000 : 10000)}}/>
-              <div style={{...styles(theme,fSize).text,fontSize:'28px'}}>{formatDurationMs(exTime)}</div>
-              <FaPlus {...bindExTimePlus} style={{fontSize:'28px',color:Colors.get('icons', theme),userSelect:'none',touchAction:'none'}} onClick={() => {setExTime(prev => prev + 10000)}}/>
-           </div>
-           
-           <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-              <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => setShowRedactSetPanel(false)}/>
-              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {redactset()}}/>
-           </div>
-         </div>
-      </div>}
+
+      {/* --- ADD NEW SET PANEL (MODERNIZED) --- */}
+      {showAddNewSetPanel && (
+  <div style={{...styles(theme).confirmContainer}}>
+    <div style={{
+      ...styles(theme).bottomSheet,height:'75vh',
+      borderTop: `3px solid ${isWarmUp ? Colors.get('difficulty2', theme) : Colors.get('difficulty5', theme)}`
+    }}>
+      <div style={{ width: '40px', height: '4px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '2px', alignSelf: 'center', marginBottom: '15px' }}></div>
+
+      <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+        <div style={{ ...styles(theme, fSize).text, fontSize: '20px', fontWeight: 'bold', margin: 0 }}>
+          {langIndex === 0 ? "Добавить сет" : "Add Set"}
+        </div>
+        {/* Warmup Toggle */}
+        <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '20px', padding: '4px' }}>
+          <div onClick={() => setIsWarmUp(true)} style={{ ...styles(theme).segmentBtn, color: isWarmUp ? Colors.get('difficulty2', theme) : Colors.get('subText', theme) }}>
+            {langIndex === 0 ? "Разминка" : "Warmup"}
+          </div>
+          <div onClick={() => setIsWarmUp(false)} style={{ ...styles(theme).segmentBtn, color: !isWarmUp ? Colors.get('difficulty5', theme) : Colors.get('subText', theme) }}>
+            {langIndex === 0 ? "Рабочий" : "Work"}
+          </div>
+        </div>
+      </div>
+
+      {/* --- PICKER ROW: REPS & WEIGHT --- */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', width: '100%' }}>
+        
+        {/* REPS PICKER */}
+        <div style={{ ...styles(theme).inputCard, height: 'auto', padding: '15px 10px' }}>
+          <div style={{ ...styles(theme, fSize).subtext, marginBottom: '10px', textAlign: 'center' }}>
+            {langIndex === 0 ? "Повторы" : "Reps"}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <ScrollPicker 
+              items={repsRange} 
+              value={reps} 
+              onChange={setReps} 
+              theme={theme} 
+              width="60px"
+            />
+          </div>
+        </div>
+
+        {/* WEIGHT PICKER (Split Int/Dec) */}
+        <div style={{ ...styles(theme).inputCard, height: 'auto', padding: '15px 10px' }}>
+          <div style={{ ...styles(theme, fSize).subtext, marginBottom: '10px', textAlign: 'center' }}>
+            {langIndex === 0 ? "Вес (кг)" : "Weight (kg)"}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '5px' }}>
+            {/* Integer Part (0-500) */}
+            <ScrollPicker 
+              items={weightIntRange} 
+              value={Math.floor(weight)} 
+              onChange={(val) => setWeight(val + (weight % 1))} 
+              theme={theme} 
+              width="50px"
+            />
+            <div style={{ paddingTop: '40px', fontSize: '20px', fontWeight: 'bold', color: Colors.get('subText', theme) }}>.</div>
+            {/* Decimal Part (.00 - .75) */}
+            <ScrollPicker 
+              items={weightDecRange} 
+              value={weight % 1} 
+              onChange={(val) => setWeight(Math.floor(weight) + val)} 
+              theme={theme} 
+              width="40px"
+              suffix=""
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* --- PICKER ROW: TIME --- */}
+      <div style={{ ...styles(theme).inputCard, height: 'auto', marginTop: '10px', padding: '15px 10px' }}>
+        <div style={{ marginBottom: '10px', textAlign: 'center', display:'flex', alignItems:'center', justifyContent:'center', width:'90%' }}>
+           <FaStopwatch style={{color:Colors.get('difficulty', theme),fontSize:'35px',marginRight:'auto'}} onClick={() => setStopWatchPanel(true)}/> 
+           <div style={{ ...styles(theme, fSize).mainText}}> {langIndex === 0 ? "Время выполнения" : "Exercise time"}</div>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+             <ScrollPicker 
+                items={minutesRange} 
+                value={Math.floor(exTime / 60000)} 
+                onChange={(min) => setExTime((min * 60000) + (exTime % 60000))} 
+                theme={theme} 
+                width="50px"
+                suffix="m"
+              />
+          </div>
+          <div style={{ paddingTop: '40px', fontSize: '20px', fontWeight: 'bold', color: Colors.get('subText', theme) }}>:</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+             <ScrollPicker 
+                items={secondsRange} 
+                value={Math.floor((exTime % 60000) / 1000)} 
+                onChange={(sec) => setExTime((Math.floor(exTime / 60000) * 60000) + (sec * 1000))} 
+                theme={theme} 
+                width="50px"
+                suffix="s"
+              />
+          </div>
+        </div>
+      </div>
+
+      {/* Timer Toggle */}
+      {!isCompleted &&
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '90%', margin: '15px auto', padding: '0 10px' }}>
+          <div style={{ ...styles(theme, fSize).text, fontSize: '16px' }}>
+            {langIndex === 0 ? 'Запустить таймер?' : 'Start timer?'}
+          </div>
+          {needTimer ?
+            <FaRegCircleCheck style={{ fontSize: '28px', color: Colors.get('done', theme), cursor: 'pointer' }} onClick={() => { setNeedTimer(false) }} /> :
+            <FaRegCircle style={{ fontSize: '28px', color: Colors.get('icons', theme), cursor: 'pointer' }} onClick={() => { setNeedTimer(true) }} />
+          }
+        </div>
+      }
+      {!isCompleted && needTimer &&
+          <div style={styles.topSection}>
+                <div style={styles.label}>
+                    <span style={{opacity: 0.7, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px'}}>
+                        {langIndex === 0 ? 'отдых: ' : 'rest: '}
+                    </span>
+                    <span style={{fontSize: '24px', fontWeight: 'bold', marginTop: '4px'}}>
+                        {Math.floor(maxTimer / 60000)}:{Math.floor((maxTimer % 60000) / 1000).toString().padStart(2, '0')}
+                    </span>
+                </div>
+                
+                <Slider 
+                    style={styles(theme).slider} 
+                    min={10} 
+                    max={600} 
+                    step={10} 
+                    value={maxTimer / 1000} 
+                    valueLabelDisplay="off" 
+                    onChange={(_, newValue) => { setMaxTimer(newValue * 1000); }} 
+                />
+            </div>  
+      }
+
+      {/* Action Buttons */}
+      <div style={{ display: 'flex', gap: '15px', marginTop: 'auto', marginBottom: '10px' }}>
+        <button onClick={() => setShowAddNewSetPanel(false)} style={{ ...styles(theme).secondaryBtn, flex: 1 }}><MdClose style={{ fontSize: '24px' }} /></button>
+        <button onClick={() => { addset() }} style={{ ...styles(theme).primaryBtn, flex: 3 }}><MdDone style={{ fontSize: '24px' }} /></button>
+      </div>
+    </div>
+  </div>
+)}
+
+      {/* --- REDACT SET PANEL --- */}
+      {showRedactSetPanel && (
+  <div style={styles(theme).confirmContainer}>
+    <div style={{
+      ...styles(theme).bottomSheet,
+      borderTop: `3px solid ${isWarmUp ? Colors.get('difficulty2', theme) : Colors.get('difficulty5', theme)}`
+    }}>
+      <div style={{ ...styles(theme, fSize).text, fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
+        {langIndex === 0 ? "Изменить сет" : "Edit Set"}
+      </div>
+
+      {/* REPS & WEIGHT PICKERS */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', width: '100%' }}>
+        {/* Reps */}
+        <div style={{ ...styles(theme).inputCard, height: 'auto', padding: '15px 10px' }}>
+          <div style={{ ...styles(theme, fSize).subtext, marginBottom: '10px', textAlign: 'center' }}>
+            {langIndex === 0 ? "Повторы" : "Reps"}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <ScrollPicker items={repsRange} value={reps} onChange={setReps} theme={theme} width="60px" />
+          </div>
+        </div>
+
+        {/* Weight */}
+        <div style={{ ...styles(theme).inputCard, height: 'auto', padding: '15px 10px' }}>
+          <div style={{ ...styles(theme, fSize).subtext, marginBottom: '10px', textAlign: 'center' }}>
+            {langIndex === 0 ? "Вес (кг)" : "Weight"}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '5px' }}>
+            <ScrollPicker 
+              items={weightIntRange} 
+              value={Math.floor(weight)} 
+              onChange={(val) => setWeight(val + (weight % 1))} 
+              theme={theme} 
+              width="50px" 
+            />
+            <div style={{ paddingTop: '40px', fontSize: '20px', fontWeight: 'bold', color: Colors.get('subText', theme) }}>.</div>
+            <ScrollPicker 
+              items={weightDecRange} 
+              value={weight % 1} 
+              onChange={(val) => setWeight(Math.floor(weight) + val)} 
+              theme={theme} 
+              width="40px" 
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Type Toggle */}
+      <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '4px', margin: '20px 0' }}>
+        <div onClick={() => { setIsWarmUp(true) }} style={{ ...styles(theme).segmentBtn, color: isWarmUp ? Colors.get('difficulty2', theme) : Colors.get('subText', theme) }}>
+          {langIndex === 0 ? "Разминка" : "Warmup"}
+        </div>
+        <div onClick={() => { setIsWarmUp(false) }} style={{ ...styles(theme).segmentBtn, color: !isWarmUp ? Colors.get('difficulty5', theme) : Colors.get('subText', theme) }}>
+          {langIndex === 0 ? "Рабочий" : "Work"}
+        </div>
+      </div>
+
+      {/* TIME PICKER */}
+      <div style={{ ...styles(theme).inputCard, height: 'auto', padding: '15px 10px' }}>
+        <div style={{ ...styles(theme, fSize).subtext, marginBottom: '10px', textAlign: 'center', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}>
+           <FaClock /> {langIndex === 0 ? "Время" : "Time"}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+             <ScrollPicker 
+                items={minutesRange} 
+                value={Math.floor(exTime / 60000)} 
+                onChange={(min) => setExTime((min * 60000) + (exTime % 60000))} 
+                theme={theme} 
+                width="50px"
+                suffix="m"
+              />
+          <div style={{ paddingTop: '40px', fontSize: '20px', fontWeight: 'bold', color: Colors.get('subText', theme) }}>:</div>
+             <ScrollPicker 
+                items={secondsRange} 
+                value={Math.floor((exTime % 60000) / 1000)} 
+                onChange={(sec) => setExTime((Math.floor(exTime / 60000) * 60000) + (sec * 1000))} 
+                theme={theme} 
+                width="50px"
+                suffix="s"
+              />
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
+        <button onClick={() => setShowRedactSetPanel(false)} style={{ ...styles(theme).secondaryBtn, flex: 1 }}><MdClose style={{ fontSize: '24px' }} /></button>
+        <button onClick={() => { redactset() }} style={{ ...styles(theme).primaryBtn, flex: 3 }}><MdDone style={{ fontSize: '24px' }} /></button>
+      </div>
+    </div>
+  </div>
+)}
+
       {stopWatchPanel && <div  style={styles(theme).confirmContainer}>
          <Stopwatch theme={theme} langIndex={langIndex} setTime={setExTime} setShowPanel={setStopWatchPanel}/>
       </div>}
       {showPlatesCalculator && <div  style={styles(theme).confirmContainer}>
          <PlatesCalculator theme={theme} langIndex={langIndex} fSize={fSize} setShowCalculator={setShowPlatesCalculator}/>
       </div>}
-      { premiumMiniPage && !UserData.hasPremium && <div onClick={(e) => {e.preventDefault();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',width:'95vw',height:'160vw',top:'15.5%',borderRadius:'24px',backdropFilter:'blur(12px)',zIndex:2}}>
-          <p style={{...styles(theme,fSize).text,textAlign: "center",}}> {langIndex === 0 ? '📈 Сравнивайте прогресс с прошлыми тренировками\n и отслеживайте рост в каждом подходе!' : '📈 Compare progress with past workouts\n and track gains in every set!'} </p>
-          <p style={{...styles(theme,fSize).text}}> {langIndex === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'} </p>
-          <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn,margin:'10px'}} >{langIndex === 0 ? 'Стать премиум' : 'Get premium'}</button>
-          <button onClick={() => {setPremiumMiniPage(false)}} style={{...styles(theme,fSize).btn,margin:'10px'}} >{langIndex === 0 ? 'Закрыть' : 'Close'}</button>
-        </div>
+      { premiumMiniPage && !UserData.hasPremium &&
+        <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    style={{
+                        position: 'absolute', inset: 0, zIndex: 2,
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                        backgroundColor: theme$.value === 'dark' ? 'rgba(10, 10, 10, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+                        backdropFilter: 'blur(5px)',
+                        textAlign: 'center'
+                    }}
+                >
+                    <div style={{ color: theme$.value === 'dark' ? '#FFD700' : '#D97706', fontSize: '11px', fontWeight: 'bold', fontFamily: 'Segoe UI' }}>
+                        {langIndex === 0 ? 'ТОЛЬКО ДЛЯ ПРЕМИУМ' : 'PREMIUM USERS ONLY'}
+                    </div>
+                    <button onClick={() => {setPremiumMiniPage(false)}} style={{...styles(theme,fSize).btn,margin:'10px'}} >{langIndex === 0 ? 'Закрыть' : 'Close'}</button>
+                </div>
       }
       {showConfirmPanel && <div  style={styles(theme).confirmContainer}>
-         <div style={{...styles(theme).cP,height:'20%'}}>
-           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Завершить тренировку?" : "Finish session?"}</div>
-           <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-              <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => setShowConfirmPanel(false)}/>
-              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {onFinishSession()}}/>
+         <div style={{...styles(theme).modalCard, height:'auto'}}>
+           <div style={{...styles(theme,fSize).text, fontSize:'20px', marginBottom:'25px'}}>{langIndex === 0 ? "Завершить тренировку?" : "Finish session?"}</div>
+           <div style={{display:'flex', width:'80%', justifyContent:'space-between'}}>
+              <button onClick={() => setShowConfirmPanel(false)} style={styles(theme).secondaryBtn}><MdClose style={{fontSize:'28px'}}/></button>
+              <button onClick={() => {onFinishSession()}} style={styles(theme).primaryBtn}><MdDone style={{fontSize:'28px'}}/></button>
            </div>
          </div>
       </div>}
       {showConfirmExercisePanel && <div  style={styles(theme).confirmContainer}>
-         <div style={{...styles(theme).cP,height:'20%'}}>
-           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Удалить упражнение?" : "Delete exercise?"}</div>
-           <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-              <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => setShowConfirmExercisePanel(false)}/>
-              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {removeexercise()}}/>
+         <div style={{...styles(theme).modalCard, height:'auto'}}>
+           <div style={{...styles(theme,fSize).text, fontSize:'20px', marginBottom:'25px'}}>{langIndex === 0 ? "Удалить упражнение?" : "Delete exercise?"}</div>
+           <div style={{display:'flex', width:'80%', justifyContent:'space-between'}}>
+              <button onClick={() => setShowConfirmExercisePanel(false)} style={styles(theme).secondaryBtn}><MdClose style={{fontSize:'28px'}}/></button>
+              <button onClick={() => {removeexercise()}} style={{...styles(theme).primaryBtn, backgroundColor:Colors.get('skipped', theme)}}><FaTrash style={{fontSize:'20px'}}/></button>
            </div>
          </div>
       </div>}
+
+      {/* --- FINISH SCREEN --- */}
       {showFinishPanel && <div  style={styles(theme).confirmContainer}>
-         <div style={{...styles(theme).cP,height:'90%',justifyContent:'flex-start'}}>
-           <div style={{...styles(theme,fSize).subtext ,fontSize:'15px',fontWeight:'bold',marginTop:'17px' }}>{langIndex === 0 ? "Результаты тренировки" : "Session results"}</div>
-           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px',height:'25%', width: '100%', marginTop: '12px', borderBottom: `1px solid ${Colors.get('border', theme)}`}}>
-           <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-            <div style={{...styles(theme,fSize).subtext}}>{langIndex === 0 ? "Время тренировки" : "Training time"}</div>
-            <div style={{...styles(theme,fSize).text,fontSize:'24px'}}>{formatDurationMs(session.duration)}</div>
+         <div style={{...styles(theme).modalCard, height:'85%', justifyContent:'flex-start', paddingTop:'10px'}}>
+           <div style={{...styles(theme,fSize).subtext ,fontSize:'18px',fontWeight:'bold',marginTop:'17px', color:Colors.get('done', theme) }}>{langIndex === 0 ? "Результаты тренировки" : "Session results"}</div>
+           
+           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', width: '100%', marginTop: '20px', paddingBottom:'20px', borderBottom: `1px solid ${Colors.get('border', theme)}`}}>
+           <div style={styles(theme).statBox}>
+            <div style={{...styles(theme,fSize).subtext, fontSize:'12px'}}>{langIndex === 0 ? "Время" : "Time"}</div>
+            <div style={{...styles(theme,fSize).text,fontSize:'20px', fontWeight:'bold', margin:0}}>{formatDurationMs(session.duration)}</div>
            </div>
-           <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-            <div style={{...styles(theme,fSize).subtext}}>{langIndex === 0 ? "Тоннаж" : "Tonnage"}</div>
-            <div style={{...styles(theme,fSize).text,fontSize:'24px'}}>{(tonnage * 0.001).toFixed(2) + (langIndex === 0 ? ' т' : ' t')}</div>
+           <div style={styles(theme).statBox}>
+            <div style={{...styles(theme,fSize).subtext, fontSize:'12px'}}>{langIndex === 0 ? "Тоннаж" : "Tonnage"}</div>
+            <div style={{...styles(theme,fSize).text,fontSize:'20px', fontWeight:'bold', margin:0}}>{(tonnage * 0.001).toFixed(2) + (langIndex === 0 ? ' т' : ' t')}</div>
            </div>
-           <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-            <div style={{...styles(theme,fSize).subtext}}>{langIndex === 0 ? "Повторения" : "Reps"}</div>
-            <div style={{...styles(theme,fSize).text,fontSize:'24px'}}>{allReps}</div>
+           <div style={styles(theme).statBox}>
+            <div style={{...styles(theme,fSize).subtext, fontSize:'12px'}}>{langIndex === 0 ? "Повторения" : "Reps"}</div>
+            <div style={{...styles(theme,fSize).text,fontSize:'20px', fontWeight:'bold', margin:0}}>{allReps}</div>
            </div>
-           <div style={{display:'flex',flexDirection:'column',alignItems:'center'}}>
-            <div style={{...styles(theme,fSize).subtext}}>{langIndex === 0 ? "Сеты" : "Sets"}</div>
-            <div style={{...styles(theme,fSize).text,fontSize:'24px'}}>{getAllSets(trainInfo.dayKey, trainInfo.dInd)}</div>
+           <div style={styles(theme).statBox}>
+            <div style={{...styles(theme,fSize).subtext, fontSize:'12px'}}>{langIndex === 0 ? "Сеты" : "Sets"}</div>
+            <div style={{...styles(theme,fSize).text,fontSize:'20px', fontWeight:'bold', margin:0}}>{getAllSets(trainInfo.dayKey, trainInfo.dInd)}</div>
            </div>
            </div>
            
             
 
-           <div style={{width: '100%',height:'55%', borderBottom: `1px solid ${Colors.get('border', theme)}`,overflowY:'scroll' }}>
-             <div style={{...styles(theme,fSize).subtext ,fontSize:'15px',fontWeight:'bold',marginTop:'17px' }}>{langIndex === 0 ? "Рекорды" : "Records"}</div>
-            <img src="images/Medal.png" style={{ width: '50px', height: '50px' }} />
+           <div style={{width: '100%',flex:1, overflowY:'scroll', display:'flex', flexDirection:'column', alignItems:'center' }}>
+             <div style={{...styles(theme,fSize).subtext ,fontSize:'16px',fontWeight:'bold',marginTop:'17px', marginBottom:'10px' }}>{langIndex === 0 ? "Рекорды" : "Records"}</div>
+            <img src="images/Medal.png" style={{ width: '60px', height: '60px', marginBottom:'10px' }} />
             {newRmRecords.length > 0 ? (
   
     <div
   style={{
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '16px',
+    gap: '12px',
     width: '100%',
-    marginTop: '12px',
-    ĥeight: '80%',                 
-    paddingRight: '4px',       
+    padding: '0 10px',      
   }}
 >
   {newRmRecords.map(({ exId, newRm, oldRm, improvement }) => {
@@ -478,21 +752,21 @@ return (
         key={exId}
         style={{
           display: 'flex',
-          width: '100%',
           flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
+          backgroundColor:'rgba(255,255,255,0.05)',
+          borderRadius:'12px',
+          padding:'10px'
         }}
       >
             
-            <div style={{ ...styles(theme, fSize).subtext, fontWeight: 'bold', textAlign: 'center', marginTop: '16px' }}>
+            <div style={{ ...styles(theme, fSize).subtext, fontWeight: 'bold', textAlign: 'center', fontSize:'14px' }}>
               {exerciseObj.name[langIndex]}
             </div>
-            <div style={{ ...styles(theme, fSize).text, fontSize: '24px', marginTop: '8px' }}>
+            <div style={{ ...styles(theme, fSize).text, fontSize: '20px', fontWeight:'bold', marginTop: '6px', color:Colors.get('iconsHighlited', theme) }}>
               {newRm} {langIndex === 0 ? 'кг' : 'kg'}
             </div>
-            <div style={{ ...styles(theme, fSize).subtext, fontSize: '10px', marginTop: '4px' }}>
+            <div style={{ ...styles(theme, fSize).subtext, fontSize: '11px', marginTop: '4px', opacity:0.6 }}>
               {langIndex === 0 ? 'было' : 'was'} {oldRm > 0 ? `${oldRm} ${langIndex === 0 ? 'кг' : 'kg'}` : '-'}
             </div>
             <div style={{ 
@@ -500,7 +774,7 @@ return (
               fontSize: '12px', 
               fontWeight: 'bold',
               color: Colors.get('done', theme),
-              marginTop: '2px'
+              marginTop: '4px'
             }}>
               {improvement > 0 ? (
                 langIndex === 0 
@@ -514,14 +788,16 @@ return (
     </div>
 
 ) : (
-  <div style={{ ...styles(theme, fSize).subtext, marginTop: '12px' }}>
+  <div style={{ ...styles(theme, fSize).subtext, marginTop: '12px', fontStyle:'italic' }}>
     {langIndex === 0 ? "Новых рекордов нет" : "No new records"}
   </div>
 )}
            </div>
-           <div style={{...styles(theme).simplePanelRow,height:'60px',marginTop:'15px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {setPage('TrainingMain')}}/>
-           </div>
+           
+           <button onClick={() => {setPage('TrainingMain')}} style={{...styles(theme).primaryBtn, width:'90%', marginTop:'15px'}}>
+               <MdDone style={{fontSize:'24px', marginRight:'10px'}}/>
+               {langIndex === 0 ? 'Завершить' : 'Finish'}
+           </button>
          </div>
       </div>}
       {showExerciseList && (
@@ -531,42 +807,47 @@ return (
       )}
       {/* strategy panel */}
         {showStarategyPanel && <div style={styles(theme).confirmContainer}>
-                  <div style={{position:'fixed',top:'30vh',left:'4.5vw',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around',width:'90vw',height:'90vw',marginTop:'5px',borderRadius:'24px',border:`1px solid ${Colors.get('border', theme)}`,backgroundColor:Colors.get('background', theme),zIndex:'7000'}}>
-                     <p style={{...styles(theme,false,false,fSize).text,padding:'20px',marginLeft:'10%',marginRight:'5%',textAlign:'center'}}>{langIndex === 0 ? 'Установите стратегию выполнения' : 'Set performing strategy'}</p>
-                      <div style={{display:'flex',flexDirection:'row',width:'90%',justifyContent:'space-around'}}>
-                        <div onClick={() => {setStrategy(0)}} style={{width:'40%',border:strategy === 0 ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:strategy === 1 ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Повторы" : "Reps"}</div>
-                        <div onClick={() => {setStrategy(1)}} style={{width:'40%',border:strategy === 1 ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:strategy === 0 ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Время" : "Time"}</div>
-                      </div>
-                      {strategy === 0 && <div style={{display:'flex',flexDirection:'row',height:'50%',width:'60%',justifyContent:'space-around'}}>
-                        <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
-                          <IoIosArrowUp onClick={() => setSets(prev => prev + 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                            <div style={{...styles(theme).text,fontSize:'24px'}}>{sets}</div>
-                          <IoIosArrowDown onClick={() => setSets(prev => prev - 1 > 0 ? prev - 1 : 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                        </div>
-                          <p style={{...styles(theme).text,fontSize:'24px',marginTop:'30%'}}>{'x'}</p>
-                        <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
-                          <IoIosArrowUp onClick={() => setCurrentRepMin(prev => prev + 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                            <div style={{...styles(theme).text,fontSize:'24px'}}>{currentRepMin}</div>
-                          <IoIosArrowDown onClick={() => setCurrentRepMin(prev => prev - 1 > 0 ? prev - 1 : 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                        </div>
-                          <p style={{...styles(theme).text,fontSize:'24px',marginTop:'30%'}}>{'-'}</p>
-                        <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
-                          <IoIosArrowUp onClick={() => setCurrentRepMax(prev => prev + 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                            <div style={{...styles(theme).text,fontSize:'24px'}}>{currentRepMax}</div>
-                          <IoIosArrowDown onClick={() => setCurrentRepMax(prev => (prev - 1 > currentRepMin + 2 ? prev - 1 : currentRepMin + 2))} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                        </div>
-                      </div>}
-                    <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'center'}}>
-                      <MdDone onClick={() => onAddExercise(true)} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
-                      </div>
+                  <div style={{...styles(theme).modalCard, height:'auto', padding:'25px'}}>
+                      <p style={{...styles(theme,false,false,fSize).text, textAlign:'center', fontSize:'18px', fontWeight:'bold', marginBottom:'20px'}}>{langIndex === 0 ? 'Стратегия выполнения' : 'Set Strategy'}</p>
+                       <div style={{display:'flex', width:'100%', justifyContent:'center', marginBottom:'20px', backgroundColor:'rgba(0,0,0,0.2)', borderRadius:'12px', padding:'4px'}}>
+                         <div onClick={() => {setStrategy(0)}} style={{...styles(theme).segmentBtn, width:'50%', backgroundColor: strategy === 0 ? Colors.get('iconsHighlited', theme) : 'transparent'}}>{langIndex === 0 ? "Повторы" : "Reps"}</div>
+                         <div onClick={() => {setStrategy(1)}} style={{...styles(theme).segmentBtn, width:'50%', backgroundColor: strategy === 1 ? Colors.get('iconsHighlited', theme) : 'transparent'}}>{langIndex === 0 ? "Время" : "Time"}</div>
+                       </div>
+                       
+                       {strategy === 0 && <div style={{display:'flex', justifyContent:'space-around', alignItems:'center', width:'100%', marginBottom:'25px'}}>
+                         <div style={{display:'flex',flexDirection:'column', alignItems:'center'}}>
+                           <IoIosArrowUp onClick={() => setSets(prev => prev + 1)} style={styles(theme).icon}/>
+                             <div style={{...styles(theme).text,fontSize:'24px', fontWeight:'bold'}}>{sets}</div>
+                           <IoIosArrowDown onClick={() => setSets(prev => prev - 1 > 0 ? prev - 1 : 1)} style={styles(theme).icon}/>
+                           <span style={styles(theme).subtext}>{langIndex === 0 ? 'Сеты' : 'Sets'}</span>
+                         </div>
+                           <p style={{...styles(theme).text,fontSize:'20px', opacity:0.5}}>X</p>
+                         <div style={{display:'flex',flexDirection:'column', alignItems:'center'}}>
+                           <IoIosArrowUp onClick={() => setCurrentRepMin(prev => prev + 1)} style={styles(theme).icon}/>
+                             <div style={{...styles(theme).text,fontSize:'24px', fontWeight:'bold'}}>{currentRepMin}</div>
+                           <IoIosArrowDown onClick={() => setCurrentRepMin(prev => prev - 1 > 0 ? prev - 1 : 1)} style={styles(theme).icon}/>
+                           <span style={styles(theme).subtext}>Min</span>
+                         </div>
+                           <p style={{...styles(theme).text,fontSize:'20px', opacity:0.5}}>-</p>
+                         <div style={{display:'flex',flexDirection:'column', alignItems:'center'}}>
+                           <IoIosArrowUp onClick={() => setCurrentRepMax(prev => prev + 1)} style={styles(theme).icon}/>
+                             <div style={{...styles(theme).text,fontSize:'24px', fontWeight:'bold'}}>{currentRepMax}</div>
+                           <IoIosArrowDown onClick={() => setCurrentRepMax(prev => (prev - 1 > currentRepMin + 2 ? prev - 1 : currentRepMin + 2))} style={styles(theme).icon}/>
+                           <span style={styles(theme).subtext}>Max</span>
+                         </div>
+                       </div>}
+                     
+                       <button onClick={() => onAddExercise(true)} style={styles(theme).primaryBtn}>
+                            <MdDone style={{fontSize:'22px'}}/>
+                       </button>
                   </div>
         </div>}
     {showSuggestionToAdd && <div  style={styles(theme).confirmContainer}>
-         <div style={{...styles(theme).cP,height:'20%'}}>
-           <div style={{...styles(theme,fSize).text}}>{langIndex === 0 ? "Добавить упражнение также в программу?" : "Add the exercise to the program too?"}</div>
-           <div style={{...styles(theme).simplePanelRow,height:'60px',backgroundColor:'rgba(0,0,0,0.2)',borderRadius:'12px'}}>
-              <MdClose style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => onAddExercise(false)}/>
-              <MdDone style={{fontSize:'38px',color:Colors.get('icons', theme)}} onClick={() => {setShowStarategyPanel(true);setShowSuggestionToAdd(false)}}/>
+         <div style={{...styles(theme).modalCard, height:'auto'}}>
+           <div style={{...styles(theme,fSize).text, fontSize:'18px', textAlign:'center', marginBottom:'25px'}}>{langIndex === 0 ? "Добавить упражнение также в программу?" : "Add the exercise to the program too?"}</div>
+           <div style={{display:'flex', width:'80%', justifyContent:'space-between'}}>
+              <button onClick={() => onAddExercise(false)} style={styles(theme).secondaryBtn}>{langIndex === 0 ? 'Нет' : 'No'}</button>
+              <button onClick={() => {setShowStarategyPanel(true);setShowSuggestionToAdd(false)}} style={styles(theme).primaryBtn}>{langIndex === 0 ? 'Да' : 'Yes'}</button>
            </div>
          </div>
       </div>}
@@ -576,28 +857,35 @@ return (
 
 export default TrainingCurrent
 
+// Helper Styles
 const numStyle = (theme,type) =>
 ({
-  fontSize:'18px',
-  fontWeight:'bold',
-  color:type === 0 ? Colors.get('trainingIsolatedFont', theme) : Colors.get('trainingBaseFont', theme),
-  width:'26%',
-  borderRight:`1px solid ${Colors.get('border', theme)}`
+ fontSize:'15px',
+ fontWeight:'bold',
+ color:type === 0 ? Colors.get('difficulty2', theme) : Colors.get('difficulty5', theme),
+ width:'25%',
+ textAlign:'left',
+ paddingLeft:'4px'
 })
+
 const numStylePrev = (theme) =>
 ({
-  fontSize:'16px',
-  color:Colors.get('prevTrainingText', theme),
-  width:'26%',
-  borderRight:`1px solid ${Colors.get('border', theme)}`
+ fontSize:'13px',
+ color:Colors.get('subText', theme),
+ width:'25%',
+ textAlign:'left',
+ paddingLeft:'4px',
+ fontStyle: 'italic'
 })
+
 const spanStyle = (theme,isMore) =>
 ({
-  fontSize:'10px',
-  position: 'relative',
-  top: '-8px',
-  fontStyle:'italic',
-  color:isMore ? Colors.get('done', theme) : Colors.get('skipped', theme)
+ fontSize:'10px',
+ position: 'relative',
+ top: '-4px',
+ left: '2px',
+ fontWeight:'bold',
+ color:isMore ? Colors.get('done', theme) : Colors.get('skipped', theme)
 })
 
 const styles = (theme,fSize) =>
@@ -611,8 +899,8 @@ const styles = (theme,fSize) =>
      overflowY:'scroll',
      justifyContent: "start",
      alignItems: "center",
-     height: "78vh",
-     top:'14vh',
+     height: "92vh",
+     top:'10vh',
      width: "100vw",
      fontFamily: "Segoe UI",
   },
@@ -623,16 +911,39 @@ const styles = (theme,fSize) =>
     width: "100%",
     alignItems: "center",
     justifyContent: "start",
-    
+  },
+  headerCard: {
+      width: '95%',
+      backgroundColor: Colors.get('bottomPanel', theme), // Or a slightly lighter shade
+      borderRadius: '20px',
+      padding: '15px',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      marginBottom: '15px',
+      marginTop: '10px'
+  },
+  headerIcon: {
+      fontSize: '20px',
+      color: Colors.get('icons', theme)
+  },
+  toolIconWrapper: {
+      width:'36px', 
+      height:'36px', 
+      borderRadius:'12px', 
+      backgroundColor:'rgba(255,255,255,0.05)', 
+      display:'flex', 
+      alignItems:'center', 
+      justifyContent:'center',
+      cursor: 'pointer'
   },
   scrollView:
   {
     display:'flex',
     flexDirection:'column',
+    alignItems:'center',
     overflowY:'scroll',
     width:'100%',
-    height:'57vh',
-    marginLeft:'4%',
+    overflowX:'hidden',
+    height:'66vh',
   },
   text :
   {
@@ -648,50 +959,187 @@ const styles = (theme,fSize) =>
   },
   icon:
   {
-     fontSize:'14px',
+     fontSize:'18px',
      color:Colors.get('icons', theme),
-     marginRight:'18px'
+     cursor: 'pointer'
   },
-  cP :
-    {
-      display:'flex',
-      flexDirection:'column',
-      alignItems: "center",
-      justifyContent: "space-around",
-      borderRadius:"24px",
-      backgroundColor:Colors.get('bottomPanel', theme),
-      width:"100%",
-      height:"90vh"
-  },
-    confirmContainer: {
+   confirmContainer: {
     position: 'fixed',
     top: 0,
-    left: -10,
+    left: 0,
+    right: 0,
     bottom: 0,
-    width:'95vw',
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+    backdropFilter: 'blur(5px)',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'center', // Center vertically for confirmations
     justifyContent: 'center',
     zIndex: 2900,
-    padding: '20px',
   },
-simplePanelRow:
-{
-  width:'75vw',
-  display:'flex',
-  flexDirection:'row',
-  alignItems:'center',
-  justifyContent:'space-around',
-},
-slider:
-{
-  width:'80%',
-  userSelect: 'none',
-  touchAction: 'none',
-  color:Colors.get('icons', theme),
-  backgroundColor:'rgba(0,0,0,0.2)',
-},
+  bottomSheet: {
+      width: '90%',
+      height:'60%',
+      position: 'absolute',
+      bottom: 0,
+      backgroundColor: Colors.get('bottomPanel', theme),
+      borderTopLeftRadius: '25px',
+      borderTopRightRadius: '25px',
+      padding: '15px 20px 30px 20px',
+      display: 'flex',
+      flexDirection: 'column',
+      boxShadow: '0 -5px 20px rgba(0,0,0,0.3)'
+  },
+  modalCard: {
+      width: '80%',
+      backgroundColor: Colors.get('bottomPanel', theme),
+      borderRadius: '24px',
+      padding: '20px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+  },
+  inputCard: {
+      flex: 1,
+      height:'80px',
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      borderRadius: '16px',
+      padding: '10px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+  },
+  circleBtn: {
+      fontSize:'24px', 
+      color:Colors.get('icons', theme), 
+      padding:'8px', 
+      borderRadius:'50%', 
+      backgroundColor:'rgba(255,255,255,0.05)',
+      cursor: 'pointer'
+  },
+  circleBtnSmall: {
+      fontSize:'18px', 
+      color:Colors.get('icons', theme), 
+      padding:'8px', 
+      borderRadius:'50%', 
+      backgroundColor:'rgba(255,255,255,0.05)',
+      cursor: 'pointer'
+  },
+  primaryBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: Colors.get('done', theme),
+      color: '#fff',
+      border: 'none',
+      borderRadius: '15px',
+      padding: '12px 20px',
+      fontSize: '16px',
+      fontWeight: 'bold',
+      boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+  },
+  secondaryBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor:  Colors.get('skipped', theme),
+      color: Colors.get('mainText', theme),
+      border: 'none',
+      borderRadius: '15px',
+      padding: '12px 20px',
+      fontSize: '16px'
+  },
+  segmentBtn: {
+      flex: 1,
+      textAlign: 'center',
+      padding: '8px',
+      borderRadius: '10px',
+      fontSize: '14px',
+      fontWeight: '600',
+      transition: 'all 0.2s'
+  },
+  slider:
+  {
+   width:'90%',
+   alignSelf:'center',
+   color:Colors.get('difficulty', theme),
+  },
+  actionBtnSmall: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      border: 'none',
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      borderRadius: '8px',
+      padding: '8px 16px',
+      cursor: 'pointer'
+  },
+  floatingMenu: {
+      position: 'fixed',
+      bottom: '90px',
+      width: '88%',
+      maxWidth: '400px',
+      height: '40px',
+      backgroundColor: theme === 'dark' ? 'rgba(15, 15, 15, 0.57)' : 'rgba(219, 219, 219, 0.46)', // Dark glass
+      backdropFilter: 'blur(10px)',
+      borderRadius: '30px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 10px',
+      boxShadow: '0 10px 25px rgba(0,0,0,0.4)',
+      zIndex: 1000,
+      border: `1px solid ${Colors.get('border', theme)}`
+  },
+  menuPillBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '8px 16px',
+      borderRadius: '20px',
+      backgroundColor: theme === 'dark' ? 'rgba(28, 28, 28, 0.85)' : 'rgba(235, 235, 235, 0.46)',
+      color: Colors.get('mainText', theme),
+      fontSize: '14px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      height: '20px'
+  },
+  menuIconBtn: {
+      width: '40px', 
+      height: '40px', 
+      borderRadius: '50%', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      cursor: 'pointer'
+  },
+  statBox: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255,255,255,0.03)',
+      borderRadius: '12px',
+      padding: '10px'
+  },
+  topSection: {
+          width: '85%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          background: 'rgba(0,0,0,0.05)', // Subtle backing for slider area
+          borderRadius: '16px',
+          padding: '15px',
+          marginTop: '10px'
+      },
+      label: {
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          color: Colors.get('mainText', theme),
+          marginBottom: '10px',
+          fontFamily: 'sans-serif', // Ensure clean font
+      }
 })
 
 function playEffects(sound){
@@ -773,8 +1221,8 @@ function ParsedTime({ time, maxTime, theme }) {
     }
   }, [seconds]);
   if (time <= 0 || elapsedOrRemaining <= 0) return null;
-  const baseFontSize = '17px';
-  const animatedFontSize = isPulsing ? '20px' : baseFontSize; // or use transform for smoother perf
+  const baseFontSize = '18px';
+  const animatedFontSize = isPulsing ? '21px' : baseFontSize; 
   const color = 
     percent < 50 && percent > 30
       ? Colors.get('trainingIsolatedFont', theme)
@@ -785,11 +1233,11 @@ function ParsedTime({ time, maxTime, theme }) {
     <div
       style={{
         color,
-        marginRight:'12px',
         fontSize: animatedFontSize,
         fontWeight: 'bold',
         transition: 'font-size 0.2s ease-out', // smooth shrink-back
         lineHeight: 1,
+        fontFamily:'monospace'
       }}
     >
       {timeString}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 const ProgressMeasurmentsCircle = ({
   startValue = 50,
@@ -7,159 +8,113 @@ const ProgressMeasurmentsCircle = ({
   unit = 'kg',
   langIndex = 0,
   goal = 0,
-  size = 120,
-  textColor = '#acbac3ff',
-  linesColor = '#34495e',
+  size = 220,
+  textColor = '#fff',
+  linesColor = '#333',
   minColor = '#e74c3c',
   maxColor = '#2ecc71',
-  mediumcolor = '#3498db',
-  baseColor = '#95a5a6',
+  mediumColor = '#3498db',
 }) => {
-  const trackColor = linesColor;
-  const mediumColor = mediumcolor;
-
+  
+  // Logic
   const actualChange = endValue - startValue;
   const absoluteChange = Math.abs(actualChange);
   const noChange = actualChange === 0;
-  const isProgress = goal === 0 ? actualChange > 0 : actualChange < 0;
-
-  const progressEmoji = noChange
-    ? '➖'
-    : isProgress
-      ? '↗️'
-      : '↘️';
+  const isProgress = goal === 0 ? actualChange > 0 : actualChange < 0; // Goal 0 = Gain, Goal 1 = Loss
 
   const displaySign = actualChange >= 0 ? '+' : '−';
-  const progressColor = noChange
-    ? textColor
-    : isProgress
-      ? maxColor
-      : minColor;
-  let startColor = isProgress ?  minColor : maxColor;
-  let endColor = isProgress ?  maxColor : minColor;
-  if(noChange){
-    startColor = maxColor;
-    endColor = maxColor;
-  }
+  
+  // Colors based on goal
+  const progressColor = noChange ? textColor : (isProgress ? maxColor : minColor);
+  
+  // Circles Configuration
+  const strokeWidth = 10;
+  const gap = 12; // Gap between rings
+  const radius1 = (size / 2) - strokeWidth;
+  const radius2 = radius1 - strokeWidth - gap;
+  const radius3 = radius2 - strokeWidth - gap;
 
-  const radius = size / 2;
-  const strokeWidth = 9;
-  const spacing = strokeWidth / 2;
+  const circ1 = 2 * Math.PI * radius1;
+  const circ2 = 2 * Math.PI * radius2;
+  const circ3 = 2 * Math.PI * radius3;
 
-  const startRadius = radius - strokeWidth / 2;
-  const mediumRadius = startRadius - spacing - strokeWidth / 2;
-  const endRadius = mediumRadius - spacing - strokeWidth / 2;
+  const maxValue = Math.max(startValue, mediumValue, endValue) * 1.1 || 1; // Avoid division by zero
 
-  const startCirc = 2 * Math.PI * startRadius;
-  const mediumCirc = 2 * Math.PI * mediumRadius;
-  const endCirc = 2 * Math.PI * endRadius;
-
-  const maxValue = Math.max(startValue, mediumValue, endValue) * 1.1;
-
-  const tooltipText = langIndex === 0
-    ? `Начало: ${startValue.toFixed(2)} ${unit}\nКонец: ${endValue.toFixed(2)} ${unit}\nСреднее: ${mediumValue.toFixed(2)} ${unit}\nИзменение: ${displaySign}${absoluteChange.toFixed(2)} ${unit}`
-    : `Start: ${startValue.toFixed(2)} ${unit}\nEnd: ${endValue.toFixed(2)} ${unit}\nAverage: ${mediumValue.toFixed(2)} ${unit}\nChange: ${displaySign}${absoluteChange.toFixed(2)} ${unit}`;
+  // Animation Variants
+  const circleVariants = (circumference, val, max) => ({
+    hidden: { strokeDashoffset: circumference },
+    visible: { 
+      strokeDashoffset: circumference * (1 - val / max),
+      transition: { duration: 1.5, ease: "easeOut" }
+    }
+  });
 
   return (
-    <div
-      style={{
-        display: 'inline-block',
-        width: size,
-        height: size,
-        position: 'relative',
-        cursor: 'help',
-      }}
-      title={tooltipText}
-    >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* Start Circle */}
-        <circle cx={radius} cy={radius} r={startRadius} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
-        <circle
-          cx={radius}
-          cy={radius}
-          r={startRadius}
-          fill="none"
-          stroke={startColor}
-          strokeWidth={strokeWidth}
-          strokeDasharray={startCirc}
-          strokeDashoffset={startCirc * (1 - startValue / maxValue)}
-          strokeLinecap="round"
+    <div style={{ position: 'relative', width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+        {/* Track Circles */}
+        <circle cx={size/2} cy={size/2} r={radius1} fill="none" stroke={linesColor} strokeWidth={strokeWidth} strokeLinecap="round" opacity={0.3} />
+        <circle cx={size/2} cy={size/2} r={radius2} fill="none" stroke={linesColor} strokeWidth={strokeWidth} strokeLinecap="round" opacity={0.3} />
+        <circle cx={size/2} cy={size/2} r={radius3} fill="none" stroke={linesColor} strokeWidth={strokeWidth} strokeLinecap="round" opacity={0.3} />
+
+        {/* Value Circles (Animated) */}
+        {/* Outer: End Value (Current) */}
+        <motion.circle
+          cx={size/2} cy={size/2} r={radius1} fill="none"
+          stroke={progressColor} strokeWidth={strokeWidth} strokeLinecap="round"
+          strokeDasharray={circ1}
+          variants={circleVariants(circ1, endValue, maxValue)}
+          initial="hidden" animate="visible"
         />
 
-        {/* Medium Circle */}
-        <circle cx={radius} cy={radius} r={mediumRadius} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
-        <circle
-          cx={radius}
-          cy={radius}
-          r={mediumRadius}
-          fill="none"
-          stroke={mediumColor}
-          strokeWidth={strokeWidth}
-          strokeDasharray={mediumCirc}
-          strokeDashoffset={mediumCirc * (1 - mediumValue / maxValue)}
-          strokeLinecap="round"
+        {/* Middle: Medium Value */}
+        <motion.circle
+          cx={size/2} cy={size/2} r={radius2} fill="none"
+          stroke={mediumColor} strokeWidth={strokeWidth} strokeLinecap="round"
+          strokeDasharray={circ2}
+          variants={circleVariants(circ2, mediumValue, maxValue)}
+          initial="hidden" animate="visible"
         />
 
-        {/* End Circle */}
-        <circle cx={radius} cy={radius} r={endRadius} fill="none" stroke={trackColor} strokeWidth={strokeWidth} />
-        <circle
-          cx={radius}
-          cy={radius}
-          r={endRadius}
-          fill="none"
-          stroke={endColor}
-          strokeWidth={strokeWidth}
-          strokeDasharray={endCirc}
-          strokeDashoffset={endCirc * (1 - endValue / maxValue)}
-          strokeLinecap="round"
+        {/* Inner: Start Value */}
+        <motion.circle
+          cx={size/2} cy={size/2} r={radius3} fill="none"
+          stroke={textColor} strokeWidth={strokeWidth} strokeLinecap="round" opacity={0.5}
+          strokeDasharray={circ3}
+          variants={circleVariants(circ3, startValue, maxValue)}
+          initial="hidden" animate="visible"
         />
       </svg>
 
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: size,
-          height: size,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          color: textColor,
-          fontSize: '12px',
-          fontWeight: 'bold',
-          lineHeight: 1.2,
-        }}
-      >
-        <div style={{ fontSize: '14px', opacity: 0.8, color: startColor }}>
-          {langIndex === 0 ? 'Начало:' : 'Start:'} {startValue.toFixed(1)} {unit}
+      {/* Center Text Info */}
+      <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+        
+        {/* Change Value (Hero) */}
+        <div style={{ fontSize: '32px', fontWeight: '900', color: progressColor, lineHeight: '1' }}>
+          {displaySign}{absoluteChange.toFixed(1)}
+          <span style={{ fontSize: '14px', fontWeight: '600', marginLeft: '2px' }}>{unit}</span>
         </div>
-        <div
-          style={{
-            fontSize: '24px',
-            marginTop: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            color: progressColor,
-            gap: '4px',
-          }}
-        >
-          {progressEmoji}
-          <span>
-            {displaySign}
-            {absoluteChange.toFixed(1)} {unit}
-          </span>
+        <div style={{ fontSize: '11px', color: textColor, opacity: 0.5, textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>
+          {langIndex === 0 ? 'Изменение' : 'Change'}
         </div>
-        <div style={{ fontSize: '14px', color: endColor, marginTop: '4px' }}>
-          {langIndex === 0 ? 'Конец:' : 'End:'} {endValue.toFixed(1)} {unit}
-        </div>
-        <div style={{ fontSize: '10px', color: mediumColor, marginTop: '4px' }}>
-          {langIndex === 0 ? 'Среднее:' : 'Medium:'} {mediumValue.toFixed(1)} {unit}
+
+        {/* Legend */}
+        <div style={{ display: 'flex', gap: '15px', marginTop: '15px' }}>
+            <LegendItem label={langIndex===0?'Начало':'Start'} val={startValue} color={textColor} opacity={0.5} />
+            <LegendItem label={langIndex===0?'Среднее':'Avg'} val={mediumValue} color={mediumColor} />
+            <LegendItem label={langIndex===0?'Конец':'End'} val={endValue} color={progressColor} />
         </div>
       </div>
     </div>
   );
 };
+
+const LegendItem = ({ label, val, color, opacity = 1 }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: color, opacity: opacity, marginBottom: '2px' }} />
+        <span style={{ fontSize: '12px', fontWeight: '700', color: color, opacity: opacity }}>{val.toFixed(0)}</span>
+    </div>
+)
 
 export default ProgressMeasurmentsCircle;

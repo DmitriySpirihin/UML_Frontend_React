@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion'; // Added for animations
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors.js';
 import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus.js';
 import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io';
+import { FaChevronDown } from 'react-icons/fa'; // For modern dropdown arrow
 
 // --- Helpers ---
 const getDayName = (dateStr, langIndex) => {
@@ -122,291 +124,355 @@ const TrainingList = () => {
   }, [type, programOptions, dayOptions, pId]);
 
   // --- Labels ---
-  const allLabel = langIndex === 0 ? 'все' : 'all';
-  const progLabel = langIndex === 0 ? 'программа' : 'program';
-  const dayLabel = langIndex === 0 ? 'день' : 'day';
+  const allLabel = langIndex === 0 ? 'Все' : 'All';
+  const progLabel = langIndex === 0 ? 'Программа' : 'Program';
+  const dayLabel = langIndex === 0 ? 'День' : 'Day';
 
   return (
     <div style={styles(theme).container}>
-      {/* === Filter Toggles === */}
+      {/* === Filter Toggles (Modern Pills) === */}
       <div style={styles(theme).filterContainer}>
-        <div style={styles(theme).textToggles}>
-          {[{ key: 0, label: allLabel }, { key: 1, label: progLabel }, { key: 2, label: dayLabel }].map(({ key, label }) => (
-            <span
-              key={key}
-              onClick={() => setType(key)}
-              style={{
-                padding: '6px 8px',
-                cursor: 'pointer',
-                fontSize: type === key
-                  ? (fSize === 0 ? '14px' : '16px')
-                  : (fSize === 0 ? '13px' : '14px'),
-                fontWeight: type === key ? '600' : '400',
-                color: type === key
-                  ? Colors.get('mainText', theme)
-                  : Colors.get('subText', theme),
-                opacity: type === key ? 1 : 0.8,
-                transition: 'all 0.2s ease'
-              }}
-            >
-              {label}
-              {key < 2 && (
-                <span style={{
-                  margin: '0 10px',
-                  color: Colors.get('border', theme),
-                  fontSize: fSize === 0 ? '13px' : '15px'
-                }}>
-                  |
-                </span>
-              )}
-            </span>
-          ))}
+        <div style={styles(theme).toggleWrapper}>
+          {[{ key: 0, label: allLabel }, { key: 1, label: progLabel }, { key: 2, label: dayLabel }].map(({ key, label }) => {
+            const isActive = type === key;
+            return (
+              <motion.div
+                key={key}
+                onClick={() => setType(key)}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  ...styles(theme).togglePill,
+                  backgroundColor: isActive ? Colors.get('currentDateBorder', theme) : 'transparent',
+                  color: isActive ? '#fff' : Colors.get('subText', theme),
+                  fontSize: fSize === 0 ? '13px' : '14px',
+                }}
+              >
+                {label}
+              </motion.div>
+            );
+          })}
         </div>
 
-        {/* Program Dropdown */}
-        {(type === 1 || type === 2) && (
-          <select
-            value={pId}
-            onChange={(e) => {
-              const newId = Number(e.target.value);
-              setPId(newId);
-              if (type === 2 && dayOptions.length > 0) {
-                setDayIndex(dayOptions[0]?.index || 0);
-              }
-            }}
-            style={styles(theme).select}
-          >
-            {programOptions.map(prog => (
-              <option key={prog.id} value={prog.id}>
-                {prog.name}
-              </option>
-            ))}
-          </select>
-        )}
+        {/* Dropdowns */}
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {(type === 1 || type === 2) && (
+            <div style={styles(theme).selectWrapper}>
+              <select
+                value={pId}
+                onChange={(e) => {
+                  const newId = Number(e.target.value);
+                  setPId(newId);
+                  if (type === 2 && dayOptions.length > 0) {
+                    setDayIndex(dayOptions[0]?.index || 0);
+                  }
+                }}
+                style={styles(theme).select}
+              >
+                {programOptions.map(prog => (
+                  <option key={prog.id} value={prog.id}>{prog.name}</option>
+                ))}
+              </select>
+              <FaChevronDown style={styles(theme).selectIcon} />
+            </div>
+          )}
 
-        {/* Day Dropdown */}
-        {type === 2 && (
-          <select
-            value={dayIndex}
-            onChange={(e) => setDayIndex(Number(e.target.value))}
-            style={styles(theme).select}
-          >
-            {dayOptions.map(day => (
-              <option key={day.index} value={day.index}>
-                {day.name}
-              </option>
-            ))}
-          </select>
-        )}
+          {type === 2 && (
+            <div style={styles(theme).selectWrapper}>
+              <select
+                value={dayIndex}
+                onChange={(e) => setDayIndex(Number(e.target.value))}
+                style={styles(theme).select}
+              >
+                {dayOptions.map(day => (
+                  <option key={day.index} value={day.index}>{day.name}</option>
+                ))}
+              </select>
+              <FaChevronDown style={styles(theme).selectIcon} />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* === Training List === */}
-      {allTrainings.length > 0 ? (
-        allTrainings.map((item) => {
-          const { date, idx, session } = item;
-          const sessionId = `${date}-${idx}`;
-          const isExpanded = expandedSessionId === sessionId;
-          const programId = session.programId || 0;
-          const sessionDayIndex = session.dayIndex || 0;
-          const sessionKey = `${programId}-${sessionDayIndex}`;
-          const borderColor = sessionColorMap.get(sessionKey) || colors[0];
+      <div style={{ width: '100%', maxWidth: '800px', paddingBottom: '50px' }}>
+        {allTrainings.length > 0 ? (
+          <AnimatePresence>
+            {allTrainings.map((item, i) => {
+              const { date, idx, session } = item;
+              const sessionId = `${date}-${idx}`;
+              const isExpanded = expandedSessionId === sessionId;
+              const programId = session.programId || 0;
+              const sessionDayIndex = session.dayIndex || 0;
+              const sessionKey = `${programId}-${sessionDayIndex}`;
+              const borderColor = sessionColorMap.get(sessionKey) || colors[0];
 
-          const program = AppData.programs[programId]; // ✅ OBJECT ACCESS
-          const programName = program?.name?.[langIndex] || `Program ${programId}`;
-          const dayName = program?.schedule?.[sessionDayIndex]?.name?.[langIndex] || `Day ${sessionDayIndex + 1}`;
+              const program = AppData.programs[programId];
+              const programName = program?.name?.[langIndex] || `Program ${programId}`;
+              const dayName = program?.schedule?.[sessionDayIndex]?.name?.[langIndex] || `Day ${sessionDayIndex + 1}`;
 
-          return (
-            <div key={sessionId} style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
-              <div
-                style={{
-                  ...styles(theme, false, false, fSize).sessionPanel,
-                  borderTop: `3px ridge ${borderColor}`,
-                  backgroundColor: isExpanded
-                    ? Colors.get('trainingGroupSelected', theme)
-                    : Colors.get('bottomPanel', theme),
-                  paddingLeft: '12px',
-                  paddingRight: '12px',
-                  cursor: 'pointer'
-                }}
-                onClick={() => setExpandedSessionId(isExpanded ? null : sessionId)}
-              >
-                <div style={{ flex: 1 }}>
-                  <div style={styles(theme, false, false, fSize).text}>
-                    {date} • {getDayName(date, langIndex)}
-                  </div>
-                  <div style={styles(theme, false, false, fSize).subtext}>
-                    {programName} • {dayName}
-                  </div>
-                </div>
-                {isExpanded ? (
-                  <IoIosArrowUp size={20} color={Colors.get('icons', theme)} style={{ marginRight: '20px' }} />
-                ) : (
-                  <IoIosArrowDown size={20} color={Colors.get('icons', theme)} style={{ marginRight: '20px' }} />
-                )}
-              </div>
-
-              {isExpanded && (
-                <div style={{ width: '100%', paddingLeft: '12px', paddingRight: '12px', paddingBottom: '12px' }}>
-                  <div style={styles(theme, false, false, fSize).subtext}>
-                    {formatDuration(session.duration || 0)} • {(session.tonnage / 1000).toFixed(2)} {langIndex === 0 ? 'тонн' : 'tons'}
+              return (
+                <motion.div
+                  key={sessionId}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.3 }}
+                  style={{
+                    ...styles(theme).card,
+                    borderLeft: `5px solid ${borderColor}`,
+                  }}
+                >
+                  {/* Header Section */}
+                  <div
+                    onClick={() => setExpandedSessionId(isExpanded ? null : sessionId)}
+                    style={{ ...styles(theme).cardHeader, cursor: 'pointer' }}
+                  >
+                    <div style={{ flex: 1, padding: '12px 0 12px 16px' }}>
+                      <div style={{ ...styles(theme, fSize).dateText }}>
+                        {date} • <span style={{ opacity: 0.8 }}>{getDayName(date, langIndex)}</span>
+                      </div>
+                      <div style={styles(theme, fSize).programText}>
+                        {programName} <span style={{ margin: '0 6px', opacity: 0.5 }}>|</span> {dayName}
+                      </div>
+                    </div>
+                    <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center' }}>
+                      <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
+                        <IoIosArrowDown size={18} color={Colors.get('subText', theme)} />
+                      </motion.div>
+                    </div>
                   </div>
 
-                  {Object.entries(session.exercises || {})
-                    .filter(([exId, ex]) => ex?.sets?.length > 0)
-                    .map(([exId, ex]) => {
-                      const exIdNum = parseInt(exId, 10);
-                      const exercise = AppData.exercises[exIdNum]; // ✅ CORRECT
-                      const exerciseName = exercise?.name?.[langIndex] || `Exercise ${exId}`;
-
-                      return (
-                        <div
-                          key={exId}
-                          style={{
-                            ...styles(theme, false, false, fSize).exercisesPanel,
-                            backgroundColor: Colors.get('background', theme),
-                            borderBottom: `1px solid ${Colors.get('border', theme)}`,
-                            width: '100%'
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontSize: fSize === 0 ? '13px' : '15px',
-                              color: Colors.get('mainText', theme),
-                              marginBottom: '6px'
-                            }}
-                          >
-                            {exerciseName}
-                            <span style={{ ...styles(theme, false, false, fSize).subtext, marginLeft: '20px' }}>
-                              {(ex.totalTonnage / 1000).toFixed(2)} {langIndex === 0 ? 'тонн' : 'tons'}
-                            </span>
+                  {/* Expanded Details */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <div style={styles(theme).expandedContent}>
+                          {/* Stats Row */}
+                          <div style={styles(theme).statsRow}>
+                            <div style={styles(theme).statBadge}>
+                              ⏱ {formatDuration(session.duration || 0)}
+                            </div>
+                            <div style={styles(theme).statBadge}>
+                              🏋️ {(session.tonnage / 1000).toFixed(2)} {langIndex === 0 ? 'т' : 't'}
+                            </div>
                           </div>
 
-                          {ex.sets.map((set, sIdx) => {
-                            const isWarmUp = set.type === 0;
-                            const setColor = isWarmUp
-                              ? Colors.get('trainingIsolatedFont', theme)
-                              : Colors.get('trainingBaseFont', theme);
+                          {/* Exercises */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {Object.entries(session.exercises || {})
+                              .filter(([_, ex]) => ex?.sets?.length > 0)
+                              .map(([exId, ex]) => {
+                                const exIdNum = parseInt(exId, 10);
+                                const exercise = AppData.exercises[exIdNum];
+                                const exerciseName = exercise?.name?.[langIndex] || `Exercise ${exId}`;
 
-                            return (
-                              <div
-                                key={sIdx}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  fontSize: fSize === 0 ? '13px' : '15px',
-                                  color: setColor,
-                                  fontWeight: '500',
-                                  borderBottom: `1px solid ${Colors.get('border', theme)}`,
-                                  marginTop: '4px'
-                                }}
-                              >
-                                <span>{sIdx + 1}:</span>
-                                <span>{set.weight}</span>
-                                <span>{langIndex === 0 ? 'кг' : 'kg'}</span>
-                                <span>×</span>
-                                <span>{set.reps}</span>
-                                {set.time != null && set.time > 0 && (
-                                  <span>({Math.round(set.time / 1000)}s)</span>
-                                )}
-                              </div>
-                            );
-                          })}
+                                return (
+                                  <div key={exId} style={styles(theme).exerciseBlock}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                                      <span style={styles(theme, fSize).exerciseTitle}>{exerciseName}</span>
+                                      <span style={styles(theme).tonnageSub}>{(ex.totalTonnage / 1000).toFixed(2)} {langIndex === 0 ? 'т' : 't'}</span>
+                                    </div>
+
+                                    <div style={styles(theme).setsGrid}>
+                                      {ex.sets.map((set, sIdx) => {
+                                        const isWarmUp = set.type === 0;
+                                        const setColor = isWarmUp
+                                          ? Colors.get('trainingIsolatedFont', theme)
+                                          : Colors.get('trainingBaseFont', theme);
+                                        const bgSet = isWarmUp ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.0)';
+
+                                        return (
+                                          <div key={sIdx} style={{ ...styles(theme).setRow, backgroundColor: bgSet, color: setColor, fontSize: fSize === 0 ? '13px' : '15px' }}>
+                                            <span style={{ opacity: 0.6, fontSize: '11px', marginRight: '6px' }}>{sIdx + 1}</span>
+                                            <span style={{ fontWeight: '600' }}>{set.weight}</span>
+                                            <span style={{ fontSize: '11px', margin: '0 2px' }}>{langIndex === 0 ? 'кг' : 'kg'}</span>
+                                            <span style={{ margin: '0 4px', opacity: 0.5 }}>×</span>
+                                            <span style={{ fontWeight: '600' }}>{set.reps}</span>
+                                            {set.time != null && set.time > 0 && (
+                                              <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.8 }}>({Math.round(set.time / 1000)}s)</span>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
                         </div>
-                      );
-                    })}
-                </div>
-              )}
-            </div>
-          );
-        })
-      ) : (
-        <div style={{
-          padding: '32px 20px',
-          color: Colors.get('subText', theme),
-          fontSize: fSize === 0 ? '13px' : '15px',
-          textAlign: 'center'
-        }}>
-          {langIndex === 0 ? 'Тренировки не найдены' : 'No trainings found'}
-        </div>
-      )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{
+              padding: '40px 20px',
+              color: Colors.get('subText', theme),
+              fontSize: fSize === 0 ? '14px' : '16px',
+              textAlign: 'center',
+              fontStyle: 'italic'
+            }}
+          >
+            {langIndex === 0 ? 'Тренировки не найдены' : 'No trainings found'}
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };
 
-const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
+const styles = (theme, fSize) => ({
   container: {
     backgroundColor: Colors.get('background', theme),
     display: 'flex',
     flexDirection: 'column',
-    overflowY: 'auto',
     alignItems: 'center',
-    height: '78vh',
-    paddingTop: '5vh',
+    height: '89vh',
+    marginTop: '120px',
     width: '100vw',
-    fontFamily: 'Segoe UI',
+    fontFamily: 'Segoe UI, Roboto, sans-serif',
+    overflowY: 'auto',
     boxSizing: 'border-box',
-    padding: '0 8px'
+    padding: '0 10px',
   },
+  // --- Filter Styles ---
   filterContainer: {
-    display: 'flex',
-    gap: '12px',
-    paddingTop: '12px',
-    width: '95%',
-    maxWidth: '800px',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: '16px'
-  },
-  textToggles: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '4px',
-    padding: '8px 0',
     width: '100%',
-    maxWidth: '400px',
-    userSelect: 'none'
-  },
-  select: {
-    borderBottom: `1px solid ${Colors.get('border', theme)}`,
-    backgroundColor: Colors.get('background', theme),
-    color: Colors.get('subText', theme),
-    fontSize: fSize === 0 ? '11px' : '13px',
-    width: '80%',
-    borderTop: 'none',
-    borderLeft: 'none',
-    borderRight: 'none',
-    outline: 'none'
-  },
-  sessionPanel: {
-    display: 'flex',
-    flexDirection: 'row',
-    width: '100%',
-    maxWidth: '800px',
-    height: '6vh',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  exercisesPanel: {
+    maxWidth: '500px',
     display: 'flex',
     flexDirection: 'column',
-    width: '100%',
-    maxWidth: '800px',
-    alignItems: 'flex-start',
-    justifyContent: 'flex-start',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '20px',
+    padding: '0 10px'
   },
-  text: {
-    textAlign: 'left',
-    fontSize: fSize === 0 ? '13px' : '15px',
+  toggleWrapper: {
+    display: 'flex',
+    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
+    padding: '4px',
+    borderRadius: '25px',
+    width: '100%',
+    justifyContent: 'space-between'
+  },
+  togglePill: {
+    flex: 1,
+    textAlign: 'center',
+    padding: '8px 0',
+    borderRadius: '20px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    transition: 'all 0.2s ease',
+  },
+  // --- Input Styles ---
+  selectWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  select: {
+    width: '100%',
+    padding: '12px 16px',
+    borderRadius: '12px',
+    border: 'none',
+    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+    color: Colors.get('mainText', theme),
+    fontSize: fSize === 0 ? '14px' : '16px',
+    appearance: 'none',
+    outline: 'none',
+    cursor: 'pointer'
+  },
+  selectIcon: {
+    position: 'absolute',
+    right: '15px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    color: Colors.get('subText', theme),
+    fontSize: '12px',
+    pointerEvents: 'none'
+  },
+  // --- Card Styles ---
+  card: {
+    width: '100%',
+    backgroundColor: theme === 'light' ? '#fff' : 'rgba(255,255,255,0.03)',
+    borderRadius: '16px',
+    marginBottom: '12px',
+    boxShadow: theme === 'light' ? '0 2px 10px rgba(0,0,0,0.05)' : 'none',
+    border: `1px solid ${theme === 'light' ? 'transparent' : 'rgba(255,255,255,0.05)'}`,
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: fSize === 0 ? '16px' : '18px',
+    fontWeight: 'bold',
     color: Colors.get('mainText', theme),
     marginBottom: '4px'
   },
-  subtext: {
-    textAlign: 'left',
-    fontSize: fSize === 0 ? '11px' : '13px',
+  programText: {
+    fontSize: fSize === 0 ? '13px' : '14px',
     color: Colors.get('subText', theme),
-    marginBottom: '4px'
+    fontWeight: '500'
+  },
+  // --- Expanded Content ---
+  expandedContent: {
+    padding: '0 16px 16px 16px',
+    borderTop: `1px solid ${Colors.get('border', theme)}`,
+    marginTop: '0px',
+    paddingTop: '12px',
+    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.01)' : 'rgba(0,0,0,0.1)'
+  },
+  statsRow: {
+    display: 'flex',
+    gap: '12px',
+    marginBottom: '16px'
+  },
+  statBadge: {
+    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+    padding: '4px 10px',
+    borderRadius: '8px',
+    fontSize: '12px',
+    color: Colors.get('mainText', theme),
+    fontWeight: '600'
+  },
+  exerciseBlock: {
+    marginBottom: '8px',
+    paddingBottom: '8px',
+    borderBottom: `1px dashed ${Colors.get('border', theme)}`
+  },
+  exerciseTitle: {
+    color: Colors.get('mainText', theme),
+    fontWeight: '600',
+    fontSize: fSize === 0 ? '14px' : '16px',
+  },
+  tonnageSub: {
+    fontSize: '11px',
+    color: Colors.get('subText', theme),
+    fontWeight: 'bold'
+  },
+  setsGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px',
+    marginTop: '4px'
+  },
+  setRow: {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '4px 8px',
+    borderRadius: '6px',
+    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)',
   }
 });
 

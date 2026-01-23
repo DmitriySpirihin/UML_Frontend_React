@@ -1,129 +1,171 @@
-import Home from '@mui/icons-material/HomeTwoTone';
-import Back from '@mui/icons-material/BackspaceTwoTone';
-import Metrics from '@mui/icons-material/BarChartTwoTone';
-import Recovery_0 from '/src/assets/Svg/Recovery_0'
-import Recovery_1 from '/src/assets/Svg/Recovery_1'
-import Recovery_2 from '/src/assets/Svg/Recovery_2'
-import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setAddNewTrainingDay,setCurrentBottomBtn,setNotifyPanel,notify$,setTrainInfo} from '../../StaticClasses/HabitsBus'
-import Colors from '../../StaticClasses/Colors'
-import {useState,useEffect} from 'react'
-import {AppData} from '../../StaticClasses/AppData'
-import {saveData} from '../../StaticClasses/SaveHelper'
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+// Icons
+import Home from '@mui/icons-material/HomeRounded';
+import Back from '@mui/icons-material/ArrowBackIosNewRounded';
+import Metrics from '@mui/icons-material/BarChartRounded';
+
+import { 
+    setPage, setAddPanel, setPage$, addPanel$, theme$, 
+    currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, notify$ 
+} from '../../StaticClasses/HabitsBus';
+import Colors from '../../StaticClasses/Colors';
+import { AppData } from '../../StaticClasses/AppData';
+import { saveData } from '../../StaticClasses/SaveHelper';
+
 const switchSound = new Audio('Audio/Click.wav');
 
-const BtnsTraining = () => {
-    // states
+const BtnsRecovery = () => {
     const [theme, setthemeState] = useState('dark');
-    const [page,setPageState] = useState('');
-    const [addPanel,setAddPanelState] = useState('');
-    const [currentBtn,setBtnState] = useState(0);
-    const [notify,setNotifyState] = useState([{enabled:false,cron:''},{enabled:false,cron:''},{enabled:false,cron:''}]);
- 
-    // subscriptions
+    const [page, setPageState] = useState('');
+    const [addPanel, setAddPanelState] = useState('');
+    const [currentBtn, setBtnState] = useState(0);
+
     useEffect(() => {
-        const subscription = theme$.subscribe(setthemeState);  
-        return () => subscription.unsubscribe();
+        const subs = [
+            theme$.subscribe(setthemeState),
+            setPage$.subscribe(setPageState),
+            addPanel$.subscribe(setAddPanelState),
+            currentBottomBtn$.subscribe(setBtnState)
+        ];
+        return () => subs.forEach(s => s.unsubscribe());
     }, []);
+
+    // Sync button state for Recovery pages
     useEffect(() => {
-        const subscription = setPage$.subscribe(setPageState);   
-        return () => subscription.unsubscribe();
-    }, []);
-    useEffect(() => {
-        const subscription = addPanel$.subscribe(setAddPanelState);   
-        return () => subscription.unsubscribe();
-    }, []);
-    useEffect(() => {
-        const subscription = currentBottomBtn$.subscribe(setBtnState);
-        const subscription2 = notify$.subscribe(setNotifyState);
-        return () => {
-            subscription.unsubscribe();
-            subscription2.unsubscribe();
-        };
-    }, []);
-    useEffect(() => {
-        if(currentBtn === 0){
-            if(page === 'TrainingExercise') setBtnState(2);
-            else if(page === 'TrainingMetrics') setBtnState(1);
-            else if(page === 'TrainingProgramm') setBtnState(4);
-            else if(page === 'TrainingMesurments') setBtnState(3);
+        if (currentBtn === 0 || currentBtn === -1) {
+            if (page === 'RecoveryAnalitics') setCurrentBottomBtn(1);
+            else if (page === 'RecoveryMain' && addPanel === '') setCurrentBottomBtn(0);
         }
-    }, [currentBtn]);
-    
-    // render    
+    }, [page, addPanel]);
+
     return (
-        <BottomPanel 
-                theme={theme} 
-                page={page} 
-                addPanel={addPanel} 
-                currentBtn={currentBtn} 
-                setBtnState={setBtnState}
-                setNotifyPanel={setNotifyPanel}
-                notify={notify}
+        <div style={containerStyle(theme)}>
+            <div style={glassOverlay(theme)} />
+
+            <NavButton 
+                id={0}
+                current={currentBtn}
+                icon={page === 'RecoveryMain' && addPanel === '' ? <Home /> : <Back />}
+                onClick={() => {
+                    onBack(page, addPanel);
+                    setCurrentBottomBtn(0);
+                    setNotifyPanel(false);
+                }}
+                theme={theme}
             />
-    )
-}
 
-export default BtnsTraining
-
-
-function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,setNotifyPanel,notify})
-{
-    
-    return (    
-        <div style={styles(theme,currentBtn).style}>
-          {page !== 'RecoveryMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);setNotifyPanel(false);}} />)}
-          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);setNotifyPanel(false);}} />)}
-          {page === 'RecoveryMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);setNotifyPanel(false);}} />)}
-          
-          <Metrics style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('RecoveryAnalitics');setAddPanel('');playEffects(switchSound);setNotifyPanel(false);}} />
-          
+            <NavButton 
+                id={1}
+                current={currentBtn}
+                icon={<Metrics />}
+                onClick={() => {
+                    setCurrentBottomBtn(1);
+                    setPage('RecoveryAnalitics');
+                    setAddPanel('');
+                    setNotifyPanel(false);
+                    playEffects(switchSound);
+                }}
+                theme={theme}
+            />
         </div>
-    )
-}   
-async function onBack(page,addPanel) {
-    if(page === 'RecoveryMain' && addPanel === ''){
+    );
+};
+
+const NavButton = ({ id, current, icon, onClick, theme }) => {
+    const isActive = current === id;
+    return (
+        <motion.div whileTap={{ scale: 0.9 }} onClick={onClick} style={navBtnWrapper}>
+            <div style={{
+                color: isActive ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
+                fontSize: '28px',
+                display: 'flex',
+                transition: 'color 0.3s ease'
+            }}>
+                {React.cloneElement(icon, { fontSize: 'inherit' })}
+            </div>
+            <AnimatePresence>
+                {isActive && (
+                    <motion.div 
+                        layoutId="recoveryActiveTab"
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0 }}
+                        style={activeIndicator(theme)}
+                    />
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+};
+
+async function onBack(page, addPanel) {
+    if (page === 'RecoveryMain' && addPanel === '') {
         setPage('MainMenu');
         await saveData();
-    }
-    else{
-        if(addPanel !== '') setAddPanel('');
+    } else {
+        if (addPanel !== '') setAddPanel('');
         else setPage('RecoveryMain');
     }
     playEffects(switchSound);
 }
-function playEffects(sound){
-  if(AppData.prefs[2] == 0 && sound !== null){
-    if(!sound.paused){
-        sound.pause();
+
+function playEffects(sound) {
+    if (AppData.prefs[2] === 0 && sound !== null) {
         sound.currentTime = 0;
+        sound.volume = 0.5;
+        sound.play();
     }
-    sound.volume = 0.5;
-    sound.play();
-  }
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    if (AppData.prefs[3] === 0 && window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
 }
 
-const styles = (theme,currentBtn,id,disengageable,disabled) => ({
-    style :{
-        position:'fixed',
-        bottom:'0',
-        left:'0',
-        width:'100vw',
-        height:'10vh',
-        borderTopLeftRadius:'24px',
-        borderTopRightRadius:'24px',
-        backgroundColor: Colors.get('bottomPanel', theme),
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center",
-        zIndex:1000,
-        boxShadow: `0px -2px 0px ${Colors.get('bottomPanelShadow', theme)}`,
-    },
-    btnstyle : {
-        transition: 'all 0.2s ease-out',
-        transform: currentBtn === id ? 'scale(1.3)' : 'scale(1)',
-        fontSize:'30px',
-        color: disengageable && disabled ? Colors.get('iconsDisabled', theme) : currentBtn === id ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
-        filter : currentBtn === id ? `drop-shadow(0 0px 8px ${Colors.get('iconsShadow', theme)})` : `drop-shadow(0px 1px 1px ${Colors.get('shadow', theme)})`,
-    }
-})
+const containerStyle = (theme) => ({
+    position: 'fixed',
+    bottom: '15px',
+    left: '15vw',
+    width: '70vw',
+    height: '65px',
+    borderRadius: '25px',
+    display: 'flex',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backdropFilter: 'blur(6px)',
+    zIndex: 1000,
+});
+
+const glassOverlay = (theme) => ({
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: Colors.get('bottomPanel', theme),
+    opacity: 0.85,
+    backdropFilter: 'blur(15px)',
+    WebkitBackdropFilter: 'blur(15px)',
+    border: `1px solid ${Colors.get('border', theme)}`,
+    borderRadius: '25px',
+    zIndex: -1,
+});
+
+const navBtnWrapper = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    height: '100%',
+    width: '60px',
+    cursor: 'pointer'
+};
+
+const activeIndicator = (theme) => ({
+    position: 'absolute',
+    bottom: '8px',
+    width: '5px',
+    height: '5px',
+    borderRadius: '50%',
+    backgroundColor: Colors.get('iconsHighlited', theme),
+    boxShadow: `0 0 10px ${Colors.get('iconsHighlited', theme)}`
+});
+
+export default BtnsRecovery;

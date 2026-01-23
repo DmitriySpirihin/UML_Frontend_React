@@ -1,58 +1,104 @@
-import Colors from '../StaticClasses/Colors'
+import React from 'react';
+import { motion } from 'framer-motion';
+import Colors from '../StaticClasses/Colors';
 
-export const VolumeTabs = ({type, theme, langIndex, activeTab, onChange }) => {
-  const baseTab = {
-    flex: 1,
-    padding: '6px 0',
-    borderRadius: 999,
-    textAlign: 'center',
-    fontSize: 12,
-    cursor: 'pointer',
-    border: 'none',
-    transition: 'all 0.18s ease',
-    userSelect: 'none',
-  };
+export const VolumeTabs = ({ type, theme, langIndex, activeTab, onChange }) => {
+  
+  // Define tab data based on type
+  const tabs = [
+    { 
+      key: 'volume', 
+      label: type === 0 
+        ? (langIndex === 0 ? 'Объём' : 'Load') 
+        : (langIndex === 0 ? 'Замеры' : 'Measurings') 
+    },
+    { 
+      key: 'muscles', 
+      label: type === 0 
+        ? (langIndex === 0 ? 'Мышцы' : 'Muscles') 
+        : (langIndex === 0 ? 'Обзор' : 'Overview') 
+    },
+    { 
+      key: 'exercises', 
+      label: type === 0 
+        ? (langIndex === 0 ? 'Упражнения' : 'Exercises') 
+        : (langIndex === 0 ? 'Аналитика' : 'Analytics') // Fixed typo 'analitic' -> 'Analytics'
+    }
+  ];
 
-  const getStyle = (tab) => {
-    const isActive = activeTab === tab;
-    return {
-      ...baseTab,
-      backgroundColor: isActive
-        ? Colors.get('iconsHighlited', theme)
-        : 'transparent',
-      color: isActive
-        ? Colors.get('bgMain', theme)
-        : Colors.get('subText', theme),
-      boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.35)' : 'none',
-      opacity: isActive ? 1 : 0.8,
-    };
-  };
+  const isLight = theme === 'light';
 
   return (
     <div
       style={{
         display: 'flex',
-        width: '90%',
-        marginTop: 18,
-        gap: 4,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 2,
-        borderRadius: 999,
-        backgroundColor: Colors.get('tabsBg', theme) || 'transparent',
+        width: '94%',
+        maxWidth: '400px', // Prevent it from getting too wide on tablets
+        marginTop: 20,
+        marginBottom: 10,
+        padding: '4px',
+        borderRadius: '16px', // Modern "Squircle" look
+        backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)', // Subtle track
+        position: 'relative',
+        zIndex: 1
       }}
     >
-      <div style={getStyle('volume')} onClick={() => onChange('volume')}>
-        {type === 0 ? langIndex === 0 ? 'объём' : 'load' : langIndex === 0 ? 'замеры' : 'measurings'}
-      </div>
+      {tabs.map((tab) => {
+        const isActive = activeTab === tab.key;
 
-      <div style={getStyle('muscles')} onClick={() => onChange('muscles')}>
-        {type === 0 ? langIndex === 0 ? 'мышцы' : 'muscles' : langIndex === 0 ? 'обзор' : 'overview'}
-      </div>
-
-      <div style={getStyle('exercises')} onClick={() => onChange('exercises')}>
-        {type === 0 ? langIndex === 0 ? 'упражнения' : 'exercises' : langIndex === 0 ? 'аналитика' : 'analitic'}
-      </div>
+        return (
+          <div
+            key={tab.key}
+            onClick={() => onChange(tab.key)}
+            style={{
+              flex: 1,
+              position: 'relative',
+              padding: '10px 0',
+              textAlign: 'center',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: isActive ? '600' : '500',
+              color: isActive 
+                ? (!isLight ? '#000000' : '#FFF') 
+                : Colors.get('subText', theme),
+              transition: 'color 0.2s ease',
+              userSelect: 'none',
+              zIndex: 2,
+              // Fix for tap highlight on mobile
+              WebkitTapHighlightColor: 'transparent' 
+            }}
+          >
+            {/* The Floating Active Background */}
+            {isActive && (
+              <motion.div
+                layoutId="activeTabBackground"
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: Colors.get('iconsHighlited', theme), // Or use card background color for standard segmented look
+                  borderRadius: '12px',
+                  zIndex: -1,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                }}
+              />
+            )}
+            
+            {/* Label */}
+            <span style={{ 
+                position: 'relative', 
+                zIndex: 2,
+                textTransform: 'capitalize', // Enforce consistent capitalization
+                color: isActive ? Colors.get('bgMain', theme) : 'inherit'
+            }}>
+                {tab.label}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 };

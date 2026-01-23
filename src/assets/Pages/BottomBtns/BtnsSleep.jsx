@@ -1,130 +1,216 @@
-import Home from '@mui/icons-material/HomeTwoTone';
-import Back from '@mui/icons-material/BackspaceTwoTone';
-import Metrics from '@mui/icons-material/AnalyticsTwoTone';
-import { FaRobot,FaChartLine } from 'react-icons/fa';
-import Add from '@mui/icons-material/AddCircleOutlineTwoTone';
-import {MdLightbulbOutline} from 'react-icons/md'
-import {setPage,setAddPanel,setPage$,addPanel$,theme$,currentBottomBtn$,setCurrentBottomBtn} from '../../StaticClasses/HabitsBus'
-import Colors from '../../StaticClasses/Colors'
-import {useState,useEffect} from 'react'
-import {AppData} from '../../StaticClasses/AppData'
-import {saveData} from '../../StaticClasses/SaveHelper'
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+// Icons
+import Home from '@mui/icons-material/HomeRounded';
+import Back from '@mui/icons-material/ArrowBackIosNewRounded';
+import Add from '@mui/icons-material/AddRounded';
+import { FaRobot, FaChartLine } from 'react-icons/fa';
+
+import { 
+    setPage, setAddPanel, setPage$, addPanel$, theme$, 
+    currentBottomBtn$, setCurrentBottomBtn 
+} from '../../StaticClasses/HabitsBus';
+import Colors from '../../StaticClasses/Colors';
+import { AppData } from '../../StaticClasses/AppData';
+import { saveData } from '../../StaticClasses/SaveHelper';
 
 const switchSound = new Audio('Audio/Click.wav');
 
 const BtnsSleep = () => {
-    // states
     const [theme, setthemeState] = useState('dark');
-    const [page,setPageState] = useState('');
-    const [addPanel,setAddPanelState] = useState('');
-    const [currentBtn,setBtnState] = useState(0);
-    const [notify,setNotifyState] = useState([{enabled:false,cron:''},{enabled:false,cron:''},{enabled:false,cron:''}]);
- 
-    // subscriptions
+    const [page, setPageState] = useState('');
+    const [addPanel, setAddPanelState] = useState('');
+    const [currentBtn, setBtnState] = useState(0);
+
     useEffect(() => {
-        const subscription = theme$.subscribe(setthemeState);  
-        return () => subscription.unsubscribe();
+        const subs = [
+            theme$.subscribe(setthemeState),
+            setPage$.subscribe(setPageState),
+            addPanel$.subscribe(setAddPanelState),
+            currentBottomBtn$.subscribe(setBtnState)
+        ];
+        return () => subs.forEach(s => s.unsubscribe());
     }, []);
+
+    // Logic to sync button state with Sleep pages
     useEffect(() => {
-        const subscription = setPage$.subscribe(setPageState);   
-        return () => subscription.unsubscribe();
-    }, []);
-    useEffect(() => {
-        const subscription = addPanel$.subscribe(setAddPanelState);   
-        return () => subscription.unsubscribe();
-    }, []);
-    useEffect(() => {
-        const subscription = currentBottomBtn$.subscribe(setBtnState);
-        return () => {
-            subscription.unsubscribe();
-        };
-    }, []);
-    useEffect(() => {
-        if(currentBtn === 0){
-            if(page === 'SleepMain') setBtnState(4);
-            else if(page === 'SleepMetrics') setBtnState(1);
+        if (currentBtn === 0 || currentBtn === -1) {
+            if (page === 'SleepMetrics') setCurrentBottomBtn(1);
+            else if (page === 'SleepMain' && addPanel === '') setCurrentBottomBtn(0);
         }
-    }, [currentBtn]);
-    
-    // render    
+    }, [page, addPanel]);
+
     return (
-        <BottomPanel 
-                theme={theme} 
-                page={page} 
-                addPanel={addPanel} 
-                currentBtn={currentBtn} 
-                setBtnState={setBtnState}
-                notify={notify}
+        <div style={containerStyle(theme)}>
+            <div style={glassOverlay(theme)} />
+            
+            <NavButton 
+                id={0}
+                current={currentBtn}
+                icon={page === 'SleepMain' && addPanel === '' ? <Home /> : <Back />}
+                onClick={() => {
+                    onBack(page, addPanel);
+                    setCurrentBottomBtn(0);
+                }}
+                theme={theme}
             />
-    )
-}
 
-export default BtnsSleep
+            
 
+            <AddButton 
+                active={addPanel === 'SleepMain'}
+                disabled={page !== 'SleepMain'}
+                onClick={() => {
+                    if (page === 'SleepMain') {
+                        setCurrentBottomBtn(3);
+                        setAddPanel('SleepNew');
+                        playEffects(switchSound);
+                    }
+                }}
+                theme={theme}
+            />
 
-function BottomPanel({page,addPanel,theme,currentBtn,setBtnState,notify})
-{
-    
-    return (    
-        <div style={styles(theme,currentBtn).style}>
-          {page !== 'SleepMain' && addPanel === '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
-          {addPanel !== '' && ( <Back style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
-          {page === 'SleepMain' && addPanel === '' && ( <Home style={styles(theme,currentBtn,-1,false,false).btnstyle} onClick={() => {onBack(page,addPanel);setCurrentBottomBtn(-1);}} />)}
-            <Add style={{...styles(theme,currentBtn,53,true,addPanel === '' && page !== 'SleepMain').btnstyle}} onClick={() => {if(page === 'SleepMain'){setCurrentBottomBtn(3);setAddPanel('SleepNew');playEffects(switchSound);}}} />
-          
-          <FaRobot style={styles(theme,currentBtn,2,true,page !== 'SleepMain').btnstyle} onClick={() => {if(page === 'SleepMain'){setCurrentBottomBtn(2);setAddPanel('SleepInsight');playEffects(switchSound);}}} />
-            <FaChartLine style={styles(theme,currentBtn,1,false,false).btnstyle} onClick={() => {setCurrentBottomBtn(1);setPage('SleepMetrics');setAddPanel('');playEffects(switchSound);}} />
-          
-         
+            <NavButton 
+                id={1}
+                current={currentBtn}
+                icon={<FaChartLine />}
+                onClick={() => {
+                    setCurrentBottomBtn(1);
+                    setPage('SleepMetrics');
+                    setAddPanel('');
+                    playEffects(switchSound);
+                }}
+                theme={theme}
+            />
         </div>
-    )
-}
-const onBack = async(page,addPanel) => {
-    if(page === 'SleepMain' && addPanel === '') {
-    await saveData();
-    setPage('MainMenu');
-    }
-    else{
-        if(addPanel !== '') setAddPanel('');
-        else {
-            setPage('SleepMain');
-        }
+    );
+};
+
+// Sub-components for cleaner code
+const NavButton = ({ id, current, icon, onClick, theme, disabled = false }) => {
+    const isActive = current === id;
+    return (
+        <motion.div 
+            whileTap={!disabled ? { scale: 0.9 } : {}}
+            onClick={onClick}
+            style={{ ...navBtnWrapper, opacity: disabled ? 0.4 : 1 }}
+        >
+            <div style={{
+                color: isActive ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
+                fontSize: '26px',
+                display: 'flex',
+                transition: 'color 0.3s ease'
+            }}>
+                {React.isValidElement(icon) ? React.cloneElement(icon, { fontSize: 'inherit' }) : icon}
+            </div>
+            <AnimatePresence>
+                {isActive && (
+                    <motion.div 
+                        layoutId="sleepActiveTab"
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0 }}
+                        style={activeIndicator(theme)}
+                    />
+                )}
+            </AnimatePresence>
+        </motion.div>
+    );
+};
+
+const AddButton = ({ disabled, onClick, theme, active }) => (
+    <motion.div
+        whileTap={!disabled ? { scale: 0.9 } : {}}
+        onClick={onClick}
+        style={{
+            ...addBtnStyle(theme),
+            opacity: disabled ? 0.5 : 1,
+            background: active ? Colors.get('iconsHighlited', theme) : Colors.get('simplePanel', theme),
+        }}
+    >
+        <Add style={{ fontSize: '30px', color: active ? '#fff' : Colors.get('icons', theme) }} />
+    </motion.div>
+);
+
+const onBack = async (page, addPanel) => {
+    if (page === 'SleepMain' && addPanel === '') {
+        await saveData();
+        setPage('MainMenu');
+    } else {
+        if (addPanel !== '') setAddPanel('');
+        else setPage('SleepMain');
     }
     playEffects(switchSound);
-}
-function playEffects(sound){
-  if(AppData.prefs[2] == 0 && sound !== null){
-    if(!sound.paused){
-        sound.pause();
+};
+
+function playEffects(sound) {
+    if (AppData.prefs[2] === 0 && sound !== null) {
         sound.currentTime = 0;
+        sound.volume = 0.5;
+        sound.play();
     }
-    sound.volume = 0.5;
-    sound.play();
-  }
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    if (AppData.prefs[3] === 0 && window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
 }
 
-const styles = (theme,currentBtn,id,disengageable,disabled) => ({
-    style :{
-        position:'fixed',
-        bottom:'0',
-        left:'0',
-        width:'100vw',
-        height:'10vh',
-        borderTopLeftRadius:'24px',
-        borderTopRightRadius:'24px',
-        backgroundColor: Colors.get('bottomPanel', theme),
-        display: "flex",
-        justifyContent: "space-around",
-        alignItems: "center",
-        zIndex:1000,
-        boxShadow: `0px -2px 0px ${Colors.get('bottomPanelShadow', theme)}`,
-    },
-    btnstyle : {
-        transition: 'all 0.2s ease-out',
-        transform: currentBtn === id ? 'scale(1.3)' : 'scale(1)',
-        fontSize:'30px',
-        color: disengageable && disabled ? Colors.get('iconsDisabled', theme) : currentBtn === id ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
-        filter : currentBtn === id ? `drop-shadow(0 0px 8px ${Colors.get('iconsShadow', theme)})` : `drop-shadow(0px 1px 1px ${Colors.get('shadow', theme)})`,
-    }
-})
+// Styles
+const containerStyle = (theme) => ({
+    position: 'fixed',
+    bottom: '15px',
+    left: '5vw',
+    width: '90vw',
+    height: '70px',
+    borderRadius: '25px',
+    display: 'flex',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backdropFilter: 'blur(6px)',
+    zIndex: 1000,
+});
+
+const glassOverlay = (theme) => ({
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: Colors.get('bottomPanel', theme),
+    opacity: 0.85,
+    backdropFilter: 'blur(15px)',
+    WebkitBackdropFilter: 'blur(15px)',
+    border: `1px solid ${Colors.get('border', theme)}`,
+    borderRadius: '25px',
+    zIndex: -1,
+});
+
+const navBtnWrapper = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    height: '100%',
+    width: '50px',
+    cursor: 'pointer'
+};
+
+const activeIndicator = (theme) => ({
+    position: 'absolute',
+    bottom: '8px',
+    width: '5px',
+    height: '5px',
+    borderRadius: '50%',
+    backgroundColor: Colors.get('iconsHighlited', theme),
+    boxShadow: `0 0 10px ${Colors.get('iconsHighlited', theme)}`
+});
+
+const addBtnStyle = (theme) => ({
+    width: '50px',
+    height: '50px',
+    borderRadius: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: `0 8px 20px ${Colors.get('shadow', theme)}`,
+    transition: 'background 0.3s ease',
+});
+
+export default BtnsSleep;

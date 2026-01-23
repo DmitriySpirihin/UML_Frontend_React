@@ -1,646 +1,405 @@
-import { useState, useEffect} from 'react';
-import {useLongPress} from '../../Helpers/LongPress.js';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useLongPress } from '../../Helpers/LongPress.js';
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
-import Colors from '../../StaticClasses/Colors';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
-import { setShowPopUpPanel, setAddPanel,addPanel$ ,theme$,lang$,fontSize$,setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
-import {FaBackspace,FaPlusSquare,FaSearchPlus,FaSearch,FaRegWindowClose,FaListAlt,FaTrashAlt} from 'react-icons/fa'
-import {MdFiberNew,MdDone,MdClose} from 'react-icons/md'
-import {FaRegSquareCheck,FaRegSquare} from 'react-icons/fa6'
-import {FiPlus,FiMinus} from 'react-icons/fi'
+import { setShowPopUpPanel, addPanel$, theme$, lang$, fontSize$, setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
+import { FaSearch, FaTrashAlt, FaChevronRight, FaPlus, FaListUl } from 'react-icons/fa';
+import { MdFiberNew, MdDone, MdClose , MdListAlt } from 'react-icons/md';
 import Icons from '../../StaticClasses/Icons';
 import MyInput from '../../Helpers/MyInput';
 import Slider from '@mui/material/Slider';
-const click = new Audio('Audio/Click.wav');
 
-const getAllHabits = () => {
-  return allHabits.concat(
-    (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.id === ch.id))
-  );
-}
+const click = new Audio('Audio/Click.wav');
 const now = new Date();
 
+// --- ВНЕШНИЕ ХЕЛПЕРЫ (ДЛЯ СТАБИЛЬНОСТИ) ---
+const getAllHabits = () => {
+    return allHabits.concat(
+        (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.id === ch.id))
+    );
+}
+
 const AddHabitPanel = () => {
-    // Theme and language state
     const [theme, setTheme] = useState(theme$.value);
-    const [lang, setLang] = useState(lang$.value);
-    const [fSize,setFontSize] = useState(fontSize$.value);
+    const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [keyboardVisible, setKeyboardVisibleState] = useState(false);
-    const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
-    const [showCreatePanel,setshowCreatePanel] = useState(false);
-    const [addPanel,setAddPanelState] = useState('');
-    const [confirmationPanel,setConfirmationPanel] = useState(false);
-    
-    // Habit data state
+    const [addPanelVisible, setAddPanelVisible] = useState(false);
+    const [showCreatePanel, setshowCreatePanel] = useState(false);
+    const [confirmationPanel, setConfirmationPanel] = useState(false);
+
+    // Habit data
     const [habitName, setHabitName] = useState('');
-    const [habitCategory, setHabitCategory] = useState(['Здоровье','Health']);
+    const [habitCategory, setHabitCategory] = useState(['Здоровье', 'Health']);
     const [habitDescription, setHabitDescription] = useState('');
     const [habitIcon, setHabitIcon] = useState('default');
     const [habitId, setHabitId] = useState(-1);
 
-    //date
-    const [year,setYear] = useState(now.getFullYear());
-    const [month,setMonth] = useState(now.getMonth() + 1);
-    const [day,setDay] = useState(now.getDate());
-    const [goals,setGoals] = useState([]);
-    const [goalName,setGoalName] = useState('');
-    const [isNegative,setIsNegative] = useState(false);
-    const [daysToForm,setDaysToForm] = useState(66);
-   
-    // UI state
+    // Date/Goals
+    const [year, setYear] = useState(now.getFullYear());
+    const [month, setMonth] = useState(now.getMonth() + 1);
+    const [day, setDay] = useState(now.getDate());
+    const [goals, setGoals] = useState([]);
+    const [goalName, setGoalName] = useState('');
+    const [isNegative, setIsNegative] = useState(false);
+    const [daysToForm, setDaysToForm] = useState(66);
+
     const [habitList, setHabitList] = useState(getAllHabits());
-    const [selectedHabit, setSelectedHabit] = useState(null);
     const [selectIconPanel, setSelectIconPanel] = useState(false);
-    const [opacity, setOpacity] = useState(0);
-    const [iconName, setIconName] = useState('default');
-    const [addButtonEnabled, setAddButtonEnabled] = useState(false);
-    const [filterCategory,setfilterCategory] = useState(langIndex === 0 ? 'Здоровье' : 'Health');
-   const handleDateChange = (isIncr, dateType) => {
-  if (dateType === 2) {
-    setDay(prevDay => {
-      const maxDay = new Date(year, month, 0).getDate();
-      let d = prevDay;
-      if (isIncr) {
-        if (prevDay < maxDay && new Date(year, month - 1, prevDay + 1).getTime() <= now.getTime()) d = prevDay + 1;
-      } else {
-        if (prevDay > 1) d = prevDay - 1;
-      }
-      return d;
-    });
-  } else if (dateType === 1) {
-    setMonth(prevMonth => {
-      let m = prevMonth;
-      if (isIncr) {
-        // нельзя месяц в будущем, учитываем год!
-        if (
-          prevMonth < 12 &&
-          new Date(year, prevMonth, day).getTime() <= now.getTime()
-        ) {
-          m = prevMonth + 1;
-        }
-      } else {
-        if (prevMonth > 1) {
-          m = prevMonth - 1;
-        }
-      }
-      // коррекция дня, если месяц изменён: например, 31 января -> февраль
-      const maxDay = new Date(year, m, 0).getDate();
-      if (day > maxDay) setDay(maxDay);
-      return m;
-    });
-  } else if (dateType === 0) {
-    setYear(prevYear => {
-      let y = prevYear;
-      if (isIncr) {
-        // не больше текущего года или месяца/дня сегодняшних
-        if (
-          prevYear < now.getFullYear() &&
-          new Date(prevYear + 1, month - 1, day).getTime() <= now.getTime()
-        ) {
-          y = prevYear + 1;
-        }
-      } else {
-        // ограничь минимальный год (например, -100, по желанию)
-        if (prevYear > now.getFullYear() - 1) {
-          y = prevYear - 1;
-        }
-      }
-      // коррекция дня/месяца, если нужно
-      const maxDay = new Date(y, month, 0).getDate();
-      if (day > maxDay) setDay(maxDay);
-      return y;
-    });
-  }
-   };
+    const [filterCategory, setfilterCategory] = useState(AppData.prefs[0] === 0 ? 'Здоровье' : 'Health');
 
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const ui = {
+        bg: isLight ? 'rgba(242,242,247,0.9)' : 'rgba(18,18,18,0.95)',
+        card: isLight ? '#FFFFFF' : '#1C1C1E',
+        text: isLight ? '#000000' : '#FFFFFF',
+        sub: '#8E8E93',
+        accent: '#007AFF',
+        blur: 'blur(30px)',
+        border: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'
+    };
 
-    const bindYearhMinus = useLongPress(() => handleDateChange(false, 0));
-    const bindYearPlus = useLongPress(() => handleDateChange(true, 0));
-    const bindMonthMinus = useLongPress(() => handleDateChange(false, 1));
-    const bindMonthPlus = useLongPress(() => handleDateChange(true, 1));
-    const bindDayMinus = useLongPress(() => handleDateChange(false, 2));
-    const bindDayPlus = useLongPress(() => handleDateChange(true, 2));
+    useEffect(() => {
+        const sub1 = theme$.subscribe(setTheme);
+        const sub2 = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
+        const sub3 = addPanel$.subscribe(v => setAddPanelVisible(v === 'AddHabitPanel'));
+        const sub4 = keyboardVisible$.subscribe(setKeyboardVisibleState);
+        return () => { sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe(); };
+    }, []);
+
+    // Логика Drum Picker (скролл списка)
+    const handleDrumScroll = (e) => {
+        const itemHeight = 44;
+        const index = Math.round(e.target.scrollTop / itemHeight);
+        const filtered = habitList.filter(h => !AppData.choosenHabits.includes(h.id) && h.category[langIndex] === filterCategory);
+        const selected = filtered[index];
+        if (selected && selected.id !== habitId) {
+            setHabitId(selected.id);
+            setHabitName(selected.name[langIndex]);
+            setIsNegative(selected.category[0] === 'Отказ от вредного');
+            setGoals(setGoalForDefault(selected.name[0], langIndex));
+            setDaysToForm(selected.category[0] === 'Отказ от вредного' ? 120 : 66);
+            if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+        }
+    };
+
+    const handleSave = () => {
+        const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+        const finalGoals = goals.map(g => ({ text: g, isDone: false }));
+        if (showCreatePanel) createHabit(habitName, habitCategory, habitDescription, habitIcon, dateStr, finalGoals, isNegative, daysToForm);
+        else addHabit(habitId, habitName, false, dateStr, finalGoals, isNegative, daysToForm);
+        closePanel();
+    };
+
+    const closePanel = () => {
+        addPanel$.next('');
+        setCurrentBottomBtn(0);
+        setConfirmationPanel(false);
+        setshowCreatePanel(false);
+        playEffects(click);
+    };
+
+    // Новая логика для барабанов даты
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+    const monthsArray = months[langIndex];
+    const yearsArray = Array.from({ length: 11 }, (_, i) => now.getFullYear() - 5 + i); // 5 лет назад и 5 вперед
+
     const setNewGoal = () => {
-      if (goalName.length > 0) {
-        setGoals(prev => [...prev, goalName]);
-        setGoalName('');
-      }
-      else setShowPopUpPanel( langIndex === 0 ? 'Введите цель' : 'Enter goal',2000,false);
+        if (goalName.length > 0) { setGoals(prev => [...prev, goalName]); setGoalName(''); }
+        else setShowPopUpPanel(langIndex === 0 ? 'Введите цель' : 'Enter goal', 2000, false);
     };
-    const removeGoal = (index) => {
-      setGoals(prev => prev.filter((_, i) => i !== index));
-    };
-    const months =[ ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
-    useEffect(() => {
-    const subscription = theme$.subscribe(setTheme);
-    const langSubscription = lang$.subscribe(setLang);
-    const keyboardSubscription = keyboardVisible$.subscribe(setKeyboardVisibleState);
-    const fontSizeSubscription = fontSize$.subscribe(setFontSize);
-    return () => {
-      subscription.unsubscribe();
-      langSubscription.unsubscribe();
-      keyboardSubscription.unsubscribe();
-      fontSizeSubscription.unsubscribe();
-    };
-    }, []);
-    useEffect(() => {
-            const themeSubscription = theme$.subscribe(setTheme);
-            const langSubscription = lang$.subscribe((lang) => {
-                setLangIndex(lang === 'ru' ? 0 : 1);
-            });
-            return () => {
-                themeSubscription.unsubscribe();
-                langSubscription.unsubscribe();
-            };
-        }, []);
-    useEffect(() => {
-        setHabitList(getAllHabits());
-    }, []);
-    useEffect(() => {
-      const subscription = addPanel$.subscribe(setAddPanelState);
-      if(addPanel === 'AddHabitPanel')setTimeout(() => setOpacity(1),400);
-      else setOpacity(0);
-      return () => {
-        subscription.unsubscribe();
-      };
-    }, []);
-    const handleInputValue = (value, index) => {
-      if(value.length > 0){
-        if (index === 0) setHabitName(value[0].toUpperCase() + value.toLowerCase().slice(1));
-        else if (index === 2) setHabitDescription(value[0].toUpperCase() + value.toLowerCase().slice(1));
-        else if (index === 3) setGoalName(value[0].toUpperCase() + value.toLowerCase().slice(1));
-      }else{
-        if (index === 0) setHabitName('');
-        else if (index === 2) setHabitDescription('');
-        else if (index === 3) setGoalName('');
-      }
-    };
-    
-    useEffect(() => {
-      if (habitName.length > 3) {
-        setAddButtonEnabled(true);
-      } else {
-        setAddButtonEnabled(false);
-      }
-    }, [habitName, habitDescription, habitIcon, langIndex]);
-    
-    return (
-        <div style={{...styles(theme).container,
-          transform: addPanel === 'AddHabitPanel' ? 'translateX(0)' : 'translateX(-100%)',
-          backgroundColor: opacity === 1 ? 'rgba(0, 0, 0, 0.5)' : 'transparent',
-          transition: 'transform 0.3s ease-in-out, background-color 0.1s ease-in-out',
-        }}>
-         {!showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
-           <div style={styles(theme,false,fSize).headerText}>{langIndex === 0 ? 'добавь привычку' : 'add habit'}</div>
-           <div style={{...styles(theme).simplePanel,height:"80%",width:'85%',marginRight:'7.5%'}}>
-            <div style={{display:'flex',flexDirection:'row',justifyContent:'space-around',width:'90%'}}>
-              <FaSearch style={{color:Colors.get("icons",theme),fontSize:'16px',marginTop:'10px',marginLeft:'10px'}}/>
-              <MyInput maxL={10} w="70%" placeHolder={langIndex === 0 ? 'поиск' : 'search'} theme={theme} 
-              onChange={value => searchHabitsList(value,habitList, setHabitList) }/>
-            </div>
-            <select style={{...styles(theme,false,fSize).input,width:"80%",marginLeft:'10%'}} onChange={(e) => setfilterCategory(e.target.value)}>
-                {renderCategoryOptions(theme, langIndex,fSize)}
-              </select>
-            <div style={styles(theme).scrollView}>
-              {habitList.slice().sort((a,b) => a.name[langIndex].length - b.name[langIndex].length).map((habit) => !AppData.choosenHabits.includes(habit.id) && habit.category[langIndex] === filterCategory && (
-                <div key={habit.id} style={{...styles(theme).text,alignContent:'center',height:'40px',borderRadius:"12px",backgroundColor: habit.id === selectedHabit ? Colors.get('highlitedPanel', theme) : 'transparent'}}
-                onClick={() => {
-                  setSelectedHabit(habit.id);
-                  setIsNegative(getAllHabits()[habit.id].category[0] === 'Отказ от вредного');
-                  setHabitId(habit.id);
-                  setGoals(setGoalForDefault(habit.name[0],langIndex));
-                  setDaysToForm(getAllHabits()[habit.id].category[0] === 'Отказ от вредного' ? 120 : 66);
-                  setAddButtonEnabled(true);
-                  playEffects(click);
-                  }}>
-                  {habit.name[langIndex]+' '+(habit.isCustom ? ' 🔖':'')}
-                </div>
-              ))}
-           </div>
-           </div>
-           {/* buttons */}
-           <div style={{display:'flex',width:'85%',flexDirection:'row',justifyContent:'space-around',alignContent:'center'}}>
-             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(click);}}><FaBackspace style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(true);setAddButtonEnabled(false);}}><MdFiberNew style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){setConfirmationPanel(true);playEffects(click);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
-           </div>
-           </div>)}
-           {/* creation panel */}
-           {showCreatePanel && (<div style={styles(theme, keyboardVisible).panel}>
-           <div style={styles(theme).headerText}>{langIndex === 0 ? 'или создай свою' : 'or create your own'}</div>
-           <div style={{...styles(theme).simplePanel,width:'85%',marginRight:'7.5%',height:"52vh",justifyContent:'space-around',alignItems:'center'}}>
-            <MyInput maxL={25} h="15%" w='90%' placeHolder={langIndex === 0 ? 'имя' : 'name'} theme={theme} onChange={v => handleInputValue(v,0)}/>
-           
-              <select style={{...styles(theme,false,fSize).input,width:"80%"}} onChange={(e) => setHabitCategory(getCategory(e.target.value))}>
-                {renderCategoryOptions(theme, langIndex,fSize)}
-              </select>
-           
-            <MyInput maxL={100} h="20%"w='90%' placeHolder={langIndex === 0 ? 'описание(опционально)' : 'description(optional)'} theme={theme} onChange={v => handleInputValue(v,2)}/>
-            <div style={styles(theme,false,fSize).headerText}>{langIndex === 0 ? 'выбери иконку(опционально)' : 'choose icon(optional)'}</div>
-            <div style={{display:"flex",justifyContent:"space-between"}}>
-              <div style={{width: '80%',marginLeft:'30px',padding:'5px'}}>
-               <div style={styles(theme).button} onClick={() => setSelectIconPanel(selectIconPanel ? false : true)}>
-                {!selectIconPanel && (<FaListAlt style={styles(theme).miniIcon}/>)}{selectIconPanel && (<FaRegWindowClose style={styles(theme).miniIcon}/>)}
-               </div>
-              </div>
-              <div style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                width: '20%',
-                height: '100%',
-                padding: '8px'
-              }}>
-                {Icons.getIcon(iconName, {
-                  size: 48,
-                  style: {
-                    marginRight:'70px',
-                    color: Colors.get("habitIcon", theme),
-                    filter: 'drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5))'
-                  }
-                })}
-              </div>
-            </div>
-           </div>
-           <div style={{display:'flex',flexDirection:'row',width:'85%',justifyContent:'space-around',alignContent:'center'}}>
-             <div style={{...styles(theme).button}} onClick={() => {setAddPanel('');setCurrentBottomBtn(0);playEffects(click);}}><FaBackspace style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {setshowCreatePanel(false);setAddButtonEnabled(false);setSelectedHabit(null);}}><FaSearchPlus style={styles(theme).miniIcon}/></div>
-             <div style={{...styles(theme).button}} onClick={() => {if(addButtonEnabled){setConfirmationPanel(true);playEffects(click);}}}><FaPlusSquare style={{...styles(theme).miniIcon,color: addButtonEnabled ?  Colors.get('icons', theme) : Colors.get('iconsDisabled', theme)}}/></div>
-           </div>
-         </div>)}
-         {selectIconPanel && (
-           <div style={styles(theme).selectPanel}>
-             {Object.entries(Icons.ic).map(([key]) => (
-               <div 
-                 key={key}
-                 style={{
-                   width: '15%',
-                   padding: '12px',
-                   display: 'flex',
-                   justifyContent: 'center',
-                   alignItems: 'center',
-                   cursor: 'pointer',
-                   borderRadius: '8px',
-                   transition: 'background-color 0.2s',
-                   ':hover': {
-                     backgroundColor: Colors.get('highlitedPanel', theme)
-                   }
-                 }}
-                 onClick={() => {
-                   setIconName(key);
-                   setHabitIcon(key);
-                   playEffects(click);
-                   setSelectIconPanel(false);
-                   if(habitName.length > 3) {
-                     setAddButtonEnabled(true);
-                   }
-                 }}
-               >
-                 {Icons.getIcon(key, { 
-                   size: 32, 
-                   style: { 
-                     color: Colors.get('habitIcon', theme),
-                     filter: 'drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5))'
-                   } 
-                 })}
-               </div>
-             ))}
-           </div>
-         )}
-         {confirmationPanel && (
-           <div style={styles(theme).container}>
-            <div style={styles(theme).confirmationPanel}>
-             <p style={styles(theme,false,fSize).text}>{confirmationText(langIndex,showCreatePanel,habitId,habitName)}</p>
-             <div style={{...styles(theme).simplePanelRow,flexDirection:'column',justifyContent:'space-between',alignItems:'center',backgroundColor:Colors.get('background', theme),width:'95%',height:'80%',borderRadius:'24px'}}>
-               <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? 'установите дату': 'set date'}</p>
-               <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindYearhMinus} onClick={() => {handleDateChange(false,0)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
-                   <p style={styles(theme).textDate}> {year} </p>
-                   <div {...bindYearPlus} onClick={() => {handleDateChange(true,0)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
-               </div>
-               <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindMonthMinus} onClick={() => {handleDateChange(false,1)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
-                   <p style={styles(theme).textDate}> {months[langIndex][month - 1]} </p>
-                   <div {...bindMonthPlus} onClick={() => {handleDateChange(true,1)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
-               </div>
-               <div style={{...styles(theme).simplePanelRow,width:'70%'}}>
-                   <div {...bindDayMinus} onClick={() => {handleDateChange(false,2)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiMinus style={{userSelect:'none',touchAction:'none'}}/></div>
-                   <p style={styles(theme).textDate}> {day} </p>
-                   <div {...bindDayPlus} onClick={() => {handleDateChange(true,2)}} style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}}><FiPlus style={{userSelect:'none',touchAction:'none'}}/></div>
-               </div> 
-               <p style={styles(theme,false,fSize).subtext}>{langIndex === 0 ? '(опционально) дополнительные цели' : '(optional) additional goals'}</p>
-               <div style={{...styles(theme).simplePanelRow,width:'80%',flexDirection:'row',justifyContent:'space-around',alignItems:'center'}}>
-                <MyInput w='80%'h='70%' maxL={70} placeHolder={langIndex === 0 ? 'новая цель' : 'new goal'} onChange={v => handleInputValue(v,3) } clear={true}/>
-                <FaPlusSquare style={{...styles(theme).miniIcon,fontSize:'20px',marginTop:'15px'}} onClick={setNewGoal}/>
-               </div>
-               <div style={{marginTop:'10px',width:'90%',display:'flex',flexDirection:'column',justifyContent:'start',alignItems:'center',overflowY:'auto',height:'90%'}}>
-                  {goals.map((goal,index) => (
-                    <div key={index} style={{display:'flex',flexDirection:'row',justifyItems:'start',alignItems:'center',width:'90%',height:'30%'}}>
-                      <div style={{...styles(theme,false,fSize).text,width:'90%',textAlign:'left',fontSize:fSize === 0 ? '11px' : '13px' }}>{(index + 1) + ': ' + goal}</div>
-                      <FaTrashAlt style={{...styles(theme).miniIcon,fontSize:'14px',marginBottom:'20px',marginLeft:'auto'}} onClick={() => removeGoal(index)}/>
-                    </div>
-                  ))}
-                </div>
-                
-                <Slider style={styles(theme).slider} min={21} max={180} value={daysToForm} valueLabelDisplay='auto' onChange={(e) => setDaysToForm(e.target.value)} />
-                <div style={{...styles(theme,false,fSize).subtext,marginTop:'5px',width:'90%'}}>{needDaysInfo(langIndex,daysToForm,isNegative)}</div>
-                
-             </div>
-             
-             <div style={styles(theme).simplePanelRow}>
-              
-               <div style={styles(theme).button} onClick={() => {setConfirmationPanel(false);resetDate(setDay,setMonth,setYear);playEffects(click);}}><MdClose style={styles(theme).miniIcon}/></div>
-               <div style={styles(theme).button} onClick={() => {
-                 const curDateString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                 const habitgoals = goals.length > 0 ? goals.map(goal => ({text: goal, isDone: false})) : [];
-                 if (showCreatePanel)createHabit(habitName, habitCategory, habitDescription, habitIcon, curDateString,habitgoals,isNegative,daysToForm)
-                 else addHabit(habitId, habitName, false, curDateString,habitgoals,isNegative,daysToForm);
-                 playEffects(click);
-                 setConfirmationPanel(false);
-                 setAddPanel('');
-                 resetDate(setDay, setMonth, setYear);
-                 playEffects(click);setConfirmationPanel(false);resetDate(setDay,setMonth,setYear);}}><MdDone style={styles(theme).miniIcon}/></div>
-             </div>
-            </div>
-           </div>
-         )}
-        </div>
-    )
-}
-export default AddHabitPanel;
 
-// Helper function to render category options
-const renderCategoryOptions = (theme, langIndex,fSize) => {
-    const categories = Array.from(new Set(allHabits.map(h => h.category[langIndex])));
-    return categories.map((category) => (
-        <option key={category} value={category} style={{...styles(theme,false,fSize).text}}>
-            {category}
-        </option>
-    ));
+    const removeGoal = (i) => setGoals(prev => prev.filter((_, idx) => idx !== i));
+
+    return (
+        <AnimatePresence>
+            {addPanelVisible && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={closePanel}>
+                    <motion.div 
+                        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                        style={{ ...panelStyle, backgroundColor: ui.bg, backdropFilter: ui.blur }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={dragHandle} />
+                        
+                        <div style={{ padding: '0 20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                            <AnimatePresence mode="wait">
+                                {!confirmationPanel ? (
+                                    <motion.div key="step1" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <h2 style={{ color: ui.text, textAlign: 'center', fontWeight: '800', margin: '10px 0 20px' }}>
+                                            {showCreatePanel ? (langIndex === 0 ? 'Своя привычка' : 'Custom Habit') : (langIndex === 0 ? 'Добавить привычку' : 'Add Habit')}
+                                        </h2>
+
+                                        {!showCreatePanel ? (
+                                            <>
+                                                {/* Фильтр категорий (Drum-style) */}
+                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '15px', paddingBottom: '5px', scrollbarWidth: 'none' }}>
+                                                    {['Здоровье', 'Развитие', 'Продуктивность', 'Отношения и отдых', 'Отказ от вредного'].map(cat => (
+                                                        <motion.div 
+                                                            key={cat} whileTap={{ scale: 0.95 }}
+                                                            onClick={() => setfilterCategory(cat)}
+                                                            style={{ 
+                                                                padding: '10px 18px', borderRadius: '14px', whiteSpace: 'nowrap',
+                                                                backgroundColor: filterCategory === cat ? ui.accent : ui.card,
+                                                                color: filterCategory === cat ? '#FFF' : ui.text,
+                                                                fontSize: '13px', fontWeight: '700', transition: '0.2s all',
+                                                                boxShadow: filterCategory === cat ? `0 4px 12px ${ui.accent}40` : 'none'
+                                                            }}
+                                                        >
+                                                            {langIndex === 0 ? cat : getCategory(cat)[1]}
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+
+                                                <div style={{ backgroundColor: ui.card, borderRadius: '16px', display: 'flex', alignItems: 'center', padding: '0 15px', marginBottom: '15px', height: '50px' }}>
+                                                    <FaSearch color={ui.sub} />
+                                                    <MyInput theme={theme} placeHolder={langIndex === 0 ? 'поиск' : 'search'} onChange={v => searchHabitsList(v, habitList, setHabitList)} />
+                                                </div>
+
+                                                {/* БАРАБАН (Drum) */}
+                                                <div style={drumContainer(ui)}>
+                                                    <div onScroll={handleDrumScroll} style={drumScroll}>
+                                                        <div style={{ height: '88px' }} />
+                                                        {habitList.filter(h => !AppData.choosenHabits.includes(h.id) && h.category[langIndex] === (langIndex === 0 ? filterCategory : getCategory(filterCategory)[1])).map((h) => (
+                                                            <div key={h.id} style={drumItem(h.id === habitId, ui)}>
+                                                                {h.name[langIndex]}
+                                                            </div>
+                                                        ))}
+                                                        <div style={{ height: '88px' }} />
+                                                    </div>
+                                                    <div style={drumLens(ui)} />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                                <MyInput w="100%" h="55px" theme={theme} placeHolder={langIndex === 0 ? 'название' : 'name'} onChange={v => setHabitName(v)} />
+                                                <motion.div whileTap={{ scale: 0.98 }} style={iconPickerTrigger(ui)} onClick={() => setSelectIconPanel(true)}>
+                                                    <span style={{ color: ui.text, fontWeight: '700' }}>Иконка</span>
+                                                    {Icons.getIcon(habitIcon, { size: 32, style: { color: ui.accent } })}
+                                                </motion.div>
+                                                <MyInput w="100%" h="80px" theme={theme} placeHolder={langIndex === 0 ? 'описание' : 'description'} onChange={v => setHabitDescription(v)} />
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                ) : (
+                                    /* ШАГ 2: Подтверждение (Барабаны даты, Цели, Слайдер) */
+                                    <motion.div key="step2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }} style={{ flex: 1, overflowY: 'auto' }}>
+                                        <h3 style={{ color: ui.text, textAlign: 'center', fontWeight: '900', margin: '20px 0', fontSize: '22px' }}>{habitName}</h3>
+                                        
+                                        {/* БАРАБАНЫ ДАТЫ */}
+                                        <div style={configCard(ui)}>
+                                            <p style={cardLabel(ui)}>{langIndex === 0 ? 'дата начала' : 'start date'}</p>
+                                            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', height: '120px' }}>
+                                                <DrumSelect items={daysArray} value={day} onChange={setDay} ui={ui} width="60px" />
+                                                <DrumSelect items={monthsArray} value={monthsArray[month-1]} onChange={(v) => setMonth(monthsArray.indexOf(v) + 1)} ui={ui} width="100px" />
+                                                <DrumSelect items={yearsArray} value={year} onChange={setYear} ui={ui} width="80px" />
+                                            </div>
+                                        </div>
+
+                                        <div style={configCard(ui)}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                                <span style={{ color: ui.text, fontWeight: '700' }}>{langIndex === 0 ? 'Срок' : 'Goal'}</span>
+                                                <span style={{ color: ui.accent, fontWeight: '900', fontSize: '24px' }}>{daysToForm} дн.</span>
+                                            </div>
+                                            <Slider min={21} max={180} value={daysToForm} onChange={(e, v) => setDaysToForm(v)} 
+                                                sx={{ color: ui.accent, '& .MuiSlider-thumb': { width: 24, height: 24 }, '& .MuiSlider-rail': { opacity: 0.3 } }} 
+                                            />
+                                            <p style={{ fontSize: '12px', color: ui.sub, marginTop: '10px', textAlign: 'center' }}>{needDaysInfo(langIndex, daysToForm, isNegative)}</p>
+                                        </div>
+
+                                        <div style={configCard(ui)}>
+                                            <p style={cardLabel(ui)}>{langIndex === 0 ? 'микро-цели' : 'sub-goals'}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: ui.bg, borderRadius: '14px', paddingRight: '5px', marginBottom: '15px' }}>
+                                                <MyInput theme={theme} w="100%" h="40px" placeHolder={langIndex === 0 ? 'Добавить цель...' : 'Add goal...'} onChange={v => setGoalName(v)} value={goalName}/>
+                                                <motion.div whileTap={{ scale: 0.9 }} onClick={setNewGoal} style={addBtn(ui)}><FaPlus color="#FFF" size={18} /></motion.div>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                {goals.map((g, i) => (
+                                                    <motion.div layout key={i} style={goalRow(ui)}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <FaListUl color={ui.accent} size={14} />
+                                                            <span style={{ color: ui.text, fontSize: '15px', fontWeight: '500' }}>{g}</span>
+                                                        </div>
+                                                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => removeGoal(i)} style={{ padding: '8px', backgroundColor: '#FF3B3020', borderRadius: '10px' }}>
+                                                            <FaTrashAlt color="#FF3B30" size={14} />
+                                                        </motion.div>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div style={{ height: '20px' }} />
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* --- ФИНАЛЬНЫЕ КНОПКИ --- */}
+                            <div style={footerButtons}>
+                                <motion.div whileTap={{ scale: 0.9 }} style={btnCancel(ui)} onClick={confirmationPanel ? () => setConfirmationPanel(false) : closePanel}>
+                                    <MdClose size={26} color={ui.text} />
+                                </motion.div>
+
+                                {!confirmationPanel && (
+                                    <motion.div whileTap={{ scale: 0.9 }} style={btnNew(ui)} onClick={() => setshowCreatePanel(!showCreatePanel)}>
+                                       {showCreatePanel ? <MdListAlt size={24} color="#FFF" /> :  <MdFiberNew size={24} color="#FFF" />}
+                                    </motion.div>
+                                )}
+
+                                <motion.div 
+                                    whileTap={{ scale: 0.95 }} 
+                                    style={btnNext(ui)} 
+                                    onClick={confirmationPanel ? handleSave : () => { if(habitId !== -1 || habitName.length > 3) setConfirmationPanel(true); }}
+                                >
+                                    {confirmationPanel ? <MdDone size={28} color="#FFF" /> : <FaChevronRight size={20} color="#FFF" />}
+                                </motion.div>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Выбор иконки (Bottom Sheet) */}
+                    <AnimatePresence>
+                        {selectIconPanel && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={() => setSelectIconPanel(false)}>
+                                <motion.div 
+                                    initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                    style={{ ...iconSheet(ui), backgroundColor: ui.bg, backdropFilter: ui.blur }} 
+                                    onClick={e => e.stopPropagation()}
+                                >
+                                    <div style={dragHandle} />
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 25px 15px' }}>
+                                        <h3 style={{ margin: 0, color: ui.text }}>Выбрать иконку</h3>
+                                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => setSelectIconPanel(false)} style={{ padding: '8px', backgroundColor: ui.card, borderRadius: '50%' }}>
+                                            <MdClose color={ui.sub} />
+                                        </motion.div>
+                                    </div>
+                                    <div style={iconGrid}>
+                                        {Object.keys(Icons.ic).map(key => (
+                                            <motion.div 
+                                                key={key} whileTap={{ scale: 0.9 }}
+                                                onClick={() => { setHabitIcon(key); setSelectIconPanel(false); }} 
+                                                style={{ ...iconItem(habitIcon === key, ui) }}
+                                            >
+                                                {Icons.getIcon(key, { size: 30, style: { color: habitIcon === key ? ui.accent : ui.text } })}
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
 };
 
-const addHabit =  (habitId,habitName,isCustom,dateString,goals,isNegative,daysToForm) => {
-    if(AppData.IsHabitInChoosenList(habitId)) {
-       setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list',2500,false);
-      return;
+// --- КОМПОНЕНТ БАРАБАНА (DrumSelect) ---
+const DrumSelect = ({ items, value, onChange, ui, width }) => {
+    const scrollRef = useRef(null);
+    const itemHeight = 40;
+
+    useEffect(() => {
+        if (scrollRef.current) {
+            const index = items.indexOf(value);
+            if (index !== -1) {
+                scrollRef.current.scrollTop = index * itemHeight;
+            }
+        }
+    }, [value, items]);
+
+    const handleScroll = (e) => {
+        const index = Math.round(e.target.scrollTop / itemHeight);
+        if (items[index] !== undefined && items[index] !== value) {
+            onChange(items[index]);
+            if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('selection');
+        }
+    };
+
+    return (
+        <div style={{ position: 'relative', height: '120px', width: width, overflow: 'hidden' }}>
+            <div ref={scrollRef} onScroll={handleScroll} style={{ height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory', scrollbarWidth: 'none' }}>
+                <div style={{ height: '40px' }} />
+                {items.map((item, i) => (
+                    <div key={i} style={{ height: `${itemHeight}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center', color: item === value ? ui.text : ui.sub, fontSize: item === value ? '18px' : '16px', fontWeight: item === value ? '800' : '500', transition: '0.2s all', opacity: item === value ? 1 : 0.5 }}>
+                        {item}
+                    </div>
+                ))}
+                <div style={{ height: '40px' }} />
+            </div>
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderTop: `1px solid ${ui.border}`, borderBottom: `1px solid ${ui.border}`, top: '40px', bottom: '40px' }} />
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(to bottom, ${ui.bg} 0%, transparent 30%, transparent 70%, ${ui.bg} 100%)` }} />
+        </div>
+    );
+};
+
+// --- СТИЛИ ---
+const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
+const panelStyle = { width: '100%', height: '92vh', borderRadius: '40px 40px 0 0', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' };
+const dragHandle = { width: '45px', height: '5px', backgroundColor: '#8E8E93', borderRadius: '3px', margin: '15px auto', opacity: 0.4 };
+
+const drumContainer = (ui) => ({ position: 'relative', height: '220px', backgroundColor: ui.card, borderRadius: '25px', overflow: 'hidden' });
+const drumScroll = { width: '100%', height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' };
+const drumItem = (active, ui) => ({ height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center', color: active ? ui.accent : ui.text, fontSize: active ? '20px' : '17px', fontWeight: active ? '900' : '400', opacity: active ? 1 : 0.4, transition: '0.3s all' });
+const drumLens = (ui) => ({ position: 'absolute', top: '88px', left: 0, right: 0, height: '44px', borderTop: `1px solid ${ui.border}`, borderBottom: `1px solid ${ui.border}`, pointerEvents: 'none' });
+
+const configCard = (ui) => ({ backgroundColor: ui.card, borderRadius: '25px', padding: '25px', marginBottom: '15px', boxShadow: `0 4px 20px ${ui.accent}10` });
+const cardLabel = (ui) => ({ color: ui.sub, fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '15px', letterSpacing: '1px' });
+
+const footerButtons = { display: 'flex', gap: '12px', padding: '20px 0 40px', alignItems: 'center' };
+const btnBase = { height: '60px', borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' };
+const btnCancel = (ui) => ({ ...btnBase, flex: 1, backgroundColor: ui.card, border: `1px solid ${ui.border}` });
+const btnNew = (ui) => ({ ...btnBase, width: '60px', backgroundColor: ui.accent, boxShadow: `0 4px 15px ${ui.accent}40` });
+const btnNext = (ui) => ({ ...btnBase, flex: 2, backgroundColor: ui.accent, boxShadow: `0 4px 15px ${ui.accent}40` });
+
+const iconSheet = (ui) => ({ width: '100%', maxHeight: '70vh', borderRadius: '40px 40px 0 0', overflow: 'hidden', borderTop: `1px solid ${ui.border}` });
+const iconGrid = { maxHeight: '50vh', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '15px', padding: '0 25px 40px' };
+const iconItem = (active, ui) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px', borderRadius: '18px', backgroundColor: active ? ui.accent + '20' : ui.card, border: active ? `2px solid ${ui.accent}` : `1px solid ${ui.border}` });
+const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: ui.card, borderRadius: '20px' });
+const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: ui.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '5px' });
+const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: ui.bg, borderRadius: '16px' });
+
+// --- ЛОГИКА (ОРИГИНАЛ) ---
+const months = [['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'], ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
+
+function playEffects(sound) {
+    if (AppData.prefs[2] === 0 && sound) { sound.currentTime = 0; sound.play(); }
+    if (AppData.prefs[3] === 0 && window.Telegram?.WebApp?.isVersionAtLeast?.('6.1')) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
-    addHabitFn(habitId,dateString,goals,isNegative,daysToForm);
-    const message = !isCustom ? AppData.prefs[0] === 0 ? 'привычка добавлена' : 'habit added' : AppData.prefs[0] === 0 ? `привычка: ${habitName} создана и добавлена` : `habit: ${habitName} was created and added`;
-    setShowPopUpPanel(message,2500,true);
 }
 
-const createHabit =  (name,category,description,icon,dateString,goals,isNegative,daysToForm) => {
+const getCategory = (value) => {
+    const map = { 'Здоровье': ['Здоровье', 'Health'], 'Health': ['Здоровье', 'Health'], 'Развитие': ["Развитие", "Growth"], 'Growth': ["Развитие", "Growth"], 'Продуктивность': ["Продуктивность", "Productivity"], 'Productivity': ["Продуктивность", "Productivity"], 'Отношения и отдых': ["Отношения и отдых", "Relationships & recreation"], 'Relationships & recreation': ["Отношения и отдых", "Relationships & recreation"], 'Отказ от вредного': ["Отказ от вредного", "Bad habits to quit"], 'Bad habits to quit': ["Отказ от вредного", "Bad habits to quit"] };
+    return map[value] || ['Здоровье', 'Health'];
+};
+
+function needDaysInfo(lang, days, isNegative) {
+    if (isNegative) return lang === 0 ? 'мне нужно ' + days + ' дней чтобы бросить' : 'i need ' + days + ' days to quit';
+    return lang === 0 ? 'мне нужно ' + days + ' дней для формирования' : 'it takes ' + days + ' days to form';
+}
+
+const addHabit = (habitId, habitName, isCustom, dateString, goals, isNegative, daysToForm) => {
+    if (AppData.IsHabitInChoosenList(habitId)) { setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list', 2500, false); return; }
+    addHabitFn(habitId, dateString, goals, isNegative, daysToForm);
+    setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка добавлена' : 'habit added', 2500, true);
+}
+
+const createHabit = (name, category, description, icon, dateString, goals, isNegative, daysToForm) => {
     const currentAll = getAllHabits();
     const maxId = currentAll.length > 0 ? Math.max(...currentAll.map(h => h.id)) : 0;
     const habitId = maxId + 1;
-    if(!AppData.IsCustomHabitExists(habitId)){
-      
-      AppData.AddCustomHabit(name,category,description,icon,habitId);
-      setTimeout(() => {addHabit(habitId,name,true,dateString,goals,category[0] === 'Отказ от вредного',daysToForm);}, 100);
-    }else{
-      setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка с таким названием уже существует' : 'habit with this name already exists',2500,false);
-    }
+    AppData.AddCustomHabit(name, category, description, icon, habitId);
+    setTimeout(() => { addHabit(habitId, name, true, dateString, goals, category[0] === 'Отказ от вредного', daysToForm); }, 100);
 }
 
 const searchHabitsList = (val, habitList, setHabitList) => {
-    if(val.length > 0){
-      const newList = getAllHabits().filter((habit) => {
-        return habit.name[AppData.prefs[0]].toLowerCase().startsWith(val.toLowerCase());
-      });
-      setHabitList(newList);
-    }else{
-        const allNow = getAllHabits();
-        if(habitList.length != allNow.length){
-            setHabitList(allNow);
-        }
-    }
-}
-
-
-const styles = (theme, keyboardVisible,fSize) => ({
-  // Container styles
-  container: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2900,
-    width:'100vw'
-  },
-  panel :
-  {
-    alignItems: "center",
-    justifyItems: "center",
-    borderRadius:"24px",
-    overflow: "hidden",
-    boxSizing:'border-box',
-    overflowY: "scroll",
-    border: `1px solid ${Colors.get('border', theme)}`,
-    margin: "5px",
-    backgroundColor:Colors.get('simplePanel', theme),
-    boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
-    width:"95vw",
-    height: "65vh"
-  },
-  confirmationPanel :
-  {
-    display:'flex',
-    flexDirection:'column',
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius:"24px",
-    border: `1px solid ${Colors.get('border', theme)}`,
-    margin: "5px",
-    marginBottom:'15vw',
-    backgroundColor:Colors.get('simplePanel', theme),
-    boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
-    width:"95%",
-    height:"170vw"
-  },
-  text :
-  {
-    textAlign: "center",
-    fontSize:fSize ? "13px" : "15px",
-    color: Colors.get('mainText', theme),
-    marginBottom:'12px'
-  },
-  subtext:
-  {
-    textAlign: "center",
-    fontSize:fSize ? "11px" : "13px",
-    color: Colors.get('subText', theme),
-    marginBottom:'12px'
-  },
-  textDate:
-  {
-    textAlign: "center",
-    fontSize: "18px",
-    color: Colors.get('mainText', theme),
-    marginBottom:'4px'
-  },
-  headerText :
-  {
-    textAlign: "center",
-    margin:'5px',
-    padding:'5px',
-    fontSize:fSize ? "13px" : "15px",
-    color: Colors.get('subText', theme),
-  },
-  scrollView:
-  {
-    overflowY: "auto",
-    boxSizing:'border-box',
-    display:'flex',
-    flexDirection:'column',
-    alignItems:'stretch',
-  },
-  simplePanel:
-  {
-    marginLeft:'7.5vw',
-    width: "70vw",
-    height: "30vh",
-    boxSizing:'border-box',
-    display:'flex',
-    flexDirection:'column',
-    alignItems:'stretch',
-    background:"rgba(0, 0, 0, 0.1)",
-    borderRadius:'24px',
-  },
-  input:
-  {
-    backgroundColor:Colors.get('simplePanel',theme),
-    width:'65vw',
-    height: "3vh",
-    borderBottom:`1px solid ${Colors.get('border', theme)}`,
-    borderRadius:'12px',
-    margin:'12px',
-    fontSize:fSize ? "13px" : "15px",
-    fontFamily:'Segoe UI',
-    color:Colors.get('subText', theme),
-  },
-  simplePanelRow:
-  {
-    width:'85vw',
-    display:'flex',
-    flexDirection:'row',
-    alignItems:'stretch',
-    justifyContent:'space-around',
-    userSelect: 'none',
-    touchAction: 'none',
-  },
-  select:
-  {
-    width:'20vw',
-    height:'6vw',
-    borderRadius:'12px',
-    border:`1px solid ${Colors.get('border', theme)}`,
-    marginTop:'12px',
-    fontSize:fSize ? "13px" : "15px",
-    color:Colors.get('subText', theme),
-    backgroundColor:Colors.get('habitCard', theme),
-  },
-  selectOption:
-  {
-    color:Colors.get('subText', theme),
-    backgroundColor:Colors.get('habitCard', theme),
-    fontSize:fSize ? "11px" : "13px",
-  },
-  selectPanel:
-  {
-    backgroundColor: Colors.get('habitCard', theme),
-    borderRadius: '24px',
-    border: `1px solid ${Colors.get('border', theme)}`,
-    position: 'absolute',
-    top: '40%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    display: 'flex',
-    flexWrap: 'wrap',
-    width: '77vw',
-    maxHeight: '42vh',
-    overflowY: 'auto',
-    padding: '16px',
-    gap: '8px',
-    justifyContent: 'center',
-    zIndex: 1000
-  },
-  selectIcon:
-  {
-     flex:'{0,0,33.33%}',
-     width:'20vw',
-     boxSizing:'border-box',
-     display:'flex',
-     alignItems:'center',
-     justifyContent:'center',
-  },
-  button:
-  {
-    display:'flex',
-    alignContent:"center",
-    justifyContent:"center",
-    width:'15vw',
-    marginTop:'12px',
-    fontSize:'12px',
-  },
-  miniIcon: {
-    fontSize: "28px",
-    padding: "5px",
-    marginTop: "10px",
-    color: Colors.get('icons', theme),
-    userSelect: 'none',
-    touchAction: 'none',
-    filter :`drop-shadow(0 0px 1px ${Colors.get('iconsShadow', theme)})`
-  },
-  slider:
-  {
-    width:'70%',
-    userSelect: 'none',
-    touchAction: 'none',
-    color:Colors.get('icons', theme),
-
-  }
-})
-function playEffects(sound){
-  if(AppData.prefs[2] == 0 && sound !== null){
-    if(!sound.paused){
-        sound.pause();
-        sound.currentTime = 0;
-    }
-    sound.volume = 0.5;
-    sound.play();
-  }
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
-function confirmationText(lang,isCreatePanel,habitId,customHabitName)
-{
-  if(isCreatePanel){
-     return lang === 0 ? 'добавить привычку ' + customHabitName + '?':'add habit ' + customHabitName + '?';
-  }
-  else{
-    const name = getAllHabits().find(h => h.id === habitId).name[lang];
-    return lang === 0 ? 'добавить привычку ' + name + '?':'add habit ' + name + '?';
-  }
-}
-function needDaysInfo(lang,daysToForm,isNegative){
-   if(isNegative){
-    return lang === 0 ? 'мне нужно ' + daysToForm + ' дней чтобы бросить привычку':'i need ' + daysToForm + ' days to quit';
-   }
-   else{
-    return lang === 0 ? 'мне нужно ' + daysToForm + ' дней для формирования привычки':'it takes ' + daysToForm + ' days to form a habit';
-   }
-}
-function resetDate(setDay,setMonth,setYear){
-  const now = new Date();
-  setDay(now.getDate());
-  setMonth(now.getMonth() + 1);
-  setYear(now.getFullYear());
+    if (val.length > 0) {
+        const newList = getAllHabits().filter((habit) => habit.name[AppData.prefs[0]].toLowerCase().startsWith(val.toLowerCase()));
+        setHabitList(newList);
+    } else { setHabitList(getAllHabits()); }
 }
 
 const setGoalForDefault = (habitName,langIndex) => {
@@ -814,10 +573,5 @@ const setGoalForDefault = (habitName,langIndex) => {
 
   return habitName in  goals ? goals[habitName][langIndex] : [];
 }
-const getCategory = (value) =>{
-   if(value === 'Здоровье' || value === 'Health') return ['Здоровье','Health'];
-   else if(value === 'Развитие' || value === 'Growth') return ["Развитие","Growth"];
-   else if(value === 'Продуктивность' || value === 'Productivity') return ["Продуктивность","Productivity"];
-   else if(value === 'Отношения и отдых' || value === 'Relationships & recreation') return ["Отношения и отдых","Relationships & recreation"];
-   else if(value === 'Отказ от вредного' || value === 'Bad habits to quit') return ["Отказ от вредного","Bad habits to quit"];
-}
+
+export default AddHabitPanel;

@@ -8,9 +8,12 @@ import BtnsRecovery from './assets/Pages/BottomBtns/BtnsRecovery'
 import BtnsMental from './assets/Pages/BottomBtns/BtnsMental'
 import BtnsSleep from './assets/Pages/BottomBtns/BtnsSleep'
 import BtnsToDo from './assets/Pages/BottomBtns/ToDoBtns'
+import BtnsRobot from './assets/Pages/BottomBtns/BtnsRobot'
 import NotifyPanel from './assets/Pages/NotifyPanel'
-import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, setPage,keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
+import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaServer, FaCog, FaTools } from 'react-icons/fa';
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
 const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'));
 const HabitsMain = lazy(() => import('./assets/Pages/HabitsPages/HabitsMain'));
@@ -30,6 +33,7 @@ const RecoveryMain = lazy(() => import('./assets/Pages/Recovery/RecoveryMain'));
 const BreathingMain = lazy(() => import('./assets/Pages/Recovery/RecoveryCategories'));
 const RecoveryAnalytics = lazy(() => import('./assets/Pages/Recovery/RecoveryAnalitics')); 
 const ToDoMain = lazy(() => import('./assets/Pages/ToDoPages/ToDoMain'));
+const RobotMain = lazy(() => import('./assets/Pages/Robot/RobotMain'));
 
 const MentalMain = lazy(() => import('./assets/Pages/MentalPages/MentalMain'));
 const MathMain = lazy(() => import('./assets/Pages/MentalPages/MathMain'));
@@ -53,13 +57,34 @@ function App() {
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
+  const [isTechicalWorks, setIsTechicalWorks] = useState(true);
   const lang = AppData.prefs[0];
-  const isTechicalWorks = true;
+  
+
+  // for test only
+  const [clickCount, setClickCount] = useState(0);
+  const [clickCountUp, setClickCountUp] = useState(0);
+
+  const handleClick = (isUp) => {
+        if (isUp) {
+            setClickCountUp(clickCountUp + 1);
+        } else {
+            setClickCount(clickCount + 1);
+        }
+        if (clickCount === 8 && clickCountUp === 4) {
+            setIsTechicalWorks(false);
+        }
+    }
+  // need to remove at production
+
 
   // ... rest of your useEffects (subscriptions) — keep these
   useEffect(() => {
     const subscription = addPanel$.subscribe(setAddPanel);  
-    return () => subscription.unsubscribe();
+    return () => 
+    {
+      subscription.unsubscribe();
+    }
   }, []);
 
   useEffect(() => {
@@ -91,10 +116,122 @@ function App() {
     <>
       {
         isTechicalWorks && 
-        <div onClick={(e) => {e.stopPropagation();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'space-around',alignItems:'center',
-          width:'100%',height:'100%',left:'0',top:'0',backgroundColor:'rgba(0,0,0,0.5)',backdropFilter:'blur(8px)',zIndex:9999}}>
-          <div style={{...styles(theme).mainText,fontSize:'20px',whiteSpace:'pre-line',textAlign:'center'}}>{lang === 0 ? '🔧 Технические работы на сервере \n скоро исправим \n пожалуйста, попробуйте позже' : '🔧 Technical works is underway on the server \n will be fixed soon \n please try again later'}</div>
-        </div> 
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={(e) => e.stopPropagation()} // Block clicks
+            style={{
+                position: 'fixed', // Fixed ensures it covers the whole screen even if scrolled
+                inset: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(12px)',
+                zIndex: 9999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'Segoe UI, sans-serif'
+            }}
+        >
+            <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                style={{
+                    width: '85%',
+                    maxWidth: '320px',
+                    padding: '30px 20px',
+                    borderRadius: '32px',
+                    backgroundColor: theme === 'dark' ? 'rgba(30, 30, 35, 0.9)' : '#ffffff',
+                    border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}
+            >
+              <div style={{ height: '2vh', width: '100%' }} onClick={() => { handleClick(true) }} ></div>
+                {/* Decorative Top Glow */}
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
+                    background: 'linear-gradient(90deg, #007AFF, #00C6FF)',
+                    boxShadow: '0 0 15px rgba(0, 122, 255, 0.5)'
+                }} />
+
+                {/* Animated Icon Container */}
+                <div style={{ position: 'relative', width: '80px', height: '80px', marginBottom: '20px' }}>
+                    {/* Static Server Icon */}
+                    <FaServer size={50} color={Colors.get('subText', theme)} style={{ opacity: 0.3, position: 'absolute', top: '15px', left: '15px' }} />
+                    
+                    {/* Spinning Gears */}
+                    <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                        style={{ position: 'absolute', top: 0, right: 0 }}
+                    >
+                        <FaCog size={34} color="#007AFF" />
+                    </motion.div>
+                    <motion.div
+                        animate={{ rotate: -360 }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                        style={{ position: 'absolute', bottom: 0, left: 0 }}
+                    >
+                        <FaCog size={24} color="#00C6FF" />
+                    </motion.div>
+                </div>
+
+                {/* Title */}
+                <h3 style={{ 
+                    margin: '0 0 10px 0', 
+                    fontSize: '20px', 
+                    fontWeight: '700', 
+                    color: Colors.get('mainText', theme) 
+                }}>
+                    {lang === 0 ? 'Технические работы' : 'Server Maintenance'}
+                </h3>
+
+                {/* Subtitle */}
+                <p style={{ 
+                    margin: '0', 
+                    fontSize: '14px', 
+                    color: Colors.get('subText', theme), 
+                    lineHeight: '1.5',
+                    maxWidth: '90%'
+                }}>
+                    {lang === 0 
+                        ? 'Мы обновляем сервер, чтобы сделать приложение лучше. Пожалуйста, зайдите позже.' 
+                        : 'We are upgrading our servers to make the app better. Please try again a bit later.'}
+                </p>
+
+                {/* Pulse Indicator */}
+                <div style={{ 
+                    marginTop: '25px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    padding: '6px 12px',
+                    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#F5F5F7',
+                    borderRadius: '20px'
+                }}>
+                    <span style={{ position: 'relative', display: 'flex', width: '8px', height: '8px' }}>
+                        <motion.span 
+                            animate={{ scale: [1, 1.5, 1], opacity: [0.7, 0, 0.7] }}
+                            transition={{ repeat: Infinity, duration: 2 }}
+                            style={{ position: 'absolute', inline: 0, width: '100%', height: '100%', borderRadius: '50%', backgroundColor: '#007AFF' }}
+                        />
+                        <span style={{ position: 'relative', inline: 0, width: '100%', height: '100%', borderRadius: '50%', backgroundColor: '#007AFF' }} />
+                    </span>
+                    <span style={{ fontSize: '11px', fontWeight: '600', color: '#007AFF', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {lang === 0 ? 'В процессе' : 'In Progress'}
+                    </span>
+                </div>
+             <div style={{ height: '2vh', width: '100%' }} onClick={() => { handleClick(false) }} ></div>
+            </motion.div>
+        </motion.div>
+    
       }
       {page !== 'LoadPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <MainBtns/>
@@ -177,12 +314,17 @@ function App() {
       {page === 'ToDoMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <ToDoMain/>
       </Suspense>}
+      {page === 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <RobotMain/>
+      </Suspense>}
+      
       {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
       {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
       {bottomBtnPanel === 'BtnsRecovery' && !keyboardVisible && <BtnsRecovery/>}
       {bottomBtnPanel === 'BtnsMental' && !keyboardVisible && <BtnsMental/>}
       {bottomBtnPanel === 'BtnsSleep' && !keyboardVisible && <BtnsSleep/>}
       {bottomBtnPanel === 'BtnsToDo' && !keyboardVisible && <BtnsToDo/>}
+      {bottomBtnPanel === 'BtnsRobot' && !keyboardVisible && <BtnsRobot/>}
     </>
   )
 }

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, addNewTrainingDay$ } from '../../StaticClasses/HabitsBus';
+import { FaChevronLeft, FaChevronRight, FaMoon, FaBed, FaRegClock, FaStickyNote, FaStar } from 'react-icons/fa';
 import SleepNew from './SleepNew.jsx';
-import SleepInsight from './SleepInsight.jsx';
 
-// Helper: Monday-based weekday index (Mon=0, ..., Sun=6)
+// --- HELPERS ---
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
 
 const formatDateKey = (d) => {
@@ -17,16 +18,16 @@ const formatDateKey = (d) => {
 
 const clickSound = new Audio('Audio/Click.wav');
 
-// Mood color palette (index 0 = mood 1, ..., index 4 = mood 5)
+// Mood color palette
 const moodColors = (theme, index) => {
   const cols = [
-    Colors.get('difficulty3', theme), // mood 1 → worst
-    Colors.get('difficulty2', theme),
-    Colors.get('difficulty1', theme),
-    Colors.get('difficulty0', theme),
-    Colors.get('difficulty5', theme), // mood 5 → best
+    Colors.get('veryBad', theme),
+    Colors.get('bad', theme),
+    Colors.get('normal', theme), 
+    Colors.get('good', theme), 
+    Colors.get('perfect', theme),
   ];
-  return cols[index] || Colors.get('background', theme);
+  return cols[index] || Colors.get('accent', theme);
 };
 
 const formatMsToHhMm = (ms) => {
@@ -35,6 +36,24 @@ const formatMsToHhMm = (ms) => {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};
+
+// Calculate height of the bar inside the cell based on sleep duration (4h to 12h range)
+const getFillPercentFromMs = (durationMs) => {
+  if (typeof durationMs !== 'number' || durationMs < 0) return 0;
+  const msPerHour = 60 * 60 * 1000;
+  const minHours = 4;
+  const maxHours = 10; // Adjusted for visual balance
+  const minMs = minHours * msPerHour;
+  const maxMs = maxHours * msPerHour;
+
+  if (durationMs <= minMs) return 15; // Minimum visible bar
+  if (durationMs >= maxMs) return 100;
+
+  const rangeMs = maxMs - minMs;
+  const progress = (durationMs - minMs) / rangeMs;
+  // Map 0-1 to 15-100 to ensure visibility
+  return 15 + Math.round(progress * 85);
 };
 
 function playEffects(sound) {
@@ -50,28 +69,12 @@ function playEffects(sound) {
     Telegram.WebApp.HapticFeedback.impactOccurred('light');
   }
 }
-const getFillPercentFromMs = (durationMs) => {
-  if (typeof durationMs !== 'number' || durationMs < 0) return 0;
-
-  const msPerHour = 60 * 60 * 1000;
-  const minHours = 4;
-  const maxHours = 12;
-  const minMs = minHours * msPerHour; // 4h = 14,400,000 ms
-  const maxMs = maxHours * msPerHour; // 12h = 43,200,000 ms
-
-  if (durationMs <= minMs) return 0;
-  if (durationMs >= maxMs) return 100;
-
-  const rangeMs = maxMs - minMs;
-  const progress = (durationMs - minMs) / rangeMs;
-  return Math.round(progress * 100);
-};
 
 const SleepMain = () => {
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-  const [date, setDate] = useState(new Date());
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [date, setDate] = useState(new Date()); // Calendar view date
+  const [currentDate, setCurrentDate] = useState(new Date()); // Selected date
   const currentDateRef = useRef(currentDate);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [selectedSleepEntry, setSelectedSleepEntry] = useState(null);
@@ -88,40 +91,25 @@ const SleepMain = () => {
     };
   }, []);
 
-  // Keep ref in sync
   useEffect(() => {
     currentDateRef.current = currentDate;
+    // Auto-select entry when mounting or changing date programmatically
+    const key = formatDateKey(currentDate);
+    const entry = AppData.sleepingLog?.[key];
+    setSelectedSleepEntry(entry || null);
   }, [currentDate]);
 
-  // Training day panel logic (kept as-is)
-  useEffect(() => {
-    const subscription = addNewTrainingDay$.subscribe(() => {
-      const today = new Date();
-      const current = currentDateRef.current;
-      if (current > today) return;
-
-      const currentDateKey = formatDateKey(current);
-      const todayKey = formatDateKey(today);
-
-      if (currentDateKey === todayKey) {
-        // setShowNewSessionPanel(true); // assuming this is handled elsewhere
-      } else {
-        // setShowPreviousSessionPanel(true);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Calendar setup
+  // Calendar Calculation logic
   const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
   const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
   const daysInMonth = lastDayOfMonth.getDate();
-  const firstDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7;
+  const firstDayOfWeek = (firstDayOfMonth.getDay() + 6) % 7; // Mon=0
 
   const daysOfWeek = [
     ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
     ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   ];
+  
   const fullNames = [
     ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'],
     ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -130,11 +118,6 @@ const SleepMain = () => {
   const calendarCells = Array(firstDayOfWeek).fill(null);
   for (let i = 1; i <= daysInMonth; i++) {
     calendarCells.push(i);
-  }
-
-  const weeks = [];
-  for (let i = 0; i < calendarCells.length; i += 7) {
-    weeks.push(calendarCells.slice(i, i + 7));
   }
 
   const prevMonth = () => {
@@ -151,157 +134,196 @@ const SleepMain = () => {
 
   return (
     <div style={styles(theme, fSize).container}>
-      <div style={styles(theme, fSize).panel}>
-        <div style={styles(theme, fSize).calendarHead}>
-          <h1 style={styles(theme, fSize).header}>
-            {date.getFullYear()}/
-            {String(date.getMonth() + 1).padStart(2, '0')}
-          </h1>
-          <div onClick={prevMonth} style={{ cursor: 'pointer' }}>
-            <h1 style={styles(theme, fSize).header}>{'<'}</h1>
-          </div>
-          <div onClick={nextMonth} style={{ cursor: 'pointer' }}>
-            <h1 style={styles(theme, fSize).header}>{'>'}</h1>
-          </div>
+      
+      {/* --- Calendar Header --- */}
+      <div style={styles(theme).headerContainer}>
+        <motion.button whileTap={{scale:0.9}} onClick={prevMonth} style={styles(theme).navBtn}>
+           <FaChevronLeft />
+        </motion.button>
+        
+        <div style={styles(theme, fSize).monthTitle}>
+           {date.toLocaleString(langIndex === 0 ? 'ru' : 'en', { month: 'long' })} 
+           <span style={{opacity: 0.5, marginLeft: '6px'}}>{date.getFullYear()}</span>
         </div>
 
-        <table style={styles(theme, fSize).table}>
-          <thead>
-            <tr>
-              {daysOfWeek[langIndex].map((day) => (
-                <th key={day}>
-                  <p
-                    style={{
-                      textAlign: 'center',
-                      fontSize: '12px',
-                      color:
-                        day === 'Вс' || day === 'Sun'
-                          ? '#873535ff'
-                          : Colors.get('subText', theme),
-                    }}
-                  >
-                    {day}
-                  </p>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {weeks.map((week, i) => (
-              <tr key={i}>
-                {week.map((day, j) => {
-                  if (day === null) {
-                    return <td key={j} />;
-                  }
-
-                  const cellDate = new Date(cellYear, cellMonth, day);
-                  const dayKey = formatDateKey(cellDate);
-                  const entry = AppData.sleepingLog?.[dayKey];
-
-                  const isChosen =
-                    day === currentDate.getDate() &&
-                    cellMonth === currentDate.getMonth() &&
-                    cellYear === currentDate.getFullYear();
-
-                  // Determine background: mood color if logged, else default
-                  let bgColor = Colors.get('background', theme);
-
-                  return (
-                    <td key={j}>
-                      <div
-  style={{
-    ...styles(theme, fSize).cell,
-    backgroundColor: bgColor, // mood color as base
-    border: `3px solid ${
-      isChosen ? Colors.get('currentDateBorder', theme) : 'transparent'
-    }`,
-    color: isChosen
-      ? Colors.get('textHighlight', theme)
-      : Colors.get('mainText', theme),
-    display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-    cursor: 'pointer',
-  }}
-  onClick={() => {
-    const newDate = new Date(cellYear, cellMonth, day);
-    setCurrentDate(newDate);
-    playEffects(clickSound);
-    setSelectedSleepEntry(entry || null);
-  }}
->
-  {/* Duration fill layer (0% to 100% from bottom) */}
-  {entry && typeof entry.duration === 'number' && (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        width: '100%',
-        height: `${getFillPercentFromMs(entry.duration)}%`,
-        backgroundColor: moodColors(theme, entry.mood - 1), // subtle white overlay
-        backdropFilter: 'blur(2px)', // optional: modern look
-        zIndex: 0,
-      }}
-    />
-  )}
-
-  {/* Day number on top */}
-  <span style={{ position: 'relative', zIndex: 1 }}>{day}</span>
-</div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <motion.button whileTap={{scale:0.9}} onClick={nextMonth} style={styles(theme).navBtn}>
+           <FaChevronRight />
+        </motion.button>
       </div>
 
-      {/* Date header below calendar */}
-      <p
-        style={{
-          ...styles(theme, fSize).subtext,
-          fontSize: '18px',
-          textAlign: 'center',
-          marginTop: '12px',
-        }}
-      >
-        {currentDate.getDate()}-{currentDate.getMonth() + 1}-
-        {currentDate.getFullYear()} {fullNames[langIndex][getMondayIndex(currentDate)]}
-      </p>
-
-      {/* Sleep info panel */}
-      {selectedSleepEntry && (
-        <div style={styles(theme, fSize).sleepInfoPanel}>
-          <p>
-            <strong>{langIndex === 0 ? 'Время отбоя:' : 'Bedtime:'}</strong>{' '}
-            {formatMsToHhMm(selectedSleepEntry.bedtime)}
-          </p>
-          <p>
-            <strong>{langIndex === 0 ? 'Продолжительность:' : 'Duration:'}</strong>{' '}
-            {formatMsToHhMm(selectedSleepEntry.duration)}
-          </p>
-          <p>
-            <strong>{langIndex === 0 ? 'Настроение:' : 'Mood:'}</strong>{' '}
-            {'★'.repeat(selectedSleepEntry.mood)}{'☆'.repeat(5 - selectedSleepEntry.mood)}
-          </p>
-          {selectedSleepEntry.note && (
-            <div>
-              <strong>{langIndex === 0 ? 'Заметка:' : 'Note:'}</strong>{' '}
-              {selectedSleepEntry.note}
-            </div>
-          )}
+      {/* --- Calendar Grid --- */}
+      <div style={styles(theme).gridWrapper}>
+        {/* Weekday Labels */}
+        <div style={styles(theme).weekRow}>
+            {daysOfWeek[langIndex].map((day, i) => (
+                <div key={i} style={{
+                    ...styles(theme).weekDay, 
+                    color: (i === 6 || i === 5) ? Colors.get('skipped', theme) : Colors.get('subText', theme)
+                }}>
+                    {day}
+                </div>
+            ))}
         </div>
-      )}
 
-      <SleepNew dateString={formatDateKey(currentDate)} />
-      <SleepInsight dateString={formatDateKey(currentDate)} />
+        {/* Days */}
+        <div style={styles(theme).daysGrid}>
+            {calendarCells.map((day, index) => {
+                if (day === null) return <div key={`empty-${index}`} />;
+
+                const cellDate = new Date(cellYear, cellMonth, day);
+                const dayKey = formatDateKey(cellDate);
+                const entry = AppData.sleepingLog?.[dayKey];
+                
+                const isSelected = 
+                    day === currentDate.getDate() && 
+                    cellMonth === currentDate.getMonth() && 
+                    cellYear === currentDate.getFullYear();
+
+                const isToday = 
+                    day === new Date().getDate() && 
+                    cellMonth === new Date().getMonth() && 
+                    cellYear === new Date().getFullYear();
+
+                // Logic for cell styling
+                const hasData = !!entry;
+                const moodColor = hasData ? moodColors(theme, entry.mood - 1) : 'transparent';
+                const fillHeight = hasData ? getFillPercentFromMs(entry.duration) : 0;
+
+                return (
+                    <motion.div 
+                        key={day}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                            setCurrentDate(new Date(cellYear, cellMonth, day));
+                            playEffects(clickSound);
+                            setSelectedSleepEntry(entry || null);
+                        }}
+                        style={styles(theme).dayCell(isSelected, isToday)}
+                    >
+                        {/* Background Fill (Data Visualization) */}
+                        {hasData && (
+                            <motion.div 
+                                initial={{ height: 0 }}
+                                animate={{ height: `${fillHeight}%` }}
+                                transition={{ type: 'spring', stiffness: 100 }}
+                                style={{
+                                    position: 'absolute',
+                                    bottom: 0, left: 0, right: 0,
+                                    backgroundColor: moodColor,
+                                    opacity: isSelected ? 0.4 : 0.25,
+                                    zIndex: 0,
+                                }}
+                            />
+                        )}
+
+                        {/* Top Indicator Line (If selected) */}
+                        {isSelected && (
+                            <motion.div layoutId="selInd" style={{
+                                position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+                                backgroundColor: hasData ? moodColor : Colors.get('mainText', theme),
+                                boxShadow: `0 2px 8px ${hasData ? moodColor : Colors.get('mainText', theme)}`
+                            }} />
+                        )}
+
+                        <span style={{ zIndex: 1, position: 'relative' }}>{day}</span>
+                    </motion.div>
+                );
+            })}
+        </div>
+      </div>
+
+      {/* --- Selected Date Info --- */}
+      <div style={styles(theme).detailsContainer}>
+         <div style={styles(theme).dateLabel}>
+            {currentDate.getDate()} {fullNames[langIndex][getMondayIndex(currentDate)]}
+         </div>
+
+         <AnimatePresence mode='wait'>
+            {selectedSleepEntry ? (
+                <motion.div 
+                    key="entry"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    style={styles(theme).card}
+                >
+                    {/* Glow effect based on mood */}
+                    <div style={styles(theme).cardGlow(moodColors(theme, selectedSleepEntry.mood - 1))} />
+                    
+                    <div style={{position: 'relative', zIndex: 2}}>
+                        {/* Metrics Row */}
+                        <div style={styles(theme).metricsGrid}>
+                            <MetricItem 
+                                icon={<FaMoon />} 
+                                label={langIndex === 0 ? 'Отбой' : 'Bedtime'} 
+                                value={formatMsToHhMm(selectedSleepEntry.bedtime)} 
+                                theme={theme}
+                                color={Colors.get('accent', theme)}
+                            />
+                             <MetricItem 
+                                icon={<FaRegClock />} 
+                                label={langIndex === 0 ? 'Длительность' : 'Duration'} 
+                                value={formatMsToHhMm(selectedSleepEntry.duration)} 
+                                theme={theme}
+                                color={moodColors(theme, selectedSleepEntry.mood - 1)}
+                            />
+                             <div style={styles(theme).metricBox}>
+                                <div style={{...styles(theme).iconBox, color: Colors.get('difficulty3', theme)}}>
+                                    <FaStar />
+                                </div>
+                                <div style={styles(theme).metricLabel}>{langIndex === 0 ? 'Настроение' : 'Mood'}</div>
+                                <div style={{display:'flex', gap:'2px', marginTop:'4px'}}>
+                                    {[1,2,3,4,5].map(star => (
+                                        <FaStar 
+                                            key={star} 
+                                            size={10} 
+                                            color={star <= selectedSleepEntry.mood ? Colors.get('difficulty3', theme) : Colors.get('subText', theme)} 
+                                            style={{opacity: star <= selectedSleepEntry.mood ? 1 : 0.2}}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Note Section */}
+                        {selectedSleepEntry.note && (
+                            <div style={styles(theme).noteBox}>
+                                <FaStickyNote size={14} style={{ minWidth: '16px', marginTop:'2px', opacity: 0.7 }} />
+                                <span style={{fontSize: '13px', fontStyle: 'italic', opacity: 0.9}}>
+                                    {selectedSleepEntry.note}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            ) : (
+                <motion.div 
+                    key="empty"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    style={styles(theme).emptyState}
+                >
+                    <FaBed size={32} color={Colors.get('subText', theme)} style={{opacity: 0.3, marginBottom: '10px'}} />
+                    <span>{langIndex === 0 ? 'Нет данных о сне' : 'No sleep data'}</span>
+                </motion.div>
+            )}
+         </AnimatePresence>
+      </div>
+     <SleepNew dateString={formatDateKey(currentDate)} />
     </div>
   );
 };
+
+// Sub-component for clean layout
+const MetricItem = ({ icon, label, value, theme, color }) => (
+    <div style={styles(theme).metricBox}>
+        <div style={{...styles(theme).iconBox, color: color}}>
+            {icon}
+        </div>
+        <div style={styles(theme).metricLabel}>{label}</div>
+        <div style={styles(theme).metricValue}>{value}</div>
+    </div>
+);
 
 export default SleepMain;
 
@@ -310,70 +332,165 @@ const styles = (theme, fSize) => ({
     backgroundColor: Colors.get('background', theme),
     display: 'flex',
     flexDirection: 'column',
-    overflowY: 'scroll',
-    justifyContent: 'start',
     alignItems: 'center',
-    height: '78vh',
-    paddingTop: '5vh',
+    height: '85vh', // Increased height usage
+    paddingTop: '80px', // Space for app header
+    marginTop:'70px',
     width: '100vw',
-    fontFamily: 'Segoe UI',
+    fontFamily: 'Segoe UI, sans-serif',
+    overflow: 'hidden'
   },
-  panel: {
+  
+  // Header
+  headerContainer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '90%',
+    marginBottom: '20px'
+  },
+  navBtn: {
+    background: 'transparent',
+    border: 'none',
+    color: Colors.get('mainText', theme),
+    fontSize: '20px',
+    padding: '10px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  monthTitle: {
+    fontSize: '22px',
+    fontWeight: '700',
+    color: Colors.get('mainText', theme),
+    textTransform: 'capitalize'
+  },
+
+  // Grid
+  gridWrapper: {
+    width: '94%',
+    padding: '0 10px'
+  },
+  weekRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    marginBottom: '10px',
+    textAlign: 'center'
+  },
+  weekDay: {
+    fontSize: '12px',
+    fontWeight: '600',
+    textTransform: 'uppercase'
+  },
+  daysGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(7, 1fr)',
+    gap: '6px', // Gap between cells
+    width: '100%'
+  },
+  dayCell: (isSelected, isToday) => ({
+    aspectRatio: '1/1', // Perfect square
+    borderRadius: '12px',
+    backgroundColor: isSelected ? Colors.get('simplePanel', theme) : 'transparent',
+    border: isToday 
+        ? `1px solid ${Colors.get('accent', theme)}` 
+        : `1px solid ${Colors.get('border', theme)}30`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '15px',
+    fontWeight: isSelected || isToday ? '700' : '500',
+    color: Colors.get('mainText', theme),
+    position: 'relative',
+    overflow: 'hidden',
+    cursor: 'pointer',
+    boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
+  }),
+
+  // Details
+  detailsContainer: {
+    width: '90%',
+    marginTop: '55px',
+    marginBottom: '40px',
     display: 'flex',
     flexDirection: 'column',
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'start',
-    borderBottom: `1px solid ${Colors.get('border', theme)}`,
+    gap: '12px'
   },
-  calendarHead: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
-    height: '10%',
-    background: Colors.get('headGradient', theme),
-  },
-  header: {
-    fontFamily: 'Segoe UI',
-    padding: '2vw',
-    marginLeft: '6vw',
-    marginRight: '6vw',
-    fontSize: '36px',
-    fontWeight: 'bold',
-    color: Colors.get('subText', theme),
-  },
-  table: {
-    borderCollapse: 'collapse',
-    width: '90%',
-    textAlign: 'center',
-    tableLayout: 'fixed',
-  },
-  cell: {
-    boxSizing: 'border-box',
-    width: '13vw',
-    height: '13vw',
-    borderRadius: '12px',
+  dateLabel: {
     fontSize: '16px',
     fontWeight: 'bold',
-    fontFamily: 'Segoe UI',
-  },
-  subtext: {
-    textAlign: 'left',
-    fontSize: fSize === 0 ? '11px' : '13px',
     color: Colors.get('subText', theme),
-    marginLeft: '10px',
-    marginBottom: '12px',
+    paddingLeft: '4px'
   },
-  sleepInfoPanel: {
-    marginTop: '16px',
+  card: {
+    position: 'relative',
+    backgroundColor: Colors.get('simplePanel', theme),
+    borderRadius: '24px',
+    padding: '20px',
+    boxShadow: '0 8px 30px rgba(0,0,0,0.2)',
+    border: `1px solid ${Colors.get('border', theme)}50`,
+    overflow: 'hidden'
+  },
+  cardGlow: (color) => ({
+    position: 'absolute',
+    top: '-50%',
+    right: '-50%',
+    width: '200px',
+    height: '200px',
+    background: `radial-gradient(circle, ${color}30 0%, transparent 70%)`,
+    filter: 'blur(30px)',
+    pointerEvents: 'none'
+  }),
+  metricsGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr 1fr',
+    gap: '10px',
+    marginBottom: '15px'
+  },
+  metricBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+    borderRadius: '16px',
+    padding: '12px 5px'
+  },
+  iconBox: {
+    fontSize: '18px',
+    marginBottom: '6px'
+  },
+  metricLabel: {
+    fontSize: '10px',
+    textTransform: 'uppercase',
+    color: Colors.get('subText', theme),
+    marginBottom: '2px'
+  },
+  metricValue: {
+    fontSize: '14px',
+    fontWeight: '700',
+    color: Colors.get('mainText', theme)
+  },
+  noteBox: {
+    display: 'flex',
+    gap: '10px',
+    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
     padding: '12px',
-    backgroundColor: Colors.get('card', theme),
-    borderRadius: '8px',
-    fontSize: fSize === 0 ? '13px' : '15px',
-    color: Colors.get('text', theme),
-    maxWidth: '90vw',
-    width: '100%',
+    borderRadius: '12px',
+    color: Colors.get('mainText', theme),
+    lineHeight: '1.4'
   },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '30px',
+    backgroundColor: Colors.get('simplePanel', theme),
+    borderRadius: '24px',
+    border: `1px dashed ${Colors.get('border', theme)}`,
+    color: Colors.get('subText', theme),
+    fontSize: '14px'
+  }
 });

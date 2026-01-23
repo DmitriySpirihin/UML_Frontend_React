@@ -1,77 +1,106 @@
-import { useState, useEffect, useRef} from 'react';
-import { AppData , UserData} from '../StaticClasses/AppData.js';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AppData, UserData } from '../StaticClasses/AppData';
 import Colors from '../StaticClasses/Colors';
-import { lastPage$, setPage,theme$,lang$,premium$,fontSize$,isValidation$,setValidation, setShowPopUpPanel} from '../StaticClasses/HabitsBus';
-import {FaBrain,FaChartBar,FaRobot,FaFlask} from 'react-icons/fa'
-import {initiateSbpPayment,initiateTONPayment,initiateTgStarsPayment} from '../StaticClasses/PaymentService';
-import { isUserHasPremium } from '../StaticClasses/NotificationsManager.js';
+import { lastPage$, setPage, theme$, lang$, premium$, fontSize$, isValidation$, setValidation, setShowPopUpPanel } from '../StaticClasses/HabitsBus';
+import { FaBrain, FaChartPie, FaRobot, FaStar, FaCrown, FaTimes, FaInfinity,FaHourglassHalf,FaCheckCircle,FaCalendarAlt } from 'react-icons/fa';
+import { MdOutlineDiamond } from "react-icons/md";
+import { BiRuble } from "react-icons/bi";
+import { initiateSbpPayment, initiateTONPayment, initiateTgStarsPayment } from '../StaticClasses/PaymentService';
+import { isUserHasPremium } from '../StaticClasses/NotificationsManager';
+
 const futureDate = new Date();
 futureDate.setDate(futureDate.getDate() + 365);
 const monthNames = [
   ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Августа', 'Сентября', 'Октября', 'Ноября', 'Декабря'],
   ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 ];
+// --- DATA ---
 const tarifs = [
-  ['149₽','399₽','999₽'],
-  ['89⭐','229⭐','699⭐'],
-  ['0.35💎','0.95💎','3.2💎']
-]
+    ['149', '399', '999'], // СБП
+    ['89', '229', '699'],  // Stars
+    ['0.35', '0.95', '3.2'] // TON
+];
+
+const currencies = [
+    <BiRuble key="rub" size={18} />,
+    <FaStar key="star" size={16} />,
+    <MdOutlineDiamond key="ton" size={18} />
+];
+
 const paymentInMonth = [
-  ['','139 / ','89 / '],
-  ['','76 / ','58 / '],
-  ['','0.32 / ','0.26 / ']
-]
+    ['', '133', '83'],
+    ['', '76', '58'],
+    ['', '0.32', '0.26']
+];
+
 const Premium = () => {
-    // Theme and language state
-    const [theme, setTheme] = useState(theme$.value);
-    const [fSize,setFontSize] = useState(fontSize$.value);
-    const [hasPremium,setHasPremium] = useState(premium$.value);
-    const [langIndex,setLangIndex] = useState(AppData.prefs[0]);
-    const [chosenCard,setChosenCard] = useState(3);
-    const [currentEndDate,setCurrentEndDate] = useState(UserData.premiumEndDate);
-    const [isValidation,setIsValidation] = useState(false);
-    const [needToValidatePayment,setNeedToValidatePayment] = useState(UserData.isValidation);
+    const [theme, setTheme] = useState('dark');
+    const [fSize, setFontSize] = useState(fontSize$.value);
+    const [hasPremium, setHasPremium] = useState(premium$.value);
+    const [langIndex, setLangIndex] = useState(AppData.prefs[0] === 'ru' ? 0 : 1);
+    const [chosenCard, setChosenCard] = useState(3);
+    const [isValidation, setIsValidation] = useState(false);
+    const [needToValidatePayment, setNeedToValidatePayment] = useState(UserData.isValidation);
+    const [currentPaymentMethod, setCurrentPaymentMethod] = useState(2);
+    const [needAgreement, setNeedAgreement] = useState(false);
+    const [showFullPolicy, setShowFullPolicy] = useState(false);
 
-    const [currentPaymentMethod,setCurrentPaymentMethod] = useState(2);
-    const [needAgreement,setNeedAgreement] = useState(false);
-    const [needToShowPaymentPolicy,setNeedToShowPaymentPolicy] = useState(false);
-
-    const getInitialEndDate = () => {
-  const days = chosenCard === 3 ? 30 : chosenCard === 2 ? 90 : 365;
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date;
-};
-const [endDate, setEndDate] = useState(getInitialEndDate());
-    useEffect(() => {
-        const daysAmount = chosenCard === 3 ? 30 : chosenCard === 2 ? 90 : 365;
-        const futureDate = new Date();
-        futureDate.setDate(futureDate.getDate() + daysAmount);
-        setEndDate(futureDate);
-    },[chosenCard])
+    const lastValidationTimeRef = useRef(0);
+    const isDark = theme === 'dark';
 
     useEffect(() => {
-            const themeSubscription = theme$.subscribe(setTheme);
-            const fontSizeSubscription = fontSize$.subscribe(setFontSize);
-            const langSubscription = lang$.subscribe((lang) => {
-                setLangIndex(lang === 'ru' ? 0 : 1);
-            });
-            const premiumSubscription = premium$.subscribe(setHasPremium);
-            const validationSubscription = isValidation$.subscribe(setIsValidation);
-            return () => {
-                themeSubscription.unsubscribe();
-                langSubscription.unsubscribe();
-                fontSizeSubscription.unsubscribe();
-                premiumSubscription.unsubscribe();
-                validationSubscription.unsubscribe();
-            };
-        }, []);
-  useEffect(() => {
-  setCurrentEndDate(UserData.premiumEndDate);
-}, [UserData.premiumEndDate]);
+        const subs = [
+            theme$.subscribe(setTheme),
+            fontSize$.subscribe(setFontSize),
+            premium$.subscribe(setHasPremium),
+            isValidation$.subscribe(setIsValidation),
+            lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1))
+        ];
+        return () => subs.forEach(s => s.unsubscribe());
+    }, []);
 
+    useEffect(() => {
+        if (!needToValidatePayment) return;
+        const timer = setTimeout(async () => {
+            const now = Date.now();
+            if (now - lastValidationTimeRef.current < 50000) return;
+            lastValidationTimeRef.current = now;
+            try {
+                const { hasPremium: isActive, isValidation: validating } = await isUserHasPremium(UserData.id);
+                if (isActive || (!isActive && !validating)) {
+                    setShowPopUpPanel(langIndex === 0 ? 'Подписка активна!' : 'Subscription active!', 4000, true);
+                    setNeedToValidatePayment(false);
+                    setValidation(false);
+                }
+            } catch (error) { console.error(error); }
+        }, 50000);
+        return () => clearTimeout(timer);
+    }, [needToValidatePayment, langIndex]);
 
-   function getEndDate() {
+    async function getPremium() {
+        if (UserData.id === null) return;
+        try {
+            if (currentPaymentMethod === 1) await initiateSbpPayment(UserData.id, chosenCard);
+            else if (currentPaymentMethod === 2) await initiateTgStarsPayment(UserData.id, chosenCard);
+            else if (currentPaymentMethod === 3) await initiateTONPayment(UserData.id, chosenCard);
+            setNeedToValidatePayment(true);
+            setValidation(true);
+            setNeedAgreement(false);
+        } catch (err) { setShowPopUpPanel('Error starting payment', 2000, false); }
+    }
+
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 15 },
+        show: { opacity: 1, y: 0, transition: { type: 'tween', ease: "easeOut", duration: 0.5 } }
+    };
+
+  function getEndDate(currentEndDate) {
   if (!currentEndDate) {
     return langIndex === 0 ? 'Нет подписки' : 'No subscription';
   }
@@ -81,431 +110,564 @@ const [endDate, setEndDate] = useState(getInitialEndDate());
   const monthIndex = parseInt(endDateStr.slice(5, 7), 10) - 1;
   return `${day} ${monthNames[langIndex][monthIndex]} ${year}`;
 }
-  async function getPremium() {
-  if (UserData.id === null) {
-    setShowPopUpPanel(langIndex === 0 ? 'Пользовательский ID не найден...' : 'User ID not found...', 2000, false);
-    return;
-  }
-  try {
-    if (currentPaymentMethod === 1) await initiateSbpPayment(UserData.id, chosenCard);
-    else if (currentPaymentMethod === 2) await initiateTgStarsPayment(UserData.id, chosenCard);
-    else if (currentPaymentMethod === 3) await initiateTONPayment(UserData.id, chosenCard);
-    
-    setNeedToValidatePayment(true);
-    setValidation(true);
-  } catch (err) {
-    setShowPopUpPanel(langIndex === 0 ? 'Не возможно запустить оплату...' : 'Could not start payment...', 2000, false);
-  }
-}
-const lastValidationTimeRef = useRef(0);
 
-useEffect(() => {
-  if (!needToValidatePayment) return;
-
-  // Schedule validation after 50 seconds
-  const timer = setTimeout(async () => {
-    const now = Date.now();
-    // Double-check cooldown (in case state changed during wait)
-    if (now - lastValidationTimeRef.current < 50000) {
-      return;
-    }
-
-    lastValidationTimeRef.current = now;
-
-    try {
-      const { hasPremium, premiumEndDate, isValidation } = await isUserHasPremium(UserData.id);
-      if (hasPremium || (!hasPremium && !isValidation)) {
-        setShowPopUpPanel(
-          langIndex === 0 
-            ? 'Поздравляем! Подписка активирована!' 
-            : 'Congratulations! Subscription activated!',
-          4000,
-          true
-        );
-        setNeedToValidatePayment(false);
-        setValidation(false);
-      }
-    } catch (error) {
-      console.error('Validation failed:', error);
-    }
-  }, 50000); // Wait 50 seconds before validating
-
-  // Cleanup timeout if dependency changes or component unmounts
-  return () => clearTimeout(timer);
-}, [needToValidatePayment, langIndex, UserData.id]);
-    
-    
     return (
-        <div style={{...styles(theme).container}}>
-          {
-            needAgreement && <div style={{...styles(theme).confirmContainer}}>
-              <div style={{...styles(theme).cP,borderRadius:'24px',width:'90%'}}>
-                <div style={{display:'flex',flexDirection:'column',width:'100%',alignItems:'center',justifyContent:'start'}}>
-              <div style={{...styles(theme).text , whiteSpace:'pre-line',textAlign:'left',paddingLeft:'10px'}}>
-               {
-                 getMiniPolicy(langIndex)
-               }
-               </div>
-                 <div style={{...styles(theme).text,alignSelf:'start',fontStyle:'italic',textDecoration:'underline',paddingLeft:'10px'}} onClick={() => setNeedToShowPaymentPolicy(true)}>{langIndex === 0 ? 'Читать весь текст' : 'Read all text'}</div>
-               </div>
-               <div>
-               < PremiumButton clickHandler={() => getPremium()} langIndex={langIndex}  theme={theme} textToShow = {[ 'Оплатить' + ' ' + tarifs[currentPaymentMethod - 1][chosenCard - 1] , 'Pay'+ ' ' + tarifs[currentPaymentMethod - 1][chosenCard - 1]]}  needSparcle={false}/>
-               
-               <button style={{...styles(theme).button,height:'40px',marginTop:'30px',borderRadius:'20px',border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setNeedAgreement(false)}>{langIndex === 0 ? 'Назад' : 'Back'}</button>    
-             </div>
-             <div style={{...styles(theme).subtext,display: 'flex',alignItems: 'center',gap: '4px',marginBottom: '1px',}}>
-              <span>{PAYMENT_METHOD_DESCRIPTIONS[langIndex][currentPaymentMethod - 1]}</span>
-             </div>
-             </div>
-             </div>
-          }
-          {
-            needToShowPaymentPolicy && <div style={{...styles(theme).confirmContainer}}>
-              <div style={{...styles(theme).cP,width:'100vw',height:'100vh',overflow:'scroll'}}>
-              <div style={{...styles(theme).subtext , whiteSpace:'pre-line',textAlign:'left',marginLeft:'10px'}}>
-               {
-                 getFullPolicy(langIndex)
-               }
-               </div>
-               <a style={{marginBottom : '25px', ...styles(theme).subtext,alignSelf:'start',marginLeft:'10px',color:Colors.get('currentDateBorder', theme)}} href="https://t.me/diiimaaan777" target="_blank">{langIndex === 0 ? 'Свяжитесь со мной в Telegram' : 'Contact me on Telegram'}</a>
-                <button style={{...styles(theme).button,height:'40px',borderRadius:'20px',border:`2px solid ${Colors.get('border', theme)}`,marginBottom:'50px'}} onClick={() => setNeedToShowPaymentPolicy(false)}>{langIndex === 0 ? 'Назад' : 'Back'}</button> 
-             </div>
-             </div>
-          }
-           {!hasPremium && !isValidation && <div style={{...styles(theme).panel}}>
-            <img src={theme === 'dark' || theme === "specialdark" ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={{width:'50%'}} />
-            <div style={{...styles(theme).subtext,fontSize:'22px'}}>{'premium'}</div>
-             <div style={{display:'flex',flexDirection:'column',width:'90vw',height:'22%',alignItems:'center',justifyContent:'center'}}>
-              <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyItems:'center',height:'35px'}}>
-               <FaRobot style={{...styles(theme).miniIcon}}/>
-               <div style={styles(theme).text}>{langIndex === 0 ? 'Персональные ИИ инсайты' : 'Personal AI insights'}</div>
-             </div>
-             <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyItems:'center',height:'35px'}}>
-               <FaBrain style={{...styles(theme).miniIcon}}/>
-               <div style={styles(theme).text}>{langIndex === 0 ? 'Расширенные функции' : 'Premium features'}</div>
-             </div>
-             <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyItems:'center',height:'35px'}}>
-               <FaChartBar style={{...styles(theme).miniIcon}}/>
-               <div style={styles(theme).text}>{langIndex === 0 ? 'Детальная статистика' : 'Detailed statistics'}</div>
-             </div>
-             <div style={{display:'flex',flexDirection:'row',alignItems:'center',justifyItems:'center',height:'35px'}}>
-               <FaFlask style={{...styles(theme).miniIcon}}/>
-               <div style={styles(theme).text}>{langIndex === 0 ? 'Тестирование новых функций' : 'Testing new features'}</div>
-             </div>
-             
-             </div>
-              <div style={{position: 'relative',display: 'flex',margin: '5px',width: '70vw',height: '65px',borderRadius: '12px',}}>
-              {/* Animated Gradient Border */}
-              <div className="premium-border" />
-                <div onClick={() => {setChosenCard(3);}}
-                id={3} style={{position: 'relative',display: 'flex',flexDirection: 'row',alignItems: 'center',justifyContent: 'space-between',backgroundColor:chosenCard === 3 ? '#6197cdff' : Colors.get('simplePanel', theme),borderRadius: '12px',width: '100%',height: '100%',paddingLeft: '12px',paddingRight: '12px',zIndex: 2,}}>
-                <div style={{ ...styles(theme).text, fontSize: '28px' }}>{langIndex === 0 ? '1 год' : '1 year'}</div>
-                <div style={{display: 'flex',flexDirection: 'column',alignItems: 'flex-end',}}>
-                 <div style={{ ...styles(theme).text, fontSize: '24px' }}>{tarifs[currentPaymentMethod - 1][2]}</div>
-                 <div style={{ ...styles(theme).text, fontSize: '14px' }}>{paymentInMonth[currentPaymentMethod - 1][2] + (langIndex === 0 ? 'мес' : 'mon')}</div>
-               </div>
-              </div>
-             {/* Centered "HIT" badge */}
-             <div style={{position: 'absolute',top: '-8px',left: '50%',transform: 'translateX(-50%)',background: 'linear-gradient(90deg, #00B4FF, #FF00C8)',color: 'white',fontSize: '12px',fontWeight: 'bold',padding: '2px 10px',borderRadius: '12px',boxShadow: '0 2px 4px rgba(0,0,0,0.2)',zIndex: 3,whiteSpace: 'nowrap',}}>{langIndex === 0 ? 'ХИТ' : 'HIT'}</div>
-             </div>
-             <div onClick={() => {setChosenCard(2);}}
-              id={2} style={{display:'flex',margin:'5px',flexDirection:'row',borderRadius:'12px',alignItems:'center',backgroundColor:chosenCard === 2 ? '#6197cdff' : Colors.get('simplePanel', theme),justifyContent:'space-between',width:'70vw',height:'65px'}}>
-                <div style={{...styles(theme).text,marginLeft:'12px',fontSize:'28px'}}>{langIndex === 0 ? '3 месяца' : '3 month'}</div>
-                <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyItems:'center'}}>
-                  <div style={{...styles(theme).text,marginRight:'12px',fontSize:'24px'}}>{tarifs[currentPaymentMethod - 1][1]}</div>
-                  <div style={{...styles(theme).text,marginRight:'12px',fontSize:'14px'}}>{paymentInMonth[currentPaymentMethod - 1][1] + (langIndex === 0 ? 'мес' : 'mon')}</div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={styles(theme).container}>
+            
+            {/* 1. Full Policy Modal */}
+            <AnimatePresence>
+                {showFullPolicy && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}
+                        style={styles(theme).fullPolicyOverlay}
+                    >
+                        <div style={styles(theme).policyHeader}>
+                            <h3 style={{margin:0}}>{langIndex === 0 ? 'Политика оплаты' : 'Payment Policy'}</h3>
+                            <div onClick={() => setShowFullPolicy(false)} style={styles(theme).iconCircle}><FaTimes size={14}/></div>
+                        </div>
+                        <div style={styles(theme).policyContent}>
+                            {getFullPolicy(langIndex)}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* 2. Close Button */}
+            
+                <motion.div whileTap={{ scale: 0.9 }} onClick={() => setPage(lastPage$.value)} style={styles(theme).closeBtn}>
+                    <div style={styles(theme).iconCircle}><FaTimes size={14} /></div>
+                </motion.div>
+            
+
+            {/* 3. Main Content Section */}
+            {!isValidation && !needAgreement && !hasPremium && (
+                <div style={styles(theme).contentWrapper}>
+                    <header style={{ textAlign: 'center', marginBottom: '25px', marginTop: '10px' }}>
+                        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={styles(theme).heroIcon}>
+                            <FaInfinity size={32} color="white" />
+                        </motion.div>
+                        <h1 style={styles(theme).title}>UltyMyLife <span style={{ color: '#007AFF' }}>Pro</span></h1>
+                        <p style={styles(theme).subtitle}>{langIndex === 0 ? 'Твоя лучшая версия' : 'Your best version'}</p>
+                    </header>
+
+                    <div style={styles(theme).segmentedControl}>
+                        <SegmentOption id={1} current={currentPaymentMethod} set={setCurrentPaymentMethod} label={langIndex === 0 ? "Карта" : "Card"} icon={<BiRuble size={14} />} isDark={isDark} />
+                        <SegmentOption id={2} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="Stars" icon={<FaStar size={12} />} isDark={isDark} />
+                        <SegmentOption id={3} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="TON" icon={<MdOutlineDiamond size={14} />} isDark={isDark} />
+                    </div>
+
+                    <motion.div variants={containerVariants} initial="hidden" animate="show" style={styles(theme).featuresGrid}>
+                        <FeatureItem theme={theme} variants={itemVariants} icon={<FaRobot />} title={langIndex === 0 ? "ИИ Анализ" : "AI Analysis"} sub={langIndex === 0 ? "Умные инсайты" : "Smart insights"} />
+                        <FeatureItem theme={theme} variants={itemVariants} icon={<FaBrain />} title={langIndex === 0 ? "Нейро-рост" : "Neuro-growth"} sub={langIndex === 0 ? "Развитие" : "Training"} />
+                        <FeatureItem theme={theme} variants={itemVariants} icon={<FaChartPie />} title={langIndex === 0 ? "Аналитика" : "Analytics"} sub={langIndex === 0 ? "Вся история" : "History"} />
+                    </motion.div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginBottom: '25px' }}>
+                        <BigPlanCard 
+                            active={chosenCard === 3} onClick={() => setChosenCard(3)} theme={theme}
+                            price={tarifs[currentPaymentMethod - 1][2]} label={langIndex === 0 ? '12 месяцев' : '1 Year'}
+                            sub={paymentInMonth[currentPaymentMethod - 1][2]} currencyIcon={currencies[currentPaymentMethod - 1]}
+                            saveLabel={langIndex === 0 ? 'ВЫГОДНО -50%' : 'SAVE 50%'} langIndex={langIndex}
+                        />
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <SmallPlanCard theme={theme} active={chosenCard === 2} onClick={() => setChosenCard(2)} price={tarifs[currentPaymentMethod - 1][1]} label={langIndex === 0 ? '3 месяца' : '3 Months'} currencyIcon={currencies[currentPaymentMethod - 1]} />
+                            <SmallPlanCard theme={theme} active={chosenCard === 1} onClick={() => setChosenCard(1)} price={tarifs[currentPaymentMethod - 1][0]} label={langIndex === 0 ? '1 месяц' : '1 Month'} currencyIcon={currencies[currentPaymentMethod - 1]} />
+                        </div>
+                    </div>
+
+                    <button onClick={setNeedAgreement} style={styles(theme).mainButton}>
+                            {langIndex === 0 ? 'Продолжить' : 'Continue'}
+                        </button>
+                    <p style={styles(theme).footerHint}>{langIndex === 0 ? 'Единоразовый платеж. Без автосписаний.' : 'One-time payment. No auto-renewal.'}</p>
                 </div>
-             </div>
-             <div onClick={() => {setChosenCard(1);}}
-              id={1} style={{display:'flex',margin:'5px',flexDirection:'row',borderRadius:'12px',alignItems:'center',backgroundColor:chosenCard === 1 ? '#6197cdff' : Colors.get('simplePanel', theme),justifyContent:'space-between',width:'70vw',height:'65px'}}>
-                <div style={{...styles(theme).text,marginLeft:'12px',fontSize:'28px'}}>{langIndex === 0 ? '1 месяц' : '1 month'}</div>
-                  <div style={{...styles(theme).text,marginRight:'12px',fontSize:'24px'}}>{tarifs[currentPaymentMethod - 1][0]}</div>
-             </div>
-              <div style={{...styles(theme).text,marginTop:'16px'}}>{langIndex === 0 ? 'Выберите способ оплаты' : 'Choose payment method'}</div>
-              <div style={{display: 'flex',flexDirection: 'row',marginBottom: '16px',justifyContent: 'center',alignItems: 'space-around',gap: '12px',marginTop: '16px',padding: '0 10px',}}>
-              
-              <div onClick={() => setCurrentPaymentMethod(1)} style={{...styles(theme).text,fontSize: currentPaymentMethod === 1 ? '17px' : '14px',borderBottom: currentPaymentMethod === 1 ? `2px solid ${Colors.get('difficulty', theme)} `: 'none' ,display: 'flex',alignItems: 'center',gap: '4px',}}>📱<span>{langIndex === 0 ? 'СБП' : 'SBP'}</span></div>
-              <div onClick={() => setCurrentPaymentMethod(2)} style={{...styles(theme).text,fontSize: currentPaymentMethod === 2 ? '17px' : '14px',borderBottom: currentPaymentMethod === 2 ? `2px solid ${Colors.get('difficulty', theme)} `: 'none',display: 'flex',alignItems: 'center',gap: '4px',}}>⭐<span>{langIndex === 0 ? 'TG звезды' : 'TG starts'}</span></div>
-              <div onClick={() => setCurrentPaymentMethod(3)} style={{...styles(theme).text,fontSize: currentPaymentMethod === 3 ? '17px' : '14px',borderBottom: currentPaymentMethod === 3 ? `2px solid ${Colors.get('difficulty', theme)} `: 'none',display: 'flex',alignItems: 'center',gap: '4px',}}>💎<span>TON</span></div>
-              
-              </div>
-
-             < PremiumButton langIndex={langIndex} clickHandler={() => setNeedAgreement(true)}  theme={theme} needSparcle={true}/>
-             <button style={{...styles(theme).button,height:'40px',borderRadius:'20px',border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setPage(lastPage$.value)}>{langIndex === 0 ? 'Оформлю позднее' : 'I will do it later'}</button>    
-
-             <div style={{display: 'flex',flexDirection: 'row',justifyContent: 'center',alignItems: 'center',gap: '12px',marginTop: '16px',padding: '0 10px',}}>
-             {/* Карта */}
-             <div style={{...styles(theme).subtext,display: 'flex',alignItems: 'center',gap: '4px',marginBottom: '16px',}}>
-              <span>{PAYMENT_METHOD_DESCRIPTIONS[langIndex][currentPaymentMethod - 1]}</span>
-             </div>
-             
+            )}
+             {hasPremium && (
+    <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, type: "spring" }}
+        style={styles(theme).premiumContainer}
+    >
+        {/* 1. Header with Glow */}
+        <div style={styles(theme).header}>
+            <div style={styles(theme).iconGlow}>
+                <FaInfinity size={24} color="#fff" />
             </div>
-          </div>}
-          {hasPremium && !isValidation && <div style={{...styles(theme).panel}}>
-              <img src={theme === 'dark' || theme === "specialdark" ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} style={{width:'50%'}} />
-              <div style={{position: 'relative',width: '60px',height: '60px',margin: '10px',borderRadius: '50%',overflow: 'hidden',border: UserData.hasPremium ? 'none' : `3px solid ${Colors.get('border', theme)}`,boxSizing: 'border-box',}}>
-                {/* User Photo */}
-                <img style={{position: 'absolute',top: 2.5,left: 3, width: '90%',height: '90%',objectFit: 'cover',borderRadius: '50%',zIndex: 1,}}src={Array.isArray(UserData.photo) ? UserData.photo[0] : UserData.photo} alt="images/Ui/Guest.jpg"/>
-                <img style={{position: 'absolute',top: 0,left: 0,width: '100%',height: '100%',objectFit: 'contain',zIndex: 2,}}src={'images/Ui/premiumborder.png'}/>
-              </div>
-              <div style={{color: Colors.get('subText', theme),fontSize: "18px",fontFamily: "Segoe UI"}}>{UserData.name}</div>
-        
-              <p style={styles(theme).text}>{langIndex === 0 ? '👑 премиум подписка активна 👑' : '👑 premium subscription active 👑'}</p>
-              <div style={styles(theme).text}>{langIndex === 0 ? 'действует до ' + getEndDate() : 'active until ' + getEndDate()}</div>
-
-              
-          </div>}
-          {isValidation && <div style={{...styles(theme).panel,justifyContent: 'space-around',height: '50vh'}}>
-              <div style={{display:'flex',flexDirection:'column'}}>
-               <span style={{fontSize:'55px'}}>⏳</span>
-    <span style={styles(theme).text}>
-      {langIndex === 0
-        ? 'Проверяем оплату... Это может занять несколько минут.'
-        : 'Verifying payment... This may take several minutes.'}
-    </span>
-    </div>
-              <button style={{...styles(theme).button,height:'40px',borderRadius:'20px',border:`2px solid ${Colors.get('border', theme)}`}} onClick={() => setPage(lastPage$.value)}>{langIndex === 0 ? 'Выйти' : 'Exit'}</button>    
-          </div>}
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.7 }}>
+                    {langIndex === 0 ? 'Статус' : 'Status'}
+                </span>
+                <span style={{ fontSize: '20px', fontWeight: '800', fontFamily: 'Segoe UI' }}>
+                    UltyMyLife <span style={{ color: '#007AFF' }}>Pro</span>
+                </span>
+            </div>
         </div>
-    )
+
+        {/* 2. Avatar with Animated Golden Ring */}
+        <div style={styles(theme).avatarSection}>
+            <div style={styles(theme).avatarWrapper}>
+                {/* Spinning Gradient Border */}
+                <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                    style={styles(theme).gradientRing} 
+                />
+                
+                {/* Image */}
+                <img 
+                    src={Array.isArray(UserData.photo) ? UserData.photo[0] : UserData.photo} 
+                    alt="User"
+                    style={styles(theme).avatarImg}
+                />
+                
+                {/* Absolute Crown Badge */}
+                <div style={styles(theme).crownBadge}>
+                    <FaCrown size={10} color="#000" />
+                </div>
+            </div>
+            
+            <h2 style={styles(theme).userName}>{UserData.name}</h2>
+            <p style={styles(theme).userQuote}>{langIndex === 0 ? 'Твоя лучшая версия' : 'Your best version'}</p>
+        </div>
+
+        {/* 3. Status Info Card */}
+        <div style={styles(theme).infoCard}>
+            <div style={styles(theme).infoRow}>
+                <div style={styles(theme).statusPill}>
+                    <FaCheckCircle size={12} />
+                    <span>{langIndex === 0 ? 'Активна' : 'Active'}</span>
+                </div>
+                <div style={styles(theme).dateText}>
+                    <FaCalendarAlt size={12} style={{ marginRight: '6px', opacity: 0.6 }} />
+                    {langIndex === 0 ? 'до ' : 'until '} 
+                    {getEndDate(UserData.premiumEndDate) }
+                </div>
+            </div>
+        </div>
+
+    </motion.div>
+)}
+            {/* 4. Validation Screen */}
+            {isValidation && (
+                <div style={styles(theme).loadingState}>
+    {/* Container for Spinner & Icon */}
+    <div style={{ position: 'relative', width: '100px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        
+        {/* Spinning Ring */}
+        <motion.div
+            style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: '50%',
+                border: `4px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                borderTopColor: '#007AFF', // Premium Blue
+                boxSizing: 'border-box'
+            }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        />
+
+        {/* Centered Hourglass Icon */}
+        <FaHourglassHalf 
+            size={28} 
+            color={isDark ? '#fff' : '#007AFF'} 
+            style={{ opacity: 0.8 }}
+        />
+    </div>
+
+    {/* Title */}
+    <h3 style={{ marginTop: '25px', marginBottom: '8px', color: isDark ? 'white' : '#000', fontSize: '18px', fontWeight: '700' }}>
+        {langIndex === 0 ? 'Активация...' : 'Activating...'}
+    </h3>
+
+    {/* Disclaimer Text */}
+    <p style={{ margin: 0, color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', fontSize: '13px', textAlign: 'center' }}>
+        {langIndex === 0 ? 'Это может занять до 5 минут' : 'This may take up to 5 minutes'}
+    </p>
+</div>
+            )}
+
+            {/* 5. Agreement Bottom Sheet */}
+            <AnimatePresence>
+                {needAgreement && (
+                    <motion.div 
+                        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} 
+                        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                        style={styles(theme).bottomSheet}
+                    >
+                        <div style={styles(theme).sheetHandle} />
+                        <h3 style={styles(theme).sheetTitle}>{langIndex === 0 ? 'Оплата' : 'Payment'}</h3>
+                        
+                        <div style={styles(theme).miniPolicyBox}>
+                            <div style={{ whiteSpace: 'pre-line', fontSize: '12px', color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)', lineHeight: '1.5' }}>
+                                {getMiniPolicy(langIndex)}
+                            </div>
+                            <button onClick={() => setShowFullPolicy(true)} style={styles(theme).textLinkBtn}>
+                                {langIndex === 0 ? 'Читать полную политику →' : 'Read full policy →'}
+                            </button>
+                        </div>
+
+                        <div style={styles(theme).checkoutTotalBox}>
+                            <div style={styles(theme).checkoutRow}>
+                                <span>{langIndex === 0 ? 'Тариф' : 'Plan'}</span>
+                                <span style={{ color: isDark ? 'white' : 'black' }}>{chosenCard === 3 ? '1 Год' : (chosenCard === 2 ? '3 Месяца' : '1 Месяц')}</span>
+                            </div>
+                            <div style={styles(theme).checkoutRow}>
+                                <span>{langIndex === 0 ? 'Метод' : 'Method'}</span>
+                                <span style={{ color: isDark ? 'white' : 'black' }}>{currentPaymentMethod === 1 ? 'SBP' : (currentPaymentMethod === 2 ? 'Stars' : 'TON')}</span>
+                            </div>
+                            <div style={{...styles(theme).checkoutRow, marginTop: '10px', paddingTop: '10px', borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`}}>
+                                <span style={{fontSize: '16px'}}>{langIndex === 0 ? 'Итого' : 'Total'}</span>
+                                <span style={styles(theme).totalPriceDisplay}>
+                                    {tarifs[currentPaymentMethod - 1][chosenCard - 1]} {currencies[currentPaymentMethod - 1]}
+                                </span>
+                            </div>
+                        </div>
+
+                        <button onClick={getPremium} style={styles(theme).mainButton}>
+                            {langIndex === 0 ? 'Оплатить' : 'Pay Now'}
+                        </button>
+                        <button onClick={() => setNeedAgreement(false)} style={styles(theme).cancelBtn}>
+                            {langIndex === 0 ? 'Отмена' : 'Cancel'}
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+        </motion.div>
+    );
+};
+
+export function PremiumButton({ 
+    langIndex, 
+    clickHandler, 
+    theme, 
+    w = '100%', 
+    h = '95px', // Slightly shorter for a sleeker look
+    textToShow = ['Получить UltyMyLife Pro', 'Get UltyMyLife Pro']
+}) {
+    const isDark = theme === 'dark';
+    const goldColor = '#FFD700'; // Standard Gold
+    const goldGradient = 'linear-gradient(135deg, #FFD700 0%, #FDB931 100%)'; // Metallic Gold
+
+    return (
+        <motion.button
+            whileHover={{ scale: 1.02, y: -1 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={clickHandler}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+                position: 'relative',
+                width: w,
+                height: h,
+                borderRadius: '18px',
+                border: isDark ? `1px solid rgba(255, 215, 0, 0.3)` : '1px solid rgba(0,0,0,0.08)',
+                cursor: 'pointer',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '15px',
+                padding: '0 20px',
+                
+                // Background Logic
+                background: isDark 
+                    ? 'linear-gradient(180deg, #1A1A1A 0%, #0D0D0D 100%)' // Deep Matte Black
+                    : '#FFFFFF',
+                
+                // Glow Shadow
+                boxShadow: isDark 
+                    ? '0  0 10px 1px rgba(255, 217, 0, 0.32)' // Subtle Gold Glow
+                    : '0 8px 20px -6px rgba(0, 0, 0, 0.1)'
+            }}
+        >
+            {/* Inner Content */}
+            <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px',
+                zIndex: 2 
+            }}>
+                {/* Crown Icon Container */}
+                <div style={{
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: isDark ? 'rgba(255, 215, 0, 0.1)' : '#FFF9E6',
+                    border: `1px solid ${isDark ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 215, 0, 0.1)'}`,
+                }}>
+                    <FaCrown size={16} color={ isDark ? '#ffe96c' : '#685900c5'} style={{ filter: 'drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3))' }} />
+                </div>
+
+                {/* Text */}
+                <span style={{ 
+                    fontSize: '14px', 
+                    fontWeight: '700', 
+                    color: isDark ? '#ffe96c' : '#826e00be',
+                    fontFamily: 'Segoe UI, sans-serif',
+                    letterSpacing: '0.4px'
+                }}>
+                    {textToShow[langIndex]}
+                </span>
+            </div>
+
+            {/* Subtle Shimmer Overlay */}
+            <div style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0, height: '1px',
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                opacity: 0.5
+            }} />
+        </motion.button>
+    );
 }
-export default Premium;
 
+const SegmentOption = ({ id, current, set, label, icon, isDark }) => (
+    <div onClick={() => set(id)} style={{
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '32px', borderRadius: '7px',
+        background: current === id ? (isDark ? '#636366' : '#FFFFFF') : 'transparent', 
+        color: current === id ? (isDark ? 'white' : 'black') : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'),
+        fontSize: '13px', transition: 'all 0.2s ease', fontWeight: current === id ? '600' : '400',
+        boxShadow: (current === id && !isDark) ? '0 2px 5px rgba(0,0,0,0.1)' : 'none'
+    }}>
+        {icon} <span>{label}</span>
+    </div>
+);
 
+const FeatureItem = ({ icon, title, sub, variants, theme }) => {
+    const isDark = theme === 'dark';
+    return (
+        <motion.div variants={variants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(0,122,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px', color: '#007AFF' }}>
+                {icon}
+            </div>
+            <div style={{ fontSize: '12px', fontWeight: '600', color: isDark ? 'white' : '#000' }}>{title}</div>
+            <div style={{ fontSize: '10px', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>{sub}</div>
+        </motion.div>
+    );
+}
 
-const styles = (theme, keyboardVisible,fSize) => ({
-  // Container styles
-  container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2900,
-    width:'100vw'
-  },
-  panel :
-  {
-    display:'flex',
-    flexDirection:'column',
-    alignItems: "center",
-    borderRadius:"24px",
-    border: `1px solid ${Colors.get('border', theme)}`,
-    margin: "5px",
-    backgroundColor:Colors.get('background', theme),
-    width:"95vw",
-    height: "90vh"
-  },
-  text :
-  {
-    textAlign: "center",
-    fontSize:fSize ? "13px" : "15px",
-    color: Colors.get('mainText', theme)
-  },
-  subtext:
-  {
-    textAlign: "center",
-    fontSize:fSize ? "11px" : "13px",
-    color: Colors.get('subText', theme)
-  },
-  button:
-  {
-    width:'85vw',
-    height:'80px',
-    marginTop:'5px',
-    color: Colors.get('mainText', theme),
-    backgroundColor:Colors.get('background', theme),
-    borderRadius:"30px",
-    marginBottom:'5px',
-    fontSize:fSize ? "13px" : "15px",
-  },
-  miniIcon: {
-    fontSize: "22px",
-    marginRight:'12px',
-    marginBottom:'8px',
-    color: Colors.get('icons', theme)
-  },
-    cP :
-      {
-        display:'flex',
-        flexDirection:'column',
-        alignItems: "center",
-        justifyContent: "space-around",
-        border: `1px solid ${Colors.get('border', theme)}`,
-        backgroundColor:Colors.get('background', theme),
-        height:"85vh"
-      },
-      confirmContainer: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 2900,
+const BigPlanCard = ({ active, onClick, price, label, sub, currencyIcon, saveLabel, langIndex, theme }) => {
+    const isDark = theme === 'dark';
+    return (
+        <motion.div whileTap={{ scale: 0.98 }} onClick={onClick} style={{
+            padding: '20px', borderRadius: '22px', position: 'relative', overflow: 'hidden',
+            background: active 
+                ? 'linear-gradient(145deg, rgba(0, 122, 255, 0.1), transparent)' 
+                : (isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF'),
+            border: active ? '2px solid #007AFF' : `2px solid ${isDark ? 'transparent' : '#E5E7EB'}`, 
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            boxShadow: (!isDark && !active) ? '0 4px 10px rgba(0,0,0,0.03)' : 'none'
+        }}>
+            {saveLabel && <div style={{ position: 'absolute', top: 0, right: 0, background: '#007AFF', padding: '4px 10px', borderBottomLeftRadius: '14px', fontSize: '10px', fontWeight: '800', color: 'white' }}>{saveLabel}</div>}
+            <div>
+                <div style={{ fontSize: '14px', color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)', marginBottom: '4px' }}>{label}</div>
+                <div style={{ color: isDark ? 'white' : 'black', fontSize: '26px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '5px' }}>{price} <span style={{ color: '#007AFF', fontSize: '18px' }}>{currencyIcon}</span></div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '11px', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>{langIndex === 0 ? 'всего' : 'only'}</div>
+                <div style={{ fontSize: '14px', color: '#007AFF', fontWeight: '600' }}>{sub} {currencyIcon} <span style={{fontWeight:400, fontSize:'11px'}}>/ {langIndex === 0 ? 'мес' : 'mo'}</span></div>
+            </div>
+        </motion.div>
+    );
+}
+
+const SmallPlanCard = ({ active, onClick, price, label, currencyIcon, theme }) => {
+    const isDark = theme === 'dark';
+    return (
+        <motion.div whileTap={{ scale: 0.98 }} onClick={onClick} style={{
+            flex: 1, padding: '16px', borderRadius: '20px', 
+            background: active 
+                ? (isDark ? 'rgba(0, 122, 255, 0.1)' : 'rgba(0, 122, 255, 0.05)') 
+                : (isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF'),
+            border: active ? '2px solid #007AFF' : `2px solid ${isDark ? 'transparent' : '#E5E7EB'}`, 
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+            boxShadow: (!isDark && !active) ? '0 4px 10px rgba(0,0,0,0.03)' : 'none'
+        }}>
+            <div style={{ fontSize: '12px', color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>{label}</div>
+            <div style={{ color: isDark ? 'white' : 'black', fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '3px' }}>{price} <span style={{fontSize:'13px', color: active ? '#007AFF' : 'inherit'}}>{currencyIcon}</span></div>
+        </motion.div>
+    );
+}
+
+// --- STYLES ---
+
+const styles = (theme) => {
+    const isDark = theme === 'dark';
+    return {
+        container: { 
+            position: 'fixed', inset: 0, 
+            backgroundColor: isDark ? '#000' : '#F9FAFB', 
+            zIndex: 5000, display: 'flex', flexDirection: 'column', 
+            backgroundImage: isDark 
+                ? 'radial-gradient(circle at 50% -20%, #1c1c1e 0%, #000 60%)' 
+                : 'radial-gradient(circle at 50% -20%, #E0E7FF 0%, #F9FAFB 60%)', 
+            fontFamily: 'Segoe UI' 
+        },
+        contentWrapper: { padding: '20px 24px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto',marginTop:'30%' },
+        heroIcon: { width: '68px', height: '68px', borderRadius: '20px', background: 'linear-gradient(180deg, #007AFF 0%, #0055B3 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto', boxShadow: '0 12px 30px rgba(0, 122, 255, 0.3)' },
+        title: { fontSize: '28px', fontWeight: '800', color: isDark ? 'white' : '#111827', margin: 0, textAlign: 'center' },
+        subtitle: { fontSize: '15px', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', marginTop: '5px', textAlign: 'center' },
+        closeBtn: { position: 'absolute', top: '85px', right: '25px', zIndex: 10 },
+        iconCircle: { width: '32px', height: '32px', borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' },
+        segmentedControl: { background: isDark ? 'rgba(118, 118, 128, 0.24)' : '#E5E7EB', borderRadius: '9px', padding: '2px', display: 'flex', width: '100%', margin: '25px 0' },
+        featuresGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', width: '100%', marginBottom: '30px' },
+        footerHint: { textAlign: 'center', fontSize: '11px', color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', marginTop: '15px' },
+        bottomSheet: { position: 'absolute', bottom: 0, left: 0, width: '100%', background: isDark ? '#1C1C1E' : '#FFFFFF', borderTopLeftRadius: '28px', borderTopRightRadius: '28px', padding: '20px 24px 40px 24px', boxSizing: 'border-box', zIndex: 6000, boxShadow: isDark ? '0 -20px 40px rgba(0,0,0,0.6)' : '0 -10px 30px rgba(0,0,0,0.1)' },
+        sheetHandle: { width: '36px', height: '5px', background: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)', borderRadius: '3px', margin: '0 auto 20px auto' },
+        sheetTitle: { textAlign: 'center', color: isDark ? 'white' : 'black', fontSize: '20px', fontWeight: 700, margin: '0 0 20px 0' },
+        miniPolicyBox: { background: isDark ? 'rgba(255,255,255,0.05)' : '#F3F4F6', borderRadius: '16px', padding: '16px', maxHeight: '160px', overflowY: 'auto', marginBottom: '20px' },
+        textLinkBtn: { background: 'none', border: 'none', color: '#007AFF', fontSize: '12px', fontWeight: '600', marginTop: '12px', padding: 0 },
+        checkoutTotalBox: { background: isDark ? 'rgba(255,255,255,0.03)' : '#F9FAFB', borderRadius: '16px', padding: '16px', marginBottom: '20px' },
+        checkoutRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', fontSize: '14px' },
+        totalPriceDisplay: { color: '#007AFF', fontWeight: '800', fontSize: '22px', display:'flex', alignItems:'center', gap:'5px' },
+        mainButton: { width: '100%', padding: '16px', borderRadius: '16px', background: '#007AFF', color: 'white', fontSize: '17px', fontWeight: '700', border: 'none', boxShadow: '0 4px 20px rgba(0, 122, 255, 0.4)' },
+        cancelBtn: { background: 'transparent', border: 'none', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', width: '100%', padding: '15px', fontSize: '15px' },
+        fullPolicyOverlay: { position: 'fixed', inset: 0, background: isDark ? '#000' : '#FFF', zIndex: 7000, padding: '20px', display: 'flex', flexDirection: 'column' },
+        policyHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: isDark ? 'white' : 'black', marginBottom: '20px', paddingBottom: '15px', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` },
+        policyContent: { flex: 1, overflowY: 'auto', color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)', fontSize: '13px', lineHeight: '1.6', whiteSpace: 'pre-wrap' },
+        loadingState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' },
+        avatarSection: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        marginBottom: '25px'
     },
-})
-function playEffects(sound){
-  if(AppData.prefs[2] == 0 && sound !== null){
-    if(!sound.paused){
-        sound.pause();
-        sound.currentTime = 0;
-    }
-    sound.volume = 0.5;
-    sound.play();
-  }
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
-
-export function PremiumButton({ langIndex, clickHandler, theme,w = '90%',h='87px',fSize='20px',br="30px", textToShow = [ 'Получить премиум' , 'Get Premium'] , needSparcle}) {
-  return (
-    <button
-     onClick ={clickHandler}
-      style={{
-        ...styles(theme).button,
+    avatarWrapper: {
         position: 'relative',
-        display: 'inline-flex',
+        width: '90px',
+        height: '90px',
+        display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '14px 32px',
-        fontSize: '17px',
+        marginBottom: '15px'
+    },
+    gradientRing: {
+        position: 'absolute',
+        inset: 0,
+        borderRadius: '50%',
+        background: 'conic-gradient(from 0deg, transparent 0deg, #007AFF 180deg, #00C6FF 360deg)',
+        padding: '3px', // Width of border
+        mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+        WebkitMaskComposite: 'xor',
+        maskComposite: 'exclude',
+    },
+    avatarImg: {
+        width: '82px',
+        height: '82px',
+        borderRadius: '50%',
+        objectFit: 'cover',
+        border: `3px solid ${theme === 'dark' ? '#1c1c1e' : '#fff'}` // Matches background to create gap
+    },
+    crownBadge: {
+        position: 'absolute',
+        bottom: '0',
+        right: '0',
+        backgroundColor: '#FFD700',
+        width: '24px',
+        height: '24px',
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: `3px solid ${theme === 'dark' ? '#1c1c1e' : '#fff'}`
+    },
+    userName: {
+        margin: '0 0 5px 0',
+        fontSize: '22px',
         fontWeight: '700',
-        backgroundColor: 'transparent',
-        border: 'none',
-        cursor: 'pointer',
-        overflow: 'hidden',
-        width:w,
-        height:h,
-         marginTop:'5px',
-        color: Colors.get('mainText', theme),
-        borderRadius:br,
-        marginBottom:'5px',
-        zIndex: 1,
-        boxShadow: '0 6px 20px rgba(21, 79, 236, 0.4)',
-        transition: 'transform 0.3s ease, box-shadow 0.3s ease, filter 0.2s ease',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 8px 28px rgba(21, 79, 236, 0.6)';
-        e.currentTarget.style.filter = 'brightness(1.05)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 6px 20px rgba(21, 79, 236, 0.4)';
-        e.currentTarget.style.filter = 'brightness(1)';
-      }}
-    >
-      {/* Animated Gradient Layer */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-50%',
-          left: '-50%',
-          width: '200%',
-          height: '200%',
-          background: 'linear-gradient(45deg, #154fec, #4e73f2, #154fec, #6a82fb, #154fec)',
-          backgroundSize: '300% 300%',
-          animation: 'premiumGradient 4s ease infinite',
-          zIndex: -1,
-        }}
-      />
+        fontFamily: 'Segoe UI',
+        color: Colors.get('mainText', theme)
+    },
+    userQuote: {
+        margin: 0,
+        fontSize: '13px',
+        color: Colors.get('subText', theme),
+        fontStyle: 'italic'
+    },
+    infoCard: {
+        width: '100%',
+        backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#F5F5F7',
+        borderRadius: '18px',
+        padding: '12px 16px'
+    },
+    infoRow: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+    },
+    statusPill: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        backgroundColor: 'rgba(52, 199, 89, 0.15)', // Green tint
+        color: '#34C759',
+        padding: '4px 10px',
+        borderRadius: '12px',
+        fontSize: '12px',
+        fontWeight: '700',
+        textTransform: 'uppercase'
+    },
+    dateText: {
+        display: 'flex',
+        alignItems: 'center',
+        fontSize: '13px',
+        color: Colors.get('subText', theme),
+        fontWeight: '500'
+    },
+    premiumContainer: {
+        width: '85%',
+        height:'50%',
+        alignSelf:'center',
+        marginTop:'50%',
+        backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : '#fff',
+        borderRadius: '32px',
+        padding: '25px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent:'space-between',
+        boxShadow: theme === 'dark' 
+            ? '0 20px 40px -10px rgba(0,0,0,0.5)' 
+            : '0 20px 40px -10px rgba(0,0,0,0.1)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+    },
+    header: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '15px',
+        marginBottom: '25px',
+        width: '100%'
+    },
+    iconGlow: {
+        width: '55px',
+        height: '55px',
+        borderRadius: '14px',
+        backgroundColor: '#007AFF',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 0 20px rgba(0, 122, 255, 0.4)'
+    },
+    }
+};
 
-      {/* Inner Fill (for crisp edge) */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(10, 15, 40, 0.4)',
-          borderRadius: '30px',
-          zIndex: -1,
-        }}
-      />
 
-      {/* Content */}
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-       <span style={{ marginRight: '8px',marginLeft: '8px',marginBottom:'8px', fontSize: '1.2em' }}>{needSparcle ? '👑' : ''}</span>
-        {textToShow[langIndex]}
-        <span style={{ marginRight: '8px',marginLeft: '8px',marginBottom:'8px', fontSize: '1.2em' }}>{needSparcle ? '👑' : ''}</span>
-      </span>
+const getMiniPolicy = (langIndex) => langIndex === 0 ? 
+    `• Нет автосписаний и скрытых платежей.
+    • Доступ ко всем ИИ-инсайтам и аналитике.
+    • Цифровой товар: возврат не предусмотрен.
+    • Активация может занять до 5 минут.` : 
+    `• No auto-renewals or hidden fees.
+    • Full access to AI insights and analytics.
+    • Digital product: no refunds available.
+    • Activation may take up to 5 minutes.`;
 
-      {/* Glow Effect */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '2px',
-          left: '2px',
-          right: '2px',
-          bottom: '2px',
-          borderRadius: '26px',
-          boxShadow: 'inset 0 0 12px rgba(255, 255, 255, 0.2)',
-          pointerEvents: 'none',
-          zIndex: 0,
-        }}
-      />
-
-      {/* Animation Style Tag */}
-      <style>{`
-        @keyframes premiumGradient {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        button {
-          will-change: transform, filter;
-        }
-      `}</style>
-    </button>
-  );
-}
-const PAYMENT_METHOD_DESCRIPTIONS = [
-  [
-    'Быстрая и безопасная оплата через СБП 📱',
-    'Мгновенная покупка за Telegram Stars ⭐',
-    'Анонимная оплата в TON-криптовалюте 💎'
-  ],
-  [
-    'Fast and secure payment via SBP 📱',
-    'Instant purchase with Telegram Stars ⭐',
-    'Anonymous payment in TON cryptocurrency 💎'
-  ]
-];
-const getMiniPolicy = (langIndex) => {
-  return langIndex === 0 ? `📌 Условия оплаты UltyMyLife
-
-• Нет пробного периода — стартуйте с минимального тарифа.
-• Возврат невозможен — услуга цифровая, цены минимальны.
-• Данные — локально, без облака, анонимные LLM-запросы.
-• Подписка не продлевается автоматически.
-• Поддержка: @diiimaaan777
-
-• Подписка станет доступна сразу после проверки оплаты ✅
-• Проверка может занять до 5 минут ⏳
-
-👉 Оплачивая, вы соглашаетесь с этими условиями.`
-    : 
-    `📌 Summary: UltyMyLife Payment Terms
-
-• No trial — start with the lowest plan
-• No refunds — digital service at minimal cost
-• Your data stays local, AI queries are anonymous
-• No auto-renewal 
-• Support: [@diiimaaan777](https://t.me/diiimaaan777)
-
-• Your subscription will be activated right after payment verification ✅
-• Verification may take up to 5 minutes ⏳
-
-👉 By making a payment, you agree to these terms.`
-}
 const getFullPolicy = (langIndex) => {
   return langIndex === 0 ? `Политика оплаты UltyMyLife
 
@@ -561,6 +723,7 @@ UltyMyLife — Telegram Mini App для саморазвития с ИИ-ана�
 ---
 
  7. Поддержка
+ https://t.me/diiimaaan777
 📩 пишите с указанием Telegram ID и даты оплаты.
 
 
@@ -620,11 +783,14 @@ We reserve the right to update pricing or terms. Users will be notified in advan
 ---
 
 7. Support  
+https://t.me/diiimaaan777
 📩  please include your **Telegram ID** and **payment date** when contacting us.
 
 
 `
 }
 
+
+export default Premium;
 
 

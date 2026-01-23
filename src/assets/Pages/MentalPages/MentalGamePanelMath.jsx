@@ -1,418 +1,697 @@
-import { useEffect, useState} from 'react'
-import {AppData} from '../../StaticClasses/AppData'
-import Colors from "../../StaticClasses/Colors"
-import {theme$,lang$,fontSize$} from '../../StaticClasses/HabitsBus';
-import { getProblem,getPoints ,hasStreak,getPrecision} from './MathProblems';
-import BreathAudio from "../../Helpers/BreathAudio"
-import {FaStar,FaFire,FaMedal,FaStopwatch} from 'react-icons/fa';
-import {IoPlayCircle,IoReloadCircle,IoArrowBackCircle} from "react-icons/io5"
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AppData } from '../../StaticClasses/AppData';
+import Colors from "../../StaticClasses/Colors";
+import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
+import { getProblem, getPoints, hasStreak, getPrecision } from './MathProblems';
+import BreathAudio from "../../Helpers/BreathAudio";
+import { FaStar, FaFire, FaMedal, FaStopwatch, FaTimes, FaPlay, FaRedo } from 'react-icons/fa';
+import { IoArrowBackCircle } from "react-icons/io5";
 import MentalInput from './MentalInput';
-import { quickMathCategories,saveSessionDuration} from './MentalHelper';
+import { quickMathCategories, saveSessionDuration } from './MentalHelper';
 
 const startTimerDuration = 3000;
 
-const MentalGamePanel = ({ show,type,difficulty,maxTimer,setShow }) => {
-   
+const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
+    // === CORE LOGIC STATES (UNCHANGED) ===
+    const [theme, setthemeState] = useState('dark');
+    const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [fSize, setFSize] = useState(AppData.prefs[4]);
+    const [input, setInput] = useState('');
+    const [handledInput, setHandledInput] = useState('');
+    const [isRunning, setIsRunning] = useState(false);
+    const [isStart, setIsStart] = useState(false);
+    const [showStartTimer, setShowStartTimer] = useState(false);
+    const [addValue, setAddValue] = useState(0);
 
-  const [theme, setthemeState] = useState('dark');
-  const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-  const [fSize, setFSize] = useState(AppData.prefs[4]); 
-  const [input, setInput] = useState('');
-  const [handledInput, setHandledInput] = useState('');
-  const [isRunning, setIsRunning] = useState(false);
-  const [isStart, setIsStart] = useState(false);
-  const [showStartTimer, setShowStartTimer] = useState(false);
-  const [addValue,setAddValue] = useState(0);
-  
-  const [seconds, setSeconds] = useState(0);
-  const [isFinished, setIsFinished] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [startTime, setStartTime] = useState(0);
+    const [seconds, setSeconds] = useState(0);
+    const [isFinished, setIsFinished] = useState(false);
+    const [isPaused, setIsPaused] = useState(false); // Kept logic, even if UI doesn't explicitly use pause btn
+    const [startTime, setStartTime] = useState(0);
 
-  //audio
-  const { initAudio, playRight, playWrong } = BreathAudio(AppData.prefs[2] === 0);
+    // audio
+    const { initAudio, playRight, playWrong } = BreathAudio(AppData.prefs[2] === 0);
 
-  //cards
-  const cards = [ { id: 0, text: "aaaabb" }, { id: 1, text: "aaaaa" },];
+    // timer
+    const [timer, setTimer] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [currTimer, setCurrTimer] = useState(0);
+    
+    // delay
+    const [delay, setDelay] = useState(0);
+    const [delayTimer, setDelayTimer] = useState(false);
 
-  //timer
-  const [timer,setTimer] = useState(false);
-  const [progress,setProgress] = useState(0);
-  const [currTimer,setCurrTimer] = useState(0);
-  //delay
-  const [delay,setDelay] = useState(0);
-  const [delayTimer,setDelayTimer] = useState(false);
+    const [scores, setScores] = useState(0);
+    const [stage, setStage] = useState(1);
+    const [streakLength, setStreakLength] = useState(0);
+    const [problem, setProblem] = useState('');
+    const [answer, setAnswer] = useState('');
+    
+    // answer handlers
+    const [message, setMessage] = useState('');
+    const [statusColor, setStatusColor] = useState('');
+    const [addScores, setAddScores] = useState(0);
+    
+    // statistics
+    const [rightAnswers, setRightAnswers] = useState(0);
+    const [record, setRecord] = useState(AppData.mentalRecords[type][difficulty]);
+    const [time, setTime] = useState(0);
 
-  const [scores, setScores] = useState(0);
+    // === LOGIC EFFECTS (UNCHANGED) ===
+    useEffect(() => {
+        if (input.length === 1) setHandledInput(prev => prev.length < 6 ? prev + input : prev);
+        else if (input.length === 2) setHandledInput(prev => prev.length > 0 ? prev.slice(0, prev.length - 1) : '');
+        else if (input.length === 3) handleAnswer();
+        setInput('');
+    }, [input]);
 
-  const [stage, setStage] = useState(1);
-  const [streakLength, setStreakLength] = useState(0);
-  const [problem,setProblem] = useState('');
-  const [answer,setAnswer] = useState('');
-  //answer handlers
-  const [message, setMessage] = useState('');
-  const [statusColor, setStatusColor] = useState('');
-  const [addScores,setAddScores] = useState(0);
-  //statistics
-  const [rightAnswers,setRightAnswers] = useState(0);
-  const [record,setRecord] = useState(AppData.mentalRecords[type][difficulty]);
-  const [time,setTime] = useState(0);
-  
-  //input
-  useEffect(() => {
-    if (input.length === 1)setHandledInput(prev => prev.length < 6 ? prev + input : prev);
-    else if (input.length === 2)setHandledInput(prev => prev.length > 0 ? prev.slice(0,prev.length - 1) : '');
-    else if (input.length === 3) handleAnswer();
-    setInput('');
-  }, [input]);
-  // time
-  useEffect(() => {
-  let intervalId = null;
-  if (isRunning) {
-    intervalId = setInterval(() => {
-      setTime(prev => prev + 100); 
-    }, 100);
-  }
-  return () => {
-    if (intervalId) {
-      clearInterval(intervalId);
-    }
-  };
-}, [isRunning]);
-  //timer
-  useEffect(() => {
-    if (!timer || !isStart || difficulty === 5) {
-      setProgress(0);
-      setCurrTimer(0);
-      return;
-    }
-    const startTime = Date.now() - currTimer; // restore actual start time of rest
-    const interval = setInterval(() => {
-    const elapsed = Date.now() - startTime;
-    const newTimerValue = Math.min(elapsed, maxTimer);
-    setCurrTimer(newTimerValue);
-    setProgress((newTimerValue / (maxTimer - addValue)) * 100);
-      if (newTimerValue >= (maxTimer - addValue) - 500 ) {
-        setTimer(false);
-        handleAnswer();
-      }
-    }, 50);
-  
-    return () => clearInterval(interval);
-  }, [timer, isStart, maxTimer, currTimer]);
+    useEffect(() => {
+        let intervalId = null;
+        if (isRunning) {
+            intervalId = setInterval(() => {
+                setTime(prev => prev + 100);
+            }, 100);
+        }
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [isRunning]);
 
-  // Subscriptions
-  useEffect(() => {
-            const subscription = theme$.subscribe(setthemeState); 
-            const subscription2 = lang$.subscribe((lang) => {
-            setLangIndex(lang === 'ru' ? 0 : 1);
-            }); 
-            const subscription3 = fontSize$.subscribe((fontSize) => {
-            setFSize(fontSize);
-            });
-            return () => {
+    useEffect(() => {
+        if (!timer || !isStart || difficulty === 5) {
+            setProgress(0);
+            setCurrTimer(0);
+            return;
+        }
+        const startTime = Date.now() - currTimer;
+        const interval = setInterval(() => {
+            const elapsed = Date.now() - startTime;
+            const newTimerValue = Math.min(elapsed, maxTimer);
+            setCurrTimer(newTimerValue);
+            setProgress((newTimerValue / (maxTimer - addValue)) * 100);
+            if (newTimerValue >= (maxTimer - addValue) - 500) {
+                setTimer(false);
+                handleAnswer();
+            }
+        }, 50);
+
+        return () => clearInterval(interval);
+    }, [timer, isStart, maxTimer, currTimer]);
+
+    useEffect(() => {
+        const subscription = theme$.subscribe(setthemeState);
+        const subscription2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
+        const subscription3 = fontSize$.subscribe(setFSize);
+        return () => {
             subscription.unsubscribe();
             subscription2.unsubscribe();
             subscription3.unsubscribe();
-            }
-      }, []);
-//startTimer
- useEffect(() => {
-    if (!showStartTimer) {
-      // Reset seconds if hidden (optional)
-      setSeconds(0);
-      return;
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!showStartTimer) {
+            setSeconds(0);
+            return;
+        }
+        const totalSeconds = Math.ceil(startTimerDuration / 1000);
+        setSeconds(totalSeconds);
+        const intervalId = setInterval(() => {
+            setSeconds(prev => {
+                if (prev <= 1) {
+                    clearInterval(intervalId);
+                    handleStart();
+                    setShowStartTimer(false);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(intervalId);
+    }, [showStartTimer]);
+
+    useEffect(() => {
+        if (!delayTimer) return;
+        const intervalId = setInterval(() => {
+            setDelay(prev => {
+                if (prev >= 900) {
+                    clearInterval(intervalId);
+                    setDelayTimer(false);
+                    setScores(prev => Math.round(prev + addScores / 2));
+                    setAddScores(0);
+                    setTimer(true);
+                    setDelay(0);
+                    return 0;
+                }
+                return prev + 100;
+            });
+        }, 100);
+        return () => clearInterval(intervalId);
+    }, [delayTimer, delay]);
+
+    // === HANDLERS ===
+    const handleStart = () => {
+        initAudio();
+        setNewProblem();
+        setIsStart(true);
+        setTimer(true);
+        setIsRunning(true);
+        setIsPaused(false);
+        setTime(0);
+        setStartTime(Date.now());
+    };
+
+    function setNewProblem() {
+        const newProblem = getProblem(type, difficulty, stage);
+        setProblem(newProblem[0]);
+        setAnswer(newProblem[1]);
     }
 
-    // Initialize countdown
-    const totalSeconds = Math.ceil(startTimerDuration / 1000);
-    setSeconds(totalSeconds);
-
-    const intervalId = setInterval(() => {
-      setSeconds(prev => {
-        if (prev <= 1) {
-          // Final tick: cleanup and trigger start
-          clearInterval(intervalId);
-          handleStart();
-          setShowStartTimer(false);
-          return 0;
+    const handleAnswer = () => {
+        setTimer(false);
+        const points = getPoints(type, difficulty, stage, currTimer, answer, handledInput, streakLength);
+        const precision = getPrecision(type, answer, handledInput);
+        playVibro(precision === 0 ? 'light' : 'medium');
+        
+        let addmessage = '';
+        if (precision === 0) {
+            addmessage = getPraise(langIndex);
+            setRightAnswers(prev => prev + 1);
+        } else if (precision < 0.15) {
+            addmessage = getSupport(langIndex);
+        } else {
+            addmessage = langIndex === 0 ? 'Правильный ответ: ' + answer : 'Correct answer: ' + answer;
         }
-        return prev - 1;
-      });
-    }, 1000);
 
-    // Cleanup on unmount or when showStartTimer becomes false
-    return () => {
-      clearInterval(intervalId);
+        const col = precision === 0 
+            ? Colors.get('maxValColor', theme) 
+            : precision < 0.15 
+                ? Colors.get('difficulty2', theme) 
+                : Colors.get('minValColor', theme);
+                
+        setStatusColor(col);
+        setMessage(addmessage);
+        setAddScores(points);
+        setNewProblem();
+        setHandledInput('');
+        setStreakLength(prev => hasStreak(type, answer, handledInput) ? prev + 1 : 0);
+        setStage(prev => prev + 1 < 20 ? prev + 1 : 20);
+        precision === 0 ? playRight() : playWrong();
+        
+        if (stage === 20) onFinishSession();
+        if (difficulty === 4 && stage % 5 === 0) setAddValue(prev => prev + 1000);
+        if (difficulty === 4 && precision > 0.15) onFinishSession();
+        
+        setDelayTimer(true);
     };
-  }, [showStartTimer, startTimerDuration]);
-  //delay
-  useEffect(() => {
-    if (!delayTimer) return;
 
-    const intervalId = setInterval(() => {
-      setDelay(prev => {
-        if (prev >= 900) {
-          // Final tick: cleanup and trigger start
-          clearInterval(intervalId);
-          setDelayTimer(false);
-          setScores(prev => Math.round(prev + addScores / 2));
-          setAddScores(0);
-          setTimer(true);
-          setDelay(0);
-          return 0;
+    const handleReload = () => {
+        setTimer(false);
+        setCurrTimer(0);
+        setProgress(0);
+        setScores(0);
+        setStage(1);
+        setRightAnswers(0);
+        setStreakLength(0);
+        setHandledInput('');
+        setMessage('');
+        setAddValue(0);
+        setNewProblem();
+        setStartTime(Date.now());
+        setNewProblem();
+        setIsStart(true);
+        setTimer(true);
+        setIsRunning(true);
+        setIsPaused(false);
+        setIsFinished(false);
+    };
+
+    const onFinishSession = () => {
+        onFinish();
+        const isRecord = scores + addScores > record;
+        const message = congratulations(difficulty === 4, langIndex, scores + addScores, rightAnswers, 20, isRecord, difficulty === 5);
+        setIsRunning(false);
+        setMessage(message);
+        setIsFinished(true);
+        setIsStart(false);
+        setTimer(false);
+    };
+
+    const onFinish = () => {
+        if (scores > record) {
+            setRecord(scores);
+            AppData.mentalRecords[type][difficulty] = scores;
         }
-        return prev + 100;
-      });
-    }, 100);
-
-    // Cleanup on unmount or when showStartTimer becomes false
-    return () => {
-      clearInterval(intervalId);
+        const endTime = Date.now();
+        const duration = Math.round((endTime - startTime) / 1000);
+        saveSessionDuration(duration, scores + addScores > record, type, difficulty, scores + addScores);
+        setScores(0);
+        setAddValue(0);
+        setStage(1);
+        setRightAnswers(0);
     };
-  }, [delayTimer,delay]);
 
-  const handleStart = () => {
-    initAudio();
-    setNewProblem();
-    setIsStart(true);
-    setTimer(true);
-    setIsRunning(true);
-    setIsPaused(false);
-    setTime(0);
-    setStartTime(Date.now());
-  };
-
-  function setNewProblem(){
-    const newProblem = getProblem(type,difficulty,stage);
-    setProblem(newProblem[0]);
-    setAnswer(newProblem[1]);
-  }
-   
-  const handleAnswer = () => {
-    setTimer(false);
+    // === VIEW HELPERS ===
+    const isDark = theme === 'dark';
     
-      const points = getPoints(type, difficulty, stage, currTimer, answer, handledInput, streakLength);
-      const precision = getPrecision(type, answer, handledInput);
-      playVibro(precision === 0 ? 'light':'medium');
-      let addmessage = '';
-      if (precision === 0) {
-        addmessage = getPraise(langIndex);
-        setRightAnswers(prev => prev + 1);
-      }
-      else if (precision < 0.15) addmessage = getSupport(langIndex);
-      else addmessage = langIndex === 0 ? 'Правильный ответ: ' + answer : 'Correct answer: ' + answer;
-      const col = precision === 0 ? Colors.get('maxValColor', theme) : precision < 0.15 ? Colors.get('difficulty2', theme) : Colors.get('minValColor', theme);
-      setStatusColor(col);
-      setMessage(addmessage);
-      setAddScores(points);
-      setNewProblem();
-      setHandledInput('');
-      setStreakLength(prev => hasStreak(type,answer, handledInput) ? prev + 1 : 0);
-      setStage(prev => prev + 1 < 20 ? prev + 1 : 20);
-      precision === 0 ? playRight() : playWrong();
-      if (stage === 20) onFinishSession();
-      if (difficulty === 4 && stage%5 === 0) {
-        setAddValue(prev => prev + 1000);
-      }
-      if (difficulty === 4 && precision > 0.15) {
-        onFinishSession();
-      }
-    
-    setDelayTimer(true);
-  };
+    // Animation Variants
+    const slideUp = {
+        hidden: { y: '100%' },
+        visible: { y: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } },
+        exit: { y: '100%' }
+    };
 
-  const handlePause = () => {
-    setIsRunning(false);
-    setIsPaused(true);
-  };
+    const fadeIn = {
+        hidden: { opacity: 0, scale: 0.95 },
+        visible: { opacity: 1, scale: 1, transition: { duration: 0.3 } },
+        exit: { opacity: 0, scale: 0.95, transition: { duration: 0.2 } }
+    };
 
-  const handleResume = () => {
-    setIsRunning(true);
-    setIsPaused(false);
-  };
-  const handleReload = () => {
-    setTimer(false);
-    setCurrTimer(0);
-    setProgress(0);
-    setScores(0);
-    setStage(1);
-    setRightAnswers(0);
-    setStreakLength(0);
-    setHandledInput('');
-    setMessage('');
-    setAddValue(0);
-    setNewProblem();
-    setStartTime(Date.now());
-    setTimer(true);
-  };
+    return (
+        <AnimatePresence>
+            {show && (
+                <motion.div
+                    key="modal-container"
+                    variants={slideUp}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    style={styles(theme).container}
+                >
+                    <AnimatePresence mode='wait'>
+                        
+                        {/* 1. START SCREEN */}
+                        {!isStart && !showStartTimer && !isFinished && (
+                            <motion.div key="start-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).contentWrapper}>
+                                <div style={styles(theme).header}>
+                                    <IoArrowBackCircle onClick={() => { setShow(false); setIsFinished(false); }} style={styles(theme).iconButton} />
+                                    <h2 style={styles(theme, fSize).title}>{quickMathCategories[difficulty].level[langIndex]}</h2>
+                                    <div style={{ width: 40 }} /> {/* Spacer for centering */}
+                                </div>
 
-  const onFinishSession = () => {
-    onFinish();
-    const isRecord = scores + addScores > record;
-    const message = congratulations(difficulty === 4,  langIndex, scores + addScores, rightAnswers, 20, isRecord, difficulty === 5);
-    setIsRunning(false);
-    setMessage(message);
-    setIsFinished(true);
-    setIsStart(false);
-    setTimer(false);
-  };
- const onFinish = () => {
-  if (scores > record) {
-    setRecord(scores);
-    AppData.mentalRecords[type][difficulty] = scores;
-  }
-  const endTime = Date.now();
-  const duration = Math.round((endTime - startTime) / 1000); // Duration in seconds
-  saveSessionDuration(duration,scores + addScores > record,type,difficulty,scores + addScores);
-  setScores(0);
-  setAddValue(0);
-  setStage(1);
-  setRightAnswers(0);
- 
- };
- 
-  return (
-    <div style={styles(theme, show).container}>
-      {!isStart && !showStartTimer && !isFinished && <div style={{display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',width:'100%',height:'80%'}}>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'18px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{quickMathCategories[difficulty].level[langIndex]}</div>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'15px',color:Colors.get('subText', theme)}}>{quickMathCategories[difficulty].description[langIndex]}</div>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'15px',color:Colors.get('mainText', theme)}}>{(langIndex === 0 ? 'Сложность: ' : 'Difficulty: ') +quickMathCategories[difficulty].difficulty[langIndex]}</div>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'15px',color:Colors.get('subText', theme)}}>{(langIndex === 0 ? 'Ограничение времени: ' : 'Time limit: ') + quickMathCategories[difficulty].timeLimitSec}</div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',marginTop:'20px',fontSize:'15px',color:Colors.get('subText', theme)}}>{(langIndex === 0 ? 'Операции: ' : 'Operations: ') + quickMathCategories[difficulty].operations}</div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',marginTop:'50px',fontSize:'12px',color:Colors.get('subText', theme)}}>{disclaimer(langIndex)}</div>
-      </div>}
-      {!isStart && !showStartTimer && !isFinished && <div style={styles(theme, show).controls}>
-      
-      <IoArrowBackCircle onClick={() => {setShow(false);setIsFinished(false);}} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
-      <IoPlayCircle onClick={() => setShowStartTimer(true)} style={{fontSize:'60px',color:Colors.get('play', theme)}} /> 
-      <IoReloadCircle onClick={handleReload} style={{fontSize:'60px',color:Colors.get('reload', theme)}}/>
-      </div>}
+                                <div style={styles(theme).card}>
+                                    <p style={styles(theme).description}>{quickMathCategories[difficulty].description[langIndex]}</p>
+                                    
+                                    <div style={styles(theme).statsGrid}>
+                                        <StatItem theme={theme} label={langIndex === 0 ? 'Сложность' : 'Difficulty'} value={quickMathCategories[difficulty].difficulty[langIndex]} />
+                                        <StatItem theme={theme} label={langIndex === 0 ? 'Время' : 'Time limit'} value={`${quickMathCategories[difficulty].timeLimitSec}s`} />
+                                        <StatItem theme={theme} label={langIndex === 0 ? 'Операции' : 'Operations'} value={quickMathCategories[difficulty].operations} fullWidth />
+                                    </div>
 
-      {!isFinished && showStartTimer && <div  style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around',width:'90%',height:'80%'}}>
-      <div style={{ fontSize: '10rem',marginTop: '180px',color:Colors.get('icons', theme), fontWeight: 'bold', lineHeight: 1}}>
-        {seconds}
-      </div>
-        <div style={{ fontSize: '2rem',marginBottom: '80px', textAlign: 'center'}}>
-        <div style={{color:Colors.get('icons', theme),marginBottom: '80px'}}>{langIndex === 0 ? 'Приготовьтесь!':'Get ready!'}</div>
-      </div>
-    </div>}
-    {!isFinished && isStart && <div style={styles(theme).playContainer}>
-      <div style={{display:'flex',flexDirection:'row' , width:'86%',borderBottom:`1px solid ${Colors.get('border', theme)}`}}>
-      <div style={{display:'flex',flexDirection:'row',marginTop:'6px',width:'60%',gap:'20px',marginRight:'auto'}}>
-      <IoArrowBackCircle onClick={() => onFinishSession()} style={{fontSize:'25px',color:Colors.get('close', theme)}}/>
-      </div>
-      <div style={{display:'flex',marginLeft:'auto',alignItems:'center',justifyContent:'center',fontSize:'20px',fontWeight:'bold',color:Colors.get('subText', theme)}}>
-        <FaStopwatch/>
-        {getParsedTime(time)}
-      </div>
-     </div>
-      <div style={{display:'flex',width:'86%',flexDirection:'row',marginTop:'20px',alignItems:'center',justifyContent:'space-between'}}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:'20px',fontWeight:'bold',color:Colors.get('minValColor', theme)}}>
-        <FaFire/>
-        {streakLength}
-      </div>  
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:'20px',fontWeight:'bold',color:Colors.get('difficulty', theme)}}>
-        {difficulty > 3 ? stage :stage + '/ 20'}
-      </div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:'20px',fontWeight:'bold',color:Colors.get('maxValColor', theme)}}>
-        <FaStar/>
-        {scores}
-      </div>
-      </div>
-      
-      <div style={{ width: '86%', height: '18px', position: 'relative',marginTop:'66px' }}>
-      <svg width="100%" height="18" viewBox="0 0 100 18" preserveAspectRatio="none" style={{ display: 'block' }}>
-      {/* Background track */}
-      <rect x="0" y="0" width="100" height="18" fill={Colors.get('bottomPanel', theme)}/>
-      {/* Progress fill */}
-      <rect x="0" y="0" width={progress} height="18"  fill={interpolateColor(Colors.get('done', theme), Colors.get('skipped', theme),(progress / 100))} /></svg>
-        <div style={{position:'relative',top:'-20px',color:Colors.get('subText', theme),marginBottom: '80px'}}>{Math.floor(((maxTimer - addValue) - currTimer)/1000 )}</div>
-      </div>
+                                    <p style={styles(theme).disclaimer}>{disclaimer(langIndex)}</p>
+                                </div>
 
-      <div>
-       {!delayTimer && <div style={problemCardStyle(theme,false)}>{problem}</div>}
-       {delayTimer && <div style={problemCardStyle(theme,true,statusColor)}>
-        <p style={{fontSize:'22px',fontWeight:'bold',color:addScores > 0 ? Colors.get('maxValColor', theme) : Colors.get('minValColor', theme)}}>{addScores > 0  && <FaStar/>}{addScores > 0 ? addScores : (langIndex === 0 ? 'не верно' : 'wrong answer')}</p>
-        <p style={{fontSize:'16px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{message}</p>
-        </div>}
-      </div>
-     
-      <div style={{fontSize:'34px',fontWeight:'bold',color:Colors.get('subText', theme),marginTop:'auto'}}>{handledInput}</div>
-    </div>}
-    {!isFinished && isStart && <MentalInput setInput={setInput} type={type}/>}
+                                <div style={styles(theme).playButtonContainer}>
+                                    <motion.button 
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => setShowStartTimer(true)} 
+                                        style={styles(theme).playButton}
+                                    >
+                                        <FaPlay style={{ marginRight: 10 }} /> {langIndex === 0 ? 'Начать' : 'Start'}
+                                    </motion.button>
+                                </div>
+                            </motion.div>
+                        )}
 
-    {isFinished &&  <div style={{display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',width:'100%',height:'80%'}}>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'28px',fontWeight:'bold',color:Colors.get('maxValColor', theme)}}><FaStar/>{scores}</div>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'18px',fontWeight:'bold',color:Colors.get('medium', theme)}}>{getTimeInfo(langIndex,time)}</div>
-      {scores > record && <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'28px',fontWeight:'bold',color:Colors.get('medium', theme)}}><FaMedal/>{langIndex === 0 ? 'Новый рекорд!' : 'New record!'}</div>}
-      {scores <= record && <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'28px',fontWeight:'bold',color:Colors.get('subText', theme)}}>{langIndex === 0 ? 'рекорд: ' + record : 'record: ' + record }</div>}
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'22px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{difficulty < 4 ? rightAnswers + ' / ' + 20 : rightAnswers}</div>
-      <div style={{display:'flex',alignItems:'center',marginTop:'20px',justifyContent:'center',fontSize:'18px',fontWeight:'bold',color:Colors.get('mainText', theme)}}>{message}</div>
-    </div>}
-    {isFinished &&  <div style={styles(theme, show).controls}>
-      <IoArrowBackCircle onClick={() => {setShow(false);setIsFinished(false);}} style={{fontSize:'60px',color:Colors.get('close', theme)}}/>
-      </div>}
-    </div>
-  );
+                        {/* 2. COUNTDOWN SCREEN */}
+                        {!isFinished && showStartTimer && (
+                            <motion.div key="countdown" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).centeredFull}>
+                                <motion.div 
+                                    key={seconds}
+                                    initial={{ scale: 0.5, opacity: 0 }}
+                                    animate={{ scale: 1.5, opacity: 1 }}
+                                    exit={{ scale: 2, opacity: 0 }}
+                                    style={{ fontSize: '8rem', fontWeight: 'bold', color: Colors.get('icons', theme) }}
+                                >
+                                    {seconds}
+                                </motion.div>
+                                <p style={{ color: Colors.get('subText', theme), marginTop: 20, fontSize: '1.5rem' }}>
+                                    {langIndex === 0 ? 'Приготовьтесь!' : 'Get ready!'}
+                                </p>
+                            </motion.div>
+                        )}
+
+                        {/* 3. GAME SCREEN */}
+                        {!isFinished && isStart && (
+                            <motion.div key="game-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).gameContainer}>
+                                {/* Top Bar */}
+                                <div style={styles(theme).gameHeader}>
+                                    <IoArrowBackCircle onClick={() => onFinishSession()} style={styles(theme).iconButtonSmall} />
+                                    
+                                    <div style={styles(theme).gameStat}>
+                                        <FaStopwatch style={{ marginRight: 6 }} /> {getParsedTime(time)}
+                                    </div>
+                                    <div style={{...styles(theme).gameStat, color: Colors.get('maxValColor', theme)}}>
+                                        <FaStar style={{ marginRight: 6 }} /> {scores}
+                                    </div>
+                                </div>
+
+                                {/* Stats Bar */}
+                                <div style={styles(theme).subStatsBar}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: Colors.get('minValColor', theme) }}>
+                                        <FaFire /> {streakLength}
+                                    </div>
+                                    <div style={{ color: Colors.get('difficulty', theme), fontWeight: 'bold' }}>
+                                        {difficulty > 3 ? `${langIndex === 0 ? 'Этап' : 'Stage'} ${stage}` : `${stage} / 20`}
+                                    </div>
+                                </div>
+
+                                {/* Progress Bar */}
+                                <div style={styles(theme).progressBarContainer}>
+                                    <motion.div 
+                                        style={{ 
+                                            height: '100%', 
+                                            backgroundColor: interpolateColor(Colors.get('done', theme), Colors.get('skipped', theme), (progress / 100)),
+                                            borderRadius: '10px'
+                                        }}
+                                        animate={{ width: `${progress}%` }}
+                                        transition={{ type: "tween", ease: "linear", duration: 0.1 }} // Smooth but responsive
+                                    />
+                                    <div style={styles(theme).timerText}>{Math.floor(((maxTimer - addValue) - currTimer) / 1000)}s</div>
+                                </div>
+
+                                {/* Problem Card */}
+                                <motion.div 
+                                    style={{
+                                        ...styles(theme).problemCard,
+                                        backgroundColor: delayTimer ? (statusColor || Colors.get('simplePanel', theme)) : Colors.get('simplePanel', theme),
+                                        borderColor: delayTimer ? statusColor : 'transparent'
+                                    }}
+                                    animate={delayTimer ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+                                >
+                                    {delayTimer ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                            <div style={{ fontSize: '28px', fontWeight: 'bold', color: addScores > 0 ? '#fff' : '#fff' }}>
+                                                {addScores > 0 ? `+${addScores}` : (langIndex === 0 ? 'Ошибка' : 'Wrong')}
+                                            </div>
+                                            <div style={{ fontSize: '16px', color: 'rgba(255,255,255,0.9)', marginTop: 5 }}>{message}</div>
+                                        </div>
+                                    ) : (
+                                        <div style={{ fontSize: '42px', fontWeight: 'bold', color: Colors.get('mainText', theme) }}>
+                                            {problem}
+                                        </div>
+                                    )}
+                                </motion.div>
+
+                                {/* Input Display */}
+                                <div style={styles(theme).inputDisplay}>
+                                    {handledInput || <span style={{ opacity: 0.3 }}>_</span>}
+                                </div>
+
+                                {/* Keypad Space */}
+                                <div style={{ flex: 1, width: '100%' }}>
+                                    <MentalInput setInput={setInput} type={type} />
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {/* 4. RESULT SCREEN */}
+                        {isFinished && (
+                            <motion.div key="result-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).contentWrapper}>
+                                <div style={styles(theme).header}>
+                                    <div />
+                                    <h2 style={styles(theme, fSize).title}>{langIndex === 0 ? 'Результат' : 'Result'}</h2>
+                                    <div />
+                                </div>
+
+                                <div style={{ ...styles(theme).card, alignItems: 'center', gap: 20, paddingTop: 30 }}>
+                                    <FaStar size={60} color={Colors.get('maxValColor', theme)} />
+                                    <div style={{ fontSize: '48px', fontWeight: 'bold', color: Colors.get('mainText', theme) }}>{scores}</div>
+                                    
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                        <ResultRow theme={theme} label={langIndex === 0 ? 'Время' : 'Time'} value={getParsedTime(time)} />
+                                        <ResultRow theme={theme} label={langIndex === 0 ? 'Правильно' : 'Correct'} value={difficulty < 4 ? `${rightAnswers} / 20` : rightAnswers} />
+                                        
+                                        {scores > record ? (
+                                            <div style={styles(theme).recordBox}>
+                                                <FaMedal color="#FFD700" /> {langIndex === 0 ? 'Новый рекорд!' : 'New Record!'}
+                                            </div>
+                                        ) : (
+                                            <ResultRow theme={theme} label={langIndex === 0 ? 'Лучший' : 'Best'} value={record} />
+                                        )}
+                                    </div>
+
+                                    <p style={{ textAlign: 'center', fontSize: '14px', color: Colors.get('subText', theme), marginTop: 10 }}>{message}</p>
+                                </div>
+
+                                <div style={styles(theme).controlsRow}>
+                                    <motion.button whileTap={{ scale: 0.9 }} onClick={handleReload} style={styles(theme).secondaryButton}>
+                                        <FaRedo size={20} />
+                                    </motion.button>
+                                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setShow(false); setIsFinished(false); }} style={styles(theme).primaryButton}>
+                                        {langIndex === 0 ? 'Завершить' : 'Finish'}
+                                    </motion.button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                    </AnimatePresence>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
 };
-export default MentalGamePanel
-const problemCardStyle = (theme,isAnswer,color) =>
-(
-   {
-     display:'flex',
-     flexDirection:'column',
-     alignItems:'center',
-     justifyContent:'center',
-     width: "95vw",
-     height: "16vh",
-     marginTop:'20px',
-     backgroundColor:Colors.get('bottomPanel', theme),
-     boxShadow : isAnswer ? '0px 0px 9px 9px' +  color : '2px 2px' +  Colors.get('shadow', theme),
-     borderRadius:'24px',
-     fontSize:'39px',
-     fontWeight:'bold',
-     color:Colors.get('mainText', theme),
-     alignContent:'center'
-  }
-)
-const styles = (theme,show) =>
-({
-    container :
-   {
-     backgroundColor:Colors.get('background', theme),
-     display: "flex",
-     position:'fixed',
-     flexDirection: "column",
-     alignItems: "center",
-     height: "86vh",
-     transform: show ? 'translateY(0)' : 'translateY(100%)',
-     bottom: '0',
-     transition: "transform 0.2s ease-in-out",
-     width: "100vw",
-     fontFamily: "Segoe UI",
-     borderTop:`2px solid ${Colors.get('border', theme)}`,
-     borderTopLeftRadius:'12px',
-     borderTopRightRadius:'12px',
-     zIndex:2000
-  },
-  controls: {
-    display: 'flex',
-    marginTop: '30px',
-    gap: '50px',
-  },
-  playContainer :
-   {
-     display: "flex",
-     flexDirection: "column",
-     alignItems: "center",
-     justifyContent:'flex-start',
-     height: "50vh",
-     bottom: '0',
-     width: "100vw",
-     
-  },
-})
+
+export default MentalGamePanelMath;
+
+const StatItem = ({ theme, label, value, fullWidth }) => (
+    <div style={{ 
+        backgroundColor: Colors.get('background', theme), 
+        padding: '10px', 
+        borderRadius: '12px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center',
+        gridColumn: fullWidth ? 'span 2' : 'auto'
+    }}>
+        <span style={{ fontSize: '12px', color: Colors.get('subText', theme) }}>{label}</span>
+        <span style={{ fontSize: '16px', fontWeight: 'bold', color: Colors.get('mainText', theme) }}>{value}</span>
+    </div>
+);
+
+const ResultRow = ({ theme, label, value }) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', padding: '5px 0', borderBottom: `1px solid ${Colors.get('border', theme)}30` }}>
+        <span style={{ color: Colors.get('subText', theme) }}>{label}</span>
+        <span style={{ color: Colors.get('mainText', theme), fontWeight: 'bold' }}>{value}</span>
+    </div>
+);
+
+// === STYLES ===
+
+const styles = (theme, fSize = 14) => ({
+    container: {
+        backgroundColor: Colors.get('background', theme),
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        height: '100vh',
+        width: '100vw',
+        zIndex: 2000,
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: 'Segoe UI',
+    },
+    contentWrapper: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '20px',
+        width: '100%',
+        boxSizing: 'border-box'
+    },
+    centeredFull: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%'
+    },
+    header: {
+        width: '90%',
+        marginTop:'65px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '20px'
+    },
+    title: {
+        fontSize: '20px',
+        fontWeight: 'bold',
+        color: Colors.get('mainText', theme),
+        margin: 0
+    },
+    card: {
+        width: '100%',
+        maxWidth: '400px',
+        backgroundColor: Colors.get('simplePanel', theme) + '80', // Glass
+        backdropFilter: 'blur(10px)',
+        borderRadius: '24px',
+        padding: '20px',
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        border: `1px solid ${Colors.get('border', theme)}40`
+    },
+    description: {
+        fontSize: '15px',
+        color: Colors.get('subText', theme),
+        textAlign: 'center',
+        marginBottom: '20px',
+        lineHeight: 1.4
+    },
+    statsGrid: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '10px',
+        width: '100%',
+        marginBottom: '20px'
+    },
+    disclaimer: {
+        fontSize: '12px',
+        color: Colors.get('subText', theme),
+        textAlign: 'center',
+        opacity: 0.7
+    },
+    iconButton: {
+        fontSize: '32px',
+        color: Colors.get('skipped', theme),
+        cursor: 'pointer'
+    },
+    iconButtonSmall: {
+        fontSize: '28px',
+        color: Colors.get('subText', theme),
+        cursor: 'pointer'
+    },
+    playButtonContainer: {
+        marginTop: 'auto',
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        paddingBottom: '40px'
+    },
+    playButton: {
+        backgroundColor: Colors.get('barsColorMeasures', theme),
+        color: '#fff',
+        border: 'none',
+        borderRadius: '16px',
+        padding: '16px 40px',
+        fontSize: '18px',
+        fontWeight: 'bold',
+        display: 'flex',
+        alignItems: 'center',
+        cursor: 'pointer',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+    },
+    // Game Screen Styles
+    gameContainer: {
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: '100%'
+    },
+    gameHeader: {
+        width: '90%',
+        display: 'flex',
+        marginTop:'55px',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '15px 0'
+    },
+    gameStat: {
+        display: 'flex',
+        alignItems: 'center',
+        fontSize: '18px',
+        fontWeight: 'bold',
+        color: Colors.get('mainText', theme)
+    },
+    subStatsBar: {
+        width: '90%',
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginBottom: '15px'
+    },
+    progressBarContainer: {
+        width: '90%',
+        height: '10px',
+        marginTop:'50px',
+        backgroundColor: Colors.get('bottomPanel', theme),
+        borderRadius: '10px',
+        position: 'relative',
+        marginBottom: '30px'
+    },
+    timerText: {
+        position: 'absolute',
+        right: 0,
+        top: '-25px',
+        fontSize: '14px',
+        color: Colors.get('subText', theme)
+    },
+    problemCard: {
+        width: '90%',
+        height: '140px',
+        borderRadius: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+        marginBottom: '20px',
+        marginTop: '50px',
+        border: '2px solid transparent'
+    },
+    inputDisplay: {
+        fontSize: '48px',
+        fontWeight: 'bold',
+        color: Colors.get('mainText', theme),
+        height: '60px',
+        marginBottom: '20px',
+        fontFamily: 'monospace',
+        letterSpacing: '2px'
+    },
+    // Result Screen Styles
+    recordBox: {
+        backgroundColor: 'rgba(255, 215, 0, 0.15)',
+        color: '#FFD700',
+        padding: '10px',
+        borderRadius: '12px',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        fontWeight: 'bold',
+        fontSize: '14px'
+    },
+    controlsRow: {
+        display: 'flex',
+        gap: '20px',
+        marginTop: 'auto',
+        marginBottom: '40px'
+    },
+    primaryButton: {
+        backgroundColor: Colors.get('difficulty5', theme),
+        color: Colors.get('mainText', theme),
+        border: 'none',
+        borderRadius: '16px',
+        padding: '14px 30px',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        cursor: 'pointer'
+    },
+    secondaryButton: {
+        backgroundColor: Colors.get('background', theme),
+        color: Colors.get('subText', theme),
+        border: `1px solid ${Colors.get('border', theme)}`,
+        borderRadius: '16px',
+        padding: '14px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer'
+    }
+});
 
 const disclaimer = (langIndex) => {
   // 0 = ru, 1 = en

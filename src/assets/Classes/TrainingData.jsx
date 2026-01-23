@@ -39,149 +39,129 @@ export const muscleIconComponents = [
   [Full_0f, Full_1f, Full_2f, Full_3f, Full_4f, Full_5f, Full_6f, Full_7f, Full_8f, Full_9f, Full_10f, Full_11f, Full_12f]
 ];
 
-const muscleIconsSrc = [
-    {
-      0: 'images/BodyIcons/Full_0.png',
-      1: 'images/BodyIcons/Full_1.png',
-      2: 'images/BodyIcons/Full_2.png',
-      3: 'images/BodyIcons/Full_3.png',
-      4: 'images/BodyIcons/Full_4.png',
-      5: 'images/BodyIcons/Full_5.png',
-      6: 'images/BodyIcons/Full_6.png',
-      7: 'images/BodyIcons/Full_7.png',
-      8: 'images/BodyIcons/Full_8.png',
-      9: 'images/BodyIcons/Full_9.png',
-      10: 'images/BodyIcons/Full_10.png',
-      11: 'images/BodyIcons/Full_11.png',
-      12: 'images/BodyIcons/Full_12.png',
-    },
-    {
-      0: 'images/BodyIcons/Full_0f.png',
-      1: 'images/BodyIcons/Full_1f.png',
-      2: 'images/BodyIcons/Full_2f.png',
-      3: 'images/BodyIcons/Full_3f.png',
-      4: 'images/BodyIcons/Full_4f.png',
-      5: 'images/BodyIcons/Full_5f.png',
-      6: 'images/BodyIcons/Full_6f.png',
-      7: 'images/BodyIcons/Full_7f.png',
-      8: 'images/BodyIcons/Full_8f.png',
-      9: 'images/BodyIcons/Full_9f.png',
-      10: 'images/BodyIcons/Full_10f.png',
-      11: 'images/BodyIcons/Full_11f.png',
-      12: 'images/BodyIcons/Full_12f.png',
-    }
-  ];
-
-
-export class MuscleIcon{
+export class MuscleIcon {
     static muscleIconsSrc = [{
-        0:'images/BodyIcons/0.png',
-        1:'images/BodyIcons/1.png',
-        2:'images/BodyIcons/2.png',
-        3:'images/BodyIcons/3.png',
-        4:'images/BodyIcons/4.png',
-        5:'images/BodyIcons/5.png',
-        6:'images/BodyIcons/6.png',
-        7:'images/BodyIcons/7.png',
-        8:'images/BodyIcons/8.png',
-        9:'images/BodyIcons/9.png',
-        10:'images/BodyIcons/10.png',
-        11:'images/BodyIcons/11.png',
-        12:'images/BodyIcons/12.png',
-        13:'images/BodyIcons/13.png',
-        14:'images/BodyIcons/14.png'
+        0: 'images/BodyIcons/0.png',
+        1: 'images/BodyIcons/1.png',
+        2: 'images/BodyIcons/2.png',
+        3: 'images/BodyIcons/3.png',
+        4: 'images/BodyIcons/4.png',
+        5: 'images/BodyIcons/5.png',
+        6: 'images/BodyIcons/6.png',
+        7: 'images/BodyIcons/7.png',
+        8: 'images/BodyIcons/8.png',
+        9: 'images/BodyIcons/9.png',
+        10: 'images/BodyIcons/10.png',
+        11: 'images/BodyIcons/11.png',
+        12: 'images/BodyIcons/12.png',
+        13: 'images/BodyIcons/13.png',
+        14: 'images/BodyIcons/14.png'
     },
-  {
-    0:'images/BodyIcons/0f.png',
-        1:'images/BodyIcons/1f.png',
-        2:'images/BodyIcons/2f.png',
-        3:'images/BodyIcons/3f.png',
-        4:'images/BodyIcons/4f.png',
-        5:'images/BodyIcons/5f.png',
-        6:'images/BodyIcons/6f.png',
-        7:'images/BodyIcons/7f.png',
-        8:'images/BodyIcons/8f.png',
-        9:'images/BodyIcons/9f.png',
-        10:'images/BodyIcons/10f.png',
-        11:'images/BodyIcons/11f.png',
-        12:'images/BodyIcons/12f.png',
-        13:'images/BodyIcons/13f.png',
-        14:'images/BodyIcons/14.png'
-  }]
-    static names = [
-    [
-        'Грудь',
-        'Плечи',
-        'Широчайшие',
-        'Бицепс',
-        'Трицепс',
-        'Трапеции',
-        'Нижняя спина',
-        'Пресс',
-        'Предплечья',
-        'Квадрицепс',
-        'Бицепс бедра',
-        'Ягодицы',
-        'Икры',
-        'Шея',
-        'Кардио'
-    ],
-    [
-        'Chest',
-        'Shoulders',
-        'Lats',
-        'Biceps',
-        'Triceps',
-        'Traps',
-        'LowerBack',
-        'Abs',
-        'Forearms',
-        'Quads',
-        'Hamstrings',
-        'Glutes',
-        'Calves',
-        'Neck',
-        'Cardio'
-    ]
-];
-   static get(mgId, lang, theme, needAmount = true,_width='80%') {
-  let amount = 0;
-  if (needAmount) {
-    amount = Object.values(AppData.exercises).filter(ex => ex.mgId === mgId).length;
-  }
+    {
+        0: 'images/BodyIcons/0f.png',
+        1: 'images/BodyIcons/1f.png',
+        2: 'images/BodyIcons/2f.png',
+        3: 'images/BodyIcons/3f.png',
+        4: 'images/BodyIcons/4f.png',
+        5: 'images/BodyIcons/5f.png',
+        6: 'images/BodyIcons/6f.png',
+        7: 'images/BodyIcons/7f.png',
+        8: 'images/BodyIcons/8f.png',
+        9: 'images/BodyIcons/9f.png',
+        10: 'images/BodyIcons/10f.png',
+        11: 'images/BodyIcons/11f.png',
+        12: 'images/BodyIcons/12f.png',
+        13: 'images/BodyIcons/13f.png',
+        14: 'images/BodyIcons/14.png'
+    }]
 
-  return (
-    <div style={{ display:'flex', width:_width, marginLeft:'5%', flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}>
-      <p style={{ color: Colors.get('mainText', theme), fontSize:'13px' }}>
-        {this.names[lang][mgId]} {/* ✅ clear */}
-      </p>
-      <div style={{ display:'flex', flexDirection:'row', alignItems:'center', justifyContent:'center' }}>
-        {needAmount && (
-          <p style={{ color: Colors.get('subText', theme), fontSize:'12px', marginRight:'5px' }}>
-            {amount} {lang === 0 ? 'упр' : 'ex'}
-          </p>
-        )}
-        <div style={{ width: '45px', height: '45px', border: `2px solid ${Colors.get('border', theme)}`, borderRadius:'50%', overflow:'hidden' }}>
-          <img 
-            src={this.muscleIconsSrc[AppData.pData.gender][mgId]} 
-            style={{ width: '45px', height: '45px' }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-  static getForList(mgId, lang, theme) {
-  return (
-    <div style={{ width: '50px', height: '50px', fontSize:'12px', color: Colors.get('subText', theme) }}>
-      <img 
-        src={this.muscleIconsSrc[AppData.pData.gender][mgId]} 
-        style={{ width: '50px' }}
-      />
-      {this.names[lang][mgId]}
-    </div>
-  );
-}
+    static names = [
+        ['Грудь', 'Плечи', 'Широчайшие', 'Бицепс', 'Трицепс', 'Трапеции', 'Нижняя спина', 'Пресс', 'Предплечья', 'Квадрицепс', 'Бицепс бедра', 'Ягодицы', 'Икры', 'Шея', 'Кардио'],
+        ['Chest', 'Shoulders', 'Lats', 'Biceps', 'Triceps', 'Traps', 'LowerBack', 'Abs', 'Forearms', 'Quads', 'Hamstrings', 'Glutes', 'Calves', 'Neck', 'Cardio']
+    ];
+
+    static get(mgId, lang, theme, needAmount = true, _width = '85%') {
+        let amount = 0;
+        if (needAmount) {
+            amount = Object.values(AppData.exercises).filter(ex => ex.mgId === mgId).length;
+        }
+
+        const isDark = theme !== 'light';
+        const cardBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+        const iconContainerBg = isDark ? 'rgba(255,255,255,0.1)' : '#ffffff';
+
+        return (
+            <div style={{
+                display: 'flex',
+                width: _width,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 10px'
+            }}>
+                <p style={{
+                    color: Colors.get('mainText', theme),
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    margin: 0,
+                    letterSpacing: '0.3px'
+                }}>
+                    {this.names[lang][mgId]}
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
+                    {needAmount && (
+                        <div style={{
+                            backgroundColor: cardBg,
+                            padding: '4px 8px',
+                            borderRadius: '8px',
+                            marginRight: '12px'
+                        }}>
+                            <p style={{ color: Colors.get('subText', theme), fontSize: '11px', fontWeight: 'bold', margin: 0 }}>
+                                {amount} {lang === 0 ? 'упр' : 'ex'}
+                            </p>
+                        </div>
+                    )}
+                    <div style={{
+                        width: '40px', height: '40px',
+                        backgroundColor: iconContainerBg,marginRight:'20px',
+                        borderRadius: '12px', // Modern Squircle
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: isDark ? 'none' : '0 2px 4px rgba(0,0,0,0.05)'
+                    }}>
+                        <img
+                            src={this.muscleIconsSrc[AppData.pData.gender][mgId]}
+                            style={{ width: '42px', height: '42px', objectFit: 'contain' }}
+                            alt=""
+                        />
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    static getForList(mgId, lang, theme) {
+        return (
+            <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px'
+            }}>
+                <div style={{
+                    width: '50px', height: '50px',
+                    backgroundColor: theme !== 'light' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                    borderRadius: '16px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <img
+                        src={this.muscleIconsSrc[AppData.pData.gender][mgId]}
+                        style={{ width: '40px', objectFit: 'contain' }}
+                        alt=""
+                    />
+                </div>
+                <span style={{ fontSize: '11px', color: Colors.get('subText', theme), fontWeight: '500' }}>
+                    {this.names[lang][mgId]}
+                </span>
+            </div>
+        );
+    }
 }
 
 export const MuscleView = ({ programmId, theme, langIndex, programs }) => {

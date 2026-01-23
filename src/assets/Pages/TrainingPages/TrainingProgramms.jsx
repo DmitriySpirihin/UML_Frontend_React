@@ -1,694 +1,591 @@
-import {useState,useEffect} from 'react'
+import React, { useState, useEffect } from 'react'
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
-import { theme$ ,lang$,fontSize$,addPanel$,setAddPanel} from '../../StaticClasses/HabitsBus.js'
-import {IoIosArrowDown,IoIosArrowUp} from 'react-icons/io'
-import {switchPosition,addDayToProgram,redactDayInProgram,removeDayFromProgram,MuscleView,addProgram,redactProgram,removeProgram,
-  addExerciseToSchedule,removeExerciseFromSchedule
+import { theme$, lang$, fontSize$, addPanel$ } from '../../StaticClasses/HabitsBus.js'
+import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io'
+import {
+    addDayToProgram, removeDayFromProgram, MuscleView, addProgram, redactProgram, removeProgram,
+    addExerciseToSchedule, removeExerciseFromSchedule, MuscleIcon
 } from '../../Classes/TrainingData.jsx'
-import {FaCalendarDay,FaPlusSquare,FaTrash,FaPencilAlt, FaPlusCircle} from 'react-icons/fa';
-import {TbArrowMoveDownFilled,TbArrowMoveUpFilled} from 'react-icons/tb'
-import {MdBook} from 'react-icons/md'
-import {MdDone,MdClose,MdFitnessCenter} from 'react-icons/md'
+import { FaCalendarDay, FaPlusSquare, FaTrash, FaPencilAlt, FaPlus, FaDumbbell } from 'react-icons/fa';
+import { MdBook, MdDone, MdClose } from 'react-icons/md'
 import MyInput from '../../Helpers/MyInput';
 import TrainingExercise from './TrainingExercise.jsx'
 
 const TrainingProgramm = () => {
+    // --- STATE ---
     const [programs, setPrograms] = useState(AppData.programs);
-    const updatePrograms = () => {
-      setPrograms(AppData.programs); // shallow copy to trigger re-render
-    };
-    // states
+    const updatePrograms = () => { setPrograms({ ...AppData.programs }); };
+
     const [theme, setthemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setFSize] = useState(AppData.prefs[1]);
-    // base
+
     const [showAddPanel, setShowAddPanel] = useState(false);
-    const [needRedact,setNeedRedact] = useState(false);
+    const [needRedact, setNeedRedact] = useState(false);
     const [currentId, setCurrentId] = useState(-1);
     const [currentDay, setCurrentDay] = useState(-1);
-    //new programm
+
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    
+    // Strategy State
     const [currentSet, setCurrentSet] = useState(3);
     const [currentRepMin, setCurrentRepMin] = useState(4);
     const [currentRepMax, setCurrentRepMax] = useState(6);
-    const [strategy, setStrategy] = useState(0);
+    const [strategy, setStrategy] = useState(0); // 0: Reps, 1: Time
     const [currentExId, setCurrentExId] = useState(0);
+    
+    // Day State
     const [dayIndex, setDayIndex] = useState(1);
     const [dayName, setDayName] = useState(langIndex === 0 ? 'День 1' : 'Day 1');
-    //const [dayExercises,setDayExercises] = useState({
-    //  1: [ { exId: 0, sets: '3x10-12' },{ exId: 5, sets: '3x10-12' },{ exId: 22, sets: '3x10-12' },],
-    //});
 
+    // Modals
     const [showAddDayPanel, setShowAddDayPanel] = useState(false);
     const [showExercisesList, setShowExercisesList] = useState(false);
     const [showConfirmRemove, setShowConfirmRemove] = useState(false);
     const [showStarategyPanel, setShowStarategyPanel] = useState(false);
     const [confirmMessage, setConfirmMessage] = useState('');
-    // current type to remove and redact
-    const [currentType,setCurrentType] = useState(0);
+    const [currentType, setCurrentType] = useState(0);
 
-    // subscriptions
+    // --- SUBSCRIPTIONS ---
     useEffect(() => {
-        if(currentRepMin > currentRepMax - 2)setCurrentRepMax(prev => prev + 1);
-    }, [currentRepMin]);
+        if (currentRepMin > currentRepMax - 2) setCurrentRepMax(currentRepMin + 2);
+    }, [currentRepMin, currentRepMax]);
+
     useEffect(() => {
-        const subscriptionTheme = theme$.subscribe(setthemeState);
-        const subscriptionLang = lang$.subscribe((lang) => {
-            setLangIndex(lang === 'ru' ? 0 : 1);
-        });
-        return () => {
-          subscriptionLang.unsubscribe();
-          subscriptionTheme.unsubscribe();
-        }
-    }, []);  
-    useEffect(() => {
-        const subscriptionAddPanel = addPanel$.subscribe(value => setShowAddPanel(value === 'AddProgrammPanel'));
-        const subscriptionFontSize = fontSize$.subscribe(setFSize);
-        return () => {
-          subscriptionAddPanel.unsubscribe();
-          subscriptionFontSize.unsubscribe();
-        };
+        const s1 = theme$.subscribe(setthemeState);
+        const s2 = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
+        const s3 = addPanel$.subscribe(v => setShowAddPanel(v === 'AddProgrammPanel'));
+        const s4 = fontSize$.subscribe(setFSize);
+        return () => { s1.unsubscribe(); s2.unsubscribe(); s3.unsubscribe(); s4.unsubscribe(); }
     }, []);
+
     useEffect(() => {
-    if (currentId === -1) return;
-    const program = programs[currentId];
-    const daysCount = program.schedule.length;
-    setDayIndex(daysCount);
-    setDayName(langIndex === 0  ? `День ${daysCount + 1}`  : `Day ${daysCount + 1}`);
-    }, [currentId, langIndex]);
-    function onClose(){
-      updatePrograms();
-      setNeedRedact(false);
-      setShowAddDayPanel(false);
-      setShowConfirmRemove(false);
-      setAddPanel('');
+        if (currentId === -1) return;
+        const program = programs[currentId];
+        if (!program) return;
+        const daysCount = program.schedule.length;
+        setDayIndex(daysCount);
+        setDayName(langIndex === 0 ? `День ${daysCount + 1}` : `Day ${daysCount + 1}`);
+    }, [currentId, langIndex, programs]);
+
+    // --- ACTIONS ---
+    const onClose = () => {
+        updatePrograms();
+        setNeedRedact(false);
+        setShowAddDayPanel(false);
+        setShowConfirmRemove(false);
+        // setAddPanel(''); // Only needed if controlling global bus, local state handled by showAddPanel
+    };
+
+    const onAddProgram = () => {
+        addProgram(capitalizeName(name), capitalizeName(description));
+        setName(''); setDescription(''); onClose(); setShowAddPanel(false);
+    };
+
+    const redact = () => {
+         redactProgram(currentId, capitalizeName(name), capitalizeName(description)); // Assuming redactProgram exists and takes these args
+         setName(''); setDescription(''); onClose(); setShowAddPanel(false);
     }
-    function onAddProgram(){
-      addProgram(capitalizeName(name),capitalizeName(description));
-      setName('');
-      setDescription('');
-      onClose();
-    }
-    function onAddTrainingDay(){
-      addDayToProgram(currentId,capitalizeName(dayName));
-      setDayIndex(prev => prev + 1);
-      setDayName(langIndex === 0 ? 'День ' + (dayIndex + 2): 'Day ' + (dayIndex + 2));
-      onClose();
-    }
-    function onAddExercise(){
-      let currentStrategy = langIndex === 0 ? 'время' : 'time' ;
-      if(strategy === 0)currentStrategy = currentSet + 'x' + currentRepMin + '-' + currentRepMax;
-      addExerciseToSchedule(currentId,currentDay,currentExId,currentStrategy);
-      setShowStarategyPanel(false);
-      updatePrograms();
-    }
-    function onRemove(type){
-      setCurrentType(type);
-      let message = '';
-      switch (type) {
-        case 0:
-          const rawName = programs[currentId].name;
-          const name = Array.isArray(rawName) ? rawName[langIndex] : rawName;
-          message = langIndex === 0 ? 'Вы уверены, что хотите удалить программу : ' + name + ' ?': 'Are you sure you want to delete the program : ' + name + ' ?';
-        break;
-        case 1:
-          const program = programs[currentId];
-          const dayName = program?.schedule[currentDay]?.name;
-          message = langIndex === 0 ? 'Вы уверены, что хотите удалить тренировочный день : ' + dayName[langIndex] + ' ?' : 'Are you sure you want to delete the training day : ' + dayName[langIndex] + ' ?';
-        break;
-        case 2:
-          const exId = programs[currentId].schedule[currentDay]?.exercises[currentExId]?.exId;
-          removeExerciseFromSchedule(currentId,currentDay,exId);
-          updatePrograms();
-        break;
-      }
-      setConfirmMessage(message);
-      setShowConfirmRemove(type < 2 ? true : false);
-    }
-    function remove(){
-       switch (currentType) {
-        case 0:removeProgram(currentId);setCurrentId(-1);break;
-        case 1:removeDayFromProgram(currentId,currentDay);setCurrentDay(prev => prev - 1);break;
-       }
-       
-       onClose();
-    }
-    function onRedact(type) {
-      setNeedRedact(true);
-      setCurrentType(type);
-      switch (type) {
-        case 0:
-          const isarr = Array.isArray(programs[currentId].name);
-          setName(isarr ? programs[currentId].name[langIndex] : programs[currentId].name);
-          setDescription(isarr ? programs[currentId].description[langIndex] : programs[currentId].description);
-          setShowAddPanel(true);
-        break;
-        case 1:
-          const rawName = programs[currentId].schedule[currentDay].name;
-          const nameOfDay = Array.isArray(rawName) ? rawName[langIndex] : rawName;
-          setDayName(nameOfDay);
-          setShowAddDayPanel(true);
-        break;
-      }
-    }
-    function redact(){
-       switch (currentType) {
-        case 0:redactProgram(currentId,name,description);break;
-        case 1:redactDayInProgram(currentId,currentDay,dayName);break;
-       }
-       onClose();
-    }
-    function switchPositions(type, switchType) {
-     switchPosition(currentId, type, switchType, currentDay, currentExId);
-      if (type === 0) {
-         let newDayIndex = currentDay;
-         if (switchType === 1) {
-          newDayIndex = currentDay - 1;
-        } else if (switchType === 0) {
-          newDayIndex = currentDay + 1;
+
+    const onAddTrainingDay = () => {
+        addDayToProgram(currentId, capitalizeName(dayName));
+        setDayIndex(prev => prev + 1);
+        onClose();
+    };
+
+    const onAddExercise = () => {
+        let currentStrategy = langIndex === 0 ? 'время' : 'time';
+        if (strategy === 0) currentStrategy = currentSet + 'x' + currentRepMin + '-' + currentRepMax;
+        addExerciseToSchedule(currentId, currentDay, currentExId, currentStrategy);
+        setShowStarategyPanel(false);
+        updatePrograms();
+    };
+
+    const onRemove = (type) => {
+        setCurrentType(type);
+        let msg = '';
+        if (type === 0) {
+            const n = programs[currentId].name;
+            msg = langIndex === 0 ? `Удалить программу "${Array.isArray(n) ? n[langIndex] : n}"?` : `Delete program "${Array.isArray(n) ? n[langIndex] : n}"?`;
+        } else if (type === 1) {
+            const dn = programs[currentId]?.schedule[currentDay]?.name;
+            msg = langIndex === 0 ? `Удалить день "${dn[langIndex]}"?` : `Delete day "${dn[langIndex]}"?`;
+        } else {
+            const exId = programs[currentId].schedule[currentDay]?.exercises[currentExId]?.exId;
+            removeExerciseFromSchedule(currentId, currentDay, exId);
+            updatePrograms();
+            return;
         }
-        if (newDayIndex >= 0) {
-         setCurrentDay(newDayIndex);
+        setConfirmMessage(msg);
+        setShowConfirmRemove(true);
+    };
+
+    const remove = () => {
+        if (currentType === 0) { removeProgram(currentId); setCurrentId(-1); }
+        else { removeDayFromProgram(currentId, currentDay); setCurrentDay(-1); }
+        onClose();
+    };
+
+    const onRedactClick = (type) => {
+        setNeedRedact(true);
+        setCurrentType(type);
+        if (type === 0) {
+            const p = programs[currentId];
+            setName(Array.isArray(p.name) ? p.name[langIndex] : p.name);
+            setDescription(Array.isArray(p.description) ? p.description[langIndex] : p.description);
+            setShowAddPanel(true);
+        } else {
+            const raw = programs[currentId].schedule[currentDay].name;
+            setDayName(Array.isArray(raw) ? raw[langIndex] : raw);
+            setShowAddDayPanel(true);
         }
-     }else{
-      let newExIndex = currentExId;
-      if (switchType === 1) {
-        newExIndex = currentExId - 1;
-      } else if (switchType === 0) {
-        newExIndex = currentExId + 1;
-      }
-      if (newExIndex >= 0) {
-        setCurrentExId(newExIndex);
-      }
-    }
-      updatePrograms();
-    }
-    function setCurrentExerciseId(id){
-       setCurrentExId(id);
-       setShowExercisesList(false);
-       setShowStarategyPanel(true);
-    }
-       // render    
-       return (
-  <div style={styles(theme).container}>
-    {Object.entries(programs)
-      .map(([idStr, program]) => ({
-        id: Number(idStr),
-        ...program
-      }))
-      .filter((program) => program.show) // показываем только видимые
-      .sort((a, b) => a.id - b.id)
-      .map((program) => (
-        <div key={program.id} style={styles(theme).panel}>
-          <div
-            style={styles(theme, currentId === program.id, false).groupPanel}
-            onClick={() => {
-              setCurrentId(prev => prev === program.id ? -1 : program.id);
-              setCurrentDay(-1);
-            }}
-          >
-            {currentId === program.id ? (
-              <IoIosArrowUp style={styles(theme).icon} />
-            ) : (
-              <IoIosArrowDown style={styles(theme).icon} />
+    };
+
+    // --- ANIMATION VARIANTS ---
+    const accordionVariants = {
+        collapsed: { height: 0, opacity: 0, overflow: 'hidden' },
+        expanded: { height: 'auto', opacity: 1, transition: { duration: 0.3, ease: 'easeInOut' } }
+    };
+
+    const modalVariants = {
+        hidden: { opacity: 0, y: 50, scale: 0.95 },
+        visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', damping: 25, stiffness: 300 } },
+        exit: { opacity: 0, y: 50, scale: 0.95 }
+    };
+
+    return (
+        <div style={styles(theme).container}>
+            <LayoutGroup>
+                <div style={{ width: '100%', maxWidth: '600px', paddingBottom: '80px' }}>
+                    {Object.entries(programs)
+                        .map(([idStr, program]) => ({ id: Number(idStr), ...program }))
+                        .filter(p => p.show)
+                        .sort((a, b) => a.id - b.id)
+                        .map((program) => {
+                            const isExpanded = currentId === program.id;
+                            
+                            return (
+                                <motion.div
+                                    key={program.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    style={{
+                                        ...styles(theme).card,
+                                        backgroundColor: isExpanded ? Colors.get('trainingGroupSelected', theme) : Colors.get('background', theme),
+                                        border: `1px solid ${isExpanded ? Colors.get('currentDateBorder', theme) : 'transparent'}`
+                                    }}
+                                >
+                                    {/* PROGRAM HEADER */}
+                                    <motion.div
+                                        onClick={() => {
+                                            setCurrentId(isExpanded ? -1 : program.id);
+                                            setCurrentDay(-1);
+                                        }}
+                                        style={styles(theme).groupHeader}
+                                        whileTap={{ scale: 0.98 }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '15px' }}>
+                                            <div style={styles(theme).iconBox}>
+                                                <MdBook size={20} color={isExpanded ? '#fff' : Colors.get('icons', theme)} />
+                                            </div>
+                                            <div>
+                                                <p style={styles(theme, false, false, fSize).text}>
+                                                    {Array.isArray(program.name) ? program.name[langIndex] : program.name}
+                                                </p>
+                                                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                                    <span style={styles(theme).badge}>
+                                                        {program.schedule.length} {langIndex === 0 ? 'дней' : 'days'}
+                                                    </span>
+                                                    {!isExpanded && <span style={{ ...styles(theme).badge, opacity: 0.6 }}>{program.creationDate}</span>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
+                                            <IoIosArrowDown style={styles(theme).icon} />
+                                        </motion.div>
+                                    </motion.div>
+
+                                    {/* PROGRAM DETAILS (ACCORDION) */}
+                                    <AnimatePresence>
+                                        {isExpanded && (
+                                            <motion.div
+                                                variants={accordionVariants}
+                                                initial="collapsed"
+                                                animate="expanded"
+                                                exit="collapsed"
+                                                style={{ borderTop: `1px solid ${Colors.get('border', theme)}` }}
+                                            >
+                                                <div style={{ padding: '20px' }}>
+                                                    <p style={{ ...styles(theme, false, false, fSize).subtext, marginBottom: '20px' }}>
+                                                        {Array.isArray(program.description) ? program.description[langIndex] : program.description}
+                                                    </p>
+
+                                                    {/* PROGRAM ACTIONS (If no day selected) */}
+                                                    {currentDay === -1 && (
+                                                        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '5px' }}>
+                                                            <ActionButton icon={<FaPlusSquare />} label={langIndex === 0 ? 'День' : 'Day'} onClick={() => setShowAddDayPanel(true)} theme={theme} />
+                                                            <ActionButton icon={<FaPencilAlt />} label={langIndex === 0 ? 'Правка' : 'Edit'} onClick={() => onRedactClick(0)} theme={theme} />
+                                                            <ActionButton icon={<FaTrash />} label={langIndex === 0 ? 'Удалить' : 'Del'} onClick={() => onRemove(0)} theme={theme} isDanger />
+                                                        </div>
+                                                    )}
+
+                                                    {/* SCHEDULE (DAYS) */}
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                        {program.schedule.map((day, index) => (
+                                                            <DayItem
+                                                                key={index}
+                                                                index={index}
+                                                                day={day}
+                                                                active={currentDay === index}
+                                                                onClick={() => setCurrentDay(currentDay === index ? -1 : index)}
+                                                                theme={theme}
+                                                                fSize={fSize}
+                                                                langIndex={langIndex}
+                                                                onAddEx={() => setShowExercisesList(true)}
+                                                                onRemove={() => { setCurrentDay(index); onRemove(1); }}
+                                                                onRemoveEx={(exIdx) => { setCurrentExId(exIdx); onRemove(2); }}
+                                                            />
+                                                        ))}
+                                                    </div>
+
+                                                    {/* MUSCLE OVERVIEW */}
+                                                    <div style={{ marginTop: '25px',justifyItems:'center', padding: '15px', backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderRadius: '16px' }}>
+                                                        <MuscleView programmId={program.id} theme={theme} langIndex={langIndex} programs={programs} />
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </motion.div>
+                            )
+                        })}
+                </div>
+            </LayoutGroup>
+
+            {/* FLOATING ADD BUTTON */}
+            {currentId === -1 && (
+                <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => { setNeedRedact(false); setShowAddPanel(true); }}
+                    style={styles(theme).bigFab}
+                >
+                    <FaPlus size={24} color="#FFF" />
+                </motion.button>
             )}
-            <MdBook
-              style={{
-                ...styles(theme).icon,
-                marginRight: '5px',
-                marginLeft: '5px',
-                fontSize: '16px'
-              }}
-            />
-            <p style={styles(theme, false, false, fSize).text}>
-              {Array.isArray(program.name) ? program.name[langIndex] : program.name}
-            </p>
-            <p
-              style={{
-                ...styles(theme, false, false, fSize).subtext,
-                marginRight: '5px',
-                marginLeft: 'auto'
-              }}
-            >
-              {program.creationDate}
-            </p>
-          </div>
 
-          {currentId === program.id && (
-            <div style={{ ...styles(theme).panel }}>
-              <div
-                style={{
-                  ...styles(theme, false, false, fSize).subtext,
-                  marginRight: '15px',
-                  marginLeft: '15px'
-                }}
-              >
-                {currentDay === -1 &&
-                  (Array.isArray(program.description)
-                    ? program.description[langIndex]
-                    : program.description)}
-              </div>
-
-        <div style={{ display: 'flex', flexDirection: 'row', width: '100%', justifyContent: 'center' }}>
-          {currentDay === -1 && (
-            <div
-              style={{
-                ...styles(theme, false, false, fSize).dayPanel,
-                width: '98%',
-                justifyContent: 'space-around',
-                flexDirection: 'row'
-              }}
-            >
-              <FaPlusSquare
-                onClick={() => setShowAddDayPanel(true)}
-                style={{ ...styles(theme).icon, fontSize: '14px' }}
-              />
-              <FaPencilAlt
-                onClick={() => onRedact(0)}
-                style={{ ...styles(theme).icon, fontSize: '14px' }}
-              />
-              <FaTrash
-                onClick={() => onRemove(0)}
-                style={{ ...styles(theme).icon, fontSize: '14px' }}
-              />
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-          {program.schedule.map((day, index) => (
-            <div key={index}>
-              <div
-                style={{
-                  ...styles(theme, false, currentDay === index).dayPanel,
-                  width: '98%',
-                  flexDirection: 'row'
-                }}
-                onClick={() => setCurrentDay(prev => prev === index ? -1 : index)}
-              >
-                {currentDay === index ? (
-                  <IoIosArrowUp
-                    style={{
-                      ...styles(theme).icon,
-                      marginLeft: '2%',
-                      width: '10px',
-                      marginTop: '7px'
-                    }}
-                  />
-                ) : (
-                  <IoIosArrowDown
-                    style={{
-                      ...styles(theme).icon,
-                      marginLeft: '2%',
-                      width: '10px',
-                      marginTop: '7px'
-                    }}
-                  />
-                )}
-                <FaCalendarDay
-                  style={{
-                    ...styles(theme).icon,
-                    marginRight: '5px',
-                    marginLeft: '5px',
-                    fontSize: '14px'
-                  }}
-                />
-                <p style={styles(theme, false, false, fSize).text}>
-                  {langIndex === 0
-                    ? `${index + 1}-день : ${day.name[0]}`
-                    : `${index + 1}-day : ${day.name[1]}`}
-                </p>
-
-                {currentDay === index && (
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      justifyContent: 'center',
-                      marginLeft: 'auto'
-                    }}
-                  >
-                    <FaPlusCircle
-                      onClick={() => setShowExercisesList(true)}
-                      style={{ ...styles(theme).icon, fontSize: '14px' }}
-                    />
-                    <TbArrowMoveDownFilled
-                      onClick={() => switchPositions(0, 0)}
-                      style={{ ...styles(theme).icon, fontSize: '14px' }}
-                    />
-                    <TbArrowMoveUpFilled
-                      onClick={() => switchPositions(0, 1)}
-                      style={{ ...styles(theme).icon, fontSize: '14px' }}
-                    />
-                    <FaPencilAlt
-                      onClick={() => onRedact(1)}
-                      style={{ ...styles(theme).icon, fontSize: '14px' }}
-                    />
-                    <FaTrash
-                      onClick={() => onRemove(1)}
-                      style={{
-                        ...styles(theme).icon,
-                        fontSize: '14px',
-                        marginRight: '8px'
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-
-              {currentDay === index && (
-                <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                  {day.exercises.map((item, i) => {
-                    // ✅ DIRECT ACCESS — no allExercises() needed
-                    const exercise = AppData.exercises[item.exId];
-
-                    // Skip if exercise was deleted or not found
-                    if (!exercise) {
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'row',
-                            width: '95%',
-                            marginLeft: '6px',
-                            marginRight: '5%',
-                            justifyContent: 'flex-start',
-                            alignItems: 'center'
-                          }}
-                        >
-                          <p style={styles(theme, false, false, fSize).text}>{i + 1}.</p>
-                          <MdFitnessCenter
-                            style={{
-                              ...styles(theme).icon,
-                              marginRight: '5px',
-                              marginLeft: '5px',
-                              fontSize: '14px'
-                            }}
-                          />
-                          <p style={{ ...styles(theme, false, false, fSize).text, color: '#ff6b6b' }}>
-                            {langIndex === 0 ? 'Упражнение удалено' : 'Exercise deleted'}
-                          </p>
+            {/* --- MODALS --- */}
+            <AnimatePresence>
+                {/* 1. Add/Edit Program Modal */}
+                {showAddPanel && (
+                    <Modal onClose={() => setShowAddPanel(false)} theme={theme} title={langIndex === 0 ? (needRedact ? 'Редактировать' : 'Новая программа') : (needRedact ? 'Edit Program' : 'New Program')}>
+                        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <MyInput maxL={40} w="100%" h="auto" value={name} theme={theme} onChange={setName} placeHolder={langIndex === 0 ? 'Название' : 'Name'} />
+                            <MyInput maxL={200} w="100%" h="auto" value={description} theme={theme} onChange={setDescription} placeHolder={langIndex === 0 ? 'Описание' : 'Description'} />
                         </div>
-                      );
-                    }
+                        <ModalActions onClose={() => setShowAddPanel(false)} onConfirm={() => needRedact ? redact() : onAddProgram()} theme={theme} />
+                    </Modal>
+                )}
 
-                    return (
-                      <div
-                        key={i}
-                        onClick={() => setCurrentExId(i)}
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'row',
-                          width: '95%',
-                          marginLeft: '6px',
-                          marginRight: '5%',
-                          justifyContent: 'flex-start',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <p style={styles(theme, false, false, fSize).text}>{i + 1}.</p>
-                        <MdFitnessCenter
-                          style={{
-                            ...styles(theme).icon,
-                            marginRight: '5px',
-                            marginLeft: '5px',
-                            fontSize: '14px'
-                          }}
-                        />
-                        <p style={styles(theme, false, false, fSize).text}>
-                          {exercise.name[langIndex]}
-                        </p>
-                        <p
-                          style={{
-                            ...styles(theme, false, false, fSize).subtext,
-                            marginLeft: 'auto'
-                          }}
-                        >
-                          {item.sets}
-                        </p>
+                {/* 2. Add Training Day Modal */}
+                {showAddDayPanel && (
+                    <Modal onClose={() => setShowAddDayPanel(false)} theme={theme} title={langIndex === 0 ? 'Тренировочный день' : 'Training Day'}>
+                        <MyInput maxL={40} w="100%" h="auto" value={dayName} theme={theme} onChange={setDayName} placeHolder={langIndex === 0 ? 'Название дня' : 'Day Name'} />
+                        <ModalActions onClose={() => setShowAddDayPanel(false)} onConfirm={onAddTrainingDay} theme={theme} />
+                    </Modal>
+                )}
 
-                        {currentExId === i && (
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                            style={{
-                              display: 'flex',
-                              flexDirection: 'row',
-                              justifyContent: 'center',
-                              marginLeft: 'auto'
-                            }}
-                          >
-                            <TbArrowMoveDownFilled
-                              onClick={() => switchPositions(1, 0)}
-                              style={{ ...styles(theme).icon, fontSize: '14px' }}
-                            />
-                            <TbArrowMoveUpFilled
-                              onClick={() => switchPositions(1, 1)}
-                              style={{ ...styles(theme).icon, fontSize: '14px' }}
-                            />
-                            <FaTrash
-                              onClick={() => onRemove(2)}
-                              style={{
-                                ...styles(theme).icon,
-                                fontSize: '14px',
-                                marginRight: '8px'
-                              }}
-                            />
-                          </div>
+                {/* 3. Confirm Remove Modal */}
+                {showConfirmRemove && (
+                    <Modal onClose={() => setShowConfirmRemove(false)} theme={theme} title="⚠️">
+                        <p style={{ ...styles(theme, false, false, fSize).text, textAlign: 'center', marginBottom: '25px' }}>{confirmMessage}</p>
+                        <div style={{ display: 'flex', gap: '20px', width: '100%', justifyContent: 'center' }}>
+                            <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowConfirmRemove(false)} style={styles(theme).secondaryBtn}>{langIndex === 0 ? "Нет" : "Cancel"}</motion.button>
+                            <motion.button whileTap={{ scale: 0.95 }} onClick={remove} style={styles(theme).dangerBtn}>{langIndex === 0 ? "Удалить" : "Delete"}</motion.button>
+                        </div>
+                    </Modal>
+                )}
+
+                {/* 4. Strategy Modal */}
+                {showStarategyPanel && (
+                    <Modal onClose={() => setShowStarategyPanel(false)} theme={theme} title={langIndex === 0 ? 'Стратегия' : 'Strategy'}>
+                        <div style={styles(theme).segmentedControl}>
+                            <div onClick={() => setStrategy(0)} style={{ ...styles(theme).segment, backgroundColor: strategy === 0 ? Colors.get('background', theme) : 'transparent', color: strategy === 0 ? Colors.get('mainText', theme) : Colors.get('subText', theme), boxShadow: strategy === 0 ? '0 2px 5px rgba(0,0,0,0.1)' : 'none' }}>
+                                {langIndex === 0 ? 'Повторы' : 'Reps'}
+                            </div>
+                            <div onClick={() => setStrategy(1)} style={{ ...styles(theme).segment, backgroundColor: strategy === 1 ? Colors.get('background', theme) : 'transparent', color: strategy === 1 ? Colors.get('mainText', theme) : Colors.get('subText', theme), boxShadow: strategy === 1 ? '0 2px 5px rgba(0,0,0,0.1)' : 'none' }}>
+                                {langIndex === 0 ? 'Время' : 'Time'}
+                            </div>
+                        </div>
+
+                        {strategy === 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', margin: '20px 0' }}>
+                                <Counter val={currentSet} set={setCurrentSet} label="SETS" theme={theme} />
+                                <span style={{ fontSize: '20px', color: Colors.get('subText', theme) }}>×</span>
+                                <Counter val={currentRepMin} set={setCurrentRepMin} label="MIN" theme={theme} />
+                                <span style={{ fontSize: '20px', color: Colors.get('subText', theme) }}>-</span>
+                                <Counter val={currentRepMax} set={setCurrentRepMax} label="MAX" theme={theme} />
+                            </div>
                         )}
-                      </div>
-                    );
-                  })}
+                        <ModalActions onClose={() => setShowStarategyPanel(false)} onConfirm={onAddExercise} theme={theme} />
+                    </Modal>
+                )}
+            </AnimatePresence>
+
+            {/* FULL SCREEN EXERCISE PICKER */}
+            {showExercisesList && (
+                <div style={styles(theme).fullOverlay}>
+                    <TrainingExercise needToAdd={true} setEx={(id) => { setCurrentExId(id); setShowExercisesList(false); setShowStarategyPanel(true); }} />
+                    <motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowExercisesList(false)} style={styles(theme).closeOverlayBtn}>
+                        <MdClose size={24} color="#FFF" />
+                    </motion.div>
                 </div>
-              )}
+            )}
+        </div>
+    )
+}
+
+// --- SUB-COMPONENTS ---
+
+const DayItem = ({ index, day, active, onClick, theme, fSize, langIndex, onAddEx, onRemove, onRemoveEx }) => (
+    <motion.div
+        layout
+        onClick={onClick}
+        style={{
+            ...styles(theme).card,
+            backgroundColor: active ? (theme === 'light' ? '#fff' : 'rgba(255,255,255,0.05)') : 'transparent',
+            border: active ? `1px solid ${Colors.get('border', theme)}` : '1px solid transparent',
+            marginBottom: '0',
+            boxShadow: active ? (theme === 'light' ? '0 4px 12px rgba(0,0,0,0.05)' : 'none') : 'none'
+        }}
+    >
+        <div style={{ padding: '12px 15px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+            <div style={{ fontSize: '12px', color: Colors.get('subText', theme) }}>
+                {active ? <IoIosArrowUp /> : <IoIosArrowDown />}
             </div>
-          ))}
+            <FaCalendarDay style={{ color: Colors.get('currentDateBorder', theme) }} size={16} />
+            <span style={{ fontWeight: '600', color: Colors.get('mainText', theme), flex: 1, fontSize: '15px' }}>
+                {langIndex === 0 ? `${day.name[0]}` : `${day.name[1]}`}
+            </span>
+            {active && (
+                <div style={{ display: 'flex', gap: '10px' }} onClick={e => e.stopPropagation()}>
+                    <motion.div whileTap={{ scale: 0.9 }} onClick={onAddEx} style={styles(theme).miniBtn}><FaPlus size={12} color="#fff" /></motion.div>
+                    <motion.div whileTap={{ scale: 0.9 }} onClick={onRemove} style={{ ...styles(theme).miniBtn, backgroundColor: 'rgba(255, 77, 77, 0.2)' }}><FaTrash size={12} color="#ff4d4d" /></motion.div>
+                </div>
+            )}
         </div>
 
-        {/* Muscle analysis for this program */}
-        <MuscleView
-          programmId={program.id}
-          theme={theme}
-          langIndex={langIndex}
-          programs={programs}
-        />
-      </div>
-    )}
-  </div>
-))}
-               {currentId === -1 && <div onClick={() => setShowAddPanel(true)} style={{...styles(theme).groupPanel,height:'5%',justifyContent:'center'}} >
-                  <FaPlusSquare style={{...styles(theme).icon,fontSize:'24px'}}/>     
-               </div>}
-                {/* add panel */}
-           {showAddPanel && (
-            <div style={styles(theme).addContainer}>
-              <div style={{...styles(theme).additionalPanel,height:'40%'}}>
-                <p style={styles(theme,false,false,fSize).text}>{langIndex === 0 ? needRedact ? 'Редактировать программу' : 'Новая программа' : needRedact ? 'Redact programm' : 'New programm'}</p>
-                <div style={{display:'flex',flexDirection:'column',backgroundColor:Colors.get('background',theme),height:'82%',width:'100%',alignItems:'center'}}>
-                  <MyInput maxL={30} w='80%' h='18%' value={needRedact ? name : ''} theme={theme} onChange={(value) => setName(value)} placeHolder={langIndex === 0 ? 'Название программы' : 'Programm name'}/>
-                  <MyInput maxL={100} w='80%' h='44%' value={needRedact ? description : ''} theme={theme} onChange={(value) => setDescription(value)} placeHolder={langIndex === 0 ? 'Описание программы' : 'Programm description'}/>
-                 
-                </div>
-                {/* bottom buttons */}
-                <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
-                <MdClose onClick={() => onClose()} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
-                <MdDone onClick={() => {if(needRedact){redact()}else{onAddProgram()}}} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
-                </div>
-              </div>
-            </div>
+        <AnimatePresence>
+            {active && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
+                    <div style={{ padding: '0 15px 15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {day.exercises.map((item, i) => {
+                            const ex = AppData.exercises[item.exId];
+                            if (!ex) return null;
+                            return (
+                                <div key={i} style={styles(theme).exerciseRow}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                                        
+                                        <div>
+                                            <div style={{ fontSize: '14px', fontWeight: '600', color: Colors.get('mainText', theme) }}>{ex.name[langIndex]}</div>
+                                            <div style={{ fontSize: '12px', color: Colors.get('subText', theme), display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <FaDumbbell size={10} /> {item.sets}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <motion.div whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); onRemoveEx(i); }} style={{ padding: '8px', opacity: 0.6 }}>
+                                        <FaTrash color="#ff4d4d" size={14} />
+                                    </motion.div>
+                                </div>
+                            )
+                        })}
+                        {day.exercises.length === 0 && (
+                            <div style={{ textAlign: 'center', fontSize: '12px', color: Colors.get('subText', theme), padding: '10px' }}>
+                                {langIndex === 0 ? 'Нет упражнений' : 'No exercises'}
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
             )}
-            {/* add training day panel */}
-            {showAddDayPanel && (
-            <div style={styles(theme).addContainer}>
-              <div style={{...styles(theme).additionalPanel,height:'40%'}}>
-                <p style={styles(theme,false,false,fSize).text}>{langIndex === 0 ? needRedact ? 'Редактировать тренировочный день' : 'Добавь тренировочный день' : needRedact ? 'Redact training day' : 'Add training day'}</p>
-                <div style={{display:'flex',flexDirection:'column',backgroundColor:Colors.get('background',theme),height:'80%',width:'100%',alignItems:'center'}}>
-                  <MyInput maxL={30} w='90%' h='40%' theme={theme} value={dayName} onChange={(value) => setDayName(value)} placeHolder={langIndex === 0 ? 'День' : 'Day'}/>
-                </div>
-                {/* bottom buttons */}
-                <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
-                <MdClose onClick={() => setShowAddDayPanel(false)} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
-                <MdDone onClick={() => {if(needRedact){redact();}else {onAddTrainingDay();}}} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
-                </div>
-              </div>
-            </div>
-            )}
-            {/* exercises list panel */}
-            {showExercisesList && (
-            <div style={{...styles(theme).addContainer}}>
-              <TrainingExercise needToAdd={true} setEx={setCurrentExerciseId} />
-            </div>
-            )}
-            {/* strategy panel */}
-            {showStarategyPanel && <div style={styles(theme).addContainer}>
-            <div style={{position:'fixed',top:'30vh',left:'7.5vw',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around',width:'80vw',height:'80vw',marginTop:'5px',borderRadius:'24px',border:`1px solid ${Colors.get('border', theme)}`,backgroundColor:Colors.get('background', theme),zIndex:'7000'}}>
-               <p style={{...styles(theme,false,false,fSize).text,padding:'20px',marginLeft:'10%',marginRight:'5%'}}>{langIndex === 0 ? 'Установите стратегию выполнения' : 'Set performing strategy'}</p>
-                <div style={{display:'flex',flexDirection:'row',width:'90%',justifyContent:'space-around'}}>
-                  <div onClick={() => {setStrategy(0)}} style={{width:'40%',border:strategy === 0 ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:strategy === 1 ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Повторы" : "Reps"}</div>
-                  <div onClick={() => {setStrategy(1)}} style={{width:'40%',border:strategy === 1 ? `2px solid ${Colors.get('trainingIsolatedFont', theme)}` : `1px solid ${Colors.get('icons', theme)}`,borderRadius:'16px',padding:'4px',fontSize:'16px',color:strategy === 0 ? Colors.get('subText', theme) : Colors.get('trainingIsolatedFont', theme)}}>{langIndex === 0 ? "Время" : "Time"}</div>
-                </div>
-                {strategy === 0 && <div style={{display:'flex',flexDirection:'row',height:'50%',width:'60%',justifyContent:'space-around'}}>
-                  <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
-                    <IoIosArrowUp onClick={() => setCurrentSet(prev => prev + 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                      <div style={{...styles(theme).text,fontSize:'24px'}}>{currentSet}</div>
-                    <IoIosArrowDown onClick={() => setCurrentSet(prev => prev - 1 > 0 ? prev - 1 : 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                  </div>
-                    <p style={{...styles(theme).text,fontSize:'24px',marginTop:'30%'}}>{'x'}</p>
-                  <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
-                    <IoIosArrowUp onClick={() => setCurrentRepMin(prev => prev + 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                      <div style={{...styles(theme).text,fontSize:'24px'}}>{currentRepMin}</div>
-                    <IoIosArrowDown onClick={() => setCurrentRepMin(prev => prev - 1 > 0 ? prev - 1 : 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                  </div>
-                    <p style={{...styles(theme).text,fontSize:'24px',marginTop:'30%'}}>{'-'}</p>
-                  <div style={{display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center'}}>
-                    <IoIosArrowUp onClick={() => setCurrentRepMax(prev => prev + 1)} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                      <div style={{...styles(theme).text,fontSize:'24px'}}>{currentRepMax}</div>
-                    <IoIosArrowDown onClick={() => setCurrentRepMax(prev => (prev - 1 > currentRepMin + 2 ? prev - 1 : currentRepMin + 2))} style={{...styles(theme).icon,marginLeft:'1px',fontSize:'24px'}}/>
-                  </div>
-                </div>}
-              <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'center'}}>
-                <MdDone onClick={() => onAddExercise()} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
-                </div>
-            </div>
-            </div>}
-            {/* confirm remove panel */}
-            {showConfirmRemove && 
-            <div style={styles(theme).addContainer}>
-             <div style={{position:'fixed',left:'7.5vw',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',width:'85vw',height:'40vw',marginTop:'5px',borderRadius:'24px',border:`1px solid ${Colors.get('border', theme)}`,backgroundColor:Colors.get('background', theme),zIndex:'7000'}}>
-              <p style={{...styles(theme,false,false,fSize).text,textAlign:'center',padding:'20px',marginLeft:'10%',marginRight:'5%'}}>{confirmMessage}</p>
-              <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
-                <MdClose onClick={() => setShowConfirmRemove(false)} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
-                <MdDone onClick={() => remove()} style={{...styles(theme).icon,fontSize:'32px', marginBottom:'8px'}}/>
-                </div>
-              </div>
-            </div>
-            }
-           </div>
-       )
-}
+        </AnimatePresence>
+    </motion.div>
+);
 
-export default TrainingProgramm
+const ActionButton = ({ icon, onClick, theme, label, isDanger }) => (
+    <motion.div
+        whileTap={{ scale: 0.95 }} onClick={onClick}
+        style={{
+            flex: 1, padding: '8px 12px', borderRadius: '12px', minWidth: '80px',
+            backgroundColor: isDanger ? 'rgba(255, 77, 77, 0.1)' : (theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)'),
+            color: isDanger ? '#ff4d4d' : Colors.get('subText', theme),
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer'
+        }}
+    >
+        {icon}
+        <span style={{ fontSize: '10px', fontWeight: '700', opacity: 0.8, textTransform: 'uppercase' }}>{label}</span>
+    </motion.div>
+);
 
+const Counter = ({ val, set, label, theme }) => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '8px' }}>
+        <div style={{ fontSize: '9px', fontWeight: '800', color: Colors.get('subText', theme), marginBottom: '4px' }}>{label}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <motion.div whileTap={{ scale: 0.8 }} onClick={() => set(v => v > 1 ? v - 1 : 1)} style={styles(theme).miniBtn}><IoIosArrowDown size={14} color="#fff" /></motion.div>
+            <span style={{ fontSize: '18px', fontWeight: 'bold', color: Colors.get('mainText', theme), minWidth: '24px', textAlign: 'center' }}>{val}</span>
+            <motion.div whileTap={{ scale: 0.8 }} onClick={() => set(v => v + 1)} style={styles(theme).miniBtn}><IoIosArrowUp size={14} color="#fff" /></motion.div>
+        </div>
+    </div>
+);
 
+const Modal = ({ children, title, theme, onClose }) => (
+    <div style={styles(theme).modalBackdrop} onClick={onClose}>
+        <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            style={styles(theme).modalContainer} onClick={e => e.stopPropagation()}
+        >
+            <div style={styles(theme).modalHeader}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: Colors.get('mainText', theme), margin: 0 }}>{title}</h3>
+            </div>
+            <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {children}
+            </div>
+        </motion.div>
+    </div>
+);
 
-const styles = (theme,isCurrentGroup,isCurrentExercise,fSize) =>
-({
-    container :
-   {
-     backgroundColor:Colors.get('background', theme),
-     display: "flex",
-     flexDirection: "column",
-     overflowY:'scroll',
-     justifyContent: "start",
-     alignItems: "center",
-     height: "78vh",
-     paddingTop:'5vh',
-     width: "100vw",
-     fontFamily: "Segoe UI",
-  },
-  groupPanel :
-      {
-    display:'flex',
-    flexDirection:'row',
-    width: "100%",
-    height:'6vh',
-    backgroundColor:isCurrentGroup ? Colors.get('trainingGroupSelected', theme) : Colors.get('trainingGroup', theme),
-    borderTop:`1px solid ${Colors.get('border', theme)}`,
-    alignItems: "center",
-    justifyContent: "left",
-    alignContent: "center"
-  },
-  dayPanel :
-      {
-    display:'flex',
-    flexDirection:'column',
-    width: "100vW",
-    height:'4vh',
-    backgroundColor:isCurrentExercise ? Colors.get('trainingGroupSelected', theme) : Colors.get('background', theme),
-    borderBottom:`1px solid ${Colors.get('border', theme)}`,
-    alignItems: "center",
-    justifyContent: "left"
-  },
-  panel :
-      {
-    display:'flex',
-    flexDirection:'column',
-    width: "100%",
-    alignItems: "center",
-    justifyItems: "center",
-  },
-  text :
-  {
-    textAlign: "left",
-    fontSize: fSize === 0 ? '13px' : '15px',
-    color: Colors.get('mainText', theme),
-    marginBottom:'12px'
-  },
-  subtext :
-  {
-    textAlign: "left",
-    fontSize: fSize === 0 ? '11px' : '13px',
-    color: Colors.get('subText', theme),
-    marginBottom:'12px'
-  },
-  icon :
-  {
-    fontSize: "20px",
-    color: Colors.get('icons', theme),
-    marginLeft: "20px",
-  },
-   addContainer: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2000,
-    padding: '10px',
-  },
-  additionalPanel: {
-    display:'flex',
-        flexDirection:'column',
-        alignItems: "center",
-        justifyContent: "space-between",
-        borderRadius:"24px",
-        border: `1px solid ${Colors.get('border', theme)}`,
-        backgroundColor:Colors.get('simplePanel', theme),
-        boxShadow: `4px 4px 6px ${Colors.get('shadow', theme)}`,
-        width:"100%",
-        height:"100vw"
-  },
-    exercisePanel :
-        {
-      display:'flex',
-      flexDirection:'column',
-      width: "90vW",
-      height:'5vh',
-      backgroundColor:isCurrentExercise ? Colors.get('trainingGroupSelected', theme) : Colors.get('background', theme),
-      alignItems: "center",
-      justifyContent: "left"
+const ModalActions = ({ onClose, onConfirm, theme }) => (
+    <div style={styles(theme).modalActions}>
+        <motion.div whileTap={{ scale: 0.9 }} onClick={onClose} style={styles(theme).circleBtn}>
+            <MdClose style={{ fontSize: '24px', color: Colors.get('subText', theme) }} />
+        </motion.div>
+        <motion.div whileTap={{ scale: 0.9 }} onClick={onConfirm} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('currentDateBorder', theme) }}>
+            <MdDone style={{ fontSize: '24px', color: '#fff' }} />
+        </motion.div>
+    </div>
+);
+
+const capitalizeName = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+
+const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
+    container: {
+        backgroundColor: Colors.get('background', theme),
+        display: "flex", flexDirection: "column",
+        overflowY: 'auto', alignItems: "center",
+        height: "90vh", paddingTop: '20px', width: "100vw",marginTop:'110px',
+        fontFamily: "Segoe UI, Roboto, sans-serif", boxSizing: 'border-box'
+    },
+    card: {
+        width: '94%', margin: '0 auto 12px auto',
+        borderRadius: '16px', overflow: 'hidden',
+        boxShadow: theme === 'light' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+    },
+    groupHeader: {
+        display: 'flex', flexDirection: 'row',
+        padding: '15px', alignItems: "center", justifyContent: "space-between",
+        cursor: 'pointer'
+    },
+    iconBox: {
+        width: '36px', height: '36px', borderRadius: '10px',
+        backgroundColor: Colors.get('currentDateBorder', theme),
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+    },
+    badge: {
+        fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px',
+        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
+        color: Colors.get('subText', theme), textTransform: 'uppercase'
+    },
+    text: {
+        fontSize: fSize === 0 ? "16px" : '18px',
+        color: Colors.get('mainText', theme), fontWeight: '600', margin: 0
+    },
+    subtext: {
+        fontSize: fSize === 0 ? "13px" : '15px',
+        color: Colors.get('subText', theme), lineHeight: '1.4', margin: 0
+    },
+    icon: { fontSize: "20px", color: Colors.get('icons', theme) },
+    
+    // EXERCISES
+    exerciseRow: {
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '10px', borderRadius: '12px',
+        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
+        border: `1px solid ${Colors.get('border', theme)}`
+    },
+    exerciseIcon: {
+        width: '32px', height: '32px', borderRadius: '50%',
+        backgroundColor: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+    },
+    
+    // BUTTONS
+    bigFab: {
+        position: 'fixed', bottom: '110px', right: '30px',
+        width: '56px', height: '56px', borderRadius: '28px',
+        backgroundColor: Colors.get('currentDateBorder', theme), border: 'none',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 8px 20px rgba(0,0,0,0.3)', cursor: 'pointer', zIndex: 100
+    },
+    miniBtn: {
+        width: '24px', height: '24px', borderRadius: '8px',
+        backgroundColor: Colors.get('currentDateBorder', theme),
+        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+    },
+    circleBtn: {
+        width: '50px', height: '50px', borderRadius: '25px',
+        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+    },
+    secondaryBtn: {
+        padding: '10px 20px', borderRadius: '12px', border: 'none',
+        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
+        color: Colors.get('mainText', theme), fontSize: '16px', cursor: 'pointer'
+    },
+    dangerBtn: {
+        padding: '10px 20px', borderRadius: '12px', border: 'none',
+        backgroundColor: '#ff4d4d', color: '#fff', fontSize: '16px', cursor: 'pointer'
+    },
+
+    // MODAL
+    modalBackdrop: {
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(5px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000
+    },
+    modalContainer: {
+        width: '99%', maxWidth: '400px', backgroundColor: Colors.get('background', theme),
+        borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        border: `1px solid ${Colors.get('border', theme)}`, overflow: 'hidden'
+    },
+    modalHeader: {
+        width: '100%', padding: '20px', borderBottom: `1px solid ${Colors.get('border', theme)}`,
+        textAlign: 'center', marginBottom: '15px'
+    },
+    modalActions: {
+        marginTop: '20px', padding: '15px 20px', width: '100%',
+        display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+        borderTop: `1px solid ${Colors.get('border', theme)}`,
+        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)'
+    },
+    segmentedControl: {
+        display: 'flex', width: '100%', backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
+        borderRadius: '12px', padding: '4px', margin: '10px 0'
+    },
+    segment: {
+        flex: 1, textAlign: 'center', padding: '8px', borderRadius: '10px',
+        fontSize: '13px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s'
+    },
+    
+    // FULL SCREEN
+    fullOverlay: { position: 'fixed', inset: 0, backgroundColor: Colors.get('background', theme), zIndex: 6000 },
+    closeOverlayBtn: {
+        position: 'fixed', top: '20px', right: '20px', zIndex: 6001,
+        width: '40px', height: '40px', borderRadius: '20px',
+        backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
     }
-})
+});
 
-function playEffects(sound){
-  if(AppData.prefs[2] == 0 && sound !== null){
-    if(!sound.paused){
-        sound.pause();
-        sound.currentTime = 0;
-    }
-    sound.volume = 0.5;
-    sound.play();
-  }
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
-const capitalizeName = (str) => {
-  if (!str) return str;
-  return str.charAt(0).toUpperCase() + str.slice(1);
-};
+
+export default TrainingProgramm;

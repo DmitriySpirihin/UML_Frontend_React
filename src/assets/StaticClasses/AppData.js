@@ -55,7 +55,7 @@ export class AppData{
     if(this.isFirstStart === false)this.prefs = data.prefs;
     else this.isFirstStart = false;
     setLang(this.prefs[0] === 0 ? 'ru' : 'en');
-    setTheme(this.prefs[1] < 2 ? this.prefs[1] === 0 ? THEME.DARK : THEME.SPECIALDARK : this.prefs[1] === 2 ? THEME.LIGHT : THEME.SPECIALLIGHT);
+    setTheme(this.prefs[1]  === 0 ? THEME.DARK : THEME.LIGHT );
     setSoundAndVibro(this.prefs[2],this.prefs[3]);
     setFontSize(this.prefs[4]);
     this.choosenHabitsStartDates = [...data.choosenHabitsStartDates];

@@ -1,4 +1,3 @@
-// src/Helpers/MyBarChart.jsx
 import React from 'react';
 import Colors from '../StaticClasses/Colors';
 import {
@@ -24,37 +23,34 @@ const msToHours = (ms) => ms / (1000 * 60 * 60);
 
 const MyBarChart = ({
   data = [],
-  theme = 'dark', // 👈 accept theme
+  theme = 'dark',
   textColor = '#94a3b8',
   linesColor = '#334155',
-  backgroundColor = '#0f172a',
+  backgroundColor = 'transparent',
   height = 220
 }) => {
+  const isLight = theme === 'light';
+
   if (!Array.isArray(data) || data.length === 0) {
     return (
       <div style={{
         height: `${height}px`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: textColor,
-        backgroundColor,
-        fontFamily: 'Segoe UI, system-ui, sans-serif',
-        fontSize: '14px',
-        borderRadius: '12px'
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: textColor, opacity: 0.6,
+        fontFamily: 'Segoe UI, sans-serif', fontSize: '14px',
       }}>
-        No data
+        No sleep data available
       </div>
     );
   }
 
-  // ✅ Compute mood colors DYNAMICALLY using current theme
+  // Mood colors from app palette
   const MOOD_COLORS = {
-    1: Colors.get('difficulty3', theme),
-    2: Colors.get('difficulty2', theme),
-    3: Colors.get('difficulty1', theme),
-    4: Colors.get('difficulty0', theme),
-    5: Colors.get('difficulty5', theme),
+                  1:Colors.get('veryBad', theme),
+                2:Colors.get('bad', theme),
+                 3:Colors.get('normal', theme), 
+                4:Colors.get('good', theme), 
+                5:Colors.get('perfect', theme),
   };
 
   const chartData = data.map(item => ({
@@ -72,23 +68,26 @@ const MyBarChart = ({
       const entry = payload[0].payload;
       const ms = entry?.ms || 0;
       const mood = entry?.mood || 0;
-      const stars = mood ? '★'.repeat(mood) + '☆'.repeat(5 - mood) : '—';
+      const stars = mood ? '★'.repeat(mood) : '—';
+      const color = getBarColor(mood);
 
       return (
         <div style={{
-          backgroundColor: Colors.get('panel', theme) || '#1e293b',
-          padding: '10px',
-          borderRadius: '8px',
-          border: `1px solid ${linesColor}`,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          backgroundColor: isLight ? 'rgba(255,255,255,0.9)' : 'rgba(30,30,30,0.9)',
+          backdropFilter: 'blur(10px)',
+          padding: '10px 14px',
+          borderRadius: '12px',
+          border: `1px solid ${color}40`,
+          boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
           fontFamily: 'Segoe UI',
-          fontSize: '13px',
-          color: Colors.get('mainText', theme) || '#f1f5f9'
+          textAlign: 'center'
         }}>
-          <div style={{ fontWeight: '600', marginBottom: '4px' }}>{label}</div>
-          <div>Sleep: {msToHhMm(ms)}</div>
-          <div style={{ marginTop: '4px', color: getBarColor(mood) }}>
-            Mood: {stars}
+          <div style={{ fontSize: '12px', color: textColor, marginBottom: '4px', opacity: 0.8 }}>{label}</div>
+          <div style={{ fontSize: '16px', fontWeight: '700', color: Colors.get('mainText', theme) }}>
+            {msToHhMm(ms)} <span style={{ fontSize: '11px', fontWeight: '400' }}>hrs</span>
+          </div>
+          <div style={{ marginTop: '6px', fontSize: '12px', fontWeight: '600', color: color, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+            <span>Mood:</span> <span style={{ letterSpacing: '2px' }}>{stars}</span>
           </div>
         </div>
       );
@@ -101,55 +100,71 @@ const MyBarChart = ({
       width: '100%',
       height: `${height}px`,
       backgroundColor,
-      borderRadius: '12px',
-      padding: '8px 4px',
-      fontFamily: 'Segoe UI, system-ui, sans-serif'
+      borderRadius: '16px',
+      padding: '10px 0',
+      fontFamily: 'Segoe UI, sans-serif'
     }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
-          margin={{ top: 15, right: 10, left: -10, bottom: 5 }}
+          margin={{ top: 20, right: 10, left: -25, bottom: 0 }}
+          barSize={18} // Slimmer, elegant bars
         >
-          <CartesianGrid stroke={linesColor} strokeOpacity={0.2} vertical={false} />
+          <defs>
+            {/* Create dynamic gradients for each mood color used */}
+            {[1, 2, 3, 4, 5].map(m => (
+              <linearGradient key={m} id={`grad-${m}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={getBarColor(m)} stopOpacity={1} />
+                <stop offset="100%" stopColor={getBarColor(m)} stopOpacity={0.6} />
+              </linearGradient>
+            ))}
+          </defs>
+
+          <CartesianGrid 
+            stroke={linesColor} 
+            strokeOpacity={0.2} 
+            vertical={false} 
+            strokeDasharray="4 4" 
+          />
           
           <XAxis
             dataKey="date"
-            tick={{ fill: textColor, fontSize: 11 }}
+            tick={{ fill: textColor, fontSize: 10, opacity: 0.7 }}
             axisLine={false}
             tickLine={false}
-            minTickGap={20}
+            dy={10}
+            interval="preserveStartEnd"
           />
           
           <YAxis
-            domain={[0, Math.ceil(maxHours)]}
-            tick={{ fill: textColor, fontSize: 10 }}
+            domain={[0, Math.ceil(maxHours + 1)]} // Add buffer
+            tick={{ fill: textColor, fontSize: 10, opacity: 0.7 }}
             axisLine={false}
             tickLine={false}
-            width={30}
-            tickFormatter={(value) => `${Math.round(value)}h`}
+            tickFormatter={(value) => `${value}h`}
           />
           
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(100,100,100,0.1)' }} />
+          <Tooltip 
+            content={<CustomTooltip />} 
+            cursor={{ fill: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', radius: 4 }} 
+          />
           
-          {/* ✅ Correct way to apply per-bar colors in Recharts */}
           <Bar
             dataKey="hours"
-            radius={[4, 4, 0, 0]}
-            barSize={28}
-            fill="#6366f1"
+            radius={[6, 6, 6, 6]} // Fully rounded bars
+            animationDuration={1200}
             shape={(props) => {
               const { x, y, width, height, index } = props;
               const mood = chartData[index]?.mood || 3;
-              const fill = getBarColor(mood);
               return (
                 <rect
                   x={x}
                   y={y}
                   width={width}
                   height={height}
-                  fill={fill}
-                  rx={4}
-                  ry={4}
+                  fill={`url(#grad-${mood})`}
+                  rx={width / 2} // Pill shape
+                  ry={width / 2}
                 />
               );
             }}
@@ -157,7 +172,9 @@ const MyBarChart = ({
             <LabelList
               dataKey="ms"
               position="top"
-              fontSize={11}
+              offset={8}
+              fontSize={10}
+              fontWeight={600}
               fill={textColor}
               formatter={(value) => msToHhMm(value)}
             />

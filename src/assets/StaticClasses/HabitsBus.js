@@ -1,9 +1,10 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 import Colors, { THEME } from './Colors';
+import { AppData } from './AppData';
 export const expandedCard$ = new BehaviorSubject(null);
 export const setExpandedCard = (idOrNull) => expandedCard$.next(idOrNull);
 
-export const theme$ = new BehaviorSubject(THEME.DARK);
+export const theme$ = new BehaviorSubject('dark');
 export const lang$ = new BehaviorSubject('ru');
 export const sound$ = new BehaviorSubject(0);
 export const vibro$ = new BehaviorSubject(0);
@@ -38,7 +39,8 @@ export const setConfirmationPanel = (state) => confirmationPanel$.next(state);
 export const setTheme = (theme) => {
   theme$.next(theme);
   Colors.setTheme(theme);
-  globalTheme$.next(theme === THEME.DARK || theme === THEME.SPECIALDARK ? 'dark' : 'light');
+  console.log(theme);
+  globalTheme$.next(theme === THEME.DARK ? 'dark' : 'light');
 };
 export const setLang = (lang) => lang$.next(lang);
 export const setFontSize = (fontSize) => fontSize$.next(fontSize);
@@ -59,6 +61,7 @@ export const setPage = (page) => {
   else if(page.startsWith('Mental')) bottomBtnPanel$.next('BtnsMental');
   else if(page.startsWith('Sleep')) bottomBtnPanel$.next('BtnsSleep');
   else if(page.startsWith('ToDo')) bottomBtnPanel$.next('BtnsToDo');
+  else if(page.startsWith('Robot')) bottomBtnPanel$.next('BtnsRobot');
   else bottomBtnPanel$.next('');
 }
 export const setAddPanel = (state) => addPanel$.next(state);

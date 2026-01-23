@@ -1,16 +1,17 @@
-import {useEffect,useState} from 'react'
+import React, { useEffect, useState } from 'react'
+import { motion } from 'framer-motion';
 import Colors from '../StaticClasses/Colors'
-import { theme$, lang$, devMessage$ ,isPasswordCorrect$,fontSize$,premium$,isValidation$ ,setPage} from '../StaticClasses/HabitsBus'
-import { AppData,UserData } from '../StaticClasses/AppData'
-//import 'grained'
-import  {NotificationsManager,sendPassword} from '../StaticClasses/NotificationsManager'
-import {FaMoon,FaBrain,FaSpa,FaBookOpen,FaRecycle,FaListAlt,FaCodeBranch} from 'react-icons/fa'
+import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, isValidation$, setPage,setPremium } from '../StaticClasses/HabitsBus'
+import { AppData, UserData } from '../StaticClasses/AppData'
+import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
+import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot, FaMedal, FaChevronRight, FaCodeBranch } from "react-icons/fa";
+import { MdOutlineSelfImprovement } from "react-icons/md";
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 import { PremiumButton } from './Premium'
 import { sendReferalLink } from '../StaticClasses/PaymentService'
 
 const MainMenu = () => {
-    const [theme, setThemeState] = useState('dark');
+    const [theme, setThemeState] = useState(AppData.prefs[1] === 0 ? 'dark' : 'light');
     const [lang, setLang] = useState(AppData.prefs[0]);
     const [fSize, setFontSize] = useState(0);
     const [clickCount, setClickCount] = useState(0);
@@ -23,15 +24,16 @@ const MainMenu = () => {
     const [passwordInput, setPasswordInput] = useState(false);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
     const [isValidation, setIsValidation] = useState(UserData.isValidation);
+
     useEffect(() => {
-          const subscription = premium$.subscribe(setHasPremium);
-          const subscription2 = isValidation$.subscribe(setIsValidation);
-          return () => 
-          {
+        const subscription = premium$.subscribe(setHasPremium);
+        const subscription2 = isValidation$.subscribe(setIsValidation);
+        return () => {
             subscription.unsubscribe();
             subscription2.unsubscribe();
-          }
-        }, []);
+        }
+    }, []);
+
     useEffect(() => {
         const themeSubscription = theme$.subscribe(setThemeState);
         const langSubscription = lang$.subscribe((lang) => {
@@ -44,8 +46,8 @@ const MainMenu = () => {
             fontSizeSubscription.unsubscribe();
         };
     }, []);
+
     useEffect(() => {
-       
         const devMessageSubscription = devMessage$.subscribe(setDevMessage);
         const isPasswordCorrectSubscription = isPasswordCorrect$.subscribe(setIsPasswordCorrect);
         return () => {
@@ -53,304 +55,318 @@ const MainMenu = () => {
             isPasswordCorrectSubscription.unsubscribe();
         };
     }, []);
+
     useEffect(() => {
-        if(isPasswordCorrect){
+        if (isPasswordCorrect) {
             setPasswordInput(false);
             setDevConsolePanel(true);
         }
     }, [isPasswordCorrect]);
 
     const handleClick = (isUp) => {
-       if(isUp){
-        setClickCountUp(clickCountUp + 1);
-       }else{
-        setClickCount(clickCount + 1);
-       }
-       if(clickCount === 5 && clickCountUp === 5){
-          setPasswordInput(true);
-          setClickCount(0);
-          setClickCountUp(0);
-       }
+        if (isUp) {
+            setClickCountUp(clickCountUp + 1);
+        } else {
+            setClickCount(clickCount + 1);
+        }
+        if (clickCount === 5 && clickCountUp === 5) {
+            setPasswordInput(true);
+            setClickCount(0);
+            setClickCountUp(0);
+            // for test only
+            UserData.hasPremium = true;
+            UserData.premiumEndDate = '2099-01-01';
+            setPremium(true);
+        }
     }
 
     const checkPassword = (value) => {
-        if(value.length === 16){
+        if (value.length === 16) {
             sendPassword(value);
         }
     }
 
+    const menuItems = [
+        { id: 'RobotMain', icon: <FaRobot />, title: lang === 0 ? 'ИИ инсайты' : 'AI insights', subtitle: lang === 0 ? 'Персональный анализ' : 'Personal analysis', color: '#00E5FF', needBlur: true },
+        { id: 'HabitsMain', icon: <FaMedal />, title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Трекер дисциплины' : 'Discipline tracker', color: '#FFD700', needBlur: false },
+        { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Тренировки' : 'Workout', subtitle: lang === 0 ? 'Дневник силы' : 'Gym diary', color: '#FF4D4D', needBlur: false },
+        { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Мозг' : 'Brain', subtitle: lang === 0 ? 'Развитие интеллекта' : 'Intelligence', color: '#4DA6FF', needBlur: false },
+        { id: 'RecoveryMain', icon: <MdOutlineSelfImprovement />, title: lang === 0 ? 'Восстановление' : 'Recovery', subtitle: lang === 0 ? 'Медитации и отдых' : 'Meditation & Rest', color: '#4DFF88', needBlur: false },
+        { id: 'SleepMain', icon: <FaBed />, title: lang === 0 ? 'Сон' : 'Sleep', subtitle: lang === 0 ? 'Анализ качества' : 'Quality analysis', color: '#A64DFF', needBlur: true },
+        { id: 'ToDoMain', icon: <FaListUl />, title: lang === 0 ? 'Задачи' : 'To-Do', subtitle: lang === 0 ? 'Список дел' : 'Task list', color: '#FFA64D', needBlur: false }
+    ];
+
+    const containerAnim = {
+        hidden: { opacity: 0 },
+        show: { opacity: 1, transition: { staggerChildren: 0.09 } }
+    };
+
+    const itemAnim = {
+        hidden: { opacity: 0, y: 15, scale: 0.98 },
+        show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 25 } }
+    };
+
     return (
-          <>
-            
+        <>
             {devConsolePanel && (
-                <div style={{position:'absolute',display:'flex',alignItems:'center',flexDirection:'column',top:'10vh',left:'0',width:'100vw',height:'40vh',backgroundColor:'rgba(0,0,0,0.7)',zIndex:1000}}>
-                  <div style={{display:'flex',overflowY:'scroll',borderRadius:'12px',width:'85vw',height:'15vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}}>
-                     {devMessage}
-                 </div>
-                 <textarea style={{borderRadius:'12px',width:'85vw',height:'10vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)}/>
-            <div style={{width:'100%',display:'flex',flexDirection:'row',justifyContent:'space-around'}}>
-                <input style={{borderRadius:'12px',width:'50vw',height:'3vh',fontSize:'12px',fontFamily:'Segoe UI',border:'2px solid white',color:'white'}} type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
-                <button onClick={() => {if(devInputMessage === 'TrainingMain'){setPage('TrainingMain');}else {NotificationsManager.sendMessage(devInputMessage,devMessageToAll)}}}>Submit</button>
-            </div>
-            <div style={{width:'90%', display:'flex',flexDirection:'row', justifyContent:'space-between'}}>
-              <button onClick={() => setDevConsolePanel(false)}>Close console</button>
-            </div>
-            
+                <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', flexDirection: 'column', top: '10vh', left: '0', width: '100vw', height: '40vh', backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 10000 }}>
+                    <div style={{ display: 'flex', overflowY: 'scroll', borderRadius: '12px', width: '85vw', height: '15vh', fontSize: '12px', fontFamily: 'Segoe UI', border: '1px solid #333', color: 'white', padding: '10px' }}>
+                        {devMessage}
+                    </div>
+                    <textarea style={{ borderRadius: '12px', width: '85vw', height: '10vh', fontSize: '12px', background: '#111', color: 'white', marginTop: '10px' }} value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)} />
+                    <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-around', marginTop: '10px' }}>
+                        <input style={{ borderRadius: '12px', width: '50vw', height: '3vh', background: '#222', color: 'white' }} type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
+                        <button onClick={() => { if (devInputMessage === 'TrainingMain') { setPage('TrainingMain'); } else { NotificationsManager.sendMessage(devInputMessage, devMessageToAll) } }}>Submit</button>
+                    </div>
+                    <button onClick={() => setDevConsolePanel(false)} style={{ marginTop: '10px' }}>Close</button>
                 </div>
             )}
-            <div style={styles(theme).container}>
-            <div style={{height:'16vh'}}/>
-            {passwordInput && <input style={{width:'85vw',height:'2vh',fontSize:'12px',borderRadius:'12px',zIndex:1001}} type="password" onChange={(e) => checkPassword(e.target.value)} />}
-            <div style={styles(theme).scrollView}>
-               <div style={{height:'1vh',width:'100%'}} onClick={() => {handleClick(true)}} />
-               {!hasPremium && !isValidation && < PremiumButton clickHandler={() => sendReferalLink()}  w = {'95%'} h={'55px'} fSize={'16px'} br={"24px"}
-                langIndex={lang}  theme={theme} textToShow = {[ 'Пригласи друга 👥 и получи месяц премиум ✨' , 'Invite a friend 👥 and get a month of premium ✨']}  needSparcle={false}/>}
-               <MenuCard 
-                    text={['Привычки', 'Habits']} 
-                    decr={[
-                        'Приложение использует научно обоснованные методы формирования привычек, включая теорию петли привычки (Чарльз Дахигг).',
-                        'This app utilizes evidence-based habit formation techniques, including the habit loop theory (Charles Duhigg).'
-                    ]} 
-                    theme={theme}  
-                    lang={lang}
-                    fontSize={fSize}
-                    onClick={() => {setPage('HabitsMain');playEffects(null);}}
-                    index={0}
-                />
-                <MenuCard 
-                    text={['Тренировочный дневник', 'Training log']} 
-                    decr={[
-                        'Отслеживайте свой тренировочный прогресс, ставьте цели и анализируйте результаты. Идеальный инструмент для системного подхода к физическому развитию.', 
-                        'Track your workout progress, set goals, and analyze results. The perfect tool for a systematic approach to physical development.'
-                    ]}
-                    colorDark="#44281eff" 
-                    colorLight="#f998c375" 
-                    colorSpecialDark="#352628ff" 
-                    colorSpecialLight="#93292950" 
-                    theme={theme} 
-                    lang={lang}
-                    fontSize={fSize}
-                    onClick={() => {setPage('TrainingMain');playEffects(null);}}
-                    index={1}
-                />
-               <MenuCard 
-                    text={['Дыхание, медитация и закаливание', 'Breathing, meditation & cold']} 
-                    decr={['Дыхательные практики, медитация и закаливание помогают улучшить качество сна и общее самочувствие.', 'Breathing exercises, meditation, and calming techniques help improve sleep quality and overall well-being.']} 
-                    colorDark="#355257ff" 
-                    colorLight="#8eebd785" 
-                    colorSpecialDark="#1c3136ff" 
-                    colorSpecialLight="#4573766d" 
-                    theme={theme} 
-                    lang={lang}
-                    fontSize={fSize}
-                    onClick={() => {setPage('RecoveryMain');playEffects(null);}}
-                    index={2}
-                />
-                <MenuCard 
-                    text={['Ментальный фитнесс', 'Mental fitness']}
-                    decr = {['Улучшайте память, внимание и скорость мышления с помощью коротких научно обоснованных тренировок.', 'Boost memory, focus and thinking speed with short, science-based brain workouts.']}
-                    colorDark="#222121ff" 
-                    colorLight="#7c7a7966" 
-                    colorSpecialDark="#353232ff" 
-                    colorSpecialLight="#4a3e3e4b" 
-                    theme={theme} 
-                    lang={lang}
-                    fontSize={fSize}
-                    onClick={() => {setPage('MentalMain');playEffects(null);}}
-                    index={3}
-                />
-                <MenuCard 
-                    text={['Сон и восстановление', 'Sleep & Recovery']}
-                    decr = {['Помогает подобрать нагрузку и время отдыха','Helps balance training load and rest']}
-                    colorDark="#37293eff" 
-                    colorLight="#cba1d790" 
-                    colorSpecialDark="#382537ff" 
-                    colorSpecialLight="#83064550" 
-                    theme={theme} 
-                    lang={lang}
-                    fontSize={fSize}
-                    onClick={() => {}}
-                    index={4}
-                    hasPremium={hasPremium}
-                    needBlur={true}
-                >
-                
 
-                </MenuCard>
-                <MenuCard 
-  text={['Список задач', 'To do list']} // filled empty first element
-  decr={[
-    'Помогает организовать список дел, установить приоритеты и следить за прогрессом.',
-    'Helps organize a to-do list, set priorities, and track progress.'
-  ]}
-  colorDark="#5a5a5a"        // neutral dark gray instead of purple
-  colorLight="#d3d3d380"     // light gray with transparency
-  colorSpecialDark="#4a4a4a"
-  colorSpecialLight="#c0c0c060"
-  theme={theme} 
-  lang={lang}
-  fontSize={fSize}
-  onClick={() => {setPage('ToDoMain');playEffects(null);}}         // optionally show tooltip or alert
-  index={5}
-  hasPremium={hasPremium}
-  needBlur={false}
-  inDevelopment={true}
-/>
-                <div style={{height:'1vh',width:'100%'}} onClick={() => {handleClick(false)}} />
+            <div style={styles(theme).container}>
+                <div style={{ height: '16vh' }} />
+                {passwordInput && <input style={{ width: '85vw', height: '2vh', fontSize: '12px', borderRadius: '12px', zIndex: 1001, marginBottom: '10px' }} type="password" onChange={(e) => checkPassword(e.target.value)} />}
+                
+                <div style={styles(theme).scrollView}>
+                    <div style={{ height: '2vh', width: '100%' }} onClick={() => { handleClick(true) }} ></div>
+                    
+                    {!hasPremium && !isValidation && (
+                        <PremiumButton 
+                            clickHandler={() => sendReferalLink()} 
+                            w={'90%'} h={'85px'} fSize={'15px'} br={"24px"}
+                            langIndex={lang} theme={theme} 
+                            textToShow={['Премиум за приглашение', 'Invite and get premium']} 
+                            needSparcle={false} 
+                        />
+                    )}
+
+                    <motion.div
+                        variants={containerAnim}
+                        initial="hidden"
+                        animate="show"
+                        style={styles(theme).grid}
+                    >
+                        {menuItems.map((menuItem, index) => (
+                            <MenuCard
+                                key={menuItem.id}
+                                item={menuItem}
+                                theme={theme}
+                                variants={itemAnim}
+                                hasPremium={hasPremium}
+                                index={index}
+                                fSize={fSize}
+                                lang={lang}
+                            />
+                        ))}
+                    </motion.div>
+
+                    <div style={{ height: '10vh', width: '100%' }} onClick={() => { handleClick(false) }} ></div>
+                </div>
             </div>
-          </div>
-          </>
+        </>
     )
+}
+
+function MenuCard({ item, theme, variants, hasPremium, index, fSize, lang }) {
+    const isLocked = !hasPremium && item.needBlur;
+    const isDev = false; //index === 6; // To-Do is indexed as 6
+    const info = getInfo(index - 1);
+    const isDark = theme === 'dark';
+ 
+    const cardStyle = {
+        position: 'relative',
+        width: '100%',
+        height: '80px',
+        display: 'flex',
+        alignItems: 'center',
+        padding: '0 20px',
+        boxSizing: 'border-box',
+        borderRadius: '24px',
+        overflow: 'hidden',
+        marginBottom: '12px',
+        // LIGHT: Solid white for high contrast | DARK: Glassmorphism
+        backgroundColor: isDark 
+            ? Colors.get('simplePanel', theme) + '99' 
+            : '#FFFFFF',
+        backdropFilter: isDark ? 'blur(40px)' : 'none',
+        border: `1px solid ${isDark ? Colors.get('border', theme) + '30' : '#E5E7EB'}`,
+        boxShadow: isDark 
+            ? '0 8px 20px 0 rgba(0, 0, 0, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1)' 
+            : '0 4px 10px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)',
+    };
+
+    const iconWrapperStyle = {
+        width: '48px',
+        height: '48px',
+        borderRadius: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: '16px',
+        flexShrink: 0,
+        backgroundColor: isDark 
+            ? Colors.get('background', theme) + '80' 
+            : Colors.get('background', theme),
+        color: item.color,
+        border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.03)'
+    };
+
+    return (
+        <motion.div
+            variants={variants}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { if (!isLocked && !isDev) { setPage(item.id); playEffects(null); } }}
+            style={cardStyle}
+        >
+            <div style={iconWrapperStyle}>
+                {React.cloneElement(item.icon, { size: 22 })}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, overflow: 'hidden' }}>
+                <h4 style={{ 
+                    ...styles(theme, fSize).title, 
+                    color: Colors.get('mainText', theme), 
+                    margin: 0, 
+                    fontWeight: isDark ? '900' : '700' 
+                }}>
+                    {item.title}
+                </h4>
+                <div style={{ 
+                    ...styles(theme, fSize).subtitle, 
+                    color: Colors.get('subText', theme), 
+                    opacity: isDark ? 0.6 : 0.8 
+                }}>
+                    {item.subtitle}
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', marginLeft: '8px' }}>
+                {info !== '' && (
+                    <div style={{
+                        padding: '4px 10px',
+                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                        borderRadius: '12px',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        color: Colors.get('mainText', theme),
+                        marginRight: '8px'
+                    }}>
+                        {info}
+                    </div>
+                )}
+                <FaChevronRight size={14} color={Colors.get('subText', theme)} style={{ opacity: 0.3 }} />
+            </div>
+
+            {/* Premium Lock Overlay */}
+            {isLocked && (
+                <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    style={{
+                        position: 'absolute', inset: 0, zIndex: 2,
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                        backgroundColor: isDark ? 'rgba(14, 14, 14, 0.52)' : 'rgba(255, 255, 255, 0.4)',
+                        backdropFilter: 'blur(5px)',
+                        textAlign: 'center'
+                    }}
+                >
+                    <div style={{ color: isDark ? '#FFD700' : '#D97706', fontSize: '11px', fontWeight: 'bold', fontFamily: 'Segoe UI' }}>
+                        {lang === 0 ? 'ТОЛЬКО ДЛЯ ПРЕМИУМ' : 'PREMIUM USERS ONLY'}
+                    </div>
+                </div>
+            )}
+
+            {/* Dev Overlay */}
+            {isDev && (
+                <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    style={{
+                        position: 'absolute', inset: 0, zIndex: 2,
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                        backgroundColor: isDark ? 'rgba(16, 16, 16, 0.54)' : 'rgba(255, 255, 255, 0.52)',
+                        backdropFilter: 'blur(6px)',
+                        textAlign: 'center'
+                    }}
+                >
+                    <div style={{ color: isDark ? '#00b3ff' : '#0606d9', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}>
+                        <FaCodeBranch style={{ color: isDark ? '#00b3ff' : '#0000a7' }} />
+                        {lang === 0 ? 'В разработке' : 'In development'}
+                    </div>
+                </div>
+            )}
+        </motion.div>
+    );
+}
+
+const styles = (theme, fontSize) => ({
+    container: {
+        backgroundColor: Colors.get('background', theme),
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "start",
+        alignItems: "center",
+        height: "100vh",
+        width: "100vw",
+        fontFamily: "Segoe UI",
+        overflow: 'hidden'
+    },
+    scrollView: {
+        width: "100vw",
+        maxHeight: "90vh",
+        overflowY: "scroll",
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+    },
+    grid: {
+        width: '92%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '4px', // Gap handled by margin in MenuCard
+        marginTop: '15px'
+    },
+    title: {
+        fontFamily: 'Segoe UI',
+        fontSize: fontSize === 0 ? '19px' : '21px',
+        letterSpacing: '0.2px'
+    },
+    subtitle: {
+        fontFamily: 'Segoe UI',
+        fontWeight: '500',
+        fontSize: fontSize === 0 ? '12px' : '14px',
+        marginTop: '2px'
+    },
+    text: {
+        fontFamily: "Segoe UI",
+        fontSize: fontSize === 0 ? "10px" : "12px",
+        color: Colors.get('subText', theme)
+    },
+    mainText: {
+        fontFamily: "Segoe UI",
+        fontSize: fontSize === 0 ? "14px" : "16px",
+        color: Colors.get('mainText', theme)
+    }
+})
+
+function playEffects(sound) {
+    if (AppData.prefs[2] == 0 && sound !== null) {
+        if (!sound.paused) {
+            sound.pause();
+            sound.currentTime = 0;
+        }
+        sound.volume = 0.5;
+        sound.play();
+    }
+    if (AppData.prefs[3] == 0 && window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    }
+}
+
+function getInfo(index) {
+    if (index === 0) return AppData.choosenHabits.length > 0 ? AppData.choosenHabits.length : '';
+    else if (index === 1) {
+        const tonnage = getCurrentCycleAnalysis().currentTonnage;
+        return tonnage > 0 ? (tonnage / 1000).toFixed(1) + (AppData.prefs[0] === 0 ? 'т' : 't') : '';
+    }
+    return '';
 }
 
 export default MainMenu
-
-function MenuCard({text = ["Категория", "Category"], decr = ["Скоро будет доступно", "Coming soon"], colorDark = "#294128ff", colorLight = "#7eff7065",
-  colorSpecialDark = "#1d2d1dff", colorSpecialLight = "#2790145c",fSize=1, theme,lang, onClick,fontSize,index,hasPremium = false,needBlur= false,inDevelopment = false}){
-    const cardColor = (theme) => {
-        if(theme === 'dark') return colorDark;
-        else if(theme === 'specialdark') return colorSpecialDark;
-        else if(theme === 'speciallight') return colorSpecialLight;
-        return colorLight;
-    }
-    const getIcon = (index,isBack) => {
-        if(index === 0) return <FaRecycle style={isBack ? backIconStyle : iconStyle}/>
-        else if(index === 1) return <FaBookOpen style={isBack ? backIconStyle : iconStyle}/>
-        else if(index === 2) return <FaSpa style={isBack ? backIconStyle : iconStyle}/>
-        else if(index === 3) return <FaBrain style={isBack ? backIconStyle : iconStyle}/>
-        else if(index === 4) return <FaMoon style={isBack ? backIconStyle : iconStyle}/>
-        else if(index === 5) return <FaListAlt style={isBack ? backIconStyle : iconStyle}/>
-    }
-    const _style = {
-        alignItems: "center",
-        justifyContent: "center",
-        display:'flex',
-        flexDirection:'row',
-        height: "13vh",
-        borderRadius: "28px",
-        margin: "10px",
-        marginBottom:'20px',
-        backgroundColor: cardColor(theme),
-        overflow : 'hidden',
-        position: 'relative',
-        boxShadow:'3px 3px 2px rgba(0,0,0,0.3)',
-    }
-    const iconStyle = {
-        fontSize:'28px',
-        color: Colors.get('mainText', theme),
-    }
-    const backIconStyle = {
-        fontSize:'86px',
-        rotate:'-20deg',
-        position:'absolute',
-        right:'-10px',
-        top:'30%',
-        color:  Colors.get('svgColor',theme)
-    }
-    const info = getInfo(index);
-    return (
-        <div style={_style} onClick={onClick}> 
-        { !hasPremium && needBlur &&
-                  <div onClick={(e) => {e.stopPropagation();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'space-around',alignItems:'center',
-                    width:'100%',height:'100%',left:'0',top:'0',backdropFilter:'blur(8px)',zIndex:2}}>
-                    <div style={{...styles(theme,fSize).mainText}}> {lang === 0 ? 'Сон и ИИ аналитика 🤖✨' : 'Sleep and AI analysis 🤖✨'} </div>
-                    <div style={{...styles(theme,fSize).mainText}}> {lang === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'} </div>
-                    <button onClick={() => {setPage('premium')}} style={{...styles(theme,fSize).btn}} >{lang === 0 ? 'Стать премиум' : 'Get premium'}</button>
-                  </div>
-                }
-        {info !== '' && <div style={{display:'flex',flexDirection:'row',width:"15%",height:'22%',backgroundColor:'rgba(50, 50, 50, 0.35)',alignItems:'center',justifyContent:'center',position:'absolute',
-          top:'10%',left:'80%',borderRadius:'12px',fontSize:'16px',color:Colors.get('mainText', theme)}}>
-           {info}
-        </div>}
-        {getIcon(index,false)}
-        <div style={{width:'70%',height:'100%',display:'flex',flexDirection:'column',alignItems:'flex-start',justifyContent:'center'}}>
-            <h2 style={styles(theme,fontSize).cardText}>{Array.isArray(text) ? text[lang] : text}</h2>
-            <p style={styles(theme,fontSize).text}>{Array.isArray(decr) ? decr[lang] : decr}</p>
-        </div>
-         {getIcon(index,true)}
-         {
-           inDevelopment && 
-                  <div onClick={(e) => {e.stopPropagation();}} style={{position:'absolute',display:'flex',flexDirection:'column',justifyContent:'space-around',alignItems:'center',
-                    width:'100%',height:'100%',left:'0',top:'0',backdropFilter:'blur(8px)',zIndex:2}}>
-                    <div style={{...styles(theme,fSize).mainText}}><FaCodeBranch style={{fontSize:'16px',color: Colors.get('medium', theme)}}/>{lang === 0 ? ' находться в разработке' : ' In development'}</div>
-                    <div style={{...styles(theme,fSize).text}}> {lang === 0 ? 'Список дел и цели, тест будет доступен в ближайшее время для премиум пользователей' : 'Todo list and goals , Test will be available soon for premium users'} </div>
-        </div>   }
-        </div> 
-    )
-}
-
-const styles = (theme,fontSize) => ({
-    container :
-   {
-     backgroundColor: Colors.get('background', theme),
-     display: "flex",
-     flexDirection: "column",
-     justifyContent: "start",
-     overflow:'hidden',
-     alignItems: "center",
-     height: "100vh",
-     width: "100vw",
-     fontFamily: "Segoe UI",
-  },
-  mainText :
-  {
-    textAlign: "left",
-    marginBottom: "5px",
-    fontSize: fontSize === 0 ? "14px" : "16px",
-    color: Colors.get('mainText', theme),
-  },
-  cardText :
-  {
-    textAlign: "left",
-    marginBottom: "5px",
-    fontSize: fontSize === 0 ? "14px" : "16px",
-    color: Colors.get('mainText', theme),
-    marginLeft: "30px"
-  },
-  text :
-  {
-    textAlign: "left",
-    fontSize: fontSize === 0 ? "10px" : "12px",
-    color: Colors.get('subText', theme),
-    marginLeft: "30px"
-  },
-  scrollView:
-  {
-    width: "95vw",
-    maxHeight: "90vh",
-    overflowY: "scroll",
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-      btn:
-      {
-         width:'70%',
-         height:'40px',
-         borderRadius:'12px',
-         fontSize: fontSize === 0 ? '13px' : '14px',
-         color:Colors.get('mainText', theme),
-         backgroundColor:Colors.get('simplePanel',theme)
-      }
-})
-function playEffects(sound){
-  if(AppData.prefs[2] == 0 && sound !== null){
-    if(!sound.paused){
-        sound.pause();
-        sound.currentTime = 0;
-    }
-    sound.volume = 0.5;
-    sound.play();
-  }
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
-function getInfo(index){
-   if(index === 0) return AppData.choosenHabits.length > 0 ? AppData.choosenHabits.length : '';
-   else if(index === 1){
-    const tonnage = getCurrentCycleAnalysis().currentTonnage;
-    return tonnage > 0 ? (tonnage / 1000).toFixed(1) + (AppData.prefs[0] === 0 ? 'т' : 't') : '';
-   }
-   else if(index === 2) return '';
-   else if(index === 3) return '';
-   else if(index === 4) return '';
-   else if(index === 5) return '';
-}

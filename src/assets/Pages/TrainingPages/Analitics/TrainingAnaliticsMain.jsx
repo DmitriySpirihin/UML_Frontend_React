@@ -1,629 +1,395 @@
-import React,  { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData } from '../../../StaticClasses/AppData';
 import Colors from '../../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, premium$, setPage } from '../../../StaticClasses/HabitsBus';
+import { theme$, lang$, fontSize$, premium$ } from '../../../StaticClasses/HabitsBus';
 import LoadDonut from './LoadDonut';
 import { VolumeTabs } from '../../../Helpers/TrainingAnaliticsTabs';
 import TrainingAnaliticsMuscles from './TrainingAnaliticsMuscles';
 import TrainingAnaliticsRM from './TrainingAnaliticsRM';
-import {FaInfo} from "react-icons/fa"
+import { FaInfoCircle, FaLock, FaTrophy } from "react-icons/fa";
+import { MdClose } from 'react-icons/md';
 
 const TrainingAnaliticsMain = () => {
+  // --- STATE (Logic Intact) ---
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [tab, setTab] = React.useState('volume');
   const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
-  const [date, setDate] = useState(new Date());
+  // eslint-disable-next-line no-unused-vars
+  const [date, setDate] = useState(new Date()); 
   const [targetTonnage, setTargetTonnage] = useState(0);
-  const [progressPercent, setProgressPercent] = useState(0); 
+  const [progressPercent, setProgressPercent] = useState(0);
   const [donutData, setDonutData] = useState([{ value: 0 }, { value: 0 }, { value: 0 }]);
   const [totalTonnage, setTotalTonnage] = useState(0);
   const [sessionCount, setSessionCount] = useState(0);
-   const [showInfo,setShowInfo] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
-  // Subscriptions
+  // --- SUBSCRIPTIONS ---
   useEffect(() => {
     const sub1 = theme$.subscribe(setThemeState);
     const sub2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
     const sub3 = fontSize$.subscribe(setFSize);
     const sub4 = premium$.subscribe(setHasPremium);
     return () => {
-      sub1.unsubscribe();
-      sub2.unsubscribe();
-      sub3.unsubscribe();
-      sub4.unsubscribe();
+      sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe();
     };
   }, []);
 
+  // --- CALCULATION EFFECT ---
   useEffect(() => {
-  const analysis = getCurrentCycleAnalysis();
-  const { currentCycle, targetTonnage, currentTonnage } = analysis;
+    const analysis = getCurrentCycleAnalysis();
+    const { currentCycle, currentTonnage } = analysis;
 
-  // Update donut: categorize current cycle sessions by load
-  const loadRange = getLoadRange();
-  let light = 0, medium = 0, heavy = 0;
+    const loadRange = getLoadRange();
+    let light = 0, medium = 0, heavy = 0;
 
-  currentCycle.forEach(session => {
-    const load = session.tonnage / (session.duration / 60000);
-    if (load < loadRange.min) light++;
-    else if (load <= loadRange.max) medium++;
-    else heavy++;
-  });
-  setTargetTonnage(analysis.targetTonnage);
-  setProgressPercent(analysis.progressPercent);
-  setDonutData([{ value: light }, { value: medium }, { value: heavy }]);
-  setTotalTonnage(currentTonnage);
-  setSessionCount(currentCycle.length);
+    currentCycle.forEach(session => {
+      const load = session.tonnage / (session.duration / 60000);
+      if (load < loadRange.min) light++;
+      else if (load <= loadRange.max) medium++;
+      else heavy++;
+    });
+    
+    setTargetTonnage(analysis.targetTonnage);
+    setProgressPercent(analysis.progressPercent);
+    setDonutData([{ value: light }, { value: medium }, { value: heavy }]);
+    setTotalTonnage(currentTonnage);
+    setSessionCount(currentCycle.length);
+  }, []);
 
-  // 💡 Optional: store targetTonnage in state to show in UI
-  // setTargetTonnage(targetTonnage);
-  // setProgressPercent(analysis.progressPercent);
-}, []); 
+  // --- RENDER HELPERS ---
+  const isLight = theme === 'light' || theme === 'speciallight';
+  const cardBg = isLight ? 'rgba(255,255,255,0.7)' : 'rgba(30,30,30,0.6)';
+  const borderColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)';
 
   return (
     <div style={styles(theme).container}>
-      {/* Tabs */}
-      <VolumeTabs type={0} theme={theme} langIndex={langIndex} activeTab={tab} onChange={setTab}/>
-      {tab === 'volume' && <div style={{width:'100%',display:'flex',height:'90%',alignItems:'center',justifyContent:'space-around',flexDirection:'column'}}>
-     <div style={{...styles(theme,fSize).text,marginTop:'20px'}}>{langIndex === 0 ? 'Текущий тренировочный цикл' : 'Current training cycle'}</div>
-      {/* Donut Chart */}
-      {Object.keys(AppData.trainingLog).length > 1  ? <LoadDonut data={donutData} theme={theme} totalTonnage={totalTonnage} sessionCount={sessionCount} langIndex={langIndex}/>: <div style={styles(theme).panelRow}><div style={styles(theme,fSize).text}>{langIndex === 0 ? 'Нет данных' : 'No data'}</div></div>}
-      {/* Needed Tonnage */}
-      <Tonnage theme={theme} langIndex={langIndex} totalTonnage={totalTonnage} targetTonnage={targetTonnage} progressPercent={progressPercent}/>
-      <InfoText theme={theme} langIndex={langIndex}/>
-     </div>}
+      <VolumeTabs type={0} theme={theme} langIndex={langIndex} activeTab={tab} onChange={setTab} />
 
-     {tab === 'muscles' && <div style={{width:'100%',display:'flex',height:'90%',alignItems:'center',justifyContent:'space-around',flexDirection:'column'}}>
-     <div style={{...styles(theme,fSize).text,marginTop:'20px'}}>{langIndex === 0 ? 'Загрузка мышечных групп' : 'Muscle load'}
-      <FaInfo onClick={() => setShowInfo(true)} style={{...styles(theme,fSize).icon , marginLeft  : '10px'}}/>
-     </div>
-       <TrainingAnaliticsMuscles/>
-     </div>}
-     {tab === 'exercises' && <div style={{width:'100%',display:'flex',height:'90%',alignItems:'center',justifyContent:'space-around',flexDirection:'column'}}>
-       <TrainingAnaliticsRM/>
-     </div>}
-      {/* Premium Overlay */}
+      <div style={{ flex: 1, width: '100%', maxWidth: '600px', position: 'relative', overflowY: 'auto', paddingBottom: '100px' }}>
+        <AnimatePresence mode="wait">
+          
+          {/* === VOLUME TAB === */}
+          {tab === 'volume' && (
+            <motion.div
+              key="volume"
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '10px' }}
+            >
+              {/* Card 1: Cycle Distribution */}
+              <div style={{ ...styles(theme).card, backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+                <div style={styles(theme).cardHeader}>
+                  <span style={styles(theme, fSize).headerTitle}>{langIndex === 0 ? 'Текущий цикл' : 'Current Cycle'}</span>
+                  <div style={styles(theme).badge}>{sessionCount} {langIndex === 0 ? 'сессий' : 'sessions'}</div>
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
+                  {Object.keys(AppData.trainingLog).length > 1 ? (
+                    <LoadDonut data={donutData} theme={theme} totalTonnage={totalTonnage} sessionCount={sessionCount} langIndex={langIndex} />
+                  ) : (
+                    <div style={{ padding: '40px', color: Colors.get('subText', theme), fontSize: '14px' }}>
+                      {langIndex === 0 ? 'Нет данных' : 'No data available'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Card 2: Tonnage Target */}
+              <div style={{ ...styles(theme).card, backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+                <Tonnage 
+                  theme={theme} 
+                  langIndex={langIndex} 
+                  totalTonnage={totalTonnage} 
+                  targetTonnage={targetTonnage} 
+                  progressPercent={progressPercent} 
+                />
+                <div style={{ padding: '0 20px 20px 20px' }}>
+                   <InfoText theme={theme} langIndex={langIndex} />
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* === MUSCLES TAB === */}
+          {tab === 'muscles' && (
+            <motion.div
+              key="muscles"
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+              style={{ padding: '10px' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px', padding: '0 10px' }}>
+                <span style={styles(theme, fSize).sectionTitle}>{langIndex === 0 ? 'Загрузка мышц' : 'Muscle Load'}</span>
+                <motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowInfo(true)} style={{ cursor: 'pointer', opacity: 0.7 }}>
+                  <FaInfoCircle size={18} color={Colors.get('mainText', theme)} />
+                </motion.div>
+              </div>
+              <TrainingAnaliticsMuscles />
+            </motion.div>
+          )}
+
+          {/* === EXERCISES TAB === */}
+          {tab === 'exercises' && (
+            <motion.div
+              key="exercises"
+              initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+              style={{ padding: '10px' }}
+            >
+              <TrainingAnaliticsRM />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* --- PREMIUM LOCK --- */}
       {!hasPremium && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'absolute',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            width: '100vw',
-            height: '170vw',
-            top: '15.5%',
-            borderRadius: '24px',
-            backdropFilter: 'blur(12px)',
-            zIndex: 2
-          }}
-        >
-          <p style={{ ...styles(theme, fSize).text, textAlign: 'center' }}>
-            {langIndex === 0 ? 'Детальная статистика тренировок 📊' : 'Detailed training statistics 📊'}
-          </p>
-          <p style={{ ...styles(theme, fSize).text, textAlign: 'center' }}>
-            {langIndex === 0 ? 'Персональные рекомендации на основании тренировок' : 'Personal recommendations based on your trainings'}
-          </p>
-          <p style={{ ...styles(theme, fSize).text, textAlign: 'center' }}>
-            {langIndex === 0
-              ? 'Отслеживайте прогресс в упражнениях, анализируйте недельную нагрузку и достигайте целей быстрее!'
-              : 'Track your exercise progress, analyze weekly workload, and hit your goals faster!'}
-          </p>
-          <p style={{ ...styles(theme, fSize).text, textAlign: 'center' }}>
-            {langIndex === 0
-              ? '✨ Перейдите на Premium, чтобы получить полный доступ к аналитике!'
-              : '✨ Upgrade to Premium for full access to advanced analytics!'}
-          </p>
-          <p style={{ ...styles(theme, fSize).text }}>
-            {langIndex === 0 ? '👑 Только для премиум пользователей 👑' : '👑 Only for premium users 👑'}
-          </p>
-          <button onClick={() => setPage('premium')} style={{ ...styles(theme, fSize).btn, margin: '10px' }}>
-            {langIndex === 0 ? 'Стать премиум' : 'Get premium'}
-          </button>
-        </div>
+        <div 
+                            onClick={(e) => e.stopPropagation()} 
+                            style={{
+                                position: 'absolute', inset: 0, zIndex: 2,
+                                display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                                backgroundColor: theme$.value === 'dark' ? 'rgba(10, 10, 10, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+                                backdropFilter: 'blur(5px)',
+                                textAlign: 'center'
+                            }}
+                        >
+                            <div style={{ color: theme$.value === 'dark' ? '#FFD700' : '#D97706', fontSize: '11px', fontWeight: 'bold', fontFamily: 'Segoe UI' }}>
+                                {langIndex === 0 ? 'ТОЛЬКО ДЛЯ ПРЕМИУМ' : 'PREMIUM USERS ONLY'}
+                            </div>
+                        </div>
       )}
-      {showInfo && <div onClick={() => setShowInfo(false)} style={{width:'100vw',top:0,height:'100vh',position:'absolute',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9000,backgroundColor:'rgba(0,0,0,0.6)'}}>
-        <div style={{width:'90%',height:'50%',backgroundColor:Colors.get('background', theme),borderRadius:'24px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-around'}}>
-          <div style={{...styles(theme,fSize).text,margin:'10px',whiteSpace:'pre-wrap'}}>{infoText(langIndex)}</div>
-          <div style={{...styles(theme,fSize).subtext,margin:'10px',textAlign:'center'}}>{langIndex === 0 ? '!нажми чтобы закрыть!' : '!tap to close!'}</div>
-        </div>
-     </div>}
+
+      {/* --- INFO MODAL --- */}
+      <AnimatePresence>
+        {showInfo && (
+          <div style={styles(theme).modalBackdrop} onClick={() => setShowInfo(false)}>
+            <motion.div 
+              initial={{ y: 50, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 50, opacity: 0, scale: 0.95 }}
+              style={styles(theme).modalContainer} onClick={e => e.stopPropagation()}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3 style={{ margin: 0, color: Colors.get('mainText', theme), fontSize: '18px' }}>Info</h3>
+                <MdClose size={24} color={Colors.get('subText', theme)} onClick={() => setShowInfo(false)} style={{ cursor: 'pointer' }} />
+              </div>
+              <div style={styles(theme, fSize).infoContent}>{infoText(langIndex)}</div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
-export default TrainingAnaliticsMain;
+// --- MODERN SUB-COMPONENT: TONNAGE STATS ---
+const Tonnage = ({ theme, langIndex, totalTonnage, targetTonnage, progressPercent }) => {
+  const isCompleted = progressPercent >= 100;
+  const accentColor = isCompleted ? '#4ADE80' : Colors.get('iconsHighlited', theme);
 
+  return (
+    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <div style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: Colors.get('subText', theme), letterSpacing: '1px', marginBottom: '10px' }}>
+        {langIndex === 0 ? 'Цель Цикла' : 'Cycle Target'}
+      </div>
 
-const styles = (theme,fSize) =>
-({
-    container :
-   {
-    display:'flex',
-    width: "100vw",
-    flexDirection:'column',
-    overflowY:'scroll',
-    overflowX:'hidden',
-    justifyContent: "flex-start",
-    alignItems:'center',
-    backgroundColor:Colors.get('background', theme),
-    height: "78vh",
-    top:'16vh',
-    paddingTop:'10px'
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '5px' }}>
+        <span style={{ fontSize: '48px', fontWeight: '900', color: accentColor, lineHeight: '1', letterSpacing: '-1px' }}>
+          {(targetTonnage / 1000).toFixed(1)}
+        </span>
+        <span style={{ fontSize: '16px', fontWeight: 'bold', color: Colors.get('subText', theme) }}>
+          {langIndex === 0 ? 'т' : 't'}
+        </span>
+      </div>
+
+      {isCompleted && (
+        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#4ADE80', marginTop: '-5px', marginBottom: '10px' }}>
+          + {((totalTonnage - targetTonnage) / 1000).toFixed(1)} {langIndex === 0 ? 'т' : 't'}
+        </div>
+      )}
+
+      {/* Progress Bar Container */}
+      <div style={{ width: '100%', height: '8px', backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)', borderRadius: '4px', margin: '15px 0', overflow: 'hidden' }}>
+        <motion.div 
+          initial={{ width: 0 }} 
+          animate={{ width: `${Math.min(progressPercent, 100)}%` }} 
+          transition={{ duration: 1, ease: 'easeOut' }}
+          style={{ height: '100%', backgroundColor: accentColor, borderRadius: '4px' }}
+        />
+      </div>
+
+      <div style={{ fontSize: '13px', color: Colors.get('subText', theme) }}>
+        {progressPercent > 0 ? (
+          <>
+            {langIndex === 0 ? 'Выполнено: ' : 'Done: '} 
+            <span style={{ color: Colors.get('mainText', theme), fontWeight: 'bold' }}>{Math.round(progressPercent)}%</span>
+            {!isCompleted && (
+                <span style={{ opacity: 0.7 }}>
+                    {' • '}{langIndex === 0 ? 'осталось ' : 'left '}{((targetTonnage - totalTonnage) / 1000).toFixed(1)}
+                </span>
+            )}
+          </>
+        ) : (
+           langIndex === 0 ? `Реком. объём: ${(getNeededTonnage() / 1000).toFixed(1)} т` : `Suggested: ${(getNeededTonnage() / 1000).toFixed(1)} t`
+        )}
+      </div>
+
+      {isCompleted && (
+        <div style={styles(theme).successBadge}>
+          <FaTrophy size={12} /> {langIndex === 0 ? 'Достигнуто' : 'Achieved'}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const InfoText = ({ theme, langIndex }) => {
+  const textContent = langIndex === 0
+    ? `Анализ цикла основан на последней программе.\n\nОбъём = сумма тоннажа всех сессий.\nЦель = прошлый цикл × 1.05.\n\nТоннаж = вес × повторения.`
+    : `Cycle analysis based on latest program.\n\nVolume = sum of all session tonnage.\nTarget = last cycle × 1.05.\n\nTonnage = weight × reps.`;
+
+  return (
+    <div style={{ 
+        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', 
+        borderRadius: '12px', padding: '12px', fontSize: '11px', color: Colors.get('subText', theme), 
+        lineHeight: '1.5', whiteSpace: 'pre-wrap', textAlign: 'left'
+    }}>
+      {textContent}
+    </div>
+  );
+};
+
+// --- STYLES ---
+const styles = (theme, fSize) => ({
+  container: {
+    display: 'flex', width: "100vw", flexDirection: 'column',
+    overflowY: 'scroll', overflowX: 'hidden', justifyContent: "flex-start", alignItems: 'center',
+    backgroundColor: Colors.get('background', theme), height: "90vh",marginTop:'90px', top: '16vh', paddingTop: '10px'
   },
-  select :
-  {
-    width:'65%',
-    height:'40px',
-    padding:'10px',
-    marginTop:'10px',
-    alignSelf:'center',
-    color:Colors.get('mainText', theme),
-    backgroundColor:Colors.get('background', theme),
-    fontSize:fSize === 0 ? '13px' : '15px',
-    borderTop:'none',
-    borderLeft:'none',
-    borderRight:'none',
-    borderBottom:`1px solid ${Colors.get('icons', theme)}`,
+  card: {
+    borderRadius: '24px', overflow: 'hidden',
+    boxShadow: theme === 'light' ? '0 4px 15px rgba(0,0,0,0.03)' : '0 10px 30px rgba(0,0,0,0.2)',
+    backdropFilter: 'blur(10px)', transition: 'all 0.3s ease'
   },
-  panelRow:
-  {
-    display:'flex',
-    width:'100%',
-    alignItems:'center',
-    justifyContent:'center',
-    marginTop:'10px',
-    gap:'10px',
+  cardHeader: {
+    padding: '15px 20px', borderBottom: `1px solid ${Colors.get('border', theme)}`,
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
   },
-  text :
-  {
-    textAlign: "left",
-    fontSize: fSize === 0 ? '13px' : '15px',
-    color: Colors.get('mainText', theme)
-  },
-  subtext :
-  {
-    textAlign: "left",
-    fontSize: fSize === 0 ? '11px' : '13px',
+  headerTitle: { fontSize: fSize === 0 ? '15px' : '17px', fontWeight: '700', color: Colors.get('mainText', theme) },
+  badge: {
+    fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', borderRadius: '12px',
+    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
     color: Colors.get('subText', theme)
   },
-  icon:
-  {
-    fontSize: '18px',
-    color: Colors.get('icons', theme)
+  successBadge: {
+    marginTop: '15px', padding: '6px 14px', borderRadius: '20px',
+    background: 'linear-gradient(135deg, rgba(74, 222, 128, 0.2), rgba(59, 130, 246, 0.2))',
+    color: '#4ADE80', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px'
+  },
+  sectionTitle: { fontSize: '18px', fontWeight: 'bold', color: Colors.get('mainText', theme), paddingLeft: '5px' },
+  
+  // MODAL
+  modalBackdrop: {
+    position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)',
+    zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+  },
+  modalContainer: {
+    width: '100%', maxWidth: '400px', backgroundColor: Colors.get('background', theme),
+    borderRadius: '24px', padding: '25px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+    border: `1px solid ${Colors.get('border', theme)}`
+  },
+  infoContent: {
+    fontSize: fSize === 0 ? '13px' : '15px', color: Colors.get('mainText', theme), lineHeight: '1.6', whiteSpace: 'pre-wrap'
+  },
+
+  // PREMIUM
+  premiumOverlay: {
+    position: 'absolute', inset: 0, zIndex: 10,
+    backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.85)' : 'rgba(10,10,10,0.85)',
+    backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center'
+  },
+  premiumContent: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+    padding: '30px', borderRadius: '24px', border: `1px solid ${Colors.get('border', theme)}`,
+    background: theme === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(20,20,20,0.9)'
   }
-})
+});
 
+// --- CORE LOGIC FUNCTIONS (Unchanged) ---
 function getLoadRange() {
-  const sessions = Object.values(AppData.trainingLog)
-    .flat() // because trainingLog[date] = [session1, session2, ...]
-    .filter(
-      session =>
-        session?.completed &&
-        session.tonnage > 0 &&
-        session.duration > 0
-    );
-
+  const sessions = Object.values(AppData.trainingLog).flat().filter(s => s?.completed && s.tonnage > 0 && s.duration > 0);
   if (sessions.length === 0) return { min: 0, max: 0 };
-
-  // Load = tonnage (kg) per minute
   const loads = sessions.map(session => session.tonnage / (session.duration / 60000));
-
   const avgLoad = loads.reduce((sum, load) => sum + load, 0) / loads.length;
   const variance = loads.reduce((sum, load) => sum + Math.pow(load - avgLoad, 2), 0) / loads.length;
   const sdLoad = Math.sqrt(variance);
-
-  // Define "medium" intensity as ±0.5 SD around mean
-  const min = Math.max(0, avgLoad - 0.5 * sdLoad); // Never negative
+  const min = Math.max(0, avgLoad - 0.5 * sdLoad);
   const max = avgLoad + 0.5 * sdLoad;
-
   return { min, max };
 }
+
 function getNeededTonnage() {
-  const allSessions = Object.values(AppData.trainingLog)
-    .flat()
-    .filter(
-      session =>
-        session?.completed &&
-        typeof session.tonnage === 'number' &&
-        session.tonnage > 0
-    );
-
+  const allSessions = Object.values(AppData.trainingLog).flat().filter(s => s?.completed && typeof s.tonnage === 'number' && s.tonnage > 0);
   if (allSessions.length === 0) return 0;
-
   const tonnages = allSessions.map(s => s.tonnage).sort((a, b) => a - b);
   const mid = Math.floor(tonnages.length / 2);
-  let medianTonnage;
-
-  if (tonnages.length % 2 === 0) {
-    medianTonnage = (tonnages[mid - 1] + tonnages[mid]) / 2;
-  } else {
-    medianTonnage = tonnages[mid];
-  }
-  const aimTonnage = medianTonnage * 1.05;
-
-  return aimTonnage;
+  let medianTonnage = tonnages.length % 2 === 0 ? (tonnages[mid - 1] + tonnages[mid]) / 2 : tonnages[mid];
+  return medianTonnage * 1.05;
 }
 
-function getWeekNumber(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-}
-
-function getWeeklySessions(targetDate, trainingLog) {
-  const targetYear = targetDate.getFullYear();
-  const targetWeek = getWeekNumber(targetDate);
-
-  let weeklySessions = [];
-
-  for (const [dateKey, sessions] of Object.entries(trainingLog)) {
-    const sessionDate = new Date(dateKey);
-    if (
-      sessionDate.getFullYear() === targetYear &&
-      getWeekNumber(sessionDate) === targetWeek
-    ) {
-      weeklySessions.push(...(Array.isArray(sessions) ? sessions : []));
-    }
-  }
-  console.log(JSON.stringify(weeklySessions))
-  return weeklySessions.filter(
-    s => s?.completed && typeof s.tonnage === 'number' && s.tonnage > 0 && s.duration > 0
-  );
-}
-function getAllSessionsChronological() {
-  const sessions = [];
-  for (const [dateKey, daySessions] of Object.entries(AppData.trainingLog)) {
-    const dayList = Array.isArray(daySessions) ? daySessions : Object.values(daySessions);
-    for (const session of dayList) {
-      if (session?.completed && session.tonnage > 0 && session.duration > 0) {
-        sessions.push({
-          ...session,
-          dateKey,
-          date: new Date(dateKey)
-        });
-      }
-    }
-  }
-  return sessions.sort((a, b) => a.startTime - b.startTime); // oldest → newest
-}
-function getLastProgramCycle() {
-  const allSessions = getAllSessionsChronological();
-  if (allSessions.length === 0) return [];
-
-  // Start from the last session
-  const lastSession = allSessions[allSessions.length - 1];
-  const targetProgramId = lastSession.programId;
-
-  // Walk backward while programId matches and sessions are in reasonable time window
-  const cycle = [];
-  let i = allSessions.length - 1;
-
-  while (i >= 0) {
-    const session = allSessions[i];
-    if (session.programId !== targetProgramId) break;
-
-    cycle.unshift(session); // prepend to keep chronological order
-
-    // Optional: stop if gap > 10 days (avoids pulling in old cycles)
-    if (i > 0) {
-      const prevSession = allSessions[i - 1];
-      const dayDiff = (session.date - prevSession.date) / (1000 * 60 * 60 * 24);
-      if (dayDiff > 10) break; // likely a new cycle
-    }
-
-    i--;
-  }
-
-  return cycle;
-}
 function getLatestProgramSessions() {
-  // Get all sessions
   const allSessions = [];
   for (const [dateKey, dayData] of Object.entries(AppData.trainingLog)) {
     const sessions = Array.isArray(dayData) ? dayData : Object.values(dayData);
     for (const s of sessions) {
       if (s?.completed && s.tonnage > 0 && s.duration > 0) {
-        allSessions.push({
-          ...s,
-          dateKey,
-          date: new Date(dateKey)
-        });
+        allSessions.push({ ...s, dateKey, date: new Date(dateKey) });
       }
     }
   }
-
-  // Sort by date
   allSessions.sort((a, b) => a.date - b.date);
-
   if (allSessions.length === 0) return [];
-
-  // Find latest programId
   const latestProgramId = allSessions[allSessions.length - 1].programId;
-
-  // Filter only sessions from that program
   return allSessions.filter(s => s.programId === latestProgramId);
 }
 
 function splitIntoCycles(sessions) {
-  if (sessions.length === 0) {
-    return {
-      currentCycle: [],
-      lastFullCycle: []
-    };
-  }
-
-  // Handle single-day programs (all dayIndex the same)
+  if (sessions.length === 0) return { currentCycle: [], lastFullCycle: [] };
   const allSameDay = sessions.every(s => s.dayIndex === sessions[0].dayIndex);
-  
   if (allSameDay) {
-    // Each session = one cycle
-    if (sessions.length === 1) {
-      return {
-        currentCycle: [sessions[0]],
-        lastFullCycle: []
-      };
-    } else {
-      return {
-        currentCycle: [sessions[sessions.length - 1]],
-        lastFullCycle: [sessions[sessions.length - 2]]
-      };
-    }
+    if (sessions.length === 1) return { currentCycle: [sessions[0]], lastFullCycle: [] };
+    return { currentCycle: [sessions[sessions.length - 1]], lastFullCycle: [sessions[sessions.length - 2]] };
   }
-
-  // Multi-day program: group by dayIndex reset
   const cycles = [];
   let currentCycle = [];
   let lastDayIndex = -1;
-
   for (const session of sessions) {
     if (session.dayIndex <= lastDayIndex) {
-      // New cycle started
-      if (currentCycle.length > 0) {
-        cycles.push(currentCycle);
-        currentCycle = [];
-      }
+      if (currentCycle.length > 0) { cycles.push(currentCycle); currentCycle = []; }
     }
     currentCycle.push(session);
     lastDayIndex = session.dayIndex;
   }
-
-  if (currentCycle.length > 0) {
-    cycles.push(currentCycle);
-  }
-
-  // Now determine last full and current
-  if (cycles.length === 1) {
-    return {
-      currentCycle: cycles[0],
-      lastFullCycle: []
-    };
-  } else {
-    return {
-      currentCycle: cycles[cycles.length - 1],
-      lastFullCycle: cycles[cycles.length - 2]
-    };
-  }
+  if (currentCycle.length > 0) cycles.push(currentCycle);
+  if (cycles.length === 1) return { currentCycle: cycles[0], lastFullCycle: [] };
+  return { currentCycle: cycles[cycles.length - 1], lastFullCycle: cycles[cycles.length - 2] };
 }
+
 export function getCurrentCycleAnalysis() {
   const latestSessions = getLatestProgramSessions();
   const { currentCycle, lastFullCycle } = splitIntoCycles(latestSessions);
-
   const currentTonnage = currentCycle.reduce((sum, s) => sum + s.tonnage, 0);
   const lastFullTonnage = lastFullCycle.reduce((sum, s) => sum + s.tonnage, 0);
-
-  // Target = last full cycle + 5%
   const targetTonnage = lastFullTonnage > 0 ? lastFullTonnage * 1.05 : 0;
-
-  // Progress % (cap at 100% if exceeded)
-  const progressPercent = targetTonnage > 0
-    ? Math.min(100, (currentTonnage / targetTonnage) * 100)
-    : 0;
-
-  return {
-    currentCycle,
-    lastFullCycle,
-    currentTonnage,
-    targetTonnage,
-    progressPercent
-  };
+  const progressPercent = targetTonnage > 0 ? Math.min(100, (currentTonnage / targetTonnage) * 100) : 0;
+  return { currentCycle, lastFullCycle, currentTonnage, targetTonnage, progressPercent };
 }
 
-function InfoText({ theme, langIndex }) {
-  const textContent = langIndex === 0
-    ? `Анализ цикла основан на последней программе тренировок.
-
-Цикл определяется автоматически:
-— Для программ с одним днём — каждый сеанс считается отдельным циклом.
-— Для программ с несколькими днями — цикл завершается, когда день в программе сбрасывается (например, после Дня 2 идёт День 0).
-
-Объём цикла = сумма тоннажа всех сессий в цикле.
-
-Цель = объём предыдущего полного цикла × 1.05 (рост на 5%).
-
-Прогресс = (текущий объём / цель) × 100%, но не более 100%.
-
-Тоннаж одного подхода = вес × повторения.
-Общий тоннаж = сумма тоннажа всех подходов.`
-
-    : `Cycle analysis is based on your latest training program.
-
-Cycle detection works as follows:
-— For single-day programs: each session is treated as its own cycle.
-— For multi-day programs: a cycle ends when the program day resets (e.g., after Day 2 comes Day 0 again).
-
-Cycle volume = total tonnage of all sessions in the current cycle.
-
-Target = volume of the last complete cycle × 1.05 (5% increase).
-
-Progress = (current volume / target) × 100%, capped at 100%.
-
-Set tonnage = weight × reps.
-Total tonnage = sum of all set tonnages.`;
-
-  return (
-    <div
-      style={{
-        ...styles(theme).subtext,
-        fontSize: '10px',
-        textAlign: 'center',
-        lineHeight: 1.4,
-        maxWidth: '90%',
-        marginTop: '8px',
-        opacity: 0.85,
-      }}
-    >
-      {textContent}
-    </div>
-  );
-}
-
-const Tonnage = ({theme,langIndex,totalTonnage,targetTonnage,progressPercent}) => {
-    return (
-        <div style={styles(theme).panelRow}>
-   <div
-  style={{
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-    gap: 8,
-  }}
->
-  {/* Лейбл над числом */}
-  <div
-    style={{
-      fontSize: 12,
-      letterSpacing: 1,
-      textTransform: 'uppercase',
-      opacity: 0.8,
-      color: Colors.get('subText', theme),
-    }}
-  >
-    {langIndex === 0 ? 'Цель цикла' : 'Cycle target'}
-  </div>
-
-  {/* Огромное число */}
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'baseline',
-      gap: 6,
-    }}
-  >
-    <span
-      style={{
-        fontSize: 40,
-        fontWeight: 700,
-        color: Colors.get('iconsHighlited', theme),
-        lineHeight: 1,
-      }}
-    >
-      {(targetTonnage / 1000).toFixed(1)}
-    </span>
-    
-    <span
-      style={{
-        fontSize: 18,
-        fontWeight: 500,
-        color: Colors.get('mainText', theme),
-        opacity: 0.9,
-      }}
-    >
-      т
-    </span>
-    {progressPercent >= 100 && <span
-      style={{
-        fontSize: 16,
-        position:'relative',
-        top:'-15px',
-        fontWeight: 500,
-        color: Colors.get('light', theme)
-      }}
-    >
-      {'+' + ((totalTonnage-targetTonnage)/1000).toFixed(1)}
-    </span>}
-  </div>
-
-  {/* Подзаголовок со статусом */}
-  {progressPercent > 0 ? (
-    <div
-      style={{
-        fontSize: 13,
-        color: Colors.get('subText', theme),
-      }}
-    >
-      {langIndex === 0 ? 'Выполнено' : 'Completed'}{' '}
-      <span
-        style={{
-          color: Colors.get('mainText', theme),
-          fontWeight: 600,
-        }}
-      >
-        {Math.round(progressPercent)}%
-      </span>
-      {progressPercent < 100 && (
-        <>
-          {' · '}
-          <span style={{ opacity: 0.9 }}>
-            {langIndex === 0
-              ? `осталось ≈ ${(targetTonnage * (1 - progressPercent / 100) / 1000).toFixed(1)} т`
-              : `left ≈ ${(targetTonnage * (1 - progressPercent / 100) / 1000).toFixed(1)} t`}
-          </span>
-        </>
-      )}
-    </div>
-  ) : (
-    <div
-      style={{
-        fontSize: 13,
-        color: Colors.get('subText', theme),
-      }}
-    >
-      {langIndex === 0
-        ? `Рекомендованный объём: ${(getNeededTonnage() / 1000).toFixed(2)} т`
-        : `Suggested load: ${(getNeededTonnage() / 1000).toFixed(2)} t`}
-    </div>
-  )}
-
-  {/* Бэйдж, если цель добита */}
-  {progressPercent >= 100 && (
-    <div
-      style={{
-        marginTop: 4,
-        padding: '4px 10px',
-        borderRadius: 999,
-        fontSize: 11,
-        fontWeight: 600,
-        background:
-          'linear-gradient(135deg, rgba(111,191,115,0.18), rgba(231,111,81,0.18))',
-        color: Colors.get('iconsHighlited', theme),
-      }}
-    >
-      {langIndex === 0 ? 'Цель достигнута' : 'Target reached'}
-    </div>
-  )}
-</div>
-
-  
-</div>
-    )
-}
-
-const infoText = (langIndex) => {
+function infoText(langIndex) {
   if (langIndex === 0) {
-    return `Нагрузка на мышцы рассчитывается на основе тоннажа выполненных упражнений за выбранный период. Для каждого упражнения:\n` +
-           `— 70% тоннажа распределяется на основную мышечную группу,\n` +
-           `— 30% — равномерно между второстепенными группами.\n` +
-           `Затем значения нормализуются относительно самой нагруженной мышцы (100%).`;
+    return `Анализ цикла основан на последней программе тренировок.\n\nЦикл определяется автоматически:\n— Для программ с одним днём — каждый сеанс считается отдельным циклом.\n— Для программ с несколькими днями — цикл завершается, когда день в программе сбрасывается.\n\nОбъём цикла = сумма тоннажа всех сессий.\nЦель = объём предыдущего полного цикла × 1.05 (рост на 5%).`;
   } else {
-    return `Muscle load is calculated based on the tonnage of completed exercises over the selected period. For each exercise:\n` +
-           `— 70% of the tonnage is assigned to the primary muscle group,\n` +
-           `— 30% is evenly distributed among secondary muscle groups.\n` +
-           `Values are then normalized relative to the most loaded muscle (100%).`;
+    return `Cycle analysis is based on your latest training program.\n\nCycle detection:\n— Single-day programs: each session is a cycle.\n— Multi-day programs: cycle ends when the day resets.\n\nCycle volume = total tonnage of sessions.\nTarget = last complete cycle × 1.05.`;
   }
-};
+}
+
+export default TrainingAnaliticsMain;
