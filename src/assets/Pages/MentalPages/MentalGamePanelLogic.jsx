@@ -686,7 +686,7 @@ const styles = (theme, fSize = 14) => ({
     },
     iconButtonSmall: {
         fontSize: '28px',
-        color: Colors.get('subText', theme),
+        color: Colors.get('skipped', theme),
         cursor: 'pointer'
     },
     playButtonContainer: {
@@ -720,7 +720,7 @@ const styles = (theme, fSize = 14) => ({
     gameHeader: {
         width: '90%',
         display: 'flex',
-        marginTop: '55px',
+         marginTop:'75px',
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '15px 0'

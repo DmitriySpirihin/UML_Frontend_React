@@ -1,22 +1,97 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppData, UserData } from '../../StaticClasses/AppData.js'
 import { saveData } from '../../StaticClasses/SaveHelper.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$, lang$, fontSize$, premium$, setPage } from '../../StaticClasses/HabitsBus'
-import { FaPlus, FaPencilAlt, FaTrash, FaChevronUp, FaChevronDown, FaCaretLeft,FaCaretRight } from 'react-icons/fa'
+import { FaPlus, FaPencilAlt, FaTrash, FaChevronUp, FaChevronDown } from 'react-icons/fa'
 import { IoMdMale, IoMdFemale } from 'react-icons/io'
-import { FiMinus,FiPlus } from 'react-icons/fi'
 import { IoScaleSharp, IoPerson, IoCalendarOutline, IoAnalytics } from 'react-icons/io5'
 import { MdClose, MdDone } from 'react-icons/md'
-import { useLongPress } from '../../Helpers/LongPress'
 import { MeasurmentsIcon } from '../../Helpers/MeasurmentsIcons.jsx'
 import TrainingMeasurmentsOveview from './TrainingMeasurmentsOverView.jsx'
 import TrainingMeasurmentsAnalitics from './TrainingMeasurmentsAnalitics.jsx'
 import { VolumeTabs } from '../../Helpers/TrainingAnaliticsTabs';
 
-// --- Constants ---
-export const names = [
+// --- SCROLL PICKER COMPONENT ---
+const ITEM_HEIGHT = 40;
+
+const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '60px' }) => {
+  const scrollRef = useRef(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+
+  // Scroll to initial value on mount or when value updates externally
+  useEffect(() => {
+    if (scrollRef.current) {
+      const selectedIndex = items.findIndex(item => item === value);
+      if (selectedIndex !== -1) {
+        scrollRef.current.scrollTop = selectedIndex * ITEM_HEIGHT;
+      }
+    }
+  }, [value, items]); // Add dependencies to sync if external state changes
+
+  const handleScroll = (e) => {
+    // We utilize scroll snapping via CSS, but we need to update state when scroll stops
+    // Using a timeout to detect "scroll end" is a common React pattern, 
+    // but for simple snapping, we can calculate based on position.
+    const scrollTop = e.target.scrollTop;
+    const index = Math.round(scrollTop / ITEM_HEIGHT);
+    const validIndex = Math.max(0, Math.min(index, items.length - 1));
+    
+    // Only trigger onChange if we are close to the snap point (optional optimization)
+    if (items[validIndex] !== value) {
+        // Debouncing this might be necessary for heavy apps, but fine here
+        onChange(items[validIndex]);
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative', height: ITEM_HEIGHT * 3, width: width, overflow: 'hidden' }}>
+      {/* Selection Highlight Bar */}
+      <div style={{
+        position: 'absolute',
+        top: ITEM_HEIGHT, left: 0, right: 0, height: ITEM_HEIGHT,
+        borderRadius: '8px',
+        backgroundColor: Colors.get('iconsHighlited', theme),
+        opacity: 0.15, pointerEvents: 'none', zIndex: 0
+      }} />
+      
+      {/* Scrollable Container */}
+      <div 
+        ref={scrollRef}
+        onScroll={handleScroll}
+        style={{
+          height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory',
+          scrollbarWidth: 'none', msOverflowStyle: 'none',
+          paddingTop: ITEM_HEIGHT, paddingBottom: ITEM_HEIGHT,
+          scrollBehavior: 'smooth'
+        }}
+        className="no-scrollbar"
+      >
+        {items.map((item, i) => (
+          <div 
+            key={i} 
+            style={{
+              height: ITEM_HEIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              scrollSnapAlign: 'center', // Changed to center for better snapping
+              fontSize: item === value ? '18px' : '14px',
+              fontWeight: item === value ? 'bold' : 'normal',
+              color: item === value ? Colors.get('mainText', theme) : Colors.get('subText', theme),
+              opacity: item === value ? 1 : 0.4,
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {item}{suffix}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// --- CONSTANTS & HELPERS ---
+const names = [
     ['Вес тела', 'Body weight'],
     ['Обхват талии', 'Waist circumference'],
     ['Обхват бицепса', 'Biceps circumference'],
@@ -26,8 +101,18 @@ export const names = [
 
 const now = new Date();
 const months = [['янв', 'фев', 'март', 'апр', 'май', 'июнь', 'июль', 'авг', 'сент', 'окт', 'нояб', 'дек'], ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']];
-const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health']]
+const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health'], ['', ''], ['','']]
 
+const generateRange = (start, end, step = 1) => {
+    const arr = [];
+    for (let i = start; i <= end; i += step) {
+        // Fix floating point math issues (e.g. 10.5)
+        arr.push(step === 1 ? i : parseFloat(i.toFixed(1)));
+    }
+    return arr;
+};
+
+// --- MAIN COMPONENT ---
 const TrainingMesurments = () => {
     // --- STATE ---
     const [theme, setthemeState] = useState('dark');
@@ -52,7 +137,6 @@ const TrainingMesurments = () => {
     const [month, setMonth] = useState(now.getMonth());
     const [day, setDay] = useState(now.getDate());
     
-    // Split Value State for "Drum Picker" logic
     const [valInt, setValInt] = useState(70);
     const [valDec, setValDec] = useState(0);
 
@@ -63,6 +147,20 @@ const TrainingMesurments = () => {
     const [height, setHeight] = useState(AppData.pData.height);
     const [wrist, setWrist] = useState(AppData.pData.wrist);
     const [goal, setGoal] = useState(AppData.pData.goal);
+
+    // --- GENERATED LISTS FOR PICKERS ---
+    const yearsList = useMemo(() => generateRange(1950, now.getFullYear() + 1), []);
+    // Dynamic days list based on month/year would be ideal, but static 1-31 with clamping is safer for scroll
+    const daysList = useMemo(() => generateRange(1, 31), []); 
+    const intList = useMemo(() => generateRange(0, 300), []);
+    const decList = useMemo(() => generateRange(0, 9), []);
+    
+    // Personal Data Lists
+    const agesList = useMemo(() => generateRange(10, 100), []);
+    const heightsList = useMemo(() => generateRange(50, 250), []);
+    const wristsList = useMemo(() => generateRange(10, 40, 0.5), []);
+    const currentGoalNames = useMemo(() => goalNames.map(g => g[langIndex]), [langIndex]);
+
 
     // --- SUBSCRIPTIONS ---
     useEffect(() => {
@@ -75,61 +173,19 @@ const TrainingMesurments = () => {
 
     // --- LOGIC ---
     const getMeasurementsCategory = (type) => (type < 0 || type >= AppData.measurements.length) ? [] : AppData.measurements[type];
-
-    // Helper to combine Int + Dec into float
     const getCombinedValue = () => parseFloat(`${valInt}.${valDec}`);
     
-    // Helper to set Int + Dec from float
     const setSplitValue = (floatVal) => {
         const val = parseFloat(floatVal) || 0;
         setValInt(Math.floor(val));
         setValDec(Math.round((val % 1) * 10));
     };
 
-    const handleDateChange = (isIncr, dateType) => {
-        // ... (Keep existing complex date logic) ...
-        if (dateType === 2) { // Day
-            setDay(prev => {
-                const max = new Date(year, month, 0).getDate();
-                let d = prev;
-                if (isIncr) { if (prev < max && new Date(year, month - 1, prev + 1).getTime() <= now.getTime()) d = prev + 1; }
-                else { if (prev > 1) d = prev - 1; }
-                return d;
-            });
-        } else if (dateType === 1) { // Month
-            setMonth(prev => {
-                let m = prev;
-                if (isIncr) { if (prev < 12 && new Date(year, prev, day).getTime() <= now.getTime()) m = prev + 1; }
-                else { if (prev > 1) m = prev - 1; }
-                const max = new Date(year, m, 0).getDate();
-                if (day > max) setDay(max);
-                return m;
-            });
-        } else if (dateType === 0) { // Year
-            setYear(prev => {
-                let y = prev;
-                if (isIncr) { if (prev < now.getFullYear()) y = prev + 1; }
-                else { if (prev > now.getFullYear() - 100) y = prev - 1; }
-                const max = new Date(y, month, 0).getDate();
-                if (day > max) setDay(max);
-                return y;
-            });
-        }
-    };
-
-    // --- BINDINGS (Long Press) ---
-    const bindYMinus = useLongPress(() => handleDateChange(false, 0));
-    const bindYPlus = useLongPress(() => handleDateChange(true, 0));
-    const bindMMinus = useLongPress(() => handleDateChange(false, 1));
-    const bindMPlus = useLongPress(() => handleDateChange(true, 1));
-    const bindDMinus = useLongPress(() => handleDateChange(false, 2));
-    const bindDPlus = useLongPress(() => handleDateChange(true, 2));
-    
-    // Value Bindings
-    const bindIntMinus = useLongPress(() => setValInt(p => p > 0 ? p - 1 : 0));
-    const bindIntPlus = useLongPress(() => setValInt(p => p + 1));
-    const bindDecMinus = useLongPress(() => setValDec(p => p > 0 ? p - 1 : 9));
-    const bindDecPlus = useLongPress(() => setValDec(p => p < 9 ? p + 1 : 0));
+    // Ensure day is valid when month/year changes
+    useEffect(() => {
+        const maxDays = new Date(year, month + 1, 0).getDate();
+        if (day > maxDays) setDay(maxDays);
+    }, [year, month]);
 
     // --- CRUD ---
     const onAddDay = async () => {
@@ -285,7 +341,7 @@ const TrainingMesurments = () => {
             {tab === 'muscles' && <TrainingMeasurmentsOveview theme={theme} langIndex={langIndex} fSize={fSize} data={data} filled={filled} age={age} height={height} gender={gender} goal={goal} wrist={wrist} />}
             {tab === 'exercises' && <TrainingMeasurmentsAnalitics theme={theme} langIndex={langIndex} fSize={fSize} data={data} />}
 
-            {/* --- MODALS (CONSTRUCTORS) --- */}
+            {/* --- MODALS --- */}
             <AnimatePresence>
                 {/* 1. ADD / REDACT VALUE */}
                 {(showAddDayPanel || showRedactPanel) && (
@@ -294,22 +350,25 @@ const TrainingMesurments = () => {
                             <h3 style={styles(theme).modalTitle}>{langIndex === 0 ? (showAddDayPanel ? 'Новый замер' : 'Изменить') : (showAddDayPanel ? 'New Entry' : 'Edit Entry')}</h3>
                         </div>
 
-                        {/* DATE PICKER (SLOT MACHINE) */}
+                        {/* DATE PICKER (Scroll Pickers) */}
                         <div style={styles(theme).sectionLabel}><IoCalendarOutline/> {langIndex === 0 ? 'Дата' : 'Date'}</div>
-                        <div style={styles(theme).slotContainer}>
-                            <SlotColumn value={year} onMinus={() => handleDateChange(false, 0)} onPlus={() => handleDateChange(true, 0)} bindMinus={bindYMinus} bindPlus={bindYPlus} theme={theme} width="80px" />
-                            <div style={styles(theme).slotDivider}/>
-                            <SlotColumn value={months[langIndex][month]} onMinus={() => handleDateChange(false, 1)} onPlus={() => handleDateChange(true, 1)} bindMinus={bindMMinus} bindPlus={bindMPlus} theme={theme} width="60px" />
-                            <div style={styles(theme).slotDivider}/>
-                            <SlotColumn value={day} onMinus={() => handleDateChange(false, 2)} onPlus={() => handleDateChange(true, 2)} bindMinus={bindDMinus} bindPlus={bindDPlus} theme={theme} width="50px" />
+                        <div style={{...styles(theme).pickerRow, marginBottom:'20px'}}>
+                            <ScrollPicker items={yearsList} value={year} onChange={setYear} theme={theme} width="80px" />
+                            <ScrollPicker 
+                                items={months[langIndex]} 
+                                value={months[langIndex][month]} 
+                                onChange={(val) => setMonth(months[langIndex].indexOf(val))} 
+                                theme={theme} width="70px" 
+                            />
+                            <ScrollPicker items={daysList} value={day} onChange={setDay} theme={theme} width="60px" />
                         </div>
 
-                        {/* VALUE PICKER (DRUM / TAPE MEASURE STYLE) */}
+                        {/* VALUE PICKER (Scroll Pickers) */}
                         <div style={styles(theme).sectionLabel}><IoAnalytics/> {langIndex === 0 ? 'Значение' : 'Value'}</div>
-                        <div style={{...styles(theme).slotContainer, marginBottom: '30px'}}>
-                            <SlotColumn value={valInt} onMinus={() => setValInt(p=>p>0?p-1:0)} onPlus={() => setValInt(p=>p+1)} bindMinus={bindIntMinus} bindPlus={bindIntPlus} theme={theme} width="80px" isValue />
-                            <div style={{fontSize:'30px', fontWeight:'bold', color:Colors.get('subText', theme), paddingBottom:'10px'}}>.</div>
-                            <SlotColumn value={valDec} onMinus={() => setValDec(p=>p>0?p-1:9)} onPlus={() => setValDec(p=>p<9?p+1:0)} bindMinus={bindDecMinus} bindPlus={bindDecPlus} theme={theme} width="50px" isValue />
+                        <div style={{...styles(theme).pickerRow, marginBottom: '30px'}}>
+                            <ScrollPicker items={intList} value={valInt} onChange={setValInt} theme={theme} width="80px" />
+                            <div style={{fontSize:'30px', fontWeight:'bold', color:Colors.get('subText', theme), alignSelf:'center', paddingBottom:'5px'}}>.</div>
+                            <ScrollPicker items={decList} value={valDec} onChange={setValDec} theme={theme} width="50px" />
                             <div style={{fontSize:'16px', fontWeight:'bold', color:Colors.get('subText', theme), alignSelf:'center', marginLeft:'10px'}}>
                                 {currentType === 0 ? (langIndex===0?'кг':'kg') : 'cm'}
                             </div>
@@ -334,29 +393,51 @@ const TrainingMesurments = () => {
                     </BottomSheet>
                 )}
 
-                {/* 3. PERSONAL DATA SETTINGS */}
+                {/* 3. PERSONAL DATA SETTINGS (Scroll Pickers) */}
                 {showPersonalDataPanel && (
                     <BottomSheet onClose={() => setShowPersonalDataPanel(false)} theme={theme}>
                         <h3 style={styles(theme).modalTitle}>{langIndex === 0 ? 'Настройки' : 'Settings'}</h3>
-                        <div style={{maxHeight:'50vh', overflowY:'auto', padding:'0 5px'}}>
-                            <DataRow label={langIndex===0?'Возраст':'Age'} value={age} theme={theme} onMinus={() => setAge(p=>p>1?p-1:1)} onPlus={() => setAge(p=>p+1)} />
-                            <div style={styles(theme).dataRow}>
-                                <span style={styles(theme).dataLabel}>{langIndex===0?'Пол':'Gender'}</span>
-                                <div style={{display:'flex', gap:'10px'}}>
-                                    <GenderToggle active={gender===0} icon={<IoMdMale/>} color="#5fb6c6" onClick={()=>setGender(0)} theme={theme}/>
-                                    <GenderToggle active={gender===1} icon={<IoMdFemale/>} color="#c65f9d" onClick={()=>setGender(1)} theme={theme}/>
+                        
+                        <div style={{padding:'20px 0'}}>
+                            
+                            {/* Row 1: Age & Height */}
+                            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'15px'}}>
+                                <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                    <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Возраст':'Age'}</span>
+                                    <ScrollPicker items={agesList} value={age} onChange={setAge} theme={theme} width="100px" />
+                                </div>
+                                <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                    <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Рост (см)':'Height'}</span>
+                                    <ScrollPicker items={heightsList} value={height} onChange={setHeight} theme={theme} width="100px" />
                                 </div>
                             </div>
-                            <DataRow label={langIndex===0?'Рост (см)':'Height (cm)'} value={height} theme={theme} onMinus={() => setHeight(p=>p>1?p-1:1)} onPlus={() => setHeight(p=>p+1)} />
-                            <DataRow label={langIndex===0?'Запястье (см)':'Wrist (cm)'} value={wrist} theme={theme} onMinus={() => setWrist(p=>p>1?p-0.5:1)} onPlus={() => setWrist(p=>p+0.5)} />
-                            <div style={styles(theme).dataRow}>
-                                <span style={styles(theme).dataLabel}>{langIndex===0?'Цель':'Goal'}</span>
-                                <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                                    <FaCaretLeft size={24} color={Colors.get('subText', theme)} onClick={()=>setGoal(p=>p<3?p+1:0)} />
-                                    <span style={{width:'120px', textAlign:'center', fontWeight:'bold', color:Colors.get('mainText', theme)}}>{goalNames[goal][langIndex]}</span>
-                                    <FaCaretRight size={24} color={Colors.get('subText', theme)} onClick={()=>setGoal(p=>p>0?p-1:3)} />
+
+                            {/* Row 2: Wrist & Gender */}
+                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
+                                <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                    <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Запястье (см)':'Wrist'}</span>
+                                    <ScrollPicker items={wristsList} value={wrist} onChange={setWrist} theme={theme} width="100px" />
+                                </div>
+                                <div style={{display:'flex', flexDirection:'column', alignItems:'center', width:'100px'}}>
+                                    <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'10px'}}>{langIndex===0?'Пол':'Gender'}</span>
+                                    <div style={{display:'flex', gap:'10px'}}>
+                                        <GenderToggle active={gender===0} icon={<IoMdMale/>} color="#5fb6c6" onClick={()=>setGender(0)} theme={theme}/>
+                                        <GenderToggle active={gender===1} icon={<IoMdFemale/>} color="#c65f9d" onClick={()=>setGender(1)} theme={theme}/>
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* Row 3: Goal */}
+                            <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Цель':'Goal'}</span>
+                                <ScrollPicker 
+                                    items={currentGoalNames} 
+                                    value={currentGoalNames[goal]} 
+                                    onChange={(val) => setGoal(currentGoalNames.indexOf(val))} 
+                                    theme={theme} width="200px" 
+                                />
+                            </div>
+
                         </div>
                         <ModalActions onClose={() => setShowPersonalDataPanel(false)} onConfirm={onFillConfirm} theme={theme} />
                     </BottomSheet>
@@ -384,7 +465,7 @@ const TrainingMesurments = () => {
     )
 }
 
-// --- MODERN SUB COMPONENTS ---
+// --- SUB COMPONENTS ---
 
 const StatCard = ({ label, value, sub, theme, icon, isWide }) => (
     <div style={{
@@ -430,38 +511,13 @@ const BottomSheet = ({ children, onClose, theme }) => (
     </div>
 )
 
-const SlotColumn = ({ value, onMinus, onPlus, bindMinus, bindPlus, theme, width, isValue }) => (
-    <div style={{display:'flex', flexDirection:'column', alignItems:'center', width: width}}>
-        <motion.div {...bindPlus} whileTap={{scale:0.8}} onClick={onPlus} style={styles(theme).slotBtn}><FaChevronUp size={12}/></motion.div>
-        <div style={{
-            fontSize: isValue ? '32px' : '20px', fontWeight:'800', 
-            color:Colors.get('mainText', theme), padding:'10px 0', 
-            fontVariantNumeric: 'tabular-nums'
-        }}>
-            {value}
-        </div>
-        <motion.div {...bindMinus} whileTap={{scale:0.8}} onClick={onMinus} style={styles(theme).slotBtn}><FaChevronDown size={12}/></motion.div>
-    </div>
-)
-
-const DataRow = ({ label, value, onMinus, onPlus, theme }) => (
-    <div style={styles(theme).dataRow}>
-        <span style={styles(theme).dataLabel}>{label}</span>
-        <div style={{display:'flex', alignItems:'center', gap:'15px'}}>
-            <motion.div whileTap={{scale:0.9}} onClick={onMinus} style={styles(theme).roundBtn}><FiMinus/></motion.div>
-            <span style={{width:'40px', textAlign:'center', fontSize:'18px', fontWeight:'bold', color:Colors.get('mainText', theme)}}>{value}</span>
-            <motion.div whileTap={{scale:0.9}} onClick={onPlus} style={styles(theme).roundBtn}><FiPlus/></motion.div>
-        </div>
-    </div>
-)
-
 const GenderToggle = ({ active, icon, color, onClick, theme }) => (
     <motion.div 
         whileTap={{scale:0.9}} onClick={onClick}
         style={{
-            width:'50px', height:'50px', borderRadius:'14px', 
+            width:'40px', height:'40px', borderRadius:'12px', 
             backgroundColor: active ? color : (theme==='light'?'rgba(0,0,0,0.05)':'rgba(255,255,255,0.05)'),
-            display:'flex', alignItems:'center', justifyContent:'center', fontSize:'24px',
+            display:'flex', alignItems:'center', justifyContent:'center', fontSize:'20px',
             color: active ? '#fff' : Colors.get('subText', theme), border: active ? 'none' : `1px solid ${Colors.get('border', theme)}`
         }}
     >
@@ -472,7 +528,7 @@ const GenderToggle = ({ active, icon, color, onClick, theme }) => (
 const ModalActions = ({ onClose, onConfirm, theme, isDanger }) => (
     <div style={{display:'flex', gap:'15px', marginTop:'25px'}}>
         <motion.button whileTap={{scale:0.95}} onClick={onClose} style={styles(theme).secBtn}><MdClose size={22}/></motion.button>
-        <motion.button whileTap={{scale:0.95}} onClick={onConfirm} style={{...styles(theme).priBtn, backgroundColor: isDanger ? '#ff4d4d' : Colors.get('currentDateBorder', theme)}}><MdDone size={22}/></motion.button>
+        <motion.button whileTap={{scale:0.95}} onClick={onConfirm} style={{...styles(theme).priBtn, backgroundColor: isDanger ? '#ff4d4d' : Colors.get('done', theme)}}><MdDone size={22}/></motion.button>
     </div>
 )
 
@@ -480,7 +536,7 @@ const styles = (theme, fSize) => ({
     container: {
         display: 'flex', width: "100vw", flexDirection: 'column',
         overflowY: 'scroll', overflowX: 'hidden', alignItems: 'center',
-        backgroundColor: Colors.get('background', theme), height: "92vh", marginTop:'100px', paddingTop: '10px'
+        backgroundColor: Colors.get('background', theme), height: "92vh", marginTop:'110px'
     },
     card: {
         width: '94%', borderRadius: '24px', margin: '0 auto', overflow: 'hidden', transition: 'all 0.3s'
@@ -501,7 +557,7 @@ const styles = (theme, fSize) => ({
     },
     addBtn: {
         width:'100%', padding:'12px', borderRadius:'12px', border:'none',
-        backgroundColor: Colors.get('currentDateBorder', theme), color:'#fff',
+        backgroundColor: Colors.get('difficulty', theme), color:'#fff',
         fontWeight:'700', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', cursor:'pointer'
     },
     historyRow: {
@@ -518,7 +574,8 @@ const styles = (theme, fSize) => ({
         width:'100%', maxWidth:'600px', backgroundColor:Colors.get('background', theme),
         borderTopLeftRadius:'30px', borderTopRightRadius:'30px',
         padding:'20px 20px 40px 20px', boxShadow:'0 -10px 40px rgba(0,0,0,0.3)',
-        borderTop: `1px solid ${Colors.get('border', theme)}`
+        borderTop: `1px solid ${Colors.get('border', theme)}`,
+        display: 'flex', flexDirection: 'column'
     },
     handle: {
         width:'40px', height:'4px', backgroundColor:Colors.get('subText', theme),
@@ -530,53 +587,22 @@ const styles = (theme, fSize) => ({
         fontSize:'12px', fontWeight:'700', textTransform:'uppercase', color:Colors.get('subText', theme),
         marginBottom:'10px', display:'flex', alignItems:'center', gap:'6px', letterSpacing:'1px'
     },
-    slotContainer: {
-        display:'flex', justifyContent:'center', alignItems:'center',
+    // PICKER LAYOUT
+    pickerRow: {
+        display:'flex', justifyContent:'center', alignItems:'center', gap:'10px',
         backgroundColor: theme==='light'?'rgba(0,0,0,0.03)':'rgba(255,255,255,0.05)',
-        borderRadius:'20px', padding:'15px', marginBottom:'20px'
-    },
-    slotBtn: {
-        width:'100%', height:'30px', display:'flex', alignItems:'center', justifyContent:'center',
-        color:Colors.get('subText', theme), cursor:'pointer',
-        backgroundColor: theme==='light'?'rgba(0,0,0,0.05)':'rgba(255,255,255,0.08)', borderRadius:'8px'
-    },
-    slotDivider: { width:'1px', height:'40px', backgroundColor:Colors.get('border', theme), margin:'0 5px' },
-    // DATA ROW
-    dataRow: {
-        display:'flex', alignItems:'center', justifyContent:'space-between',
-        padding:'12px', borderBottom:`1px solid ${Colors.get('border', theme)}`
-    },
-    dataLabel: { fontSize:'14px', fontWeight:'600', color:Colors.get('subText', theme) },
-    roundBtn: {
-        width:'36px', height:'36px', borderRadius:'10px',
-        backgroundColor: theme==='light'?'rgba(0,0,0,0.05)':'rgba(255,255,255,0.1)',
-        display:'flex', alignItems:'center', justifyContent:'center', color:Colors.get('mainText', theme)
+        borderRadius:'20px', padding:'15px'
     },
     // ACTIONS
     secBtn: {
         flex:1, padding:'15px', borderRadius:'16px', border:'none',
-        backgroundColor: theme==='light'?'rgba(0,0,0,0.05)':'rgba(255,255,255,0.1)',
+        backgroundColor:Colors.get('skipped', theme),
         color:Colors.get('subText', theme), cursor:'pointer', display:'flex', justifyContent:'center'
     },
     priBtn: {
         flex:1, padding:'15px', borderRadius:'16px', border:'none',
         color:'#fff', cursor:'pointer', display:'flex', justifyContent:'center',
         boxShadow:'0 5px 15px rgba(0,0,0,0.2)'
-    },
-    // PREMIUM
-    premiumOverlay: {
-        position:'fixed', inset:0, zIndex:2500, backgroundColor:'rgba(0,0,0,0.6)',
-        backdropFilter:'blur(15px)', display:'flex', alignItems:'center', justifyContent:'center', padding:'20px'
-    },
-    premiumCard: {
-        width:'100%', maxWidth:'350px', backgroundColor: theme==='light'?'rgba(255,255,255,0.9)':'rgba(30,30,30,0.9)',
-        borderRadius:'30px', padding:'30px', display:'flex', flexDirection:'column', alignItems:'center',
-        boxShadow:'0 20px 50px rgba(0,0,0,0.5)', border: `1px solid ${Colors.get('border', theme)}`
-    },
-    premiumBtn: {
-        background:'linear-gradient(45deg, #FFD700, #FFA500)', border:'none',
-        padding:'12px 30px', borderRadius:'25px', color:'#000', fontWeight:'800',
-        fontSize:'16px', cursor:'pointer', boxShadow:'0 5px 20px rgba(255, 215, 0, 0.4)'
     }
 })
 

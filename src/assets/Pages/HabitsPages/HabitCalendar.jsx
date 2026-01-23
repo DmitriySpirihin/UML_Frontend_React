@@ -46,7 +46,7 @@ const styles = (theme,fSize) => ({
         position: 'relative', overflow: 'hidden'
       },
       calendarHead: {
-        padding: '15px 20px', display:'flex', flexDirection:'row', alignItems:'center', justifyContent:'space-between',
+        padding: '15px 20px', display:'flex', flexDirection:'row', alignItems:'center', justifyContent:'space-between',marginTop:'20px',
         width:'100%', boxSizing: 'border-box', backgroundColor: Colors.get('background', theme), zIndex: 2
       },
       headerWrapper: {

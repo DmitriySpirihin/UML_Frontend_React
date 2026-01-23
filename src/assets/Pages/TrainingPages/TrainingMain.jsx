@@ -699,7 +699,7 @@ const styles = (theme,fSize) => ({
    },
    calendarHead: {
      padding: '15px 20px', display:'flex', flexDirection:'row', alignItems:'center', justifyContent:'space-between',
-     width:'100%', boxSizing: 'border-box',
+     width:'100%', boxSizing: 'border-box',marginTop:'20px'
    },
    headerWrapper: {
      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',

@@ -77,7 +77,7 @@ const BreathingMain = () => {
                 <div style={{ height: '3vh' }} /> 
                 
                 {/* Заголовок (вернули системный цвет текста) */}
-                <div style={{ width: '92%', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <div style={{ width: '92%', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '5px',marginTop:'20px' }}>
                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <span style={{ fontSize: '28px' }}>{pageInfo.emoji}</span>
                         <h1 style={{ margin: 0, color: Colors.get('mainText', theme), fontSize: '26px', fontFamily: 'Segoe UI', fontWeight: '800' }}>

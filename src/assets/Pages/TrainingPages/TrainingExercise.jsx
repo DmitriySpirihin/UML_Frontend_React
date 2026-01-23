@@ -368,10 +368,10 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
 
                                 {/* TYPE TOGGLE */}
                                 <div style={styles(theme).segmentedControl}>
-                                    <div onClick={() => setIsBase(true)} style={{ ...styles(theme).segment, backgroundColor: isBase ? Colors.get('background', theme) : 'transparent', color: isBase ? Colors.get('trainingBaseFont', theme) : Colors.get('subText', theme), boxShadow: isBase ? '0 2px 5px rgba(0,0,0,0.1)' : 'none' }}>
+                                    <div onClick={() => setIsBase(true)} style={{ ...styles(theme).segment, backgroundColor: isBase ? Colors.get('difficulty5', theme) : 'transparent', color: isBase ? Colors.get('trainingBaseFont', theme) : Colors.get('subText', theme), boxShadow: isBase ? '0 2px 5px rgba(0,0,0,0.1)' : 'none' }}>
                                         {langIndex === 0 ? "База" : "Base"}
                                     </div>
-                                    <div onClick={() => setIsBase(false)} style={{ ...styles(theme).segment, backgroundColor: !isBase ? Colors.get('background', theme) : 'transparent', color: !isBase ? Colors.get('trainingIsolatedFont', theme) : Colors.get('subText', theme), boxShadow: !isBase ? '0 2px 5px rgba(0,0,0,0.1)' : 'none' }}>
+                                    <div onClick={() => setIsBase(false)} style={{ ...styles(theme).segment, backgroundColor: !isBase ? Colors.get('difficulty2', theme) : 'transparent', color: !isBase ? Colors.get('trainingIsolatedFont', theme) : Colors.get('subText', theme), boxShadow: !isBase ? '0 2px 5px rgba(0,0,0,0.1)' : 'none' }}>
                                         {langIndex === 0 ? "Изол." : "Iso"}
                                     </div>
                                 </div>
@@ -390,7 +390,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                                                     style={{ 
                                                         ...styles(theme).scrollItem, 
                                                         borderColor: isActive ? Colors.get('currentDateBorder', theme) : 'transparent',
-                                                        backgroundColor: isActive ? (theme==='light'?'rgba(0,0,0,0.05)':'rgba(255,255,255,0.1)') : 'transparent'
+                                                        backgroundColor: isActive ? (theme==='light'?'rgba(0,0,0,0.05)':'rgba(255, 255, 255, 0.1)') : 'transparent'
                                                     }}
                                                 >
                                                     {MuscleIcon.getForList(key, langIndex, theme)}
@@ -413,7 +413,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                                                     onClick={() => setMGroups(prev => prev.map((val, i) => i === index ? !val : val))}
                                                     style={{
                                                         ...styles(theme).chip,
-                                                        backgroundColor: mGroups[index] ? Colors.get('currentDateBorder', theme) : 'transparent',
+                                                        backgroundColor: mGroups[index] ? Colors.get('difficulty', theme) : 'transparent',
                                                         color: mGroups[index] ? '#fff' : Colors.get('subText', theme),
                                                         borderColor: mGroups[index] ? 'transparent' : Colors.get('border', theme)
                                                     }}
@@ -431,7 +431,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                                 <motion.div whileTap={{ scale: 0.9 }} onClick={() => showRedakt ? setShowRedakt(false) : onClose()} style={styles(theme).circleBtn}>
                                     <MdClose style={{ fontSize: '24px', color: Colors.get('subText', theme) }} />
                                 </motion.div>
-                                <motion.div whileTap={{ scale: 0.9 }} onClick={() => showRedakt ? onRedakt() : onAdd()} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('currentDateBorder', theme) }}>
+                                <motion.div whileTap={{ scale: 0.9 }} onClick={() => showRedakt ? onRedakt() : onAdd()} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('done', theme) }}>
                                     <MdDone style={{ fontSize: '24px', color: '#fff' }} />
                                 </motion.div>
                             </div>
@@ -539,7 +539,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     },
     // COMPONENTS
     segmentedControl: {
-        display: 'flex', width: '100%', backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
+        display: 'flex', width: '98%', backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
         borderRadius: '12px', padding: '4px', margin: '10px 0'
     },
     segment: {
@@ -563,11 +563,11 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     },
     circleBtn: {
         width: '50px', height: '50px', borderRadius: '25px',
-        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
+        backgroundColor: Colors.get('skipped', theme),
         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
     },
     fab: {
-        backgroundColor: Colors.get('currentDateBorder', theme),
+        backgroundColor: Colors.get('difficulty', theme),
         border: 'none', borderRadius: '20px', padding: '8px 20px',
         display: 'flex', alignItems: 'center', gap: '8px',
         color: '#fff', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.2)'

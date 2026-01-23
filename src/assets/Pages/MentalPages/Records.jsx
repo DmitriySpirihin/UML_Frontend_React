@@ -164,6 +164,7 @@ const Records = () => {
 const SegmentedControl = ({ items, selectedIndex, setSelectedIndex, theme, colorKey, isSecondary }) => {
     return (
         <div style={{
+            marginTop: isSecondary ? 0 : '16px',
             display: 'flex',
             backgroundColor: Colors.get('panel', theme),
             padding: '4px',
@@ -207,10 +208,9 @@ const SegmentedControl = ({ items, selectedIndex, setSelectedIndex, theme, color
                         )}
                         <div 
                             size={isSecondary ? 18 : 22} 
-                            color={isActive ? activeColor : Colors.get('subText', theme)}
                             style={{ transition: 'color 0.3s ease' }}
                         >
-                            {Icon}
+                            {typeof Icon === 'string' ? Icon : <Icon size={isSecondary ? 18 : 22}  style={{ color: isActive ? activeColor : Colors.get('subText', theme) }}/>}
                         </div>
                     </div>
                 );
@@ -320,11 +320,9 @@ const styles = (theme, fSize) => ({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        height: "88vh", // Adjusted to not overlap bottom nav if exists
         width: "100vw",
-        marginTop: '115px', // More breathing room
+        height: "92vh", marginTop:'110px',
         fontFamily: "Segoe UI",
-        overflowY: 'scroll'
     },
     controlsWrapper: {
         width: '90%',
@@ -338,7 +336,7 @@ const styles = (theme, fSize) => ({
     listContainer: {
         flex: 1,
         width: '94%',
-        overflowY: 'auto',
+        overflowY: 'scroll',
         padding: '0 5px', // Space for scrollbar
         display: 'flex',
         flexDirection: 'column',

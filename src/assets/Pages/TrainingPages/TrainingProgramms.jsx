@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
@@ -6,13 +6,94 @@ import { theme$, lang$, fontSize$, addPanel$ } from '../../StaticClasses/HabitsB
 import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io'
 import {
     addDayToProgram, removeDayFromProgram, MuscleView, addProgram, redactProgram, removeProgram,
-    addExerciseToSchedule, removeExerciseFromSchedule, MuscleIcon
+    addExerciseToSchedule, removeExerciseFromSchedule
 } from '../../Classes/TrainingData.jsx'
 import { FaCalendarDay, FaPlusSquare, FaTrash, FaPencilAlt, FaPlus, FaDumbbell } from 'react-icons/fa';
 import { MdBook, MdDone, MdClose } from 'react-icons/md'
 import MyInput from '../../Helpers/MyInput';
 import TrainingExercise from './TrainingExercise.jsx'
 
+// --- SCROLL PICKER COMPONENT ---
+const ITEM_HEIGHT = 40;
+
+const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '60px' }) => {
+  const scrollRef = useRef(null);
+
+  // Scroll to initial value on mount or when value updates externally
+  useEffect(() => {
+    if (scrollRef.current) {
+      const selectedIndex = items.findIndex(item => item === value);
+      if (selectedIndex !== -1) {
+        scrollRef.current.scrollTop = selectedIndex * ITEM_HEIGHT;
+      }
+    }
+  }, [value, items]);
+
+  const handleScroll = (e) => {
+    const scrollTop = e.target.scrollTop;
+    const index = Math.round(scrollTop / ITEM_HEIGHT);
+    const validIndex = Math.max(0, Math.min(index, items.length - 1));
+    
+    if (items[validIndex] !== value) {
+        onChange(items[validIndex]);
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative', height: ITEM_HEIGHT * 3, width: width, overflow: 'hidden' }}>
+      {/* Selection Highlight Bar */}
+      <div style={{
+        position: 'absolute',
+        top: ITEM_HEIGHT, left: 0, right: 0, height: ITEM_HEIGHT,
+        borderRadius: '8px',
+        backgroundColor: Colors.get('iconsHighlited', theme),
+        opacity: 0.15, pointerEvents: 'none', zIndex: 0
+      }} />
+      
+      {/* Scrollable Container */}
+      <div 
+        ref={scrollRef}
+        onScroll={handleScroll}
+        style={{
+          height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory',
+          scrollbarWidth: 'none', msOverflowStyle: 'none',
+          paddingTop: ITEM_HEIGHT, paddingBottom: ITEM_HEIGHT,
+          scrollBehavior: 'smooth'
+        }}
+        className="no-scrollbar"
+      >
+        {items.map((item, i) => (
+          <div 
+            key={i} 
+            style={{
+              height: ITEM_HEIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              scrollSnapAlign: 'center',
+              fontSize: item === value ? '20px' : '16px',
+              fontWeight: item === value ? 'bold' : 'normal',
+              color: item === value ? Colors.get('mainText', theme) : Colors.get('subText', theme),
+              opacity: item === value ? 1 : 0.4,
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {item}{suffix}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// --- HELPER ---
+const generateRange = (start, end) => {
+    const arr = [];
+    for (let i = start; i <= end; i++) {
+        arr.push(i);
+    }
+    return arr;
+};
+
+// --- MAIN COMPONENT ---
 const TrainingProgramm = () => {
     // --- STATE ---
     const [programs, setPrograms] = useState(AppData.programs);
@@ -32,10 +113,14 @@ const TrainingProgramm = () => {
     
     // Strategy State
     const [currentSet, setCurrentSet] = useState(3);
-    const [currentRepMin, setCurrentRepMin] = useState(4);
-    const [currentRepMax, setCurrentRepMax] = useState(6);
+    const [currentRepMin, setCurrentRepMin] = useState(8);
+    const [currentRepMax, setCurrentRepMax] = useState(12);
     const [strategy, setStrategy] = useState(0); // 0: Reps, 1: Time
     const [currentExId, setCurrentExId] = useState(0);
+    
+    // Picker Data
+    const setsList = useMemo(() => generateRange(1, 20), []);
+    const repsList = useMemo(() => generateRange(1, 100), []);
     
     // Day State
     const [dayIndex, setDayIndex] = useState(1);
@@ -51,8 +136,14 @@ const TrainingProgramm = () => {
 
     // --- SUBSCRIPTIONS ---
     useEffect(() => {
-        if (currentRepMin > currentRepMax - 2) setCurrentRepMax(currentRepMin + 2);
-    }, [currentRepMin, currentRepMax]);
+        // Auto-adjust max if min exceeds it
+        if (currentRepMin > currentRepMax) setCurrentRepMax(currentRepMin);
+    }, [currentRepMin]);
+    
+    // Ensure Max doesn't drop below min via picker
+    useEffect(() => {
+         if (currentRepMax < currentRepMin) setCurrentRepMin(currentRepMax);
+    }, [currentRepMax])
 
     useEffect(() => {
         const s1 = theme$.subscribe(setthemeState);
@@ -77,7 +168,6 @@ const TrainingProgramm = () => {
         setNeedRedact(false);
         setShowAddDayPanel(false);
         setShowConfirmRemove(false);
-        // setAddPanel(''); // Only needed if controlling global bus, local state handled by showAddPanel
     };
 
     const onAddProgram = () => {
@@ -86,8 +176,8 @@ const TrainingProgramm = () => {
     };
 
     const redact = () => {
-         redactProgram(currentId, capitalizeName(name), capitalizeName(description)); // Assuming redactProgram exists and takes these args
-         setName(''); setDescription(''); onClose(); setShowAddPanel(false);
+          redactProgram(currentId, capitalizeName(name), capitalizeName(description)); 
+          setName(''); setDescription(''); onClose(); setShowAddPanel(false);
     }
 
     const onAddTrainingDay = () => {
@@ -148,12 +238,6 @@ const TrainingProgramm = () => {
     const accordionVariants = {
         collapsed: { height: 0, opacity: 0, overflow: 'hidden' },
         expanded: { height: 'auto', opacity: 1, transition: { duration: 0.3, ease: 'easeInOut' } }
-    };
-
-    const modalVariants = {
-        hidden: { opacity: 0, y: 50, scale: 0.95 },
-        visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', damping: 25, stiffness: 300 } },
-        exit: { opacity: 0, y: 50, scale: 0.95 }
     };
 
     return (
@@ -309,7 +393,7 @@ const TrainingProgramm = () => {
                     </Modal>
                 )}
 
-                {/* 4. Strategy Modal */}
+                {/* 4. Strategy Modal (UPDATED WITH SCROLL PICKERS) */}
                 {showStarategyPanel && (
                     <Modal onClose={() => setShowStarategyPanel(false)} theme={theme} title={langIndex === 0 ? 'Стратегия' : 'Strategy'}>
                         <div style={styles(theme).segmentedControl}>
@@ -322,12 +406,28 @@ const TrainingProgramm = () => {
                         </div>
 
                         {strategy === 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px', justifyContent: 'center', margin: '20px 0' }}>
-                                <Counter val={currentSet} set={setCurrentSet} label="SETS" theme={theme} />
-                                <span style={{ fontSize: '20px', color: Colors.get('subText', theme) }}>×</span>
-                                <Counter val={currentRepMin} set={setCurrentRepMin} label="MIN" theme={theme} />
-                                <span style={{ fontSize: '20px', color: Colors.get('subText', theme) }}>-</span>
-                                <Counter val={currentRepMax} set={setCurrentRepMax} label="MAX" theme={theme} />
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '20px 0' }}>
+                                {/* Sets Picker */}
+                                <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                    <span style={{fontSize:'10px', fontWeight:'bold', color:Colors.get('subText', theme), marginBottom:'5px'}}>SETS</span>
+                                    <ScrollPicker items={setsList} value={currentSet} onChange={setCurrentSet} theme={theme} width="60px" />
+                                </div>
+                                
+                                <span style={{ fontSize: '20px', color: Colors.get('subText', theme), marginTop:'15px' }}>×</span>
+                                
+                                {/* Min Reps Picker */}
+                                <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                    <span style={{fontSize:'10px', fontWeight:'bold', color:Colors.get('subText', theme), marginBottom:'5px'}}>MIN</span>
+                                    <ScrollPicker items={repsList} value={currentRepMin} onChange={setCurrentRepMin} theme={theme} width="60px" />
+                                </div>
+                                
+                                <span style={{ fontSize: '20px', color: Colors.get('subText', theme), marginTop:'15px' }}>-</span>
+                                
+                                {/* Max Reps Picker */}
+                                <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                    <span style={{fontSize:'10px', fontWeight:'bold', color:Colors.get('subText', theme), marginBottom:'5px'}}>MAX</span>
+                                    <ScrollPicker items={repsList} value={currentRepMax} onChange={setCurrentRepMax} theme={theme} width="60px" />
+                                </div>
                             </div>
                         )}
                         <ModalActions onClose={() => setShowStarategyPanel(false)} onConfirm={onAddExercise} theme={theme} />
@@ -429,17 +529,6 @@ const ActionButton = ({ icon, onClick, theme, label, isDanger }) => (
     </motion.div>
 );
 
-const Counter = ({ val, set, label, theme }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '8px' }}>
-        <div style={{ fontSize: '9px', fontWeight: '800', color: Colors.get('subText', theme), marginBottom: '4px' }}>{label}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <motion.div whileTap={{ scale: 0.8 }} onClick={() => set(v => v > 1 ? v - 1 : 1)} style={styles(theme).miniBtn}><IoIosArrowDown size={14} color="#fff" /></motion.div>
-            <span style={{ fontSize: '18px', fontWeight: 'bold', color: Colors.get('mainText', theme), minWidth: '24px', textAlign: 'center' }}>{val}</span>
-            <motion.div whileTap={{ scale: 0.8 }} onClick={() => set(v => v + 1)} style={styles(theme).miniBtn}><IoIosArrowUp size={14} color="#fff" /></motion.div>
-        </div>
-    </div>
-);
-
 const Modal = ({ children, title, theme, onClose }) => (
     <div style={styles(theme).modalBackdrop} onClick={onClose}>
         <motion.div
@@ -461,7 +550,7 @@ const ModalActions = ({ onClose, onConfirm, theme }) => (
         <motion.div whileTap={{ scale: 0.9 }} onClick={onClose} style={styles(theme).circleBtn}>
             <MdClose style={{ fontSize: '24px', color: Colors.get('subText', theme) }} />
         </motion.div>
-        <motion.div whileTap={{ scale: 0.9 }} onClick={onConfirm} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('currentDateBorder', theme) }}>
+        <motion.div whileTap={{ scale: 0.9 }} onClick={onConfirm} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('done', theme) }}>
             <MdDone style={{ fontSize: '24px', color: '#fff' }} />
         </motion.div>
     </div>
@@ -523,7 +612,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     bigFab: {
         position: 'fixed', bottom: '110px', right: '30px',
         width: '56px', height: '56px', borderRadius: '28px',
-        backgroundColor: Colors.get('currentDateBorder', theme), border: 'none',
+        backgroundColor: Colors.get('difficulty', theme), border: 'none',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: '0 8px 20px rgba(0,0,0,0.3)', cursor: 'pointer', zIndex: 100
     },
@@ -534,7 +623,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     },
     circleBtn: {
         width: '50px', height: '50px', borderRadius: '25px',
-        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
+        backgroundColor: Colors.get('skipped', theme),
         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
     },
     secondaryBtn: {
