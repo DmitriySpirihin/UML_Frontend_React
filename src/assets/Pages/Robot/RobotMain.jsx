@@ -41,7 +41,7 @@ const styles = (theme, fSize) => ({
     justifyContent: 'start',
     alignItems: 'center',
     height: '88vh',
-    marginTop:'100px',
+    marginTop:'110px',
     width: '100vw',
     fontFamily: 'Segoe UI',
   }

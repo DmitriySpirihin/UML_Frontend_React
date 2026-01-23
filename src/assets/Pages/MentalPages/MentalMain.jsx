@@ -3,9 +3,7 @@ import { motion } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$, lang$, fontSize$, setPage } from '../../StaticClasses/HabitsBus'
-import { FaStopwatch20, FaMemory, FaStar, FaChevronRight } from 'react-icons/fa'
-import { GiLogicGateNxor, GiTargetShot } from 'react-icons/gi'
-
+import { FaStar, FaChevronRight } from 'react-icons/fa'
 const MentalMain = () => {
     // states
     const [theme, setthemeState] = useState('dark');
@@ -31,7 +29,7 @@ const MentalMain = () => {
     const menuItems = [
         {
             id: 0,
-            icon: <FaStopwatch20 />,
+            icon: '⚡',
             title: langIndex === 0 ? 'Быстрый счёт' : 'Mental Math',
             subtitle: langIndex === 0 ? 'Скорость и точность' : 'Speed & Accuracy',
             color: '#4DFF88', // Green
@@ -39,7 +37,7 @@ const MentalMain = () => {
         },
         {
             id: 1,
-            icon: <FaMemory />,
+            icon: '🧠',
             title: langIndex === 0 ? 'Память' : 'Memory',
             subtitle: langIndex === 0 ? 'N-back и последовательности' : 'N-back & Sequences',
             color: '#FF4D4D', // Red
@@ -47,7 +45,7 @@ const MentalMain = () => {
         },
         {
             id: 2,
-            icon: <GiLogicGateNxor />,
+            icon: '🧩',
             title: langIndex === 0 ? 'Логика' : 'Logic',
             subtitle: langIndex === 0 ? 'Паттерны и задачи' : 'Patterns & Puzzles',
             color: '#00E5FF', // Cyan
@@ -55,7 +53,7 @@ const MentalMain = () => {
         },
         {
             id: 3,
-            icon: <GiTargetShot />,
+            icon: '🎯',
             title: langIndex === 0 ? 'Фокус' : 'Focus',
             subtitle: langIndex === 0 ? 'Внимание и контроль' : 'Attention & Control',
             color: '#FFD700', // Gold
@@ -131,6 +129,7 @@ function MenuCard({ item, theme, variants, fSize, record }) {
         height: '48px',
         borderRadius: '16px',
         display: 'flex',
+        fontSize:'28px',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: '16px',
@@ -150,7 +149,7 @@ function MenuCard({ item, theme, variants, fSize, record }) {
             style={cardStyle}
         >
             <div style={iconWrapperStyle}>
-                {React.cloneElement(item.icon, { size: 22 })}
+                {item.icon}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, overflow: 'hidden' }}>

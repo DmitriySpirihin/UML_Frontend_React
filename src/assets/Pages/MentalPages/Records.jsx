@@ -18,7 +18,7 @@ const categoryLabels = [
     ['Фокус', 'Focus']
 ];
 
-const categoryIcons = [FaStopwatch, FaMemory, GiLogicGateNxor, GiTargetShot];
+const categoryIcons = [ '⚡', '🧠', '🧩', '🎯'];
 
 const difficultyIcons = [FaStarHalf, FaStar, GiStarsStack, GiCrownedSkull, FaInfinity];
 
@@ -205,11 +205,13 @@ const SegmentedControl = ({ items, selectedIndex, setSelectedIndex, theme, color
                                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                             />
                         )}
-                        <Icon 
+                        <div 
                             size={isSecondary ? 18 : 22} 
                             color={isActive ? activeColor : Colors.get('subText', theme)}
                             style={{ transition: 'color 0.3s ease' }}
-                        />
+                        >
+                            {Icon}
+                        </div>
                     </div>
                 );
             })}

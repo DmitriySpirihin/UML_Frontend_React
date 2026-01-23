@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$, lang$, fontSize$, setPage, setRecoveryType } from '../../StaticClasses/HabitsBus'
-import { FaRegSnowflake, FaSpa, FaChevronRight } from 'react-icons/fa'
+import {  FaChevronRight } from 'react-icons/fa'
 import { BsLungs } from 'react-icons/bs'
 
 const RecoveryMain = () => {
@@ -31,7 +31,7 @@ const RecoveryMain = () => {
     const menuItems = [
         {
             id: 0,
-            icon: <BsLungs />,
+            icon: '🌬️',
             title: langIndex === 0 ? 'Дыхание' : 'Breathing',
             subtitle: langIndex === 0 ? 'Практики для сна и спокойствия' : 'Exercises for sleep & calm',
             color: '#4DFF88', // Green
@@ -39,7 +39,7 @@ const RecoveryMain = () => {
         },
         {
             id: 1,
-            icon: <FaSpa />,
+            icon: '🧘',
             title: langIndex === 0 ? 'Медитация' : 'Meditation',
             subtitle: langIndex === 0 ? 'Концентрация и осознанность' : 'Focus & Mindfulness',
             color: '#A64DFF', // Purple
@@ -47,7 +47,7 @@ const RecoveryMain = () => {
         },
         {
             id: 2,
-            icon: <FaRegSnowflake />,
+            icon: '💧',
             title: langIndex === 0 ? 'Закаливание' : 'Cold Exposure',
             subtitle: langIndex === 0 ? 'Иммунитет и энергия' : 'Immunity & Energy',
             color: '#00E5FF', // Cyan
@@ -128,6 +128,7 @@ function MenuCard({ item, theme, variants, fSize, info }) {
         justifyContent: 'center',
         marginRight: '16px',
         flexShrink: 0,
+        fontSize:'28px',
         backgroundColor: isDark 
             ? Colors.get('background', theme) + '80' 
             : Colors.get('background', theme),
@@ -143,7 +144,7 @@ function MenuCard({ item, theme, variants, fSize, info }) {
             style={cardStyle}
         >
             <div style={iconWrapperStyle}>
-                {React.cloneElement(item.icon, { size: 22 })}
+                {item.icon}
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, overflow: 'hidden' }}>
@@ -175,7 +176,7 @@ function MenuCard({ item, theme, variants, fSize, info }) {
                         borderRadius: '12px',
                         fontSize: '13px',
                         fontWeight: '700',
-                        color: Colors.get('mainText', theme),
+                        color: Colors.get('perfect', theme),
                         marginRight: '8px'
                     }}>
                         {info}
