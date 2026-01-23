@@ -234,7 +234,7 @@ const styles = (theme, fSize) => ({
     logo: { height: "85%", objectFit: "contain" }, // ZOOMED LOGO
     iconBtn: { width: '40px', height: '40px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.get('background', theme) },
     text: { color: Colors.get('mainText', theme), fontSize: fSize === 0 ? "13px" : "15px", fontFamily: "Segoe UI" },
-    input: { width: "100%", padding: "15px", border: `1px solid ${Colors.get('border', theme)}`, borderRadius: "16px", color: Colors.get('mainText', theme), backgroundColor: Colors.get('bottomPanel', theme) }
+    input: { width: "100%",height:'70%', padding: "15px", border: `1px solid ${Colors.get('border', theme)}`, borderRadius: "16px", color: Colors.get('mainText', theme), backgroundColor: Colors.get('bottomPanel', theme) }
 });
 
 const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
@@ -245,16 +245,16 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
             {isOpen && (
                 <motion.div initial={{ x: '100%' }} animate={{ x: '0%' }} exit={{ x: '100%' }} transition={{ type: 'spring', stiffness: 300, damping: 30 }} style={{ ...settingsPanelStyles(theme).panel, width: "100vw", height: "100vh", borderRadius: "0", left: 0, zIndex: 9500, justifyContent: 'flex-start' }}>
                     <div style={{padding: '20px', display: 'flex', alignItems: 'center'}}>
-                         <motion.div whileTap={{scale: 0.9}} onClick={() => { setIsOpen(false); playEffects(transitionSound) }} style={{display:'flex', alignItems:'center', gap: '5px', padding: '10px', borderRadius: '12px', background: Colors.get('bottomPanel', theme)}}>
+                         <motion.div whileTap={{scale: 0.9}} onClick={() => { setIsOpen(false); playEffects(transitionSound) }} style={{display:'flex',marginTop:'85px', alignItems:'center', gap: '5px', padding: '10px', borderRadius: '12px', background: Colors.get('bottomPanel', theme)}}>
                             <FaChevronRight style={{transform: 'rotate(180deg)'}}/> 
                             <span style={{fontFamily: 'Segoe UI', fontSize: '14px'}}>{langIndex === 0 ? 'Назад' : 'Back'}</span>
                          </motion.div>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", flexGrow: 1 }}>
                         {panelNum === 1 && (
-                            <div style={{ width: "80%", display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            <div style={{ width: "80%",height:'80%', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                 <p style={styles(theme).text}>{langIndex === 0 ? 'Опишите проблему:' : 'Describe problem:'}</p>
-                                <textarea maxLength={160} onChange={(e) => setReport(e.target.value)} style={styles(theme).input} rows={5} />
+                                <textarea maxLength={860} onChange={(e) => setReport(e.target.value)} style={styles(theme).input} rows={5} />
                                 {report.length > 0 && <motion.div whileTap={{scale:0.95}} style={{padding: '15px', borderRadius: '12px', background: '#FF4D4D', color: 'white', textAlign: 'center', fontWeight: 'bold'}} onClick={sendReport}>{langIndex === 0 ? 'Отправить' : 'Send'}</motion.div>}
                             </div>
                         )}
