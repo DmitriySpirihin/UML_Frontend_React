@@ -168,8 +168,8 @@ const styles = (theme, fSize) => ({
         flexDirection: "column",
         justifyItems: "center",
         alignItems: "center",
-        height: "90vh",
-        marginTop:'110px',
+        height: "91vh",
+        marginTop:'120px',
         width: "100vw",
         fontFamily: "Segoe UI, sans-serif",
         overflow: 'hidden'

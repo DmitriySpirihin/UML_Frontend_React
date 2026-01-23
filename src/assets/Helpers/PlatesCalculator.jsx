@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import Colors from '../StaticClasses/Colors'
 import { saveData } from '../StaticClasses/SaveHelper'
 import { MdClose, MdDone, MdSettings, MdArrowBack } from 'react-icons/md'
@@ -18,45 +18,32 @@ const PlatesCalculator = ({ theme, langIndex, fSize, setShowCalculator }) => {
     const [plates, setPlates] = useState([]);
     const [plateString, setPlateString] = useState('');
     const [showSettings, setShowSettings] = useState(false);
+    const [isError, setIsError] = useState(false);
 
-    // --- Logic Functions (Unchanged) ---
-    const getPlatesString = () => {
-        const targetOneSide = (weight - barWeight) / 2;
-        if (targetOneSide < 0) return langIndex === 0 ? 'Вес меньше грифа!' : 'Weight < Bar';
-        
-        let remaining = targetOneSide;
-        const result = [];
-        const available = PLATE_WEIGHTS.map((_, i) => ownPlates[i] ? platesAmount[i] / 2 : 0);
+    // 1. Calculate Maximum Possible Weight based on inventory
+    const maxWeight = useMemo(() => {
+        const platesTotal = ownPlates.reduce((acc, owned, i) => {
+            return acc + (owned ? platesAmount[i] * PLATE_WEIGHTS[i] : 0);
+        }, 0);
+        return barWeight + platesTotal;
+    }, [barWeight, ownPlates, platesAmount]);
 
-        for (let i = 0; i < PLATE_WEIGHTS.length; i++) {
-            const plate = PLATE_WEIGHTS[i];
-            while (remaining >= plate - 0.01 && available[i] > 0) {
-                result.push(plate);
-                remaining -= plate;
-                available[i]--;
-            }
+    // 2. Auto-Cap Weight if inventory shrinks
+    useEffect(() => {
+        if (weight > maxWeight) {
+            setWeight(maxWeight);
         }
-        
-        // Return simplified string for modern UI
-        if (result.length === 0) return langIndex === 0 ? 'Пустой гриф' : 'Empty Bar';
-        
-        // Group plates for display (e.g., "2x20 + 10")
-        const counts = {};
-        result.forEach(x => { counts[x] = (counts[x] || 0) + 1; });
-        const sideStr = Object.entries(counts)
-            .sort((a,b) => parseFloat(b[0]) - parseFloat(a[0]))
-            .map(([k, v]) => v > 1 ? `${v}x${k}` : `${k}`)
-            .join(' + ');
+    }, [maxWeight, weight]);
 
-        return `${sideStr} / side`;
-    };
-
-    // Recalculate when inputs change
+    // 3. Main Calculation Logic
     useEffect(() => {
         const targetOneSide = (weight - barWeight) / 2;
+        
+        // A. Weight too low
         if (targetOneSide < 0) {
             setPlates([]); 
-            setPlateString(langIndex === 0 ? 'Вес слишком мал' : 'Weight too low');
+            setPlateString(langIndex === 0 ? 'Вес меньше грифа' : 'Weight < Bar');
+            setIsError(true);
             return;
         }
 
@@ -66,7 +53,8 @@ const PlatesCalculator = ({ theme, langIndex, fSize, setShowCalculator }) => {
 
         for (let i = 0; i < PLATE_WEIGHTS.length; i++) {
             const plate = PLATE_WEIGHTS[i];
-            while (remaining >= plate - 0.01 && available[i] > 0) {
+            // Epsilon for float safety
+            while (remaining >= plate - 0.001 && available[i] > 0) {
                 result.push(plate);
                 remaining -= plate;
                 available[i]--;
@@ -74,8 +62,28 @@ const PlatesCalculator = ({ theme, langIndex, fSize, setShowCalculator }) => {
         }
         
         setPlates(result);
-        setPlateString(getPlatesString());
-    }, [weight, barWeight, ownPlates, platesAmount]);
+
+        // B. Check for Impossible Increments (e.g. need 1.25kg but don't have it)
+        if (remaining > 0.01) {
+            const missing = remaining.toFixed(2);
+            setPlateString(langIndex === 0 ? `Не хватает: ${missing} кг / сторона` : `Missing: ${missing} kg / side`);
+            setIsError(true);
+        } else {
+            setIsError(false);
+            if (result.length === 0) {
+                setPlateString(langIndex === 0 ? 'Пустой гриф' : 'Empty Bar');
+            } else {
+                // Success: Format string
+                const counts = {};
+                result.forEach(x => { counts[x] = (counts[x] || 0) + 1; });
+                const sideStr = Object.entries(counts)
+                    .sort((a,b) => parseFloat(b[0]) - parseFloat(a[0]))
+                    .map(([k, v]) => v > 1 ? `${v}x${k}` : `${k}`)
+                    .join(' + ');
+                setPlateString(`${sideStr} / side`);
+            }
+        }
+    }, [weight, barWeight, ownPlates, platesAmount, langIndex]);
 
     const onSaveAndClose = async () => {
         AppData.ownPlates = ownPlates;
@@ -85,7 +93,7 @@ const PlatesCalculator = ({ theme, langIndex, fSize, setShowCalculator }) => {
         setShowCalculator(false);
     }
 
-    const currentStyles = styles(theme, fSize);
+    const currentStyles = styles(theme, fSize, isError);
 
     return (
         <>
@@ -128,17 +136,21 @@ const PlatesCalculator = ({ theme, langIndex, fSize, setShowCalculator }) => {
                                 </div>
                             </div>
 
-                            {/* 2. Drum Picker */}
+                            {/* 2. Drum Picker (Blocked at maxWeight) */}
                             <div style={currentStyles.pickerSection}>
                                 <DrumPicker 
                                     theme={theme}
                                     value={weight}
                                     min={barWeight}
-                                    max={400}
-                                    step={1.25} // Granularity
+                                    max={maxWeight} // Physically limits the scroll
+                                    step={2.5} 
                                     onChange={setWeight}
                                     styles={currentStyles}
                                 />
+                                {/* Max Weight Info */}
+                                <div style={currentStyles.maxWeightLabel}>
+                                    MAX: {maxWeight} kg
+                                </div>
                             </div>
 
                             {/* 3. Footer/Action */}
@@ -157,55 +169,58 @@ const PlatesCalculator = ({ theme, langIndex, fSize, setShowCalculator }) => {
 
 // --- Sub-Components ---
 
-// 1. Drum Picker (The Modern Weight Scroller)
+// 1. Drum Picker
 const DrumPicker = ({ theme, value, min, max, step, onChange, styles }) => {
     const scrollRef = useRef(null);
-    const itemHeight = 50; // px
+    const itemHeight = 50; 
     
-    // Generate weights array
-    const weights = [];
-    for(let i = min; i <= max; i += step) {
-        weights.push(i);
-    }
+    // Generate weights
+    const weights = useMemo(() => {
+        const arr = [];
+        for(let i = min; i <= max + 0.01; i += step) {
+             // rounding to avoid 42.500000001
+            arr.push(Math.round(i * 100) / 100);
+        }
+        return arr;
+    }, [min, max, step]);
 
-    // Handle Scroll to update value
+    // Handle User Scroll
     const handleScroll = (e) => {
         const scrollTop = e.target.scrollTop;
         const index = Math.round(scrollTop / itemHeight);
         if(weights[index] !== undefined && weights[index] !== value) {
-            // Debouncing could be added here if performance lags
             onChange(weights[index]);
         }
     };
 
-    // Auto-scroll to current value when it changes externally or on mount
+    // Handle External Updates (e.g. Auto-Cap)
     useEffect(() => {
         if(scrollRef.current) {
             const index = weights.indexOf(value);
             if(index !== -1) {
-                scrollRef.current.scrollTo({
-                    top: index * itemHeight,
-                    behavior: 'smooth'
-                });
+                // Check if we are far off to prevent fighting user scroll
+                const currentScroll = scrollRef.current.scrollTop;
+                const targetScroll = index * itemHeight;
+                if (Math.abs(currentScroll - targetScroll) > itemHeight) {
+                    scrollRef.current.scrollTo({
+                        top: targetScroll,
+                        behavior: 'smooth'
+                    });
+                }
             }
         }
-    }, []); // Only on mount to set initial position, relying on scroll snap for user interaction
+    }, [value, weights]);
 
     return (
         <div style={styles.drumContainer}>
-            {/* Selection Highlight Overlay */}
             <div style={styles.drumHighlight}></div>
-            
-            {/* The Scrollable List */}
             <div 
                 ref={scrollRef}
                 style={styles.drumScrollArea} 
                 onScroll={handleScroll}
             >
-                {/* Padding to center the first/last items */}
                 <div style={{height: `${itemHeight * 2}px`}}></div>
-                
-                {weights.map((w, i) => {
+                {weights.map((w) => {
                    const isSelected = w === value;
                    return (
                         <div key={w} style={{
@@ -220,7 +235,6 @@ const DrumPicker = ({ theme, value, min, max, step, onChange, styles }) => {
                         </div>
                    )
                 })}
-                
                 <div style={{height: `${itemHeight * 2}px`}}></div>
             </div>
         </div>
@@ -231,30 +245,23 @@ const DrumPicker = ({ theme, value, min, max, step, onChange, styles }) => {
 const BarVisualizer = ({ plates, barWeight, theme, styles }) => {
     return (
         <div style={styles.barContainer}>
-            {/* The Bar */}
             <div style={styles.barShaft}>
                 <div style={styles.barWeightText}>{barWeight}</div>
             </div>
-            
-            {/* The Sleeve (where plates go) */}
             <div style={styles.barSleeveContainer}>
                 <div style={styles.barSleeveBase}></div>
-                
-                {/* Render Plates stacked */}
                 {plates.map((val, idx) => (
                     <div key={idx} style={getPlateStyle(val, idx, theme)}>
                         <span style={styles.plateText}>{val}</span>
                     </div>
                 ))}
-                
-                {/* Clip/End */}
                 <div style={styles.barClip}></div>
             </div>
         </div>
     )
 }
 
-// 3. Settings View (Inventory)
+// 3. Settings View
 const SettingsView = ({ theme, langIndex, barWeight, setBarWeight, ownPlates, setOwnPlates, platesAmount, setPlatesAmount, styles }) => {
     return (
         <div style={styles.settingsPanel}>
@@ -300,22 +307,22 @@ const SettingsView = ({ theme, langIndex, barWeight, setBarWeight, ownPlates, se
 // --- Helpers ---
 const getPlateColor = (weight) => {
     switch(parseFloat(weight)) {
-        case 50: return '#1ea035'; // Green
-        case 25: return '#a42b2b'; // Red
-        case 20: return '#173894'; // Blue
-        case 15: return '#f6b93b'; // Yellow
-        case 10: return '#14aa87'; // Grey
-        case 5: return '#2496c4';     // White
+        case 50: return '#1ea035'; 
+        case 25: return '#a42b2b'; 
+        case 20: return '#173894'; 
+        case 15: return '#f6b93b'; 
+        case 10: return '#14aa87'; 
+        case 5: return '#2496c4';     
         case 2.5: return '#8f24c4';
         case 1.25: return '#c83131';
+        default: return '#555';
     }
 }
 
 const getPlateStyle = (weight, index, theme) => {
     const color = getPlateColor(weight);
-    // Height scales with weight
     const heights = { 50: 120, 25: 120, 20: 110, 15: 100, 10: 85, 5: 70, 2.5: 60, 1.25: 50 };
-    const widths = { 50: 35, 25: 35, 20: 30, 15: 28, 10: 25, 5: 20, 2.5: 18, 1.25: 15 }; // px
+    const widths = { 50: 35, 25: 35, 20: 30, 15: 28, 10: 25, 5: 20, 2.5: 18, 1.25: 15 }; 
     
     return {
         height: `${heights[weight]}px`,
@@ -335,8 +342,7 @@ const getPlateStyle = (weight, index, theme) => {
 
 export default PlatesCalculator
 
-const styles = (theme, fSize) => ({
-    // Shared Layout
+const styles = (theme, fSize, isError) => ({
     backdrop: {
         position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
         backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)', zIndex: 998
@@ -361,13 +367,9 @@ const styles = (theme, fSize) => ({
     contentContainer: {
         width: '100%', paddingBottom: '30px', flex: 1, overflowY: 'auto'
     },
-
-    // Main Panel Grid
     mainPanel: {
         display: 'flex', flexDirection: 'column', height: '100%', gap: '10px'
     },
-
-    // Visualizer
     visualizerSection: {
         flex: 1, minHeight: '180px', display: 'flex', flexDirection: 'column', 
         alignItems: 'center', justifyContent: 'center', position: 'relative'
@@ -396,13 +398,15 @@ const styles = (theme, fSize) => ({
         fontSize: '9px', fontWeight: 'bold', color: 'rgba(255,255,255,0.9)', 
         transform: 'rotate(-90deg)', whiteSpace: 'nowrap'
     },
+    // Dynamic Error Style
     resultBadge: {
         marginTop: '15px', padding: '8px 16px', borderRadius: '20px',
-        backgroundColor: 'rgba(255,255,255,0.08)',
-        color: Colors.get('mainText', theme), fontSize: '14px', fontWeight: '600'
+        backgroundColor: isError ? 'rgba(231, 76, 60, 0.2)' : 'rgba(255,255,255,0.08)',
+        border: isError ? '1px solid #e74c3c' : 'none',
+        color: isError ? '#e74c3c' : Colors.get('mainText', theme), 
+        fontSize: '14px', fontWeight: '600',
+        transition: 'all 0.3s ease'
     },
-
-    // Drum Picker
     pickerSection: {
         height: '250px', position: 'relative', width: '100%',
         borderTop: '1px solid rgba(255,255,255,0.05)',
@@ -423,7 +427,6 @@ const styles = (theme, fSize) => ({
     drumScrollArea: {
         width: '100%', height: '100%', overflowY: 'scroll',
         scrollSnapType: 'y mandatory',
-        // Hide scrollbar
         scrollbarWidth: 'none', msOverflowStyle: 'none',
         '::-webkit-scrollbar': { display: 'none' }
     },
@@ -433,8 +436,11 @@ const styles = (theme, fSize) => ({
         scrollSnapAlign: 'center',
         cursor: 'pointer'
     },
-
-    // Footer
+    maxWeightLabel: {
+        position: 'absolute', bottom: '10px', right: '20px',
+        fontSize: '10px', color: Colors.get('icons', theme), opacity: 0.5,
+        fontWeight: 'bold', letterSpacing: '1px'
+    },
     footerAction: {
         display: 'flex', justifyContent: 'center', padding: '10px'
     },
@@ -444,8 +450,6 @@ const styles = (theme, fSize) => ({
         boxShadow: '0 4px 15px rgba(0,0,0,0.3)', cursor: 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center'
     },
-
-    // Settings
     settingsPanel: {
         padding: '20px'
     },

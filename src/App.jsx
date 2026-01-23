@@ -328,30 +328,119 @@ function App() {
     </>
   )
 }
-const SuspenseSpinner = ({theme}) => {
-  return (
-    <div style={{backgroundColor: Colors.get('background', theme), display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100vw'}}>
-    <div className="spinner">
-      <style>
-        {
-          `.spinner {
-            margin-top: 20%;
-            border: 4px solid ${Colors.get('subText', theme)};
-            border-top: 4px solid ${Colors.get('habitCardSkipped', theme)};
-            border-radius: 50%;
-            width: 10vw;
-            height: 10vw;
-            animation: spinner 1.6s linear infinite;
-          }
-          @keyframes spinner {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }`
-        }
-      </style>
-    </div>
-    </div>
-  );
+const SuspenseSpinner = ({ theme }) => {
+    const logoSrc = theme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png';
+    const bgColor = Colors.get('background', theme);
+
+    return (
+        <div style={{
+            backgroundColor: bgColor,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            width: '100vw',
+            overflow: 'hidden'
+        }}>
+            
+            <div className="spinner-container">
+                {/* 1. The Glowing Blur Layer (Behind) */}
+                <div className="spinner-ring blur-ring"></div>
+                
+                {/* 2. The Sharp Spinner Layer (Front) */}
+                <div className="spinner-ring main-ring"></div>
+                
+                {/* 3. The Mask/Background for center hole */}
+                <div className="spinner-hole" style={{ backgroundColor: bgColor }}>
+                     {/* 4. The Breathing Logo */}
+                    <img src={logoSrc} className="spinner-logo" alt="Loading..." />
+                </div>
+            </div>
+
+            <style>{`
+                .spinner-container {
+                    position: relative;
+                    width: 150px; 
+                    height: 150px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+
+                /* --- The Rotating Gradient Rings --- */
+                .spinner-ring {
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    /* Iridescent Gradient */
+                    background: conic-gradient(
+                        from 0deg,
+                        #bd4a83b3, 
+                        #894cc5b8, 
+                        #c5588fa8, 
+                        #bf5252ae, 
+                        #bfaa5cbf, 
+                        #5cb2caaf, 
+                        #905cc39e, 
+                        #b95d8bb0
+                    );
+                    animation: spin 1.5s linear infinite;
+                }
+
+                /* The Glow Effect */
+                .blur-ring {
+                    filter: blur(25px);
+                    opacity: 0.8;
+                    transform: scale(1.1); /* Make glow slightly larger */
+                }
+
+                /* --- The Center Hole --- */
+                /* This creates the ring effect by covering the center of the gradient */
+                .spinner-hole {
+                    position: absolute;
+                    width: 88%; /* Adjusts border thickness (Smaller % = thicker border) */
+                    height: 88%;
+                    border-radius: 50%;
+                    z-index: 2;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    box-shadow: inset 0 0 20px rgba(0,0,0,0.5); /* Inner shadow for depth */
+                }
+
+                /* --- The Logo --- */
+                .spinner-logo {
+                    width: 60%;
+                    height: 60%;
+                    object-fit: contain;
+                    animation: breathe 3s ease-in-out infinite;
+                    z-index: 3;
+                    filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+                }
+
+                /* --- Animations --- */
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+
+                @keyframes breathe {
+                    0% { transform: scale(0.95); opacity: 0.9; }
+                    50% { transform: scale(1.05); opacity: 1; }
+                    100% { transform: scale(0.95); opacity: 0.9; }
+                }
+
+                /* Mobile Adjustments */
+                @media (max-width: 600px) {
+                    .spinner-container {
+                        width: 120px;
+                        height: 120px;
+                    }
+                }
+            `}</style>
+        </div>
+    );
 }
 
 export default App
