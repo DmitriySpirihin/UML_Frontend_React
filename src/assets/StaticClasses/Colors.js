@@ -39,6 +39,7 @@ export class Colors {
     categoryNegative: { light: "#FEE2E2", dark: "#450A0A" },
     done: { light: "#10B981", dark: "#10B981" }, 
     skipped: { light: "#EF4444", dark: "#EF4444" },
+    scrollFont: { light: "#6394ff", dark: "#027088d4" }, 
 
     maxValColor: { light: "#44ef63", dark: "#44ef5b8b"},
     minValColor: { light: "#ef4444", dark: "#ef4444a1"  },

@@ -1,4 +1,4 @@
-import React, {useState,useEffect,useRef} from 'react'
+import React, {useState,useEffect,useRef, useMemo} from 'react'
 import { AppData,UserData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,trainInfo$,setPage} from '../../StaticClasses/HabitsBus'
@@ -21,11 +21,12 @@ import ScrollPicker from '../../Helpers/ScrollPicker.jsx'
 const timerSound = new Audio('Audio/Timer.wav');
 
 // Arrays for Pickers
-const repsRange = Array.from({ length: 102 }, (_, i) => i ); // 1 to 100
-const weightIntRange = Array.from({ length: 500 }, (_, i) => i - 1); // 0 to 499
-const weightDecRange = [0, 0, 0.25, 0.5, 0.75, 1 , 1]; // Fractional kg
-const minutesRange = Array.from({ length: 60 }, (_, i) => i - 1); // 0 to 59
-const secondsRange = Array.from({ length: 12 }, (_, i) => (i - 1) * 5); // 0, 5, 10... 55 (Step 5 for easier UX)
+const setsRange = Array.from({ length: 20 }, (_, i) => i + 1); // 1 to 20
+const repsRange = Array.from({ length: 102 }, (_, i) => i + 1); // 1 to 100
+const weightIntRange = Array.from({ length: 500 }, (_, i) => i ); // 0 to 499
+const weightDecRange = [ 0, 0.25, 0.5, 0.75]; // Fractional kg
+const minutesRange = Array.from({ length: 60 }, (_, i) => i ); // 0 to 59
+const secondsRange = Array.from({ length: 12 }, (_, i) => (i ) * 5); // 0, 5, 10... 55 (Step 5 for easier UX)
 
 const TrainingCurrent = () => {
     // states
@@ -104,6 +105,16 @@ const TrainingCurrent = () => {
       subscription4.unsubscribe();
       }
       }, []); 
+
+    // Sync Min/Max Reps for Strategy
+    useEffect(() => {
+       if (currentRepMin > currentRepMax) setCurrentRepMax(currentRepMin);
+    }, [currentRepMin]);
+    
+    useEffect(() => {
+         if (currentRepMax < currentRepMin) setCurrentRepMin(currentRepMax);
+    }, [currentRepMax])
+
     //timers
 useEffect(() => {
   if (isCompleted) return;
@@ -727,7 +738,7 @@ return (
            </div>
            </div>
            
-            
+           
 
            <div style={{width: '100%',flex:1, overflowY:'scroll', display:'flex', flexDirection:'column', alignItems:'center' }}>
              <div style={{...styles(theme,fSize).subtext ,fontSize:'16px',fontWeight:'bold',marginTop:'17px', marginBottom:'10px' }}>{langIndex === 0 ? "Рекорды" : "Records"}</div>
@@ -810,33 +821,36 @@ return (
                   <div style={{...styles(theme).modalCard, height:'auto', padding:'25px'}}>
                       <p style={{...styles(theme,false,false,fSize).text, textAlign:'center', fontSize:'18px', fontWeight:'bold', marginBottom:'20px'}}>{langIndex === 0 ? 'Стратегия выполнения' : 'Set Strategy'}</p>
                        <div style={{display:'flex', width:'100%', justifyContent:'center', marginBottom:'20px', backgroundColor:'rgba(0,0,0,0.2)', borderRadius:'12px', padding:'4px'}}>
-                         <div onClick={() => {setStrategy(0)}} style={{...styles(theme).segmentBtn, width:'50%', backgroundColor: strategy === 0 ? Colors.get('iconsHighlited', theme) : 'transparent'}}>{langIndex === 0 ? "Повторы" : "Reps"}</div>
-                         <div onClick={() => {setStrategy(1)}} style={{...styles(theme).segmentBtn, width:'50%', backgroundColor: strategy === 1 ? Colors.get('iconsHighlited', theme) : 'transparent'}}>{langIndex === 0 ? "Время" : "Time"}</div>
+                         <div onClick={() => {setStrategy(0)}} style={{...styles(theme).segmentBtn, width:'50%', backgroundColor: strategy === 0 ? Colors.get('difficulty', theme) : 'transparent'}}>{langIndex === 0 ? "Повторы" : "Reps"}</div>
+                         <div onClick={() => {setStrategy(1)}} style={{...styles(theme).segmentBtn, width:'50%', backgroundColor: strategy === 1 ? Colors.get('difficulty', theme) : 'transparent'}}>{langIndex === 0 ? "Время" : "Time"}</div>
                        </div>
                        
-                       {strategy === 0 && <div style={{display:'flex', justifyContent:'space-around', alignItems:'center', width:'100%', marginBottom:'25px'}}>
-                         <div style={{display:'flex',flexDirection:'column', alignItems:'center'}}>
-                           <IoIosArrowUp onClick={() => setSets(prev => prev + 1)} style={styles(theme).icon}/>
-                             <div style={{...styles(theme).text,fontSize:'24px', fontWeight:'bold'}}>{sets}</div>
-                           <IoIosArrowDown onClick={() => setSets(prev => prev - 1 > 0 ? prev - 1 : 1)} style={styles(theme).icon}/>
-                           <span style={styles(theme).subtext}>{langIndex === 0 ? 'Сеты' : 'Sets'}</span>
-                         </div>
-                           <p style={{...styles(theme).text,fontSize:'20px', opacity:0.5}}>X</p>
-                         <div style={{display:'flex',flexDirection:'column', alignItems:'center'}}>
-                           <IoIosArrowUp onClick={() => setCurrentRepMin(prev => prev + 1)} style={styles(theme).icon}/>
-                             <div style={{...styles(theme).text,fontSize:'24px', fontWeight:'bold'}}>{currentRepMin}</div>
-                           <IoIosArrowDown onClick={() => setCurrentRepMin(prev => prev - 1 > 0 ? prev - 1 : 1)} style={styles(theme).icon}/>
-                           <span style={styles(theme).subtext}>Min</span>
-                         </div>
-                           <p style={{...styles(theme).text,fontSize:'20px', opacity:0.5}}>-</p>
-                         <div style={{display:'flex',flexDirection:'column', alignItems:'center'}}>
-                           <IoIosArrowUp onClick={() => setCurrentRepMax(prev => prev + 1)} style={styles(theme).icon}/>
-                             <div style={{...styles(theme).text,fontSize:'24px', fontWeight:'bold'}}>{currentRepMax}</div>
-                           <IoIosArrowDown onClick={() => setCurrentRepMax(prev => (prev - 1 > currentRepMin + 2 ? prev - 1 : currentRepMin + 2))} style={styles(theme).icon}/>
-                           <span style={styles(theme).subtext}>Max</span>
-                         </div>
-                       </div>}
-                     
+                       {strategy === 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', margin: '20px 0' }}>
+                             {/* Sets */}
+                             <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                <span style={{fontSize:'10px', fontWeight:'bold', color:Colors.get('subText', theme), marginBottom:'5px'}}>SETS</span>
+                                <ScrollPicker items={setsRange} value={sets} onChange={setSets} theme={theme} width="60px" />
+                             </div>
+                             
+                             <span style={{ fontSize: '20px', color: Colors.get('subText', theme), marginTop:'15px' }}>×</span>
+                             
+                             {/* Min */}
+                             <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                <span style={{fontSize:'10px', fontWeight:'bold', color:Colors.get('subText', theme), marginBottom:'5px'}}>MIN</span>
+                                <ScrollPicker items={repsRange} value={currentRepMin} onChange={setCurrentRepMin} theme={theme} width="60px" />
+                             </div>
+                             
+                             <span style={{ fontSize: '20px', color: Colors.get('subText', theme), marginTop:'15px' }}>-</span>
+                             
+                             {/* Max */}
+                             <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                                <span style={{fontSize:'10px', fontWeight:'bold', color:Colors.get('subText', theme), marginBottom:'5px'}}>MAX</span>
+                                <ScrollPicker items={repsRange} value={currentRepMax} onChange={setCurrentRepMax} theme={theme} width="60px" />
+                             </div>
+                          </div>
+                        )}
+                      
                        <button onClick={() => onAddExercise(true)} style={styles(theme).primaryBtn}>
                             <MdDone style={{fontSize:'22px'}}/>
                        </button>
@@ -904,7 +918,7 @@ const styles = (theme,fSize) =>
      width: "100vw",
      fontFamily: "Segoe UI",
   },
-  panel :
+ panel :
       {
     display:'flex',
     flexDirection:'column',
@@ -912,7 +926,7 @@ const styles = (theme,fSize) =>
     alignItems: "center",
     justifyContent: "start",
   },
-  headerCard: {
+ headerCard: {
       width: '95%',
       backgroundColor: Colors.get('bottomPanel', theme), // Or a slightly lighter shade
       borderRadius: '20px',
@@ -920,12 +934,12 @@ const styles = (theme,fSize) =>
       boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
       marginBottom: '15px',
       marginTop: '10px'
-  },
-  headerIcon: {
+ },
+ headerIcon: {
       fontSize: '20px',
       color: Colors.get('icons', theme)
-  },
-  toolIconWrapper: {
+ },
+ toolIconWrapper: {
       width:'36px', 
       height:'36px', 
       borderRadius:'12px', 
@@ -934,35 +948,35 @@ const styles = (theme,fSize) =>
       alignItems:'center', 
       justifyContent:'center',
       cursor: 'pointer'
-  },
-  scrollView:
-  {
-    display:'flex',
-    flexDirection:'column',
-    alignItems:'center',
-    overflowY:'scroll',
-    width:'100%',
-    overflowX:'hidden',
-    height:'66vh',
-  },
-  text :
-  {
-    textAlign: "left",
-    fontSize: fSize === 0 ? '13px' : '15px',
-    color: Colors.get('mainText', theme),
-    marginBottom:'5px'
-  },
-  subtext :
-  {
-    fontSize: fSize === 0 ? '11px' : '13px',
-    color: Colors.get('subText', theme)
-  },
-  icon:
-  {
+ },
+ scrollView:
+ {
+   display:'flex',
+   flexDirection:'column',
+   alignItems:'center',
+   overflowY:'scroll',
+   width:'100%',
+   overflowX:'hidden',
+   height:'66vh',
+ },
+ text :
+ {
+   textAlign: "left",
+   fontSize: fSize === 0 ? '13px' : '15px',
+   color: Colors.get('mainText', theme),
+   marginBottom:'5px'
+ },
+ subtext :
+ {
+   fontSize: fSize === 0 ? '11px' : '13px',
+   color: Colors.get('subText', theme)
+ },
+ icon:
+ {
      fontSize:'18px',
      color:Colors.get('icons', theme),
      cursor: 'pointer'
-  },
+ },
    confirmContainer: {
     position: 'fixed',
     top: 0,
@@ -976,7 +990,7 @@ const styles = (theme,fSize) =>
     justifyContent: 'center',
     zIndex: 2900,
   },
-  bottomSheet: {
+ bottomSheet: {
       width: '90%',
       height:'60%',
       position: 'absolute',
@@ -988,8 +1002,8 @@ const styles = (theme,fSize) =>
       display: 'flex',
       flexDirection: 'column',
       boxShadow: '0 -5px 20px rgba(0,0,0,0.3)'
-  },
-  modalCard: {
+ },
+ modalCard: {
       width: '80%',
       backgroundColor: Colors.get('bottomPanel', theme),
       borderRadius: '24px',
@@ -999,8 +1013,8 @@ const styles = (theme,fSize) =>
       alignItems: 'center',
       justifyContent: 'center',
       boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
-  },
-  inputCard: {
+ },
+ inputCard: {
       flex: 1,
       height:'80px',
       backgroundColor: 'rgba(255,255,255,0.05)',
@@ -1009,24 +1023,24 @@ const styles = (theme,fSize) =>
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center'
-  },
-  circleBtn: {
+ },
+ circleBtn: {
       fontSize:'24px', 
       color:Colors.get('icons', theme), 
       padding:'8px', 
       borderRadius:'50%', 
       backgroundColor:'rgba(255,255,255,0.05)',
       cursor: 'pointer'
-  },
-  circleBtnSmall: {
+ },
+ circleBtnSmall: {
       fontSize:'18px', 
       color:Colors.get('icons', theme), 
       padding:'8px', 
       borderRadius:'50%', 
       backgroundColor:'rgba(255,255,255,0.05)',
       cursor: 'pointer'
-  },
-  primaryBtn: {
+ },
+ primaryBtn: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -1038,8 +1052,8 @@ const styles = (theme,fSize) =>
       fontSize: '16px',
       fontWeight: 'bold',
       boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
-  },
-  secondaryBtn: {
+ },
+ secondaryBtn: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -1049,8 +1063,8 @@ const styles = (theme,fSize) =>
       borderRadius: '15px',
       padding: '12px 20px',
       fontSize: '16px'
-  },
-  segmentBtn: {
+ },
+ segmentBtn: {
       flex: 1,
       textAlign: 'center',
       padding: '8px',
@@ -1058,14 +1072,14 @@ const styles = (theme,fSize) =>
       fontSize: '14px',
       fontWeight: '600',
       transition: 'all 0.2s'
-  },
-  slider:
-  {
+ },
+ slider:
+ {
    width:'90%',
    alignSelf:'center',
    color:Colors.get('difficulty', theme),
-  },
-  actionBtnSmall: {
+ },
+ actionBtnSmall: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -1074,8 +1088,8 @@ const styles = (theme,fSize) =>
       borderRadius: '8px',
       padding: '8px 16px',
       cursor: 'pointer'
-  },
-  floatingMenu: {
+ },
+ floatingMenu: {
       position: 'fixed',
       bottom: '90px',
       width: '88%',
@@ -1091,8 +1105,8 @@ const styles = (theme,fSize) =>
       boxShadow: '0 10px 25px rgba(0,0,0,0.4)',
       zIndex: 1000,
       border: `1px solid ${Colors.get('border', theme)}`
-  },
-  menuPillBtn: {
+ },
+ menuPillBtn: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -1104,8 +1118,8 @@ const styles = (theme,fSize) =>
       fontWeight: '600',
       cursor: 'pointer',
       height: '20px'
-  },
-  menuIconBtn: {
+ },
+ menuIconBtn: {
       width: '40px', 
       height: '40px', 
       borderRadius: '50%', 
@@ -1113,16 +1127,16 @@ const styles = (theme,fSize) =>
       alignItems: 'center', 
       justifyContent: 'center',
       cursor: 'pointer'
-  },
-  statBox: {
+ },
+ statBox: {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       backgroundColor: 'rgba(255,255,255,0.03)',
       borderRadius: '12px',
       padding: '10px'
-  },
-  topSection: {
+ },
+ topSection: {
           width: '85%',
           display: 'flex',
           flexDirection: 'column',

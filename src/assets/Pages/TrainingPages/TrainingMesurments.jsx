@@ -28,8 +28,8 @@ const names = [
 ]
 
 const now = new Date();
-const months = [['янв', 'фев', 'март', 'апр', 'май', 'июнь', 'июль', 'авг', 'сент', 'окт', 'нояб', 'дек','',''], ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec','','']];
-const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health'], ['', ''], ['','']]
+const months = [['янв', 'фев', 'март', 'апр', 'май', 'июнь', 'июль', 'авг', 'сент', 'окт', 'нояб', 'дек'], ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']];
+const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health']]
 
 const generateRange = (start, end, step = 1) => {
     const arr = [];
@@ -77,11 +77,11 @@ const TrainingMesurments = () => {
     const [goal, setGoal] = useState(AppData.pData.goal);
 
     // --- GENERATED LISTS FOR PICKERS ---
-    const yearsList = useMemo(() => generateRange(2010, now.getFullYear() + 1), []);
+    const yearsList = useMemo(() => generateRange(2020, now.getFullYear()), []);
     // Dynamic days list based on month/year would be ideal, but static 1-31 with clamping is safer for scroll
-    const daysList = useMemo(() => generateRange(1, 33), []); 
+    const daysList = useMemo(() => generateRange(1, 31), []); 
     const intList = useMemo(() => generateRange(0, 300), []);
-    const decList = useMemo(() => generateRange(0, 11), []);
+    const decList = useMemo(() => generateRange(0, 9), []);
     
     // Personal Data Lists
     const agesList = useMemo(() => generateRange(10, 100), []);
@@ -329,7 +329,7 @@ const TrainingMesurments = () => {
                         <div style={{padding:'20px 0'}}>
                             
                             {/* Row 1: Age & Height */}
-                            <div style={{display:'flex', justifyContent:'space-between', marginBottom:'15px'}}>
+                            <div style={{display:'flex', justifyContent:'space-around', marginBottom:'15px',backgroundColor:theme==='light'?'rgba(0,0,0,0.03)':'rgba(255,255,255,0.05)', borderRadius:'12px'}}>
                                 <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
                                     <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Возраст':'Age'}</span>
                                     <ScrollPicker items={agesList} value={age} onChange={setAge} theme={theme} width="100px" />
@@ -341,7 +341,7 @@ const TrainingMesurments = () => {
                             </div>
 
                             {/* Row 2: Wrist & Gender */}
-                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
+                            <div style={{display:'flex', justifyContent:'space-around', alignItems:'center', marginBottom:'20px',backgroundColor:theme==='light'?'rgba(0,0,0,0.03)':'rgba(255,255,255,0.05)', borderRadius:'12px'}}>
                                 <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
                                     <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Запястье (см)':'Wrist'}</span>
                                     <ScrollPicker items={wristsList} value={wrist} onChange={setWrist} theme={theme} width="100px" />
@@ -356,7 +356,7 @@ const TrainingMesurments = () => {
                             </div>
 
                             {/* Row 3: Goal */}
-                            <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
+                            <div style={{display:'flex', flexDirection:'column', alignItems:'center',backgroundColor:theme==='light'?'rgba(0,0,0,0.03)':'rgba(255,255,255,0.05)', borderRadius:'12px'}}>
                                 <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Цель':'Goal'}</span>
                                 <ScrollPicker 
                                     items={currentGoalNames} 

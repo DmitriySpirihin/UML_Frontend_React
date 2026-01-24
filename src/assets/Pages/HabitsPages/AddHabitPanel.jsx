@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useLongPress } from '../../Helpers/LongPress.js';
+import Colors from '../../StaticClasses/Colors'
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
@@ -10,6 +10,7 @@ import { MdFiberNew, MdDone, MdClose , MdListAlt } from 'react-icons/md';
 import Icons from '../../StaticClasses/Icons';
 import MyInput from '../../Helpers/MyInput';
 import Slider from '@mui/material/Slider';
+import ScrollPicker from '../../Helpers/ScrollPicker.jsx'; // Imported Component
 
 const click = new Audio('Audio/Click.wav');
 const now = new Date();
@@ -51,13 +52,13 @@ const AddHabitPanel = () => {
 
     const isLight = theme === 'light' || theme === 'speciallight';
     const ui = {
-        bg: isLight ? 'rgba(242,242,247,0.9)' : 'rgba(18,18,18,0.95)',
-        card: isLight ? '#FFFFFF' : '#1C1C1E',
-        text: isLight ? '#000000' : '#FFFFFF',
-        sub: '#8E8E93',
-        accent: '#007AFF',
+        bg: Colors.get('background', theme),
+        card: Colors.get('mathInput', theme),
+        text: Colors.get('mainText', theme),
+        sub:Colors.get('subText', theme),
+        accent: Colors.get('scrollFont', theme),
         blur: 'blur(30px)',
-        border: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'
+        border:Colors.get('border', theme)
     };
 
     useEffect(() => {
@@ -100,11 +101,13 @@ const AddHabitPanel = () => {
         playEffects(click);
     };
 
-    // Новая логика для барабанов даты
+    // Date Logic
     const daysInMonth = new Date(year, month, 0).getDate();
     const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
     const monthsArray = months[langIndex];
-    const yearsArray = Array.from({ length: 11 }, (_, i) => now.getFullYear() - 5 + i); // 5 лет назад и 5 вперед
+    // RESTRICTED YEAR ARRAY (Current Year Only)
+    const YEAR = now.getFullYear();
+    const yearsArray = [YEAR- 1, YEAR]; 
 
     const setNewGoal = () => {
         if (goalName.length > 0) { setGoals(prev => [...prev, goalName]); setGoalName(''); }
@@ -154,14 +157,14 @@ const AddHabitPanel = () => {
                                                     ))}
                                                 </div>
 
-                                                <div style={{ backgroundColor: ui.card, borderRadius: '16px', display: 'flex', alignItems: 'center', padding: '0 15px', marginBottom: '15px', height: '50px' }}>
-                                                    <FaSearch color={ui.sub} />
-                                                    <MyInput theme={theme} placeHolder={langIndex === 0 ? 'поиск' : 'search'} onChange={v => searchHabitsList(v, habitList, setHabitList)} />
+                                                <div style={{  borderRadius: '16px', display: 'flex', alignItems: 'center',justifyContent: 'space-between', padding: '0 15px', marginBottom: '15px', height: '50px' }}>
+                                                    <FaSearch color={ui.sub} style={{marginRight:'15px',marginTop:'5px'}}/>
+                                                    <MyInput theme={theme}  placeHolder={langIndex === 0 ? 'поиск' : 'search'} onChange={v => searchHabitsList(v, habitList, setHabitList)} />
                                                 </div>
 
                                                 {/* БАРАБАН (Drum) */}
                                                 <div style={drumContainer(ui)}>
-                                                    <div onScroll={handleDrumScroll} style={drumScroll}>
+                                                    <div onScroll={handleDrumScroll} style={drumScroll} className="no-scrollbar">
                                                         <div style={{ height: '88px' }} />
                                                         {habitList.filter(h => !AppData.choosenHabits.includes(h.id) && h.category[langIndex] === (langIndex === 0 ? filterCategory : getCategory(filterCategory)[1])).map((h) => (
                                                             <div key={h.id} style={drumItem(h.id === habitId, ui)}>
@@ -189,13 +192,13 @@ const AddHabitPanel = () => {
                                     <motion.div key="step2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }} style={{ flex: 1, overflowY: 'auto' }}>
                                         <h3 style={{ color: ui.text, textAlign: 'center', fontWeight: '900', margin: '20px 0', fontSize: '22px' }}>{habitName}</h3>
                                         
-                                        {/* БАРАБАНЫ ДАТЫ */}
+                                        {/* БАРАБАНЫ ДАТЫ (SCROLLPICKER) */}
                                         <div style={configCard(ui)}>
                                             <p style={cardLabel(ui)}>{langIndex === 0 ? 'дата начала' : 'start date'}</p>
-                                            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', height: '120px' }}>
-                                                <DrumSelect items={daysArray} value={day} onChange={setDay} ui={ui} width="60px" />
-                                                <DrumSelect items={monthsArray} value={monthsArray[month-1]} onChange={(v) => setMonth(monthsArray.indexOf(v) + 1)} ui={ui} width="100px" />
-                                                <DrumSelect items={yearsArray} value={year} onChange={setYear} ui={ui} width="80px" />
+                                            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', height: '120px', alignItems: 'center' }}>
+                                                <ScrollPicker items={daysArray} value={day} onChange={setDay} theme={theme} width="70px" />
+                                                <ScrollPicker items={monthsArray} value={monthsArray[month-1]} onChange={(v) => setMonth(monthsArray.indexOf(v) + 1)} theme={theme} width="120px" />
+                                                <ScrollPicker items={yearsArray} value={year} onChange={setYear} theme={theme} width="100px" />
                                             </div>
                                         </div>
 
@@ -212,7 +215,7 @@ const AddHabitPanel = () => {
 
                                         <div style={configCard(ui)}>
                                             <p style={cardLabel(ui)}>{langIndex === 0 ? 'микро-цели' : 'sub-goals'}</p>
-                                            <div style={{ display: 'flex', alignItems: 'center', backgroundColor: ui.bg, borderRadius: '14px', paddingRight: '5px', marginBottom: '15px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center',  borderRadius: '14px', paddingRight: '5px', marginBottom: '15px' }}>
                                                 <MyInput theme={theme} w="100%" h="40px" placeHolder={langIndex === 0 ? 'Добавить цель...' : 'Add goal...'} onChange={v => setGoalName(v)} value={goalName}/>
                                                 <motion.div whileTap={{ scale: 0.9 }} onClick={setNewGoal} style={addBtn(ui)}><FaPlus color="#FFF" size={18} /></motion.div>
                                             </div>
@@ -296,45 +299,6 @@ const AddHabitPanel = () => {
     );
 };
 
-// --- КОМПОНЕНТ БАРАБАНА (DrumSelect) ---
-const DrumSelect = ({ items, value, onChange, ui, width }) => {
-    const scrollRef = useRef(null);
-    const itemHeight = 40;
-
-    useEffect(() => {
-        if (scrollRef.current) {
-            const index = items.indexOf(value);
-            if (index !== -1) {
-                scrollRef.current.scrollTop = index * itemHeight;
-            }
-        }
-    }, [value, items]);
-
-    const handleScroll = (e) => {
-        const index = Math.round(e.target.scrollTop / itemHeight);
-        if (items[index] !== undefined && items[index] !== value) {
-            onChange(items[index]);
-            if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('selection');
-        }
-    };
-
-    return (
-        <div style={{ position: 'relative', height: '120px', width: width, overflow: 'hidden' }}>
-            <div ref={scrollRef} onScroll={handleScroll} style={{ height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory', scrollbarWidth: 'none' }}>
-                <div style={{ height: '40px' }} />
-                {items.map((item, i) => (
-                    <div key={i} style={{ height: `${itemHeight}px`, display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center', color: item === value ? ui.text : ui.sub, fontSize: item === value ? '18px' : '16px', fontWeight: item === value ? '800' : '500', transition: '0.2s all', opacity: item === value ? 1 : 0.5 }}>
-                        {item}
-                    </div>
-                ))}
-                <div style={{ height: '40px' }} />
-            </div>
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderTop: `1px solid ${ui.border}`, borderBottom: `1px solid ${ui.border}`, top: '40px', bottom: '40px' }} />
-            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(to bottom, ${ui.bg} 0%, transparent 30%, transparent 70%, ${ui.bg} 100%)` }} />
-        </div>
-    );
-};
-
 // --- СТИЛИ ---
 const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
 const panelStyle = { width: '100%', height: '92vh', borderRadius: '40px 40px 0 0', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' };
@@ -348,9 +312,9 @@ const drumLens = (ui) => ({ position: 'absolute', top: '88px', left: 0, right: 0
 const configCard = (ui) => ({ backgroundColor: ui.card, borderRadius: '25px', padding: '25px', marginBottom: '15px', boxShadow: `0 4px 20px ${ui.accent}10` });
 const cardLabel = (ui) => ({ color: ui.sub, fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '15px', letterSpacing: '1px' });
 
-const footerButtons = { display: 'flex', gap: '12px', padding: '20px 0 40px', alignItems: 'center' };
+const footerButtons = { display: 'flex', gap: '12px', padding: '20px 0 40px', alignItems: 'center' ,marginBottom:'20px'};
 const btnBase = { height: '60px', borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' };
-const btnCancel = (ui) => ({ ...btnBase, flex: 1, backgroundColor: ui.card, border: `1px solid ${ui.border}` });
+const btnCancel = (ui) => ({ ...btnBase, flex: 1, backgroundColor: '#FF3B30', border: `1px solid ${ui.border}` });
 const btnNew = (ui) => ({ ...btnBase, width: '60px', backgroundColor: ui.accent, boxShadow: `0 4px 15px ${ui.accent}40` });
 const btnNext = (ui) => ({ ...btnBase, flex: 2, backgroundColor: ui.accent, boxShadow: `0 4px 15px ${ui.accent}40` });
 
@@ -358,7 +322,7 @@ const iconSheet = (ui) => ({ width: '100%', maxHeight: '70vh', borderRadius: '40
 const iconGrid = { maxHeight: '50vh', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '15px', padding: '0 25px 40px' };
 const iconItem = (active, ui) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px', borderRadius: '18px', backgroundColor: active ? ui.accent + '20' : ui.card, border: active ? `2px solid ${ui.accent}` : `1px solid ${ui.border}` });
 const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: ui.card, borderRadius: '20px' });
-const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: ui.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: '5px' });
+const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: ui.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '15px', marginTop: '10px' });
 const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: ui.bg, borderRadius: '16px' });
 
 // --- ЛОГИКА (ОРИГИНАЛ) ---

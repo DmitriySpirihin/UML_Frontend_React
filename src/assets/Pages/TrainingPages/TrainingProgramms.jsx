@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
@@ -12,77 +12,7 @@ import { FaCalendarDay, FaPlusSquare, FaTrash, FaPencilAlt, FaPlus, FaDumbbell }
 import { MdBook, MdDone, MdClose } from 'react-icons/md'
 import MyInput from '../../Helpers/MyInput';
 import TrainingExercise from './TrainingExercise.jsx'
-
-// --- SCROLL PICKER COMPONENT ---
-const ITEM_HEIGHT = 40;
-
-const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '60px' }) => {
-  const scrollRef = useRef(null);
-
-  // Scroll to initial value on mount or when value updates externally
-  useEffect(() => {
-    if (scrollRef.current) {
-      const selectedIndex = items.findIndex(item => item === value);
-      if (selectedIndex !== -1) {
-        scrollRef.current.scrollTop = selectedIndex * ITEM_HEIGHT;
-      }
-    }
-  }, [value, items]);
-
-  const handleScroll = (e) => {
-    const scrollTop = e.target.scrollTop;
-    const index = Math.round(scrollTop / ITEM_HEIGHT);
-    const validIndex = Math.max(0, Math.min(index, items.length - 1));
-    
-    if (items[validIndex] !== value) {
-        onChange(items[validIndex]);
-    }
-  };
-
-  return (
-    <div style={{ position: 'relative', height: ITEM_HEIGHT * 3, width: width, overflow: 'hidden' }}>
-      {/* Selection Highlight Bar */}
-      <div style={{
-        position: 'absolute',
-        top: ITEM_HEIGHT, left: 0, right: 0, height: ITEM_HEIGHT,
-        borderRadius: '8px',
-        backgroundColor: Colors.get('iconsHighlited', theme),
-        opacity: 0.15, pointerEvents: 'none', zIndex: 0
-      }} />
-      
-      {/* Scrollable Container */}
-      <div 
-        ref={scrollRef}
-        onScroll={handleScroll}
-        style={{
-          height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory',
-          scrollbarWidth: 'none', msOverflowStyle: 'none',
-          paddingTop: ITEM_HEIGHT, paddingBottom: ITEM_HEIGHT,
-          scrollBehavior: 'smooth'
-        }}
-        className="no-scrollbar"
-      >
-        {items.map((item, i) => (
-          <div 
-            key={i} 
-            style={{
-              height: ITEM_HEIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              scrollSnapAlign: 'center',
-              fontSize: item === value ? '20px' : '16px',
-              fontWeight: item === value ? 'bold' : 'normal',
-              color: item === value ? Colors.get('mainText', theme) : Colors.get('subText', theme),
-              opacity: item === value ? 1 : 0.4,
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {item}{suffix}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+import ScrollPicker from '../../Helpers/ScrollPicker.jsx' // Imported Component
 
 // --- HELPER ---
 const generateRange = (start, end) => {
@@ -393,14 +323,14 @@ const TrainingProgramm = () => {
                     </Modal>
                 )}
 
-                {/* 4. Strategy Modal (UPDATED WITH SCROLL PICKERS) */}
+                {/* 4. Strategy Modal (USING IMPORTED SCROLL PICKER) */}
                 {showStarategyPanel && (
                     <Modal onClose={() => setShowStarategyPanel(false)} theme={theme} title={langIndex === 0 ? 'Стратегия' : 'Strategy'}>
                         <div style={styles(theme).segmentedControl}>
-                            <div onClick={() => setStrategy(0)} style={{ ...styles(theme).segment, backgroundColor: strategy === 0 ? Colors.get('background', theme) : 'transparent', color: strategy === 0 ? Colors.get('mainText', theme) : Colors.get('subText', theme), boxShadow: strategy === 0 ? '0 2px 5px rgba(0,0,0,0.1)' : 'none' }}>
+                            <div onClick={() => setStrategy(0)} style={{ ...styles(theme).segment, backgroundColor: strategy === 0 ? Colors.get('difficulty', theme) : 'transparent', color: strategy === 0 ? Colors.get('mainText', theme) : Colors.get('subText', theme), boxShadow: strategy === 0 ? '0 2px 5px rgba(0,0,0,0.1)' : 'none' }}>
                                 {langIndex === 0 ? 'Повторы' : 'Reps'}
                             </div>
-                            <div onClick={() => setStrategy(1)} style={{ ...styles(theme).segment, backgroundColor: strategy === 1 ? Colors.get('background', theme) : 'transparent', color: strategy === 1 ? Colors.get('mainText', theme) : Colors.get('subText', theme), boxShadow: strategy === 1 ? '0 2px 5px rgba(0,0,0,0.1)' : 'none' }}>
+                            <div onClick={() => setStrategy(1)} style={{ ...styles(theme).segment, backgroundColor: strategy === 1 ? Colors.get('difficulty', theme) : 'transparent', color: strategy === 1 ? Colors.get('mainText', theme) : Colors.get('subText', theme), boxShadow: strategy === 1 ? '0 2px 5px rgba(0,0,0,0.1)' : 'none' }}>
                                 {langIndex === 0 ? 'Время' : 'Time'}
                             </div>
                         </div>

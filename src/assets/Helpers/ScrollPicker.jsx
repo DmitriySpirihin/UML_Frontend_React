@@ -1,84 +1,151 @@
-import { useRef,useEffect,useState } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import Colors from "../StaticClasses/Colors";
 
-const ITEM_HEIGHT = 40; // Height of each number in the list
+const ITEM_HEIGHT = 44; 
+const VISIBLE_ITEMS = 3; // Kept to 3 as requested
 
-const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '60px' }) => {
+const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80px' }) => {
   const scrollRef = useRef(null);
-  const [isScrolling, setIsScrolling] = useState(false);
 
-  // Scroll to initial value on mount
+  // 1. TRIPLE THE LIST: [Previous Set, Current Set, Next Set]
+  // This provides the buffer needed to scroll infinitely in both directions.
+  const infiniteItems = useMemo(() => {
+    return [...items, ...items, ...items];
+  }, [items]);
+
+  // Calculate spacer height to ensure centering alignment matches your old style
+  const SPACER_HEIGHT = ((VISIBLE_ITEMS - 1) / 2) * ITEM_HEIGHT;
+
+  // 2. INITIAL MOUNT: Scroll to the "Middle" Set
   useEffect(() => {
     if (scrollRef.current) {
       const selectedIndex = items.findIndex(item => item === value);
-      if (selectedIndex !== -1) {
-        scrollRef.current.scrollTop = selectedIndex * ITEM_HEIGHT;
-      }
+      // If not found, default to 0. 
+      // We add `items.length` to jump to the middle set (Index + Length)
+      const middleSetIndex = (selectedIndex === -1 ? 0 : selectedIndex) + items.length;
+      
+      scrollRef.current.scrollTop = middleSetIndex * ITEM_HEIGHT;
     }
   }, []); // Run once on mount
 
   const handleScroll = (e) => {
-    if (isScrolling) return;
     const scrollTop = e.target.scrollTop;
-    const index = Math.round(scrollTop / ITEM_HEIGHT);
-    const validIndex = Math.max(0, Math.min(index, items.length - 1));
+    const singleSetHeight = items.length * ITEM_HEIGHT;
     
-    if (items[validIndex] !== value) {
-      onChange(items[validIndex]);
+    // --- INFINITE LOOP LOGIC ---
+    // If user scrolls to the top (1st set), jump silently to Middle (2nd set)
+    if (scrollTop < singleSetHeight / 2) {
+      e.target.scrollTop = scrollTop + singleSetHeight;
+    } 
+    // If user scrolls to the bottom (3rd set), jump silently to Middle (2nd set)
+    else if (scrollTop >= singleSetHeight * 2.5) {
+      e.target.scrollTop = scrollTop - singleSetHeight;
+    }
+
+    // --- SELECTION LOGIC ---
+    // 1. Calculate the raw index based on scroll position
+    const rawIndex = Math.round(scrollTop / ITEM_HEIGHT);
+    
+    // 2. Modulo (%) operator to get the actual item index (0 to items.length-1)
+    const actualIndex = rawIndex % items.length;
+    
+    // 3. Update if changed
+    const newItem = items[actualIndex];
+    if (newItem !== value && newItem !== undefined) {
+      onChange(newItem);
     }
   };
 
   return (
-    <div style={{ position: 'relative', height: ITEM_HEIGHT * 3, width: width, overflow: 'hidden' }}>
-      {/* Selection Highlight Bar (Glass effect) */}
+    <div style={{ 
+      position: 'relative', 
+      height: ITEM_HEIGHT * VISIBLE_ITEMS, 
+      width: width, 
+      borderRadius: '12px',
+      overflow: 'hidden',
+      userSelect: 'none',
+      perspective: '1000px'
+    }}>
+      {/* 1. Selection Highlight (Your Original Style) */}
       <div style={{
         position: 'absolute',
-        top: ITEM_HEIGHT,
-        left: 0,
-        right: 0,
-        height: ITEM_HEIGHT,
-        borderRadius: '8px',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '90%',
+        height: ITEM_HEIGHT - 4,
+        borderRadius: '12px',
         backgroundColor: Colors.get('iconsHighlited', theme),
-        opacity: 0.15,
+        opacity: 0.1,
+        border: `1px solid ${Colors.get('mainText', theme)}20`,
         pointerEvents: 'none',
-        zIndex: 0
+        zIndex: 1
+      }} />
+
+      {/* 2. Fade Gradients (Your Original Style) */}
+      <div style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        pointerEvents: 'none',
+        zIndex: 2,
+        background: `linear-gradient(to bottom, 
+          ${Colors.get('background', theme)} 0%, 
+          transparent 20%, 
+          transparent 80%, 
+          ${Colors.get('background', theme)} 100%)`
       }} />
       
-      {/* Scrollable Container */}
+      {/* 3. Scrollable Container */}
       <div 
         ref={scrollRef}
         onScroll={handleScroll}
+        className="no-scrollbar"
         style={{
           height: '100%',
           overflowY: 'scroll',
           scrollSnapType: 'y mandatory',
-          scrollbarWidth: 'none', // Firefox
-          msOverflowStyle: 'none', // IE
-          paddingTop: ITEM_HEIGHT, // Spacer for top
-          paddingBottom: ITEM_HEIGHT, // Spacer for bottom
-          scrollBehavior: 'smooth'
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          scrollBehavior: 'smooth',
+          WebkitOverflowScrolling: 'touch'
         }}
-        className="no-scrollbar" // Add this class to global css: .no-scrollbar::-webkit-scrollbar { display: none; }
       >
-        {items.map((item, i) => (
-          <div 
-            key={i} 
-            style={{
-              height: ITEM_HEIGHT,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              scrollSnapAlign: 'start',
-              fontSize: item === value ? '20px' : '16px',
-              fontWeight: item === value ? 'bold' : 'normal',
-              color: item === value ? Colors.get('mainText', theme) : Colors.get('subText', theme),
-              opacity: item === value ? 1 : 0.5,
-              transition: 'all 0.2s ease'
-            }}
-          >
-            {i > 0 ? item : ''}{i > 0 ? suffix : ''}
-          </div>
-        ))}
+        {/* Top Spacer */}
+        <div style={{ height: SPACER_HEIGHT, width: '100%' }} />
+
+        {infiniteItems.map((item, i) => {
+          // Check if this specific DOM element represents the selected value
+          // We assume the middle set is the "active" visual one usually, 
+          // but visually they all look the same based on the `value` prop.
+          const isSelected = item === value;
+          
+          return (
+            <div 
+              key={i} 
+              style={{
+                height: ITEM_HEIGHT,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                scrollSnapAlign: 'center',
+                
+                // Original Font Styles
+                fontSize: isSelected ? '18px' : '15px',
+                fontWeight: isSelected ? '700' : '500',
+                color: isSelected ? Colors.get('scrollFont', theme) : Colors.get('subText', theme),
+                opacity: isSelected ? 1 : 0.4, 
+                transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
+                transform: `scale(${isSelected ? 1.1 : 0.9})`,
+                fontFamily: 'sans-serif'
+              }}
+            >
+              {item}<span style={{ fontSize: '12px', marginLeft: '2px', opacity: 0.7 }}>{suffix}</span>
+            </div>
+          );
+        })}
+
+        {/* Bottom Spacer */}
+        <div style={{ height: SPACER_HEIGHT, width: '100%' }} />
       </div>
     </div>
   );

@@ -190,7 +190,7 @@ const SleepNew = ({ dateString }) => {
                                         min={MIN_MS}
                                         max={MAX_MS}
                                         theme={theme}
-                                        accentColor={Colors.get('accent', theme)}
+                                        accentColor={Colors.get('difficulty', theme)}
                                     />
                                 </div>
                             </div>
@@ -263,7 +263,7 @@ const SleepNew = ({ dateString }) => {
                                 onClick={() => setAddPanel('')}
                                 style={styles(theme).cancelButton}
                              >
-                                <MdClose size={24} color={Colors.get('subText', theme)} />
+                                <MdClose size={34} color={Colors.get('mainText', theme)} />
                              </motion.button>
 
                              <motion.button 
@@ -442,7 +442,7 @@ const styles = (theme, fSize) => {
             height: '56px',
             borderRadius: '18px',
             border: 'none',
-            backgroundColor: Colors.get('simplePanel', theme),
+            backgroundColor: Colors.get('skipped', theme),
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -453,7 +453,7 @@ const styles = (theme, fSize) => {
             height: '56px',
             borderRadius: '18px',
             border: 'none',
-            background: `linear-gradient(135deg, ${Colors.get('difficulty5', theme)}, #3F51B5)`,
+            background: Colors.get('done', theme),
             color: '#fff',
             fontSize: '16px',
             fontWeight: '700',

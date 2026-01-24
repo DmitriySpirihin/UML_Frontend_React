@@ -8,6 +8,7 @@ import { FaTrash } from "react-icons/fa"
 import { FaList } from "react-icons/fa6"
 import {MdClose,MdDone, MdAccessTime} from 'react-icons/md'
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import ScrollPicker from '../../Helpers/ScrollPicker.jsx' // Imported Component
 
 // --- HELPERS ---
 const formatDateKey = (d) => {
@@ -20,9 +21,9 @@ const formatDateKey = (d) => {
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
 const clickSound = new Audio('Audio/Click.wav');
 
-// Range Helpers
-const hoursRange = Array.from({ length: 24 }, (_, i) => ({ value: i, label: i.toString().padStart(2,'0') }));
-const minutesRange = Array.from({ length: 12 }, (_, i) => ({ value: i * 5, label: (i * 5).toString().padStart(2,'0') }));
+// Range Helpers (Simplified for ScrollPicker)
+const hoursRange = Array.from({ length: 24 }, (_, i) => i);
+const minutesRange = Array.from({ length: 12 }, (_, i) => i * 5);
 
 // --- ANIMATION VARIANTS ---
 const slideVariants = {
@@ -118,7 +119,6 @@ const TrainingMain = () => {
     }, []);
 
     // --- PICKER DATA ---
-    // --- PICKER DATA ---
     const programOptions = useMemo(() => {
         const progs = Object.entries(AppData.programs)
             .filter(([, program]) => program.show !== false)
@@ -141,7 +141,25 @@ const TrainingMain = () => {
         }));
     }, [programId, langIndex]);
 
-    // --- FIXED FUNCTION NAME ---
+    // Helpers to sync ScrollPicker (Visual) with State (IDs)
+    const currentProgramLabel = useMemo(() => 
+        programOptions.find(p => p.value === programId)?.label || programOptions[0].label, 
+    [programId, programOptions]);
+
+    const currentDayLabel = useMemo(() => 
+        dayOptions.find(d => d.value === dayIndex)?.label || dayOptions[0].label, 
+    [dayIndex, dayOptions]);
+
+    const handleProgramChange = (label) => {
+        const found = programOptions.find(p => p.label === label);
+        if (found) setProgrammId(found.value);
+    };
+
+    const handleDayChange = (label) => {
+        const found = dayOptions.find(d => d.label === label);
+        if (found) setDayIndex(found.value);
+    };
+
     const setTimeFromPicker = (setter, currentMs, type, val) => {
         const totalMinutes = Math.floor(currentMs / 60000);
         let h = Math.floor(totalMinutes / 60) % 24;
@@ -385,22 +403,28 @@ const TrainingMain = () => {
            
            <div style={{marginBottom: '20px', width: '100%'}}>
                 <PickerLabel label={langIndex === 0 ? "Программа" : "Program"} theme={theme} />
-                <DrumPicker 
-                    items={programOptions} 
-                    value={programId} 
-                    onChange={setProgrammId} 
-                    theme={theme} 
-                />
+                <div style={{display:'flex', justifyContent:'center'}}>
+                    <ScrollPicker 
+                        items={programOptions.map(p => p.label)} 
+                        value={currentProgramLabel} 
+                        onChange={handleProgramChange} 
+                        theme={theme} 
+                        width="100%"
+                    />
+                </div>
            </div>
            
            <div style={{marginBottom: '20px', width: '100%'}}>
                 <PickerLabel label={langIndex === 0 ? "День" : "Day"} theme={theme} />
-                <DrumPicker 
-                    items={dayOptions} 
-                    value={dayIndex} 
-                    onChange={setDayIndex} 
-                    theme={theme} 
-                />
+                <div style={{display:'flex', justifyContent:'center'}}>
+                    <ScrollPicker 
+                        items={dayOptions.map(d => d.label)} 
+                        value={currentDayLabel} 
+                        onChange={handleDayChange} 
+                        theme={theme} 
+                        width="100%"
+                    />
+                </div>
            </div>
            
            <div style={{marginTop: '15px'}}>
@@ -417,24 +441,30 @@ const TrainingMain = () => {
              <div onClick={() => setShowPreviousSessionPanel(false)} style={{padding:'5px', cursor:'pointer'}}><MdClose size={24} color={Colors.get('subText', theme)}/></div>
            </div>
           
-         <div style={{marginBottom: '20px', width: '100%'}}>
+          <div style={{marginBottom: '20px', width: '100%'}}>
                 <PickerLabel label={langIndex === 0 ? "Программа" : "Program"} theme={theme} />
-                <DrumPicker 
-                    items={programOptions} 
-                    value={programId} 
-                    onChange={setProgrammId} 
-                    theme={theme} 
-                />
+                <div style={{display:'flex', justifyContent:'center'}}>
+                    <ScrollPicker 
+                        items={programOptions.map(p => p.label)} 
+                        value={currentProgramLabel} 
+                        onChange={handleProgramChange} 
+                        theme={theme} 
+                         width="100%"
+                    />
+                </div>
            </div>
            
            <div style={{marginBottom: '20px', width: '100%'}}>
                 <PickerLabel label={langIndex === 0 ? "День" : "Day"} theme={theme} />
-                <DrumPicker 
-                    items={dayOptions} 
-                    value={dayIndex} 
-                    onChange={setDayIndex} 
-                    theme={theme} 
-                />
+                <div style={{display:'flex', justifyContent:'center'}}>
+                    <ScrollPicker 
+                        items={dayOptions.map(d => d.label)} 
+                        value={currentDayLabel} 
+                        onChange={handleDayChange} 
+                        theme={theme} 
+                         width="100%"
+                    />
+                </div>
            </div>
 
           {/* TIME SECTION (DRUM STYLE) */}
@@ -450,13 +480,22 @@ const TrainingMain = () => {
                  <div style={{flex:1, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                     <PickerLabel label={langIndex === 0 ? 'Начало' : 'Start'} theme={theme} />
                     <div style={{display: 'flex', gap: '5px', width: '100%', justifyContent: 'center'}}>
-                        <div style={{width: '50px'}}>
-                            <DrumPicker items={hoursRange} value={Math.floor(startTime / 3600000)} onChange={(val) => setTimeFromPicker(setStartTime, startTime, 'h', val)} theme={theme} />
-                        </div>
+                        <ScrollPicker 
+                            items={hoursRange} 
+                            value={Math.floor(startTime / 3600000)} 
+                            onChange={(val) => setTimeFromPicker(setStartTime, startTime, 'h', val)} 
+                            theme={theme} 
+                            width="60px"
+                        />
                         <span style={{paddingTop: '20px', fontWeight: 'bold'}}>:</span>
-                        <div style={{width: '50px'}}>
-                            <DrumPicker items={minutesRange} value={(startTime / 60000) % 60} onChange={(val) => setTimeFromPicker(setStartTime, startTime, 'm', val)} theme={theme} />
-                        </div>
+                        <ScrollPicker 
+                            items={minutesRange} 
+                            value={(startTime / 60000) % 60} 
+                            onChange={(val) => setTimeFromPicker(setStartTime, startTime, 'm', val)} 
+                            theme={theme} 
+                            width="60px"
+                            suffix=""
+                        />
                     </div>
                  </div>
 
@@ -464,13 +503,22 @@ const TrainingMain = () => {
                  <div style={{flex:1, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
                     <PickerLabel label={langIndex === 0 ? 'Конец' : 'End'} theme={theme} />
                     <div style={{display: 'flex', gap: '5px', width: '100%', justifyContent: 'center'}}>
-                        <div style={{width: '50px'}}>
-                            <DrumPicker items={hoursRange} value={Math.floor(endTime / 3600000)} onChange={(val) => setTimeFromPicker(setEndTime, endTime, 'h', val)} theme={theme} />
-                        </div>
+                        <ScrollPicker 
+                            items={hoursRange} 
+                            value={Math.floor(endTime / 3600000)} 
+                            onChange={(val) => setTimeFromPicker(setEndTime, endTime, 'h', val)} 
+                            theme={theme} 
+                            width="60px"
+                        />
                         <span style={{paddingTop: '20px', fontWeight: 'bold'}}>:</span>
-                        <div style={{width: '50px'}}>
-                            <DrumPicker items={minutesRange} value={(endTime / 60000) % 60} onChange={(val) => setTimeFromPicker(setEndTime, endTime, 'm', val)} theme={theme} />
-                        </div>
+                        <ScrollPicker 
+                            items={minutesRange} 
+                            value={(endTime / 60000) % 60} 
+                            onChange={(val) => setTimeFromPicker(setEndTime, endTime, 'm', val)} 
+                            theme={theme} 
+                            width="60px"
+                            suffix=""
+                        />
                     </div>
                  </div>
              </div>
@@ -533,127 +581,6 @@ const ActionButton = ({icon, label, onClick, theme, isPrimary, isDestructive}) =
             {icon}
             {label && <span>{label}</span>}
         </motion.div>
-    );
-};
-
-// --- DRUM PICKER COMPONENT (Based on your reference) ---
-// --- DRUM PICKER COMPONENT (Fixed) ---
-const DrumPicker = ({ items, value, onChange, theme }) => {
-    const ITEM_HEIGHT = 44; 
-    const scrollRef = useRef(null);
-    const isProgrammatic = useRef(false);
-
-    // Initial scroll to active value
-    useEffect(() => {
-        if (scrollRef.current) {
-            const index = items.findIndex(i => i.value == value); // Loose equality for safety
-            if (index !== -1) {
-                scrollRef.current.scrollTop = index * ITEM_HEIGHT;
-            }
-        }
-    }, [items, value]); // Re-run if items change (e.g. switching programs)
-
-    const handleDrumScroll = (e) => {
-        if (isProgrammatic.current) return;
-        
-        const scrollTop = e.target.scrollTop;
-        const index = Math.round(scrollTop / ITEM_HEIGHT);
-        
-        // Ensure index is valid
-        if (index >= 0 && index < items.length) {
-            const item = items[index];
-            // Only update if value actually changed to prevent loop
-            if (item.value != value) {
-                onChange(item.value);
-            }
-        }
-    };
-
-    const handleItemClick = (index) => {
-        if (scrollRef.current) {
-            isProgrammatic.current = true;
-            scrollRef.current.scrollTo({
-                top: index * ITEM_HEIGHT,
-                behavior: 'smooth'
-            });
-            
-            // Allow manual scroll detection again after animation
-            setTimeout(() => { isProgrammatic.current = false; }, 300);
-            
-            // Immediate update for responsiveness
-            if (items[index].value != value) {
-                onChange(items[index].value);
-            }
-        }
-    };
-
-    const containerStyle = {
-        position: 'relative',
-        height: '160px',
-        backgroundColor: theme === 'light' ? '#f0f0f0' : 'rgba(255,255,255,0.05)',
-        borderRadius: '25px',
-        overflow: 'hidden',
-        width: '100%'
-    };
-
-    const scrollStyle = {
-        height: '100%',
-        overflowY: 'scroll',
-        scrollSnapType: 'y mandatory',
-        scrollBehavior: 'auto', // We handle smooth scrolling in click
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none'
-    };
-
-    const itemStyle = (isActive) => ({
-        height: `${ITEM_HEIGHT}px`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        scrollSnapAlign: 'center',
-        fontSize: isActive ? '16px' : '14px',
-        fontWeight: isActive ? 'bold' : 'normal',
-        color: isActive ? Colors.get('mainText', theme) : Colors.get('subText', theme),
-        opacity: isActive ? 1 : 0.5,
-        transition: 'all 0.2s',
-        cursor: 'pointer'
-    });
-
-    const lensStyle = {
-        position: 'absolute',
-        top: '50%',
-        left: 0,
-        right: 0,
-        height: `${ITEM_HEIGHT}px`,
-        marginTop: `-${ITEM_HEIGHT / 2}px`,
-        pointerEvents: 'none',
-        borderTop: `1px solid ${Colors.get('border', theme)}`,
-        borderBottom: `1px solid ${Colors.get('border', theme)}`,
-        background: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)'
-    };
-
-    return (
-        <div style={containerStyle}>
-            <div 
-                ref={scrollRef}
-                onScroll={handleDrumScroll} 
-                style={scrollStyle}
-                className="no-scrollbar"
-            >
-                <div style={{ height: '88px' }} /> {/* Spacer Top */}
-                {items.map((item, index) => (
-                    <div 
-                        key={item.value + '_' + index} // Unique key
-                        onClick={() => handleItemClick(index)}
-                        style={itemStyle(item.value == value)} // Loose equality
-                    >
-                        {item.label}
-                    </div>
-                ))}
-                <div style={{ height: '88px' }} /> {/* Spacer Bottom */}
-            </div>
-            <div style={lensStyle} />
-        </div>
     );
 };
 

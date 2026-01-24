@@ -389,10 +389,10 @@ const styles = (theme, fSize, isError) => ({
         display: 'flex', alignItems: 'center'
     },
     barSleeveBase: {
-        width: '15px', height: '35px', backgroundColor: '#777', borderRadius: '2px', marginRight: '1px'
+        width: '5px', height: '35px', backgroundColor: '#777', borderRadius: '2px', marginRight: '1px'
     },
     barClip: {
-        width: '20px', height: '25px', backgroundColor: '#444', marginLeft: '5px', borderRadius: '2px'
+        width: '5px', height: '25px', backgroundColor: '#444', marginLeft: '1px', borderRadius: '2px'
     },
     plateText: {
         fontSize: '9px', fontWeight: 'bold', color: 'rgba(255,255,255,0.9)', 
@@ -479,14 +479,14 @@ const styles = (theme, fSize, isError) => ({
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px'
     },
     plateConfigCircle: {
-        width: '45px', height: '45px', borderRadius: '50%', 
+        width: '75px', height: '75px', borderRadius: '50%', 
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontWeight: 'bold', fontSize: '12px', color: '#fff', cursor: 'pointer',
         transition: 'transform 0.1s'
     },
     plateCountControls: {
         display: 'flex', alignItems: 'center', gap: '8px', 
-        color: Colors.get('mainText', theme), fontSize: '12px',
-        backgroundColor: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '10px'
+        color: Colors.get('mainText', theme), fontSize: '16px',
+        backgroundColor: 'rgba(255,255,255,0.05)', padding: '2px 5px', borderRadius: '10px',marginBottom:'30px'
     }
 })
