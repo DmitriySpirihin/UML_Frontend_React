@@ -513,7 +513,7 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
                 />
                 <img src="images/Congrat.png" style={{ width: '120px', height: '120px', borderRadius: '50%' }} alt="Done" />
             </div>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center',zIndex: 10 }}>
                 <h2 style={{ fontSize: '32px', color: textMain, margin: '0 0 10px 0', fontWeight: '300' }}>
                     {langIndex === 0 ? 'Дыхание восстановлено' : 'Breath Restored'}
                 </h2>
@@ -527,7 +527,7 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
                 style={{ 
                     padding: '15px 50px', borderRadius: '30px', 
                     background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', 
-                    color: textMain, fontSize: '16px', fontWeight: '500'
+                    color: textMain, fontSize: '16px', fontWeight: '500',zIndex: 10
                 }}
             >
                 {langIndex === 0 ? 'В меню' : 'Done'}

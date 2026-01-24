@@ -368,11 +368,11 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} style={{ width: '150px', height: '150px', borderRadius: '50%', border: `1px dashed ${accent}`, position: 'absolute', top: -15, left: -15 }} />
                 <img src="images/Congrat.png" style={{ width: '120px', height: '120px', borderRadius: '50%' }} alt="Done" />
             </div>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center',zIndex: 10 }}>
                 <h2 style={{ fontSize: '32px', color: textMain, margin: '0 0 10px 0', fontWeight: '300' }}>{langIndex === 0 ? 'Закалка завершена' : 'Session Complete'}</h2>
                 <p style={{ width: '80%', color: textSub, fontSize: '16px', lineHeight: '1.6', margin: '0 auto' }}>{finishMessage}</p>
             </div>
-            <motion.button whileTap={{ scale: 0.95 }} onClick={() => { setIsFinished(false); setShow(false); }} style={{ padding: '15px 50px', borderRadius: '30px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', color: textMain, fontSize: '16px', fontWeight: '500' }}>{langIndex === 0 ? 'В меню' : 'Done'}</motion.button>
+            <motion.button whileTap={{ scale: 0.95 }} onClick={() => { setIsFinished(false); setShow(false); }} style={{ padding: '15px 50px',zIndex: 10, borderRadius: '30px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', color: textMain, fontSize: '16px', fontWeight: '500' }}>{langIndex === 0 ? 'В меню' : 'Done'}</motion.button>
         </motion.div>
       )}
 

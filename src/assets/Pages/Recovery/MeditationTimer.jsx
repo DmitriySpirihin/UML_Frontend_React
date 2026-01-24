@@ -98,9 +98,9 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
   }, [isRunning, currentStepIndex, duration, allSteps.length]);
 
   useEffect(() => {
-    if (audioEnabled && isRunning && audio.paused) audio.play();
+    if (audioEnabled && isStart && isRunning && audio.paused && !isFinished) audio.play();
     else audio.pause();
-  }, [isRunning, audioEnabled]);
+  }, [isRunning, audioEnabled,isFinished,isStart]);
 
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
@@ -417,7 +417,7 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
                     <img src="images/Congrat.png" style={{ width: '120px', height: '120px', borderRadius: '50%' }} alt="Done" />
                 </div>
                 
-                <div style={{ textAlign: 'center' }}>
+                <div style={{ textAlign: 'center',zIndex: 10 }}>
                     <h2 style={{ fontSize: '32px', color: textMain, margin: '0 0 10px 0', fontWeight: '300' }}>
                         {langIndex === 0 ? 'Сессия завершена' : 'Session Complete'}
                     </h2>
@@ -430,7 +430,7 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
                     whileTap={{ scale: 0.95 }}
                     onClick={() => { setIsFinished(false); setShow(false); }}
                     style={{ 
-                        padding: '15px 50px', borderRadius: '30px', 
+                        padding: '15px 50px', borderRadius: '30px',zIndex: 10,
                         background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', 
                         color: textMain, fontSize: '16px', fontWeight: '500'
                     }}
