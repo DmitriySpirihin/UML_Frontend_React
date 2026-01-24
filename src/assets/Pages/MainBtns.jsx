@@ -21,7 +21,7 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.40.9.r';
+const version = '2.c.50.1.r';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
