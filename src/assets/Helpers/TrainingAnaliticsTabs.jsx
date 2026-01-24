@@ -34,7 +34,7 @@ export const VolumeTabs = ({ type, theme, langIndex, activeTab, onChange }) => {
         display: 'flex',
         width: '94%',
         maxWidth: '400px', // Prevent it from getting too wide on tablets
-        marginTop: 20,
+        marginTop: 35,
         marginBottom: 10,
         padding: '4px',
         borderRadius: '16px', // Modern "Squircle" look

@@ -31,7 +31,7 @@ export class Colors {
 
     // Borders & Lines
     border: { light: "#E2E8F0", dark: "#242830" }, 
-    currentDateBorder: { light: "#3B82F6", dark: "#4F5B70" }, 
+    currentDateBorder: { light: "#0763f7d4", dark: "#2362ce" }, 
     linesColor: { light: "#CBD5E1", dark: "#1A1D23" },
 
     // Status Colors

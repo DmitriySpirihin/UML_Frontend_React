@@ -90,18 +90,14 @@ const styles = (theme,fSize) => ({
 
 const getProgressColor = (percent, theme) => {
     if (percent < 25) return theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
-    if (percent >= 100) return 'rgba(46, 151, 65, 0.4)'; 
-    const startHue = 45; const endHue = 110;  const range = endHue - startHue;
+    if (percent >= 100) return theme === 'light' ? 'rgba(50, 215, 80, 0.64)' : 'rgba(36, 151, 57, 0.4)'; 
+     const startHue = 45; const endHue = 110;  const range = endHue - startHue;
     const normalizedPercent = (percent - 25) / 75; const currentHue = startHue + (normalizedPercent * range);
     return `hsla(${currentHue}, 90%, 40%, 0.3)`; 
 };
 
 const getProgressTextColor = (percent, theme) => {
-    if (percent < 25) return Colors.get('mainText', theme);
-    if (percent >= 100) return '#4ade80';
-    const startHue = 45; const endHue = 110; const range = endHue - startHue;
-    const normalizedPercent = (percent - 25) / 75; const currentHue = startHue + (normalizedPercent * range);
-    return `hsl(${currentHue}, 90%, 60%)`; 
+     return Colors.get('mainText', theme);; 
 }
 
 // Animation Variants
@@ -138,6 +134,8 @@ const HabitCalendar = () => {
     const [fSize, setfontSize] = useState(0);
     const [currentDate, setCurrentDate] = useState(date);
     const [inFoPanelData, setInfoPanelData] = useState(false);
+    const today = new Date().getDate(); 
+    const curMonth = new Date().getMonth();
     
     // Animation state
     const [direction, setDirection] = useState(0);
@@ -283,6 +281,7 @@ const HabitCalendar = () => {
                                         <div style={{
                                             ...styles(theme).cell,
                                             backgroundColor: cellBg, color: cellColor,
+                                            border: today === day && curMonth === cellMonth ? `2px solid ${Colors.get('currentDateBorder', theme)}` : 'transparent',
                                             boxShadow: isChoosen ? `0 4px 12px ${Colors.get('shadow', theme)}` : 'none',
                                         }} onClick={() => {
                                                 setCurrentDate(new Date(cellYear, cellMonth, day));

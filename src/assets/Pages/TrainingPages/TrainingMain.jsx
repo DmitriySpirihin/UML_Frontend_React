@@ -64,6 +64,8 @@ const TrainingMain = () => {
    
    // Animation state
    const [direction, setDirection] = useState(0);
+   const today = new Date().getDate(); 
+    const curMonth = new Date().getMonth();
 
    // --- SUBSCRIPTIONS ---
    useEffect(() => {
@@ -294,6 +296,7 @@ const TrainingMain = () => {
                                     <div style={{
                                         ...styles(theme).cell,
                                         backgroundColor: cellBg, color: cellColor,
+                                         border: today === day && curMonth === cellMonth ? `2px solid ${Colors.get('currentDateBorder', theme)}` : 'transparent',
                                         boxShadow: isChoosen ? `0 4px 12px ${Colors.get('shadow', theme)}` : 'none',
                                     }}
                                     onClick={() => {setCurrentDate(new Date(Date.UTC(cellYear, cellMonth, day)));setTrainingAmount(trAmount);playEffects(clickSound);}} >

@@ -122,15 +122,16 @@ export class MuscleIcon {
                         </div>
                     )}
                     <div style={{
-                        width: '40px', height: '40px',
+                        width: '42px', height: '42px',
                         backgroundColor: iconContainerBg,marginRight:'20px',
-                        borderRadius: '12px', // Modern Squircle
+                        borderRadius: '12px',
+                        overflow: 'hidden', // Modern Squircle
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         boxShadow: isDark ? 'none' : '0 2px 4px rgba(0,0,0,0.05)'
                     }}>
                         <img
                             src={this.muscleIconsSrc[AppData.pData.gender][mgId]}
-                            style={{ width: '42px', height: '42px', objectFit: 'contain' }}
+                            style={{ width: '62px', height: '62px', objectFit: 'contain' }}
                             alt=""
                         />
                     </div>
@@ -145,14 +146,14 @@ export class MuscleIcon {
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px'
             }}>
                 <div style={{
-                    width: '50px', height: '50px',
+                    width: '42px', height: '42px',
                     backgroundColor: theme !== 'light' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
                     borderRadius: '16px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}>
                     <img
                         src={this.muscleIconsSrc[AppData.pData.gender][mgId]}
-                        style={{ width: '40px', objectFit: 'contain' }}
+                        style={{ width: '62px', height: '62px', objectFit: 'contain' }}
                         alt=""
                     />
                 </div>

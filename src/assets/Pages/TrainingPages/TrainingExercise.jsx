@@ -470,7 +470,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     },
     // SEARCH
     searchContainer: {
-        width: '94%', maxWidth: '600px',
+        width: '94%', maxWidth: '600px',marginTop:'25px',
         backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
         borderRadius: '12px', display: 'flex', alignItems: 'center',
         padding: '8px 0', marginBottom: '10px'

@@ -78,7 +78,8 @@ const SleepMain = () => {
   const currentDateRef = useRef(currentDate);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [selectedSleepEntry, setSelectedSleepEntry] = useState(null);
-
+  const today = new Date().getDate(); 
+    const curMonth = new Date().getMonth();
   // Subscriptions
   useEffect(() => {
     const sub1 = theme$.subscribe(setThemeState);
@@ -198,7 +199,7 @@ const SleepMain = () => {
                             playEffects(clickSound);
                             setSelectedSleepEntry(entry || null);
                         }}
-                        style={styles(theme).dayCell(isSelected, isToday)}
+                        style={{...styles(theme).dayCell(isSelected, isToday), border: today === day && curMonth === cellMonth ? `2px solid ${Colors.get('currentDateBorder', theme)}` : 'transparent',}}
                     >
                         {/* Background Fill (Data Visualization) */}
                         {hasData && (

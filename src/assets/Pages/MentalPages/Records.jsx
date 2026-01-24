@@ -238,9 +238,9 @@ const ListItem = ({ theme, fSize, isUser, rank, name, score, index }) => {
     let RankIcon = null;
     let rankColor = Colors.get('mainText', theme);
     
-    if (rank === 1) { RankIcon = FaTrophy; rankColor = '#FFD700'; } // Gold
-    else if (rank === 2) { RankIcon = FaMedal; rankColor = '#C0C0C0'; } // Silver
-    else if (rank === 3) { RankIcon = FaMedal; rankColor = '#CD7F32'; } // Bronze
+    if (rank === 1) { RankIcon = FaTrophy; rankColor = Colors.get('barsColorWeight', theme); } // Gold
+    else if (rank === 2) { RankIcon = FaMedal; rankColor = Colors.get('icons', theme); } // Silver
+    else if (rank === 3) { RankIcon = FaMedal; rankColor = Colors.get('difficulty5', theme); } // Bronze
 
     return (
         <motion.div
@@ -258,9 +258,7 @@ const ListItem = ({ theme, fSize, isUser, rank, name, score, index }) => {
                 backgroundColor: isUser 
                     ? (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)') 
                     : (isDark ? 'rgba(30, 30, 30, 0.4)' : '#FFFFFF'),
-                border: isUser 
-                    ? `1px solid ${Colors.get('light', theme)}` 
-                    : `1px solid ${Colors.get('border', theme)}`,
+                border: isUser ? `1px solid ${Colors.get('done', theme)}` : 'none',
                 backdropFilter: 'blur(10px)',
                 boxShadow: isDark ? '0 4px 6px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.05)',
                 marginBottom: '8px'
@@ -291,7 +289,7 @@ const ListItem = ({ theme, fSize, isUser, rank, name, score, index }) => {
                         gap: '6px',
                         fontSize: fSize === 0 ? '15px' : '17px',
                         fontWeight: isUser ? 'bold' : 'normal',
-                        color: isUser ? Colors.get('light', theme) : Colors.get('mainText', theme)
+                        color: Colors.get('mainText', theme)
                     }}>
                         {name}
                         {isUser && <FaUserAlt size={10} color={Colors.get('light', theme)} />}
