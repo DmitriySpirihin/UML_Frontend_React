@@ -5,7 +5,7 @@ import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, is
 import { AppData, UserData } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
-import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot, FaMedal, FaChevronRight, FaCodeBranch, FaThumbtack, FaTrashRestore, FaStar } from "react-icons/fa";
+import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot, FaMedal, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaStar } from "react-icons/fa";
 import { MdOutlineSelfImprovement } from "react-icons/md";
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 import { PremiumButton } from './Premium'
@@ -31,6 +31,7 @@ const MainMenu = () => {
     const [itemsState, setItemsState] = useState(AppData.menuCardsStates || {});
 
     const initialMenuItems = [
+        { id: 'MainCard', icon: null, title: lang === 0 ? '' : '', subtitle: lang === 0 ? '' : '', color: '#00ff6600' },
         { id: 'HabitsMain', icon: <FaMedal />, title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Трекер дисциплины' : 'Discipline tracker', color: '#FFD700' },
         { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Тренировки' : 'Workout', subtitle: lang === 0 ? 'Дневник силы' : 'Gym diary', color: '#FF4D4D'},
         { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Мозг' : 'Brain', subtitle: lang === 0 ? 'Развитие интеллекта' : 'Intelligence', color: '#4DA6FF' },
@@ -196,22 +197,8 @@ useEffect(() => {
                 
                 <div style={styles(theme).scrollView}>
                     <div style={{ height: '2vh', width: '100%' }} onClick={() => { handleClick(true) }} ></div>
-                    
-                    {!hasPremium && !isValidation && (
-                        <PremiumButton 
-                            clickHandler={() => sendReferalLink()} 
-                            w={'87%'} h={'55px'} fSize={'15px'} br={"24px"}
-                            langIndex={lang} theme={theme} 
-                            textToShow={['Премиум за приглашение', 'Invite and get premium']} 
-                            needSparcle={false} 
-                        />
-                    )}
 
-                    <AIInsightButton 
-                        theme={theme} 
-                        lang={lang} 
-                        onClick={() => { setPage('RobotMain'); }} 
-                    />
+                    
 
                     <motion.div
                         variants={containerAnim}
@@ -275,17 +262,16 @@ function AIInsightButton({ theme, lang, onClick }) {
             onClick={onClick}
             style={{
                 width: '88%',
-                height: '50px',
+                height: '88%',
                 borderRadius: '16px',
                 background: isDark ? 'rgba(0, 229, 255, 0.08)' : '#FFFFFF',
                 border: `1px solid ${isDark ? 'rgba(0, 229, 255, 0.3)' : 'rgba(0, 229, 255, 0.5)'}`,
-                boxShadow: `0 0 15px ${isDark ? 'rgba(0, 229, 255, 0.15)' : 'rgba(0, 150, 255, 0.1)'}`,
+                margin: '5px',
                 backdropFilter: 'blur(10px)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '10px',
-                marginBottom: '10px',
                 cursor: 'pointer',
                 position: 'relative',
                 overflow: 'hidden'
@@ -299,38 +285,72 @@ function AIInsightButton({ theme, lang, onClick }) {
                 color: isDark ? '#E0F7FA' : '#333',
                 letterSpacing: '0.3px'
             }}>
-                {lang === 0 ? 'AI Ассистент & Инсайты' : 'AI Assistant & Insights'}
+                {lang === 0 ? 'AI Ассистент' : 'AI Assistant'}
             </span>
-            <div style={{ position: 'absolute', right: '15px', opacity: 0.6 }}>
-                 <FaStar size={10} color={mainColor} />
-            </div>
         </motion.div>
     );
 }
+function ReferalButton({ theme, lang, onClick }) {
+    const isDark = theme === 'dark';
+    const mainColor = '#ffd500';
 
+    return (
+        <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            whileTap={{ scale: 0.96 }}
+            onClick={onClick}
+            style={{
+                width: '88%',
+                height: '88%',
+                borderRadius: '16px',
+                background: isDark ? 'rgba(242, 255, 0, 0.08)' : '#FFFFFF',
+                border: `1px solid ${isDark ? 'rgba(255, 238, 0, 0.3)' : 'rgba(255, 247, 0, 0.5)'}`,
+                margin: '5px',
+                backdropFilter: 'blur(10px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                position: 'relative',
+                overflow: 'hidden'
+            }}
+        >
+            <FaCrown size={18} color={mainColor} />
+            <span style={{
+                fontFamily: 'Segoe UI',
+                fontWeight: '600',
+                fontSize: '15px',
+                color: isDark ? '#E0F7FA' : '#333',
+                letterSpacing: '0.3px'
+            }}>
+                {lang === 0 ? 'Друг = премиум' : 'Friend = premium'}
+            </span>
+        </motion.div>
+    );
+}
 function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide }) {
-    const isLocked = false; 
-    const isDev = false; 
     const info = getInfo(index - 1); 
     const isDark = theme === 'dark';
 
     const cardStyle = {
         position: 'relative',
         width: '100%',
-        height: '80px', 
+        height: !item.icon ? '50px' : '80px', 
         display: 'flex',
         alignItems: 'center',
-        padding: '0 20px',
+        padding: !item.icon ? '0px' : '0 20px',
         boxSizing: 'border-box',
-        borderRadius: '24px',
+        borderRadius: !item.icon ? '0px' : '24px',
         overflow: 'hidden',
         marginBottom: '12px',
-        backgroundColor: isDark ? Colors.get('simplePanel', theme) + '99' : '#FFFFFF',
-        backdropFilter: isDark ? 'blur(40px)' : 'none',
-        border: isPinned 
+        backgroundColor: !item.icon ? 'transparent' : isDark ? Colors.get('simplePanel', theme) + '99' : '#FFFFFF',
+        backdropFilter: !item.icon ? 'none' : isDark ? 'blur(40px)' : 'none',
+        border: !item.icon ? 'none' : isPinned 
             ? `1px solid ${item.color}` 
             : `1px solid ${isDark ? Colors.get('border', theme) + '30' : '#E5E7EB'}`,
-        boxShadow: isDark ? '0 8px 20px 0 rgba(0, 0, 0, 0.4)' : '0 4px 10px rgba(0, 0, 0, 0.04)',
+        boxShadow: !item.icon ? 'none' : isDark ? '0 8px 20px 0 rgba(0, 0, 0, 0.4)' : '0 4px 10px rgba(0, 0, 0, 0.04)',
     };
 
     const iconWrapperStyle = {
@@ -358,21 +378,23 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide }) 
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={(e, { offset }) => {
-    if (offset.x < -80) {
-        onHide();
-        if (window.Telegram?.WebApp?.HapticFeedback) 
+          if (offset.x < -80) {
+           onHide();
+           if (window.Telegram?.WebApp?.HapticFeedback) 
             window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-    }
-    if (offset.x > 80) {
+        }
+        if (offset.x > 80) {
         onPin();
         if (window.Telegram?.WebApp?.HapticFeedback) 
             window.Telegram.WebApp.HapticFeedback.impactOccurred('medium');
     }
 }}
 
-            onClick={() => { if (!isLocked && !isDev) { setPage(item.id); playEffects(null); } }}
+            onClick={() => { if (item.icon !== null) { setPage(item.id); playEffects(null); } }}
             style={cardStyle}
         >
+            {item.icon ? ( <div style={{display:'flex',flexDirection:'row',width:'100%',alignItems:'center'}}>
+            
             <div style={iconWrapperStyle}>
                 {React.cloneElement(item.icon, { size: 22 })}
             </div>
@@ -423,23 +445,25 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide }) 
                 )}
                 <FaChevronRight size={14} color={Colors.get('subText', theme)} style={{ opacity: 0.3 }} />
             </div>
+            </div>) : 
+            (
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignContent: 'center', justifyItems: 'center' }}>
+                    <ReferalButton
+                        theme={theme} 
+                        lang={lang} 
+                        onClick={() => sendReferalLink()}
+                    />
+                        <AIInsightButton 
+                        theme={theme} 
+                        lang={lang} 
+                        onClick={() => { setPage('RobotMain'); }} 
+                    />
+            </div>
 
-            {isLocked && (
-                <div 
-                    onClick={(e) => e.stopPropagation()} 
-                    style={{
-                        position: 'absolute', inset: 0, zIndex: 2,
-                        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-                        backgroundColor: isDark ? 'rgba(14, 14, 14, 0.52)' : 'rgba(255, 255, 255, 0.4)',
-                        backdropFilter: 'blur(5px)',
-                        textAlign: 'center'
-                    }}
-                >
-                    <div style={{ color: isDark ? '#FFD700' : '#D97706', fontSize: '11px', fontWeight: 'bold', fontFamily: 'Segoe UI' }}>
-                        {lang === 0 ? 'ТОЛЬКО ДЛЯ ПРЕМИУМ' : 'PREMIUM USERS ONLY'}
-                    </div>
-                </div>
-            )}
+            )
+            }
+
+            
         </motion.div>
     );
 }

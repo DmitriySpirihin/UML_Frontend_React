@@ -49,6 +49,10 @@ export class AppData{
   static todoList = [];
   static menuCardsStates = 
 {
+  "MainCard": {
+    "pinned": true,
+    "hidden": false
+  },
   "HabitsMain": {
     "pinned": false,
     "hidden": false
@@ -119,6 +123,10 @@ export class AppData{
     this.todoList = data.todoList || [];
     this.menuItems = data.menuCardsStates || // AppData.menuCardsStates
 {
+  "MainCard": {
+    "pinned": true,
+    "hidden": false
+  },
   "HabitsMain": {
     "pinned": false,
     "hidden": false

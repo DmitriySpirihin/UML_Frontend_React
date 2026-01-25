@@ -1,6 +1,7 @@
 import {AppData, UserData } from './AppData';
 import { serializeData, deserializeData ,saveData} from './SaveHelper';
 import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel,setValidation} from './HabitsBus';
+import pako from 'pako';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
 
@@ -105,6 +106,8 @@ export async function isUserHasPremium(uid) {
   }
 }
 
+
+
 export async function cloudBackup() {
   try {
     const dataToSave = serializeData();
@@ -113,54 +116,56 @@ export async function cloudBackup() {
       return;
     }
 
-    // ✅ Set the last backup timestamp in AppData BEFORE saving
+    const dataString = typeof dataToSave === 'string' ? dataToSave : JSON.stringify(dataToSave);
+
+    // 📦 COMPRESSION STEP
+    // 1. Deflate the string to a compressed Uint8Array
+    const compressedData = pako.deflate(dataString);
+    // 2. Convert binary to Base64 string for safe transport
+    const base64Data = btoa(String.fromCharCode(...compressedData));
+
+    // Update timestamp
     const now = new Date();
-    AppData.lastBackupDate = now.toISOString(); // or `now.getTime()` if you prefer timestamp
+    AppData.lastBackupDate = now.toISOString();
 
-    const dataString = typeof dataToSave === 'string' 
-      ? dataToSave 
-      : JSON.stringify(dataToSave);
-
-    const response = await NotificationsManager.sendMessage('backup', dataString);
+    const response = await NotificationsManager.sendMessage('backup', base64Data);
     
     if (response?.success) {
-      setShowPopUpPanel('✅ Backup saved to cloud!', 2000, true);
+      setShowPopUpPanel('✅ Compressed backup saved!', 2000, true);
     } else {
-      // Optional: revert lastBackupDate if save failed?
-      // But since it's client-side only, it's okay to keep it optimistic
       setShowPopUpPanel('❌ ' + (response?.message || 'Backup failed'), 2000, false);
     }
   } catch (error) {
     console.error('Backup error:', error);
-    setShowPopUpPanel('❌ Backup failed: ' + (error.message || 'unknown error'), 2000, false);
+    setShowPopUpPanel('❌ Backup failed', 2000, false);
   }
 }
 // 📥 Manual Restore from Server
 export async function cloudRestore() {
-  const confirmed = confirm('⚠️ This will overwrite your current data. Continue?');
+  const confirmed = confirm('⚠️ Overwrite current data?');
   if (!confirmed) return;
 
   try {
     const response = await NotificationsManager.sendMessage('restore', '');
 
-    if (!response.success || typeof response.message !== 'string') {
-      setShowPopUpPanel('⚠️ ' + (response.message || 'No backup found'), 2000, false);
+    if (!response.success || !response.message) {
+      setShowPopUpPanel('⚠️ No backup found', 2000, false);
       return;
     }
 
- 
-    deserializeData(response.message);
+    // 🔓 DECOMPRESSION STEP
+    // 1. Convert Base64 back to binary
+    const binaryData = Uint8Array.from(atob(response.message), c => c.charCodeAt(0));
+    // 2. Inflate the binary back to a string
+    const decompressedString = pako.inflate(binaryData, { to: 'string' });
+
+    deserializeData(decompressedString);
     await saveData();
 
-    setShowPopUpPanel('✅ Data restored from cloud!', 2000, true);
-
+    setShowPopUpPanel('✅ Data restored!', 2000, true);
   } catch (error) {
     console.error('Restore error:', error);
-    let msg = '❌ Restore failed';
-    if (error.message?.includes('corrupt') || error.message?.includes('parse')) {
-      msg = '❌ Backup data is corrupted';
-    }
-    setShowPopUpPanel(msg, 2000, false);
+    setShowPopUpPanel('❌ Data corrupted or invalid', 2000, false);
   }
 }
 

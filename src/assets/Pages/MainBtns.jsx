@@ -21,7 +21,7 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.50.6.f';
+const version = '2.c.50.8.f';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -177,7 +177,7 @@ const SettingsPanel = ({ theme, langIndex, setAdditionalPanel, setAdditionalPane
                             <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={vibroIndex === 0 ? <LuVibrate /> : <LuVibrateOff />} label={langIndex === 0 ? 'Вибрация' : 'Haptics'} value={vibroIndex === 0 ? (langIndex === 0 ? 'Вкл' : 'On') : (langIndex === 0 ? 'Выкл' : 'Off')} color="#FFD700" isActive={vibroIndex === 0} onClick={() => { changeSettings(3); setVibro(vibroIndex === 0 ? 1 : 0); playEffects(null) }} />
                             <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<FaBug />} label={langIndex === 0 ? 'Ошибка' : 'Bug Report'} color="#FF4D4D" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(1) }} />
                             <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<FaAddressCard />} label={langIndex === 0 ? 'Контакты' : 'Contacts'} color="#4DFF88" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(3); playEffects(null) }} />
-                            {hasPremium && <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<MdBackup />} label={langIndex === 0 ? 'Бекап' : 'Backup'} color="#FFA64D" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(4) }} />}
+                            <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<MdBackup />} label={langIndex === 0 ? 'Бекап' : 'Backup'} color="#FFA64D" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(4) }} />
                         </div>
                          <div style={{...settingsPanelStyles(theme,fSize).text,fontSize:'10px',marginLeft:'auto',marginRight:'55px',color:Colors.get('subText', theme)}}>{version}</div>
                     </motion.div>
