@@ -24,12 +24,13 @@ export async function initializeTelegramSDK(opts = {}) {
     }
 
     // Setup back button handler
-    if (window.Telegram?.WebApp?.BackButton) {
-      window.Telegram.WebApp.BackButton.hide();
-      window.Telegram.WebApp.onEvent('backButtonClicked', () => {
-        saveData();
-        Telegram.WebApp.close();
-      });
+    const tg = window.Telegram?.WebApp;
+
+    if (tg) {
+      tg.MainButton.hide();
+      tg.BackButton.hide();
+      if (tg.SecondaryButton) tg.SecondaryButton.hide();
+      if (tg.SettingsButton) tg.SettingsButton.hide();
     }
     return true;
   } catch (error) {

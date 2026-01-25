@@ -65,13 +65,13 @@ const styles = (theme,fSize) => ({
           transition: 'background 0.2s', zIndex: 10
       },
       tableWrapper: {
-        width: '100%', padding: '10px 0px 20px 0px', boxSizing: 'border-box',
+        width: '100%', padding: '15px 0px 15px 0px', boxSizing: 'border-box',
         overflow: 'hidden' 
       },
-      table: { width:'100%', borderCollapse:'collapse', textAlign:'center' },
+      table: { width:'90%', borderCollapse:'collapse', textAlign:'center' },
       cell: {
          boxSizing:'border-box', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-         width: '13vw', height: '13vw', maxHeight: '50px', maxWidth: '50px', borderRadius:'14px', 
+         width: '12vw', height: '13vw', maxHeight: '50px', maxWidth: '50px', borderRadius:'14px', 
          fontSize:'16px', fontWeight:'600', fontFamily: "Segoe UI", transition: 'all 0.2s ease-in-out',
          cursor: 'pointer', margin: 'auto' 
       },

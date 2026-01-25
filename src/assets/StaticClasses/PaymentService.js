@@ -15,14 +15,11 @@ export async function initiateSbpPayment(userId, plan) {
       throw new Error('Invalid payment response: missing paymentId or URL');
     }
 
-    // ✅ CRITICAL: Save paymentId for later verification
     localStorage.setItem('pendingPaymentId', invoice.paymentId);
 
-    // Open in Telegram Mini App browser
     if (window.Telegram?.WebApp?.openLink) {
       window.Telegram.WebApp.openLink(invoice.confirmation.confirmation_url);
     } else {
-      // Fallback for dev/testing
       window.open(invoice.confirmation.confirmation_url, '_blank');
     }
   } catch (error) {
@@ -33,7 +30,8 @@ export async function initiateSbpPayment(userId, plan) {
 
 async function createSbpInvoice(userId, plan) {
   try {
-    const res = await fetch(`${API_BASE}/api/sbp-invoice`, { // ✅ NO TRAILING SPACE
+    // ✅ Uses API_BASE
+    const res = await fetch(`${API_BASE}/api/sbp-invoice`, { 
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, plan }),
@@ -46,6 +44,9 @@ async function createSbpInvoice(userId, plan) {
   }
 }
 
+// ---------------------------------------------------------
+// 2. Telegram Stars Payment (FIXED)
+// ---------------------------------------------------------
 export async function initiateTgStarsPayment(userId, plan) {
   if (!window.Telegram?.WebApp) {
     alert('Telegram Stars payments are only available inside Telegram.');
@@ -53,16 +54,24 @@ export async function initiateTgStarsPayment(userId, plan) {
   }
 
   try {
-    const res = await fetch('/api/tg-stars-invoice', {
+    // 🔴 OLD ERROR: fetch('/api/tg-stars-invoice') -> Tried to fetch from GitHub Pages
+    // 🟢 FIXED: Added ${API_BASE}
+    const res = await fetch(`${API_BASE}/api/tg-stars-invoice`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, plan }),
     });
 
+    // Check for HTTP errors (like 404 or 500) before parsing JSON
+    if (!res.ok) {
+        const text = await res.text(); // Get raw text to debug
+        console.error('Stars API Error Body:', text);
+        throw new Error(`Server returned status: ${res.status}`);
+    }
+
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Failed to create Stars invoice');
 
-    // Use Telegram WebApp to open the invoice (better UX)
     window.Telegram.WebApp.openTelegramLink(data.invoice_link);
   } catch (err) {
     console.error('Stars payment error:', err);
@@ -71,28 +80,33 @@ export async function initiateTgStarsPayment(userId, plan) {
   }
 }
 
+// ---------------------------------------------------------
+// 3. TON Payment (FIXED)
+// ---------------------------------------------------------
 export async function initiateTONPayment(userId, plan) {
   try {
-    const res = await fetch('/api/ton-invoice', {
+    // 🔴 OLD ERROR: fetch('/api/ton-invoice')
+    // 🟢 FIXED: Added ${API_BASE}
+    const res = await fetch(`${API_BASE}/api/ton-invoice`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, plan }),
     });
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Failed to create TON invoice');
 
     const { address, amount, comment } = data;
 
-    // Build ton:// URL (amount in nanotons)
     const amountInNano = Math.round(amount * 1e9);
     const encodedComment = encodeURIComponent(comment);
     const tonUrl = `ton://transfer/${address}?amount=${amountInNano}&text=${encodedComment}`;
 
-    // Open directly in Telegram Wallet (mobile-friendly!)
     if (window.Telegram?.WebApp) {
       window.Telegram.WebApp.openTelegramLink(tonUrl);
     } else {
-      // Fallback: open in browser (will prompt Tonkeeper or Telegram)
       window.open(tonUrl, '_blank');
     }
   } catch (err) {

@@ -100,7 +100,7 @@ const MyInput = ({
         alignItems: 'center', // Center vertically
         justifyContent: 'flex-start',
         cursor: 'text',
-        marginTop: '10px'
+        
       }}
       onClick={(event) => {
         setCurrentKeyboardString('');

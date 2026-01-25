@@ -63,12 +63,12 @@
 
 import { AppData } from "../../StaticClasses/AppData"
 import { saveData } from "../../StaticClasses/SaveHelper"
+import { BehaviorSubject } from 'rxjs';
+export const todoEvents$ = new BehaviorSubject(null);
 
 export async function createGoal(name, description, difficulty, priority, category, icon, color, startDate, deadLine, goals, note) {
-  // create id
   const id = Date.now();
 
-  // set to AppData.todoList
   AppData.todoList.push({
     id,
     name,
@@ -85,8 +85,9 @@ export async function createGoal(name, description, difficulty, priority, catego
     note
   });
 
-  // then save
   await saveData();
+  // Уведомляем всех подписчиков, что список изменился
+  if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
 }
 
 export async function redactGoal(id, name, description, difficulty, priority, category, icon, color, startDate, deadLine, note) {
@@ -105,76 +106,68 @@ export async function redactGoal(id, name, description, difficulty, priority, ca
     item.note = note;
     
     await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
 }
 
 export async function deleteGoal(id) {
-  // find by id and remove from AppData.todoList
   AppData.todoList = AppData.todoList.filter(item => item.id !== id);
   
-  // then save
   await saveData();
+  if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
 }
 
 export async function toggleGoal(id) {
-  // find by id and toggle isDone
   const item = AppData.todoList.find(i => i.id === id);
   
   if (item) {
     item.isDone = !item.isDone;
     await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
 }
 
 export async function addSubGoal(id, subGoalText) {
-  // find toDo by id
   const item = AppData.todoList.find(i => i.id === id);
   
   if (item) {
-    // add new goal to goals array
     if (!item.goals) item.goals = [];
     item.goals.push({ text: subGoalText, isDone: false });
     
-    // then save
     await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
 }
 
 export async function redactSubGoal(id, subGoalIndex, newText) {
-  // find toDo by id
   const item = AppData.todoList.find(i => i.id === id);
   
-  // find and replace goal in goals array
   if (item && item.goals && item.goals[subGoalIndex]) {
     item.goals[subGoalIndex].text = newText;
     
-    // then save
     await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
 }
 
 export async function deleteSubGoal(id, subGoalIndex) {
-  // find toDo by id
   const item = AppData.todoList.find(i => i.id === id);
   
-  // remove goals[subGoalIndex]
   if (item && item.goals) {
     item.goals.splice(subGoalIndex, 1);
     
-    // then save
     await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
 }
 
 export async function toggleSubGoal(id, subGoalIndex) {
-  // find toDo by id
   const item = AppData.todoList.find(i => i.id === id);
   
-  // toggle isDone of goals[subGoalIndex]
   if (item && item.goals && item.goals[subGoalIndex]) {
     item.goals[subGoalIndex].isDone = !item.goals[subGoalIndex].isDone;
     
-    // then save
     await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
 }
