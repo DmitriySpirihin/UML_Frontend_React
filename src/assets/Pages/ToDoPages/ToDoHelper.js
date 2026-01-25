@@ -1,5 +1,8 @@
-export const TODO_LIST = [
+
+
+/* [
 {
+    id: 1,
     name: 'Life admin cleanup',
     description: 'General digital and life maintenance',
     difficulty: 4,
@@ -18,6 +21,7 @@ export const TODO_LIST = [
     note: 'List of apps to delete: [web:32][web:31]'
 },
 {
+    id: 2,
     name: 'Home declutter mini sprint',
     description: 'Quick declutter of key home zones',
     difficulty: 2,
@@ -36,6 +40,7 @@ export const TODO_LIST = [
     note: 'goal 2: [web:32][web:31]'
 },
 {
+    id: 3,
     name: 'Finance & subscriptions review',
     description: 'Check money leaks and recurring payments',
     difficulty: 3,
@@ -52,78 +57,124 @@ export const TODO_LIST = [
         { text: 'Set calendar reminder for next big payments', isDone: false }
     ],
     note: 'Avoid unnecessary subscriptions!'
-},
-{
-    name: 'Personal growth lists',
-    description: 'Brain dump of ideas and long-term plans',
-    difficulty: 1,
-    priority: 2,
-    category: 'Personal',
-    icon: '🧠',
-    color: '#7b272763',
+}
+]
+*/
+
+import { AppData } from "../../StaticClasses/AppData"
+import { saveData } from "../../StaticClasses/SaveHelper"
+
+export async function createGoal(name, description, difficulty, priority, category, icon, color, startDate, deadLine, goals, note) {
+  // create id
+  const id = Date.now();
+
+  // set to AppData.todoList
+  AppData.todoList.push({
+    id,
+    name,
+    description,
+    difficulty,
+    priority,
+    category,
+    icon,
+    color,
     isDone: false,
-    startDate: '2026-01-18',
-    deadLine: '2026-02-10',
-    goals: [
-        { text: 'Create list of books / films / games to finish', isDone: false },
-        { text: 'Write bucket list of things to do in life', isDone: false },
-        { text: 'Write list of skills to learn in 2026', isDone: false }
-    ],
-    note: 'Very important to keep this list up to date!'
-},
-{
-    name: 'Health & checkups planning',
-    description: 'Plan basic medical and health-related tasks',
-    difficulty: 2,
-    priority: 3,
-    category: 'Health',
-    icon: '🏥',
-    color: '#582c5163',
-    isDone: true,
-    startDate: '2026-01-20',
-    deadLine: '2026-02-15',
-    goals: [
-        { text: 'Make list of needed checkups and analyses', isDone: false },
-        { text: 'Schedule at least one health-related appointment', isDone: true},
-        { text: 'Prepare digital copies of important medical documents', isDone: false }
-    ],
-    note: 'Make sure to schedule checkups and consultations in advance!'
-},
-{
-    name: 'Digital cleanup day',
-    description: 'Clean and organize digital life',
-    difficulty: 2,
-    priority: 3,
-    category: 'Digital',
-    icon: '💾',
-    color: '#73b63463',
-    isDone: false,
-    startDate: '2026-01-21',
-    deadLine: '2026-02-10',
-    goals: [
-        { text: 'Delete unused apps on phone and PC', isDone: false },
-        { text: 'Clear old emails and unsubscribe from spam lists', isDone: false }, // [web:32][web:31]
-        { text: 'Organize digital photos and backups', isDone: false } // [web:32]
-    ],
-    note: 'Have a list of apps to delete! [web:32][web:31]'
-},
-{
-    name: 'Life admin hour',
-    description: 'Short focused session to close open loops',
-    difficulty: 2,
-    priority: 4,
-    category: 'Personal',
-    icon: '⏱️',
-    color: '#4d4c2663',
-    isDone: false,
-    startDate: '2026-01-22',
-    deadLine: '2026-02-05',
-    goals: [
-        { text: 'Pay bills and check upcoming payments', isDone: false }, // [web:30]
-        { text: 'Schedule or confirm important appointments', isDone: false }, // [web:33]
-        { text: 'Return or cancel any pending orders', isDone: false } // [web:29]
-    ],
-    note: 'Ensure to close all open loops!'
+    startDate,
+    deadLine,
+    goals: goals || [],
+    note
+  });
+
+  // then save
+  await saveData();
 }
 
-]
+export async function redactGoal(id, name, description, difficulty, priority, category, icon, color, startDate, deadLine, note) {
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  if (item) {
+    item.name = name;
+    item.description = description;
+    item.difficulty = difficulty;
+    item.priority = priority;
+    item.category = category;
+    item.icon = icon;
+    item.color = color;
+    item.startDate = startDate;
+    item.deadLine = deadLine;
+    item.note = note;
+    
+    await saveData();
+  }
+}
+
+export async function deleteGoal(id) {
+  // find by id and remove from AppData.todoList
+  AppData.todoList = AppData.todoList.filter(item => item.id !== id);
+  
+  // then save
+  await saveData();
+}
+
+export async function toggleGoal(id) {
+  // find by id and toggle isDone
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  if (item) {
+    item.isDone = !item.isDone;
+    await saveData();
+  }
+}
+
+export async function addSubGoal(id, subGoalText) {
+  // find toDo by id
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  if (item) {
+    // add new goal to goals array
+    if (!item.goals) item.goals = [];
+    item.goals.push({ text: subGoalText, isDone: false });
+    
+    // then save
+    await saveData();
+  }
+}
+
+export async function redactSubGoal(id, subGoalIndex, newText) {
+  // find toDo by id
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  // find and replace goal in goals array
+  if (item && item.goals && item.goals[subGoalIndex]) {
+    item.goals[subGoalIndex].text = newText;
+    
+    // then save
+    await saveData();
+  }
+}
+
+export async function deleteSubGoal(id, subGoalIndex) {
+  // find toDo by id
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  // remove goals[subGoalIndex]
+  if (item && item.goals) {
+    item.goals.splice(subGoalIndex, 1);
+    
+    // then save
+    await saveData();
+  }
+}
+
+export async function toggleSubGoal(id, subGoalIndex) {
+  // find toDo by id
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  // toggle isDone of goals[subGoalIndex]
+  if (item && item.goals && item.goals[subGoalIndex]) {
+    item.goals[subGoalIndex].isDone = !item.goals[subGoalIndex].isDone;
+    
+    // then save
+    await saveData();
+  }
+}

@@ -33,8 +33,9 @@ const RecoveryMain = lazy(() => import('./assets/Pages/Recovery/RecoveryMain'));
 const BreathingMain = lazy(() => import('./assets/Pages/Recovery/RecoveryCategories'));
 const RecoveryAnalytics = lazy(() => import('./assets/Pages/Recovery/RecoveryAnalitics')); 
 const ToDoMain = lazy(() => import('./assets/Pages/ToDoPages/ToDoMain'));
+const ToDoMetrics = lazy(() => import('./assets/Pages/ToDoPages/ToDoMetrics'));
 const RobotMain = lazy(() => import('./assets/Pages/Robot/RobotMain'));
-
+const UserPanel = lazy(() => import('./assets/Pages/UserPanel'));
 const MentalMain = lazy(() => import('./assets/Pages/MentalPages/MentalMain'));
 const MathMain = lazy(() => import('./assets/Pages/MentalPages/MathMain'));
 const MemoryMain = lazy(() => import('./assets/Pages/MentalPages/MemoryMain'));
@@ -316,6 +317,12 @@ function App() {
       </Suspense>}
       {page === 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <RobotMain/>
+      </Suspense>}
+      {page === 'ToDoMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <ToDoMetrics/>
+      </Suspense>}
+      {addPanel === 'UserPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <UserPanel/>
       </Suspense>}
       
       {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}

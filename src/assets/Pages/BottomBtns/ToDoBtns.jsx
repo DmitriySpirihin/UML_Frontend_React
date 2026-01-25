@@ -58,11 +58,11 @@ const BtnsToDo = () => {
 
             {/* Add Task Button */}
             <AddButton 
-                active={addPanel !== ''}
+                active={addPanel === 'aaaa'}
                 disabled={page !== 'ToDoMain'}
                 onClick={() => {
                     if (page === 'ToDoMain') {
-                        setCurrentBottomBtn(3);
+                        setCurrentBottomBtn(6);
                         setAddPanel('ToDoNew');
                         playEffects(switchSound);
                     }
@@ -128,7 +128,7 @@ const AddButton = ({ disabled, onClick, theme, active }) => (
             background: active ? Colors.get('iconsHighlited', theme) : Colors.get('simplePanel', theme),
         }}
     >
-        <Add style={{ fontSize: '32px', color: active ? '#fff' : Colors.get('icons', theme) }} />
+        <Add style={{ fontSize: '32px', color: active ? theme === 'dark' ? '#fff' : '#000' : Colors.get('icons', theme) }} />
     </motion.div>
 );
 

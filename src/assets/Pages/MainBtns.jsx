@@ -8,7 +8,7 @@ import { FaAddressCard, FaLanguage, FaHighlighter, FaVolumeMute, FaVolumeUp, FaB
 import { LuVibrate, LuVibrateOff } from 'react-icons/lu'
 import { RiFontSize2 } from 'react-icons/ri'
 import { MdBackup } from 'react-icons/md'
-import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage } from '../StaticClasses/HabitsBus';
+import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, setAddPanel } from '../StaticClasses/HabitsBus';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import Dark from '@mui/icons-material/DarkModeTwoTone';
@@ -21,7 +21,7 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.50.5.f';
+const version = '2.c.50.6.f';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -33,6 +33,7 @@ const MainBtns = () => {
     const [vibro, setVibro] = useState(0);
     const [fSize, setFSize] = useState(0);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
 
     useEffect(() => {
         const handleToggle = () => setIsSettingsOpen(prev => !prev);
@@ -109,7 +110,7 @@ const UserPanel = ({ theme, fSize }) => {
         return () => subscription.unsubscribe();
     }, []);
     return (
-        <div style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+        <div onClick={() => setAddPanel('UserPanel')}  style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '8px' }}>
                 {hasPremium && <div style={{ color: '#c7903db4', fontSize: "9px", fontFamily: "Segoe UI", fontWeight: 'bold' }}>PREMIUM</div>}
                 <div style={{ color: Colors.get('subText', theme), fontSize: fSize === 0 ? "11px" : "13px", fontFamily: "Segoe UI" }}>{UserData.name}</div>
@@ -176,7 +177,7 @@ const SettingsPanel = ({ theme, langIndex, setAdditionalPanel, setAdditionalPane
                             <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={vibroIndex === 0 ? <LuVibrate /> : <LuVibrateOff />} label={langIndex === 0 ? 'Вибрация' : 'Haptics'} value={vibroIndex === 0 ? (langIndex === 0 ? 'Вкл' : 'On') : (langIndex === 0 ? 'Выкл' : 'Off')} color="#FFD700" isActive={vibroIndex === 0} onClick={() => { changeSettings(3); setVibro(vibroIndex === 0 ? 1 : 0); playEffects(null) }} />
                             <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<FaBug />} label={langIndex === 0 ? 'Ошибка' : 'Bug Report'} color="#FF4D4D" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(1) }} />
                             <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<FaAddressCard />} label={langIndex === 0 ? 'Контакты' : 'Contacts'} color="#4DFF88" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(3); playEffects(null) }} />
-                            <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<MdBackup />} label={langIndex === 0 ? 'Бекап' : 'Backup'} color="#FFA64D" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(4) }} />
+                            {hasPremium && <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<MdBackup />} label={langIndex === 0 ? 'Бекап' : 'Backup'} color="#FFA64D" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(4) }} />}
                         </div>
                          <div style={{...settingsPanelStyles(theme,fSize).text,fontSize:'10px',marginLeft:'auto',marginRight:'55px',color:Colors.get('subText', theme)}}>{version}</div>
                     </motion.div>

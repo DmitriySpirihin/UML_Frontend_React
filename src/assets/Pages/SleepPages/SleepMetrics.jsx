@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import MyBarChart from "../../Helpers/MyBarChart";
-import { AppData } from '../../StaticClasses/AppData.js';
+import { AppData,UserData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
+import { theme$, lang$, fontSize$,premium$ } from '../../StaticClasses/HabitsBus';
 import { FaChartBar, FaMoon, FaStar, FaHistory } from 'react-icons/fa';
 
 const PERIOD_DAYS = [28, 180, 360];
@@ -89,18 +89,21 @@ const SleepMetrics = () => {
     const [theme, setThemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setFSize] = useState(AppData.prefs[4]);
-    const [periodIndex, setPeriodIndex] = useState(0);
+    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
 
     useEffect(() => {
-        const sub1 = theme$.subscribe(setThemeState);
-        const sub2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
-        const sub3 = fontSize$.subscribe(setFSize);
+        const themeSub = theme$.subscribe(setThemeState);
+        const langSub = lang$.subscribe(setLangIndex);
+        const fSizeSub = fontSize$.subscribe(setFSize);
+        const premiumSub = premium$.subscribe(setHasPremium);
         return () => {
-            sub1.unsubscribe();
-            sub2.unsubscribe();
-            sub3.unsubscribe();
+            themeSub.unsubscribe();
+            langSub.unsubscribe();
+            fSizeSub.unsubscribe();
+            premiumSub.unsubscribe();
         };
     }, []);
+    const [periodIndex, setPeriodIndex] = useState(0);
 
     // Data Processing
     const sleepData = useMemo(() => {
@@ -147,6 +150,7 @@ const SleepMetrics = () => {
 
     return (
         <div style={styles(theme).container}>
+
             <div style={styles(theme).scrollContent}>
                 
                 {/* 1. Header & Period Selector */}
@@ -250,6 +254,22 @@ const SleepMetrics = () => {
 
                 <div style={{ marginBottom: '80px' }} /> {/* Bottom Spacer */}
             </div>
+            {!hasPremium && (
+                <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    style={{
+                        position: 'absolute', inset: 0, zIndex: 2,
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                        backgroundColor: theme$.value === 'dark' ? 'rgba(10, 10, 10, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+                        backdropFilter: 'blur(5px)',
+                        textAlign: 'center'
+                    }}
+                >
+                    <div style={{ color: theme$.value === 'dark' ? '#FFD700' : '#D97706', fontSize: '11px', fontWeight: 'bold', fontFamily: 'Segoe UI' }}>
+                        {langIndex === 0 ? 'ТОЛЬКО ДЛЯ ПРЕМИУМ' : 'PREMIUM USERS ONLY'}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

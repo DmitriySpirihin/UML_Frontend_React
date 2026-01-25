@@ -47,9 +47,37 @@ export class AppData{
   //
   static sleepingLog = {};
   static todoList = [];
+  static menuCardsStates = 
+{
+  "HabitsMain": {
+    "pinned": false,
+    "hidden": false
+  },
+  "TrainingMain": {
+    "pinned": false,
+    "hidden": false
+  },
+  "MentalMain": {
+    "pinned": false,
+    "hidden": true
+  },
+  "RecoveryMain": {
+    "pinned": false,
+    "hidden": true
+  },
+  "SleepMain": {
+    "pinned": true,
+    "hidden": false
+  },
+  "ToDoMain": {
+    "pinned": false,
+    "hidden": true
+  }
+};
   // methods
   static init(data) {
     if (!data) return;
+    //console.log(JSON.stringify(data));  //log for tests
     this.lastSave = data.lastSave;
     this.isFirstStart = data.isFirstStart;
     if(this.isFirstStart === false)this.prefs = data.prefs;
@@ -88,7 +116,34 @@ export class AppData{
     this.mentalLog = data.mentalLog;
     this.mentalRecords = data.mentalRecords;
     this.sleepingLog = data.sleepingLog;
-    this.todoList = data.todoList;
+    this.todoList = data.todoList || [];
+    this.menuItems = data.menuCardsStates || // AppData.menuCardsStates
+{
+  "HabitsMain": {
+    "pinned": false,
+    "hidden": false
+  },
+  "TrainingMain": {
+    "pinned": false,
+    "hidden": false
+  },
+  "MentalMain": {
+    "pinned": false,
+    "hidden": true
+  },
+  "RecoveryMain": {
+    "pinned": false,
+    "hidden": true
+  },
+  "SleepMain": {
+    "pinned": true,
+    "hidden": false
+  },
+  "ToDoMain": {
+    "pinned": false,
+    "hidden": true
+  }
+};
   } 
   static setPrefs(ind,value){
     this.prefs[ind] = value;
@@ -341,6 +396,7 @@ export class Data{
     this.sleepingLog = AppData.sleepingLog;
     this.mentalLog = AppData.mentalLog;
     this.todoList = AppData.todoList;
+    this.menuItems = AppData.menuCardsStates;
   }
 }
 
