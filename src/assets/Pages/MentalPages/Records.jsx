@@ -77,7 +77,6 @@ const Records = () => {
     .filter(item => {
         if (filterMode === 0) return true; 
         const isMe = Number(item.uid) === Number(UserData.id); 
-        const isAdmin = ADMIN_IDS.includes(Number(item.uid));
         const isFriend = UserData.friends && UserData.friends.some(f => Number(f.uid) === Number(item.uid));
         return isMe || isFriend;
     })
@@ -143,7 +142,7 @@ const Records = () => {
                                     theme={theme}
                                     fSize={fSize}
                                     isUser={item.name === UserData.name}
-                                    isAdmin={isAdmin}
+                                    isAdmin={ADMIN_IDS.includes(Number(item.uid))}
                                     rank={index + 1}
                                     name={item.name}
                                     score={item.data?.[categoryIndex]?.[difficultyIndex] || 0}
@@ -164,7 +163,22 @@ const Records = () => {
                 )}
             </div>
             
-            {/* ... (Keep Premium Overlay logic) ... */}
+            {!hasPremium && (
+                <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    style={{
+                        position: 'absolute', inset: 0, zIndex: 2,
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                        backgroundColor: theme$.value === 'dark' ? 'rgba(10, 10, 10, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+                        backdropFilter: 'blur(5px)',
+                        textAlign: 'center'
+                    }}
+                >
+                    <div style={{ color: theme$.value === 'dark' ? '#FFD700' : '#D97706', fontSize: '11px', fontWeight: 'bold', fontFamily: 'Segoe UI' }}>
+                        {langIndex === 0 ? 'ТОЛЬКО ДЛЯ ПРЕМИУМ' : 'PREMIUM USERS ONLY'}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
