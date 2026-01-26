@@ -39,19 +39,27 @@ const Records = () => {
     // Initial Fetch
     useEffect(() => {
         const fetchGlobalData = async () => {
-            try {
-                // Simulate fetch or get real data
-                const data = await NotificationsManager.getMentalRecordsGlobal() || [];
-                
-                // If data is empty or fetch failed, fallback to local user to show something
-                if (!data || data.length === 0) {
-                     setGlobalData([{ name: UserData?.name || 'User', data: AppData.mentalRecords }]);
-                } else {
-                    setGlobalData(data);
-                }
-            } catch (err) {
-                setGlobalData([{ name: UserData?.name || 'User', data: AppData.mentalRecords }]);
-            } finally {
+           try {
+    const data = await NotificationsManager.getMentalRecordsGlobal() || [];
+    
+    if (!data || data.length === 0) {
+        // ✅ FIX: Added uid: UserData.id
+        setGlobalData([{ 
+            uid: UserData.id, 
+            name: UserData?.name || 'User', 
+            data: AppData.mentalRecords 
+        }]);
+    } else {
+        setGlobalData(data);
+    }
+} catch (err) {
+    // ✅ FIX: Added uid: UserData.id here too
+    setGlobalData([{ 
+        uid: UserData.id, 
+        name: UserData?.name || 'User', 
+        data: AppData.mentalRecords 
+    }]);
+} finally {
                 setLoading(false);
             }
         };
@@ -141,8 +149,8 @@ const Records = () => {
                                     key={item.name + index} 
                                     theme={theme}
                                     fSize={fSize}
-                                    isUser={item.uid === UserData.id}
-                                    isAdmin={ADMIN_IDS.includes(Number(item.uid))}
+                                    isUser={Number(item.uid) === Number(UserData.id)}
+                                    isAdmin={item.uid && ADMIN_IDS.includes(Number(item.uid))}
                                     rank={index + 1}
                                     name={item.name}
                                     score={item.data?.[categoryIndex]?.[difficultyIndex] || 0}
