@@ -66,12 +66,9 @@ useEffect(() => {
         // 1. Check Premium
         await isUserHasPremium(UserData.id); 
         
-        // 2. Sync XP to DB (Calculated from loaded logs)
-        // We call the stats calculation logic here or use the raw values
         const currentStats = calculateStats(); // Helper to get the XP values
-        await NotificationsManager.sendXp(currentStats.level.xp, currentStats.level.current);
+        await sendXp(currentStats.level.xp, currentStats.level.current);
         
-        // 3. Get Friends List
         await getFriendsList(); 
       }
 
