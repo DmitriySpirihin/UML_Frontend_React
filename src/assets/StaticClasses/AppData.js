@@ -121,7 +121,7 @@ export class AppData{
     this.mentalRecords = data.mentalRecords;
     this.sleepingLog = data.sleepingLog;
     this.todoList = data.todoList || [];
-    this.menuItems = data.menuCardsStates || // AppData.menuCardsStates
+    this.menuCardsStates = data.menuCardsStates || // AppData.menuCardsStates
 {
   "MainCard": {
     "pinned": true,
@@ -404,7 +404,7 @@ export class Data{
     this.sleepingLog = AppData.sleepingLog;
     this.mentalLog = AppData.mentalLog;
     this.todoList = AppData.todoList;
-    this.menuItems = AppData.menuCardsStates;
+    this.menuCardsStates = AppData.menuCardsStates;
   }
 }
 

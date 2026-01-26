@@ -163,6 +163,8 @@ export function deserializeData(data) {
 }
 
 export async function clearAllSaves() {
+  const confirmed = confirm(AppData.prefs[0] === 0 ? '⚠️ Удалить все сохраненные данные?' : '⚠️ Delete your saves permanently? This cannot be undone.');
+  if (!confirmed) return;
   try {
     if (db) {
       const tx1 = db.transaction('UserData', 'readwrite');

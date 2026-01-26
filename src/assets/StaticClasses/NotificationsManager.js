@@ -170,7 +170,7 @@ export async function cloudRestore() {
 }
 
 export async function deleteCloudBackup() {
-  const confirmed = confirm('⚠️ Delete your cloud backup permanently? This cannot be undone.');
+   const confirmed = confirm(AppData.prefs[0] === 0 ? '⚠️ Удалить все сохраненные данные из онлайн-хранилища?' : '⚠️ Delete your cloud backup permanently? This cannot be undone.');
   if (!confirmed) return;
 
   try {

@@ -7,20 +7,19 @@ import { sendBugreport } from '../StaticClasses/NotificationsManager'
 import { FaAddressCard, FaLanguage, FaHighlighter, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaTimes, FaChevronRight } from 'react-icons/fa'
 import { LuVibrate, LuVibrateOff } from 'react-icons/lu'
 import { RiFontSize2 } from 'react-icons/ri'
+import { clearAllSaves } from '../StaticClasses/SaveHelper';
 import { MdBackup,MdInfoOutline } from 'react-icons/md'
-import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot, FaMedal,  FaThumbtack, FaTrashRestore, FaStar } from "react-icons/fa";
 import { setTheme as setGlobalTheme, globalTheme$,addPanel$, theme$, showPopUpPanel$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, setAddPanel } from '../StaticClasses/HabitsBus';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import KeyBoard from '../Helpers/KeyBoard';
 import { cloudBackup, cloudRestore, deleteCloudBackup } from '../StaticClasses/NotificationsManager';
-import { set } from 'animejs';
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.60.0.f';
+const version = '2.c.60.1.f';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -262,6 +261,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                                 <ActionButton text={langIndex === 0 ? 'Создать' : 'Backup'} onClick={cloudBackup} theme={theme} color="#FFA64D"/>
                                 <ActionButton text={langIndex === 0 ? 'Восстановить' : 'Restore'} onClick={cloudRestore} theme={theme} color="#4DA6FF"/>
                                 <ActionButton text={langIndex === 0 ? 'Удалить' : 'Delete'} onClick={deleteCloudBackup} theme={theme} color="#FF4D4D"/>
+                                <ActionButton text={langIndex === 0 ? 'Удалить сейв с устройства' : 'Delete save from device'} onClick={clearAllSaves} theme={theme} color="#FF4D4D"/>
                             </div>
                         )}
                         
