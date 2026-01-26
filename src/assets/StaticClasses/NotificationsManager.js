@@ -195,7 +195,7 @@ export async function deleteCloudBackup() {
 
 export async function sendXp(xp, level) {
         try {
-            const response = await this.sendMessage('update_xp', JSON.stringify({ xp, level }));
+            const response = await NotificationsManager.sendMessage('update_xp', JSON.stringify({ xp, level }));
             return response;
         } catch (error) {
             console.error('Failed to sync XP:', error);
