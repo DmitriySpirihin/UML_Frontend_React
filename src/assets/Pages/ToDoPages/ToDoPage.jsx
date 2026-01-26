@@ -52,9 +52,15 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
     };
 
     const handleToggleSub = async (index) => {
+        if (!task.goals) return;
         const newGoals = [...task.goals];
-        newGoals[index].isDone = !newGoals[index].isDone;
+        newGoals[index] = { 
+            ...newGoals[index], 
+            isDone: !newGoals[index].isDone 
+        };
         setTask(prev => ({ ...prev, goals: newGoals }));
+
+        // 4. Save to backend/storage
         await toggleSubGoal(task.id, index);
     };
 

@@ -62,7 +62,8 @@ export const setPage = (page) => {
   else if(page.startsWith('Sleep')) bottomBtnPanel$.next('BtnsSleep');
   else if(page.startsWith('ToDo')) bottomBtnPanel$.next('BtnsToDo');
   else if(page.startsWith('Robot')) bottomBtnPanel$.next('BtnsRobot');
-  else bottomBtnPanel$.next('');
+  else if(page.startsWith('Info')) bottomBtnPanel$.next('BtnsInfo');
+  else bottomBtnPanel$.next('BtnsMenu');
 }
 export const setAddPanel = (state) => addPanel$.next(state);
 export const emitHabitsChanged = () => habitsChanged$.next(Date.now());

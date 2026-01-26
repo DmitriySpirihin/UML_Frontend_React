@@ -117,6 +117,7 @@ export async function initiateTONPayment(userId, plan) {
 }
 
 // frontend/utils/referrals.js
+//t.me/UltyMyLife_bot/umlminiapp
 export async function sendReferalLink() {
   if (!window.Telegram?.WebApp) {
     alert('Available only in Telegram');
@@ -128,13 +129,13 @@ export async function sendReferalLink() {
     return;
   }
 
-  const referalLink = `${window.location.origin}/?ref=${uid}`;
+  const BOT_USERNAME = 'UltyMyLife_bot'; 
+  const APP_NAME = 'umlminiapp'; 
+  const referalLink = `https://t.me/${BOT_USERNAME}/${APP_NAME}?startapp=${uid}`;
+  const messageText = 'Привет! Присоединяйся к UltyMyLife и получим оба по месяцу Premium бесплатно! 🎁';
 
-  // Open Telegram share sheet (best UX)
   window.Telegram.WebApp.openTelegramLink(
-    `https://t.me/share/url?url=${encodeURIComponent(referalLink)}&text=${encodeURIComponent(
-      'Привет! Присоединяйся к UltyMyLife и получим оба по месяцу Premium бесплатно! 🎁'
-    )}`
+    `https://t.me/share/url?url=${encodeURIComponent(referalLink)}&text=${encodeURIComponent(messageText)}`
   );
 }
 

@@ -446,7 +446,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                     setTime(prevTime => {
                         const newTime = prevTime + 1000;
                         temp = 0;
-                        if (!isNegative) { isDoneSound.play(); clearInterval(interval); setStatus(1); setTime(0); setTimer(false); setProgress(0); }
+                        if (!isNegative && newTime >= maxTimer) { isDoneSound.play(); clearInterval(interval); setStatus(1); setTime(0); setTimer(false); setProgress(0); }
                         else { if (newTime >= maxTimer && status < 1) setStatus(1); }
                         return newTime;
                     });
@@ -522,7 +522,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                 <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
                     <span style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.5px', color: textColor, opacity: 0.5, marginBottom: '4px' }}>{habit.category[langIndex]}</span>
                     <span style={{ fontFamily: 'Segoe UI', fontWeight: '700', fontSize: '18px', color: textColor, whiteSpace: expanded ? 'normal' : 'nowrap', overflow: expanded ? 'visible' : 'hidden', textOverflow: 'ellipsis', lineHeight: '1.2' }}>{habitInfo.name[langIndex]}</span>
-                    {timer && <span style={{ fontSize: '14px', fontWeight: '700', color: status===1 ? (isLight?'#2E7D32':'#FFF') : habitColor, marginTop: '4px', opacity: 0.9 }}>{parsedTime(time, maxTimer, isNegative)}</span>}
+                    {timer && <span style={{ fontSize: '14px', fontWeight: '700', color: status===1 ? (isLight?'#2E7D32':'#FFF') : habitColor, marginTop: '4px', opacity: 0.9 }}>{parsedTime(time, maxTimer,langIndex, isNegative)}</span>}
                 </div>
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingLeft: '10px', alignSelf: 'center' }}>
                     {!isNegative && <>
@@ -645,7 +645,35 @@ function setInfoText(langIndex) { return langIndex === 0 ? 'Вы еще не д�
 
 function playEffects(sound) { if (AppData.prefs[2] == 0 && sound !== null) { if (!sound.paused) { sound.pause(); sound.currentTime = 0; } sound.volume = 0.5; sound.play(); } if (AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback) Telegram.WebApp.HapticFeedback.impactOccurred('light'); }
 
-function parsedTime(time, maxTime, isNegative) { const elapsedOrRemaining = isNegative ? time : maxTime - time; const minutes = Math.floor((elapsedOrRemaining % 3600000) / 60000); const seconds = Math.floor((elapsedOrRemaining % 60000) / 1000); return minutes + ':' + seconds.toString().padStart(2, '0'); }
+function parsedTime(time, maxTime,langIndex, isNegative) {
+  const elapsedOrRemaining = isNegative ? time : maxTime - time;
+  const totalSeconds = Math.floor(elapsedOrRemaining / 1000);
+
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) {
+    // Только дни, например "2d"
+    return days + (langIndex === 0 ? 'дн.' : 'd');
+  }
+
+  if (hours > 0) {
+    // Формат HH:MM, например "05:23"
+    return (
+      hours.toString().padStart(2, '0') + ':' +
+      minutes.toString().padStart(2, '0')
+    );
+  }
+
+  // Формат MM:SS, например "03:07"
+  return (
+    minutes.toString().padStart(2, '0') + ':' +
+    seconds.toString().padStart(2, '0')
+  );
+}
+
 
 export function parsedTimeSimple(maxTimer) { return (Math.floor(maxTimer / 60000) + 'm'); }
 

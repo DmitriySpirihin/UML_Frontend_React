@@ -7,21 +7,20 @@ import { sendBugreport } from '../StaticClasses/NotificationsManager'
 import { FaAddressCard, FaLanguage, FaHighlighter, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaTimes, FaChevronRight } from 'react-icons/fa'
 import { LuVibrate, LuVibrateOff } from 'react-icons/lu'
 import { RiFontSize2 } from 'react-icons/ri'
-import { MdBackup } from 'react-icons/md'
-import { setTheme as setGlobalTheme, globalTheme$, theme$, showPopUpPanel$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, setAddPanel } from '../StaticClasses/HabitsBus';
+import { MdBackup,MdInfoOutline } from 'react-icons/md'
+import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot, FaMedal,  FaThumbtack, FaTrashRestore, FaStar } from "react-icons/fa";
+import { setTheme as setGlobalTheme, globalTheme$,addPanel$, theme$, showPopUpPanel$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, setAddPanel } from '../StaticClasses/HabitsBus';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import Dark from '@mui/icons-material/DarkModeTwoTone';
-import Light from '@mui/icons-material/LightModeTwoTone';
-import Menu from '@mui/icons-material/MenuTwoTone';
 import KeyBoard from '../Helpers/KeyBoard';
 import { cloudBackup, cloudRestore, deleteCloudBackup } from '../StaticClasses/NotificationsManager';
+import { set } from 'animejs';
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.50.8.f';
+const version = '2.c.60.0.f';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -29,19 +28,13 @@ const MainBtns = () => {
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [additionalPanel, setAdditionalPanel] = useState(false);
     const [additionalPanelNum, setAdditionalPanelNum] = useState(1);
+    const [secondPanel, setSecondPanel] = useState(false);
+    const [secondPanelNum, setSecondPanelNum] = useState(0);
     const [sound, setSound] = useState(0);
     const [vibro, setVibro] = useState(0);
     const [fSize, setFSize] = useState(0);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
-
-    useEffect(() => {
-        const handleToggle = () => setIsSettingsOpen(prev => !prev);
-        window.addEventListener('toggleSettingsPanel', handleToggle);
-        return () => window.removeEventListener('toggleSettingsPanel', handleToggle);
-    }, []);
-
-    const toggleSettings = () => window.dispatchEvent(new Event('toggleSettingsPanel'));
 
     React.useEffect(() => {
         const subs = [
@@ -50,7 +43,8 @@ const MainBtns = () => {
             lang$.subscribe((l) => setLangIndex(l === 'ru' ? 0 : 1)),
             sound$.subscribe(setSound),
             vibro$.subscribe(setVibro),
-            fontSize$.subscribe(setFSize)
+            fontSize$.subscribe(setFSize),
+            addPanel$.subscribe(value => setIsSettingsOpen(value === 'settings' ? true : false)),
         ];
         return () => subs.forEach(s => s.unsubscribe());
     }, []);
@@ -63,25 +57,13 @@ const MainBtns = () => {
 
             {/* UPPER PANEL - Elements at bottom, Zoomed Logo */}
             <div style={styles(theme, fSize).logoContainer}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <motion.div whileTap={{ scale: 0.9 }} style={styles(theme).iconBtn}>
-                        <Menu style={{ color: Colors.get('icons', theme) }} onClick={() => { toggleSettings(); playEffects(null); }} />
-                    </motion.div>
-                    <motion.div whileTap={{ scale: 0.9, rotate: 180 }} transition={{ duration: 0.4 }} style={styles(theme).iconBtn}>
-                        {globalTheme === 'dark'
-                            ? <Dark style={{ color: Colors.get('icons', theme) }} onClick={() => { toggleTheme(); playEffects(null); }} />
-                            : <Light style={{ color: Colors.get('icons', theme) }} onClick={() => { toggleTheme(); playEffects(null); }} />
-                        }
-                    </motion.div>
-                </div>
+                
 
                 <img
                     src={globalTheme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'}
                     style={styles(theme).logo}
                     alt="Logo"
                 />
-
-                <UserPanel theme={theme} fSize={fSize} />
             </div>
 
             <SettingsPanel
@@ -111,13 +93,14 @@ const UserPanel = ({ theme, fSize }) => {
     }, []);
     return (
         <div onClick={() => setAddPanel('UserPanel')}  style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '8px' }}>
-                {hasPremium && <div style={{ color: '#c7903db4', fontSize: "9px", fontFamily: "Segoe UI", fontWeight: 'bold' }}>PREMIUM</div>}
-                <div style={{ color: Colors.get('subText', theme), fontSize: fSize === 0 ? "11px" : "13px", fontFamily: "Segoe UI" }}>{UserData.name}</div>
-            </div>
-            <div style={{ position: 'relative', width: '32px', height: '32px', borderRadius: '50%', overflow: 'hidden', border: hasPremium ? 'none' : `2px solid ${Colors.get('border', theme)}`, boxSizing: 'border-box' }}>
+            
+            <div style={{ position: 'relative',marginRight: '8px', width: '52px', height: '52px', borderRadius: '50%', overflow: 'hidden', border: hasPremium ? 'none' : `2px solid ${Colors.get('border', theme)}`, boxSizing: 'border-box' }}>
                 <img style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} src={Array.isArray(UserData.photo) ? UserData.photo[0] : UserData.photo} alt="Avatar" />
                 {hasPremium && (<img style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain', zIndex: 2 }} src={'images/Ui/premiumborder.png'} />)}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '8px' }}>
+                {hasPremium && <div style={{ color: '#c7903db4', fontSize: "10px", fontFamily: "Segoe UI", fontWeight: 'bold' }}>PREMIUM</div>}
+                <div style={{ color: Colors.get('subText', theme), fontSize: fSize === 0 ? "16px" : "18px", fontFamily: "Segoe UI" }}>{UserData.name}</div>
             </div>
         </div>
     )
@@ -147,7 +130,7 @@ const SettingsPanel = ({ theme, langIndex, setAdditionalPanel, setAdditionalPane
                         style={settingsPanelStyles(theme).panel}
                     >
                         <div style={settingsPanelStyles(theme).header}>
-                            <div style={settingsPanelStyles(theme).headerTitle}>{langIndex === 0 ? 'Настройки' : 'Settings'}</div>
+                            <UserPanel theme={theme} fSize={fSize} />
                             <motion.div whileTap={{scale: 0.9}} onClick={() => { onClose(); playEffects(transitionSound) }} style={settingsPanelStyles(theme).closeBtn}>
                                 <FaTimes />
                             </motion.div>
@@ -178,6 +161,7 @@ const SettingsPanel = ({ theme, langIndex, setAdditionalPanel, setAdditionalPane
                             <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<FaBug />} label={langIndex === 0 ? 'Ошибка' : 'Bug Report'} color="#FF4D4D" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(1) }} />
                             <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<FaAddressCard />} label={langIndex === 0 ? 'Контакты' : 'Contacts'} color="#4DFF88" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(3); playEffects(null) }} />
                             <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<MdBackup />} label={langIndex === 0 ? 'Бекап' : 'Backup'} color="#FFA64D" onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(4) }} />
+                            <SettingsItem theme={theme} fSize={fSize} variants={itemVariants} icon={<MdInfoOutline />} label={langIndex === 0 ? 'Как пользоваться' : 'How to use'} color="#8b98ff" onClick={() => { setPage('InfoPanel'); onClose(); playEffects(null) }} />
                         </div>
                          <div style={{...settingsPanelStyles(theme,fSize).text,fontSize:'10px',marginLeft:'auto',marginRight:'55px',color:Colors.get('subText', theme)}}>{version}</div>
                     </motion.div>
@@ -213,10 +197,10 @@ const settingsPanelStyles = (theme, fSize) => ({
         borderTopRightRadius:'24px', borderBottomRightRadius:'24px',
         borderRight: `1px solid ${Colors.get('border', theme)}`
     },
-    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: `1px solid ${Colors.get('border', theme)}`, marginBottom: '10px' },
+    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '35px 24px', borderBottom: `1px solid ${Colors.get('border', theme)}`, marginBottom: '10px' },
     headerTitle: { fontFamily: 'Segoe UI', fontWeight: 700, fontSize: '22px', color: Colors.get('mainText', theme) },
     closeBtn: { width: '32px', height: '32px', borderRadius: '12px', backgroundColor: Colors.get('bottomPanel', theme), display: 'flex', alignItems: 'center', justifyContent: 'center', color: Colors.get('icons', theme) },
-    listEl: { display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '80%', margin: '0 14px', padding: '16px', borderRadius: '18px', backgroundColor: Colors.get('bottomPanel', theme), border: `1px solid ${Colors.get('border', theme)}` },
+    listEl: { display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '80%', margin: '0 14px', padding: '12px', borderRadius: '18px', backgroundColor: Colors.get('bottomPanel', theme), border: `1px solid ${Colors.get('border', theme)}` },
     iconBox: { width: '32px', height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
     premiumEl: { position: 'relative', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '80%', margin: '0 14px', padding: '16px', borderRadius: '20px', backgroundColor: Colors.get('simplePanel', theme), border: '1px solid #C5A059' },
     textNoMargin: { fontSize: fSize === 0 ? "15px" : "16px", color: Colors.get('mainText', theme), margin: '0', fontFamily: "Segoe UI", fontWeight: 500 },
@@ -228,11 +212,11 @@ const styles = (theme, fSize) => ({
         position: "fixed", top: 0, left: 0, width: "100vw", height: "13vh", minHeight: "100px",
         backgroundColor: Colors.get('bottomPanel', theme) + 'D9', backdropFilter: "blur(15px)",
         borderBottom: `1px solid ${Colors.get('border', theme)}`,
-        display: "flex", justifyContent: "space-between", 
+        display: "flex", justifyContent: "center", 
         alignItems: "flex-end", // ELEMENTS TO BOTTOM
         padding: "0 15px 8px 15px", boxSizing: "border-box", zIndex: 1000,
     },
-    logo: { height: "85%", objectFit: "contain" }, // ZOOMED LOGO
+    logo: { height: "65%", objectFit: "contain" }, // ZOOMED LOGO
     iconBtn: { width: '40px', height: '40px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.get('background', theme) },
     text: { color: Colors.get('mainText', theme), fontSize: fSize === 0 ? "13px" : "15px", fontFamily: "Segoe UI" },
     input: { width: "100%",height:'70%', padding: "15px", border: `1px solid ${Colors.get('border', theme)}`, borderRadius: "16px", color: Colors.get('mainText', theme), backgroundColor: Colors.get('bottomPanel', theme) }
@@ -241,6 +225,7 @@ const styles = (theme, fSize) => ({
 const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
     const [report, setReport] = useState('');
     const sendReport = () => { sendBugreport(report); setReport(''); }
+    const itemVariants = { hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } };
     return (
         <AnimatePresence>
             {isOpen && (
@@ -251,7 +236,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                             <span style={{fontFamily: 'Segoe UI', fontSize: '14px'}}>{langIndex === 0 ? 'Назад' : 'Back'}</span>
                          </motion.div>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", flexGrow: 1 }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", flexGrow: 1,overflow: 'auto' }}>
                         {panelNum === 1 && (
                             <div style={{ width: "80%",height:'80%', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                 <p style={styles(theme).text}>{langIndex === 0 ? 'Опишите проблему:' : 'Describe problem:'}</p>
@@ -279,6 +264,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                                 <ActionButton text={langIndex === 0 ? 'Удалить' : 'Delete'} onClick={deleteCloudBackup} theme={theme} color="#FF4D4D"/>
                             </div>
                         )}
+                        
                     </div>
                 </motion.div>
             )}
@@ -340,5 +326,6 @@ function playEffects(sound) {
     if (AppData.prefs[2] == 0 && sound !== null) { if (!sound.paused) { sound.pause(); sound.currentTime = 0; } sound.volume = 0.5; sound.play(); }
     if (AppData.prefs[3] == 0 && window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }
+
 
 export default MainBtns

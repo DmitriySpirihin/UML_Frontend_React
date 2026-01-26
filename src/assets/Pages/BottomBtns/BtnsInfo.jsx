@@ -3,14 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Icons
 import Home from '@mui/icons-material/HomeRounded';
 import Back from '@mui/icons-material/ArrowBackIosNewRounded';
-import Metrics from '@mui/icons-material/BarChartRounded';
-import Calendar from '@mui/icons-material/CalendarMonthRounded';
 import Add from '@mui/icons-material/AddRounded';
-import FaBell from '@mui/icons-material/NotificationsRounded';
 
 import { 
     setPage, setAddPanel, setPage$, addPanel$, theme$, 
-    currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, notify$ 
+    currentBottomBtn$, setCurrentBottomBtn 
 } from '../../StaticClasses/HabitsBus';
 import Colors from '../../StaticClasses/Colors';
 import { AppData } from '../../StaticClasses/AppData';
@@ -18,30 +15,21 @@ import { saveData } from '../../StaticClasses/SaveHelper';
 
 const switchSound = new Audio('Audio/Click.wav');
 
-const BtnsHabits = () => {
-    const [theme, setThemeState] = useState('dark');
+const BtnsInfo = () => {
+    const [theme, setthemeState] = useState('dark');
     const [page, setPageState] = useState('');
     const [addPanel, setAddPanelState] = useState('');
     const [currentBtn, setBtnState] = useState(0);
 
     useEffect(() => {
         const subs = [
-            theme$.subscribe(setThemeState),
+            theme$.subscribe(setthemeState),
             setPage$.subscribe(setPageState),
             addPanel$.subscribe(setAddPanelState),
             currentBottomBtn$.subscribe(setBtnState)
         ];
         return () => subs.forEach(s => s.unsubscribe());
     }, []);
-
-    // Logic to sync button state with page
-    useEffect(() => {
-        if (currentBtn === 0 || currentBtn === -1) {
-            if (page === 'HabitCalendar') setCurrentBottomBtn(4);
-            else if (page === 'HabitMetrics') setCurrentBottomBtn(1);
-            else if (page === 'HabitsMain' && addPanel === '') setCurrentBottomBtn(0);
-        }
-    }, [page, addPanel]);
 
     return (
         <div style={containerStyle(theme)}>
@@ -50,95 +38,39 @@ const BtnsHabits = () => {
             <NavButton 
                 id={0}
                 current={currentBtn}
-                icon={page === 'HabitsMain' && addPanel === '' ? <Home /> : <Back />}
+                icon={<Home />}
                 onClick={() => {
-                    onBack(page, addPanel);
-                    setNotifyPanel(false);
+                    setPage('MainMenu');
                     setCurrentBottomBtn(0);
                 }}
                 theme={theme}
             />
 
-            <NavButton 
-                id={1}
-                current={currentBtn}
-                icon={<Metrics />}
-                onClick={() => {
-                    setCurrentBottomBtn(1);
-                    setPage('HabitMetrics');
-                    setAddPanel('');
-                    setNotifyPanel(false);
-                    playEffects(switchSound);
-                }}
-                theme={theme}
-            />
-
-            <AddButton 
-                active={addPanel === 'aaaaa'}
-                disabled={page !== 'HabitsMain'}
-                onClick={() => {
-                    if (page === 'HabitsMain') {
-                        setCurrentBottomBtn(2);
-                        setAddPanel('AddHabitPanel');
-                        setNotifyPanel(false);
-                        playEffects(switchSound);
-                    }
-                }}
-                theme={theme}
-            />
-
-            <NavButton 
-                id={4}
-                current={currentBtn}
-                icon={<Calendar />}
-                onClick={() => {
-                    setCurrentBottomBtn(4);
-                    setPage('HabitCalendar');
-                    setAddPanel('');
-                    setNotifyPanel(false);
-                    playEffects(switchSound);
-                }}
-                theme={theme}
-            />
-
-            {page.startsWith('H') && (
-                <NavButton 
-                    id={5}
-                    current={currentBtn}
-                    icon={<FaBell />}
-                    onClick={() => {
-                        setCurrentBottomBtn(5);
-                        setNotifyPanel(true);
-                        setAddPanel('');
-                        playEffects(switchSound);
-                    }}
-                    theme={theme}
-                />
-            )}
         </div>
     );
 };
 
 // Sub-components for cleaner code
-const NavButton = ({ id, current, icon, onClick, theme }) => {
+const NavButton = ({ id, current, icon, onClick, theme, disabled = false }) => {
     const isActive = current === id;
     return (
         <motion.div 
-            whileTap={{ scale: 0.9 }}
+            whileTap={!disabled ? { scale: 0.9 } : {}}
             onClick={onClick}
-            style={navBtnWrapper}
+            style={{ ...navBtnWrapper, opacity: disabled ? 0.4 : 1 }}
         >
             <div style={{
                 color: isActive ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
-                fontSize: '28px',
+                fontSize: '26px',
+                display: 'flex',
                 transition: 'color 0.3s ease'
             }}>
-                {React.cloneElement(icon, { fontSize: 'inherit' })}
+                {React.isValidElement(icon) ? React.cloneElement(icon, { fontSize: 'inherit' }) : icon}
             </div>
             <AnimatePresence>
                 {isActive && (
                     <motion.div 
-                        layoutId="activeTab"
+                        layoutId="sleepActiveTab"
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0 }}
@@ -152,7 +84,6 @@ const NavButton = ({ id, current, icon, onClick, theme }) => {
 
 const AddButton = ({ disabled, onClick, theme, active }) => (
     <motion.div
-        whileHover={!disabled ? { scale: 1.1 } : {}}
         whileTap={!disabled ? { scale: 0.9 } : {}}
         onClick={onClick}
         style={{
@@ -161,18 +92,17 @@ const AddButton = ({ disabled, onClick, theme, active }) => (
             background: active ? Colors.get('iconsHighlited', theme) : Colors.get('simplePanel', theme),
         }}
     >
-        <Add style={{ fontSize: '32px', color: active ? '#fff' : Colors.get('icons', theme) }} />
+        <Add style={{ fontSize: '30px', color: active ? '#fff' : Colors.get('icons', theme) }} />
     </motion.div>
 );
 
-// Logic and Helpers
 const onBack = async (page, addPanel) => {
-    if (page === 'HabitsMain' && addPanel === '') {
+    if (page === 'RobotMain' && addPanel === '') {
         await saveData();
         setPage('MainMenu');
     } else {
         if (addPanel !== '') setAddPanel('');
-        else setPage('HabitsMain');
+        else setPage('RobotMain');
     }
     playEffects(switchSound);
 };
@@ -191,7 +121,7 @@ function playEffects(sound) {
 // Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '15px', // Floating dock
+    bottom: '15px',
     left: '5vw',
     width: '90vw',
     height: '70px',
@@ -199,11 +129,8 @@ const containerStyle = (theme) => ({
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
-    zIndex: 1000,
-    boxSizing: 'border-box',
-    padding: '0 10px',
     backdropFilter: 'blur(6px)',
-    overflow: 'hidden'
+    zIndex: 1000,
 });
 
 const glassOverlay = (theme) => ({
@@ -250,4 +177,4 @@ const addBtnStyle = (theme) => ({
     transition: 'background 0.3s ease',
 });
 
-export default BtnsHabits;
+export default BtnsInfo;

@@ -196,7 +196,7 @@ const styles = (theme, fSize) => ({
         flex: 1, overflowY: 'auto', padding: '10px 20px 120px 20px',
         display: 'flex', flexDirection: 'column', gap: '18px'
     },
-    header: { marginBottom: '5px' },
+    header: { marginBottom: '5px',marginTop: '15px' },
     pageTitle: { fontSize: '28px', fontWeight: '800', color: Colors.get('mainText', theme), margin: 0 },
     pageSubtitle: { fontSize: '14px', color: Colors.get('subText', theme) },
     

@@ -5,7 +5,7 @@ import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, is
 import { AppData, UserData } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
-import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot, FaMedal, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaStar } from "react-icons/fa";
+import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot, FaMedal, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift , FaTelegramPlane } from "react-icons/fa";
 import { MdOutlineSelfImprovement } from "react-icons/md";
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 import { PremiumButton } from './Premium'
@@ -23,6 +23,7 @@ const MainMenu = () => {
     const [devMessageToAll, setDevMessageToAll] = useState('');
     const [isPasswordCorrect, setIsPasswordCorrect] = useState(false);
     const [passwordInput, setPasswordInput] = useState(false);
+    const [showReferralModal, setShowReferralModal] = useState(false);
     
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium); 
     const [isValidation, setIsValidation] = useState(UserData.isValidation);
@@ -190,6 +191,13 @@ useEffect(() => {
                     <button onClick={() => setDevConsolePanel(false)} style={{ marginTop: '10px' }}>Close</button>
                 </div>
             )}
+            <ReferralModal 
+                isOpen={showReferralModal}
+                onClose={() => setShowReferralModal(false)}
+                onSend={sendReferalLink}
+                theme={theme}
+                lang={lang}
+            />
 
             <div style={styles(theme).container}>
                 <div style={{ height: '16vh' }} />
@@ -219,6 +227,7 @@ useEffect(() => {
                                     isPinned={itemsState[menuItem.id]?.pinned}
                                     onPin={() => handlePin(menuItem.id)}
                                     onHide={() => handleHide(menuItem.id)}
+                                    setShowReferralModal={setShowReferralModal}
                                 />
                             ))}
                         </AnimatePresence>
@@ -330,7 +339,7 @@ function ReferalButton({ theme, lang, onClick }) {
         </motion.div>
     );
 }
-function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide }) {
+function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,setShowReferralModal }) {
     const info = getInfo(index - 1); 
     const isDark = theme === 'dark';
 
@@ -451,7 +460,7 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide }) 
                     <ReferalButton
                         theme={theme} 
                         lang={lang} 
-                        onClick={() => sendReferalLink()}
+                        onClick={() => setShowReferralModal(true)}
                     />
                         <AIInsightButton 
                         theme={theme} 
@@ -542,3 +551,119 @@ function getInfo(index) {
 }
 
 export default MainMenu
+
+const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
+    const isDark = theme === 'dark';
+    const bg = isDark ? Colors.get('simplePanel', theme) : '#FFFFFF';
+    const text = Colors.get('mainText', theme);
+    const sub = Colors.get('subText', theme);
+
+    // Modern Gradient for the icon background
+    const iconGradient = 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)';
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    {/* Backdrop */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        style={{
+                            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                            backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+                            zIndex: 2000
+                        }}
+                    />
+
+                    {/* Modal Panel */}
+                    <motion.div
+                        initial={{ y: '100%' }}
+                        animate={{ y: 0 }}
+                        exit={{ y: '100%' }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                        style={{
+                            position: 'fixed', bottom: 0, left: 0, right: 0,
+                            backgroundColor: bg,
+                            borderTopLeftRadius: '32px', borderTopRightRadius: '32px',
+                            padding: '24px',
+                            zIndex: 2001,
+                            boxShadow: '0 -10px 40px rgba(0,0,0,0.2)',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center'
+                        }}
+                    >
+                        {/* Drag Handle */}
+                        <div style={{ width: '40px', height: '5px', borderRadius: '10px', backgroundColor: sub, opacity: 0.3, marginBottom: '20px' }} />
+
+                        {/* Animated Icon */}
+                        <motion.div
+                            initial={{ scale: 0.5, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.1 }}
+                            style={{
+                                width: '80px', height: '80px', borderRadius: '50%',
+                                background: iconGradient,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                marginBottom: '20px',
+                                boxShadow: '0 10px 20px rgba(255, 215, 0, 0.3)'
+                            }}
+                        >
+                            <FaGift size={40} color="#FFF" />
+                        </motion.div>
+
+                        {/* Title */}
+                        <h2 style={{ 
+                            fontFamily: 'Segoe UI', fontSize: '24px', fontWeight: '800', 
+                            color: text, margin: '0 0 10px 0', textAlign: 'center' 
+                        }}>
+                            {lang === 0 ? 'Пригласи друга' : 'Invite a Friend'}
+                        </h2>
+
+                        {/* Description */}
+                        <p style={{ 
+                            fontFamily: 'Segoe UI', fontSize: '15px', fontWeight: '500', 
+                            color: sub, margin: '0 0 30px 0', textAlign: 'center', lineHeight: '1.5',
+                            maxWidth: '90%'
+                        }}>
+                            {lang === 0 
+                                ? 'Отправь ссылку другу. Когда он присоединится, вы оба получите 1 месяц Premium бесплатно! Каждый новый друг + 1 месяц Premium бесплатно! 🎁' 
+                                : 'Send a link to a friend. When they join, you both get 1 month of Premium for free! Each new friend + 1 month of Premium for free! 🎁'}
+                        </p>
+
+                        {/* Action Buttons */}
+                        <div style={{ width: '100%', display: 'flex', gap: '12px', flexDirection: 'column' }}>
+                            <motion.button
+                                whileTap={{ scale: 0.96 }}
+                                onClick={() => { onSend(); onClose(); }}
+                                style={{
+                                    width: '100%', padding: '16px', borderRadius: '16px',
+                                    border: 'none', background: '#007AFF',
+                                    color: '#FFF', fontSize: '16px', fontWeight: '700',
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                }}
+                            >
+                                <FaTelegramPlane size={20} />
+                                {lang === 0 ? 'Отправить приглашение' : 'Send Invitation'}
+                            </motion.button>
+
+                            <motion.button
+                                whileTap={{ scale: 0.96 }}
+                                onClick={onClose}
+                                style={{
+                                    width: '100%', padding: '14px', borderRadius: '16px',
+                                    border: 'none', background: 'transparent',
+                                    color: sub, fontSize: '15px', fontWeight: '600',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                {lang === 0 ? 'Позже' : 'Maybe later'}
+                            </motion.button>
+                        </div>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
+    );
+};

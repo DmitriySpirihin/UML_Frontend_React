@@ -10,6 +10,8 @@ import BtnsSleep from './assets/Pages/BottomBtns/BtnsSleep'
 import BtnsToDo from './assets/Pages/BottomBtns/ToDoBtns'
 import BtnsRobot from './assets/Pages/BottomBtns/BtnsRobot'
 import NotifyPanel from './assets/Pages/NotifyPanel'
+import BtnsMenu from './assets/Pages/BottomBtns/BtnsMenu';
+import BtnsInfo from './assets/Pages/BottomBtns/BtnsInfo';
 import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
 import { motion, AnimatePresence } from 'framer-motion';
@@ -42,7 +44,7 @@ const MemoryMain = lazy(() => import('./assets/Pages/MentalPages/MemoryMain'));
 const LogicMain = lazy(() => import('./assets/Pages/MentalPages/LogicMain'));
 const FocusMain = lazy(() => import('./assets/Pages/MentalPages/FocusMain'));
 const Records = lazy(() => import('./assets/Pages/MentalPages/Records'));
-
+const InfoPanel = lazy(() => import('./assets/Pages/InfoPanel'));
 
 const SleepMetrics = lazy(() => import('./assets/Pages/SleepPages/SleepMetrics'));
 const SleepMain = lazy(() => import('./assets/Pages/SleepPages/SleepMain'));
@@ -237,6 +239,7 @@ function App() {
       {page !== 'LoadPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <MainBtns/>
       </Suspense>}
+      
       {page === 'LoadPanel' && <LoadPanel/>}
       {page === 'MainMenu' && <MainMenu/>}
       {page === 'HabitsMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
@@ -324,6 +327,9 @@ function App() {
       {addPanel === 'UserPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <UserPanel/>
       </Suspense>}
+      {page === 'InfoPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <InfoPanel/>
+      </Suspense>}
       
       {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
       {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
@@ -332,6 +338,8 @@ function App() {
       {bottomBtnPanel === 'BtnsSleep' && !keyboardVisible && <BtnsSleep/>}
       {bottomBtnPanel === 'BtnsToDo' && !keyboardVisible && <BtnsToDo/>}
       {bottomBtnPanel === 'BtnsRobot' && !keyboardVisible && <BtnsRobot/>}
+      {bottomBtnPanel === 'BtnsMenu' && !keyboardVisible && <BtnsMenu/>}
+      {bottomBtnPanel === 'BtnsInfo' && !keyboardVisible && <BtnsInfo/>}
     </>
   )
 }
