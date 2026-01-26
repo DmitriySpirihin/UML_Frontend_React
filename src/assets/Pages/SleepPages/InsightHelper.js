@@ -1,52 +1,68 @@
 import { AppData } from "../../StaticClasses/AppData";
 import { allHabits } from "../../Classes/Habit";
+
 const API_BASE = 'https://ultymylife.ru/api/insight';
 
 const INSIGHT_SYSTEM_PROMPTS = [
-  // 0 — RU
-  `Ты — персональный фитнес-аналитик. Проанализируй данные за последние 7 дней и дай краткий, практичный отчёт на русском языке.`,
-  // 1 — EN
-  `You are a personal fitness analyst. Analyze the data from the last 7 days and provide a short, practical report in English.`
+  // 0 — RU (Expert Persona)
+  `Ты — элитный спортивный физиолог и аналитик данных. Твоя цель — найти скрытые взаимосвязи между сном, ментальным состоянием и физическими показателями пользователя, чтобы оптимизировать его производительность.`,
+  
+  // 1 — EN (Expert Persona)
+  `You are an elite sports physiologist and data scientist. Your goal is to find hidden correlations between sleep, mental state, and physical performance to optimize the user's productivity.`
 ];
 
 const INSIGHT_USER_PROMPT_TEMPLATES = [
-  // 0 — RU
-  `Требования к ответу:
-1) Кратко опиши общий уровень активности и прогресс за неделю. Используй 📊 или 🔍.
-2) Отметь сильные стороны и питивные тренды. Добавь ✅, 🌟 или 💪.
-3) Укажи проблемные зоны (что чаще всего пропускалось, где нет прогресса). Используй ⚠️ или 🚧.
-4) Дай 3–5 конкретных и выполнимых рекомендаций на следующую неделю. Начинай каждую с 💡, 🎯 или 📅.
-5) Стиль: коротко, по делу, мотивирующе, без "воды". Каждый пункт — с новой строки. НЕ используй Markdown, списки, жирный шрифт или дефисы в начале строк. Используй только текст и эмодзи для акцента.
+  // 0 — RU (Detailed & Correlative)
+  `Требования к отчёту (строго следуй формату):
 
-Примечание по привычкам:
-- Для положительных привычек (например, "Ходьба"): status = -2 → completed, status = 0 → skipped.
-- Для отрицательных привычек (например, "Курение"): status = 1 → успех (воздержался), status = 0 → срыв.
+1) 📊 **Синтез данных:** Не просто перечисли факты, а свяжи их. Как качество сна (или его отсутствие) повлияло на силовые показатели или ментальные тесты? Есть ли "провальные" дни недели?
+2) 💪 **Ключевые победы:** Назови КОНКРЕТНЫЕ упражнения с прогрессом (тоннаж/вес) или привычки с идеальной дисциплиной. Выдели лучшее достижение недели.
+3) ⚠️ **Диагностика проблем:** Почему были пропуски? (Усталость? Лень? Нехватка времени?). Определи паттерн срывов (например, "пропуски всегда в выходные").
+4) 🎯 **План действий (3 пункта):** Дай микро-задачи на следующую неделю.
+   - Не пиши "улучши сон", пиши "сдвинь отбой на 20 минут раньше".
+   - Не пиши "тренируйся жестче", пиши "добавь 1 подход в отстающем упражнении".
+5) Стиль: Тренерский, жесткий, но мотивирующий. Без воды.
+
+Форматирование:
+- Каждый пункт с новой строки.
+- Используй эмодзи для структуры.
+- НЕ используй Markdown (жирный шрифт, списки), только простой текст.
 
 Данные для анализа:`,
 
-  // 1 — EN
-  `Requirements for your response:
-1) Briefly describe the overall activity level and progress over the past week. Use 📊 or 🔍.
-2) Highlight strengths and positive trends. Add ✅, 🌟, or 💪.
-3) Point out problem areas (what is most often skipped or shows no progress). Use ⚠️ or 🚧.
-4) Give 3–5 specific, actionable recommendations for next week. Start each with 💡, 🎯, or 📅.
-5) Style: short, to the point, motivating, no fluff. Each point on a new line. DO NOT use Markdown, bullets, bold text, or leading dashes. Use only plain text and emojis for visual emphasis.
+  // 1 — EN (Detailed & Correlative)
+  `Report Requirements (Follow strictly):
 
-Habit status note:
-- For positive habits (e.g., "Walking"): status = -2 → completed, status = 0 → skipped.
-- For negative habits (e.g., "Smoking"): status = 1 → success (abstained), status = 0 → relapse.
+1) 📊 **Data Synthesis:** Don't just list facts; connect them. How did sleep quality impact gym performance or mental focus scores? Are there specific "failure days" in the week?
+2) 💪 **Key Wins:** Mention SPECIFIC exercises with progress (tonnage/weight) or habits with perfect streaks. Highlight the #1 achievement of the week.
+3) ⚠️ **Problem Diagnosis:** Why did skips happen? (Fatigue? Poor scheduling?). Identify the failure pattern (e.g., "always skipping habits on weekends").
+4) 🎯 **Action Plan (3 items):** Give micro-tasks for next week.
+   - Don't say "sleep better", say "shift bedtime 20 mins earlier".
+   - Don't say "train harder", say "add 1 set to your weakest lift".
+5) Tone: Coach-like, direct, motivating. No fluff.
+
+Formatting:
+- Each point on a new line.
+- Use emojis for structure.
+- DO NOT use Markdown (bold, lists), use plain text only.
 
 Data to analyze:`
 ];
 
 export function getInsightPrompt(langIndex) {
-  // Generate list of last 7 calendar days (YYYY-MM-DD)
+  // ✅ DATE FIX: Generate Local YYYY-MM-DD to match database keys
+  const getLocalISODate = (dateObj) => {
+    const offset = dateObj.getTimezoneOffset() * 60000;
+    const localDate = new Date(dateObj.getTime() - offset);
+    return localDate.toISOString().split('T')[0];
+  };
+
   const today = new Date();
   const last7Days = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    last7Days.push(d.toISOString().split('T')[0]); // e.g. "2026-01-06"
+    last7Days.push(getLocalISODate(d));
   }
 
   const user = AppData.pData || {};
@@ -62,20 +78,16 @@ export function getInsightPrompt(langIndex) {
   const exercises = AppData.exercises || {};
   const allhabits = allHabits || {};
 
-  // Helper: format a section or show "No data"
+  // Helper: format a section
   const formatSection = (title, contentLines) => {
-    if (contentLines.length === 0) return `${title} (last 7 days):\n  No data\n`;
+    if (contentLines.length === 0) return `${title} (last 7 days):\n  No data (User was inactive here)\n`;
     return `${title} (last 7 days):\n${contentLines.join('\n')}\n`;
   };
 
-  // 1. USER BLOCK
+  // 1. USER BLOCK (Added Context)
   const userBlock = `
-USER:
-- age: ${user.age || 'unknown'}
-- gender: ${user.gender !== undefined ? user.gender : 'unknown'}
-- height: ${user.height || 'unknown'} cm
-- wrist: ${user.wrist || 'unknown'} cm
-- goal: ${user.goal || 'unknown'}
+USER CONTEXT:
+- Profile: ${user.age || '?'} y.o, ${user.gender === 0 ? 'Male' : 'Female'}, Goal: ${user.goal !== undefined ? ['Mass', 'Strength', 'Cut', 'Health'][user.goal] : 'General'}
 `.trim();
 
   // 2. HABITS
@@ -86,175 +98,80 @@ USER:
 
     const arr = Array.isArray(dayData)
       ? dayData
-      : Object.entries(dayData).map(([habitId, status]) => ({
-          habitId: Number(habitId),
-          status: status
-        }));
+      : Object.entries(dayData).map(([habitId, status]) => ({ habitId: Number(habitId), status }));
 
     const dayHabits = arr.map(item => {
       const h = allhabits[item.habitId];
-      const name = h?.name
-        ? (h.name[langIndex] || h.name[0] || `Habit #${item.habitId}`)
-        : `Habit #${item.habitId}`;
-      return {
-        habitId: item.habitId,
-        status: item.status,
-        habitName: name
-      };
+      // Get English name fallback if specific lang missing
+      const name = h?.name ? (h.name[1] || h.name[0]) : `Habit #${item.habitId}`; 
+      
+      // STATUS DECODER for AI
+      let statusStr = "Skipped";
+      if (item.status === -2) statusStr = "Done";
+      if (item.status === 1) statusStr = "Abstained (Success)"; // For negative habits
+      if (item.status === 0) statusStr = "Failed/Skipped";
+
+      return `${name}: ${statusStr}`;
     });
 
     if (dayHabits.length > 0) {
-      habitLines.push(`  ${date}: ${JSON.stringify(dayHabits)}`);
+      habitLines.push(`  ${date}: ${dayHabits.join(', ')}`);
     }
   });
-  const habitsBlock = formatSection(
-    langIndex === 0
-      ? 'ПРИВЫЧКИ (за последние 7 дней)'
-      : 'HABITS_BY_DATE',
-    habitLines
-  );
+  const habitsBlock = formatSection('HABITS', habitLines);
 
-  // 3. TRAININGS
+  // 3. TRAININGS (Enhanced for PR detection)
   const trainingLines = [];
   last7Days.forEach(date => {
     const sessions = trainings[date];
     if (!sessions || !sessions.length) return;
 
-    trainingLines.push(`  DATE: ${date}`);
-    sessions.forEach((s, idx) => {
+    sessions.forEach((s) => {
       const program = programs[s.programId];
-      const programName = program?.name
-        ? (program.name[langIndex] || program.name[0] || `Program #${s.programId}`)
-        : `Program #${s.programId}`;
-
-      trainingLines.push(`    [Session #${idx + 1}] program: ${programName}, dayIndex: ${s.dayIndex}, completed: ${s.completed}, duration(ms): ${s.duration || 0}, tonnage: ${s.tonnage || 0}`);
-      trainingLines.push(`      exercises:`);
-
+      const programName = program?.name ? (program.name[1] || `Prog #${s.programId}`) : `Prog #${s.programId}`;
+      
+      trainingLines.push(`  DATE: ${date} | Program: ${programName} | Duration: ${Math.round((s.duration || 0)/60000)} min`);
+      
       const order = s.exerciseOrder || [];
       order.forEach(exId => {
         const exData = s.exercises?.[exId];
-        const exMeta = exercises[exId];
-        const exName = exMeta?.name
-          ? (exMeta.name[langIndex] || exMeta.name[0] || `Exercise #${exId}`)
-          : `Exercise #${exId}`;
-
         if (!exData) return;
-
-        trainingLines.push(`        - ${exName} (mgId: ${exData.mgId || 'N/A'})`);
-        trainingLines.push(`          sets:`);
-        (exData.sets || []).forEach((set, i) => {
-          trainingLines.push(`            * set ${i + 1}: type=${set.type || 'N/A'}, reps=${set.reps || 0}, weight=${set.weight || 0}, time=${set.time || 0}`);
+        
+        const exMeta = exercises[exId];
+        const exName = exMeta?.name ? (exMeta.name[1] || `Ex #${exId}`) : `Ex #${exId}`;
+        
+        // Find max weight for this session to highlight strength
+        let maxWeight = 0;
+        let totalReps = 0;
+        (exData.sets || []).forEach(set => {
+           if(set.weight > maxWeight) maxWeight = set.weight;
+           totalReps += (set.reps || 0);
         });
-        trainingLines.push(`          totalTonnage: ${exData.totalTonnage || 0}, completed: ${exData.completed || false}`);
+
+        trainingLines.push(`    - ${exName}: MaxWeight=${maxWeight}kg, TotalReps=${totalReps}, Vol=${exData.totalTonnage}`);
       });
     });
   });
-  const trainingsBlock = formatSection(langIndex === 0 ? 'ТРЕНИРОВКИ' : 'TRAININGS', trainingLines);
+  const trainingsBlock = formatSection('GYM_PERFORMANCE', trainingLines);
 
-  // 4. Simple logs: breathing, meditation, hardening
-  const buildSimpleLog = (logObj, extraFields = []) => {
-    const lines = [];
-    last7Days.forEach(date => {
-      const arr = logObj[date];
-      if (!arr || !arr.length) return;
-      lines.push(`  ${date}:`);
-      arr.forEach((item, i) => {
-        const durationMs = (item.endTime || 0) - (item.startTime || 0);
-        let line = `    #${i + 1}: duration(ms): ${durationMs}`;
-        extraFields.forEach(f => {
-          if (item[f] != null) line += `, ${f}: ${item[f]}`;
-        });
-        lines.push(line);
-      });
-    });
-    return lines;
-  };
-
-  const breathingBlock = formatSection(langIndex === 0 ? 'ДЫХАНИЕ' : 'BREATHING', buildSimpleLog(breathing, ['maxHold']));
-  const meditationBlock = formatSection(langIndex === 0 ? 'МЕДИТАЦИЯ' : 'MEDITATION', buildSimpleLog(meditation));
-  const hardeningBlock = formatSection(langIndex === 0 ? 'ЗАКАЛИВАНИЕ' : 'HARDENING', buildSimpleLog(hardening, ['timeInColdWater']));
-
-  // 5. MENTAL ACTIVITY
-  const mentalLines = [];
-  let mentalTotalSeconds = 0;
-  let mentalDaysCount = 0;
-  last7Days.forEach(date => {
-    const durSec = mentalLog[date];
-    if (durSec == null) return;
-    const dur = Number(durSec) || 0;
-    mentalTotalSeconds += dur;
-    mentalDaysCount++;
-    mentalLines.push(`  ${date}: duration(sec): ${dur}, duration(min): ${Math.round((dur / 60) * 10) / 10}`);
-  });
-  if (mentalLines.length > 0) {
-    mentalLines.push(`  total(sec): ${mentalTotalSeconds}, total(min): ${Math.round((mentalTotalSeconds / 60) * 10) / 10}, days: ${mentalDaysCount}`);
-  }
-  const mentalBlock = formatSection(langIndex === 0 ? 'МЕНТАЛЬНАЯ АКТИВНОСТЬ' : 'MENTAL', mentalLines);
-
-  // 6. MENTAL RECORDS
-  const mentalCategoryNames = [
-    ['Быстрый счёт', 'Mental math'],
-    ['Память в действии', 'Memory'],
-    ['Числовая логика', 'Number logic'],
-    ['Чистый фокус', 'Pure focus']
-  ];
-  const mentalRecordLines = [];
-  (mentalRecords || []).forEach((arr, idx) => {
-    const name = mentalCategoryNames[idx]?.[langIndex] || `Category ${idx}`;
-    const scores = (Array.isArray(arr) ? arr : []).map(v => Number(v) || 0);
-    const best = scores.length ? Math.max(...scores) : 0;
-    const nonZero = scores.filter(v => v > 0);
-    const avg = nonZero.length ? Math.round((nonZero.reduce((a, b) => a + b, 0) / nonZero.length) * 10) / 10 : 0;
-    mentalRecordLines.push(`  ${name}: best=${best}, avg(nonZero)=${avg}, byDifficulty=${JSON.stringify(scores)}`);
-  });
-  const mentalRecordsBlock = mentalRecordLines.length
-    ? (langIndex === 0
-        ? `РЕЗУЛЬТАТЫ МЕНТАЛЬНЫХ ТРЕНИРОВОК (лучшие):\n${mentalRecordLines.join('\n')}\n`
-        : `MENTAL_RECORDS (best scores):\n${mentalRecordLines.join('\n')}\n`)
-    : (langIndex === 0
-        ? `РЕЗУЛЬТАТЫ МЕНТАЛЬНЫХ ТРЕНИРОВОК:\n  Нет данных\n`
-        : `MENTAL_RECORDS:\n  No data\n`);
-
-  // 7. MENTAL SCORE HINTS
-  function estimateMaxMathSessionScore(difficulty) {
-    const baseScores = [100, 200, 300, 400];
-    const base = baseScores[difficulty] || 100;
-    let total = 0;
-    for (let stage = 1; stage <= 20; stage++) {
-      const stageMultiplier = Math.min(1 + stage * 0.02, 1.3);
-      const timeMultiplier = 1.6;
-      const streakLength = stage - 1;
-      const streakMultiplier = streakLength >= 5
-        ? Math.min(1 + 0.1 * Math.min(streakLength / 10, 4), 1.5)
-        : 1;
-      total += Math.round(base * stageMultiplier * timeMultiplier * streakMultiplier);
-    }
-    return total;
-  }
-
-  const mathDifficultyNames = [
-    ['начальный', 'novice'],
-    ['средний', 'intermediate'],
-    ['продвинутый', 'advanced'],
-    ['безумный', 'insane']
-  ];
-  const scoreHintLines = mathDifficultyNames.map((labels, d) =>
-    `  ${labels[langIndex] || labels[0]}: estimatedMax≈${estimateMaxMathSessionScore(d)}`
-  );
-  const mentalScoreHintBlock = (langIndex === 0
-    ? `ПОДСКАЗКИ ПО МАКС. БАЛЛАМ (масштаб математики, максимум при идеальном решении 20 вопросов):\n${scoreHintLines.join('\n')}\n`
-    : `MENTAL_SCORE_HINTS (math scale, estimated max for perfect 20 questions):\n${scoreHintLines.join('\n')}\n`);
-
-  // 8. SLEEP
+  // 4. MENTAL & SLEEP (Crucial for correlation)
   const sleepLines = [];
   last7Days.forEach(date => {
     const s = sleeping[date];
     if (!s) return;
-    sleepLines.push(`  ${date}: bedtime(ms): ${s.bedtime || 0}, duration(ms): ${s.duration || 0}, mood(1-5): ${s.mood || 'N/A'}, note: "${s.note || ''}"`);
+    const durHrs = Math.round((s.duration || 0) / 360000) / 10; // Hours
+    sleepLines.push(`  ${date}: Sleep=${durHrs}h, Mood=${s.mood}/5, Note="${s.note || ''}"`);
   });
-  const sleepBlock = formatSection(langIndex === 0 ? 'СОН' : 'SLEEP', sleepLines);
+  const sleepBlock = formatSection('SLEEP_AND_RECOVERY', sleepLines);
 
-  // 9. Final prompts
+  const mentalLines = [];
+  last7Days.forEach(date => {
+    const dur = mentalLog[date];
+    if (dur) mentalLines.push(`  ${date}: MentalTraining=${Math.round(dur/60)} min`);
+  });
+  const mentalBlock = formatSection('BRAIN_TRAINING', mentalLines);
+
+  // 5. COMPILE PROMPT
   const systemPrompt = (INSIGHT_SYSTEM_PROMPTS[langIndex] || INSIGHT_SYSTEM_PROMPTS[0]).trim();
   const instructionBlock = (INSIGHT_USER_PROMPT_TEMPLATES[langIndex] || INSIGHT_USER_PROMPT_TEMPLATES[0]).trim();
 
@@ -263,15 +180,12 @@ ${instructionBlock}
 
 ${userBlock}
 
+${sleepBlock}
 ${habitsBlock}
 ${trainingsBlock}
-${breathingBlock}
-${meditationBlock}
-${hardeningBlock}
 ${mentalBlock}
-${mentalRecordsBlock}
-${mentalScoreHintBlock}
-${sleepBlock}
+
+(Analyze the data above looking for patterns between Sleep -> Gym or Habits -> Mood)
 `.trim();
 
   return { systemPrompt, userPrompt };
@@ -292,14 +206,12 @@ export async function getInsight(langIndex) {
       })
     });
 
-    if (!res.ok) {
-      throw new Error(`Insight API error: ${res.status}`);
-    }
-
+    if (!res.ok) throw new Error(`Insight API error: ${res.status}`);
+    
     const data = await res.json();
     return data.insight;
   } catch (error) {
     console.error('Failed to get insight:', error);
-    throw error; // or return fallback
+    throw error;
   }
 }
