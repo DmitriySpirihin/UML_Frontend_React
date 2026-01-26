@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState,useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData, fillEmptyDays } from '../StaticClasses/AppData';
 import { theme$, lang$, setPage, setTheme ,setPremium} from '../StaticClasses/HabitsBus';
@@ -6,7 +6,8 @@ import Colors from '../StaticClasses/Colors';
 import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud, loadData } from '../StaticClasses/SaveHelper';
 import { initializeTelegramSDK, getTelegramContext } from '../StaticClasses/SaveHelper';
-import { isUserHasPremium } from '../StaticClasses/NotificationsManager';
+import { isUserHasPremium ,sendXp,getFriendsList} from '../StaticClasses/NotificationsManager';
+import { calculateStats } from './UserPanel';
 
 function LoadPanel() {
   const [theme, setThemeState] = useState('dark');
@@ -15,68 +16,76 @@ function LoadPanel() {
   const [userPhoto, setUserPhoto] = useState('images/Ui/Guest.jpg');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function initializeApp() {
-      try {
-        await initDBandCloud();
-        const outsideTelegram = typeof window !== 'undefined' ? !window.Telegram?.WebApp : true;
-        await initializeTelegramSDK({ mock: outsideTelegram });
+useEffect(() => {
+  async function initializeApp() {
+    try {
+      await initDBandCloud();
+      const outsideTelegram = typeof window !== 'undefined' ? !window.Telegram?.WebApp : true;
+      await initializeTelegramSDK({ mock: outsideTelegram });
 
-        const { user, languageCode, colorScheme } = getTelegramContext();
+      const tgContext = getTelegramContext(); 
+      const { user, languageCode, colorScheme, start_param } = tgContext;
 
-        if (user) {
-          if (AppData.isFirstStart) {
-            AppData.prefs[0] = languageCode === 'ru' ? 0 : 1;
-            AppData.prefs[1] = colorScheme === 'dark' ? 0 : 1;
-            setTheme('dark');
-          }
-          UserData.Init(user.id, user.username, user.photo_url || 'images/Ui/Guest.jpg');
-          setUserName(user.username);
-          setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url);
-        } else {
-          UserData.Init(0, AppData.prefs[0] === 0 ? 'гость' : 'guest', 'images/Ui/Guest.jpg');
-          setUserName(AppData.prefs[0] === 0 ? 'гость' : 'guest');
-          setUserPhoto('images/Ui/Guest.jpg');
+      if (user) {
+        if (AppData.isFirstStart) {
+          AppData.prefs[0] = languageCode === 'ru' ? 0 : 1;
+          AppData.prefs[1] = colorScheme === 'dark' ? 0 : 1;
+          setTheme('dark');
         }
+        UserData.Init(user.id, user.username, user.photo_url || 'images/Ui/Guest.jpg');
+        setUserName(user.username);
+        setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url);
 
-        await loadData();
-        fillEmptyDays();
-        setAllHabits();
-
-        if (UserData.id !== 0 && UserData.id !== null) {
-          const urlParams = new URLSearchParams(window.location.search);
-          const referrerId = urlParams.get('ref');
-          if (referrerId && !isNaN(referrerId) && Number(referrerId) !== UserData.id) {
-            const refKey = `ref_processed_${referrerId}`;
-            if (!localStorage.getItem(refKey)) {
-              try {
-                await fetch('/api/record-referral', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ referrerId: Number(referrerId), newUserId: UserData.id }),
-                });
-                localStorage.setItem(refKey, '1');
-              } catch (err) { console.warn('Referral submission failed:', err); }
-            }
+        // --- Referral Logic ---
+        const referrerId = start_param; 
+        if (referrerId && !isNaN(referrerId) && Number(referrerId) !== user.id) {
+          const refKey = `ref_processed_${referrerId}`;
+          if (!localStorage.getItem(refKey)) {
+            try {
+              await fetch('/api/record-referral', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ referrerId: Number(referrerId), newUserId: user.id }),
+              });
+              localStorage.setItem(refKey, '1');
+            } catch (err) { console.warn('Referral submission failed:', err); }
           }
         }
-
-        if (UserData.id !== 0) { await isUserHasPremium(UserData.id); }
-
-        setLoading(false);
-        setTimeout(() => setPage('MainMenu'), 1200); // Slightly longer to appreciate animations
-
-      } catch (error) {
-        console.error('Initialization error:', error);
-        setLoading(false);
-        setTimeout(() => setPage('MainMenu'), 1200);
+      } else {
+        UserData.Init(0, AppData.prefs[0] === 0 ? 'гость' : 'guest', 'images/Ui/Guest.jpg');
+        setUserName(AppData.prefs[0] === 0 ? 'гость' : 'guest');
+        setUserPhoto('images/Ui/Guest.jpg');
       }
+
+      await loadData();
+      fillEmptyDays();
+      setAllHabits();
+
+      // --- SYNC & SOCIAL LOGIC ---
+      if (UserData.id && UserData.id !== 0) { 
+        // 1. Check Premium
+        await isUserHasPremium(UserData.id); 
+        
+        // 2. Sync XP to DB (Calculated from loaded logs)
+        // We call the stats calculation logic here or use the raw values
+        const currentStats = calculateStats(); // Helper to get the XP values
+        await NotificationsManager.sendXp(currentStats.level.xp, currentStats.level.current);
+        
+        // 3. Get Friends List
+        await getFriendsList(); 
+      }
+
+      setLoading(false);
+      setTimeout(() => setPage('MainMenu'), 1200);
+
+    } catch (error) {
+      console.error('Initialization error:', error);
+      setLoading(false);
+      setTimeout(() => setPage('MainMenu'), 1200);
     }
-    initializeApp();
-    //test only  uncomment fields below to get premium
-    //UserData.hasPremium = true;
-    //setPremium(true);
-  }, []);
+  }
+  initializeApp();
+}, []);
 
   useEffect(() => {
     const themeSub = theme$.subscribe(setThemeState);
@@ -273,3 +282,7 @@ const styles = (theme) => ({
     borderRadius: "10px",
   }
 });
+
+// Helper to avoid code duplication
+
+

@@ -48,7 +48,7 @@ export class NotificationsManager {
 
     static async getMentalRecordsGlobal() {
     const response = await this.sendMessage('getmentalrecords', '');
-    return response.message; // directly returns [{name, data}, ...]
+    return response.message;
   }
 }
 
@@ -191,4 +191,44 @@ export async function deleteCloudBackup() {
     console.error('Delete backup error:', error);
     setShowPopUpPanel('❌ Delete failed: ' + (error.message || 'unknown error'), 2000, false);
   }
+}
+
+export async function sendXp(xp, level) {
+        try {
+            const response = await this.sendMessage('update_xp', JSON.stringify({ xp, level }));
+            return response;
+        } catch (error) {
+            console.error('Failed to sync XP:', error);
+            throw error;
+        }
+}
+
+export async function getFriendsList() {
+    // Safety check: don't fetch if the user is a guest
+    if (!UserData.id || UserData.id === 0) return [];
+
+    try {
+        const FRIENDS_URL = `https://ultymylife.ru/api/my-friends/${UserData.id}`;
+        
+        const response = await fetch(FRIENDS_URL, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        
+        if (data.success) {
+            // ✅ Save the data to your static class for global access
+            UserData.SetFriends(data.friends); 
+            return data.friends; 
+        } else {
+            throw new Error(data.error || 'Failed to fetch friends');
+        }
+    } catch (error) {
+        console.error('Error fetching friends list:', error);
+        return []; 
+    }
 }

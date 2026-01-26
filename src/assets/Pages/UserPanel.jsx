@@ -2,12 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData } from '../StaticClasses/AppData.js';
 import { saveData } from '../StaticClasses/SaveHelper.js';
+import { sendReferalLink } from '../StaticClasses/PaymentService'; 
 import Colors from '../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, premium$, setAddPanel, setPage } from '../StaticClasses/HabitsBus';
 import { 
     FaCrown, FaUserShield, FaSignOutAlt,  FaGem, 
     FaRulerVertical, FaBirthdayCake, FaBullseye, 
-    FaRunning, FaBrain, FaBed, FaMedal, FaSpa
+    FaRunning, FaBrain, FaBed, FaMedal, FaSpa, FaUserFriends, FaShareAlt
 } from 'react-icons/fa';
 import { IoMdMale, IoMdFemale } from 'react-icons/io';
 import { MdClose, MdDone } from 'react-icons/md';
@@ -30,6 +31,9 @@ const UserPanel = () => {
     const [fSize, setFSize] = useState(AppData.prefs[4]);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
 
+    // --- FRIENDS STATE (Loaded directly from UserData) ---
+    const [friends, setFriends] = useState(UserData.friends || []);
+
     // --- METRICS EDIT STATE ---
     const [showBodyMetrics, setShowBodyMetrics] = useState(false);
     const [age, setAge] = useState(AppData.pData.age || 25);
@@ -37,6 +41,7 @@ const UserPanel = () => {
     const [height, setHeight] = useState(AppData.pData.height || 175);
     const [wrist, setWrist] = useState(AppData.pData.wrist || 17);
     const [goal, setGoal] = useState(AppData.pData.goal || 0);
+    const [showFriendsPanel, setShowFriendsPanel] = useState(false);
 
     // --- LISTS FOR PICKERS ---
     const agesList = useMemo(() => generateRange(10, 100), []);
@@ -49,6 +54,7 @@ const UserPanel = () => {
         const langSub = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
         const fSizeSub = fontSize$.subscribe(setFSize);
         const premiumSub = premium$.subscribe(setHasPremium);
+        
         return () => {
             themeSub.unsubscribe(); langSub.unsubscribe();
             fSizeSub.unsubscribe(); premiumSub.unsubscribe();
@@ -56,65 +62,39 @@ const UserPanel = () => {
     }, []);
 
     // --- DERIVED METRICS ---
-    const stats = useMemo(() => {
-        const habitsCount = AppData.choosenHabits?.length || 0;
-        const trainingCount = Object.keys(AppData.trainingLog || {}).length;
-        const mentalCount = Object.keys(AppData.mentalLog || {}).length;
-        const sleepCount = Object.keys(AppData.sleepingLog || {}).length;
-        const recoveryCount = 
-            Object.keys(AppData.meditationLog || {}).length +
-            Object.keys(AppData.breathingLog || {}).length +
-            Object.keys(AppData.hardeningLog || {}).length;
+   const stats = useMemo(() => {
+    const coreStats = calculateStats();
+    
+    const ranks = [
+        { title: ['Новичок', 'Novice'], color: '#4f4f4f' },
+        { title: ['Искатель', 'Seeker'], color: '#4CAF50' },
+        { title: ['Достигатор', 'Achiever'], color: '#2196F3' },
+        { title: ['Элита', 'Elite'], color: '#9C27B0' },
+        { title: ['Легенда', 'Legend'], color: '#FFD700' }
+    ];
+    
+    let rankIndex = 0;
+    const lvl = coreStats.level.current;
+    if (lvl >= 50) rankIndex = 4;
+    else if (lvl >= 20) rankIndex = 3;
+    else if (lvl >= 10) rankIndex = 2;
+    else if (lvl >= 5) rankIndex = 1;
 
-        // Leveling Logic
-        const totalXP = (trainingCount * 50) + (mentalCount * 30) + (sleepCount * 20) + (recoveryCount * 20) + (habitsCount * 10);
-        let level = 1;
-        let xpThreshold = 500; 
-        let prevThreshold = 0;
-        while (totalXP >= xpThreshold) {
-            prevThreshold = xpThreshold;
-            level++;
-            xpThreshold += (level * 500); 
+    return {
+        ...coreStats,
+        level: {
+            ...coreStats.level,
+            title: ranks[rankIndex].title[lang],
+            color: ranks[rankIndex].color
+        },
+        body: {
+            age: AppData.pData?.age || '--',
+            height: AppData.pData?.height || '--',
+            gender: AppData.pData?.gender,
+            goal: currentGoalNames[AppData.pData?.goal] || '--'
         }
-        const currentLevelXP = totalXP - prevThreshold;
-        const xpNeededForNext = xpThreshold - prevThreshold;
-        const progressPercent = Math.min(100, Math.max(0, (currentLevelXP / xpNeededForNext) * 100));
-
-        // Rank Configuration
-        const ranks = [
-            { title: ['Новичок', 'Novice'], color: '#4f4f4f' },        // Gray
-            { title: ['Искатель', 'Seeker'], color: '#4CAF50' },       // Green
-            { title: ['Достигатор', 'Achiever'], color: '#2196F3' },   // Blue
-            { title: ['Элита', 'Elite'], color: '#9C27B0' },           // Purple
-            { title: ['Легенда', 'Legend'], color: '#FFD700' }         // Gold
-        ];
-        
-        let rankIndex = 0;
-        if (level >= 50) rankIndex = 4;
-        else if (level >= 20) rankIndex = 3;
-        else if (level >= 10) rankIndex = 2;
-        else if (level >= 5) rankIndex = 1;
-
-        const currentRank = ranks[rankIndex];
-
-        return {
-            counts: { habits: habitsCount, training: trainingCount, mental: mentalCount, sleep: sleepCount, recovery: recoveryCount },
-            level: { 
-                current: level, 
-                xp: currentLevelXP, 
-                needed: xpNeededForNext, 
-                percent: progressPercent, 
-                title: currentRank.title[lang],
-                color: currentRank.color 
-            },
-            body: {
-                age: AppData.pData?.age || '--',
-                height: AppData.pData?.height || '--',
-                gender: AppData.pData?.gender, // 0: Male, 1: Female
-                goal: currentGoalNames[AppData.pData?.goal] || '--'
-            }
-        };
-    }, [lang, showBodyMetrics]); 
+    };
+}, [lang, AppData.trainingLog, AppData.choosenHabits, AppData.pData]);
 
     const close = () => setAddPanel('');
     
@@ -213,7 +193,45 @@ const UserPanel = () => {
                     <InfoCard icon={<FaBullseye />} label={lang === 0 ? 'Цель' : 'Goal'} value={stats.body.goal} theme={theme} fullWidth />
                 </div>
 
-                {/* 4. Premium */}
+                {/* 4. Friends List Section (Direct from UserData) */}
+                <div style={{ marginTop: '25px', marginBottom: '10px' }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 5px' }}>
+                        <div onClick={() => setShowFriendsPanel(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <FaUserFriends color={Colors.get('subText', theme)} />
+                            <span style={{ fontSize: '14px', fontWeight: '800', color: Colors.get('mainText', theme), textTransform: 'uppercase' }}>
+                                {lang === 0 ? 'Друзья' : 'Friends'}
+                            </span>
+                        </div>
+                        {friends.length > 0 && (
+                            <motion.button whileTap={{scale:0.9}} onClick={sendReferalLink} style={{background:'none', border:'none', color:accent, fontWeight:'700', fontSize:'12px', cursor:'pointer'}}>
+                                + {lang === 0 ? 'Пригласить' : 'Invite'}
+                            </motion.button>
+                        )}
+                    </div>
+
+                    {friends.length === 0 ? (
+                        <div style={s.emptyState}>
+                            <span style={{fontSize:'14px', color:Colors.get('subText', theme), textAlign:'center', marginBottom:'10px'}}>
+                                {lang === 0 ? 'У вас пока нет друзей в приложении.' : 'No friends yet. Invite them to earn Premium!'}
+                            </span>
+                            <motion.button 
+                                whileTap={{scale:0.95}} 
+                                onClick={sendReferalLink}
+                                style={{...s.priBtn, width: 'auto', padding: '10px 25px', fontSize: '14px'}}
+                            >
+                                <FaShareAlt style={{marginRight:'8px'}}/> {lang === 0 ? 'Пригласить друга' : 'Invite a Friend'}
+                            </motion.button>
+                        </div>
+                    ) : (
+                        showFriendsPanel ? (<div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                            {friends.map((friend, i) => (
+                                <FriendCard key={i} friend={friend} theme={theme} lang={lang} />
+                            ))}
+                        </div>) : null
+                    )}
+                </div>
+
+                {/* 5. Premium */}
                 {!hasPremium && <motion.div 
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setPage('premium')}
@@ -237,7 +255,7 @@ const UserPanel = () => {
                     </div>
                 </motion.div>}
 
-                {/* 5. Actions */}
+                {/* 6. Actions */}
                 <div style={s.actionList}>
                     
                     <ActionItem icon={<FaUserShield />} label={lang === 0 ? 'Изменить персональные данные' : 'Edit personal data'} theme={theme} onClick={() => setShowBodyMetrics(true)} />
@@ -295,6 +313,52 @@ const UserPanel = () => {
 
 // --- SUB-COMPONENTS ---
 
+const FriendCard = ({ friend, theme, lang }) => {
+    // Calculate progress based on friend.xp and friend.level
+    // Assuming xp needed for next level is level * 500
+    const level = friend.level || 1;
+    const xp = friend.xp || 0;
+    const maxXp = level * 500;
+    const pct = Math.min(100, Math.max(0, (xp / maxXp) * 100));
+
+    return (
+        <div style={{
+            backgroundColor: Colors.get('simplePanel', theme),
+            borderRadius: '16px', padding: '10px 15px',
+            display: 'flex', alignItems: 'center', gap: '12px',
+            border: `1px solid ${Colors.get('border', theme)}30`
+        }}>
+            {/* Friend Avatar */}
+            <div style={{
+                width: '40px', height: '40px', borderRadius: '12px',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '16px', fontWeight: '900', color: Colors.get('mainText', theme),
+                flexShrink: 0
+            }}>
+                {friend.name ? friend.name.charAt(0).toUpperCase() : '?'}
+            </div>
+
+            {/* Friend Info & Progress */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: Colors.get('mainText', theme) }}>
+                        {friend.name}
+                    </span>
+                    <span style={{ fontSize: '10px', fontWeight: '800', color: Colors.get('accent', theme), backgroundColor: 'rgba(255,215,0,0.1)', padding:'2px 6px', borderRadius:'6px' }}>
+                        LVL {level}
+                    </span>
+                </div>
+                
+                {/* Mini XP Bar */}
+                <div style={{ width: '100%', height: '4px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ width: `${pct}%`, height: '100%', backgroundColor: Colors.get('accent', theme), borderRadius: '2px' }} />
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const BottomSheet = ({ children, onClose, theme }) => (
     <div style={styles(theme).backdrop} onClick={onClose}>
         <motion.div 
@@ -331,7 +395,7 @@ const ModalActions = ({ onClose, onConfirm, theme }) => (
 
 const MetricChip = ({ icon, label, value, color, theme }) => (
     <div style={{ 
-        minWidth: '85px', backgroundColor: Colors.get('simplePanel', theme), 
+        minWidth: '85px',height: '55px', backgroundColor: Colors.get('simplePanel', theme), 
         borderRadius: '18px', padding: '12px', display: 'flex', flexDirection: 'column', 
         alignItems: 'center', justifyContent: 'center', marginRight: '10px',
         border: `1px solid ${Colors.get('border', theme)}50`, flexShrink: 0
@@ -395,10 +459,10 @@ const styles = (theme, fSize) => {
         
         heroSection: { display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '10px 0 20px 0', position: 'relative' },
         avatarWrapper: {
-            width: '110px', height: '110px', borderRadius: '40px', border: '3px solid', 
+            width: '80px', height: '80px', borderRadius: '20px', border: '3px solid', 
             padding: '6px', position: 'relative', marginBottom: '15px'
         },
-        avatarImg: { width: '100%', height: '100%', borderRadius: '32px', objectFit: 'cover' },
+        avatarImg: { width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' },
         avatarPlaceholder: {
             width: '100%', height: '100%', borderRadius: '32px', backgroundColor: panel, 
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '38px', fontWeight: '900', color: text
@@ -429,6 +493,14 @@ const styles = (theme, fSize) => {
             scrollbarWidth: 'none', msOverflowStyle: 'none'
         },
         infoGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', margin: '10px 0' },
+        
+        // FRIENDS & EMPTY STATE
+        emptyState: {
+            backgroundColor: panel, borderRadius: '24px', padding: '25px 20px',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            border: `1px dashed ${Colors.get('border', theme)}50`
+        },
+
         premiumCard: { borderRadius: '24px', padding: '20px', margin: '15px 0' },
         premiumInfo: { display: 'flex', alignItems: 'center', gap: '18px' },
         premTitle: { fontSize: '17px', fontWeight: '900' },
@@ -473,3 +545,37 @@ const styles = (theme, fSize) => {
 };
 
 export default UserPanel;
+
+
+export const calculateStats = () => {
+    const habitsCount = AppData.choosenHabits?.length || 0;
+    const trainingCount = Object.keys(AppData.trainingLog || {}).length;
+    const mentalCount = Object.keys(AppData.mentalLog || {}).length;
+    const sleepCount = Object.keys(AppData.sleepingLog || {}).length;
+    const recoveryCount = 
+        Object.keys(AppData.meditationLog || {}).length +
+        Object.keys(AppData.breathingLog || {}).length +
+        Object.keys(AppData.hardeningLog || {}).length;
+
+    // XP Logic: Match your specific multipliers
+    const totalXP = (trainingCount * 50) + (mentalCount * 30) + (sleepCount * 20) + (recoveryCount * 20) + (habitsCount * 10);
+    
+    let level = 1;
+    let xpThreshold = 500; 
+    let prevThreshold = 0;
+    while (totalXP >= xpThreshold) {
+        prevThreshold = xpThreshold;
+        level++;
+        xpThreshold += (level * 500); 
+    }
+
+    return {
+        counts: { habits: habitsCount, training: trainingCount, mental: mentalCount, sleep: sleepCount, recovery: recoveryCount },
+        level: {
+            current: level,
+            xp: totalXP - prevThreshold,
+            needed: xpThreshold - prevThreshold,
+            percent: Math.min(100, Math.max(0, ((totalXP - prevThreshold) / (xpThreshold - prevThreshold)) * 100))
+        }
+    };
+};
