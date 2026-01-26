@@ -73,6 +73,18 @@ const InfoPanel = () => {
                         );
                     })}
                 </div>
+                <img
+        src={'images/Mascot_Teaches.png'}
+        style={{
+            position: 'absolute', // anchors to the Header, not the screen
+            top: '650px',         // Moves it UP to sit on the edge
+            left: '20px',         // Anchors it to the left side
+            width: '150px',       // Set a fixed size or % of the header
+            zIndex: 1,
+            filter: 'drop-shadow(0 5px 5px rgba(0,0,0,0.3))' // Optional shadow
+        }}
+        alt="Mascot"
+    />
             </div>
 
             {/* --- CONTENT SCROLL VIEW --- */}
@@ -96,7 +108,11 @@ const InfoPanel = () => {
                 </AnimatePresence>
                 {/* Extra space at bottom for scrolling */}
                 <div style={{height: '100px'}} /> 
+                
             </div>
+
+           
+
         </div>
     )
 }
@@ -176,10 +192,12 @@ const styles = (theme, fontSize) => {
             overflow: 'hidden'
         },
         scrollView: {
-            flex: 1,
             width: "90%",
+            height: "49vh",
             overflowY: "scroll",
-            padding: '20px'
+            padding: '20px',
+            backgroundColor: Colors.get('simplePanel', theme),
+            borderBottom: `1px solid ${Colors.get('border', theme)}`,
         },
         contentContainer: {
             width: '100%',

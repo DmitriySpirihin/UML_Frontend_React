@@ -1,0 +1,107 @@
+import{A as g,t as m,l as w,f as S,j as e,m as h,a as k,C as r,k as v,z as T,B as C,D as M,E as j,G as F,n as B}from"./index-cDpv6z1N.js";import{r as c}from"./recharts-Bg6K2Pzo.js";const A=()=>{const[i,b]=c.useState(g.prefs[1]===0?"dark":"light"),[t,s]=c.useState(g.prefs[0]),[l,d]=c.useState(0),[a,u]=c.useState("MainCard"),x=[{id:"MainCard",icon:e.jsx(v,{}),title:t===0?"Общее":"General",subtitle:"",color:"#404040"},{id:"HabitsMain",icon:e.jsx(T,{}),title:t===0?"Привычки":"Habits",subtitle:"",color:"#FFD700"},{id:"TrainingMain",icon:e.jsx(C,{}),title:t===0?"Тренировки":"Workout",subtitle:"",color:"#FF4D4D"},{id:"MentalMain",icon:e.jsx(M,{}),title:t===0?"Мозг":"Brain",subtitle:"",color:"#4DA6FF"},{id:"RecoveryMain",icon:e.jsx(j,{}),title:t===0?"Восстановление":"Recovery",subtitle:"",color:"#4DFF88"},{id:"SleepMain",icon:e.jsx(F,{}),title:t===0?"Сон":"Sleep",subtitle:"",color:"#A64DFF"},{id:"ToDoMain",icon:e.jsx(B,{}),title:t===0?"Задачи":"To-Do",subtitle:"",color:"#FFA64D"}];c.useEffect(()=>{const n=m.subscribe(b),p=w.subscribe(f=>s(f==="ru"?0:1)),y=S.subscribe(d);return()=>{n.unsubscribe(),p.unsubscribe(),y.unsubscribe()}},[]);const o=D(i,l);return e.jsxs("div",{style:o.container,children:[e.jsxs("div",{style:o.header,children:[e.jsxs("div",{style:o.topBar,children:[e.jsx("span",{style:o.headerTitle,children:t===0?"Инструкция":"User Guide"}),e.jsx("div",{style:{width:40}})," "]}),e.jsx("div",{style:o.tabsContainer,className:"no-scrollbar",children:x.map(n=>{const p=a===n.id;return e.jsxs(h.div,{onClick:()=>u(n.id),style:o.tabItem(p,n.color),whileTap:{scale:.95},children:[e.jsx("div",{style:{fontSize:"18px",display:"flex"},children:n.icon}),p&&e.jsx(h.span,{initial:{opacity:0,width:0},animate:{opacity:1,width:"auto"},style:o.tabText,children:n.title})]},n.id)})}),e.jsx("img",{src:"images/Mascot_Teaches.png",style:{position:"absolute",top:"650px",left:"20px",width:"150px",zIndex:1,filter:"drop-shadow(0 5px 5px rgba(0,0,0,0.3))"},alt:"Mascot"})]}),e.jsxs("div",{style:o.scrollView,className:"no-scrollbar",children:[e.jsx(k,{mode:"wait",children:e.jsx(h.div,{initial:{opacity:0,y:10},animate:{opacity:1,y:0},exit:{opacity:0,y:-10},transition:{duration:.2},style:o.contentContainer,children:e.jsx("div",{style:o.htmlContent,dangerouslySetInnerHTML:{__html:I(t,a)}})},a)}),e.jsx("div",{style:{height:"100px"}})]})]})},D=(i,b)=>{const t=r.get("background",i),s=r.get("mainText",i),l=r.get("subText",i),d=r.get("simplePanel",i);return{container:{backgroundColor:t,display:"flex",flexDirection:"column",height:"90vh",marginTop:"100px",width:"100vw",fontFamily:"Segoe UI",overflow:"hidden"},header:{width:"100%",backgroundColor:t,paddingTop:"40px",borderBottom:`1px solid ${r.get("border",i)}`,zIndex:10},topBar:{display:"flex",width:"100%",alignItems:"center",justifyContent:"center",padding:"0 20px 15px 20px"},backBtn:{width:"40px",height:"40px",borderRadius:"12px",backgroundColor:d,display:"flex",alignItems:"center",justifyContent:"center",color:s,cursor:"pointer"},headerTitle:{fontSize:"20px",fontWeight:"700",color:s},tabsContainer:{display:"flex",gap:"10px",padding:"0 20px 15px 20px",overflowX:"scroll",width:"100%",boxSizing:"border-box"},tabItem:(a,u)=>({padding:a?"8px 16px":"8px 12px",borderRadius:"20px",backgroundColor:a?u:d,color:a?"#FFF":l,display:"flex",alignItems:"center",gap:"8px",cursor:"pointer",flexShrink:0,transition:"background-color 0.3s ease",border:a?"none":`1px solid ${r.get("border",i)}`}),tabText:{fontSize:"14px",fontWeight:"600",whiteSpace:"nowrap",overflow:"hidden"},scrollView:{width:"90%",height:"49vh",overflowY:"scroll",padding:"20px",backgroundColor:r.get("simplePanel",i),borderBottom:`1px solid ${r.get("border",i)}`},contentContainer:{width:"100%",maxWidth:"600px",margin:"0 auto"},htmlContent:{whiteSpace:"pre-wrap",wordWrap:"break-word",textAlign:"left",lineHeight:"1.6",fontSize:b===0?"15px":"17px",color:s,fontFamily:"Segoe UI, sans-serif"}}};function I(i,b){const t=i===0,s=`🧠✨ <b>Инструкция</b>
+<i>Ваш помощник для роста, здоровья и продуктивности</i>
+
+## 📋 Общие принципы
+• <b>Навигация:</b> Все разделы доступны из главного меню.
+• <b>Авто-сохранение:</b> Данные сохраняются мгновенно.
+• <b>Управление:</b> Используйте ➕ для создания и ✅ для завершения.`,l=`🧠✨ <b>User Guide</b>
+<i>Your assistant for growth, health, and productivity</i>
+
+## 📋 General Principles
+• <b>Navigation:</b> Access all features from the main menu.
+• <b>Auto-Save:</b> Data saves instantly.
+• <b>Controls:</b> Use ➕ to add items and ✅ to mark as done.`;switch(b){case"MainCard":return t?s:l;case"HabitsMain":return t?`## 🔄 Привычки
+*Создавайте полезные рутины.*
+
+• <b>Добавить:</b> Укажите название, частоту и иконку.
+• <b>Календарь:</b> Зелёные дни = успех. Старайтесь не прерывать цепочку!
+• <b>Напоминания:</b> Установите время, и мы напомним.
+• <b>Статистика:</b> Следите за лучшими сериями выполнения.
+
+> 💡 <b>Совет:</b> Начните с 1–3 простых привычек, чтобы не перегореть.`:`## 🔄 Habits
+*Build stick-to-it routines.*
+
+• <b>Add:</b> Set a name, frequency, and icon.
+• <b>Calendar:</b> Green days = success. Keep the streak alive!
+• <b>Reminders:</b> Set a time, and we'll notify you.
+• <b>Stats:</b> Track your current and best streaks.
+
+> 💡 <b>Tip:</b> Start with 1–3 simple habits to avoid burnout.`;case"TrainingMain":return t?`## 🏋️ Тренировки
+*Ваш карманный тренер.*
+
+• <b>Новая тренировка:</b> Выберите тип (Силовая, Кардио, и т.д.).
+• <b>Упражнения:</b> Фиксируйте веса, повторы и подходы.
+• <b>Прогресс:</b> Графики покажут, как растут ваши показатели.
+• <b>Медиа:</b> Прикрепляйте фото формы или заметки к тренировке.
+
+> 💪 <b>Совет:</b> Записывайте веса сразу во время отдыха между подходами.`:`## 🏋️ Workout Log
+*Your pocket trainer.*
+
+• <b>New Workout:</b> Choose a type (Strength, Cardio, Yoga, etc.).
+• <b>Exercises:</b> Log weights, reps, and sets easily.
+• <b>Progress:</b> Charts show how your strength grows over time.
+• <b>Media:</b> Attach physique photos or notes to any session.
+
+> 💪 <b>Tip:</b> Log your weights during rest periods for accuracy.`;case"MentalMain":return t?`## 🧩 Мозг
+*Фитнес для ума.*
+
+• <b>Мини-игры:</b> Задания на память, реакцию и счет.
+• <b>Аналитика:</b> Смотрите динамику развития когнитивных навыков.
+• <b>Цели:</b> Ставьте планки (например, «Улучшить память на 10%»).
+
+> 🌟 <b>Совет:</b> Даже 5 минут игры утром помогают проснуться лучше кофе.`:`## 🧩 Brain Training
+*Fitness for your mind.*
+
+• <b>Mini-games:</b> Daily tasks for memory, reaction, and logic.
+• <b>Analytics:</b> Watch your cognitive skills improve.
+• <b>Goals:</b> Set targets (e.g., "Improve memory by 10%").
+
+> 🌟 <b>Tip:</b> 5 minutes of brain training wakes you up better than coffee.`;case"RecoveryMain":return t?`## 🌿 Восстановление
+*Баланс стресса и отдыха.*
+
+### 🌬️ Дыхание
+Выбирайте технику (например, "4-7-8" для сна) и следуйте за визуальным ритмом.
+
+### 🧘 Медитация
+Таймер с фоновыми звуками для концентрации или расслабления.
+
+### ❄️ Закаливание
+Трекер холодовых процедур (душ, ванна). Отмечайте длительность и ощущения.`:`## 🌿 Recovery
+*Balance stress with rest.*
+
+### 🌬️ Breathing
+Choose a technique (e.g., "Box Breathing") and follow the visual rhythm.
+
+### 🧘 Meditation
+Timer with ambient sounds for focus or relaxation.
+
+### ❄️ Cold Exposure
+Track cold showers or ice baths. Log duration and how you felt afterward.`;case"SleepMain":return t?`## 😴 Сон
+*Качество ночи определяет качество дня.*
+
+• <b>Режим:</b> Фиксируйте время отбоя и подъема.
+• <b>Оценка:</b> Ставьте рейтинг своему самочувствию (1–5).
+• <b>Факторы:</b> Отмечайте кофеин, стресс или алкоголь, чтобы видеть закономерности.
+
+> 🌙 <b>Совет:</b> Старайтесь ложиться в одно время даже в выходные.`:`## 😴 Sleep Diary
+*Good days start with good nights.*
+
+• <b>Schedule:</b> Log bedtime and wake-up times.
+• <b>Quality:</b> Rate how you feel (1–5 stars).
+• <b>Factors:</b> Tag caffeine, stress, or screens to spot patterns.
+
+> 🌙 <b>Tip:</b> Consistency is key. Try to wake up at the same time daily.`;case"ToDoMain":return t?`## ✅ Задачи
+*Порядок в делах — порядок в голове.*
+
+• <b>Создание:</b> Имя задачи, дедлайн и приоритет (🔥 Высокий / ❄️ Низкий).
+• <b>Чек-листы:</b> Разбивайте большие задачи на подпункты.
+• <b>Повторы:</b> Настройте регулярные дела (например, "Оплата счетов").
+
+> 📌 <b>Совет:</b> Используйте правило «2 минут»: если дело быстрое — сделайте сразу.`:`## ✅ Tasks
+*Clear mind, organized life.*
+
+• <b>Create:</b> Add name, deadline, and priority (🔥 High / ❄️ Low).
+• <b>Checklists:</b> Break big tasks into smaller sub-steps.
+• <b>Recurring:</b> Set up repeating tasks (e.g., "Pay bills").
+
+> 📌 <b>Tip:</b> The "2-Minute Rule": if a task takes <2 mins, do it now.`;default:return t?s:l}}export{A as default};

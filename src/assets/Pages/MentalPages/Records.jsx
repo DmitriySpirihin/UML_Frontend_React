@@ -141,7 +141,7 @@ const Records = () => {
                                     key={item.name + index} 
                                     theme={theme}
                                     fSize={fSize}
-                                    isUser={item.name === UserData.name}
+                                    isUser={item.uid === UserData.id}
                                     isAdmin={ADMIN_IDS.includes(Number(item.uid))}
                                     rank={index + 1}
                                     name={item.name}
@@ -262,6 +262,14 @@ const ListItem = ({ theme, fSize, isUser,isAdmin, rank, name, score, index }) =>
     // Rank Styling
     let RankIcon = null;
     let rankColor = Colors.get('mainText', theme);
+    const borderColor = isUser 
+        ? Colors.get('done', theme) 
+        : (isAdmin ? Colors.get('accent', theme) : 'none');
+
+    // ✅ Background Logic: User gets distinct BG, Admin gets slight tint if not user
+    const bgColor = isUser 
+        ? (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)') 
+        : (isDark ? 'rgba(30, 30, 30, 0.4)' : '#FFFFFF');
     
     if (rank === 1) { RankIcon = FaTrophy; rankColor = Colors.get('barsColorWeight', theme); } // Gold
     else if (rank === 2) { RankIcon = FaMedal; rankColor = Colors.get('icons', theme); } // Silver
@@ -271,79 +279,63 @@ const ListItem = ({ theme, fSize, isUser,isAdmin, rank, name, score, index }) =>
         <motion.div
             layout
             variants={itemVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+            initial="hidden" animate="visible" exit="exit"
             style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 16px',
-                borderRadius: '16px',
-                backgroundColor: isUser 
-                    ? (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)') 
-                    : (isDark ? 'rgba(30, 30, 30, 0.4)' : '#FFFFFF'),
-                border: isUser ? `1px solid ${Colors.get('done', theme)}` : 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 16px', borderRadius: '16px', marginBottom: '8px',
                 backdropFilter: 'blur(10px)',
                 boxShadow: isDark ? '0 4px 6px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.05)',
-                marginBottom: '8px'
+                // Apply dynamic styles
+                backgroundColor: bgColor,
+                border: isUser || isAdmin ? `1px solid ${borderColor}` : 'none'
             }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                 {/* Rank Badge */}
                 <div style={{
-                    width: '32px',
-                    height: '32px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '8px',
-                    backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)',
-                    fontWeight: 'bold',
-                    color: rankColor,
-                    fontSize: '14px'
+                    width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: '8px', backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)',
+                    fontWeight: 'bold', color: rankColor, fontSize: '14px'
                 }}>
                     {RankIcon ? <RankIcon size={16} /> : rank}
                 </div>
 
-                {/* Name & User Indicator */}
+                {/* Name & Indicators */}
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '6px',
+                        display: 'flex', alignItems: 'center', gap: '8px',
                         fontSize: fSize === 0 ? '15px' : '17px',
-                        fontWeight: (isUser || isAdmin) ? 'bold' : 'normal', // Bold for admins too
+                        fontWeight: (isUser || isAdmin) ? 'bold' : 'normal',
                         color: Colors.get('mainText', theme)
                     }}>
                         {name}
                         
-                        {/* ✅ User Indicator */}
-                        {isUser && <FaUserAlt size={10} color={Colors.get('light', theme)} />}
+                        {/* --- ICONS SECTION --- */}
                         
-                        {/* ✅ Admin Indicator (Shield) */}
+                        {/* 1. Admin Shield (Shows for you AND other admins) */}
                         {isAdmin && (
                             <div style={{ 
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                backgroundColor: 'rgba(0, 191, 255, 0.15)', // Light blue bg
+                                backgroundColor: 'rgba(0, 191, 255, 0.15)',
                                 borderRadius: '4px', padding: '2px 4px' 
                             }}>
                                 <FaUserShield size={12} color="#00BFFF" />
-                                {/* Optional: Add text label if you want */}
-                                {<span style={{fontSize:'8px', marginLeft:'3px', color:'#00BFFF'}}>ADM</span>}
                             </div>
                         )}
+
+                        {/* 2. User Icon (Only shows if it is YOU) */}
+                        {isUser && (
+                            <FaUserAlt size={11} color={Colors.get('done', theme)} />
+                        )}
+
                     </div>
                 </div>
             </div>
 
             {/* Score */}
             <div style={{
-                fontSize: fSize === 0 ? '16px' : '18px',
-                fontWeight: 'bold',
-                color: Colors.get('done', theme), // Usually a bright accent color
-                fontFamily: 'monospace', // Better for numbers
-                letterSpacing: '-0.5px'
+                fontSize: fSize === 0 ? '16px' : '18px', fontWeight: 'bold',
+                color: Colors.get('done', theme), fontFamily: 'monospace', letterSpacing: '-0.5px'
             }}>
                 {score}
             </div>

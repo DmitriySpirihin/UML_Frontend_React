@@ -46,7 +46,7 @@ const BtnsRobot = () => {
             <NavButton 
                 id={0}
                 current={currentBtn}
-                icon={page === 'RobotMain' && addPanel === '' ? <Home /> : <Back />}
+                icon={<Home /> }
                 onClick={() => {
                     onBack(page, addPanel);
                     setCurrentBottomBtn(0);

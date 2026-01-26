@@ -84,6 +84,19 @@ const Insight = () => {
                         {langIndex === 0 ? 'Персональный инсайт' : 'Personal Insight'}
                     </span>
                 </div>
+                <img
+        src={'images/Mascot_Sits.png'}
+        style={{
+
+            position: 'absolute', // anchors to the Header, not the screen
+            top: '225px',         // Moves it UP to sit on the edge
+            left: '20px',         // Anchors it to the left side
+            width: '100px',       // Set a fixed size or % of the header
+            zIndex: 10,
+            filter: 'drop-shadow(0 5px 5px rgba(0,0,0,0.3))' // Optional shadow
+        }}
+        alt="Mascot"
+    />
             </div>
 
             {/* --- 2. Content Body --- */}
