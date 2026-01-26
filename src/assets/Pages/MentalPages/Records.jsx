@@ -6,9 +6,11 @@ import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$,premium$ } from '../../StaticClasses/HabitsBus';
 
 // Icons
-import { FaStopwatch, FaMemory, FaUserAlt, FaTrophy, FaMedal,FaGlobe, FaUserFriends} from 'react-icons/fa';
+import { FaStopwatch, FaMemory, FaUserAlt, FaTrophy, FaMedal,FaGlobe, FaUserShield,FaUserFriends} from 'react-icons/fa';
 import { GiLogicGateNxor, GiTargetShot, GiStarsStack, GiCrownedSkull } from 'react-icons/gi';
 import { FaStarHalf, FaStar, FaInfinity } from 'react-icons/fa';
+
+const ADMIN_IDS = [768852208, 8484480648];
 
 // === Configuration ===
 const categoryLabels = [
@@ -75,6 +77,7 @@ const Records = () => {
     .filter(item => {
         if (filterMode === 0) return true; 
         const isMe = Number(item.uid) === Number(UserData.id); 
+        const isAdmin = ADMIN_IDS.includes(Number(item.uid));
         const isFriend = UserData.friends && UserData.friends.some(f => Number(f.uid) === Number(item.uid));
         return isMe || isFriend;
     })
@@ -140,6 +143,7 @@ const Records = () => {
                                     theme={theme}
                                     fSize={fSize}
                                     isUser={item.name === UserData.name}
+                                    isAdmin={isAdmin}
                                     rank={index + 1}
                                     name={item.name}
                                     score={item.data?.[categoryIndex]?.[difficultyIndex] || 0}
@@ -226,7 +230,7 @@ const SegmentedControl = ({ items, selectedIndex, setSelectedIndex, theme, color
     );
 };
 
-const ListItem = ({ theme, fSize, isUser, rank, name, score, index }) => {
+const ListItem = ({ theme, fSize, isUser,isAdmin, rank, name, score, index }) => {
     const isDark = theme === 'dark';
     
     // Animation variants for staggering
@@ -295,11 +299,26 @@ const ListItem = ({ theme, fSize, isUser, rank, name, score, index }) => {
                         alignItems: 'center', 
                         gap: '6px',
                         fontSize: fSize === 0 ? '15px' : '17px',
-                        fontWeight: isUser ? 'bold' : 'normal',
+                        fontWeight: (isUser || isAdmin) ? 'bold' : 'normal', // Bold for admins too
                         color: Colors.get('mainText', theme)
                     }}>
                         {name}
+                        
+                        {/* ✅ User Indicator */}
                         {isUser && <FaUserAlt size={10} color={Colors.get('light', theme)} />}
+                        
+                        {/* ✅ Admin Indicator (Shield) */}
+                        {isAdmin && (
+                            <div style={{ 
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                backgroundColor: 'rgba(0, 191, 255, 0.15)', // Light blue bg
+                                borderRadius: '4px', padding: '2px 4px' 
+                            }}>
+                                <FaUserShield size={12} color="#00BFFF" />
+                                {/* Optional: Add text label if you want */}
+                                {<span style={{fontSize:'8px', marginLeft:'3px', color:'#00BFFF'}}>ADM</span>}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
