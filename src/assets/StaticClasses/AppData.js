@@ -363,40 +363,7 @@ export class UserData {
    static hasPremium = false;
    static premiumEndDate = new Date();
    static isValidation = false;
-   static friends = [
-    { 
-        uid: 101, 
-        name: "Demian", 
-        level: 5, 
-        xp: 1200, 
-        xpNeeded: 2500, // (5 * 500)
-        join_date: "2025-12-01T10:00:00Z" 
-    },
-    { 
-        uid: 102, 
-        name: "Alex", 
-        level: 12, 
-        xp: 500, 
-        xpNeeded: 6000, 
-        join_date: "2026-01-15T14:30:00Z" 
-    },
-    { 
-        uid: 103, 
-        name: "Sarah", 
-        level: 1, 
-        xp: 50, 
-        xpNeeded: 500, 
-        join_date: "2026-01-20T09:15:00Z" 
-    },
-    { 
-        uid: 104, 
-        name: "Mike_Pro", 
-        level: 25, 
-        xp: 8000, 
-        xpNeeded: 12500, 
-        join_date: "2025-11-05T18:45:00Z" 
-    }
-];
+   static friends = [];
 
    static Init(id,name,photo){
       this.id = id;
