@@ -507,7 +507,19 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
 
                                     <p style={{ textAlign: 'center', fontSize: '14px', color: Colors.get('subText', theme), marginTop: 10 }}>{message}</p>
                                 </div>
+                                <img
+        src={'images/Congrat.png'}
+        style={{
 
+            position: 'absolute', // anchors to the Header, not the screen
+            top: '595px',         // Moves it UP to sit on the edge
+            left: '36%',         // Anchors it to the left side
+            width: '120px',       // Set a fixed size or % of the header
+            zIndex: 10,
+            filter: 'drop-shadow(0 5px 5px rgba(0,0,0,0.3))' // Optional shadow
+        }}
+        alt="Mascot"
+    />
                                 <div style={styles(theme).controlsRow}>
                                     <motion.button whileTap={{ scale: 0.9 }} onClick={handleReload} style={styles(theme).secondaryButton}>
                                         <FaRedo size={20} />

@@ -364,10 +364,13 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '40px', zIndex: 10 }}
         >
-            <div style={{ position: 'relative' }}>
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} style={{ width: '150px', height: '150px', borderRadius: '50%', border: `1px dashed ${accent}`, position: 'absolute', top: -15, left: -15 }} />
-                <img src="images/Congrat.png" style={{ width: '120px', height: '120px', borderRadius: '50%' }} alt="Done" />
-            </div>
+             <div style={{ position: 'relative' }}>
+                            <motion.div 
+                                animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                                style={{ width: '150px', height: '150px', borderRadius: '50%', border: `1px dashed ${Colors.get('in', theme)}`, position: 'absolute', top: -15, left: -15 }}
+                            />
+                            <img src="images/Cold.png" style={{ width: '150px' }} alt="Done" />
+                        </div>
             <div style={{ textAlign: 'center',zIndex: 10 }}>
                 <h2 style={{ fontSize: '32px', color: textMain, margin: '0 0 10px 0', fontWeight: '300' }}>{langIndex === 0 ? 'Закалка завершена' : 'Session Complete'}</h2>
                 <p style={{ width: '80%', color: textSub, fontSize: '16px', lineHeight: '1.6', margin: '0 auto' }}>{finishMessage}</p>

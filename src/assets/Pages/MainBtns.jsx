@@ -19,7 +19,7 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.70.0.f';
+const version = '2.c.70.5.f';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -27,13 +27,10 @@ const MainBtns = () => {
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [additionalPanel, setAdditionalPanel] = useState(false);
     const [additionalPanelNum, setAdditionalPanelNum] = useState(1);
-    const [secondPanel, setSecondPanel] = useState(false);
-    const [secondPanelNum, setSecondPanelNum] = useState(0);
     const [sound, setSound] = useState(0);
     const [vibro, setVibro] = useState(0);
     const [fSize, setFSize] = useState(0);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
 
     React.useEffect(() => {
         const subs = [
@@ -59,7 +56,7 @@ const MainBtns = () => {
                 
 
                 <img
-                    src={globalTheme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'}
+                    src={'images/Ui/Main_Dark.png'}
                     style={styles(theme).logo}
                     alt="Logo"
                 />
@@ -90,15 +87,37 @@ const UserPanel = ({ theme, fSize }) => {
         const subscription = premium$.subscribe(setHasPremium);
         return () => subscription.unsubscribe();
     }, []);
+    const s = {avatarImg: { width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' },
+        avatarPlaceholder: {
+            width: '100%', height: '100%', borderRadius: '32px', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '38px', fontWeight: '900',
+        },
+        avatarWrapper: {
+            width: '50px', height: '50px', borderRadius: '20px', border: '3px solid', 
+            padding: '6px', position: 'relative'
+        },
+        premiumMiniBadge: {
+            position: 'absolute', bottom: '0px', right: '0px',
+            backgroundColor: '#FFD700', color: '#000', width: '20px', height: '20px',
+            borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)', border: '2px solid #000', zIndex: 1
+        }}
     return (
         <div onClick={() => setAddPanel('UserPanel')}  style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
             
-            <div style={{ position: 'relative',marginRight: '8px', width: '52px', height: '52px', borderRadius: '50%', overflow: 'hidden', border: hasPremium ? 'none' : `2px solid ${Colors.get('border', theme)}`, boxSizing: 'border-box' }}>
-                <img style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} src={Array.isArray(UserData.photo) ? UserData.photo[0] : UserData.photo} alt="Avatar" />
-                {hasPremium && (<img style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain', zIndex: 2 }} src={'images/Ui/premiumborder.png'} />)}
-            </div>
+            <div style={{ ...s.avatarWrapper, borderColor: hasPremium ? '#FFD700' : Colors.get('border', theme) }}>
+                                    {UserData.photo ? (
+                                        <img src={UserData.photo} style={s.avatarImg} alt="user" />
+                                    ) : (
+                                        <div style={s.avatarPlaceholder}>{UserData.name?.charAt(0).toUpperCase()}</div>
+                                    )}
+                                    {/* PREMIUM BADGE (Bottom Right) */}
+                                    {hasPremium && (
+                                        <div style={s.premiumMiniBadge}><FaCrown size={10} /></div>
+                                    )}
+                                </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '8px' }}>
-                {hasPremium && <div style={{ color: '#c7903db4', fontSize: "10px", fontFamily: "Segoe UI", fontWeight: 'bold' }}>PREMIUM</div>}
+                {hasPremium && <div style={{ color: '#FFD700', fontSize: "10px", fontFamily: "Segoe UI", fontWeight: 'bold' }}>PREMIUM</div>}
                 <div style={{ color: Colors.get('subText', theme), fontSize: fSize === 0 ? "16px" : "18px", fontFamily: "Segoe UI" }}>{UserData.name}</div>
             </div>
         </div>

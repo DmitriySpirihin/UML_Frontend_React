@@ -742,7 +742,7 @@ return (
 
            <div style={{width: '100%',flex:1, overflowY:'scroll', display:'flex', flexDirection:'column', alignItems:'center' }}>
              <div style={{...styles(theme,fSize).subtext ,fontSize:'16px',fontWeight:'bold',marginTop:'17px', marginBottom:'10px' }}>{langIndex === 0 ? "Рекорды" : "Records"}</div>
-            <img src="images/Medal.png" style={{ width: '60px', height: '60px', marginBottom:'10px' }} />
+            <img src="images/Medal.png" style={{ width: '100px', marginBottom:'10px' }} />
             {newRmRecords.length > 0 ? (
   
     <div

@@ -218,7 +218,20 @@ const NotifyPanel = () => {
                 <div style={{padding: '25px 20px 0 20px', width: '100%', boxSizing: 'border-box'}}>
                     <p style={styles(theme, false, fSize).subText}>{getInfoText(langIndex)}</p>
                 </div>
+                <img
+        src={page.startsWith("H") ? 'images/bro_habits.png' : 'images/Training.png'}
+        style={{
 
+            position: 'absolute', // anchors to the Header, not the screen
+            top: '110px',         // Moves it UP to sit on the edge
+            left: '20px',         // Anchors it to the left side
+            width:  page.startsWith("H") ? '100px' : '140px',       // Set a fixed size or % of the header
+            zIndex: 10,
+            filter: 'drop-shadow(0 5px 5px rgba(0,0,0,0.3))' // Optional shadow
+        }}
+        alt="Mascot"
+    />
+                
                 {/* БАРАБАН */}
                 <div style={styles(theme).timePickerWrapper}>
                     <div style={styles(theme).highlightBar} />
@@ -313,6 +326,7 @@ const NotifyPanel = () => {
                 </div>
 
             </motion.div>
+            
         </div>
     );
 };

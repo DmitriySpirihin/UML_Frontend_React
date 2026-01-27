@@ -163,27 +163,47 @@ export function deserializeData(data) {
 }
 
 export async function clearAllSaves() {
-  const confirmed = confirm(AppData.prefs[0] === 0 ? '⚠️ Удалить все сохраненные данные?' : '⚠️ Delete your saves permanently? This cannot be undone.');
-  if (!confirmed) return;
-  try {
-    if (db) {
-      const tx1 = db.transaction('UserData', 'readwrite');
-      await tx1.objectStore('UserData').clear();
+    const isRu = AppData.prefs[0] === 0;
+    const confirmed = confirm(isRu ? '⚠️ Удалить все сохраненные данные?' : '⚠️ Delete your saves permanently? This cannot be undone.');
+    
+    if (!confirmed) return;
+  
+    try {
+      if (db) {
+        // Helper to clear a store and return a real Promise
+        const clearStore = (storeName) => {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(storeName, 'readwrite');
+                const store = transaction.objectStore(storeName);
+                const request = store.clear();
+  
+                request.onsuccess = () => resolve();
+                request.onerror = (e) => reject(e.target.error);
+            });
+        };
+  
+        // Wait for both stores to clear
+        await Promise.all([
+            clearStore('UserData'),
+            clearStore('Icons')
+        ]);
+  
+        console.log('✅ Local storage cleared successfully');
+      }
+  
+      // Send notifications after DB is definitely clear
+      const userId = AppData.userData?.id || 1;
+      NotificationsManager.sendMessage("trainingoff", userId);
+      NotificationsManager.sendMessage("habitoff", userId);
+      
+      // Optional: Force reload to visually reset the app
+      // window.location.reload();
 
-      const tx2 = db.transaction('Icons', 'readwrite');
-      await tx2.objectStore('Icons').clear();
-
-      console.log('Local storage cleared successfully');
+    } catch (error) {
+      console.error('❌ Error clearing saves:', error);
+      alert('Error clearing data: ' + error.message);
     }
-
-    // Removed cloud clearing
-    NotificationsManager.sendMessage("trainingoff", AppData.userData?.id || 1);
-    NotificationsManager.sendMessage("habitoff", AppData.userData?.id || 1);
-  } catch (error) {
-    console.error('Error clearing saves:', error);
-    throw error;
   }
-}
 
 
 /**

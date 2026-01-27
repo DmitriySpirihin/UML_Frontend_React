@@ -27,6 +27,27 @@ const MainMenu = () => {
     
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium); 
     const [isValidation, setIsValidation] = useState(UserData.isValidation);
+    const [showGuideBanner, setShowGuideBanner] = useState(false);
+    useEffect(() => {
+      // показываем только один раз
+      const key = "uml_guide_banner_seen_v1";
+      const seen = localStorage.getItem(key) === "1";
+    
+      if (!seen) {
+        // чуть задержки, чтобы меню успело отрисоваться
+        const t = setTimeout(() => setShowGuideBanner(true), 450);
+        return () => clearTimeout(t);
+      }
+    }, []);
+    const closeGuideBanner = () => {
+  localStorage.setItem("uml_guide_banner_seen_v1", "1");
+  setShowGuideBanner(false);
+};
+const openGuide = () => {
+  localStorage.setItem("uml_guide_banner_seen_v1", "1");
+  setShowGuideBanner(false);
+  setPage("InfoPanel");
+};
 
     // --- STATE ДЛЯ УПРАВЛЕНИЯ СПИСКОМ ---
     const [itemsState, setItemsState] = useState(AppData.menuCardsStates || {});
@@ -106,13 +127,10 @@ useEffect(() => {
         } else {
             setClickCount(clickCount + 1);
         }
-        if (clickCount === 5 && clickCountUp === 5) {
+        if (clickCount === 8 && clickCountUp === 4) {
             setPasswordInput(true);
             setClickCount(0);
             setClickCountUp(0);
-            UserData.hasPremium = true;
-            UserData.premiumEndDate = '2099-01-01';
-            setPremium(true);
         }
     }
 
@@ -198,7 +216,150 @@ useEffect(() => {
                 theme={theme}
                 lang={lang}
             />
-
+            <AnimatePresence>
+              {showGuideBanner && !devConsolePanel && !showReferralModal && (
+                <>
+                  {/* Backdrop */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={closeGuideBanner}
+                    style={{
+                      position: "fixed",
+                      inset: 0,
+                      backgroundColor: "rgba(0,0,0,0.62)",
+                      backdropFilter: "blur(6px)",
+                      zIndex: 1500,
+                    }}
+                  />
+            
+                  {/* Banner */}
+                  <motion.div
+                    initial={{ y: 40, opacity: 0, scale: 0.98 }}
+                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                    exit={{ y: 40, opacity: 0, scale: 0.98 }}
+                    transition={{ type: "spring", damping: 22, stiffness: 260 }}
+                    style={{
+                      position: "fixed",
+                      left: "5%",
+                      top: "18%",
+                      transform: "translateX(-50%)",
+                      width: "92%",
+                      maxWidth: "520px",
+                      borderRadius: "26px",
+                      overflow: "hidden",
+                      zIndex: 1501,
+                      border: `1px solid ${Colors.get("border", theme)}55`,
+                      background: theme === "dark"
+                        ? "rgba(20,20,20,0.82)"
+                        : "rgba(255,255,255,0.88)",
+                      boxShadow: theme === "dark"
+                        ? "0 30px 80px rgba(0,0,0,0.65)"
+                        : "0 25px 70px rgba(0,0,0,0.18)",
+                    }}
+                  >
+                    {/* Glow */}
+                    <div
+                      style={{
+                        position: "absolute",
+                        inset: "-120px -80px auto -80px",
+                        height: "260px",
+                        background:
+                          "radial-gradient(circle at 45% 45%, rgba(77,166,255,0.35), transparent 60%)",
+                        filter: "blur(2px)",
+                        pointerEvents: "none",
+                      }}
+                    />
+            
+                    <div style={{ position: "relative", padding: "18px 18px 16px 18px" }}>
+                      <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+                        <img
+                          src={"images/bro.png"}
+                          alt="Guide"
+                          style={{
+                            width: 92,
+                            height: 92,
+                            objectFit: "contain",
+                            filter:
+                              theme === "dark"
+                                ? "drop-shadow(0 16px 22px rgba(0,0,0,0.55))"
+                                : "drop-shadow(0 12px 18px rgba(0,0,0,0.16))",
+                          }}
+                        />
+            
+                        <div style={{ flex: 1 }}>
+                          <div
+                            style={{
+                              fontFamily: "Segoe UI",
+                              fontWeight: 900,
+                              fontSize: 18,
+                              color: Colors.get("mainText", theme),
+                              letterSpacing: "0.2px",
+                              marginBottom: 6,
+                            }}
+                          >
+                            {lang === 0 ? "Быстрый старт" : "Quick start"}
+                          </div>
+            
+                          <div
+                            style={{
+                              fontFamily: "Segoe UI",
+                              fontWeight: 700,
+                              fontSize: 13,
+                              lineHeight: 1.35,
+                              color: Colors.get("subText", theme),
+                              opacity: theme === "dark" ? 0.85 : 0.8,
+                            }}
+                          >
+                            {lang === 0
+                              ? "Хочешь за 30 секунд понять, как всё работает? Я покажу."
+                              : "Want to understand everything in 30 seconds? I’ll show you."}
+                          </div>
+                        </div>
+                      </div>
+            
+                      <div style={{ display: "flex", gap: "10px", marginTop: 14 }}>
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          onClick={openGuide}
+                          style={{
+                            flex: 1,
+                            padding: "12px 14px",
+                            borderRadius: "16px",
+                            border: "none",
+                            cursor: "pointer",
+                            fontWeight: 900,
+                            fontFamily: "Segoe UI",
+                            background: "#007AFF",
+                            color: "#fff",
+                          }}
+                        >
+                          {lang === 0 ? "Открыть инструкцию" : "Open guide"}
+                        </motion.button>
+            
+                        <motion.button
+                          whileTap={{ scale: 0.97 }}
+                          onClick={closeGuideBanner}
+                          style={{
+                            padding: "12px 14px",
+                            borderRadius: "16px",
+                            border: `1px solid ${Colors.get("border", theme)}55`,
+                            cursor: "pointer",
+                            fontWeight: 800,
+                            fontFamily: "Segoe UI",
+                            background: "transparent",
+                            color: Colors.get("subText", theme),
+                          }}
+                        >
+                          {lang === 0 ? "Позже" : "Later"}
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
             <div style={styles(theme).container}>
                 <div style={{ height: '16vh' }} />
                 {passwordInput && <input style={{ width: '85vw', height: '2vh', fontSize: '12px', borderRadius: '12px', zIndex: 1001, marginBottom: '10px' }} type="password" onChange={(e) => checkPassword(e.target.value)} />}
@@ -271,7 +432,7 @@ function AIInsightButton({ theme, lang, onClick }) {
             onClick={onClick}
             style={{
                 width: '88%',
-                height: '88%',
+                height: '78%',
                 borderRadius: '16px',
                 background: isDark ? 'rgba(0, 229, 255, 0.08)' : '#FFFFFF',
                 border: `1px solid ${isDark ? 'rgba(0, 229, 255, 0.3)' : 'rgba(0, 229, 255, 0.5)'}`,
@@ -311,7 +472,7 @@ function ReferalButton({ theme, lang, onClick }) {
             onClick={onClick}
             style={{
                 width: '88%',
-                height: '88%',
+                height: '78%',
                 borderRadius: '16px',
                 background: isDark ? 'rgba(242, 255, 0, 0.08)' : '#FFFFFF',
                 border: `1px solid ${isDark ? 'rgba(255, 238, 0, 0.3)' : 'rgba(255, 247, 0, 0.5)'}`,
@@ -334,7 +495,7 @@ function ReferalButton({ theme, lang, onClick }) {
                 color: isDark ? '#E0F7FA' : '#333',
                 letterSpacing: '0.3px'
             }}>
-                {lang === 0 ? 'Друг = премиум' : 'Friend = premium'}
+                {lang === 0 ? 'Пригласи друга' : 'Invite a friend'}
             </span>
         </motion.div>
     );

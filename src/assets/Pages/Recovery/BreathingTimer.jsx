@@ -511,7 +511,7 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
                     animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                     style={{ width: '150px', height: '150px', borderRadius: '50%', border: `1px dashed ${Colors.get('in', theme)}`, position: 'absolute', top: -15, left: -15 }}
                 />
-                <img src="images/Congrat.png" style={{ width: '120px', height: '120px', borderRadius: '50%' }} alt="Done" />
+                <img src="images/Meditate.png" style={{ width: '150px' }} alt="Done" />
             </div>
             <div style={{ textAlign: 'center',zIndex: 10 }}>
                 <h2 style={{ fontSize: '32px', color: textMain, margin: '0 0 10px 0', fontWeight: '300' }}>
