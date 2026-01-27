@@ -1,6 +1,6 @@
 import {AppData, UserData } from './AppData';
 import { serializeData, deserializeData ,saveData} from './SaveHelper';
-import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel,setValidation} from './HabitsBus';
+import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel,setValidation,setIsServerAvailable} from './HabitsBus';
 import pako from 'pako';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
@@ -64,9 +64,7 @@ export async function isUserHasPremium(uid) {
   try {
     const response = await fetch(BASE_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
         type: 'premiumcheck',
@@ -82,19 +80,34 @@ export async function isUserHasPremium(uid) {
       return 'Network error';
     }
 
-    // ✅ Parse as JSON (not text!)
     const data = await response.json();
-     if (data.success) {
+    
+    if (data.success) {
       const hasPremium = data.message.hasPremium === true;
       const premiumEndDate = data.message.premiumEndDate ? new Date(data.message.premiumEndDate) : null;
       const isValidation = data.message.isValidation || false;
+      
+      // ✅ Capture Server Status
+      const isServerAvailable = data.message.isServerAvailable !== undefined ? data.message.isServerAvailable : true;
+
+      // Update UserData/AppData
       UserData.hasPremium = hasPremium;
       UserData.premiumEndDate = premiumEndDate;
       UserData.isValidation = isValidation;
+      
+      // Store server status in AppData (assuming AppData is where global app state lives)
+      // If AppData isn't imported, use UserData or a separate state
+      if (typeof AppData !== 'undefined') {
+          AppData.isServerAvailable = isServerAvailable;
+      }
+
       setPremium(hasPremium);
       setValidation(isValidation);
-      console.log(`hasPremium : ${hasPremium} , premium end data : ${premiumEndDate} , isValidation : ${isValidation}` ) ; 
-      return { hasPremium, premiumEndDate , isValidation };
+      setIsServerAvailable(isServerAvailable);
+      
+      console.log(`Premium: ${hasPremium}, Valid: ${isValidation}, Server OK: ${isServerAvailable}`);
+      
+      return { hasPremium, premiumEndDate, isValidation, isServerAvailable };
     } else {
       throw new Error(data.error || 'Unknown error');
     }

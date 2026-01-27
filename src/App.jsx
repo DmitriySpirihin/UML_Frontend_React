@@ -1,6 +1,6 @@
 import './App.css'
 import { AppData, UserData } from './assets/StaticClasses/AppData';
-import { useState,useEffect, Suspense, lazy} from 'react';
+import { useState,useEffect, Suspense, lazy, use} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
@@ -12,7 +12,7 @@ import BtnsRobot from './assets/Pages/BottomBtns/BtnsRobot'
 import NotifyPanel from './assets/Pages/NotifyPanel'
 import BtnsMenu from './assets/Pages/BottomBtns/BtnsMenu';
 import BtnsInfo from './assets/Pages/BottomBtns/BtnsInfo';
-import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, keyboardVisible$,notifyPanel$} from './assets/StaticClasses/HabitsBus'
+import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, keyboardVisible$,notifyPanel$,isServerAvailable$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaServer, FaCog, FaTools } from 'react-icons/fa';
@@ -79,7 +79,13 @@ function App() {
         }
     }
   // need to remove at production
-
+  useEffect(() => {
+    const subscription = isServerAvailable$.subscribe(setIsTechicalWorks);  
+    return () => 
+    {
+      subscription.unsubscribe();
+    }
+  }, []);
 
   // ... rest of your useEffects (subscriptions) — keep these
   useEffect(() => {
