@@ -154,28 +154,52 @@ export async function cloudRestore() {
 
   try {
     const response = await NotificationsManager.sendMessage('restore', '');
-
     console.log("Server Restore Response:", response); // Debugging
 
-    // Check if success is false OR if the message is missing
     if (!response || !response.success || !response.message) {
-      // Use the server's error message if available, otherwise default
       const errorMsg = response?.message || '⚠️ No backup found';
       setShowPopUpPanel(errorMsg, 2000, false);
       return;
     }
 
-    // 🔓 DECOMPRESSION STEP
-    // 1. Convert Base64 back to binary
-    const binaryData = Uint8Array.from(atob(response.message), c => c.charCodeAt(0));
+    let rawData = response.message;
+
+    // 🧹 CLEANUP STEP: Handle double-stringified data
+    // If the server returned "VGhp...", remove the surrounding quotes
+    if (typeof rawData === 'string' && rawData.startsWith('"') && rawData.endsWith('"')) {
+        rawData = rawData.slice(1, -1);
+    }
     
-    // 2. Inflate the binary back to a string
-    const decompressedString = pako.inflate(binaryData, { to: 'string' });
+    // Remove any accidental whitespace/newlines
+    if (typeof rawData === 'string') {
+        rawData = rawData.replace(/\s/g, '');
+    }
 
-    deserializeData(decompressedString);
+    // 🔓 DECOMPRESSION STEP
+    try {
+        // 1. Try decoding as Base64 (Compressed Data)
+        const binaryData = Uint8Array.from(atob(rawData), c => c.charCodeAt(0));
+        const decompressedString = pako.inflate(binaryData, { to: 'string' });
+        
+        console.log("Restoring compressed data...");
+        deserializeData(decompressedString);
+    } catch (e) {
+        console.warn("Decompression failed, trying legacy (plain JSON) restore...", e);
+        
+        // 2. Fallback: Maybe it wasn't compressed/Base64? (Legacy Data)
+        // If atob failed, rawData might just be the JSON string itself.
+        try {
+            // If it's a string looking like JSON, parse it
+            const jsonString = (typeof rawData === 'string' && rawData.startsWith('{')) ? rawData : JSON.stringify(rawData);
+            deserializeData(jsonString);
+        } catch (jsonErr) {
+            throw new Error("Data is neither valid Base64 nor valid JSON");
+        }
+    }
+
     await saveData();
-
     setShowPopUpPanel('✅ Data restored!', 2000, true);
+
   } catch (error) {
     console.error('Restore error:', error);
     setShowPopUpPanel('❌ Data corrupted or invalid', 2000, false);
