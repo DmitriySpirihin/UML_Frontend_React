@@ -73,8 +73,8 @@ const RecoveryMain = () => {
         style={{
 
             position: 'absolute', // anchors to the Header, not the screen
-            top: '665px',         // Moves it UP to sit on the edge
-            left: '230px',         // Anchors it to the left side
+            top: '75%',         // Moves it UP to sit on the edge
+            left: '55%',         // Anchors it to the left side
             width: '140px',       // Set a fixed size or % of the header
             zIndex: 10,
             filter: 'drop-shadow(0 5px 5px rgba(0,0,0,0.3))' // Optional shadow
@@ -82,12 +82,14 @@ const RecoveryMain = () => {
         alt="Mascot"
     />
             <div style={styles(theme).scrollView}>
+                
                 <motion.div
                     variants={containerAnim}
                     initial="hidden"
                     animate="show"
                     style={styles(theme).grid}
                 >
+                    
                     {menuItems.map((item, index) => (
                         <MenuCard
                             key={item.id}

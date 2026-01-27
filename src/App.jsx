@@ -60,7 +60,7 @@ function App() {
   const [bottomBtnPanel, setBottomBtnPanel] = useState('');
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
-  const [isTechicalWorks, setIsTechicalWorks] = useState(true);
+  const [isTechicalWorks, setIsTechicalWorks] = useState(false);
   const lang = AppData.prefs[0];
   
 

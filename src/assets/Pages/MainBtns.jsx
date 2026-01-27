@@ -19,7 +19,7 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.70.5.f';
+const version = '2.c.70.6.f';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -93,7 +93,7 @@ const UserPanel = ({ theme, fSize }) => {
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '38px', fontWeight: '900',
         },
         avatarWrapper: {
-            width: '50px', height: '50px', borderRadius: '20px', border: '3px solid', 
+            width: '40px', height: '40px', borderRadius: '20px', border: '1px solid', 
             padding: '6px', position: 'relative'
         },
         premiumMiniBadge: {
@@ -215,7 +215,7 @@ const settingsPanelStyles = (theme, fSize) => ({
         borderTopRightRadius:'24px', borderBottomRightRadius:'24px',
         borderRight: `1px solid ${Colors.get('border', theme)}`
     },
-    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '35px 24px', borderBottom: `1px solid ${Colors.get('border', theme)}`, marginBottom: '10px' },
+    header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '25px 24px', borderBottom: `1px solid ${Colors.get('border', theme)}`, marginTop: '50px' },
     headerTitle: { fontFamily: 'Segoe UI', fontWeight: 700, fontSize: '22px', color: Colors.get('mainText', theme) },
     closeBtn: { width: '32px', height: '32px', borderRadius: '12px', backgroundColor: Colors.get('bottomPanel', theme), display: 'flex', alignItems: 'center', justifyContent: 'center', color: Colors.get('icons', theme) },
     listEl: { display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '80%', margin: '0 14px', padding: '12px', borderRadius: '18px', backgroundColor: Colors.get('bottomPanel', theme), border: `1px solid ${Colors.get('border', theme)}` },
@@ -237,11 +237,12 @@ const styles = (theme, fSize) => ({
     logo: { height: "65%", objectFit: "contain" }, // ZOOMED LOGO
     iconBtn: { width: '40px', height: '40px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.get('background', theme) },
     text: { color: Colors.get('mainText', theme), fontSize: fSize === 0 ? "13px" : "15px", fontFamily: "Segoe UI" },
-    input: { width: "100%",height:'70%', padding: "15px", border: `1px solid ${Colors.get('border', theme)}`, borderRadius: "16px", color: Colors.get('mainText', theme), backgroundColor: Colors.get('bottomPanel', theme) }
+    input: { width: "90%",height:'70%', padding: "15px", border: `1px solid ${Colors.get('border', theme)}`, borderRadius: "16px", color: Colors.get('mainText', theme), backgroundColor: Colors.get('bottomPanel', theme) }
 });
 
 const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
     const [report, setReport] = useState('');
+    const [showDanger, setShowDanger] = useState(false);
     const sendReport = () => { sendBugreport(report); setReport(''); }
     const itemVariants = { hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } };
     return (
@@ -264,12 +265,15 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                         )}
                         {panelNum === 3 && (
                             <div style={{ width: "80%", display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
-                                <FaAddressCard size={40} color={Colors.get('mainText', theme)}/>
+                               <div style={{ borderRadius: '36px',width:'65vw',height:'40vw',zIndex: 1,display: 'flex',overflow: 'hidden'}}>
+                                  <img src={ 'images/Our_Faces.png'} style={{width: '100%',height: '100%',objectFit: 'contain'}}/>
+                                </div>
+                              
                                 <a href={`https://t.me/Diiimaan777`} target="_blank" rel="noopener noreferrer" style={{textDecoration: 'none', width: '100%'}}>
-                                     <div style={{padding: '15px', borderRadius: '12px', background: Colors.get('bottomPanel', theme), display:'flex', alignItems:'center', gap: '10px'}}><TelegramIcon style={{color: '#4DA6FF'}}/><span style={styles(theme).text}>Diiimaan777</span></div>
+                                     <div style={{padding: '15px', borderRadius: '12px', background: Colors.get('bottomPanel', theme), display:'flex', alignItems:'center',justifyContent: 'center', gap: '10px'}}><TelegramIcon style={{color: '#4DA6FF'}}/><span style={styles(theme).text}>Diiimaan777</span></div>
                                 </a>
                                 <a href={`https://t.me/DemianWorkSelf`} target="_blank" rel="noopener noreferrer" style={{textDecoration: 'none', width: '100%'}}>
-                                     <div style={{padding: '15px', borderRadius: '12px', background: Colors.get('bottomPanel', theme), display:'flex', alignItems:'center', gap: '10px'}}><TelegramIcon style={{color: '#4DA6FF'}}/><span style={styles(theme).text}>DemianWorkSelf</span></div>
+                                     <div style={{padding: '15px', borderRadius: '12px', background: Colors.get('bottomPanel', theme), display:'flex', alignItems:'center',justifyContent: 'center', gap: '10px'}}><TelegramIcon style={{color: '#4DA6FF'}}/><span style={styles(theme).text}>DemianWorkSelf</span></div>
                                 </a>
                             </div>
                         )}
@@ -279,8 +283,11 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                                 <p style={{...styles(theme).text, fontSize: '12px', opacity: 0.7}}>{AppData.lastBackupDate === '' ? (langIndex === 0 ? 'Нет копий' : 'No backups') : AppData.lastBackupDate}</p>
                                 <ActionButton text={langIndex === 0 ? 'Создать' : 'Backup'} onClick={cloudBackup} theme={theme} color="#FFA64D"/>
                                 <ActionButton text={langIndex === 0 ? 'Восстановить' : 'Restore'} onClick={cloudRestore} theme={theme} color="#4DA6FF"/>
-                                <ActionButton text={langIndex === 0 ? 'Удалить' : 'Delete'} onClick={deleteCloudBackup} theme={theme} color="#FF4D4D"/>
-                                <ActionButton text={langIndex === 0 ? 'Удалить сейв с устройства' : 'Delete save from device'} onClick={clearAllSaves} theme={theme} color="#FF4D4D"/>
+                            <div  style={{display:'flex',flexDirection:'column',gap: '15px',border: `3px solid #b32323`,borderRadius: '16px',padding: '15px',margin: '15px 0'}}>
+                                <div onClick={() => setShowDanger(prev => !prev)} style={{color: '#dd4b4b', fontWeight: 'bold', fontSize: '12px', opacity: 0.7}}>{langIndex === 0 ? 'Опасная зона!' : 'Danger zone!'}</div>
+                                {showDanger && <ActionButton text={langIndex === 0 ? 'Удалить сейв в облаке' : 'Delete from cloud'} onClick={deleteCloudBackup} theme={theme} color="#FF4D4D"/>}
+                                {showDanger && <ActionButton text={langIndex === 0 ? 'Удалить сейв с устройства' : 'Delete save from device'} onClick={clearAllSaves} theme={theme} color="#FF4D4D"/>}
+                            </div>    
                             </div>
                         )}
                         

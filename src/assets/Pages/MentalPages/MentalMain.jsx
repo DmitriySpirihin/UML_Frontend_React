@@ -100,8 +100,8 @@ const MentalMain = () => {
         style={{
 
             position: 'absolute', // anchors to the Header, not the screen
-            top: '665px',         // Moves it UP to sit on the edge
-            left: '250px',         // Anchors it to the left side
+            top: '70%',         // Moves it UP to sit on the edge
+            left: '60%',         // Anchors it to the left side
             width: '130px',       // Set a fixed size or % of the header
             zIndex: 10,
             filter: 'drop-shadow(0 5px 5px rgba(0,0,0,0.3))' // Optional shadow

@@ -148,14 +148,20 @@ export async function cloudRestore() {
   try {
     const response = await NotificationsManager.sendMessage('restore', '');
 
-    if (!response.success || !response.message) {
-      setShowPopUpPanel('⚠️ No backup found', 2000, false);
+    console.log("Server Restore Response:", response); // Debugging
+
+    // Check if success is false OR if the message is missing
+    if (!response || !response.success || !response.message) {
+      // Use the server's error message if available, otherwise default
+      const errorMsg = response?.message || '⚠️ No backup found';
+      setShowPopUpPanel(errorMsg, 2000, false);
       return;
     }
 
     // 🔓 DECOMPRESSION STEP
     // 1. Convert Base64 back to binary
     const binaryData = Uint8Array.from(atob(response.message), c => c.charCodeAt(0));
+    
     // 2. Inflate the binary back to a string
     const decompressedString = pako.inflate(binaryData, { to: 'string' });
 
