@@ -32,7 +32,7 @@ export const premium$ = new BehaviorSubject(false);
 export const addNewTrainingDay$ =  new Subject();
 export const recoveryType$ = new BehaviorSubject(0);
 export const isValidation$ = new BehaviorSubject(false);
-export const isServerAvailable$ = new BehaviorSubject(true);
+export const isServerAvailable$ = new BehaviorSubject(false);
 
 export const setValidation = (state) => isValidation$.next(state);
 export const setIsServerAvailable = (state) => isServerAvailable$.next(state);
