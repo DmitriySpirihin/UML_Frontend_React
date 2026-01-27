@@ -154,8 +154,9 @@ export async function cloudRestore() {
 
   try {
     const response = await NotificationsManager.sendMessage('restore', '');
-    console.log("Server Restore Response:", response); // Debugging
+    console.log("🔍 Server Raw Response:", response); 
 
+    // 1. Validate Response
     if (!response || !response.success || !response.message) {
       const errorMsg = response?.message || '⚠️ No backup found';
       setShowPopUpPanel(errorMsg, 2000, false);
@@ -164,36 +165,72 @@ export async function cloudRestore() {
 
     let rawData = response.message;
 
-    // 🧹 CLEANUP STEP: Handle double-stringified data
-    // If the server returned "VGhp...", remove the surrounding quotes
-    if (typeof rawData === 'string' && rawData.startsWith('"') && rawData.endsWith('"')) {
-        rawData = rawData.slice(1, -1);
-    }
+    // 2. DATA SANITIZATION (The Fix)
+    // ---------------------------------------------------------
     
-    // Remove any accidental whitespace/newlines
-    if (typeof rawData === 'string') {
-        rawData = rawData.replace(/\s/g, '');
+    // A. Handle if server returns an Object wrapper (New Server Logic)
+    if (typeof rawData === 'object' && rawData !== null) {
+        // If it looks like { content: "..." }, extract it
+        if (rawData.content) rawData = rawData.content;
+        // If it's just a raw JSON object (Legacy), stringify it so we can parse it later
+        else rawData = JSON.stringify(rawData);
     }
 
-    // 🔓 DECOMPRESSION STEP
+    // B. Handle if it's a String (Clean it up)
+    if (typeof rawData === 'string') {
+        // Remove surrounding quotes if present (e.g. "VGhpcy...")
+        // This is the #1 cause of 'InvalidCharacterError'
+        if (rawData.startsWith('"') && rawData.endsWith('"')) {
+            rawData = rawData.slice(1, -1);
+        }
+        
+        // Remove all whitespace/newlines (atob hates them)
+        rawData = rawData.replace(/\s/g, '');
+    }
+    // ---------------------------------------------------------
+
+    // 3. DECOMPRESSION ATTEMPT
     try {
-        // 1. Try decoding as Base64 (Compressed Data)
+        console.log("🔓 Attempting Base64 decode on:", rawData.substring(0, 15) + "...");
+        
+        // Decode Base64 -> Binary
         const binaryData = Uint8Array.from(atob(rawData), c => c.charCodeAt(0));
+        
+        // Inflate (Decompress)
         const decompressedString = pako.inflate(binaryData, { to: 'string' });
         
-        console.log("Restoring compressed data...");
         deserializeData(decompressedString);
+        console.log("✅ Decompression successful");
+
     } catch (e) {
-        console.warn("Decompression failed, trying legacy (plain JSON) restore...", e);
+        console.warn("⚠️ Decompression failed, attempting Legacy JSON restore...", e);
         
-        // 2. Fallback: Maybe it wasn't compressed/Base64? (Legacy Data)
-        // If atob failed, rawData might just be the JSON string itself.
+        // 4. FALLBACK: Plain JSON (Legacy Data)
+        // If the data was never compressed, atob() will fail. 
+        // We try to parse the original 'response.message' directly.
         try {
-            // If it's a string looking like JSON, parse it
-            const jsonString = (typeof rawData === 'string' && rawData.startsWith('{')) ? rawData : JSON.stringify(rawData);
-            deserializeData(jsonString);
-        } catch (jsonErr) {
-            throw new Error("Data is neither valid Base64 nor valid JSON");
+            let legacyData = response.message;
+            // If it's a stringified JSON, parse it
+            if (typeof legacyData === 'string') {
+                 // Try to remove quotes again just in case
+                 if (legacyData.startsWith('"') && legacyData.endsWith('"')) {
+                    legacyData = legacyData.slice(1, -1);
+                 }
+                 // If it starts with { or [, it's JSON text
+                 if (legacyData.startsWith('{') || legacyData.startsWith('[')) {
+                    // It's already a JSON string, do nothing
+                 } else {
+                    // If it's double-escaped JSON
+                    try { legacyData = JSON.parse(legacyData); } catch(err){}
+                 }
+            }
+            
+            deserializeData(legacyData);
+            console.log("✅ Legacy JSON restore successful");
+            
+        } catch (finalErr) {
+            console.error("❌ Final restore failed. Data is unusable.", finalErr);
+            throw new Error("Backup file is corrupted or format is unknown.");
         }
     }
 
@@ -202,7 +239,7 @@ export async function cloudRestore() {
 
   } catch (error) {
     console.error('Restore error:', error);
-    setShowPopUpPanel('❌ Data corrupted or invalid', 2000, false);
+    setShowPopUpPanel('❌ Restore failed', 2000, false);
   }
 }
 
