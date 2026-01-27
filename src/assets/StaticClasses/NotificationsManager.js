@@ -88,7 +88,7 @@ export async function isUserHasPremium(uid) {
       const isValidation = data.message.isValidation || false;
       
       // ✅ Capture Server Status
-      const isServerAvailable = data.message.isServerAvailable !== undefined ? data.message.isServerAvailable : true;
+      const isServerAvailable = data.message.isServerAvailable !== undefined ? !data.message.isServerAvailable : true;
 
       // Update UserData/AppData
       UserData.hasPremium = hasPremium;
