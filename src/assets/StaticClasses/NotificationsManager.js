@@ -94,12 +94,6 @@ export async function isUserHasPremium(uid) {
       UserData.hasPremium = hasPremium;
       UserData.premiumEndDate = premiumEndDate;
       UserData.isValidation = isValidation;
-      
-      // Store server status in AppData (assuming AppData is where global app state lives)
-      // If AppData isn't imported, use UserData or a separate state
-      if (typeof AppData !== 'undefined') {
-          AppData.isServerAvailable = isServerAvailable;
-      }
 
       setPremium(hasPremium);
       setValidation(isValidation);
