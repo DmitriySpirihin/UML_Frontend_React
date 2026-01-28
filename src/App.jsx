@@ -64,7 +64,7 @@ function App() {
   const lang = AppData.prefs[0];
   
 
-  /*/ for test only
+  
   const [clickCount, setClickCount] = useState(0);
   const [clickCountUp, setClickCountUp] = useState(0);
 
@@ -78,7 +78,7 @@ function App() {
             setIsTechicalWorks(false);
         }
     }
-  */// need to remove at production
+  // need to remove at production
   useEffect(() => {
     const subscription = isServerAvailable$.subscribe(setIsTechicalWorks);  
     return () => 
@@ -162,7 +162,7 @@ function App() {
                     overflow: 'hidden'
                 }}
             >
-              <div style={{ height: '2vh', width: '100%' }} onClick={() => {}} ></div>
+              <div style={{ height: '2vh', width: '100%' }} onClick={() => {handleClick(true)}} ></div>
                 {/* Decorative Top Glow */}
                 <div style={{
                     position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
@@ -237,7 +237,7 @@ function App() {
                         {lang === 0 ? 'В процессе' : 'In Progress'}
                     </span>
                 </div>
-             <div style={{ height: '2vh', width: '100%' }} onClick={() => { }} ></div>
+             <div style={{ height: '2vh', width: '100%' }} onClick={() => {handleClick(false)}} ></div>
             </motion.div>
         </motion.div>
     
