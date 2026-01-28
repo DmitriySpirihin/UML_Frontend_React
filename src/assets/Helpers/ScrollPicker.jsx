@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import Colors from "../StaticClasses/Colors";
 
-const ITEM_HEIGHT = 44; 
+const ITEM_HEIGHT = 36; 
 const VISIBLE_ITEMS = 3; 
 
 const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80px' }) => {
@@ -20,34 +20,23 @@ const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80p
   useEffect(() => {
     if (scrollRef.current) {
       const selectedIndex = items.findIndex(item => item === value);
-      // Default to 0 if not found, add items.length to reach the middle set
       const middleSetIndex = (selectedIndex === -1 ? 0 : selectedIndex) + items.length;
-      
-      // Perform the scroll immediately (while scrollBehavior is still 'auto')
       scrollRef.current.scrollTop = middleSetIndex * ITEM_HEIGHT;
-
-      // Enable smooth scrolling after a tiny delay
-      // This ensures the initial jump is instant, but future user scrolls are smooth
       requestAnimationFrame(() => {
         setIsLoaded(true);
       });
     }
-  }, []); // Run once on mount
+  }, []);
 
   const handleScroll = (e) => {
     const scrollTop = e.target.scrollTop;
     const singleSetHeight = items.length * ITEM_HEIGHT;
-    
-    // --- INFINITE LOOP LOGIC ---
-    // Using a threshold to jump silently between sets
     if (scrollTop < singleSetHeight / 2) {
       e.target.scrollTop = scrollTop + singleSetHeight;
     } 
     else if (scrollTop >= singleSetHeight * 2.5) {
       e.target.scrollTop = scrollTop - singleSetHeight;
     }
-
-    // --- SELECTION LOGIC ---
     const rawIndex = Math.round(scrollTop / ITEM_HEIGHT);
     const actualIndex = rawIndex % items.length;
     
@@ -75,10 +64,8 @@ const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80p
         transform: 'translate(-50%, -50%)',
         width: '90%',
         height: ITEM_HEIGHT - 4,
-        borderRadius: '12px',
-        backgroundColor: Colors.get('iconsHighlited', theme),
-        opacity: 0.1,
-        border: `1px solid ${Colors.get('mainText', theme)}20`,
+        borderTop: `1px solid ${Colors.get('border', theme)}`,
+        borderBottom: `1px solid ${Colors.get('border', theme)}`,
         pointerEvents: 'none',
         zIndex: 1
       }} />
@@ -89,11 +76,7 @@ const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80p
         top: 0, left: 0, right: 0, bottom: 0,
         pointerEvents: 'none',
         zIndex: 2,
-        background: `linear-gradient(to bottom, 
-          ${Colors.get('background', theme)} 0%, 
-          transparent 20%, 
-          transparent 80%, 
-          ${Colors.get('background', theme)} 100%)`
+        
       }} />
       
       {/* 3. Scrollable Container */}

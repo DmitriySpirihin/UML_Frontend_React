@@ -17,6 +17,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.5",
     "@mui/material": "^7.3.5",
+    "@telegram-apps/analytics": "^1.6.4",
     "@telegram-apps/sdk": "^3.11.8",
     "@twa-dev/sdk": "^8.0.2",
     "animejs": "^4.2.2",

@@ -162,25 +162,7 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
         style={{ position: 'absolute', inset: 0, zIndex: 0 }}
       />
 
-      {/* PARTICLES */}
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 1 }}>
-          {phaseType === 'hot' && [...Array(10)].map((_, i) => (
-              <motion.div key={`hot-${i}`}
-                initial={{ y: '110%', opacity: 0 }}
-                animate={{ y: '-10%', opacity: [0, 0.8, 0], x: Math.random() * 100 - 50 }}
-                transition={{ duration: Math.random() * 2 + 3, repeat: Infinity, ease: "linear", delay: Math.random() * 2 }}
-                style={{ position: 'absolute', left: `${Math.random() * 100}%`, width: '4px', height: '4px', background: '#FFC107', borderRadius: '50%', filter: 'blur(1px)' }}
-              />
-          ))}
-          {phaseType === 'cold' && [...Array(10)].map((_, i) => (
-              <motion.div key={`cold-${i}`}
-                initial={{ y: '-10%', opacity: 0 }}
-                animate={{ y: '110%', opacity: [0, 0.8, 0], x: Math.random() * 50 - 25 }}
-                transition={{ duration: Math.random() * 3 + 2, repeat: Infinity, ease: "linear", delay: Math.random() * 2 }}
-                style={{ position: 'absolute', left: `${Math.random() * 100}%`, width: '6px', height: '6px', background: '#E0F7FA', borderRadius: '50%', filter: 'blur(1px)' }}
-              />
-          ))}
-      </div>
+      
 
       <AnimatePresence mode='wait'>
       

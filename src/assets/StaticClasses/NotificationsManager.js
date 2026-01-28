@@ -154,9 +154,8 @@ export async function cloudRestore() {
 
   try {
     const response = await NotificationsManager.sendMessage('restore', '');
-    console.log("🔍 Server Raw Response:", response); 
+    console.log("📥 Server Raw Response:", response);
 
-    // 1. Validate Response
     if (!response || !response.success || !response.message) {
       const errorMsg = response?.message || '⚠️ No backup found';
       setShowPopUpPanel(errorMsg, 2000, false);
@@ -164,81 +163,82 @@ export async function cloudRestore() {
     }
 
     let rawData = response.message;
+    let finalDataToLoad = null;
 
-    // 2. DATA SANITIZATION (The Fix)
+    // ---------------------------------------------------------
+    // 🔍 STEP 1: DETECT FORMAT & UNWRAP
     // ---------------------------------------------------------
     
-    // A. Handle if server returns an Object wrapper (New Server Logic)
+    // Case A: It's an Object (e.g., { content: "base64..." } OR Legacy { xp: 100... })
     if (typeof rawData === 'object' && rawData !== null) {
-        // If it looks like { content: "..." }, extract it
-        if (rawData.content) rawData = rawData.content;
-        // If it's just a raw JSON object (Legacy), stringify it so we can parse it later
-        else rawData = JSON.stringify(rawData);
+        if (rawData.content) {
+            // It's the new standard wrapper -> Extract Base64 string
+            rawData = rawData.content; 
+        } else {
+            // It's Legacy Data (Plain Object) -> No decompression needed
+            console.log("♻️ Detected Legacy Object Data");
+            finalDataToLoad = JSON.stringify(rawData); // Convert to string for deserialize
+        }
     }
 
-    // B. Handle if it's a String (Clean it up)
+    // Case B: It's a String (e.g., "base64..." OR '{"content":"..."}' OR Legacy JSON)
     if (typeof rawData === 'string') {
-        // Remove surrounding quotes if present (e.g. "VGhpcy...")
-        // This is the #1 cause of 'InvalidCharacterError'
+        // Clean up accidental double-quotes from server/client stringify issues
         if (rawData.startsWith('"') && rawData.endsWith('"')) {
             rawData = rawData.slice(1, -1);
         }
-        
-        // Remove all whitespace/newlines (atob hates them)
-        rawData = rawData.replace(/\s/g, '');
-    }
-    // ---------------------------------------------------------
 
-    // 3. DECOMPRESSION ATTEMPT
-    try {
-        console.log("🔓 Attempting Base64 decode on:", rawData.substring(0, 15) + "...");
-        
-        // Decode Base64 -> Binary
-        const binaryData = Uint8Array.from(atob(rawData), c => c.charCodeAt(0));
-        
-        // Inflate (Decompress)
-        const decompressedString = pako.inflate(binaryData, { to: 'string' });
-        
-        deserializeData(decompressedString);
-        console.log("✅ Decompression successful");
-
-    } catch (e) {
-        console.warn("⚠️ Decompression failed, attempting Legacy JSON restore...", e);
-        
-        // 4. FALLBACK: Plain JSON (Legacy Data)
-        // If the data was never compressed, atob() will fail. 
-        // We try to parse the original 'response.message' directly.
-        try {
-            let legacyData = response.message;
-            // If it's a stringified JSON, parse it
-            if (typeof legacyData === 'string') {
-                 // Try to remove quotes again just in case
-                 if (legacyData.startsWith('"') && legacyData.endsWith('"')) {
-                    legacyData = legacyData.slice(1, -1);
-                 }
-                 // If it starts with { or [, it's JSON text
-                 if (legacyData.startsWith('{') || legacyData.startsWith('[')) {
-                    // It's already a JSON string, do nothing
-                 } else {
-                    // If it's double-escaped JSON
-                    try { legacyData = JSON.parse(legacyData); } catch(err){}
-                 }
+        // Check if it's a JSON string masking the real data
+        if (rawData.trim().startsWith('{')) {
+            try {
+                const parsed = JSON.parse(rawData);
+                if (parsed.content) {
+                    rawData = parsed.content; // Extracted Base64 from JSON string
+                } else {
+                    // It's a Legacy JSON string
+                    console.log("♻️ Detected Legacy JSON String");
+                    finalDataToLoad = rawData;
+                }
+            } catch (e) {
+                // Not JSON, assume it's Base64 or plain text
             }
-            
-            deserializeData(legacyData);
-            console.log("✅ Legacy JSON restore successful");
-            
-        } catch (finalErr) {
-            console.error("❌ Final restore failed. Data is unusable.", finalErr);
-            throw new Error("Backup file is corrupted or format is unknown.");
         }
     }
 
-    await saveData();
-    setShowPopUpPanel('✅ Data restored!', 2000, true);
+    // ---------------------------------------------------------
+    // 🔓 STEP 2: DECOMPRESS OR LOAD
+    // ---------------------------------------------------------
+
+    // If we haven't found "Legacy" data yet, 'rawData' should be our Base64 string
+    if (!finalDataToLoad) {
+        try {
+            // Remove whitespace/newlines (Fixes InvalidCharacterError)
+            const cleanBase64 = String(rawData).replace(/\s/g, '');
+
+            console.log("🔓 Decrypting Base64...");
+            const binaryData = Uint8Array.from(atob(cleanBase64), c => c.charCodeAt(0));
+            finalDataToLoad = pako.inflate(binaryData, { to: 'string' });
+        } catch (e) {
+            console.warn("⚠️ Decompression failed. Trying raw data as fallback.", e);
+            // Fallback: maybe it wasn't compressed? Use rawData as is.
+            finalDataToLoad = typeof rawData === 'object' ? JSON.stringify(rawData) : rawData;
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 💾 STEP 3: APPLY DATA
+    // ---------------------------------------------------------
+    try {
+        deserializeData(finalDataToLoad);
+        await saveData();
+        setShowPopUpPanel('✅ Data restored!', 2000, true);
+    } catch (err) {
+        console.error("❌ Final Apply Failed:", err);
+        throw new Error("Restored data is not valid JSON.");
+    }
 
   } catch (error) {
-    console.error('Restore error:', error);
+    console.error('Restore Logic Error:', error);
     setShowPopUpPanel('❌ Restore failed', 2000, false);
   }
 }

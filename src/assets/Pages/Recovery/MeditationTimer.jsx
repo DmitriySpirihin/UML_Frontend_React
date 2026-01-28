@@ -98,9 +98,9 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
   }, [isRunning, currentStepIndex, duration, allSteps.length]);
 
   useEffect(() => {
-    if (audioEnabled && isStart && isRunning && audio.paused && !isFinished) audio.play();
+    if (audioEnabled && isStart && isRunning && audio.paused && !isFinished && !isPaused) audio.play();
     else audio.pause();
-  }, [isRunning, audioEnabled,isFinished,isStart]);
+  }, [isRunning, audioEnabled,isFinished,isStart,isPaused]);
 
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
@@ -171,7 +171,7 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
             transition={{ duration: 15, repeat: Infinity, ease: "linear", delay: 2 }}
             style={{ 
                 position: 'absolute', bottom: '-10%', right: '-10%', width: '500px', height: '500px', 
-                background: `radial-gradient(circle, #4DFF8820 0%, transparent 70%)`, filter: 'blur(50px)', opacity: 0.5 
+                background: `radial-gradient(circle, #4DFF8820 0%, transparent 50%)`, filter: 'blur(50px)', opacity: 0.5 
             }} 
           />
       </div>

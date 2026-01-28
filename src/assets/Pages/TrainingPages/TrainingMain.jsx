@@ -490,7 +490,7 @@ const TrainingMain = () => {
                             theme={theme} 
                             width="60px"
                         />
-                        <span style={{paddingTop: '20px', fontWeight: 'bold'}}>:</span>
+                        <span style={{paddingTop: '25%', fontWeight: 'bold'}}>:</span>
                         <ScrollPicker 
                             items={minutesRange} 
                             value={(startTime / 60000) % 60} 
@@ -513,7 +513,7 @@ const TrainingMain = () => {
                             theme={theme} 
                             width="60px"
                         />
-                        <span style={{paddingTop: '20px', fontWeight: 'bold'}}>:</span>
+                        <span style={{paddingTop: '25%', fontWeight: 'bold'}}>:</span>
                         <ScrollPicker 
                             items={minutesRange} 
                             value={(endTime / 60000) % 60} 

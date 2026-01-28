@@ -32,7 +32,7 @@ const AddHabitPanel = () => {
 
     // Habit data
     const [habitName, setHabitName] = useState('');
-    const [habitCategory, setHabitCategory] = useState(['Здоровье', 'Health']);
+    const [habitCategory, setHabitCategory] = useState(0);
     const [habitDescription, setHabitDescription] = useState('');
     const [habitIcon, setHabitIcon] = useState('default');
     const [habitId, setHabitId] = useState(-1);
@@ -88,7 +88,7 @@ const AddHabitPanel = () => {
     const handleSave = () => {
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         const finalGoals = goals.map(g => ({ text: g, isDone: false }));
-        if (showCreatePanel) createHabit(habitName, habitCategory, habitDescription, habitIcon, dateStr, finalGoals, isNegative, daysToForm);
+        if (showCreatePanel) createHabit(habitName, getCategory(habitCategory), habitDescription, habitIcon, dateStr, finalGoals, isNegative, daysToForm);
         else addHabit(habitId, habitName, false, dateStr, finalGoals, isNegative, daysToForm);
         closePanel();
     };
@@ -143,7 +143,7 @@ const AddHabitPanel = () => {
                                                     {['Здоровье', 'Развитие', 'Продуктивность', 'Отношения и отдых', 'Отказ от вредного'].map(cat => (
                                                         <motion.div 
                                                             key={cat} whileTap={{ scale: 0.95 }}
-                                                            onClick={() => setfilterCategory(cat)}
+                                                            onClick={() => {setfilterCategory(cat);setHabitCategory(cat);}}
                                                             style={{ 
                                                                 padding: '10px 18px', borderRadius: '14px', whiteSpace: 'nowrap',
                                                                 backgroundColor: filterCategory === cat ? ui.accent : ui.card,
@@ -178,6 +178,24 @@ const AddHabitPanel = () => {
                                             </>
                                         ) : (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                                {/* Фильтр категорий (Drum-style) */}
+                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '15px', paddingBottom: '5px', scrollbarWidth: 'none' }}>
+                                                    {['Здоровье', 'Развитие', 'Продуктивность', 'Отношения и отдых', 'Отказ от вредного'].map(cat => (
+                                                        <motion.div 
+                                                            key={cat} whileTap={{ scale: 0.95 }}
+                                                            onClick={() => {setfilterCategory(cat);setHabitCategory(cat);}}
+                                                            style={{ 
+                                                                padding: '10px 18px', borderRadius: '14px', whiteSpace: 'nowrap',
+                                                                backgroundColor: filterCategory === cat ? ui.accent : ui.card,
+                                                                color: filterCategory === cat ? '#FFF' : ui.text,
+                                                                fontSize: '13px', fontWeight: '700', transition: '0.2s all',
+                                                                boxShadow: filterCategory === cat ? `0 4px 12px ${ui.accent}40` : 'none'
+                                                            }}
+                                                        >
+                                                            {langIndex === 0 ? cat : getCategory(cat)[1]}
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
                                                 <MyInput w="100%" h="55px" theme={theme} placeHolder={langIndex === 0 ? 'название' : 'name'} onChange={v => setHabitName(v)} />
                                                 <motion.div whileTap={{ scale: 0.98 }} style={iconPickerTrigger(ui)} onClick={() => setSelectIconPanel(true)}>
                                                     <span style={{ color: ui.text, fontWeight: '700' }}>Иконка</span>

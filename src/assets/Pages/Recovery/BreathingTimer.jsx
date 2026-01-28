@@ -263,21 +263,7 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
         style={{ position: 'absolute', inset: 0, zIndex: 0 }}
       />
 
-      {/* PARTICLES */}
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 1 }}>
-          {[...Array(6)].map((_, i) => (
-              <motion.div 
-                key={i}
-                animate={{ y: [0, -100, 0], x: [0, Math.random() * 50 - 25, 0], opacity: [0.1, 0.3, 0.1] }}
-                transition={{ duration: 10 + i * 2, repeat: Infinity, ease: "linear" }}
-                style={{ 
-                    position: 'absolute', top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
-                    width: `${Math.random() * 4 + 2}px`, height: `${Math.random() * 4 + 2}px`,
-                    background: '#fff', borderRadius: '50%', filter: 'blur(1px)'
-                }}
-              />
-          ))}
-      </div>
+      
 
       <AnimatePresence mode='wait'>
       
