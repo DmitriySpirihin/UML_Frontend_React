@@ -9,30 +9,19 @@ import './Analitics'
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
 WebApp.ready();
 const manifestUrl = 'https://dmitriyspirihin.github.io/UML_Frontend_React/tonconnect-manifest.json';
+const customWalletsList = 'https://dmitriyspirihin.github.io/UML_Frontend_React/wallets.json';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <TonConnectUIProvider 
-    manifestUrl={manifestUrl}
-    // OPTIONAL: Filter out broken wallets to clean up the console
-    uiPreferences={{
-        borderRadius: 's'
-    }}
-    walletsListConfiguration={{
-        includeWallets: [
-            {
-                appName: "tonkeeper",
-                name: "Tonkeeper",
-                imageUrl: "https://tonkeeper.com/assets/tonkeeper.ico",
-                aboutUrl: "https://tonkeeper.com",
-                universalLink: "https://app.tonkeeper.com/ton-connect",
-                bridgeUrl: "https://bridge.tonapi.io/bridge",
-                platforms: ["ios", "android", "chrome", "firefox"]
-            },
-            // Add OpenMask or MyTonWallet if needed
-        ]
-    }}
->
+        manifestUrl={manifestUrl}
+        walletsListConfiguration={{
+            includeWallets: [],
+        }}
+        actionsConfiguration={{
+            twaReturnUrl: 'https://t.me/UltyMyLife_bot/umlminiapp'
+        }}
+    >
        <App />
     </TonConnectUIProvider>
   </StrictMode>,

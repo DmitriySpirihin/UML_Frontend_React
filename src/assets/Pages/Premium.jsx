@@ -49,6 +49,7 @@ const Premium = () => {
     const [showFullPolicy, setShowFullPolicy] = useState(false);
     const [tonConnectUI] = useTonConnectUI();
     const lastValidationTimeRef = useRef(0);
+    const [isWalletReady, setIsWalletReady] = useState(false);
     const isDark = theme === 'dark';
 
     useEffect(() => {
@@ -61,6 +62,12 @@ const Premium = () => {
         ];
         return () => subs.forEach(s => s.unsubscribe());
     }, []);
+    useEffect(() => {
+    // We try to "ping" the wallet UI state
+    if (tonConnectUI) {
+        setIsWalletReady(true);
+    }
+}, [tonConnectUI]);
 
     useEffect(() => {
         if (!needToValidatePayment) return;
@@ -445,11 +452,14 @@ const Premium = () => {
                             </div>
                         </div>
 
-                        <button onClick={getPremium} style={styles(theme).mainButton}>
-                            {currentPaymentMethod === 3 && !tonConnectUI.connected 
-                             ? (langIndex === 0 ? 'Подключить кошелек' : 'Connect Wallet') 
-                             : (langIndex === 0 ? 'Оплатить' : 'Pay Now')
-                             }
+                        <button onClick={getPremium} disabled={!isWalletReady} style={styles(theme).mainButton}>
+                            {!isWalletReady 
+        ? <div className="spinner-small" /> // Simple CSS spinner
+        : (currentPaymentMethod === 3 && !tonConnectUI.connected 
+            ? (langIndex === 0 ? 'Подключить кошелек' : 'Connect Wallet') 
+            : (langIndex === 0 ? 'Оплатить' : 'Pay Now')
+          )
+    }
                         </button>
                         <button onClick={() => setNeedAgreement(false)} style={styles(theme).cancelBtn}>
                             {langIndex === 0 ? 'Отмена' : 'Cancel'}
