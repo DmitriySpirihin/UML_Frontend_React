@@ -19,6 +19,7 @@
     "@mui/material": "^7.3.5",
     "@telegram-apps/analytics": "^1.6.4",
     "@telegram-apps/sdk": "^3.11.8",
+    "@tonconnect/ui-react": "^2.3.1",
     "@twa-dev/sdk": "^8.0.2",
     "animejs": "^4.2.2",
     "class-transformer": "^0.5.1",
@@ -39,6 +40,7 @@
     "recharts": "^3.6.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
+    "ton-core": "^0.53.0",
     "use-long-press": "^3.3.0"
   },
   "devDependencies": {

@@ -82,6 +82,7 @@ useEffect(() => {
     }
   }
   initializeApp();
+  setPremium(true);
 }, []);
 
   useEffect(() => {

@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData } from '../StaticClasses/AppData';
+import { useTonConnectUI } from '@tonconnect/ui-react';
+import { beginCell } from 'ton-core';
 import Colors from '../StaticClasses/Colors';
 import { lastPage$, setPage, theme$, lang$, premium$, fontSize$, isValidation$, setValidation, setShowPopUpPanel } from '../StaticClasses/HabitsBus';
 import { FaBrain, FaChartPie, FaRobot, FaStar, FaCrown, FaTimes, FaInfinity,FaHourglassHalf,FaCheckCircle,FaCalendarAlt } from 'react-icons/fa';
 import { MdOutlineDiamond } from "react-icons/md";
 import { BiRuble } from "react-icons/bi";
-import { initiateSbpPayment, initiateTONPayment, initiateTgStarsPayment } from '../StaticClasses/PaymentService';
+import { initiateSbpPayment, fetchTonInvoice, initiateTgStarsPayment } from '../StaticClasses/PaymentService';
 import { isUserHasPremium } from '../StaticClasses/NotificationsManager';
 
 const futureDate = new Date();
@@ -45,7 +47,7 @@ const Premium = () => {
     const [currentPaymentMethod, setCurrentPaymentMethod] = useState(2);
     const [needAgreement, setNeedAgreement] = useState(false);
     const [showFullPolicy, setShowFullPolicy] = useState(false);
-
+    const [tonConnectUI] = useTonConnectUI();
     const lastValidationTimeRef = useRef(0);
     const isDark = theme === 'dark';
 
@@ -74,21 +76,65 @@ const Premium = () => {
                     setValidation(false);
                 }
             } catch (error) { console.error(error); }
-        }, 50000);
+        }, 30000);
         return () => clearTimeout(timer);
     }, [needToValidatePayment, langIndex]);
 
     async function getPremium() {
         if (UserData.id === null) return;
+
         try {
-            if (currentPaymentMethod === 1) await initiateSbpPayment(UserData.id, chosenCard);
-            else if (currentPaymentMethod === 2) await initiateTgStarsPayment(UserData.id, chosenCard);
-            else if (currentPaymentMethod === 3) await initiateTONPayment(UserData.id, chosenCard);
-            setNeedToValidatePayment(true);
-            setValidation(true);
-            setNeedAgreement(false);
-        } catch (err) { setShowPopUpPanel('Error starting payment', 2000, false); }
+            // 1. SBP Payment
+            if (currentPaymentMethod === 1) {
+                await initiateSbpPayment(UserData.id, chosenCard);
+                setUiForValidation(); // Helper to update UI state
+            } 
+            // 2. Telegram Stars
+            else if (currentPaymentMethod === 2) {
+                await initiateTgStarsPayment(UserData.id, chosenCard);
+                setUiForValidation();
+            } 
+            // 3. TON
+            else if (currentPaymentMethod === 3) {
+                if (!tonConnectUI.connected) {
+                    await tonConnectUI.openModal();
+                    return; 
+                }
+
+                const { address, amount, comment } = await fetchTonInvoice(UserData.id, chosenCard);
+                const body = beginCell()
+                    .storeUint(0, 32) 
+                    .storeStringTail(comment)
+                    .endCell();
+
+                // D. Send Transaction
+                const transaction = {
+                    validUntil: Math.floor(Date.now() / 1000) + 600, 
+                    messages: [
+                        {
+                            address: address,
+                            amount: Math.floor(amount * 1e9).toString(), 
+                            payload: body.toBoc().toString('base64')
+                        }
+                    ]
+                };
+
+                await tonConnectUI.sendTransaction(transaction);
+                setUiForValidation();
+            }
+        } catch (err) { 
+            console.error(err);
+            if (!err.message?.includes('User rejected')) {
+                setShowPopUpPanel('Error starting payment', 2000, false); 
+            }
+        }
     }
+
+    const setUiForValidation = () => {
+        setNeedToValidatePayment(true);
+        setValidation(true);
+        setNeedAgreement(false);
+    };
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -151,9 +197,9 @@ const Premium = () => {
                     </header>
 
                     <div style={styles(theme).segmentedControl}>
-                        <SegmentOption id={1} current={currentPaymentMethod} set={setCurrentPaymentMethod} label={langIndex === 0 ? "Карта" : "Card"} icon={<BiRuble size={14} />} isDark={isDark} />
-                        <SegmentOption id={2} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="Stars" icon={<FaStar size={12} />} isDark={isDark} />
-                        <SegmentOption id={3} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="TON" icon={<MdOutlineDiamond size={14} />} isDark={isDark} />
+                        <SegmentOption id={1} current={currentPaymentMethod} set={setCurrentPaymentMethod} label={langIndex === 0 ? "СБП(только Россия)" : "SBP(Russia only)"} icon={<BiRuble size={14} />} isDark={isDark} />
+                        <SegmentOption id={2} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="Telegram Stars" icon={<FaStar size={12} />} isDark={isDark} />
+                        <SegmentOption id={3} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="TON / TON Connect" icon={<MdOutlineDiamond size={14} />} isDark={isDark} />
                     </div>
 
                     <motion.div variants={containerVariants} initial="hidden" animate="show" style={styles(theme).featuresGrid}>
@@ -167,7 +213,7 @@ const Premium = () => {
                             active={chosenCard === 3} onClick={() => setChosenCard(3)} theme={theme}
                             price={tarifs[currentPaymentMethod - 1][2]} label={langIndex === 0 ? '12 месяцев' : '1 Year'}
                             sub={paymentInMonth[currentPaymentMethod - 1][2]} currencyIcon={currencies[currentPaymentMethod - 1]}
-                            saveLabel={langIndex === 0 ? 'ВЫГОДНО -50%' : 'SAVE 50%'} langIndex={langIndex}
+                            saveLabel={langIndex === 0 ? 'ВЫГОДНО -35%' : 'SAVE 35%'} langIndex={langIndex}
                         />
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <SmallPlanCard theme={theme} active={chosenCard === 2} onClick={() => setChosenCard(2)} price={tarifs[currentPaymentMethod - 1][1]} label={langIndex === 0 ? '3 месяца' : '3 Months'} currencyIcon={currencies[currentPaymentMethod - 1]} />
@@ -249,43 +295,118 @@ const Premium = () => {
 )}
             {/* 4. Validation Screen */}
             {isValidation && (
-                <div style={styles(theme).loadingState}>
-    {/* Container for Spinner & Icon */}
-    <div style={{ position: 'relative', width: '100px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        
-        {/* Spinning Ring */}
-        <motion.div
-            style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: '50%',
-                border: `4px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                borderTopColor: '#007AFF', // Premium Blue
-                boxSizing: 'border-box'
-            }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        />
+    <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        style={styles(theme).loadingState}
+    >
+        {/* Central Animation Container */}
+        <div style={{ position: 'relative', width: '120px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '30px' }}>
+            
+            {/* 1. Outer Glow Blur (Ambient) */}
+            <motion.div
+                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'radial-gradient(circle, rgba(0,122,255,0.4) 0%, transparent 70%)',
+                    borderRadius: '50%',
+                    filter: 'blur(20px)',
+                }}
+            />
 
-        {/* Centered Hourglass Icon */}
-        <FaHourglassHalf 
-            size={28} 
-            color={isDark ? '#fff' : '#007AFF'} 
-            style={{ opacity: 0.8 }}
-        />
-    </div>
+            {/* 2. Outer Ring (Slow Rotate) */}
+            <motion.div
+                style={{
+                    position: 'absolute',
+                    width: '100%', height: '100%',
+                    borderRadius: '50%',
+                    border: `2px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
+                    borderTop: '2px solid #007AFF',
+                    borderLeft: '2px solid transparent',
+                    boxShadow: '0 0 15px rgba(0, 122, 255, 0.2)'
+                }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            />
 
-    {/* Title */}
-    <h3 style={{ marginTop: '25px', marginBottom: '8px', color: isDark ? 'white' : '#000', fontSize: '18px', fontWeight: '700' }}>
-        {langIndex === 0 ? 'Активация...' : 'Activating...'}
-    </h3>
+            {/* 3. Inner Ring (Fast Rotate Reverse) */}
+            <motion.div
+                style={{
+                    position: 'absolute',
+                    width: '70%', height: '70%',
+                    borderRadius: '50%',
+                    border: `2px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
+                    borderBottom: '2px solid #FFD700', // Gold accent
+                    borderRight: '2px solid transparent',
+                }}
+                animate={{ rotate: -360 }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+            />
 
-    {/* Disclaimer Text */}
-    <p style={{ margin: 0, color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', fontSize: '13px', textAlign: 'center' }}>
-        {langIndex === 0 ? 'Это может занять до 5 минут' : 'This may take up to 5 minutes'}
-    </p>
-</div>
-            )}
+            {/* 4. Center Icon (Pulse) */}
+            <motion.div
+                animate={{ scale: [1, 1.1, 1], filter: ['brightness(1)', 'brightness(1.3)', 'brightness(1)'] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: isDark ? '#1C1C1E' : '#FFF',
+                    borderRadius: '50%',
+                    width: '50px', height: '50px',
+                    boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.5)' : '0 4px 20px rgba(0,0,0,0.1)',
+                    zIndex: 2
+                }}
+            >
+                <MdOutlineDiamond size={24} color="#007AFF" />
+            </motion.div>
+        </div>
+
+        {/* Text Section */}
+        <div style={{ textAlign: 'center', zIndex: 2 }}>
+            <motion.h3 
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                style={{ 
+                    margin: '0 0 8px 0', 
+                    color: isDark ? 'white' : '#000', 
+                    fontSize: '20px', 
+                    fontWeight: '700',
+                    letterSpacing: '0.5px'
+                }}
+            >
+                {langIndex === 0 ? 'Проверка транзакции' : 'Verifying Transaction'}
+            </motion.h3>
+
+            <p style={{ 
+                margin: 0, 
+                color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', 
+                fontSize: '13px',
+                maxWidth: '250px',
+                lineHeight: '1.5' 
+            }}>
+                {langIndex === 0 
+                    ? 'Мы подтверждаем оплату. Не закрывайте приложение.' 
+                    : 'Confirming secure payment. Please do not close the app.'}
+            </p>
+            
+            {/* Tiny loading dots for extra activity detail */}
+            <motion.div 
+                style={{ display: 'flex', gap: '4px', justifyContent: 'center', marginTop: '15px' }}
+            >
+                {[0, 1, 2].map(i => (
+                    <motion.div
+                        key={i}
+                        animate={{ y: [0, -6, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.1 }}
+                        style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#007AFF' }}
+                    />
+                ))}
+            </motion.div>
+        </div>
+    </motion.div>
+)}
 
             {/* 5. Agreement Bottom Sheet */}
             <AnimatePresence>
@@ -325,7 +446,10 @@ const Premium = () => {
                         </div>
 
                         <button onClick={getPremium} style={styles(theme).mainButton}>
-                            {langIndex === 0 ? 'Оплатить' : 'Pay Now'}
+                            {currentPaymentMethod === 3 && !tonConnectUI.connected 
+                             ? (langIndex === 0 ? 'Подключить кошелек' : 'Connect Wallet') 
+                             : (langIndex === 0 ? 'Оплатить' : 'Pay Now')
+                             }
                         </button>
                         <button onClick={() => setNeedAgreement(false)} style={styles(theme).cancelBtn}>
                             {langIndex === 0 ? 'Отмена' : 'Cancel'}
@@ -671,7 +795,7 @@ const getMiniPolicy = (langIndex) => langIndex === 0 ?
 const getFullPolicy = (langIndex) => {
   return langIndex === 0 ? `Политика оплаты UltyMyLife
 
-> *Последнее обновление: 13 января 2026 г.*
+> *Последнее обновление: 28 января 2026 г.*
 
 1. Общие положения
 UltyMyLife — Telegram Mini App для саморазвития с ИИ-аналитикой. Доступ к расширенным функциям (трекинг привычек, ИИ-анализ сна, ментальные практики, персонализированные рекомендации) предоставляется по подписке.
@@ -679,7 +803,7 @@ UltyMyLife — Telegram Mini App для саморазвития с ИИ-ана�
 Оплата возможна через:
 - **СБП (₽)** — рубли;
 - **Telegram Stars (★)** — внутренняя валюта Telegram;
-- **TON** — криптовалюта, поддерживаемая кошельками Telegram.
+- **TON** — криптовалюта (через TON Connect).
 
 Цены указаны без НДС (для РФ НДС включён автоматически при оплате через СБП).
 
@@ -691,7 +815,7 @@ UltyMyLife — Telegram Mini App для саморазвития с ИИ-ана�
 |--------------|---------|---------|---------|
 | 1 месяц      | 149 ₽   | 89 ★    | 0.35 TON |
 | 3 месяца     | 399 ₽   | 229 ★   | 0.95 TON |
-| 12 месяцев  | 999 ₽   | 699 ★   | 3.2 TON |
+| 12 месяцев   | 999 ₽   | 699 ★   | 3.2 TON |
 
  Подписка даёт полный доступ ко всем функциям. Не продлевается автоматически.
 
@@ -713,7 +837,7 @@ UltyMyLife — Telegram Mini App для саморазвития с ИИ-ана�
 ---
 
 5. Приватность данных
-Все данные хранятся локально (SQLite), не передаются третьим лицам. Запросы к ИИ отправляются анонимно, без привязки к вашему аккаунту.
+Все данные хранятся в защищенной базе данных (PostgreSQL), что позволяет сохранять прогресс при смене устройства. Запросы к ИИ отправляются анонимно.
 
 ---
 
@@ -725,13 +849,11 @@ UltyMyLife — Telegram Mini App для саморазвития с ИИ-ана�
  7. Поддержка
  https://t.me/diiimaaan777
 📩 пишите с указанием Telegram ID и даты оплаты.
-
-
 `
     : 
     `UltyMyLife Payment Policy
 
-> *Last updated: January 13, 2026*
+> *Last updated: January 28, 2026*
 
 1. General Provisions  
 UltyMyLife is a Telegram Mini App for self-improvement powered by AI analytics. Access to advanced features (habit tracking, AI sleep analysis, mental exercises, and personalized recommendations) is available via subscription.
@@ -739,7 +861,7 @@ UltyMyLife is a Telegram Mini App for self-improvement powered by AI analytics. 
 Payment methods supported:  
 - **SBP (₽)** — Russian rubles;  
 - **Telegram Stars (★)** — Telegram’s in-app currency;  
-- **TON** — cryptocurrency supported by Telegram Wallet.
+- **TON** — cryptocurrency (via TON Connect).
 
 Prices are shown excluding VAT. For users in Russia, VAT is automatically included when paying via SBP.
 
@@ -773,7 +895,7 @@ There is **no free trial period**. We offer **low entry prices** to ensure broad
 ---
 
 5. Data Privacy  
-All data is stored **locally** (SQLite) and **never shared with third parties**. AI requests are sent **anonymously**, with no linkage to your Telegram account.
+All data is stored in a secure database (PostgreSQL), allowing you to keep your progress across devices. AI requests are sent **anonymously**.
 
 ---
 
@@ -785,8 +907,6 @@ We reserve the right to update pricing or terms. Users will be notified in advan
 7. Support  
 https://t.me/diiimaaan777
 📩  please include your **Telegram ID** and **payment date** when contacting us.
-
-
 `
 }
 

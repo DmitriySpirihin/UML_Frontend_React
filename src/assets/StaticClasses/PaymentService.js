@@ -83,10 +83,8 @@ export async function initiateTgStarsPayment(userId, plan) {
 // ---------------------------------------------------------
 // 3. TON Payment (FIXED)
 // ---------------------------------------------------------
-export async function initiateTONPayment(userId, plan) {
+export async function fetchTonInvoice(userId, plan) {
   try {
-    // 🔴 OLD ERROR: fetch('/api/ton-invoice')
-    // 🟢 FIXED: Added ${API_BASE}
     const res = await fetch(`${API_BASE}/api/ton-invoice`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -98,20 +96,12 @@ export async function initiateTONPayment(userId, plan) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Failed to create TON invoice');
 
-    const { address, amount, comment } = data;
+    // Just return the data (address, amount, comment)
+    // The React Component will use this to call tonConnectUI.sendTransaction()
+    return data; 
 
-    const amountInNano = Math.round(amount * 1e9);
-    const encodedComment = encodeURIComponent(comment);
-    const tonUrl = `ton://transfer/${address}?amount=${amountInNano}&text=${encodedComment}`;
-
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.openTelegramLink(tonUrl);
-    } else {
-      window.open(tonUrl, '_blank');
-    }
   } catch (err) {
-    console.error('TON payment error:', err);
-    alert('Не удалось открыть платеж TON. Попробуйте позже.');
+    console.error('TON fetch error:', err);
     throw err;
   }
 }
