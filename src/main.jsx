@@ -12,7 +12,27 @@ const manifestUrl = 'https://dmitriyspirihin.github.io/UML_Frontend_React/toncon
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <TonConnectUIProvider manifestUrl={manifestUrl}>
+    <TonConnectUIProvider 
+    manifestUrl={manifestUrl}
+    // OPTIONAL: Filter out broken wallets to clean up the console
+    uiPreferences={{
+        borderRadius: 's'
+    }}
+    walletsListConfiguration={{
+        includeWallets: [
+            {
+                appName: "tonkeeper",
+                name: "Tonkeeper",
+                imageUrl: "https://tonkeeper.com/assets/tonkeeper.ico",
+                aboutUrl: "https://tonkeeper.com",
+                universalLink: "https://app.tonkeeper.com/ton-connect",
+                bridgeUrl: "https://bridge.tonapi.io/bridge",
+                platforms: ["ios", "android", "chrome", "firefox"]
+            },
+            // Add OpenMask or MyTonWallet if needed
+        ]
+    }}
+>
        <App />
     </TonConnectUIProvider>
   </StrictMode>,
