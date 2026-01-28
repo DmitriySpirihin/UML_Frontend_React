@@ -1,21 +1,19 @@
-import './nuke.js'; // Run the nuke script first
+// import './nuke.js'; 
+
 import { Buffer } from 'buffer';
 window.Buffer = window.Buffer || Buffer;
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
-import WebApp from '@twa-dev/sdk'
-import './Analitics' 
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
+import App from './App.jsx';
+import WebApp from '@twa-dev/sdk';
+import './Analitics';
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
 
 WebApp.ready();
 
 const manifestUrl = 'https://dmitriyspirihin.github.io/UML_Frontend_React/tonconnect-manifest.json';
 
-// ------------------------------------------------------
-// 1. DEFINE THE SAFE LIST DIRECTLY IN CODE
-// ------------------------------------------------------
 const safeWalletsArray = [
   {
     "app_name": "telegram-wallet",
@@ -47,17 +45,19 @@ const safeWalletsArray = [
   }
 ];
 
-// 2. CONVERT IT TO A "DATA URL" (Tricks the SDK into loading local data as if it were a file)
 const walletsSource = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(safeWalletsArray));
-
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <TonConnectUIProvider 
         manifestUrl={manifestUrl}
+        
+        // 2. REMOVED "restoreConnection={false}"
+        // Now the app will behave normally and remember the user!
+
         walletsListConfiguration={{
             includeWallets: [],
-            walletsListSource: walletsSource // 👈 Using our embedded list
+            walletsListSource: walletsSource 
         }}
         actionsConfiguration={{
             twaReturnUrl: 'https://t.me/UltyMyLife_bot/umlminiapp'
