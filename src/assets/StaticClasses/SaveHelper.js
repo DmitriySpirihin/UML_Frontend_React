@@ -9,18 +9,29 @@ import {setShowPopUpPanel} from '../StaticClasses/HabitsBus';
 export async function initializeTelegramSDK(opts = {}) {
   try {
     await init();
+    
     if (miniApp.ready.isAvailable()) {
       await miniApp.ready();
-      const platform = Telegram.WebApp.platform;
-     if (platform !== 'desktop' && platform !== 'web') {
-        if (viewport.mount?.isAvailable?.()) {
-         await viewport.mount();
-          viewport.expand();
-          if (viewport.requestFullscreen?.isAvailable?.()) {
-            await viewport.requestFullscreen();
-         }
-       }
-     }
+      
+      // 1. Get the platform
+      const platform = window.Telegram?.WebApp?.platform;
+      
+      // 2. Define strictly what counts as mobile
+      const isMobile = platform === 'android' || platform === 'ios';
+
+      // 3. Mount viewport (allows us to control it)
+      if (viewport.mount.isAvailable()) {
+        await viewport.mount();
+        
+        // 4. ONLY expand and fullscreen if it is a mobile device
+        if (isMobile) {
+          viewport.expand(); // Takes up available space
+          
+          if (viewport.requestFullscreen.isAvailable()) {
+            await viewport.requestFullscreen(); // Removes top bars on supported devices
+          }
+        }
+      }
     }
 
     // Setup back button handler
@@ -34,7 +45,7 @@ export async function initializeTelegramSDK(opts = {}) {
     }
     return true;
   } catch (error) {
-    // Minimal mock
+    // Minimal mock for development
     try {
       const fallbackUser = {
         id: 1,
@@ -54,6 +65,7 @@ export async function initializeTelegramSDK(opts = {}) {
         };
         window.Telegram.WebApp.colorScheme = 'dark';
         window.Telegram.WebApp.languageCode = 'ru';
+        window.Telegram.WebApp.platform = 'unknown'; // Mock platform
         window.Telegram.WebApp.ready = window.Telegram.WebApp.ready || (function () { return; });
       }
       return true;
