@@ -1,5 +1,6 @@
 import { Buffer } from 'buffer';
 window.Buffer = window.Buffer || Buffer;
+localStorage.removeItem('ton-connect-ui_wallets-list');
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
