@@ -1,11 +1,19 @@
-// src/nuke.js
 try {
-    console.log('💥 NUKING OLD DATA...');
-    // Delete the specific keys that hold the broken connection
-    localStorage.removeItem('ton-connect-storage_bridge-connection');
-    localStorage.removeItem('ton-connect-ui_last-selected-wallet-info');
-    localStorage.removeItem('ton-connect-ui_wallets-list');
-    console.log('✅ NUKE COMPLETE');
+    console.log('☢️ STARTING SCORCHED EARTH NUKE...');
+    
+    // We loop backwards because deleting items changes the indices
+    let deletedCount = 0;
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+        const key = localStorage.key(i);
+        // Delete ANY key that contains "ton-connect"
+        if (key && key.toLowerCase().includes('ton-connect')) {
+            console.log(`🗑 Deleting infected key: ${key}`);
+            localStorage.removeItem(key);
+            deletedCount++;
+        }
+    }
+    
+    console.log(`✅ NUKE COMPLETE. Deleted ${deletedCount} keys.`);
 } catch (e) {
     console.error('Nuke failed:', e);
 }
