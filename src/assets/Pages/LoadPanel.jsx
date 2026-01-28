@@ -1,7 +1,7 @@
 import { useEffect, useState,useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData, fillEmptyDays } from '../StaticClasses/AppData';
-import { theme$, lang$, setPage, setTheme ,setPremium} from '../StaticClasses/HabitsBus';
+import { theme$, lang$, setPage, setTheme } from '../StaticClasses/HabitsBus';
 import Colors from '../StaticClasses/Colors';
 import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud, loadData } from '../StaticClasses/SaveHelper';
@@ -82,7 +82,6 @@ useEffect(() => {
     }
   }
   initializeApp();
-  setPremium(true);
 }, []);
 
   useEffect(() => {
