@@ -17,6 +17,7 @@ createRoot(document.getElementById('root')).render(
         manifestUrl={manifestUrl}
         walletsListConfiguration={{
             includeWallets: [],
+            walletsListSource: customWalletsList,
         }}
         actionsConfiguration={{
             twaReturnUrl: 'https://t.me/UltyMyLife_bot/umlminiapp'
