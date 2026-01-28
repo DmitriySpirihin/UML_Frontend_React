@@ -1,5 +1,3 @@
-// import './nuke.js'; 
-
 import { Buffer } from 'buffer';
 window.Buffer = window.Buffer || Buffer;
 import { StrictMode } from 'react';
@@ -14,56 +12,62 @@ WebApp.ready();
 
 const manifestUrl = 'https://dmitriyspirihin.github.io/UML_Frontend_React/tonconnect-manifest.json';
 
-const safeWalletsArray = [
-  {
-    "app_name": "telegram-wallet",
-    "name": "Wallet",
-    "image": "https://wallet.tg/images/logo-288.png",
-    "about_url": "https://wallet.tg/",
-    "universal_url": "https://t.me/wallet/start",
-    "bridge": [{"type": "sse","url": "https://bridge.tonapi.io/bridge"}],
-    "platforms": ["ios", "android", "macos", "windows", "linux"]
-  },
-  {
-    "app_name": "tonkeeper",
-    "name": "Tonkeeper",
-    "image": "https://tonkeeper.com/assets/tonkeeper.ico",
-    "about_url": "https://tonkeeper.com",
-    "tondns": "tonkeeper.ton",
-    "universal_url": "https://app.tonkeeper.com/ton-connect",
-    "bridge": [{"type": "sse","url": "https://bridge.tonapi.io/bridge"},{"type": "js","key": "tonkeeper"}],
-    "platforms": ["ios", "android", "chrome", "firefox", "macos"]
-  },
-  {
-    "app_name": "mytonwallet",
-    "name": "MyTonWallet",
-    "image": "https://mytonwallet.io/icon-256.png",
-    "about_url": "https://mytonwallet.io",
-    "universal_url": "https://connect.mytonwallet.org/ton-connect",
-    "bridge": [{"type": "js","key": "mytonwallet"},{"type": "sse","url": "https://tonconnect.mytonwallet.org/bridge"}],
-    "platforms": ["chrome", "windows", "macos", "linux", "ios", "android"]
-  }
+// ------------------------------------------------------
+// 1. DEFINE THE BROKEN WALLETS TO EXCLUDE
+// ------------------------------------------------------
+const BROKEN_WALLETS = [
+    'tokenpocket',          // Caused ERR_CERT_DATE_INVALID
+    'binance-web3-wallet',  // Caused CORS errors
+    'dewallet',             // Caused Timeout errors
+    'bitgetWalletLite'      // Often buggy on mobile
 ];
 
-const walletsSource = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(safeWalletsArray));
+// ------------------------------------------------------
+// 2. FETCH & FILTER FUNCTION
+// ------------------------------------------------------
+async function getCleanWalletsSource() {
+    try {
+        // Fetch the official, up-to-date list from TON
+        const response = await fetch('https://raw.githubusercontent.com/ton-connect/wallets-list/main/wallets.json');
+        const wallets = await response.json();
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <TonConnectUIProvider 
-        manifestUrl={manifestUrl}
+        // Filter out the broken ones
+        const cleanWallets = wallets.filter(wallet => !BROKEN_WALLETS.includes(wallet.app_name));
         
-        // 2. REMOVED "restoreConnection={false}"
-        // Now the app will behave normally and remember the user!
+        console.log(`✅ Loaded ${cleanWallets.length} wallets (Excluded: ${BROKEN_WALLETS.join(', ')})`);
 
-        walletsListConfiguration={{
-            includeWallets: [],
-            walletsListSource: walletsSource 
-        }}
-        actionsConfiguration={{
-            twaReturnUrl: 'https://t.me/UltyMyLife_bot/umlminiapp'
-        }}
-    >
-       <App />
-    </TonConnectUIProvider>
-  </StrictMode>,
-)
+        // Convert to Data URI so the SDK treats it as a file
+        return 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(cleanWallets));
+    } catch (e) {
+        console.error('Failed to fetch official list, using fallback:', e);
+        // Fallback: If GitHub is down, use a minimal safe list
+        const safeFallback = [
+            { app_name: "telegram-wallet", name: "Wallet", bridge: [{type:"sse", url:"https://bridge.tonapi.io/bridge"}], platforms: ["ios","android","macos","windows","linux"] },
+            { app_name: "tonkeeper", name: "Tonkeeper", bridge: [{type:"js", key:"tonkeeper"}], platforms: ["ios","android","chrome","firefox"] }
+        ];
+        return 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(safeFallback));
+    }
+}
+
+// ------------------------------------------------------
+// 3. INITIALIZE APP
+// ------------------------------------------------------
+// We wrap the render in an async function to wait for the list
+getCleanWalletsSource().then((cleanSource) => {
+    createRoot(document.getElementById('root')).render(
+      <StrictMode>
+        <TonConnectUIProvider 
+            manifestUrl={manifestUrl}
+            walletsListConfiguration={{
+                includeWallets: [], // Use strictly our filtered source
+                walletsListSource: cleanSource 
+            }}
+            actionsConfiguration={{
+                twaReturnUrl: 'https://t.me/UltyMyLife_bot/umlminiapp'
+            }}
+        >
+           <App />
+        </TonConnectUIProvider>
+      </StrictMode>,
+    )
+});
