@@ -85,7 +85,7 @@ export async function initiateTgStarsPayment(userId, plan) {
 // ---------------------------------------------------------
 export async function fetchTonInvoice(userId, plan) {
 
-  console.log("🚀 SENDING TO BACKEND:", { telegramId: userId, tarifId: plan });
+ // console.log("🚀 SENDING TO BACKEND:", { telegramId: userId, tarifId: plan });
   try {
     const res = await fetch(`${API_BASE}/api/ton-invoice`, {
       method: 'POST',

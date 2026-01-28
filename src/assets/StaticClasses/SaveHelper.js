@@ -17,7 +17,7 @@ export async function initializeTelegramSDK(opts = {}) {
     const platform = rawWebApp?.platform || 'unknown';
 
     // Debugging: This will show you exactly what Telegram thinks the device is
-    console.log('Detected Platform:', platform);
+   // console.log('Detected Platform:', platform);
 
     // 3. Define Mobile Explicitly
     // We strictly enable fullscreen ONLY for Android and iOS. 
@@ -46,6 +46,7 @@ export async function initializeTelegramSDK(opts = {}) {
 
     // 6. Setup Buttons (Hide them)
     if (rawWebApp) {
+      rawWebApp.isClosingConfirmationEnabled = true;
       rawWebApp.MainButton.hide();
       rawWebApp.BackButton.hide();
       if (rawWebApp.SecondaryButton) rawWebApp.SecondaryButton.hide();
@@ -83,7 +84,7 @@ export async function initDBandCloud() {
         }
       }
     });
-    console.log('DB initialized');
+  //  console.log('DB initialized');
   } catch (error) {
     console.error('DB initialization failed:', error);
   }
@@ -105,7 +106,7 @@ export async function saveData() {
 
   try {
     await db.put('UserData', dataToSave, 'current');
-    console.log('Data saved to DB');
+   // console.log('Data saved to DB');
     return { success: true };
   } catch (e) {
     console.error('Saving to DB failed:', e);
@@ -124,7 +125,7 @@ export async function loadData() {
   try {
     const localData = await db.get('UserData', 'current');
     if (!localData) {
-      console.log('No data in local DB');
+    //  console.log('No data in local DB');
       return { success: false, error: 'No saved data found' };
     }
 
@@ -185,7 +186,7 @@ export async function clearAllSaves() {
             clearStore('Icons')
         ]);
   
-        console.log('✅ Local storage cleared successfully');
+      //  console.log('✅ Local storage cleared successfully');
       }
   
       // Send notifications after DB is definitely clear

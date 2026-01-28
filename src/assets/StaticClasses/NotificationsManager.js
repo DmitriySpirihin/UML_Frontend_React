@@ -30,7 +30,7 @@ export class NotificationsManager {
             }
 
             const data = await response.json();
-            console.log('Success:', data);
+          //  console.log('Success:', data);
             
             if (type === "password") {
                 setIsPasswordCorrect(data.message);
@@ -99,7 +99,7 @@ export async function isUserHasPremium(uid) {
       setValidation(isValidation);
       setIsServerAvailable(isServerAvailable);
       
-      console.log(`Premium: ${hasPremium}, Valid: ${isValidation}, Server OK: ${isServerAvailable}`);
+     // console.log(`Premium: ${hasPremium}, Valid: ${isValidation}, Server OK: ${isServerAvailable}`);
       
       return { hasPremium, premiumEndDate, isValidation, isServerAvailable };
     } else {
@@ -154,7 +154,7 @@ export async function cloudRestore() {
 
   try {
     const response = await NotificationsManager.sendMessage('restore', '');
-    console.log("📥 Server Raw Response:", response);
+   // console.log("📥 Server Raw Response:", response);
 
     if (!response || !response.success || !response.message) {
       const errorMsg = response?.message || '⚠️ No backup found';
@@ -172,7 +172,7 @@ export async function cloudRestore() {
     // We need to extract the inner .message
     if (typeof rawData === 'object' && rawData !== null) {
         if (rawData.success === true && rawData.message) {
-            console.log("📦 Unwrapping nested server response...");
+          //  console.log("📦 Unwrapping nested server response...");
             rawData = rawData.message; // Now rawData is just the "eJz..." string
         }
     }
@@ -188,7 +188,7 @@ export async function cloudRestore() {
             rawData = rawData.content; 
         } else {
             // It's Legacy Data (Plain Object) -> No decompression needed
-            console.log("♻️ Detected Legacy Object Data");
+          // console.log("♻️ Detected Legacy Object Data");
             finalDataToLoad = JSON.stringify(rawData); 
         }
     }
@@ -211,7 +211,7 @@ export async function cloudRestore() {
                     rawData = parsed.message;
                 } else {
                     // It's a Legacy JSON string
-                    console.log("♻️ Detected Legacy JSON String");
+                  //  console.log("♻️ Detected Legacy JSON String");
                     finalDataToLoad = rawData;
                 }
             } catch (e) {
@@ -229,7 +229,7 @@ export async function cloudRestore() {
             // Remove whitespace/newlines (Fixes InvalidCharacterError)
             const cleanBase64 = String(rawData).replace(/\s/g, '');
 
-            console.log("🔓 Decrypting Base64...");
+           // console.log("🔓 Decrypting Base64...");
             const binaryData = Uint8Array.from(atob(cleanBase64), c => c.charCodeAt(0));
             finalDataToLoad = pako.inflate(binaryData, { to: 'string' });
         } catch (e) {
