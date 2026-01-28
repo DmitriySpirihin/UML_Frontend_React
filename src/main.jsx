@@ -49,11 +49,18 @@ const safeWalletsArray = [
 // 2. CONVERT IT TO A "DATA URL" (Tricks the SDK into loading local data as if it were a file)
 const walletsSource = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(safeWalletsArray));
 
-// 3. NUCLEAR RESET (Keep this for ONE build, then remove it)
-// This guarantees the browser forgets the old "Bad" list
 try {
-    localStorage.removeItem('ton-connect-ui_wallets-list'); 
-} catch (e) {}
+    // This key holds the connection to TokenPocket. Delete it!
+    localStorage.removeItem('ton-connect-storage_bridge-connection');
+    
+    // This key holds the "Last Selected" wallet info. Delete it!
+    localStorage.removeItem('ton-connect-ui_last-selected-wallet-info');
+    
+    // This key holds the old cached list. Delete it!
+    localStorage.removeItem('ton-connect-ui_wallets-list');
+} catch (e) {
+    console.error('Storage cleanup failed', e);
+}
 
 
 createRoot(document.getElementById('root')).render(
