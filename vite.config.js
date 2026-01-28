@@ -13,32 +13,24 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',
-    // Increase limit to 1.5MB to silence warnings if chunks are still slightly large
-    chunkSizeWarningLimit: 1600, 
+    // Increase limit to 2000kB (2MB) so you don't see the yellow warning.
+    // A 1.5MB vendor file is perfectly fine for modern 4G/WiFi.
+    chunkSizeWarningLimit: 2000, 
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // 1. Recharts (Visualization)
+          // 1. Keep Recharts separate (fixes your specific circular dependency issue)
           if (id.includes('recharts')) {
             return 'recharts';
           }
           
-          // 2. TON SDK & Buffer (Heavy logic)
+          // 2. Keep TON SDK separate (Optimizes initial load)
           if (id.includes('@tonconnect') || id.includes('ton-core') || id.includes('ton-crypto') || id.includes('buffer')) {
             return 'ton-sdk';
           }
 
-          // 3. Framer Motion (Animation library is very heavy)
-          if (id.includes('framer-motion')) {
-            return 'framer-motion';
-          }
-
-          // 4. React Core (React, ReactDOM, Router)
-          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
-            return 'react-core';
-          }
-
-          // 5. Everything else remains in 'vendor'
+          // 3. DO NOT split React or Framer Motion anymore. 
+          // Putting them back into 'vendor' fixes the initialization error.
           if (id.includes('node_modules')) {
             return 'vendor';
           }
