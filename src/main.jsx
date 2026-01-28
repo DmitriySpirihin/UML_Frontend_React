@@ -1,19 +1,4 @@
-try {
-    // This stops the SDK from seeing the old broken connection
-    localStorage.removeItem('ton-connect-storage_bridge-connection');
-    localStorage.removeItem('ton-connect-ui_last-selected-wallet-info');
-    localStorage.removeItem('ton-connect-ui_wallets-list');
-    
-    // Safety check: verify it's gone
-    if (localStorage.getItem('ton-connect-storage_bridge-connection')) {
-        console.error('FAILED TO CLEAR STORAGE');
-    } else {
-        console.log('✅ Storage Cleared Successfully');
-    }
-} catch (e) {
-    console.error('Storage cleanup failed', e);
-}
-
+import './nuke.js'; // Run the nuke script first
 import { Buffer } from 'buffer';
 window.Buffer = window.Buffer || Buffer;
 import { StrictMode } from 'react'
