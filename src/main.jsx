@@ -1,3 +1,19 @@
+try {
+    // This stops the SDK from seeing the old broken connection
+    localStorage.removeItem('ton-connect-storage_bridge-connection');
+    localStorage.removeItem('ton-connect-ui_last-selected-wallet-info');
+    localStorage.removeItem('ton-connect-ui_wallets-list');
+    
+    // Safety check: verify it's gone
+    if (localStorage.getItem('ton-connect-storage_bridge-connection')) {
+        console.error('FAILED TO CLEAR STORAGE');
+    } else {
+        console.log('✅ Storage Cleared Successfully');
+    }
+} catch (e) {
+    console.error('Storage cleanup failed', e);
+}
+
 import { Buffer } from 'buffer';
 window.Buffer = window.Buffer || Buffer;
 import { StrictMode } from 'react'
@@ -48,19 +64,6 @@ const safeWalletsArray = [
 
 // 2. CONVERT IT TO A "DATA URL" (Tricks the SDK into loading local data as if it were a file)
 const walletsSource = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(safeWalletsArray));
-
-try {
-    // This key holds the connection to TokenPocket. Delete it!
-    localStorage.removeItem('ton-connect-storage_bridge-connection');
-    
-    // This key holds the "Last Selected" wallet info. Delete it!
-    localStorage.removeItem('ton-connect-ui_last-selected-wallet-info');
-    
-    // This key holds the old cached list. Delete it!
-    localStorage.removeItem('ton-connect-ui_wallets-list');
-} catch (e) {
-    console.error('Storage cleanup failed', e);
-}
 
 
 createRoot(document.getElementById('root')).render(
