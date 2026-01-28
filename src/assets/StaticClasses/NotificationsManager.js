@@ -166,7 +166,19 @@ export async function cloudRestore() {
     let finalDataToLoad = null;
 
     // ---------------------------------------------------------
-    // 🔍 STEP 1: DETECT FORMAT & UNWRAP
+    // 📦 STEP 0: UNWRAP NESTED SERVER RESPONSE (The Fix)
+    // ---------------------------------------------------------
+    // The logs show rawData is: { success: true, message: "eJz..." }
+    // We need to extract the inner .message
+    if (typeof rawData === 'object' && rawData !== null) {
+        if (rawData.success === true && rawData.message) {
+            console.log("📦 Unwrapping nested server response...");
+            rawData = rawData.message; // Now rawData is just the "eJz..." string
+        }
+    }
+
+    // ---------------------------------------------------------
+    // 🔍 STEP 1: DETECT FORMAT & UNWRAP (Standard Checks)
     // ---------------------------------------------------------
     
     // Case A: It's an Object (e.g., { content: "base64..." } OR Legacy { xp: 100... })
@@ -177,13 +189,13 @@ export async function cloudRestore() {
         } else {
             // It's Legacy Data (Plain Object) -> No decompression needed
             console.log("♻️ Detected Legacy Object Data");
-            finalDataToLoad = JSON.stringify(rawData); // Convert to string for deserialize
+            finalDataToLoad = JSON.stringify(rawData); 
         }
     }
 
     // Case B: It's a String (e.g., "base64..." OR '{"content":"..."}' OR Legacy JSON)
     if (typeof rawData === 'string') {
-        // Clean up accidental double-quotes from server/client stringify issues
+        // Clean up accidental double-quotes
         if (rawData.startsWith('"') && rawData.endsWith('"')) {
             rawData = rawData.slice(1, -1);
         }
@@ -194,13 +206,16 @@ export async function cloudRestore() {
                 const parsed = JSON.parse(rawData);
                 if (parsed.content) {
                     rawData = parsed.content; // Extracted Base64 from JSON string
+                } else if (parsed.success && parsed.message) {
+                    // Handle double-nested JSON string case
+                    rawData = parsed.message;
                 } else {
                     // It's a Legacy JSON string
                     console.log("♻️ Detected Legacy JSON String");
                     finalDataToLoad = rawData;
                 }
             } catch (e) {
-                // Not JSON, assume it's Base64 or plain text
+                // Not JSON, assume it's Base64
             }
         }
     }
@@ -209,7 +224,6 @@ export async function cloudRestore() {
     // 🔓 STEP 2: DECOMPRESS OR LOAD
     // ---------------------------------------------------------
 
-    // If we haven't found "Legacy" data yet, 'rawData' should be our Base64 string
     if (!finalDataToLoad) {
         try {
             // Remove whitespace/newlines (Fixes InvalidCharacterError)
@@ -220,7 +234,7 @@ export async function cloudRestore() {
             finalDataToLoad = pako.inflate(binaryData, { to: 'string' });
         } catch (e) {
             console.warn("⚠️ Decompression failed. Trying raw data as fallback.", e);
-            // Fallback: maybe it wasn't compressed? Use rawData as is.
+            // Fallback
             finalDataToLoad = typeof rawData === 'object' ? JSON.stringify(rawData) : rawData;
         }
     }
