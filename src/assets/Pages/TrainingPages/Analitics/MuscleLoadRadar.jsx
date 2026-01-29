@@ -52,7 +52,7 @@ function MuscleLoadRadar({ theme, langIndex, muscleLoadData }) {
   return (
     <div style={{ width: '100%', height: '300px', position: 'relative' }}>
       <ResponsiveContainer width="100%" height="100%" className="muscle-load-chart">
-        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={muscleLoadData}>
+        <RadarChart cx="50%" cy="50%" outerRadius="60%" data={muscleLoadData}>
           
           <defs>
             {/* Soft Glow Filter */}

@@ -259,7 +259,7 @@ const UserPanel = () => {
                 <div style={s.actionList}>
                     
                     <ActionItem icon={<FaUserShield />} label={lang === 0 ? 'Изменить персональные данные' : 'Edit personal data'} theme={theme} onClick={() => setShowBodyMetrics(true)} />
-                    <ActionItem onClick={close} icon={<FaSignOutAlt />} label={lang === 0 ? 'Выйти' : 'Logout'} theme={theme} noBorder color="#FF4D4D" />
+                    <ActionItem onClick={close} icon={<FaSignOutAlt />} label={lang === 0 ? 'Выйти' : 'Close'} theme={theme} noBorder color="#FF4D4D" />
                 </div>
 
                 <div style={{ height: '100px' }} />
