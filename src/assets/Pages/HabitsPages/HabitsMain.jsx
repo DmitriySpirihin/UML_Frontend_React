@@ -716,5 +716,66 @@ function parsedTime(time, maxTime,langIndex, isNegative) {
 
 export function parsedTimeSimple(maxTimer) { return (Math.floor(maxTimer / 60000) + 'm'); }
 
-const Achievement = ({ milestone, index, habitId, isNegative, percent, theme, fSize, langIndex }) => { return <div style={{ fontSize: '13px', color: Colors.get('subText', theme), marginLeft: '2px', marginBottom:'6px', display: 'flex', alignItems: 'center', gap: '6px' }}><FaFire size={12} color={Colors.get('icons', theme)} style={{opacity: 0.5}}/>{milestone[langIndex]}</div>; };
+const Achievement = ({ milestone, index, habitId, theme, langIndex }) => {
+    // 1. Find the index of the habit to look up related data
+    const habitIndex = AppData.choosenHabits.indexOf(habitId);
+    
+    // 2. Get the reference time (LastSkip or StartDate if no skip exists)
+    // Using Date.now() vs the stored timestamp
+    const lastSkipMs = AppData.choosenHabitsLastSkip[habitId]; 
+    const startDateMs = AppData.choosenHabitsStartDates[habitIndex];
+    
+    // If they've never skipped, the streak is based on the Start Date
+    const effectiveStartMs = lastSkipMs || startDateMs;
 
+    const msInDay = 24 * 60 * 60 * 1000;
+    const currentStreak = effectiveStartMs 
+        ? Math.floor((Date.now() - effectiveStartMs) / msInDay) 
+        : 0;
+    
+    // 3. Define thresholds (30, 50, 100)
+    const thresholds = [30, 50, 100];
+    const target = thresholds[index] || 30;
+    
+    const isLocked = currentStreak < target;
+    const daysLeft = target - currentStreak;
+
+    // Translations
+    const statusText = langIndex === 0 
+        ? `${daysLeft} days left to unlock` 
+        : `Осталось ${daysLeft} дн. до открытия`;
+
+    return (
+        <div style={{ 
+            fontSize: '13px', 
+            color: Colors.get('subText', theme), 
+            marginLeft: '2px', 
+            marginBottom: '6px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '6px' 
+        }}>
+            {isLocked ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.6 }}>
+                    <div style={{ 
+                        width: '12px', 
+                        height: '12px', 
+                        border: `1px solid ${Colors.get('subText', theme)}`, 
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '9px',
+                        fontWeight: 'bold'
+                    }}>i</div>
+                    <span style={{ fontSize: '11px' }}>{statusText}</span>
+                </div>
+            ) : (
+                <>
+                    <FaFire size={12} color={Colors.get('icons', theme)} style={{ opacity: 0.8 }}/>
+                    {milestone[langIndex]}
+                </>
+            )}
+        </div>
+    );
+};
