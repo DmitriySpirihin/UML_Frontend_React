@@ -93,21 +93,11 @@ const MentalMain = () => {
                         />
                     ))}
                 </motion.div>
-
+                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{width: '54px', height: '154px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '15% 25% 15% auto'}}>
+                                            <img style={{ width: '15vh' }} src={'images/Math.png'} alt="logo" />
+                                        </motion.div>
                 <div style={{ height: '10vh', width: '100%' }} />
-                <img
-        src={'images/Math.png'}
-        style={{
-
-            position: 'absolute', // anchors to the Header, not the screen
-            top: '70%',         // Moves it UP to sit on the edge
-            left: '60%',         // Anchors it to the left side
-            width: '130px',       // Set a fixed size or % of the header
-            zIndex: 10,
-            filter: 'drop-shadow(0 5px 5px rgba(0,0,0,0.3))' // Optional shadow
-        }}
-        alt="Mascot"
-    />
+                
             </div>
             
         </div>

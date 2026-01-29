@@ -213,24 +213,14 @@ const NotifyPanel = () => {
                 transition={{ type: "spring", stiffness: 300, damping: 25 }}
                 style={styles(theme).panel}
             >
-                
+                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{width: '64px', height: '154px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                   <img style={{  width:page.startsWith("H") ? '14vh' : '16vh' }} src={page.startsWith("H") ? 'images/bro_habits.png' : 'images/Training.png'} alt="logo" />
+                </motion.div>
                 {/* Заголовок */}
                 <div style={{padding: '25px 20px 0 20px', width: '100%', boxSizing: 'border-box'}}>
                     <p style={styles(theme, false, fSize).subText}>{getInfoText(langIndex)}</p>
                 </div>
-                <img
-        src={page.startsWith("H") ? 'images/bro_habits.png' : 'images/Training.png'}
-        style={{
-
-            position: 'absolute', // anchors to the Header, not the screen
-            top: '12%',         // Moves it UP to sit on the edge
-            left: '5%',         // Anchors it to the left side
-            width:  page.startsWith("H") ? '100px' : '140px',       // Set a fixed size or % of the header
-            zIndex: 10,
-            filter: 'drop-shadow(0 5px 5px rgba(0,0,0,0.3))' // Optional shadow
-        }}
-        alt="Mascot"
-    />
+                
                 
                 {/* БАРАБАН */}
                 <div style={styles(theme).timePickerWrapper}>
@@ -338,8 +328,8 @@ export default NotifyPanel;
 
 function getInfoText(langIndex) {
   return langIndex === 0 ? 
-  'Установите время и дни недели, чтобы бот отправлял вам уведомления' : 
-  'Set a time and days of week to bot send notification to you';
+  'Установите время и дни недели, чтобы я мог отправлять вам уведомления' : 
+  'Set a time and days of week to i can send notification to you';
 }
 function getCronExpression(daysOfWeek,hour,minute){
   let cron = `${minute > 0 ? minute : '*'} ${hour > 0 ? hour : '*'} * *`;

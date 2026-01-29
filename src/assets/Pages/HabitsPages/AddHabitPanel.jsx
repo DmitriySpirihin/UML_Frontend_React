@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Colors from '../../StaticClasses/Colors'
 import { allHabits } from '../../Classes/Habit.js';
@@ -55,10 +55,10 @@ const AddHabitPanel = () => {
         bg: Colors.get('background', theme),
         card: Colors.get('mathInput', theme),
         text: Colors.get('mainText', theme),
-        sub:Colors.get('subText', theme),
+        sub: Colors.get('subText', theme),
         accent: Colors.get('scrollFont', theme),
         blur: 'blur(30px)',
-        border:Colors.get('border', theme)
+        border: Colors.get('border', theme)
     };
 
     useEffect(() => {
@@ -69,21 +69,48 @@ const AddHabitPanel = () => {
         return () => { sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe(); };
     }, []);
 
-    // Логика Drum Picker (скролл списка)
-    const handleDrumScroll = (e) => {
-        const itemHeight = 44;
-        const index = Math.round(e.target.scrollTop / itemHeight);
-        const filtered = habitList.filter(h => !AppData.choosenHabits.includes(h.id) && h.category[langIndex] === filterCategory);
-        const selected = filtered[index];
-        if (selected && selected.id !== habitId) {
-            setHabitId(selected.id);
-            setHabitName(selected.name[langIndex]);
-            setIsNegative(selected.category[0] === 'Отказ от вредного');
-            setGoals(setGoalForDefault(selected.name[0], langIndex));
-            setDaysToForm(selected.category[0] === 'Отказ от вредного' ? 120 : 66);
+    // --- 1. PREPARE DATA FOR SCROLL PICKER ---
+    const filteredHabits = useMemo(() => {
+        const targetCategory = langIndex === 0 ? filterCategory : getCategory(filterCategory)[1];
+        return habitList.filter(h => !AppData.choosenHabits.includes(h.id) && h.category[langIndex] === targetCategory);
+    }, [habitList, filterCategory, langIndex]);
+
+    const pickerItems = useMemo(() => {
+        return filteredHabits.map(h => h.name[langIndex]);
+    }, [filteredHabits, langIndex]);
+
+    // Find current selected name for the picker value
+    const currentPickerValue = useMemo(() => {
+        const found = filteredHabits.find(h => h.id === habitId);
+        return found ? found.name[langIndex] : (pickerItems[0] || '');
+    }, [habitId, filteredHabits, pickerItems, langIndex]);
+
+
+    // --- 2. HANDLE PICKER CHANGE ---
+    const handlePickerChange = (selectedName) => {
+        const selectedHabit = filteredHabits.find(h => h.name[langIndex] === selectedName);
+        
+        if (selectedHabit && selectedHabit.id !== habitId) {
+            setHabitId(selectedHabit.id);
+            setHabitName(selectedHabit.name[langIndex]);
+            setIsNegative(selectedHabit.category[0] === 'Отказ от вредного');
+            setGoals(setGoalForDefault(selectedHabit.name[0], langIndex));
+            setDaysToForm(selectedHabit.category[0] === 'Отказ от вредного' ? 120 : 66);
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
     };
+
+    // Initialize selection when category changes (select first item if current is invalid)
+    useEffect(() => {
+        if (!showCreatePanel && filteredHabits.length > 0) {
+            // If currently selected ID is not in the new list, select the first one
+            const currentInList = filteredHabits.find(h => h.id === habitId);
+            if (!currentInList) {
+               handlePickerChange(filteredHabits[0].name[langIndex]);
+            }
+        }
+    }, [filterCategory, habitList]);
+
 
     const handleSave = () => {
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
@@ -105,7 +132,6 @@ const AddHabitPanel = () => {
     const daysInMonth = new Date(year, month, 0).getDate();
     const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
     const monthsArray = months[langIndex];
-    // RESTRICTED YEAR ARRAY (Current Year Only)
     const YEAR = now.getFullYear();
     const yearsArray = [YEAR- 1, YEAR]; 
 
@@ -162,18 +188,28 @@ const AddHabitPanel = () => {
                                                     <MyInput theme={theme}  placeHolder={langIndex === 0 ? 'поиск' : 'search'} onChange={v => searchHabitsList(v, habitList, setHabitList)} />
                                                 </div>
 
-                                                {/* БАРАБАН (Drum) */}
-                                                <div style={drumContainer(ui)}>
-                                                    <div onScroll={handleDrumScroll} style={drumScroll} className="no-scrollbar">
-                                                        <div style={{ height: '88px' }} />
-                                                        {habitList.filter(h => !AppData.choosenHabits.includes(h.id) && h.category[langIndex] === (langIndex === 0 ? filterCategory : getCategory(filterCategory)[1])).map((h) => (
-                                                            <div key={h.id} style={drumItem(h.id === habitId, ui)}>
-                                                                {h.name[langIndex]}
-                                                            </div>
-                                                        ))}
-                                                        <div style={{ height: '88px' }} />
-                                                    </div>
-                                                    <div style={drumLens(ui)} />
+                                                {/* --- REPLACED WITH SCROLLPICKER --- */}
+                                                <div style={{
+                                                    ...drumContainer(ui), 
+                                                    display: 'flex', 
+                                                    justifyContent: 'center', 
+                                                    alignItems: 'center',
+                                                    height: '250px' // Adjust height to fit ScrollPicker comfortably
+                                                }}>
+                                                    {pickerItems.length > 0 ? (
+                                                        <ScrollPicker 
+                                                            items={pickerItems} 
+                                                            value={currentPickerValue} 
+                                                            onChange={handlePickerChange} 
+                                                            theme={theme} 
+                                                            width="100%" 
+                                                            visibleItems={8}
+                                                        />
+                                                    ) : (
+                                                        <div style={{color: ui.sub, fontSize:'14px'}}>
+                                                            {langIndex === 0 ? 'Нет привычек' : 'No habits found'}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </>
                                         ) : (
@@ -264,7 +300,7 @@ const AddHabitPanel = () => {
 
                                 {!confirmationPanel && (
                                     <motion.div whileTap={{ scale: 0.9 }} style={btnNew(ui)} onClick={() => setshowCreatePanel(!showCreatePanel)}>
-                                       {showCreatePanel ? <MdListAlt size={24} color="#FFF" /> :  <MdFiberNew size={24} color="#FFF" />}
+                                           {showCreatePanel ? <MdListAlt size={24} color="#FFF" /> :  <MdFiberNew size={24} color="#FFF" />}
                                     </motion.div>
                                 )}
 

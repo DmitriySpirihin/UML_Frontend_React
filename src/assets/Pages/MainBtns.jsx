@@ -19,7 +19,7 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.82.5.f';
+const version = '2.c.82.7.f';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -280,7 +280,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                         {panelNum === 4 && (
                             <div style={{ width: "85%", display: 'flex', flexDirection: 'column', gap: '15px', textAlign: 'center' }}>
                                 <MdBackup size={50} color={Colors.get('mainText', theme)} style={{margin: '0 auto'}}/>
-                                <p style={{...styles(theme).text, fontSize: '12px', opacity: 0.7}}>{AppData.lastBackupDate === '' ? (langIndex === 0 ? 'Нет копий' : 'No backups') : AppData.lastBackupDate}</p>
+                                <p style={{...styles(theme).text, fontSize: '12px', opacity: 0.7}}>{AppData.lastBackupDate === '' ? (langIndex === 0 ? 'Нет копий' : 'No backups') : AppData.lastBackupDate.split('T')[0]}</p>
                                 <ActionButton text={langIndex === 0 ? 'Создать' : 'Backup'} onClick={cloudBackup} theme={theme} color="#FFA64D"/>
                                 <ActionButton text={langIndex === 0 ? 'Восстановить' : 'Restore'} onClick={cloudRestore} theme={theme} color="#4DA6FF"/>
                             <div  style={{display:'flex',flexDirection:'column',gap: '15px',border: `3px solid #b32323`,borderRadius: '16px',padding: '15px',margin: '15px 0'}}>

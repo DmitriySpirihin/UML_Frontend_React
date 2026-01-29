@@ -36,7 +36,7 @@ const RobotMain = () => {
                         position: 'absolute', inset: 0, zIndex: 2555,
                         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
                         backgroundColor: theme$.value === 'dark' ? 'rgba(10, 10, 10, 0.85)' : 'rgba(255, 255, 255, 0.9)',
-                        backdropFilter: 'blur(22px)',
+                        backdropFilter: 'blur(10px)',
                         textAlign: 'center'
                     }}
                 >

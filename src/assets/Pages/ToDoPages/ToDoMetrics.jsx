@@ -167,6 +167,22 @@ const ToDoMetrics = () => {
                 </motion.div>
 
             </motion.div>
+            {!hasPremium && (
+                <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    style={{
+                        position: 'absolute', inset: 0, zIndex: 2,
+                        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+                        backgroundColor: theme$.value === 'dark' ? 'rgba(10, 10, 10, 0.85)' : 'rgba(255, 255, 255, 0.9)',
+                        backdropFilter: 'blur(11px)',
+                        textAlign: 'center'
+                    }}
+                >
+                    <div style={{ color: theme$.value === 'dark' ? '#FFD700' : '#D97706', fontSize: '11px', fontWeight: 'bold', fontFamily: 'Segoe UI' }}>
+                        {lang === 0 ? 'ТОЛЬКО ДЛЯ ПРЕМИУМ' : 'PREMIUM USERS ONLY'}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

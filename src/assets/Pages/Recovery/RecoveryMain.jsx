@@ -68,19 +68,7 @@ const RecoveryMain = () => {
     return (
         <div style={styles(theme).container}>
             <div style={{ height: '16vh' }} /> 
-            <img
-        src={'images/Meditate.png'}
-        style={{
-
-            position: 'absolute', // anchors to the Header, not the screen
-            top: '75%',         // Moves it UP to sit on the edge
-            left: '55%',         // Anchors it to the left side
-            width: '140px',       // Set a fixed size or % of the header
-            zIndex: 10,
-            filter: 'drop-shadow(0 5px 5px rgba(0,0,0,0.3))' // Optional shadow
-        }}
-        alt="Mascot"
-    />
+            
             <div style={styles(theme).scrollView}>
                 
                 <motion.div
@@ -101,6 +89,9 @@ const RecoveryMain = () => {
                         />
                     ))}
                 </motion.div>
+                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{width: '54px', height: '154px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '35% 25% 15% auto'}}>
+                                            <img style={{ width: '18vh' }} src={'images/Meditate.png'} alt="logo" />
+                                        </motion.div>
                 
                 <div style={{ height: '10vh', width: '100%' }} />
             </div>

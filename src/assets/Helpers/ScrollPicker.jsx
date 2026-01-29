@@ -1,46 +1,40 @@
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState } from "react";
 import Colors from "../StaticClasses/Colors";
 
-const ITEM_HEIGHT = 36; 
-const VISIBLE_ITEMS = 3; 
+const ITEM_HEIGHT = 36;  
 
-const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80px' }) => {
+const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80px',visibleItems = 3 }) => {
   const scrollRef = useRef(null);
-  // State to control smooth scrolling. false = instant, true = smooth
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // 1. TRIPLE THE LIST: [Previous Set, Current Set, Next Set]
-  const infiniteItems = useMemo(() => {
-    return [...items, ...items, ...items];
-  }, [items]);
+  // Buffer to allow the first and last items to be selected in the center
+  const SPACER_HEIGHT = ((visibleItems - 1) / 2) * ITEM_HEIGHT;
 
-  const SPACER_HEIGHT = ((VISIBLE_ITEMS - 1) / 2) * ITEM_HEIGHT;
-
-  // 2. INITIAL MOUNT: Scroll to the "Middle" Set INSTANTLY
+  // 1. INITIAL MOUNT: Scroll to the selected value INSTANTLY
   useEffect(() => {
     if (scrollRef.current) {
       const selectedIndex = items.findIndex(item => item === value);
-      const middleSetIndex = (selectedIndex === -1 ? 0 : selectedIndex) + items.length;
-      scrollRef.current.scrollTop = middleSetIndex * ITEM_HEIGHT;
+      if (selectedIndex !== -1) {
+        scrollRef.current.scrollTop = selectedIndex * ITEM_HEIGHT;
+      }
+      // Enable smooth scrolling after the initial jump
       requestAnimationFrame(() => {
         setIsLoaded(true);
       });
     }
-  }, []);
+  }, []); // Run only on mount
 
+  // 2. Simple Scroll Handler (No looping logic)
   const handleScroll = (e) => {
     const scrollTop = e.target.scrollTop;
-    const singleSetHeight = items.length * ITEM_HEIGHT;
-    if (scrollTop < singleSetHeight / 2) {
-      e.target.scrollTop = scrollTop + singleSetHeight;
-    } 
-    else if (scrollTop >= singleSetHeight * 2.5) {
-      e.target.scrollTop = scrollTop - singleSetHeight;
-    }
-    const rawIndex = Math.round(scrollTop / ITEM_HEIGHT);
-    const actualIndex = rawIndex % items.length;
     
-    const newItem = items[actualIndex];
+    // Calculate which item is currently in the center
+    const rawIndex = Math.round(scrollTop / ITEM_HEIGHT);
+    
+    // Clamp the index to ensure it stays within bounds
+    const index = Math.max(0, Math.min(items.length - 1, rawIndex));
+    
+    const newItem = items[index];
     if (newItem !== value && newItem !== undefined) {
       onChange(newItem);
     }
@@ -49,14 +43,14 @@ const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80p
   return (
     <div style={{ 
       position: 'relative', 
-      height: ITEM_HEIGHT * VISIBLE_ITEMS, 
+      height: ITEM_HEIGHT * visibleItems, 
       width: width, 
       borderRadius: '12px',
       overflow: 'hidden',
       userSelect: 'none',
       perspective: '1000px'
     }}>
-      {/* 1. Selection Highlight */}
+      {/* Selection Highlight */}
       <div style={{
         position: 'absolute',
         top: '50%',
@@ -70,16 +64,16 @@ const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80p
         zIndex: 1
       }} />
 
-      {/* 2. Fade Gradients */}
+      {/* Fade Gradients Overlay */}
       <div style={{
         position: 'absolute',
         top: 0, left: 0, right: 0, bottom: 0,
         pointerEvents: 'none',
         zIndex: 2,
-        
+       
       }} />
       
-      {/* 3. Scrollable Container */}
+      {/* Scrollable Container */}
       <div 
         ref={scrollRef}
         onScroll={handleScroll}
@@ -90,14 +84,14 @@ const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80p
           scrollSnapType: 'y mandatory',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
-          // KEY FIX: Use 'auto' initially for instant jump, then 'smooth'
           scrollBehavior: isLoaded ? 'smooth' : 'auto',
           WebkitOverflowScrolling: 'touch'
         }}
       >
-        <div style={{ height: SPACER_HEIGHT, width: '100%' }} />
+        {/* Top Spacer */}
+        <div style={{ height: SPACER_HEIGHT, width: '100%', flexShrink: 0 }} />
 
-        {infiniteItems.map((item, i) => {
+        {items.map((item, i) => {
           const isSelected = item === value;
           
           return (
@@ -109,6 +103,7 @@ const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80p
                 alignItems: 'center',
                 justifyContent: 'center',
                 scrollSnapAlign: 'center',
+                flexShrink: 0, // Prevent items from shrinking
                 
                 // Styles
                 fontSize: isSelected ? '18px' : '15px',
@@ -125,7 +120,8 @@ const ScrollPicker = ({ items, value, onChange, theme, suffix = '', width = '80p
           );
         })}
 
-        <div style={{ height: SPACER_HEIGHT, width: '100%' }} />
+        {/* Bottom Spacer */}
+        <div style={{ height: SPACER_HEIGHT, width: '100%', flexShrink: 0 }} />
       </div>
     </div>
   );

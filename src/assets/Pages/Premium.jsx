@@ -5,7 +5,7 @@ import { useTonConnectUI } from '@tonconnect/ui-react';
 import { beginCell } from 'ton-core';
 import Colors from '../StaticClasses/Colors';
 import { lastPage$, setPage, theme$, lang$, premium$, fontSize$, isValidation$, setValidation, setShowPopUpPanel } from '../StaticClasses/HabitsBus';
-import { FaBrain, FaChartPie, FaRobot, FaStar, FaCrown, FaTimes, FaInfinity,FaHourglassHalf,FaCheckCircle,FaCalendarAlt } from 'react-icons/fa';
+import { FaBrain, FaChartPie, FaRobot, FaStar, FaCrown, FaTimes, FaInfinity,FaCheckCircle,FaCalendarAlt } from 'react-icons/fa';
 import { MdOutlineDiamond } from "react-icons/md";
 import { BiRuble } from "react-icons/bi";
 import { initiateSbpPayment, fetchTonInvoice, initiateTgStarsPayment } from '../StaticClasses/PaymentService';
@@ -195,27 +195,29 @@ const Premium = () => {
             {/* 3. Main Content Section */}
             {!isValidation && !needAgreement && !hasPremium && (
                 <div style={styles(theme).contentWrapper}>
-                    <header style={{ textAlign: 'center', marginBottom: '25px', marginTop: '10px' }}>
-                        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={styles(theme).heroIcon}>
-                            <FaInfinity size={32} color="white" />
+                    <header style={{ textAlign: 'center', marginBottom: '5px', marginTop: '10px' }}>
+                        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{width: '54px', height: '154px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto'}}>
+                            <img style={{ width: '15vh' }} src={'images/Premium_Bro.png'} alt="logo" />
                         </motion.div>
                         <h1 style={styles(theme).title}>UltyMyLife <span style={{ color: '#007AFF' }}>Pro</span></h1>
                         <p style={styles(theme).subtitle}>{langIndex === 0 ? 'Твоя лучшая версия' : 'Your best version'}</p>
                     </header>
 
                     <div style={styles(theme).segmentedControl}>
-                        <SegmentOption id={1} current={currentPaymentMethod} set={setCurrentPaymentMethod} label={langIndex === 0 ? "СБП(только Россия)" : "SBP(Russia only)"} icon={<BiRuble size={14} />} isDark={isDark} />
-                        <SegmentOption id={2} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="Telegram Stars" icon={<FaStar size={12} />} isDark={isDark} />
-                        <SegmentOption id={3} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="TON / TON Connect" icon={<MdOutlineDiamond size={14} />} isDark={isDark} />
+                        <SegmentOption id={1} current={currentPaymentMethod} set={setCurrentPaymentMethod} label={langIndex === 0 ? "СБП" : "SBP"} icon={<BiRuble size={14} />} isDark={isDark} />
+                        <SegmentOption id={2} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="Stars" icon={<FaStar size={12} />} isDark={isDark} />
+                        <SegmentOption id={3} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="TON" icon={<MdOutlineDiamond size={14} />} isDark={isDark} />
                     </div>
 
                     <motion.div variants={containerVariants} initial="hidden" animate="show" style={styles(theme).featuresGrid}>
+                        
                         <FeatureItem theme={theme} variants={itemVariants} icon={<FaRobot />} title={langIndex === 0 ? "ИИ Анализ" : "AI Analysis"} sub={langIndex === 0 ? "Умные инсайты" : "Smart insights"} />
                         <FeatureItem theme={theme} variants={itemVariants} icon={<FaBrain />} title={langIndex === 0 ? "Нейро-рост" : "Neuro-growth"} sub={langIndex === 0 ? "Развитие" : "Training"} />
                         <FeatureItem theme={theme} variants={itemVariants} icon={<FaChartPie />} title={langIndex === 0 ? "Аналитика" : "Analytics"} sub={langIndex === 0 ? "Вся история" : "History"} />
                     </motion.div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginBottom: '25px' }}>
+                        
                         <BigPlanCard 
                             active={chosenCard === 3} onClick={() => setChosenCard(3)} theme={theme}
                             price={tarifs[currentPaymentMethod - 1][2]} label={langIndex === 0 ? '12 месяцев' : '1 Year'}
@@ -228,10 +230,10 @@ const Premium = () => {
                         </div>
                     </div>
 
-                    <button onClick={setNeedAgreement} style={styles(theme).mainButton}>
-                            {langIndex === 0 ? 'Продолжить' : 'Continue'}
+                    <button onClick={() => {if(currentPaymentMethod !== 1){setNeedAgreement(true)}}} style={{...styles(theme).mainButton,backgroundColor: currentPaymentMethod !== 1 ? '#007AFF' : '#d13636', boxShadow: currentPaymentMethod !== 1 ? '0 4px 20px rgba(0, 122, 255, 0.4)' : '0 4px 20px rgba(255, 0, 0, 0.4)'}}>
+                            {currentPaymentMethod !== 1 ? langIndex === 0 ? 'Продолжить' : 'Continue' : langIndex === 0 ? 'Временно недоступно' : 'Temporarily unavailable'}
                         </button>
-                    <p style={styles(theme).footerHint}>{langIndex === 0 ? 'Единоразовый платеж. Без автосписаний.' : 'One-time payment. No auto-renewal.'}</p>
+                    <p style={styles(theme).footerHint}>{getPaymentMethodHint(currentPaymentMethod, langIndex)}</p>
                 </div>
             )}
              {hasPremium && (
@@ -642,15 +644,14 @@ const styles = (theme) => {
                 : 'radial-gradient(circle at 50% -20%, #E0E7FF 0%, #F9FAFB 60%)', 
             fontFamily: 'Segoe UI' 
         },
-        contentWrapper: { padding: '20px 24px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto',marginTop:'30%' },
-        heroIcon: { width: '68px', height: '68px', borderRadius: '20px', background: 'linear-gradient(180deg, #007AFF 0%, #0055B3 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto', boxShadow: '0 12px 30px rgba(0, 122, 255, 0.3)' },
+        contentWrapper: { padding: '20px 24px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto',marginTop:'10%' },
         title: { fontSize: '28px', fontWeight: '800', color: isDark ? 'white' : '#111827', margin: 0, textAlign: 'center' },
         subtitle: { fontSize: '15px', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', marginTop: '5px', textAlign: 'center' },
         closeBtn: { position: 'absolute', top: '85px', right: '25px', zIndex: 10 },
         iconCircle: { width: '32px', height: '32px', borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' },
         segmentedControl: { background: isDark ? 'rgba(118, 118, 128, 0.24)' : '#E5E7EB', borderRadius: '9px', padding: '2px', display: 'flex', width: '100%', margin: '25px 0' },
         featuresGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', width: '100%', marginBottom: '30px' },
-        footerHint: { textAlign: 'center', fontSize: '11px', color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', marginTop: '15px' },
+        footerHint: { textAlign: 'center', fontSize: '12px', color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', marginTop: '15px' },
         bottomSheet: { position: 'absolute', bottom: 0, left: 0, width: '100%', background: isDark ? '#1C1C1E' : '#FFFFFF', borderTopLeftRadius: '28px', borderTopRightRadius: '28px', padding: '20px 24px 40px 24px', boxSizing: 'border-box', zIndex: 6000, boxShadow: isDark ? '0 -20px 40px rgba(0,0,0,0.6)' : '0 -10px 30px rgba(0,0,0,0.1)' },
         sheetHandle: { width: '36px', height: '5px', background: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)', borderRadius: '3px', margin: '0 auto 20px auto' },
         sheetTitle: { textAlign: 'center', color: isDark ? 'white' : 'black', fontSize: '20px', fontWeight: 700, margin: '0 0 20px 0' },
@@ -918,6 +919,24 @@ We reserve the right to update pricing or terms. Users will be notified in advan
 https://t.me/diiimaaan777
 📩  please include your **Telegram ID** and **payment date** when contacting us.
 `
+}
+function getPaymentMethodHint(currentPaymentMethod, langIndex) {
+  switch (currentPaymentMethod) {
+    case 1:
+      return langIndex === 0
+        ? 'Безопасный платеж через официальный шлюз ЮKassa (СБП).'
+        : 'Secure payment processed via official YooKassa gateway (SBP).';
+    case 2:
+      return langIndex === 0
+        ? 'Оплата цифровых товаров внутренней валютой Telegram Stars.'
+        : 'Purchase of digital goods using Telegram Stars currency.';
+    case 3:
+      return langIndex === 0
+        ? 'Децентрализованная транзакция через протокол TonConnect.'
+        : 'Decentralized blockchain transaction via TonConnect protocol.';
+    default:
+      return '';
+  }
 }
 
 

@@ -115,7 +115,7 @@ const HabitMetrics = () => {
                         position: 'absolute', inset: 0, zIndex: 2,
                         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
                         backgroundColor: theme$.value === 'dark' ? 'rgba(10, 10, 10, 0.85)' : 'rgba(255, 255, 255, 0.9)',
-                        backdropFilter: 'blur(5px)',
+                        backdropFilter: 'blur(10px)',
                         textAlign: 'center'
                     }}
                 >
@@ -166,12 +166,12 @@ const HabitMetrics = () => {
                             <div style={{ width: '90%', display: 'flex', gap: '12px', margin: '20px 0' }}>
                                 <div style={{ ...statCard(ui), border: `1px solid ${ui.accent}30`, boxShadow: isLight ? 'none' : `0 0 15px ${ui.accent}15` }}>
                                     <FaTrophy style={{ position: 'absolute', right: '-5px', bottom: '-5px', fontSize: '45px', color: ui.accent, opacity: 0.1 }} />
-                                    <span style={{ fontSize: '10px', fontWeight: '800', color: ui.accent }}>РЕКОРД</span>
+                                    <span style={{ fontSize: '10px', fontWeight: '800', color: ui.accent }}>{langIndex === 0 ? 'РЕКОРД' : 'RECORD'}</span>
                                     <span style={{ fontSize: '28px', fontWeight: '900', color: ui.text }}>{maxStreak}</span>
                                 </div>
                                 <div style={{ ...statCard(ui), border: `1px solid ${ui.orange}30`, boxShadow: isLight ? 'none' : `0 0 15px ${ui.orange}15` }}>
                                     <FaFire style={{ position: 'absolute', right: '-5px', bottom: '-5px', fontSize: '50px', color: ui.orange, opacity: 0.1 }} />
-                                    <span style={{ fontSize: '10px', fontWeight: '800', color: ui.orange }}>ТЕКУЩАЯ</span>
+                                    <span style={{ fontSize: '10px', fontWeight: '800', color: ui.orange }}>{langIndex === 0 ? 'ТЕКУЩАЯ' : 'CURRENT'}</span>
                                     <span style={{ fontSize: '28px', fontWeight: '900', color: ui.text }}>{currentStreak}</span>
                                 </div>
                             </div>
@@ -191,7 +191,7 @@ const HabitMetrics = () => {
                                     </svg>
                                     <div style={{ position: 'absolute', textAlign: 'center' }}>
                                         <span style={{ fontSize: '38px', fontWeight: '900', color: ui.text }}>{Math.round(fillAmount * 100)}%</span>
-                                        <div style={{ fontSize: '10px', color: ui.sub, fontWeight: '800' }}>DONE</div>
+                                        <div style={{ fontSize: '10px', color: ui.sub, fontWeight: '800' }}>{langIndex === 0 ? 'ГОТОВО' : 'DONE'}</div>
                                     </div>
                                 </div>
                                 <div style={{ width: '100%' }}>
@@ -213,17 +213,17 @@ const HabitMetrics = () => {
                             <div style={{ width: '90%', marginTop: '20px', display: 'flex', gap: '10px' }}>
                                 <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowInfo(true)} style={actionCard(ui)}>
                                     <FaInfoCircle size={18} color={ui.accent} />
-                                    <span style={{ fontSize: '12px', fontWeight: '800', color: ui.text }}>Инфо</span>
+                                    <span style={{ fontSize: '12px', fontWeight: '800', color: ui.text }}>{langIndex === 0 ? 'Инфо' : 'Info'}</span>
                                 </motion.div>
                                 <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowListOfHabitsPanel(true)} style={actionCard(ui)}>
                                     <FaListUl size={18} color={ui.text} />
-                                    <span style={{ fontSize: '12px', fontWeight: '800', color: ui.text }}>Список</span>
+                                    <span style={{ fontSize: '12px', fontWeight: '800', color: ui.text }}>{langIndex === 0 ? 'Список' : 'List'}</span>
                                 </motion.div>
                                 <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowChangeDaysPanel(true)} style={actionCard(ui)}>
                                     <FaPencilAlt size={16} color={ui.accent} />
                                     <div style={{ textAlign: 'left', lineHeight: '1' }}>
                                         <div style={{ fontSize: '14px', fontWeight: '800', color: ui.text }}>{daysToForm}</div>
-                                        <div style={{ fontSize: '9px', color: ui.sub }}>ДНЕЙ</div>
+                                        <div style={{ fontSize: '9px', color: ui.sub }}>{langIndex === 0 ? 'ДНЕЙ' : 'DAYS'}</div>
                                     </div>
                                 </motion.div>
                             </div>
@@ -241,7 +241,7 @@ const HabitMetrics = () => {
                             onClick={e => e.stopPropagation()}
                         >
                             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'40px' }}>
-                                <span style={{ fontSize: '24px', fontWeight: '800', color: ui.text }}>Привычки</span>
+                                <span style={{ fontSize: '24px', fontWeight: '800', color: ui.text }}>{langIndex === 0 ? 'Привычки' : 'Habits'}</span>
                                 <MdClose size={28} color={ui.sub} onClick={() => setShowListOfHabitsPanel(false)} style={{cursor:'pointer'}} />
                             </div>
                             {AppData.choosenHabits.map((id) => (
@@ -277,9 +277,9 @@ const HabitMetrics = () => {
                             style={{ ...bottomSheetStyle, backgroundColor: ui.panel, backdropFilter: ui.blur, textAlign: 'center' }} onClick={e => e.stopPropagation()}
                         >
                             <div style={dragHandle} />
-                            <h3 style={{ color: ui.text, marginBottom: '20px' }}>Срок формирования</h3>
+                            <h3 style={{ color: ui.text, marginBottom: '20px' }}>{langIndex === 0 ? 'Срок формирования' : 'Formation Period'}</h3>
                             <Slider min={21} max={180} value={tempDaysToForm} onChange={(e, v) => setTempDaysToForm(v)} sx={{ color: ui.accent, marginBottom: '20px' }} />
-                            <div style={{ fontSize: '28px', fontWeight: '900', color: ui.text, marginBottom: '30px' }}>{tempDaysToForm} дней</div>
+                            <div style={{ fontSize: '28px', fontWeight: '900', color: ui.text, marginBottom: '30px' }}>{tempDaysToForm} {langIndex === 0 ? 'дней' : 'days'}</div>
                             <div style={{ display: 'flex', gap: '15px', padding: '0 20px' }}>
                                 <button style={modalBtnStyle} onClick={() => setShowChangeDaysPanel(false)}>Cancel</button>
                                 <button style={{ ...modalBtnStyle, backgroundColor: ui.accent, color: '#FFF' }} onClick={() => {
@@ -334,9 +334,21 @@ function interpolateColor(color1, color2, factor) {
 }
 
 const infoTextLong = (lang, habitId) => {
+    // Determine if the habit is negative (breaking bad) or positive (building good)
     const isNegative = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habitId)];
-    return isNegative ? (lang === 0 ? 'Каждый день без срыва — победа. Мозгу нужно время на детокс.' : 'Every day without relapse is a win. Your brain needs time to detox.') : (lang === 0 ? 'Автоматизм вырабатывается через 66 дней. Важна общая тенденция.' : 'Automaticity takes about 66 days. Consistency is key.');
-}
+
+    if (isNegative) {
+        // --- TEXT FOR BREAKING BAD HABITS ---
+        return lang === 0 
+            ? 'Избавление от привычки — это перестройка дофаминовых путей. Мозг будет сопротивляться, требуя «награды», но каждый день воздержания физически ослабляет старую нейронную связь. Срыв — это не конец, а часть процесса. Полная перестройка занимает около 90 дней.' 
+            : 'Breaking a habit means rewiring your dopamine pathways. Your brain will resist and crave the old reward, but every day you abstain physically weakens that old neural connection. A slip-up is not a failure, but part of the process. Full rewiring usually takes about 90 days.';
+    } else {
+        // --- TEXT FOR BUILDING NEW HABITS ---
+        return lang === 0 
+            ? 'Формирование привычки — это создание новой «дороги» в мозге. Исследования UCL показывают, что автоматизм наступает в среднем через 66 дней. Сначала требуется сила воли, но регулярность превращает усилие в рефлекс. Пропущенный день не обнуляет прогресс, если вы сразу вернетесь в строй.' 
+            : 'Forming a habit is like building a new highway in your brain. UCL research shows it takes an average of 66 days to reach automaticity. At first, it requires willpower, but consistency turns effort into reflex. Missing one day does not reset your progress, as long as you get back on track immediately.';
+    }
+};
 const daysCountText = (lang, count) => [['Неделя', 'Месяц', 'Квартал'], ['Week', 'Month', 'Quarter']][lang][count];
 const getHabitRangeStartLabel = (daysCount) => {
     const d = new Date(); d.setDate(d.getDate() - [7, 30, 90][daysCount]);

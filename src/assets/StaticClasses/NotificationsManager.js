@@ -134,6 +134,7 @@ export async function cloudBackup() {
     // Update timestamp
     const now = new Date();
     AppData.lastBackupDate = now.toISOString();
+    await saveData();
 
     const response = await NotificationsManager.sendMessage('backup', base64Data);
     
@@ -266,7 +267,8 @@ export async function deleteCloudBackup() {
 
     if (response?.success) {
       // ✅ Clear local lastBackupDate
-      AppData.lastBackupDate = null;
+      AppData.lastBackupDate = '';
+      await saveData();
 
       // Optional: also save this state locally (IndexedDB)
       // await saveData();

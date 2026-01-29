@@ -5,10 +5,9 @@ import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, is
 import { AppData, UserData } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
-import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot, FaMedal, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift , FaTelegramPlane } from "react-icons/fa";
+import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot,FaStar, FaMedal, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift , FaTelegramPlane } from "react-icons/fa";
 import { MdOutlineSelfImprovement } from "react-icons/md";
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
-import { PremiumButton } from './Premium'
 import { sendReferalLink } from '../StaticClasses/PaymentService'
 
 const MainMenu = () => {
@@ -501,7 +500,6 @@ function ReferalButton({ theme, lang, onClick }) {
     );
 }
 function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,setShowReferralModal }) {
-    const info = getInfo(index - 1); 
     const isDark = theme === 'dark';
 
     const cardStyle = {
@@ -600,19 +598,7 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,set
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', marginLeft: '8px' }}>
-                {info !== '' && (
-                    <div style={{
-                        padding: '4px 10px',
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-                        borderRadius: '12px',
-                        fontSize: '13px',
-                        fontWeight: '700',
-                        color: Colors.get('mainText', theme),
-                        marginRight: '8px'
-                    }}>
-                        {info}
-                    </div>
-                )}
+                <Info id = {item.id} theme={theme} lang={lang} />
                 <FaChevronRight size={14} color={Colors.get('subText', theme)} style={{ opacity: 0.3 }} />
             </div>
             </div>) : 
@@ -637,6 +623,33 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,set
         </motion.div>
     );
 }
+
+const Info = ({ id, theme, lang }) => {
+  const info = getInfo(id, lang);
+
+  if (!info) return null;
+
+  return (
+    <div
+      style={{
+        padding: '4px 10px',
+        backgroundColor:
+          theme === 'dark'
+            ? 'rgba(255, 255, 255, 0.05)'
+            : 'rgba(0, 0, 0, 0.05)',
+        borderRadius: '12px',
+        fontSize: '13px',
+        fontWeight: '700',
+        color: Colors.get('mainText', theme),
+        marginRight: '8px',
+      }}
+    >
+      {info}
+      {id === 'MentalMain' && <FaStar style={{marginLeft:'5px'}}/>}
+    </div>
+  );
+};
+
 
 const styles = (theme, fontSize) => ({
     container: {
@@ -702,15 +715,47 @@ function playEffects(sound) {
     }
 }
 
-function getInfo(index) {
-    if (index === 0) return AppData.choosenHabits.length > 0 ? AppData.choosenHabits.length : '';
-    else if (index === 1) {
+function getInfo(id,langIndex = 0) {
+    if (id === 'HabitsMain') return AppData.choosenHabits.length > 0 ? AppData.choosenHabits.length : '';
+    else if (id === 'TrainingMain') {
         const tonnage = getCurrentCycleAnalysis().currentTonnage;
         return tonnage > 0 ? (tonnage / 1000).toFixed(1) + (AppData.prefs[0] === 0 ? 'т' : 't') : '';
     }
+    else if (id === 'ToDoMain') return AppData.todoList.length > 0 ? AppData.todoList.length : '';
+    else if (id === 'SleepMain') return getTodaySleepHours(langIndex);
+    else if (id === 'RecoveryMain') return getTodaySessionCount();
+    else if (id === 'MentalMain') return getMentalScoresSummary();
+
     return '';
 }
+function getTodaySleepHours(langIndex) {
+  const entry = AppData.sleepingLog[new Date().toISOString().split('T')[0]];
+  if (!entry || typeof entry.duration !== 'number') return '';
+  return formatMsToHhMm(entry.duration);
+}
+const formatMsToHhMm = (ms) => {
+  if (typeof ms !== 'number' || ms < 0) return '--:--';
+  const totalMinutes = Math.floor(ms / (60 * 1000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+};
+function getTodaySessionCount() {
+  const todayKey = new Date().toISOString().split('T')[0];
+  const getCount = (log) => (log[todayKey] ? log[todayKey].length : 0);
+  const totalSessions = 
+    getCount(AppData.breathingLog) + 
+    getCount(AppData.meditationLog) + 
+    getCount(AppData.hardeningLog);
 
+  return totalSessions;
+}
+function getMentalScoresSummary() {
+  const mentalRecords = AppData.mentalRecords;
+  const total = mentalRecords.flat().reduce((sum, v) => sum + v, 0);
+  const k = (total / 1000).toFixed(1); // переводим в «k» с одним знаком [cite:5]
+  return `${k}k`;
+}
 export default MainMenu
 
 const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
