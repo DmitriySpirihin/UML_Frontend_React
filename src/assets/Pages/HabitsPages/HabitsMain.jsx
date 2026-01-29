@@ -534,45 +534,84 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                 </div>
             </div>
             {expanded && (
-                <motion.div initial={{opacity: 0}} animate={{opacity: 1}} transition={{duration: 0.2, delay: 0.1}} style={{ padding: '0 20px 20px 20px' }}>
-                    <div style={{ height: '1px', width: '100%', backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)', marginBottom: '15px' }} />
-                    {habitInfo.descr[langIndex] && <div style={{ color: subTextColor, fontSize: '14px', marginBottom: '20px', lineHeight: '1.4' }}>{habitInfo.descr[langIndex]}</div>}
-                    <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                        {habitsGoals?.map((goal, index) => (
-                            <motion.div key={index} whileTap={{scale: 0.98}} style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '14px 16px', borderRadius: '16px', backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.05)', border: isLight ? '1px solid rgba(0,0,0,0.05)' : 'none', boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none' }}>
-                                <div style={{ fontSize: '14px', flexGrow: 1, fontWeight: '500', color: goal.isDone ? (isLight ? '#AEAEB2' : '#636366') : textColor, textDecoration: goal.isDone ? 'line-through' : 'none' }}>{goal.text}</div>
-                                {showAddOptions && currentGoal === index && (<div style={{display:'flex', marginRight: '10px'}}><FaPencilAlt onClick={() => setCP(prev => ({...prev,show:true,type:2,hId:id,gId:index,setGoals:setHabitGoals}))} style={{fontSize:'14px', margin:'0 6px', color:Colors.get('icons', theme), opacity: 0.7}} /><FaTrash onClick={() => setCP(prev => ({...prev,show:true,type:3,hId:id,gId:index,setGoals:setHabitGoals}))} style={{fontSize:'14px', margin:'0 6px', color:Colors.get('icons', theme), opacity: 0.7}} /></div>)}
-                                <div onClick={() => {setShowAddOptions(prev => prev && currentGoal === index ? false : true); setCurrentGoal(index); setCurrentId(id);}}><TbDotsVertical style={{fontSize:'16px', color:Colors.get('icons', theme), opacity: 0.4, marginRight: '12px'}} /></div>
-                                <div onClick={() => setHabitGoals(prev => {const updated = prev.map((h, i) => i === index ? { ...h, isDone: !h.isDone } : h); AppData.choosenHabitsGoals[id] = updated; return updated;})} style={{ width: '24px', height: '24px', borderRadius: '8px', border: goal.isDone ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: goal.isDone ? habitColor : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>{goal.isDone && <FaCheck size={12} color="#FFF" />}</div>
-                            </motion.div>
-                        ))}
+    <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        transition={{ duration: 0.2, delay: 0.1 }} 
+        style={{ padding: '0 20px 20px 20px' }}
+    >
+        {/* Separator Line */}
+        <div style={{ height: '1px', width: '100%', backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)', marginBottom: '15px' }} />
+        {/* Description */}
+                {habitInfo.descr[langIndex] && (
+                    <div style={{ color: subTextColor, fontSize: '14px', marginBottom: '20px', lineHeight: '1.4' }}>
+                        {habitInfo.descr[langIndex]}
                     </div>
-                    <div onClick={() => setCP({show:true,type:1,hId:id,gId:0,setGoals:setHabitGoals})} style={{ display:'flex', alignItems:'center', justifyContent: 'center', marginTop:'15px', cursor:'pointer', padding: '12px', borderRadius: '16px', border: `2px dashed ${habitColor}66`, backgroundColor: `${habitColor}10` }}><FaPlus style={{fontSize:'12px', color: habitColor}}/><span style={{fontSize:'13px', marginLeft:'8px', color: habitColor, fontWeight: '600'}}>{langIndex === 0 ? 'Добавить цель' : 'Add goal'}</span></div>
-                    <div style={{marginTop: '25px', marginBottom: '10px', fontSize: '12px', fontWeight: 'bold', color: Colors.get('subText', theme), textTransform: 'uppercase', letterSpacing: '0.5px'}}>{langIndex === 0 ? 'Достижения' : 'Achievements'}</div>
-                    {AppData.choosenHabitsAchievements[id]?.map((milestone, index) => (<Achievement key={index} index={index} milestone={milestone} habitId={id} isNegative={isNegative} percent={percent} theme={theme} fSize={fSize} langIndex={langIndex} />))}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', gap: '20px' }}>
-                        <FaPencilAlt onClick={() => setCP(prev => ({ ...prev, show: true, type: 0, hId: id, gId: 0, hInfo: setHabitInfo }))} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
-                        <FaTrash onClick={() => onDeleteHabit(id)} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
-                        <FaArrowUp style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} onClick={() => { toggleIsActive(); }} />
-                    </div>
-                    {!hasPremium && (
-                                    <div 
-                                        onClick={(e) => e.stopPropagation()} 
-                                        style={{
-                                            position: 'fixed',width:'100%',height:'80%', zIndex: 2,top:'86px',left:'0px',
-                                            display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-                                            backgroundColor: theme$.value === 'dark' ? 'rgba(10, 10, 10, 0.85)' : 'rgba(255, 255, 255, 0.9)',
-                                            backdropFilter: 'blur(5px)',
-                                            textAlign: 'center'
-                                        }}
-                                    >
-                                        <div style={{ color: theme$.value === 'dark' ? '#FFD700' : '#D97706', fontSize: '11px', fontWeight: 'bold', fontFamily: 'Segoe UI' }}>
-                                            {langIndex === 0 ? 'ТОЛЬКО ДЛЯ ПРЕМИУМ' : 'PREMIUM USERS ONLY'}
-                                        </div>
-                                    </div>
-                                )}
-                </motion.div>
-            )}
+                )}
+        {/* --- CONTENT BASED ON PREMIUM STATUS --- */}
+        {hasPremium ? (
+            <>
+                
+
+                {/* Goals List */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {habitsGoals?.map((goal, index) => (
+                        <motion.div key={index} whileTap={{ scale: 0.98 }} style={{ display: 'flex', alignItems: 'center', width: '90%', padding: '14px 16px', borderRadius: '16px', backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.05)', border: isLight ? '1px solid rgba(0,0,0,0.05)' : 'none', boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none' }}>
+                            <div style={{ fontSize: '14px', flexGrow: 1, fontWeight: '500', color: goal.isDone ? (isLight ? '#AEAEB2' : '#636366') : textColor, textDecoration: goal.isDone ? 'line-through' : 'none' }}>{goal.text}</div>
+                            
+                            {/* Edit/Delete Goal Options */}
+                            {showAddOptions && currentGoal === index && (
+                                <div style={{ display: 'flex', marginRight: '10px' }}>
+                                    <FaPencilAlt onClick={() => setCP(prev => ({ ...prev, show: true, type: 2, hId: id, gId: index, setGoals: setHabitGoals }))} style={{ fontSize: '14px', margin: '0 6px', color: Colors.get('icons', theme), opacity: 0.7 }} />
+                                    <FaTrash onClick={() => setCP(prev => ({ ...prev, show: true, type: 3, hId: id, gId: index, setGoals: setHabitGoals }))} style={{ fontSize: '14px', margin: '0 6px', color: Colors.get('icons', theme), opacity: 0.7 }} />
+                                </div>
+                            )}
+
+                            {/* Dots Menu */}
+                            <div onClick={() => { setShowAddOptions(prev => prev && currentGoal === index ? false : true); setCurrentGoal(index); setCurrentId(id); }}>
+                                <TbDotsVertical style={{ fontSize: '16px', color: Colors.get('icons', theme), opacity: 0.4, marginRight: '12px' }} />
+                            </div>
+
+                            {/* Checkbox */}
+                            <div onClick={() => setHabitGoals(prev => { const updated = prev.map((h, i) => i === index ? { ...h, isDone: !h.isDone } : h); AppData.choosenHabitsGoals[id] = updated; return updated; })} style={{ width: '24px', height: '24px', borderRadius: '8px', border: goal.isDone ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: goal.isDone ? habitColor : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                {goal.isDone && <FaCheck size={12} color="#FFF" />}
+                            </div>
+                        </motion.div>
+                    ))}
+                </div>
+
+                {/* Add Goal Button */}
+                <div onClick={() => setCP({ show: true, type: 1, hId: id, gId: 0, setGoals: setHabitGoals })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '15px', cursor: 'pointer', padding: '12px', borderRadius: '16px', border: `2px dashed ${habitColor}66`, backgroundColor: `${habitColor}10` }}>
+                    <FaPlus style={{ fontSize: '12px', color: habitColor }} />
+                    <span style={{ fontSize: '13px', marginLeft: '8px', color: habitColor, fontWeight: '600' }}>
+                        {langIndex === 0 ? 'Добавить цель' : 'Add goal'}
+                    </span>
+                </div>
+
+                {/* Achievements Section */}
+                <div style={{ marginTop: '25px', marginBottom: '10px', fontSize: '12px', fontWeight: 'bold', color: Colors.get('subText', theme), textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {langIndex === 0 ? 'Достижения' : 'Achievements'}
+                </div>
+                {AppData.choosenHabitsAchievements[id]?.map((milestone, index) => (
+                    <Achievement key={index} index={index} milestone={milestone} habitId={id} isNegative={isNegative} percent={percent} theme={theme} fSize={fSize} langIndex={langIndex} />
+                ))}
+            </>
+        ) : (
+            /* --- NO PREMIUM VIEW --- */
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '15px', marginBottom: '15px', fontSize: '12px', fontWeight: '600', color: Colors.get('subText', theme) , border: `2px dashed ${Colors.get('subText', theme)}66`, padding: '12px', borderRadius: '16px'}}>
+                {langIndex === 0 ? 'Микро цели и достижения с премиум' : 'Micro goals and achievements with premium'}
+            </div>
+        )}
+
+        {/* --- BOTTOM ACTIONS (Visible to All) --- */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', gap: '20px' }}>
+            <FaPencilAlt onClick={() => setCP(prev => ({ ...prev, show: true, type: 0, hId: id, gId: 0, hInfo: setHabitInfo }))} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
+            <FaTrash onClick={() => onDeleteHabit(id)} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
+            <FaArrowUp style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} onClick={() => { toggleIsActive(); }} />
+        </div>
+
+    </motion.div>
+)}
             {showTimerSlider && (
                 <div style={{ display: 'flex', alignItems: 'center', position: 'absolute', borderRadius: '24px', width: '100%', height: '80px', top: 0, zIndex: 1001, backgroundColor: isLight ? '#FFF' : Colors.get('background', theme) }} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '90%', margin: '0 auto' }}>
