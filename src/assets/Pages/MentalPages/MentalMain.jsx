@@ -205,12 +205,11 @@ export default MentalMain
 
 const getCategoryRecord = (index) => {
     if (!AppData.mentalRecords || !AppData.mentalRecords[index]) return 0;
-    let bestScore = 0;
+    let totalScore = 0;
     for (let i = 0; i < 4; i++) {
-        const scores = AppData.mentalRecords[index][i];
-        if (scores > bestScore) bestScore = scores;
+        totalScore += AppData.mentalRecords[index][i];
     }
-    return bestScore;
+    return totalScore;
 }
 
 const styles = (theme, fontSize) => ({

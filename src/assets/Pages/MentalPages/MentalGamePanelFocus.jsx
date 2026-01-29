@@ -288,7 +288,6 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
         const endTime = Date.now();
         const duration = Math.round((endTime - startTime) / 1000);
         saveSessionDuration(duration, finalScore > record, type, difficulty, finalScore);
-        setScores(0);
         setAddScores(0);
         setStage(1);
         setRightAnswers(0);
@@ -529,10 +528,10 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
                                             <img style={{ width: '14vh' }} src={'images/Congrat.png'} alt="logo" />
                                         </motion.div>
                                 <div style={styles(theme).controlsRow}>
-                                    <motion.button whileTap={{ scale: 0.9 }} onClick={handleReload} style={styles(theme).secondaryButton}>
+                                    <motion.button whileTap={{ scale: 0.9 }} onClick={() =>{handleReload();setScores(0)}} style={styles(theme).secondaryButton}>
                                         <FaRedo size={20} />
                                     </motion.button>
-                                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setShow(false); setIsFinished(false); }} style={styles(theme).primaryButton}>
+                                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setShow(false); setIsFinished(false);setScores(0) }} style={styles(theme).primaryButton}>
                                         {langIndex === 0 ? 'Завершить' : 'Finish'}
                                     </motion.button>
                                 </div>
