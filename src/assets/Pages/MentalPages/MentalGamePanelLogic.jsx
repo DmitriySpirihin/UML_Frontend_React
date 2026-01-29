@@ -263,7 +263,6 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
         saveSessionDuration(duration, finalScore > record, type, difficulty, finalScore);
         setAddScores(0);
         setStage(1);
-        setRightAnswers(0);
     };
 
     // === ANIMATION VARIANTS ===
@@ -513,7 +512,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
                                     <motion.button whileTap={{ scale: 0.9 }} onClick={() =>{handleReload();setScores(0)}} style={styles(theme).secondaryButton}>
                                         <FaRedo size={20} />
                                     </motion.button>
-                                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setShow(false); setIsFinished(false);setScores(0) }} style={styles(theme).primaryButton}>
+                                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setShow(false); setIsFinished(false);setScores(0);setRightAnswers(0); }} style={styles(theme).primaryButton}>
                                         {langIndex === 0 ? 'Завершить' : 'Finish'}
                                     </motion.button>
                                 </div>

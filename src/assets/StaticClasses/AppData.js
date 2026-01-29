@@ -50,7 +50,7 @@ export class AppData{
   static menuCardsStates = 
 {
   "MainCard": {
-    "pinned": true,
+    "pinned": false,
     "hidden": false
   },
   "HabitsMain": {
@@ -63,19 +63,19 @@ export class AppData{
   },
   "MentalMain": {
     "pinned": false,
-    "hidden": true
+    "hidden": false
   },
   "RecoveryMain": {
     "pinned": false,
-    "hidden": true
+    "hidden": false
   },
   "SleepMain": {
-    "pinned": true,
+    "pinned": false,
     "hidden": false
   },
   "ToDoMain": {
     "pinned": false,
-    "hidden": true
+    "hidden": false
   }
 };
   // methods
@@ -124,7 +124,7 @@ export class AppData{
     this.menuCardsStates = data.menuCardsStates || // AppData.menuCardsStates
 {
   "MainCard": {
-    "pinned": true,
+    "pinned": false,
     "hidden": false
   },
   "HabitsMain": {
@@ -137,19 +137,19 @@ export class AppData{
   },
   "MentalMain": {
     "pinned": false,
-    "hidden": true
+    "hidden": false
   },
   "RecoveryMain": {
     "pinned": false,
-    "hidden": true
+    "hidden": false
   },
   "SleepMain": {
-    "pinned": true,
+    "pinned": false,
     "hidden": false
   },
   "ToDoMain": {
     "pinned": false,
-    "hidden": true
+    "hidden": false
   }
 };
   } 
