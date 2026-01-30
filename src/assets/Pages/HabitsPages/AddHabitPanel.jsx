@@ -287,7 +287,7 @@ const AddHabitPanel = () => {
                                                 ))}
                                             </div>
                                         </div>
-                                        <div style={{ height: '20px' }} />
+                                        <div style={{ marginBottom: '290px' }} />
                                     </motion.div>
                                 )}
                             </AnimatePresence>

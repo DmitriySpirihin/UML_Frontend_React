@@ -409,15 +409,22 @@ const StatCard = ({ label, value, sub, theme, icon, isWide }) => (
 )
 
 const DiffBadge = ({data, type, ind, theme}) => {
-    if (ind < data[type].length - 1) {
-        const diff = data[type][ind].value - data[type][ind+1].value; // New - Old
-        if (diff === 0) return null;
-        const isPos = diff > 0;
+    // FIX: Check if there is a previous element (ind > 0) since array is sorted by Date Ascending
+    if (ind > 0) {
+        // Calculate difference: Current Value - Previous Value
+        const diff = data[type][ind].value - data[type][ind - 1].value; 
+        
+        // Ignore zero or tiny floating point differences
+        if (Math.abs(diff) < 0.01) return null; 
+
+        const isPos = AppData.pData.goal === 2 ? diff < 0 : diff > 0;
+        
         return (
             <span style={{
                 fontSize:'10px', fontWeight:'800', padding:'2px 6px', borderRadius:'6px',
                 backgroundColor: isPos ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-                color: isPos ? '#4CAF50' : '#F44336'
+                color: isPos ? '#4CAF50' : '#F44336',
+                marginLeft: '8px' // Added margin for better spacing
             }}>
                 {isPos ? '+' : ''}{Number.isInteger(diff) ? diff : diff.toFixed(1)}
             </span>

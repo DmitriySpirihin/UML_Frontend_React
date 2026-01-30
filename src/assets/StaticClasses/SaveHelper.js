@@ -46,9 +46,12 @@ export async function initializeTelegramSDK(opts = {}) {
 
     // 6. Setup Buttons (Hide them)
     if (rawWebApp) {
-      rawWebApp.isClosingConfirmationEnabled = true;
-      rawWebApp.MainButton.hide();
-      rawWebApp.BackButton.hide();
+      rawWebApp.BackButton.onClick(() => {
+         if (rawWebApp.showConfirm(AppData.prefs[0] === 0 ? '⚠️ Вы уверены что хотите выйти?' : '⚠️ Are you sure you want to exit the app?')) {
+           rawWebApp.close();
+         }
+      }
+      );
       if (rawWebApp.SecondaryButton) rawWebApp.SecondaryButton.hide();
       if (rawWebApp.SettingsButton) rawWebApp.SettingsButton.hide();
     }

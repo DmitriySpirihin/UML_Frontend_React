@@ -73,7 +73,6 @@ const KeyBoard = () => {
         const subscription = lang$.subscribe((lang) => {
             const newLangIndex = lang === 'ru' ? 0 : 1;
             setLangIndex(newLangIndex);
-            setCurrentLang(newLangIndex); // Sync current lang
         });
         const subscriptionK = keyboardNeeded$.subscribe((prev) => {
             setNeedKeyBoard(prev);

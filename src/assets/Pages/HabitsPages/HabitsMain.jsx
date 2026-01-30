@@ -108,6 +108,22 @@ const styles = (theme, fSize = 0) => {
     }
 }
 
+const getCategory = (value) => {
+    const map = {
+        'Здоровье': ['Здоровье', 'Health'],
+        'Health': ['Здоровье', 'Health'],
+        'Развитие': ["Развитие", "Growth"],
+        'Growth': ["Развитие", "Growth"],
+        'Продуктивность': ["Продуктивность", "Productivity"],
+        'Productivity': ["Продуктивность", "Productivity"],
+        'Отношения и отдых': ["Отношения и отдых", "Relationships & recreation"],
+        'Relationships & recreation': ["Отношения и отдых", "Relationships & recreation"],
+        'Отказ от вредного': ["Отказ от вредного", "Bad habits to quit"],
+        'Bad habits to quit': ["Отказ от вредного", "Bad habits to quit"]
+    };
+    return map[value] || ['Здоровье', 'Health'];
+};
+
 const HabitsMain = () => {
     const [theme, setthemeState] = React.useState('dark');
     const [habitsCards, setHabitsCards] = React.useState([]);
@@ -124,6 +140,7 @@ const HabitsMain = () => {
     const [newDescr, setNewDescr] = useState('');
     const [newIcon, setNewIcon] = useState('');
     const [selectIconPanel, setSelectIconPanel] = useState(false);
+    const [newCategory, setNewCategory] = useState('Здоровье');
 
     const [habitTodelete, setHabitToDelete] = useState(null);
     const [confirmMessage, setConfirmMessage] = useState('');
@@ -134,6 +151,7 @@ const HabitsMain = () => {
             setNewName(getAllHabits().find(h => h.id === cP.hId)?.name[langIndex] || '');
             setNewDescr(getAllHabits().find(h => h.id === cP.hId)?.description[langIndex] || '');
             setNewIcon(getAllHabits().find(h => h.id === cP.hId)?.iconName || '');
+            setNewCategory(getAllHabits().find(h => h.id === cP.hId)?.category[0] || 'Здоровье');
         }
         if (cP.type === 4) {
             if (cP.gId <= 0) return;
@@ -208,17 +226,52 @@ const HabitsMain = () => {
     const onConfirmAction = () => {
         switch (cP.type) {
             case 0:
-                const index = AppData.CustomHabits.findIndex(h => h.id === cP.hId);
-                if (index !== -1) {
-                    AppData.CustomHabits = AppData.CustomHabits.map((habit, i) =>
-                        i === index ? { ...habit, name: [newName.trim(), newName.trim()], description: [newDescr.trim(), newDescr.trim()], iconName: newIcon } : habit
-                    );
+            // Ensure array exists
+            if (!AppData.CustomHabits) AppData.CustomHabits = [];
+            
+            const index = AppData.CustomHabits.findIndex(h => h.id === cP.hId);
+            const categoryArray = getCategory(newCategory); // Get ['Ru', 'En']
+
+            if (index !== -1) {
+                // Scenario A: Updating an existing Custom Habit
+                AppData.CustomHabits = AppData.CustomHabits.map((habit, i) =>
+                    i === index ? { 
+                        ...habit, 
+                        name: [newName.trim(), newName.trim()], 
+                        description: [newDescr.trim(), newDescr.trim()], 
+                        iconName: newIcon,
+                        category: categoryArray // <--- UPDATE CATEGORY
+                    } : habit
+                );
+            } else {
+                // Scenario B: Editing a Standard Habit (Create an override)
+                const originalHabit = allHabits.find(h => h.id === cP.hId);
+                if (originalHabit) {
+                    const newHabitOverride = {
+                        ...originalHabit,
+                        name: [newName.trim(), newName.trim()],
+                        description: [newDescr.trim(), newDescr.trim()],
+                        iconName: newIcon,
+                        category: categoryArray, // <--- UPDATE CATEGORY
+                        isCustom: true 
+                    };
+                    AppData.CustomHabits = [...AppData.CustomHabits, newHabitOverride];
                 }
-                setHabitsCards(prev => [...prev]);
-                setCP(prev => ({ ...prev, show: false }));
-                if (cP.hInfo) cP.hInfo({ name: [newName, newName], descr: [newDescr, newDescr], icon: newIcon });
-                setDataVersion(v => v + 1);
-                break;
+            }
+
+            setHabitsCards(prev => [...prev]); 
+            setCP(prev => ({ ...prev, show: false }));
+            
+            // Update the UI immediately
+            if (cP.hInfo) cP.hInfo({ 
+                name: [newName, newName], 
+                descr: [newDescr, newDescr], 
+                icon: newIcon,
+                // Optional: update local card category if needed, though HabitsMain refresh handles it
+            });
+            
+            setDataVersion(v => v + 1);
+            break;
             case 1:
                 if (newGoal.length > 0) {
                     cP.setGoals(prev => [...prev, { text: newGoal, isDone: false }]);
@@ -268,7 +321,7 @@ const HabitsMain = () => {
             
             {hasHabits && <div style={styles(theme).scrollView} key={dataVersion}>
                 {buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete })}
-                <div style={{ height: '100px' }} />
+                <div style={{ marginBottom: '150px' }} />
             </div>}
 
             {cP.show && (
@@ -285,15 +338,35 @@ const HabitsMain = () => {
                         {cP.type === 2 && <MyInput w='100%' h='50px' value={newGoal} onChange={setNewGoal} placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'} theme={theme}/>}
                         
                         {cP.type === 0 && (
-                            <div style={{width: '100%', display: 'flex', flexDirection: 'column', gap: '12px'}}>
-                                <MyInput w='100%' h='50px' value={newName} onChange={setNewName} placeholder={langIndex===0?'Название':'Name'} theme={theme}/>
-                                <MyInput w='100%' h='50px' value={newDescr} onChange={setNewDescr} placeholder={langIndex===0?'Описание (опц.)':'Description (opt.)'} theme={theme}/>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', backgroundColor: isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)', borderRadius: '14px', cursor: 'pointer' }} onClick={() => setSelectIconPanel(!selectIconPanel)}>
-                                    <span style={{fontSize: '14px', color: Colors.get('subText', theme)}}>{langIndex===0?'Иконка':'Icon'}</span>
-                                    <div style={{color: Colors.get('habitIcon', theme)}}>{Icons.getIcon(newIcon, {size: 28})}</div>
-                                </div>
-                            </div>
-                        )}
+    <div style={{width: '100%', display: 'flex', flexDirection: 'column', gap: '12px'}}>
+        
+        {/* --- ADD CATEGORY SELECTOR HERE --- */}
+        <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', paddingBottom: '5px', scrollbarWidth: 'none' }}>
+            {['Здоровье', 'Развитие', 'Продуктивность', 'Отношения и отдых', 'Отказ от вредного'].map(cat => (
+                <div 
+                    key={cat} 
+                    onClick={() => setNewCategory(cat)}
+                    style={{ 
+                        padding: '8px 14px', borderRadius: '12px', whiteSpace: 'nowrap', cursor: 'pointer',
+                        backgroundColor: newCategory === cat ? Colors.get('scrollFont', theme) : (isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)'),
+                        color: newCategory === cat ? '#FFF' : Colors.get('subText', theme),
+                        fontSize: '12px', fontWeight: '700', transition: '0.2s all',
+                    }}
+                >
+                    {langIndex === 0 ? cat : getCategory(cat)[1]}
+                </div>
+            ))}
+        </div>
+
+        <MyInput w='100%' h='50px' value={newName} onChange={setNewName} placeholder={langIndex===0?'Название':'Name'} theme={theme}/>
+        <MyInput w='100%' h='50px' value={newDescr} onChange={setNewDescr} placeholder={langIndex===0?'Описание (опц.)':'Description (opt.)'} theme={theme}/>
+        
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', backgroundColor: isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)', borderRadius: '14px', cursor: 'pointer' }} onClick={() => setSelectIconPanel(!selectIconPanel)}>
+            <span style={{fontSize: '14px', color: Colors.get('subText', theme)}}>{langIndex===0?'Иконка':'Icon'}</span>
+            <div style={{color: Colors.get('habitIcon', theme)}}>{Icons.getIcon(newIcon, {size: 28})}</div>
+        </div>
+    </div>
+)}
 
                         <div style={styles(theme).buttonsRow}>
                             <button style={styles(theme).btnCancel} onClick={() => setCP(prev => ({ ...prev, show: false }))}>
@@ -329,8 +402,10 @@ const HabitsMain = () => {
 export default HabitsMain
 
 function getAllHabits() {
-    return allHabits.concat(
-        (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.id === ch.id))
+    const custom = AppData.CustomHabits || [];
+    // Prioritize Custom Habits: Return Custom + Standard habits that don't have a custom override
+    return custom.concat(
+        allHabits.filter(h => !custom.some(ch => ch.id === h.id))
     );
 }
 
@@ -403,7 +478,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     let cardBg = isLight ? '#FFFFFF' : (Colors.get('simplePanel', theme) + '99');
     let textColor = isLight ? '#1D1D1F' : Colors.get('mainText', theme);
     let subTextColor = isLight ? '#8E8E93' : Colors.get('subText', theme);
-    let iconBg = isLight ? `${habitColor}15` : `${habitColor}20`;
+    let iconBg = isLight ? '#FFFFFF' : 'rgba(70, 70, 70, 0.2)';
     let iconColor = habitColor;
     let borderColor = isLight ? 'transparent' : `1px solid ${Colors.get('border', theme)}80`;
     
@@ -528,7 +603,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                     {!isNegative && <>
                         {!timer && status === 0 && <TimerOffIcon onClick={(e) => { e.stopPropagation(); setShowTimerSlider(true); }} style={{ color: Colors.get('icons', theme), opacity: 0.4, fontSize: '24px', marginRight: '15px' }} />}
                         {timer && <TimerIcon onClick={(e) => { e.stopPropagation(); stopTimer() }} style={{ color: habitColor, fontSize: '24px', marginRight: '15px' }} />}
-                        <div style={{ width: '30px', height: '30px', borderRadius: '50%', border: status !== 0 ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: status === 1 ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{status === 1 && <FaCheck size={16} color="#FFF" />}</div>
+                        <div onClick={(e) => {e.stopPropagation(); setNewStatus(true)}} style={{ width: '30px', height: '30px', borderRadius: '50%', border: status !== 0 ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: status === 1 ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{status === 1 && <FaCheck size={16} color="#FFF" />}</div>
                     </>}
                     {isNegative && <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(255, 69, 58, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaFire size={16} color="#FF453A" /></div>}
                 </div>
@@ -608,6 +683,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
             <FaPencilAlt onClick={() => setCP(prev => ({ ...prev, show: true, type: 0, hId: id, gId: 0, hInfo: setHabitInfo }))} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
             <FaTrash onClick={() => onDeleteHabit(id)} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
             <FaArrowUp style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} onClick={() => { toggleIsActive(); }} />
+           {!isNegative && <div onClick={() => setNewStatus(true)} style={{ width: '18px', height: '18px', borderRadius: '50%', border: status !== 0 ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: status === 1 ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{status === 1 && <FaCheck size={16} color="#FFF" />}</div>}
         </div>
 
     </motion.div>
