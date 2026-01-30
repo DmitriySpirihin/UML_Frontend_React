@@ -4,7 +4,7 @@ import { openDB } from 'idb';
 import 'reflect-metadata';
 import { instanceToPlain, plainToClass } from 'class-transformer';
 import { NotificationsManager } from '../StaticClasses/NotificationsManager';
-import {setShowPopUpPanel} from '../StaticClasses/HabitsBus';
+import {setShowPopUpPanel,setAddPanel} from '../StaticClasses/HabitsBus';
 
 export async function initializeTelegramSDK(opts = {}) {
   try {
@@ -46,14 +46,33 @@ export async function initializeTelegramSDK(opts = {}) {
 
     // 6. Setup Buttons (Hide them)
     if (rawWebApp) {
+      // Настройка BackButton (Контекстное меню выхода)
       rawWebApp.BackButton.onClick(() => {
-         if (rawWebApp.showConfirm(AppData.prefs[0] === 0 ? '⚠️ Вы уверены что хотите выйти?' : '⚠️ Are you sure you want to exit the app?')) {
-           rawWebApp.close();
-         }
+        const isRussian = AppData.prefs[0] === 0;
+        rawWebApp.showPopup({
+          title: isRussian ? 'Выход из системы' : 'Exit LifeOS',
+          message: isRussian 
+            ? 'Все данные синхронизированы. Вы уверены, что хотите завершить сессию?' 
+            : 'All data is synced. Are you sure you want to end the session?',
+          buttons: [
+            { id: 'exit', type: 'destructive', text: isRussian ? 'Выйти' : 'Exit' },
+            { id: 'cancel', type: 'cancel', text: isRussian ? 'Остаться' : 'Stay' },
+          ]
+        }, (buttonId) => {
+          if (buttonId === 'exit') rawWebApp.close();
+        });
+      });
+
+      // Настройка SettingsButton (Вызов твоей панели)
+      if (rawWebApp.SettingsButton) {
+        rawWebApp.SettingsButton.show(); // Обязательно вызываем show(), так как по умолчанию она скрыта
+        rawWebApp.SettingsButton.onClick(() => {
+          setAddPanel('settings'); // Твоя функция для открытия панели настроек
+        });
       }
-      );
+
+      // Скрываем SecondaryButton, если она не используется
       if (rawWebApp.SecondaryButton) rawWebApp.SecondaryButton.hide();
-      if (rawWebApp.SettingsButton) rawWebApp.SettingsButton.hide();
     }
 
     return true;
