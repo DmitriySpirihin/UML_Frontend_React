@@ -297,8 +297,22 @@ const TrainingProgramm = () => {
                 {showAddPanel && (
                     <Modal onClose={() => setShowAddPanel(false)} theme={theme} title={langIndex === 0 ? (needRedact ? 'Редактировать' : 'Новая программа') : (needRedact ? 'Edit Program' : 'New Program')}>
                         <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                            <MyInput maxL={40} w="100%" h="auto" value={name} theme={theme} onChange={setName} placeHolder={langIndex === 0 ? 'Название' : 'Name'} />
-                            <MyInput maxL={200} w="100%" h="auto" value={description} theme={theme} onChange={setDescription} placeHolder={langIndex === 0 ? 'Описание' : 'Description'} />
+                            <input 
+                                                type="text" 
+                                                placeholder={langIndex === 0 ? 'Название' : 'Name'}
+                                                value={name}
+                                                onChange={(e) => setDescription(e.target.value)}
+                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                            />
+                            <input 
+                                                type="text" 
+                                                placeholder={langIndex === 0 ? 'Описание' : 'Description'}
+                                                value={description}
+                                                onChange={(e) => setDescription(e.target.value)}
+                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                            />
+
+                           
                         </div>
                         <ModalActions onClose={() => setShowAddPanel(false)} onConfirm={() => needRedact ? redact() : onAddProgram()} theme={theme} />
                     </Modal>
@@ -307,7 +321,13 @@ const TrainingProgramm = () => {
                 {/* 2. Add Training Day Modal */}
                 {showAddDayPanel && (
                     <Modal onClose={() => setShowAddDayPanel(false)} theme={theme} title={langIndex === 0 ? 'Тренировочный день' : 'Training Day'}>
-                        <MyInput maxL={40} w="100%" h="auto" value={dayName} theme={theme} onChange={setDayName} placeHolder={langIndex === 0 ? 'Название дня' : 'Day Name'} />
+                        <input 
+                                                type="text" 
+                                                placeholder={langIndex === 0 ? 'Название дня' : 'Day Name'}
+                                                value={dayName}
+                                                onChange={(e) => setDayName(e.target.value)}
+                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                            />
                         <ModalActions onClose={() => setShowAddDayPanel(false)} onConfirm={onAddTrainingDay} theme={theme} />
                     </Modal>
                 )}

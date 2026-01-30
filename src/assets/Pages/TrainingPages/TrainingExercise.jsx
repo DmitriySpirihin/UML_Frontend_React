@@ -8,7 +8,6 @@ import { MuscleIcon, addExercise, removeExercise, updateExercise } from '../../C
 import { FaTrash, FaPencilAlt, FaPlus } from 'react-icons/fa';
 import { TbDotsVertical } from 'react-icons/tb'
 import { MdDone, MdClose } from 'react-icons/md'
-import MyInput from '../../Helpers/MyInput';
 
 const TrainingExercise = ({ needToAdd, setEx }) => {
     // states
@@ -183,7 +182,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                     placeholder={langIndex === 0 ? "Поиск упражнения..." : "Search exercise..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    style={styles(theme).searchInput}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
                 />
                 {searchTerm && (
                     <MdClose 
@@ -355,16 +354,20 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
 
                             <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
                                 {/* INPUTS */}
-                                <MyInput
-                                    maxL={40} w="100%" h="auto" value={name} theme={theme}
-                                    onChange={(value) => setName(value)}
-                                    placeHolder={langIndex === 0 ? 'Название' : 'Name'}
-                                />
-                                <MyInput
-                                    maxL={300} w="100%" h="auto" value={description} theme={theme}
-                                    onChange={(value) => setDescription(value)}
-                                    placeHolder={langIndex === 0 ? 'Описание' : 'Description'}
-                                />
+                                <input 
+                    type="text" 
+                    placeholder={langIndex === 0 ? 'Название' : 'Name'}
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                />
+                <input 
+                    type="text" 
+                    placeholder={langIndex === 0 ? 'Описание' : 'Description'}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                />
 
                                 {/* TYPE TOGGLE */}
                                 <div style={styles(theme).segmentedControl}>
@@ -377,28 +380,6 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                                 </div>
 
                                 {/* MAIN MUSCLE SELECTOR (Horizontal Scroll) */}
-                                <div style={{ marginTop: '5px' }}>
-                                    <p style={{ ...styles(theme, false, false, fSize).label, marginBottom: '8px' }}>{langIndex === 0 ? 'Основная мышца' : 'Main Muscle'}</p>
-                                    <div style={styles(theme).horizontalScroll}>
-                                        {Object.keys(MuscleIcon.muscleIconsSrc[0]).map((keyStr) => {
-                                            const key = Number(keyStr);
-                                            const isActive = formMainMuscle === key;
-                                            return (
-                                                <div 
-                                                    key={key} 
-                                                    onClick={() => setFormMainMuscle(key)}
-                                                    style={{ 
-                                                        ...styles(theme).scrollItem, 
-                                                        borderColor: isActive ? Colors.get('currentDateBorder', theme) : 'transparent',
-                                                        backgroundColor: isActive ? (theme==='light'?'rgba(0,0,0,0.05)':'rgba(255, 255, 255, 0.1)') : 'transparent'
-                                                    }}
-                                                >
-                                                    {MuscleIcon.getForList(key, langIndex, theme)}
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
 
                                 {/* ADDITIONAL MUSCLES (Chips) */}
                                 <div>
