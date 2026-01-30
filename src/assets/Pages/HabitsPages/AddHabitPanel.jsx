@@ -8,7 +8,6 @@ import { setShowPopUpPanel, addPanel$, theme$, lang$, fontSize$, setCurrentBotto
 import { FaSearch, FaTrashAlt, FaChevronRight, FaPlus, FaListUl } from 'react-icons/fa';
 import { MdFiberNew, MdDone, MdClose , MdListAlt } from 'react-icons/md';
 import Icons from '../../StaticClasses/Icons';
-import MyInput from '../../Helpers/MyInput';
 import Slider from '@mui/material/Slider';
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx'; // Imported Component
 
@@ -185,7 +184,14 @@ const AddHabitPanel = () => {
 
                                                 <div style={{  borderRadius: '16px', display: 'flex', alignItems: 'center',justifyContent: 'space-between', padding: '0 15px', marginBottom: '15px', height: '50px' }}>
                                                     <FaSearch color={ui.sub} style={{marginRight:'15px',marginTop:'5px'}}/>
-                                                    <MyInput theme={theme}  placeHolder={langIndex === 0 ? 'поиск' : 'search'} onChange={v => searchHabitsList(v, habitList, setHabitList)} />
+                                                   
+                                                        <input 
+                                                                                        type="text" 
+                                                                                        placeholder={langIndex === 0 ? 'поиск' : 'search'}
+                                                                                     
+                                                                                         onChange={(e) => searchHabitsList(e.target.value, habitList, setHabitList)}
+                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                                                        />
                                                 </div>
 
                                                 {/* --- REPLACED WITH SCROLLPICKER --- */}
@@ -232,12 +238,26 @@ const AddHabitPanel = () => {
                                                         </motion.div>
                                                     ))}
                                                 </div>
-                                                <MyInput w="100%" h="55px" theme={theme} placeHolder={langIndex === 0 ? 'название' : 'name'} onChange={v => setHabitName(v)} />
+                                                
+                                                    <input 
+                                                                                        type="text" 
+                                                                                        placeholder={langIndex === 0 ? 'название' : 'name'}
+                                                                                        value={habitName}
+                                                                                         onChange={(e) => setHabitName(e.target.value)}
+                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                                                        />
                                                 <motion.div whileTap={{ scale: 0.98 }} style={iconPickerTrigger(ui)} onClick={() => setSelectIconPanel(true)}>
                                                     <span style={{ color: ui.text, fontWeight: '700' }}>Иконка</span>
                                                     {Icons.getIcon(habitIcon, { size: 32, style: { color: ui.accent } })}
                                                 </motion.div>
-                                                <MyInput w="100%" h="80px" theme={theme} placeHolder={langIndex === 0 ? 'описание' : 'description'} onChange={v => setHabitDescription(v)} />
+                                                 <input 
+                                                                                        type="text" 
+                                                                                        placeholder={langIndex === 0 ? 'описание' : 'description'}
+                                                                                        value={habitDescription}
+                                                                                         onChange={(e) => setHabitDescription(e.target.value)}
+                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                                                        />
+                                               
                                             </div>
                                         )}
                                     </motion.div>
@@ -270,7 +290,14 @@ const AddHabitPanel = () => {
                                         <div style={configCard(ui)}>
                                             <p style={cardLabel(ui)}>{langIndex === 0 ? 'микро-цели' : 'sub-goals'}</p>
                                             <div style={{ display: 'flex', alignItems: 'center',  borderRadius: '14px', paddingRight: '5px', marginBottom: '15px' }}>
-                                                <MyInput theme={theme} w="100%" h="40px" placeHolder={langIndex === 0 ? 'Добавить цель...' : 'Add goal...'} onChange={v => setGoalName(v)} value={goalName}/>
+        
+                                                     <input 
+                                                                                        type="text" 
+                                                                                        placeholder={langIndex === 0 ? 'Добавить цель...' : 'Add goal...'}
+                                                                                        value={goalName}
+                                                                                         onChange={(e) => setGoalName(e.target.value)}
+                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                                                        />
                                                 <motion.div whileTap={{ scale: 0.9 }} onClick={setNewGoal} style={addBtn(ui)}><FaPlus color="#FFF" size={18} /></motion.div>
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

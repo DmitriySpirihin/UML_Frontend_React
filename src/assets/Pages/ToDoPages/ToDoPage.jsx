@@ -9,7 +9,6 @@ import {
     redactGoal, deleteGoal, toggleGoal, toggleSubGoal, 
     deleteSubGoal, addSubGoal 
 } from "./ToDoHelper";
-import MyInput from "../../Helpers/MyInput";
 
 // --- CONSTANTS ---
 const PRIORITY_LABELS = [['Низкий', 'Low'], ['Обычный', 'Normal'], ['Важный', 'Important'], ['Высокий', 'High'], ['Критический', 'Critical']];
@@ -122,7 +121,13 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                                 </div>
 
                                 {isEditing ? (
-                                    <MyInput h={50} w={'100%'} value={task.name} theme={theme} onChange={v => setTask({...task, name: v})} />
+                                    <input 
+                    type="text" 
+                    placeholder={langIndex === 0 ? 'Название' : 'Name'}
+                    value={task.name}
+                    onChange={(e) => setTask({...task, name: e.target.value})}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                />
                                 ) : (
                                     <h2 style={s.title}>{task.name}</h2>
                                 )}
@@ -156,7 +161,13 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
 
                                 <div style={s.sectionBox}>
                                     {isEditing ? (
-                                        <MyInput placeholder={lang === 0 ? 'Описание' : 'Description'} h={80} w={'100%'} value={task.description} theme={theme} onChange={v => setTask({...task, description: v})} />
+                                        <input 
+                    type="text" 
+                    placeholder={langIndex === 0 ?  'Описание' : 'Description'}
+                    value={task.description}
+                    onChange={(e) => setTask({...task, description: e.target.value})}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                />
                                     ) : (
                                         <p style={s.description}>{task.description || (lang === 0 ? "Нет описания" : "No description")}</p>
                                     )}
@@ -189,7 +200,13 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
 
                                         <div style={s.addSubRow}>
                                             <FaPlus style={{color: Colors.get('subText', theme), marginRight: 10}} />
-                                            <MyInput h={35} w={'100%'} placeholder={lang===0 ? "Добавить задачу..." : "Add item..."} value={newSubGoalText} theme={theme} onChange={v => setNewSubGoalText(v)} />
+                                             <input 
+                    type="text" 
+                    placeholder={langIndex === 0 ? "Добавить задачу..." : "Add item..."}
+                    value={newSubGoalText}
+                    onChange={(e) => setNewSubGoalText(e.target.value)}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                />
                                             {newSubGoalText.length > 0 && <button onClick={handleAddSub} style={s.addSubBtn}>OK</button>}
                                         </div>
                                     </div>
@@ -221,6 +238,7 @@ const DateBox = ({ label, value, icon, isEditing, theme, onChange }) => {
             <div style={{display:'flex', flexDirection:'column', flex: 1}}>
                 <span style={s.label}>{label}</span>
                 {isEditing ? (
+                    
                     <input type="date" style={s.dateInput} value={value || ''} onChange={(e) => onChange(e.target.value)} />
                 ) : (
                     <span style={s.dateValue}>{value || '-'}</span>

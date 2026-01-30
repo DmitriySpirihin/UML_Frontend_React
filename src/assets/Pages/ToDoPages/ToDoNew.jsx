@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import MyInput from "../../Helpers/MyInput";
 import Icons from "../../StaticClasses/Icons";
 import ScrollPicker from "../../Helpers/ScrollPicker";
 import { addPanel$, setAddPanel,setShowPopUpPanel } from '../../StaticClasses/HabitsBus.js';
@@ -139,11 +138,14 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                 <div style={s.mainInputWrapper}>
                                     <span style={{fontSize: '2rem', marginRight: '10px'}}>{selectedIcon}</span>
                                     <div style={{flex: 1}}>
-                                        <MyInput 
-                                            placeHolder={lang === 0 ? "Название цели..." : "Goal Title..."} 
-                                            value={name} onChange={setName} theme={theme} 
-                                            w="100%" h="auto" 
-                                        />
+                                        <input 
+                                                            type="text" 
+                                                            placeholder={langIndex === 0 ? "Название цели..." : "Goal Title..."}
+                                                            value={name}
+                                                            onChange={(e) => setName(e.target.value)}
+                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                        />
+                                        
                                     </div>
                                 </div>
                             </div>
@@ -241,10 +243,14 @@ const ToDoNew = ({ theme, lang, fSize }) => {
 
                             {/* 5. Description */}
                             <div style={{ marginTop: '20px' }}>
-                                <MyInput 
-                                    placeHolder={lang === 0 ? "Заметки / Описание..." : "Notes / Description..."} 
-                                    value={desc} onChange={setDesc} theme={theme}
-                                />
+                                <input 
+                                                            type="text" 
+                                                            placeholder={langIndex === 0 ? "Заметки / Описание..." : "Notes / Description..."}
+                                                            value={desc}
+                                                            onChange={(e) => setDesc(e.target.value)}
+                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                        />
+                                
                             </div>
 
                             {/* 6. Subtasks */}
@@ -253,10 +259,14 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                 
                                 <div style={s.addSubRow}>
                                     <div style={{flex: 1}}>
-                                        <MyInput 
-                                            placeHolder={lang === 0 ? "Добавить шаг..." : "Add a step..."}
-                                            value={newSubGoal} onChange={setNewSubGoal} theme={theme}
-                                        />
+                                        
+                                        <input 
+                                                            type="text" 
+                                                            placeholder={langIndex === 0 ? "Добавить шаг..." : "Add a step..."}
+                                                            value={newSubGoal}
+                                                            onChange={(e) => setNewSubGoal(e.target.value)}
+                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                        />
                                     </div>
                                     <motion.div 
                                         whileTap={{ scale: 0.9 }} 

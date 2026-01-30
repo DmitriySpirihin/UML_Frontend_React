@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import MyInput from '../../Helpers/MyInput.jsx';    
 import { theme$, lang$, fontSize$, setAddPanel } from '../../StaticClasses/HabitsBus';
 // Импортируем события, но список берем напрямую из AppData для надежности
 import { todoEvents$ } from './ToDoHelper.js';
@@ -200,13 +199,13 @@ const ToDoMain = () => {
                         >
                             <div style={s.inputContainer}>
                                 <FaSearch size={14} color={Colors.get('subText', theme)} style={{ marginLeft: '16px', opacity: 0.6 }}/>
-                                <MyInput
-                                    placeholder={langIndex === 0 ? 'Найти задачу...' : 'Search tasks...'}
-                                    h={'80%'}
-                                    w={'80%'}
-                                    value={searchQuery}
-                                    theme={theme}
-                                    onChange={v => setSearchQuery(v)}
+                               
+                                <input 
+                                type="text" 
+                                placeholder={langIndex === 0 ? 'Найти задачу...' : 'Search tasks...'}
+                                value={searchQuery}
+                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
                                 />
                                 
                                 {searchQuery.length > 0 && (

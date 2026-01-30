@@ -19,8 +19,6 @@ import TimerIcon from '@mui/icons-material/TimerTwoTone';
 import TimerOffIcon from '@mui/icons-material/TimerOffTwoTone';
 import Slider from '@mui/material/Slider';
 
-import MyInput from '../../Helpers/MyInput';
-
 const dateKey = new Date().toISOString().split('T')[0];
 const clickSound = new Audio('Audio/Click.wav');
 const skipSound = new Audio('Audio/Skip.wav');
@@ -334,8 +332,16 @@ const HabitsMain = () => {
                             {cP.type === 0 && (langIndex === 0 ? 'Настройки привычки' : 'Edit habit')}
                         </div>
 
-                        {cP.type === 1 && <MyInput w='100%' h='50px' value={newGoal} onChange={setNewGoal} placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'} theme={theme}/>}
-                        {cP.type === 2 && <MyInput w='100%' h='50px' value={newGoal} onChange={setNewGoal} placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'} theme={theme}/>}
+                        {cP.type === 1 || cP.type === 2 &&
+                        
+                         <input 
+                                type="text" 
+                                placeholder={langIndex === 0 ? 'Найти задачу...' : 'Search tasks...'}
+                                value={searchQuery}
+                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                />
+                         }
                         
                         {cP.type === 0 && (
     <div style={{width: '100%', display: 'flex', flexDirection: 'column', gap: '12px'}}>
@@ -358,8 +364,20 @@ const HabitsMain = () => {
             ))}
         </div>
 
-        <MyInput w='100%' h='50px' value={newName} onChange={setNewName} placeholder={langIndex===0?'Название':'Name'} theme={theme}/>
-        <MyInput w='100%' h='50px' value={newDescr} onChange={setNewDescr} placeholder={langIndex===0?'Описание (опц.)':'Description (opt.)'} theme={theme}/>
+        <input 
+                                type="text" 
+                                placeholder={langIndex === 0 ? 'Название':'Name'}
+                                value={newName}
+                                 onChange={(e) => setNewName(e.target.value)}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                />
+                                <input 
+                                type="text" 
+                                placeholder={langIndex === 0 ? 'Описание (опц.)':'Description (opt.)'}
+                                value={newDescr}
+                                 onChange={(e) => setNewDescr(e.target.value)}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                />
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', backgroundColor: isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)', borderRadius: '14px', cursor: 'pointer' }} onClick={() => setSelectIconPanel(!selectIconPanel)}>
             <span style={{fontSize: '14px', color: Colors.get('subText', theme)}}>{langIndex===0?'Иконка':'Icon'}</span>
