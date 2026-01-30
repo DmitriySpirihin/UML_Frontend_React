@@ -9,6 +9,7 @@ import { FaList } from "react-icons/fa6"
 import {MdClose,MdDone, MdAccessTime} from 'react-icons/md'
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx' // Imported Component
+import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx'
 
 // --- HELPERS ---
 const formatDateKey = (d) => {
@@ -223,6 +224,7 @@ const TrainingMain = () => {
 
    return (
        <div style={styles(theme).container}>
+        {<HoverInfoButton tab='TrainingMain'/>}
          <div style={styles(theme).panel}>
            {/* --- HEADER & CALENDAR --- */}
            <div style={styles(theme).calendarHead}>

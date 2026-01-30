@@ -6,7 +6,7 @@ import { AppData, getHabitPerformPercent, UserData } from '../../StaticClasses/A
 
 // --- ИМПОРТЫ ---
 import { expandedCard$, setExpandedCard } from '../../StaticClasses/HabitsBus.js';
-import { theme$, lang$, fontSize$, premium$, confirmationPanel$, setShowPopUpPanel, setPage, } from '../../StaticClasses/HabitsBus'
+import { theme$, lang$, fontSize$, premium$, confirmationPanel$, setShowPopUpPanel, setPage,setActiveTab } from '../../StaticClasses/HabitsBus'
 import Colors from '../../StaticClasses/Colors'
 
 import { MdDone, MdClose } from 'react-icons/md'
@@ -18,6 +18,7 @@ import { TbDotsVertical } from 'react-icons/tb'
 import TimerIcon from '@mui/icons-material/TimerTwoTone';
 import TimerOffIcon from '@mui/icons-material/TimerOffTwoTone';
 import Slider from '@mui/material/Slider';
+import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 
 const dateKey = new Date().toISOString().split('T')[0];
 const clickSound = new Audio('Audio/Click.wav');
@@ -300,6 +301,7 @@ const HabitsMain = () => {
 
     return (
         <div style={{ ...styles(theme).container, backgroundColor: pageBg }}>
+            {<HoverInfoButton tab='HabitsMain'/>}
             {needConfirmation && <div style={styles(theme).confirmContainer}>
                 <div style={styles(theme).cP}>
                     <div style={styles(theme, fSize).mainText}>{confirmMessage}</div>

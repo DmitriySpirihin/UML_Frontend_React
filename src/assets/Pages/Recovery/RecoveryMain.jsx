@@ -4,7 +4,7 @@ import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$, lang$, fontSize$, setPage, setRecoveryType } from '../../StaticClasses/HabitsBus'
 import {  FaChevronRight } from 'react-icons/fa'
-import { BsLungs } from 'react-icons/bs'
+import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 
 const RecoveryMain = () => {
     // states
@@ -67,6 +67,7 @@ const RecoveryMain = () => {
 
     return (
         <div style={styles(theme).container}>
+            {<HoverInfoButton tab='RecoveryMain'/>}
             <div style={{ height: '16vh' }} /> 
             
             <div style={styles(theme).scrollView}>

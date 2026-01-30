@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Colors from "../StaticClasses/Colors";
-import { theme$, lang$, fontSize$ } from "../StaticClasses/HabitsBus";
+import { theme$, lang$, fontSize$ ,activeTab$} from "../StaticClasses/HabitsBus";
 import { AppData } from "../StaticClasses/AppData";
 import {
   FaRunning,
@@ -21,6 +21,11 @@ const InfoPanel = () => {
   const [lang, setLang] = useState(() => AppData?.prefs?.[0] ?? 0);
   const [fSize, setFontSize] = useState(0);
   const [activeTab, setActiveTab] = useState("MainCard");
+
+  useEffect(() => {
+    const s = activeTab$.subscribe(setActiveTab);
+    return () => s.unsubscribe();
+  }, []);
 
   const menuItems = useMemo(
     () => [
@@ -407,7 +412,8 @@ function getInstructions(langIndex, sectionId, accent) {
     "Quick Start",
     "1 минута",
     [
-      step("1", "Навигация", "Все разделы доступны из главного меню — вкладки сверху."),
+      step("1", "Навигация", "Все разделы доступны из главного меню — вкладки сверху.Можешь скрыть или закрепить свайпом. "),
+      
       step("2", "Авто-сохранение", "Данные сохраняются сразу. Никаких “ой, не сохранилось”."),
       step(
         "3",
@@ -436,7 +442,7 @@ function getInstructions(langIndex, sectionId, accent) {
     "Quick Start",
     "1 minute",
     [
-      step("1", "Navigation", "Use top tabs to switch sections."),
+      step("1", "Navigation", "Use top tabs to switch sections.Can hide or pin with swipe."),
       step("2", "Auto-save", "Data saves instantly."),
       step(
         "3",

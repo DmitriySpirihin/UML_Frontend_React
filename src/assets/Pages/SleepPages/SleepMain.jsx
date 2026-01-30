@@ -5,6 +5,7 @@ import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, addNewTrainingDay$ } from '../../StaticClasses/HabitsBus';
 import { FaChevronLeft, FaChevronRight, FaMoon, FaBed, FaRegClock, FaStickyNote, FaStar } from 'react-icons/fa';
 import SleepNew from './SleepNew.jsx';
+import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 
 // --- HELPERS ---
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
@@ -135,7 +136,7 @@ const SleepMain = () => {
 
   return (
     <div style={styles(theme, fSize).container}>
-      
+      {<HoverInfoButton tab='SleepMain'/>}
       {/* --- Calendar Header --- */}
       <div style={styles(theme).headerContainer}>
         <motion.button whileTap={{scale:0.9}} onClick={prevMonth} style={styles(theme).navBtn}>

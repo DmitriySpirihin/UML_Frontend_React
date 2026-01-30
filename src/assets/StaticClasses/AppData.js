@@ -78,6 +78,15 @@ export class AppData{
     "hidden": false
   }
 };
+static infoMiniPanel = {
+  "MainCard": true,
+  "HabitsMain": true,
+  "TrainingMain": true,
+  "MentalMain": true,
+  "RecoveryMain": true,
+  "SleepMain": true,
+  "ToDoMain": true
+};
   // methods
   static init(data) {
     if (!data) return;
@@ -152,6 +161,15 @@ export class AppData{
     "hidden": false
   }
 };
+    this.infoMiniPanel = data.infoMiniPanel || {
+      "MainCard": true,
+      "HabitsMain": true,
+      "TrainingMain": true,
+      "MentalMain": true,
+      "RecoveryMain": true,
+      "SleepMain": true,
+      "ToDoMain": true
+    };
   } 
   static setPrefs(ind,value){
     this.prefs[ind] = value;
@@ -409,6 +427,7 @@ export class Data{
     this.mentalLog = AppData.mentalLog;
     this.todoList = AppData.todoList;
     this.menuCardsStates = AppData.menuCardsStates;
+    this.infoMiniPanel = AppData.infoMiniPanel;
   }
 }
 

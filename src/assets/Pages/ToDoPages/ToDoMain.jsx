@@ -24,6 +24,7 @@ import {
 import ToDoPage from './ToDoPage.jsx';
 import ToDoNew from './ToDoNew.jsx';
 import ToDoMetrics from './ToDoMetrics.jsx';
+import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 
 const clickSound = new Audio('Audio/Click.wav');
 const doneSound = new Audio('Audio/IsDone.wav');
@@ -159,7 +160,7 @@ const ToDoMain = () => {
 
     return (
         <div style={s.container}>
-            
+            {<HoverInfoButton tab='ToDoMain'/>}
             {/* --- HEADER --- */}
             <div style={{ width: '92%', marginTop: '14vh', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 10 }}>
                 

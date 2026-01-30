@@ -4,6 +4,7 @@ import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$, lang$, fontSize$, setPage } from '../../StaticClasses/HabitsBus'
 import { FaStar, FaChevronRight } from 'react-icons/fa'
+import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 const MentalMain = () => {
     // states
     const [theme, setthemeState] = useState('dark');
@@ -73,6 +74,7 @@ const MentalMain = () => {
 
     return (
         <div style={styles(theme).container}>
+            {<HoverInfoButton tab='MentalMain'/>}
             <div style={{ height: '16vh' }} />
 
             <div style={styles(theme).scrollView}>
