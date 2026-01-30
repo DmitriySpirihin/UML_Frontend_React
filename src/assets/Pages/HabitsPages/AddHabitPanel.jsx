@@ -91,7 +91,7 @@ const AddHabitPanel = () => {
         
         if (selectedHabit && selectedHabit.id !== habitId) {
             setHabitId(selectedHabit.id);
-            setHabitName(selectedHabit.name[langIndex]);
+            //setHabitName(selectedHabit.name[langIndex]);
             setIsNegative(selectedHabit.category[0] === 'Отказ от вредного');
             setGoals(setGoalForDefault(selectedHabit.name[0], langIndex));
             setDaysToForm(selectedHabit.category[0] === 'Отказ от вредного' ? 120 : 66);
@@ -244,7 +244,7 @@ const AddHabitPanel = () => {
                                                                                         placeholder={langIndex === 0 ? 'название' : 'name'}
                                                                                         value={habitName}
                                                                                          onChange={(e) => setHabitName(e.target.value)}
-                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                                                                         />
                                                 <motion.div whileTap={{ scale: 0.98 }} style={iconPickerTrigger(ui)} onClick={() => setSelectIconPanel(true)}>
                                                     <span style={{ color: ui.text, fontWeight: '700' }}>Иконка</span>
@@ -255,7 +255,7 @@ const AddHabitPanel = () => {
                                                                                         placeholder={langIndex === 0 ? 'описание' : 'description'}
                                                                                         value={habitDescription}
                                                                                          onChange={(e) => setHabitDescription(e.target.value)}
-                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                                                                         />
                                                
                                             </div>

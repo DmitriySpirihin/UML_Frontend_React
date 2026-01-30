@@ -182,7 +182,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                     placeholder={langIndex === 0 ? "Поиск упражнения..." : "Search exercise..."}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px'}}
                 />
                 {searchTerm && (
                     <MdClose 
@@ -359,14 +359,14 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                     placeholder={langIndex === 0 ? 'Название' : 'Name'}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                 />
                 <input 
                     type="text" 
                     placeholder={langIndex === 0 ? 'Описание' : 'Description'}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                 />
 
                                 {/* TYPE TOGGLE */}

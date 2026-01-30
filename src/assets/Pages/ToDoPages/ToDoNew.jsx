@@ -46,7 +46,7 @@ const ToDoNew = ({ theme, lang, fSize }) => {
 
     const handleSave = async () => {
         if (!name.trim()){
-            setShowPopUpPanel(langIndex === 0 ? 'Введите название' : 'Enter name', 2000, false);
+            setShowPopUpPanel(lang === 0 ? 'Введите название' : 'Enter name', 2000, false);
             return;
         }
 
@@ -137,13 +137,13 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                             <div style={s.section}>
                                 <div style={s.mainInputWrapper}>
                                     <span style={{fontSize: '2rem', marginRight: '10px'}}>{selectedIcon}</span>
-                                    <div style={{flex: 1}}>
+                                    <div style={{width: '100%', display: 'flex', flexDirection: 'column'}}>
                                         <input 
                                                             type="text" 
-                                                            placeholder={langIndex === 0 ? "Название цели..." : "Goal Title..."}
+                                                            placeholder={lang === 0 ? "Название цели..." : "Goal Title..."}
                                                             value={name}
                                                             onChange={(e) => setName(e.target.value)}
-                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                                         />
                                         
                                     </div>
@@ -242,13 +242,13 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                             </div>
 
                             {/* 5. Description */}
-                            <div style={{ marginTop: '20px' }}>
+                            <div style={{width: '100%', display: 'flex', flexDirection: 'column', marginBottom: 12}}>
                                 <input 
                                                             type="text" 
-                                                            placeholder={langIndex === 0 ? "Заметки / Описание..." : "Notes / Description..."}
+                                                            placeholder={lang === 0 ? "Заметки / Описание..." : "Notes / Description..."}
                                                             value={desc}
                                                             onChange={(e) => setDesc(e.target.value)}
-                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                                         />
                                 
                             </div>
@@ -258,14 +258,14 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                 <label style={s.sectionTitle}>{lang === 0 ? 'Чек-лист' : 'Checklist'}</label>
                                 
                                 <div style={s.addSubRow}>
-                                    <div style={{flex: 1}}>
+                                    <div style={{width: '100%', display: 'flex', flexDirection: 'column',border: `3px dotted ${Colors.get('border', theme)}`,borderRadius: '16px', padding: '12px',marginTop: '10px'}}>
                                         
                                         <input 
                                                             type="text" 
-                                                            placeholder={langIndex === 0 ? "Добавить шаг..." : "Add a step..."}
+                                                            placeholder={lang === 0 ? "Добавить шаг..." : "Add a step..."}
                                                             value={newSubGoal}
                                                             onChange={(e) => setNewSubGoal(e.target.value)}
-                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px'}}
                                                         />
                                     </div>
                                     <motion.div 
@@ -299,7 +299,7 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                             </div>
                             
                             {/* Bottom Spacer for safe area */}
-                            <div style={{marginBottom:'300px'}}></div>
+                            <div style={{marginBottom:'360px'}}></div>
                         </div>
                         
                     </motion.div>

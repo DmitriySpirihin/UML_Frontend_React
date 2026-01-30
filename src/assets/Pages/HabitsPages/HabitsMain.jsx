@@ -333,23 +333,26 @@ const HabitsMain = () => {
                         </div>
 
                         {cP.type === 1 &&
-                        
+                       <div style={{width: '100%', display: 'flex', flexDirection: 'column', marginBottom: 12}}>
                          <input 
                                 type="text" 
                                 placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'}
                                 value={newGoal}
                                  onChange={(e) => setNewGoal(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                 />
+                                </div>
                          }
                         {cP.type === 2 &&
+                        <div style={{width: '100%', display: 'flex', flexDirection: 'column', marginBottom: 12}}>
                          <input 
                                 type="text" 
                                 placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'}
                                 value={newGoal}
                                  onChange={(e) => setNewGoal(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                 />
+                                </div>
                          }
                         
                         {cP.type === 0 && (
@@ -378,14 +381,14 @@ const HabitsMain = () => {
                                 placeholder={langIndex === 0 ? 'Название':'Name'}
                                 value={newName}
                                  onChange={(e) => setNewName(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                 />
                                 <input 
                                 type="text" 
                                 placeholder={langIndex === 0 ? 'Описание (опц.)':'Description (opt.)'}
                                 value={newDescr}
                                  onChange={(e) => setNewDescr(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                 />
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', backgroundColor: isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)', borderRadius: '14px', cursor: 'pointer' }} onClick={() => setSelectIconPanel(!selectIconPanel)}>

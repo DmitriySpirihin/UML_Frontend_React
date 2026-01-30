@@ -121,13 +121,15 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                                 </div>
 
                                 {isEditing ? (
+                                    <div style={{width: '100%', display: 'flex', flexDirection: 'column', marginBottom: 12}}>
                                     <input 
                     type="text" 
-                    placeholder={langIndex === 0 ? 'Название' : 'Name'}
+                    placeholder={lang === 0 ? 'Название' : 'Name'}
                     value={task.name}
                     onChange={(e) => setTask({...task, name: e.target.value})}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                 />
+                </div>
                                 ) : (
                                     <h2 style={s.title}>{task.name}</h2>
                                 )}
@@ -159,14 +161,14 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                                     )}
                                 </div>
 
-                                <div style={s.sectionBox}>
+                                <div style={{width: '100%', display: 'flex', flexDirection: 'column', marginBottom: 12}}>
                                     {isEditing ? (
                                         <input 
                     type="text" 
-                    placeholder={langIndex === 0 ?  'Описание' : 'Description'}
+                    placeholder={lang === 0 ?  'Описание' : 'Description'}
                     value={task.description}
                     onChange={(e) => setTask({...task, description: e.target.value})}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                 />
                                     ) : (
                                         <p style={s.description}>{task.description || (lang === 0 ? "Нет описания" : "No description")}</p>
@@ -202,16 +204,16 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                                             <FaPlus style={{color: Colors.get('subText', theme), marginRight: 10}} />
                                              <input 
                     type="text" 
-                    placeholder={langIndex === 0 ? "Добавить задачу..." : "Add item..."}
+                    placeholder={lang === 0 ? "Добавить задачу..." : "Add item..."}
                     value={newSubGoalText}
                     onChange={(e) => setNewSubGoalText(e.target.value)}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px'}}
                 />
                                             {newSubGoalText.length > 0 && <button onClick={handleAddSub} style={s.addSubBtn}>OK</button>}
                                         </div>
                                     </div>
                                 </div>
-                                <div style={{ marginBottom: '260px' }} />
+                                <div style={{ marginBottom: '560px' }} />
                             </div>
                             
                         </div>
