@@ -332,13 +332,22 @@ const HabitsMain = () => {
                             {cP.type === 0 && (langIndex === 0 ? 'Настройки привычки' : 'Edit habit')}
                         </div>
 
-                        {cP.type === 1 || cP.type === 2 &&
+                        {cP.type === 1 &&
                         
                          <input 
                                 type="text" 
-                                placeholder={langIndex === 0 ? 'Найти задачу...' : 'Search tasks...'}
-                                value={searchQuery}
-                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'}
+                                value={newGoal}
+                                 onChange={(e) => setNewGoal(e.target.value)}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                />
+                         }
+                        {cP.type === 2 &&
+                         <input 
+                                type="text" 
+                                placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'}
+                                value={newGoal}
+                                 onChange={(e) => setNewGoal(e.target.value)}
                                 style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
                                 />
                          }
