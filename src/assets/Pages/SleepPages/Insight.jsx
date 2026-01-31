@@ -97,10 +97,7 @@ const Insight = () => {
             
             {/* --- 1. Header --- */}
             <div style={styles(theme).header}>
-                <div style={styles(theme).iconGlowContainer}>
-                    <FaRobot size={28} color="#fff" style={{ zIndex: 2 }} />
-                    <div style={styles(theme).iconGlow} />
-                </div>
+                <img src={'images/Couch.png'} style={styles(theme).mascot} alt="Couch" />
                 
                 <div style={styles(theme).titleContainer}>
                     <span style={styles(theme).gradientTitle}>
@@ -110,7 +107,7 @@ const Insight = () => {
                         {langIndex === 0 ? 'Персональный инсайт' : 'Personal Insight'}
                     </span>
                 </div>
-                <img src={'images/Mascot_Sits.png'} style={styles(theme).mascot} alt="Mascot" />
+                
             </div>
 
             {/* --- 2. Content Body --- */}
@@ -119,7 +116,9 @@ const Insight = () => {
                     <div style={styles(theme).loadingContainer}>
                         {/* MODERN GRADIENT SPINNER */}
                         <div style={styles(theme).modernSpinnerContainer}>
-                            <div style={styles(theme).modernSpinner} />
+                            <div style={styles(theme).modernSpinner} >
+                             <img src={'images/Thinking.png'} style={styles(theme).loadingIcon} alt="Couch" />
+                             </div>
                         </div>
                         <span style={{ opacity: 0.7, fontSize: '14px', marginTop: '12px' }}>
                             {langIndex === 0 ? 'Анализирую данные...' : 'Analyzing data...'}
@@ -228,8 +227,8 @@ const styles = (theme, activeOrSize) => {
             overflow: 'hidden'
         },
         header: {
-            padding: '24px 24px 12px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center',
-            position: 'relative', flexShrink: 0
+             display: 'flex', flexDirection: 'column', alignItems: 'center',
+            position: 'relative', flexShrink: 0,  borderBottom:`1px solid  rgba(94, 94, 94, 0.35)`,padding:'22px'
         },
         iconGlowContainer: {
             width: '52px', height: '52px', borderRadius: '18px', backgroundColor: '#1a1a1a',
@@ -242,12 +241,12 @@ const styles = (theme, activeOrSize) => {
             opacity: 0.8, filter: 'blur(15px)', zIndex: 0,
         },
         titleContainer: { 
+            marginTop:'15%',
             textAlign: 'center',
-            width:'90%',
-            borderBottom:`1px solid  rgba(94, 94, 94, 0.35)` 
+            zIndex:2
         },
         gradientTitle: {
-            fontSize: '20px', fontWeight: '800', fontFamily: 'Segoe UI, sans-serif',
+            fontSize: '25px', fontWeight: '800', fontFamily: 'Segoe UI, sans-serif',
             background: `linear-gradient(90deg, ${accentColor} 0%, ${secondaryAccent} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             display: 'block'
@@ -259,9 +258,14 @@ const styles = (theme, activeOrSize) => {
             opacity: 0.8 
         },
         mascot: {
-            position: 'absolute', top: '25%', left: '-10px', width: '100px',
-            zIndex: 10, filter: 'drop-shadow(0 5px 15px rgba(0,0,0,0.4))',
-            pointerEvents: 'none'
+            position: 'absolute', top: '1%', left: '35%', width: '100px',
+            zIndex: 1, filter: 'drop-shadow(0 5px 15px rgba(0,0,0,0.4))',
+            pointerEvents: 'none' 
+        },
+        loadingIcon: {
+            position: 'absolute', width: '150px',borderRadius:'50%',marginTop:'10%',
+            zIndex: 1, filter: 'drop-shadow(0 5px 15px rgba(0,0,0,0.4))',
+            pointerEvents: 'none' 
         },
         contentBody: {
             flex: 1, overflowY: 'auto', padding: '10px 24px 30px 24px',
@@ -282,7 +286,7 @@ const styles = (theme, activeOrSize) => {
             color: Colors.get('subText', theme)
         },
         modernSpinnerContainer: {
-            position: 'relative', width: '60px', height: '60px',
+            position: 'relative', width: '150px', height: '150px',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
         },
         modernSpinner: {
@@ -291,7 +295,7 @@ const styles = (theme, activeOrSize) => {
             height: '100%',
             borderRadius: '50%',
             background: `linear-gradient(45deg, ${accentColor}40, ${secondaryAccent}80, ${accentColor}40)`,
-            backgroundSize: '200% 200%',
+            backgroundSize: '250% 250%',
             animation: 'gradientRotate 3s ease infinite, pulseGlow 2s ease-in-out infinite',
             opacity: 0.9,
             boxShadow: `0 0 20px ${accentColor}60, 0 0 30px ${secondaryAccent}60`,
