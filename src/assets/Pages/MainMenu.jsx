@@ -599,7 +599,7 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,set
 
             <div style={{ display: 'flex', alignItems: 'center', marginLeft: '8px' }}>
                 <Info id = {item.id} theme={theme} lang={lang} />
-                <FaChevronRight size={14} color={Colors.get('subText', theme)} style={{ opacity: 0.3 }} />
+                
             </div>
             </div>) : 
             (
@@ -627,11 +627,10 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,set
 const Info = ({ id, theme, lang }) => {
   const info = getInfo(id, lang);
 
-  if (!info) return null;
-
   return (
     <div
       style={{
+        width:'13vw',
         padding: '4px 10px',
         backgroundColor:
           theme === 'dark'
@@ -641,10 +640,10 @@ const Info = ({ id, theme, lang }) => {
         fontSize: '13px',
         fontWeight: '700',
         color: Colors.get('mainText', theme),
-        marginRight: '8px',
+       
       }}
     >
-      {info}
+      {info.length > 0 ? info : '-'}
       {id === 'MentalMain' && <FaStar style={{marginLeft:'5px'}}/>}
     </div>
   );
@@ -716,15 +715,15 @@ function playEffects(sound) {
 }
 
 function getInfo(id,langIndex = 0) {
-    if (id === 'HabitsMain') return AppData.choosenHabits.length > 0 ? AppData.choosenHabits.length : '';
+    if (id === 'HabitsMain') return AppData.choosenHabits.length > 0 ? AppData.choosenHabits.length.toString() : '';
     else if (id === 'TrainingMain') {
         const tonnage = getCurrentCycleAnalysis().currentTonnage;
         return tonnage > 0 ? (tonnage / 1000).toFixed(1) + (AppData.prefs[0] === 0 ? 'т' : 't') : '';
     }
-    else if (id === 'ToDoMain') return AppData.todoList.length > 0 ? AppData.todoList.length : '';
-    else if (id === 'SleepMain') return getTodaySleepHours(langIndex);
-    else if (id === 'RecoveryMain') return getTodaySessionCount();
-    else if (id === 'MentalMain') return getMentalScoresSummary();
+    else if (id === 'ToDoMain') return AppData.todoList.length > 0 ? AppData.todoList.length.toString() : '';
+    else if (id === 'SleepMain') return getTodaySleepHours(langIndex).toString();
+    else if (id === 'RecoveryMain') return getTodaySessionCount().toString();
+    else if (id === 'MentalMain') return getMentalScoresSummary().toString();
 
     return '';
 }

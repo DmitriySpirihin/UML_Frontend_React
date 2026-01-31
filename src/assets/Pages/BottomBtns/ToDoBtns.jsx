@@ -157,7 +157,7 @@ function playEffects(sound) {
 // Modern UI Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '15px',
+    bottom: '7vw',
     left: '10vw',
     width: '80vw',
     height: '70px',
@@ -166,7 +166,7 @@ const containerStyle = (theme) => ({
     justifyContent: 'space-around',
     alignItems: 'center',
     backdropFilter: 'blur(6px)',
-    zIndex: 1000,
+    zIndex: 2000,
 });
 
 const glassOverlay = (theme) => ({

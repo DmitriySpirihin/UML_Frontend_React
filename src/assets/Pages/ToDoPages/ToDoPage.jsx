@@ -190,9 +190,9 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                                     <div style={s.goalsContainer}>
                                         <AnimatePresence>
                                             {task.goals?.map((goal, idx) => (
-                                                <motion.div key={idx} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} style={s.goalRow}>
+                                                <motion.div key={idx} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} style={{...s.goalRow,border:goal.isDone ? `2px solid  #2ed177` : 'transparent'}}>
                                                     <div onClick={() => handleToggleSub(idx)} style={s.checkbox(goal.isDone)}>
-                                                        {goal.isDone && <FaCheck size={10} color="#fff" />}
+                                                        {goal.isDone && <FaCheck size={10} color="#2ed177" />}
                                                     </div>
                                                     <div style={s.goalText(goal.isDone)} onClick={() => handleToggleSub(idx)}>{goal.text}</div>
                                                     <div onClick={() => setShowDeleteWarning(idx)} style={s.deleteSubBtn}><FaTimes /></div>
@@ -260,7 +260,7 @@ const styles = (theme, fSize, accentColor) => {
 
     return {
         // ... (Keep previous backdrop, modalContainer, etc.)
-        backdrop: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', zIndex: 1999 },
+        backdrop: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', zIndex: 1000 },
         modalContainer: { position: 'fixed', bottom: 0, left: 0, right: 0, height: '90vh', backgroundColor: bg, borderTopLeftRadius: '32px', borderTopRightRadius: '32px', zIndex: 2000, display: 'flex', flexDirection: 'column', boxShadow: '0 -10px 40px rgba(0,0,0,0.5)', overflow: 'hidden' },
         
         // Warning Panel
@@ -304,7 +304,7 @@ const styles = (theme, fSize, accentColor) => {
         checkbox: (checked) => ({ width: 24, height: 24, borderRadius: 8, border: `2px solid ${checked ? accentColor : border}`, backgroundColor: checked ? accentColor : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }),
         goalText: (checked) => ({ flex: 1, fontSize: 15, color: text, opacity: checked ? 0.5 : 1, textDecoration: checked ? 'line-through' : 'none', marginLeft: 12 }),
         deleteSubBtn: { color: sub, padding: 5 },
-        addSubRow: { display: 'flex', alignItems: 'center', padding: '5px 15px', border: `2px dashed ${border}`, borderRadius: 16 },
+        addSubRow: { display: 'flex', alignItems: 'center', padding: '16px 15px', border: `2px dashed ${border}`, borderRadius: 16 },
         addSubBtn: { background: accentColor, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 'bold', marginLeft: 10 },
         description: { fontSize: 16, lineHeight: 1.6, color: text, margin: 0, opacity: 0.9 },
         selectInput: { width: '100%', padding: 12, borderRadius: 12, border: `1px solid ${border}`, backgroundColor: panel, color: text }

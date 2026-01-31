@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, setAddPanel } from '../../StaticClasses/HabitsBus';
+import { theme$, lang$, fontSize$, setAddPanel,addPanel$ } from '../../StaticClasses/HabitsBus';
 // Импортируем события, но список берем напрямую из AppData для надежности
 import { todoEvents$ } from './ToDoHelper.js';
 import { 
@@ -45,7 +45,7 @@ const ToDoMain = () => {
     const [fSize, setFSize] = useState(AppData.prefs[4]);
 
     // --- LOCAL UI STATE ---
-    const [showToDo, setShowToDo] = useState(false);
+    const [showToDo, setShowToDo] = useState(addPanel$.value === 'ToDoPage' ? true : false);
     const [showMetrics, setShowMetrics] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     
@@ -67,6 +67,7 @@ const ToDoMain = () => {
         const sub1 = theme$.subscribe(setThemeState);
         const sub2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
         const sub3 = fontSize$.subscribe(setFSize);
+        const sub5 = addPanel$.subscribe(value => setShowToDo(value === 'ToDoPage'));
         
         const sub4 = todoEvents$.subscribe(event => {
             if (!event) return;
@@ -75,24 +76,24 @@ const ToDoMain = () => {
 
             if (event.type === 'OPEN_STATS') {
                 setShowMetrics(true);
-                setShowToDo(false);
+                setAddPanel('');
             }
             if (event.type === 'OPEN_ADD') {
                 setShowMetrics(false);
                 setCurrentIndex(-1);
-                setShowToDo(true);
+                setAddPanel('ToDoPage');
             }
             if (event.type === 'CLOSE_ALL') {
                 setShowMetrics(false);
-                setShowToDo(false);
+                setAddPanel('');
             }
         });
 
         return () => { 
-            sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe(); 
+            sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe(); sub5.unsubscribe();
         };
     }, []);
-
+   
     // --- LOGIC ---
     useEffect(() => {
         sortList();
@@ -131,6 +132,10 @@ const ToDoMain = () => {
         }
         
         setSortedList(newList);
+    }
+
+    const onClose = () => {
+        setAddPanel('');
     }
 
     const handleQuickComplete = (e, item) => {
@@ -298,7 +303,7 @@ const ToDoMain = () => {
                                             // Находим реальный индекс в полном списке AppData
                                             const realIndex = AppData.todoList.indexOf(item);
                                             setCurrentIndex(realIndex);
-                                            setShowToDo(true);
+                                            setAddPanel('ToDoPage');
                                             playEffects(clickSound);
                                         }}
                                         onCheck={(e) => handleQuickComplete(e, item)}
@@ -319,7 +324,7 @@ const ToDoMain = () => {
             {/* --- MODALS --- */}
             <ToDoPage 
                 show={showToDo} 
-                setShow={setShowToDo} 
+                setShow={onClose} 
                 theme={theme} 
                 lang={langIndex} 
                 fSize={fSize} 

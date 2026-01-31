@@ -4,30 +4,44 @@ import { AppData, UserData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import Icons from "../../StaticClasses/Icons";
 import ScrollPicker from "../../Helpers/ScrollPicker";
-import { addPanel$, setAddPanel,setShowPopUpPanel } from '../../StaticClasses/HabitsBus.js';
+import { addPanel$, setAddPanel, setShowPopUpPanel } from '../../StaticClasses/HabitsBus.js';
 import { createGoal } from "./ToDoHelper";
-import { FaCalendarDay, FaClock ,FaPlus,FaTimes} from 'react-icons/fa';
+import { FaCalendarDay, FaClock, FaPlus, FaTimes, FaTag } from 'react-icons/fa';
 
 // --- Configuration ---
 const PRIORITY_LABELS = [['Низкий', 'Low'], ['Обычный', 'Normal'], ['Важный', 'Important'], ['Высокий', 'High'], ['Критический', 'Critical']];
 const DIFFICULTY_LABELS = [['Очень легко', 'Very Easy'], ['Легко', 'Easy'], ['Средне', 'Medium'], ['Сложно', 'Hard'], ['Кошмар', 'Nightmare']];
 const URGENCY_LABELS = [['Не горит', 'Not Urgent'], ['Обычная', 'Normal'], ['Срочно', 'Urgent'], ['Очень срочно', 'Very Urgent'], ['ASAP', 'ASAP']];
 
-const CATEGORY_ICONS = ['📝', '💼', '🏠', '💪', '🛒', '🎓', '✈️', '💰', '🎨', '💻'];
+// Defined Categories with Icons and Labels [Russian, English]
+const CATEGORIES = [
+    { icon: '📝', label: ['Общее', 'General'] },
+    { icon: '💼', label: ['Работа', 'Work'] },
+    { icon: '🏠', label: ['Дом', 'Home'] },
+    { icon: '💪', label: ['Здоровье', 'Health'] },
+    { icon: '🛒', label: ['Покупки', 'Shopping'] },
+    { icon: '🎓', label: ['Учеба', 'Study'] },
+    { icon: '✈️', label: ['Путешествия', 'Trip'] },
+    { icon: '💰', label: ['Финансы', 'Finance'] },
+    { icon: '🎨', label: ['Хобби', 'Hobby'] },
+    { icon: '💻', label: ['Код', 'Coding'] },
+];
 
 const ToDoNew = ({ theme, lang, fSize }) => {
     const [show, setShow] = useState(false);
-    
+
     // Form State
     const [name, setName] = useState('');
     const [desc, setDesc] = useState('');
-    
+
     // Pickers State
     const [priority, setPriority] = useState(PRIORITY_LABELS[1][lang]);
     const [difficulty, setDifficulty] = useState(DIFFICULTY_LABELS[2][lang]);
     const [urgency, setUrgency] = useState(URGENCY_LABELS[1][lang]);
-    const [selectedIcon, setSelectedIcon] = useState(CATEGORY_ICONS[0]);
     
+    // Category State (Stores index of CATEGORIES array)
+    const [selectedCatIndex, setSelectedCatIndex] = useState(0);
+
     // Dates State
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [deadLine, setDeadLine] = useState('');
@@ -35,7 +49,6 @@ const ToDoNew = ({ theme, lang, fSize }) => {
     // Subgoals
     const [subGoals, setSubGoals] = useState([]);
     const [newSubGoal, setNewSubGoal] = useState('');
-    const subGoalInputRef = useRef(null);
 
     useEffect(() => {
         const sub = addPanel$.subscribe(val => setShow(val === 'ToDoNew'));
@@ -45,7 +58,7 @@ const ToDoNew = ({ theme, lang, fSize }) => {
     // --- Actions ---
 
     const handleSave = async () => {
-        if (!name.trim()){
+        if (!name.trim()) {
             setShowPopUpPanel(lang === 0 ? 'Введите название' : 'Enter name', 2000, false);
             return;
         }
@@ -55,26 +68,28 @@ const ToDoNew = ({ theme, lang, fSize }) => {
         const dIdx = DIFFICULTY_LABELS.findIndex(l => l.includes(difficulty));
         const uIdx = URGENCY_LABELS.findIndex(l => l.includes(urgency));
 
+        // Get selected category data
+        const currentCat = CATEGORIES[selectedCatIndex];
+        const categoryName = currentCat.label[1]; // Always save English name or ID for consistency
+        const categoryIcon = currentCat.icon;
+
         await createGoal(
-            name, 
-            desc, 
-            dIdx, 
-            pIdx, 
-            'General', // Category
-            selectedIcon, 
-            Colors.get('areaChart', theme), // Default color
-            startDate, 
-            deadLine, 
-            subGoals, 
-            '', 
-            uIdx // Pass Urgency
+            name,
+            desc,
+            dIdx,
+            pIdx,
+            categoryName, // Dynamic Category
+            categoryIcon, // Dynamic Icon
+            startDate,
+            deadLine,
+            subGoals,
+            uIdx
         );
         closePanel();
     };
 
     const closePanel = () => {
         setAddPanel(null);
-        // Reset state after a small delay for smooth exit
         setTimeout(() => {
             setName(''); setDesc(''); setSubGoals([]); setNewSubGoal('');
             setPriority(PRIORITY_LABELS[1][lang]);
@@ -82,6 +97,7 @@ const ToDoNew = ({ theme, lang, fSize }) => {
             setUrgency(URGENCY_LABELS[1][lang]);
             setStartDate(new Date().toISOString().split('T')[0]);
             setDeadLine('');
+            setSelectedCatIndex(0);
         }, 300);
     };
 
@@ -93,23 +109,22 @@ const ToDoNew = ({ theme, lang, fSize }) => {
 
     // --- Styles & UI Helpers ---
     const s = styles(theme);
-    const isDark = theme !== 'light';
 
     return (
         <AnimatePresence>
             {show && (
                 <>
-                    {/* Backdrop Blur */}
-                    <motion.div 
+                    {/* Backdrop */}
+                    <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         onClick={closePanel}
                         style={s.backdrop}
                     />
 
                     {/* Main Sheet */}
-                    <motion.div 
-                        initial={{ y: '100%' }} 
-                        animate={{ y: 0 }} 
+                    <motion.div
+                        initial={{ y: '100%' }}
+                        animate={{ y: 0 }}
                         exit={{ y: '100%' }}
                         transition={{ type: 'spring', damping: 28, stiffness: 250 }}
                         style={s.container}
@@ -125,49 +140,67 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                 {lang === 0 ? 'Отмена' : 'Cancel'}
                             </motion.button>
                             <span style={s.headerTitle}>{lang === 0 ? 'Новая цель' : 'New Goal'}</span>
-                            <motion.button whileTap={{ scale: 0.9 }} onClick={handleSave} style={{...s.textBtn, color: Colors.get('done', theme), fontWeight: '700'}}>
+                            <motion.button whileTap={{ scale: 0.9 }} onClick={handleSave} style={{ ...s.textBtn, color: Colors.get('done', theme), fontWeight: '700' }}>
                                 {lang === 0 ? 'Создать' : 'Create'}
                             </motion.button>
                         </div>
 
                         {/* Scrollable Content */}
                         <div style={s.scrollContent} className="no-scrollbar">
-                            
+
                             {/* 1. Main Input Section */}
                             <div style={s.section}>
                                 <div style={s.mainInputWrapper}>
-                                    <span style={{fontSize: '2rem', marginRight: '10px'}}>{selectedIcon}</span>
-                                    <div style={{width: '100%', display: 'flex', flexDirection: 'column'}}>
-                                        <input 
-                                                            type="text" 
-                                                            placeholder={lang === 0 ? "Название цели..." : "Goal Title..."}
-                                                            value={name}
-                                                            onChange={(e) => setName(e.target.value)}
-                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
-                                                        />
-                                        
+                                    {/* Display Selected Icon Large */}
+                                    <div style={s.largeIconDisplay}>
+                                        {CATEGORIES[selectedCatIndex].icon}
+                                    </div>
+                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+                                        <input
+                                            type="text"
+                                            placeholder={lang === 0 ? "Название цели..." : "Goal Title..."}
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            style={s.mainInput}
+                                        />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* 2. Icon Picker (Horizontal Scroll) */}
-                            <div style={s.iconScrollContainer}>
-                                {CATEGORY_ICONS.map((icon, i) => (
-                                    <motion.div 
-                                        key={i} 
-                                        whileTap={{ scale: 0.8 }}
-                                        onClick={() => setSelectedIcon(icon)}
-                                        style={{
-                                            ...s.iconChip,
-                                            backgroundColor: icon === selectedIcon ? Colors.get('iconsHighlited', theme) : 'transparent',
-                                            border: icon === selectedIcon ? 'none' : `1px solid ${Colors.get('border', theme)}`
-                                        }}
-                                    >
-                                        <span style={{ fontSize: '1.2rem', filter: icon === selectedIcon ? 'grayscale(0)' : 'grayscale(100%) opacity(0.7)' }}>
-                                            {icon}
-                                        </span>
-                                    </motion.div>
-                                ))}
+                            {/* 2. Categories Picker (Horizontal Scroll) */}
+                            <div style={s.categorySection}>
+                                <div style={{display:'flex', alignItems:'center', marginBottom: 8, paddingLeft: 5}}>
+                                    <FaTag size={12} color={Colors.get('subText', theme)} style={{marginRight: 6}}/>
+                                    <label style={s.label}>{lang === 0 ? 'Категория' : 'Category'}</label>
+                                </div>
+                                <div style={s.iconScrollContainer}>
+                                    {CATEGORIES.map((cat, i) => {
+                                        const isSelected = i === selectedCatIndex;
+                                        return (
+                                            <motion.div
+                                                key={i}
+                                                whileTap={{ scale: 0.9 }}
+                                                onClick={() => setSelectedCatIndex(i)}
+                                                style={{
+                                                    ...s.categoryChip,
+                                                    backgroundColor: isSelected ? Colors.get('iconsHighlited', theme) : 'transparent',
+                                                    borderColor: isSelected ? 'transparent' : Colors.get('border', theme),
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '1.4rem' }}>{cat.icon}</span>
+                                                {isSelected && (
+                                                    <motion.span 
+                                                        initial={{opacity:0, width: 0}} 
+                                                        animate={{opacity:1, width: 'auto'}} 
+                                                        style={s.categoryLabel}
+                                                    >
+                                                        {cat.label[lang]}
+                                                    </motion.span>
+                                                )}
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
                             {/* 3. Settings Card (Priority, Difficulty, Urgency) */}
@@ -176,32 +209,32 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                     {/* Priority */}
                                     <div style={s.pickerCol}>
                                         <label style={s.label}>{lang === 0 ? 'Приоритет' : 'Priority'}</label>
-                                        <ScrollPicker 
-                                            items={PRIORITY_LABELS.map(l => l[lang])} 
-                                            value={priority} onChange={setPriority} 
-                                            theme={theme} width="100%" 
+                                        <ScrollPicker
+                                            items={PRIORITY_LABELS.map(l => l[lang])}
+                                            value={priority} onChange={setPriority}
+                                            theme={theme} width="100%"
                                         />
                                     </div>
                                     <div style={s.divider} />
-                                    
+
                                     {/* Difficulty */}
                                     <div style={s.pickerCol}>
                                         <label style={s.label}>{lang === 0 ? 'Сложность' : 'Difficulty'}</label>
-                                        <ScrollPicker 
-                                            items={DIFFICULTY_LABELS.map(l => l[lang])} 
-                                            value={difficulty} onChange={setDifficulty} 
-                                            theme={theme} width="100%" 
+                                        <ScrollPicker
+                                            items={DIFFICULTY_LABELS.map(l => l[lang])}
+                                            value={difficulty} onChange={setDifficulty}
+                                            theme={theme} width="100%"
                                         />
                                     </div>
                                     <div style={s.divider} />
-                                    
+
                                     {/* Urgency */}
                                     <div style={s.pickerCol}>
                                         <label style={s.label}>{lang === 0 ? 'Срочность' : 'Urgency'}</label>
-                                        <ScrollPicker 
-                                            items={URGENCY_LABELS.map(l => l[lang])} 
-                                            value={urgency} onChange={setUrgency} 
-                                            theme={theme} width="100%" 
+                                        <ScrollPicker
+                                            items={URGENCY_LABELS.map(l => l[lang])}
+                                            value={urgency} onChange={setUrgency}
+                                            theme={theme} width="100%"
                                         />
                                     </div>
                                 </div>
@@ -212,14 +245,14 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                 {/* Start Date */}
                                 <div style={s.dateCard}>
                                     <div style={s.dateRow}>
-                                        <FaCalendarDay style={{marginRight: 10, color: Colors.get('subText', theme)}}/>
-                                        <div style={{display:'flex', flexDirection:'column', flex: 1}}>
-                                            <span style={s.label}>{lang===0?'Старт':'Start'}</span>
-                                            <input 
-                                                type="date" 
-                                                style={s.dateInput} 
-                                                value={startDate} 
-                                                onChange={(e) => setStartDate(e.target.value)} 
+                                        <FaCalendarDay style={{ marginRight: 10, color: Colors.get('subText', theme) }} />
+                                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                            <span style={s.label}>{lang === 0 ? 'Старт' : 'Start'}</span>
+                                            <input
+                                                type="date"
+                                                style={s.dateInput}
+                                                value={startDate}
+                                                onChange={(e) => setStartDate(e.target.value)}
                                             />
                                         </div>
                                     </div>
@@ -227,14 +260,14 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                 {/* Deadline */}
                                 <div style={s.dateCard}>
                                     <div style={s.dateRow}>
-                                        <FaClock style={{marginRight: 10, color: Colors.get('subText', theme)}}/>
-                                        <div style={{display:'flex', flexDirection:'column', flex: 1}}>
-                                            <span style={s.label}>{lang===0?'Срок':'Deadline'}</span>
-                                            <input 
-                                                type="date" 
-                                                style={s.dateInput} 
-                                                value={deadLine} 
-                                                onChange={(e) => setDeadLine(e.target.value)} 
+                                        <FaClock style={{ marginRight: 10, color: Colors.get('subText', theme) }} />
+                                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                            <span style={s.label}>{lang === 0 ? 'Срок' : 'Deadline'}</span>
+                                            <input
+                                                type="date"
+                                                style={s.dateInput}
+                                                value={deadLine}
+                                                onChange={(e) => setDeadLine(e.target.value)}
                                             />
                                         </div>
                                     </div>
@@ -242,45 +275,45 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                             </div>
 
                             {/* 5. Description */}
-                            <div style={{width: '100%', display: 'flex', flexDirection: 'column', marginBottom: 12}}>
-                                <input 
-                                                            type="text" 
-                                                            placeholder={lang === 0 ? "Заметки / Описание..." : "Notes / Description..."}
-                                                            value={desc}
-                                                            onChange={(e) => setDesc(e.target.value)}
-                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
-                                                        />
-                                
+                            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', marginBottom: 12 }}>
+                                <input
+                                    type="text"
+                                    placeholder={lang === 0 ? "Заметки / Описание..." : "Notes / Description..."}
+                                    value={desc}
+                                    onChange={(e) => setDesc(e.target.value)}
+                                    style={s.mainInput}
+                                />
                             </div>
 
                             {/* 6. Subtasks */}
                             <div style={s.subTaskContainer}>
                                 <label style={s.sectionTitle}>{lang === 0 ? 'Чек-лист' : 'Checklist'}</label>
-                                
+
                                 <div style={s.addSubRow}>
-                                    <div style={{width: '100%', display: 'flex', flexDirection: 'column',border: `3px dotted ${Colors.get('border', theme)}`,borderRadius: '16px', padding: '12px',marginTop: '10px'}}>
-                                        
-                                        <input 
-                                                            type="text" 
-                                                            placeholder={lang === 0 ? "Добавить шаг..." : "Add a step..."}
-                                                            value={newSubGoal}
-                                                            onChange={(e) => setNewSubGoal(e.target.value)}
-                                                            style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px'}}
-                                                        />
+                                    <div style={s.subInputContainer}>
+                                        <input
+                                            ref={(input) => { if(input && show && !newSubGoal) input.focus() }} 
+                                            type="text"
+                                            placeholder={lang === 0 ? "Добавить шаг..." : "Add a step..."}
+                                            value={newSubGoal}
+                                            onChange={(e) => setNewSubGoal(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && addSubGoalLocal()}
+                                            style={s.subInput}
+                                        />
                                     </div>
-                                    <motion.div 
-                                        whileTap={{ scale: 0.9 }} 
+                                    <motion.div
+                                        whileTap={{ scale: 0.9 }}
                                         onClick={addSubGoalLocal}
                                         style={s.addBtn}
                                     >
-                                        <FaPlus style={{width: '100%', color: Colors.get('mainText', theme) }} />
+                                        <FaPlus style={{ width: '100%', color: '#fff' }} />
                                     </motion.div>
                                 </div>
 
                                 <div style={s.subList}>
                                     <AnimatePresence>
                                         {subGoals.map((sg, i) => (
-                                            <motion.div 
+                                            <motion.div
                                                 key={i}
                                                 initial={{ opacity: 0, height: 0 }}
                                                 animate={{ opacity: 1, height: 'auto' }}
@@ -290,20 +323,18 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                                 <div style={s.subDot} />
                                                 <span style={s.subText}>{sg.text}</span>
                                                 <div onClick={() => setSubGoals(subGoals.filter((_, idx) => idx !== i))}>
-                                                    <FaTimes style={{width: '100%', color: Colors.get('subText', theme) }} />
+                                                    <FaTimes style={{ width: '100%', color: Colors.get('subText', theme), cursor: 'pointer' }} />
                                                 </div>
                                             </motion.div>
                                         ))}
                                     </AnimatePresence>
                                 </div>
                             </div>
-                            
-                            {/* Bottom Spacer for safe area */}
-                            <div style={{marginBottom:'360px'}}></div>
+
+                            {/* Bottom Spacer */}
+                            <div style={{ marginBottom: '100px' }}></div>
                         </div>
-                        
                     </motion.div>
-                    
                 </>
             )}
         </AnimatePresence>
@@ -319,20 +350,20 @@ const styles = (theme) => {
     const text = Colors.get('mainText', theme);
     const subText = Colors.get('subText', theme);
     const border = Colors.get('border', theme);
-    
+
     return {
         backdrop: {
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(4px)',
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(5px)',
             zIndex: 998
         },
         container: {
             position: 'fixed', bottom: 0, left: 0, right: 0,
-            height: '85vh',
+            height: '90vh',
             backgroundColor: bg,
             borderRadius: '24px 24px 0 0',
-            boxShadow: '0 -10px 40px rgba(0,0,0,0.1)',
+            boxShadow: '0 -10px 40px rgba(0,0,0,0.2)',
             zIndex: 999,
             display: 'flex', flexDirection: 'column',
             overflow: 'hidden'
@@ -358,19 +389,43 @@ const styles = (theme) => {
             flex: 1, overflowY: 'auto', padding: '20px'
         },
         section: { marginBottom: '20px' },
-        mainInputWrapper: {
-            display: 'flex', alignItems: 'center'
-        },
         
-        // Icon Picker
-        iconScrollContainer: {
-            display: 'flex', gap: '12px', overflowX: 'auto', padding: '5px 5px 15px 5px',
-            scrollbarWidth: 'none'
+        // Inputs
+        mainInputWrapper: {
+            display: 'flex', alignItems: 'center', gap: '15px'
         },
-        iconChip: {
-            width: '45px', height: '45px', minWidth: '45px',
-            borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer'
+        largeIconDisplay: {
+            fontSize: '2.5rem',
+            width: '50px',
+            textAlign: 'center'
+        },
+        mainInput: {
+            flex: 1, border: 'none', background: 'transparent', fontSize: '15px', 
+            color: text, 
+            outline: `1px solid ${border}`, 
+            borderRadius: '16px', padding: '14px',
+            width: '100%'
+        },
+
+        // Category Picker
+        categorySection: {
+            marginBottom: '20px'
+        },
+        iconScrollContainer: {
+            display: 'flex', gap: '10px', overflowX: 'auto', padding: '2px 2px 10px 2px',
+            scrollbarWidth: 'none', msOverflowStyle: 'none'
+        },
+        categoryChip: {
+            padding: '8px 16px',
+            borderRadius: '16px', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            cursor: 'pointer',
+            border: `1px solid ${border}`,
+            minWidth: '60px',
+            whiteSpace: 'nowrap'
+        },
+        categoryLabel: {
+            fontSize: '13px', fontWeight: '600', color: text, marginLeft: '4px'
         },
 
         // Settings Card
@@ -391,7 +446,8 @@ const styles = (theme) => {
             width: '1px', height: '60px', backgroundColor: border, margin: '0 5px'
         },
         label: {
-            fontSize: '11px', color: subText, fontWeight: '700', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px'
+            fontSize: '11px', color: subText, fontWeight: '700', 
+            marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px'
         },
 
         // Date Section
@@ -414,6 +470,15 @@ const styles = (theme) => {
         subTaskContainer: { marginTop: '30px' },
         sectionTitle: { fontSize: '16px', fontWeight: '700', color: text, marginLeft: '5px', marginBottom: '10px', display: 'block' },
         addSubRow: { display: 'flex', alignItems: 'center', gap: '10px' },
+        subInputContainer: {
+            flex: 1, display: 'flex', flexDirection: 'column',
+            border: `2px dashed ${border}`,
+            borderRadius: '16px', padding: '12px',
+            marginTop: '10px'
+        },
+        subInput: {
+             border: 'none', background: 'transparent', fontSize: '15px', color: text, outline: 'none', width: '100%'
+        },
         addBtn: {
             width: '46px', height: '46px', borderRadius: '14px',
             backgroundColor: Colors.get('done', theme),
@@ -427,7 +492,7 @@ const styles = (theme) => {
             padding: '12px 16px', backgroundColor: panel, borderRadius: '12px'
         },
         subDot: {
-            width: '6px', height: '6px', borderRadius: '50%', backgroundColor: Colors.get('subText', theme), marginRight: '12px'
+            width: '6px', height: '6px', borderRadius: '50%', backgroundColor: subText, marginRight: '12px'
         },
         subText: { flex: 1, fontSize: '15px', color: text }
     };

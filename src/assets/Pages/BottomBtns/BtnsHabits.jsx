@@ -191,7 +191,7 @@ function playEffects(sound) {
 // Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '15px', // Floating dock
+    bottom: '7vw', // Floating dock
     left: '5vw',
     width: '90vw',
     height: '70px',

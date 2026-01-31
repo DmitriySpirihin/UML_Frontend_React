@@ -132,7 +132,7 @@ function playEffects(sound) {
 // Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '15px',
+    bottom: '7vw',
     left: '15vw', // Narrower because there are fewer buttons
     width: '70vw',
     height: '65px',

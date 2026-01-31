@@ -214,7 +214,7 @@ function playEffects(sound) {
 
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '15px',
+    bottom: '7vw',
     left: '2.5vw',
     width: '95vw',
     height: '70px',

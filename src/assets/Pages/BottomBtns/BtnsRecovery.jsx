@@ -123,7 +123,7 @@ function playEffects(sound) {
 
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '15px',
+    bottom: '7vw',
     left: '15vw',
     width: '70vw',
     height: '65px',

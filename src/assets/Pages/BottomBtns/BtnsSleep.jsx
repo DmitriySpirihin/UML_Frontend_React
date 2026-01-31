@@ -157,7 +157,7 @@ function playEffects(sound) {
 // Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '15px',
+    bottom: '7vw',
     left: '5vw',
     width: '90vw',
     height: '70px',

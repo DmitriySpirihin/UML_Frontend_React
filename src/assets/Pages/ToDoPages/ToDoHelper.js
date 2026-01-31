@@ -9,7 +9,6 @@
     priority: 4,
     category: 'Life',
     icon: '🧹',
-    color: '#18885263',
     isDone: true,
     startDate: '2026-01-15',
     deadLine: '2026-02-01',
@@ -18,47 +17,11 @@
         { text: 'Unsubscribe from unused services and newsletters', isDone: false },
         { text: 'Organize important documents into folders/cloud', isDone: false }
     ],
-    note: 'List of apps to delete: [web:32][web:31]'
-},
-{
-    id: 2,
-    name: 'Home declutter mini sprint',
-    description: 'Quick declutter of key home zones',
-    difficulty: 2,
-    priority: 2,
-    category: 'Home',
-    icon: '🏠',
-    color: '#88561863',
-    isDone: false,
-    startDate: '2026-01-16',
-    deadLine: '2026-02-05',
-    goals: [
-        { text: 'Sort clothes and remove things not used for a year', isDone: false },
-        { text: 'Throw away or recycle old papers and receipts', isDone: false },
-        { text: 'Tidy up workspace and cables around PC', isDone: false }
-    ],
-    note: 'goal 2: [web:32][web:31]'
-},
-{
-    id: 3,
-    name: 'Finance & subscriptions review',
-    description: 'Check money leaks and recurring payments',
-    difficulty: 3,
-    priority: 4,
-    category: 'Finance',
-    icon: '💳',
-    color: '#376e6d63',
-    isDone: true,
-    startDate: '2026-01-17',
-    deadLine: '2026-02-07',
-    goals: [
-        { text: 'List all active subscriptions and their prices', isDone: false },
-        { text: 'Cancel at least one that is not really needed', isDone: false },
-        { text: 'Set calendar reminder for next big payments', isDone: false }
-    ],
-    note: 'Avoid unnecessary subscriptions!'
+    urgency : 5
 }
 ]
+
+       
 */
 
 import { AppData } from "../../StaticClasses/AppData"
@@ -66,7 +29,7 @@ import { saveData } from "../../StaticClasses/SaveHelper"
 import { BehaviorSubject } from 'rxjs';
 export const todoEvents$ = new BehaviorSubject(null);
 
-export async function createGoal(name, description, difficulty, priority, category, icon, color, startDate, deadLine, goals, note) {
+export async function createGoal(name, description, difficulty, priority, category, icon,  startDate, deadLine, goals, urgency) {
   const id = Date.now();
 
   AppData.todoList.push({
@@ -77,12 +40,11 @@ export async function createGoal(name, description, difficulty, priority, catego
     priority,
     category,
     icon,
-    color,
     isDone: false,
     startDate,
     deadLine,
     goals: goals || [],
-    note
+    urgency
   });
 
   await saveData();

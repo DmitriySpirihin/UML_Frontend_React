@@ -64,7 +64,7 @@ const PeriodSelector = ({ selectedIndex, setSelectedIndex, theme, langIndex }) =
                             style={styles(theme).segmentActiveBg}
                         />
                     )}
-                    <span style={{ position: 'relative', zIndex: 1 }}>{label[langIndex]}</span>
+                    <div style={{ position: 'relative', zIndex: 1 }}>{label[langIndex === 'ru' ? 0 : 1]}</div>
                 </motion.div>
             );
         })}
