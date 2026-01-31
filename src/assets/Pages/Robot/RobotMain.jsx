@@ -28,7 +28,7 @@ const RobotMain = () => {
     <div style={styles(theme, fSize).container}>
       
        {<Insight />}
-      {hasPremium && (
+      {!hasPremium && (
              <div style={{width : '100vw' ,height: '80vh',position:'fixed',zIndex: 2555,pointerEvents: 'none'} }>
                 <div 
                     onClick={(e) => e.stopPropagation()} 
