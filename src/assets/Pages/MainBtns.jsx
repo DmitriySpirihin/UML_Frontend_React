@@ -19,7 +19,7 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.84.3.s';
+const version = '2.c.84.5.s';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -54,12 +54,8 @@ const MainBtns = () => {
             {/* UPPER PANEL - Elements at bottom, Zoomed Logo */}
             <div style={styles(theme, fSize).logoContainer}>
                 
-
-                <img
-                    src={'images/Ui/Main_Dark.png'}
-                    style={styles(theme).logo}
-                    alt="Logo"
-                />
+                <UltyLogo theme={theme} />
+                
             </div>
 
             <SettingsPanel
@@ -231,7 +227,7 @@ const styles = (theme, fSize) => ({
         backgroundColor: Colors.get('bottomPanel', theme) + 'D9', backdropFilter: "blur(15px)",
         borderBottom: `1px solid ${Colors.get('border', theme)}`,
         display: "flex", justifyContent: "center", 
-        alignItems: "flex-end", // ELEMENTS TO BOTTOM
+        alignItems: "center", // ELEMENTS TO BOTTOM
         padding: "0 15px 8px 15px", boxSizing: "border-box", zIndex: 1000,
     },
     logo: { height: "65%", objectFit: "contain" }, // ZOOMED LOGO
@@ -355,3 +351,65 @@ function playEffects(sound) {
 
 
 export default MainBtns
+
+
+const UltyLogo = ({ theme = 'dark' }) => {
+  const isDark = theme === 'dark';
+
+  // Gradient Colors
+  const gradientColors = isDark 
+    ? { top: "#9b9999", bottom: "#313a4b" } // Silver metallic
+    : { top: "#0d0d0e", bottom: "#70757b" }; // Deep Slate/Blue
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '40px',
+      background: 'transparent'
+    }}>
+      <svg 
+        width="400" 
+        height="80" 
+        viewBox="0 0 400 80"
+        style={{ filter: isDark ? 'drop-shadow(0 0 8px rgba(17, 73, 146, 0.46))' : 'none' }}
+      >
+        <defs>
+          <linearGradient id="logoGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={gradientColors.top} />
+            <stop offset="100%" stopColor={gradientColors.bottom} />
+          </linearGradient>
+        </defs>
+        
+        <text
+          marginTop='16px'
+          x="50%"
+          y="60"
+          textAnchor="middle"
+          fontFamily="serif"
+          fontSize="25px"
+          fontWeight="700"
+          fill="url(#logoGradient)"
+          style={{ transition: 'fill 0.5s ease' }}
+        >
+          UltyMyLife
+        </text>
+      </svg>
+
+      <p style={{
+        marginTop: '-10px',
+        fontSize: '5px',
+        fontWeight: '500',
+        textTransform: 'uppercase',
+        letterSpacing: '0.1em',
+        fontFamily: 'sans-serif',
+        color: isDark ? 'rgba(150, 150, 150, 0.5)' : 'rgba(19, 21, 26, 0.8)',
+        transition: 'color 0.5s ease'
+      }}>
+        all your life in one place
+      </p>
+    </div>
+  );
+};

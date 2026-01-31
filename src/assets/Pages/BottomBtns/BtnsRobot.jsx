@@ -138,7 +138,7 @@ const containerStyle = (theme) => ({
     justifyContent: 'space-around',
     alignItems: 'center',
     backdropFilter: 'blur(6px)',
-    zIndex: 1000,
+    zIndex: 5500,
 });
 
 const glassOverlay = (theme) => ({
