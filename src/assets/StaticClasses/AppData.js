@@ -8,6 +8,9 @@ import { saveData } from "../StaticClasses/SaveHelper";
 import {exercises,programs} from "../Classes/TrainingData";
 
 export class AppData{
+   static insightData = '';
+   // Format: { [category]: { text: "...", date: "2023-10-27" } }
+   static insightCache = {};
    static lastSave = new Date().toISOString();
    static isFirstStart = true;
    static prefs = [0,0,0,0,0]; //language, theme, sound, vibro,font size main 16,14 sub 14,12
@@ -130,7 +133,8 @@ static infoMiniPanel = {
     this.mentalRecords = data.mentalRecords;
     this.sleepingLog = data.sleepingLog;
     this.todoList = data.todoList || [];
-    this.menuCardsStates = data.menuCardsStates || // AppData.menuCardsStates
+    this.insightCache = data.insightCache || {};
+    this.menuCardsStates = data.menuCardsStates ||
 {
   "MainCard": {
     "pinned": false,
@@ -376,7 +380,7 @@ export const fillEmptyDays = () => {
 
 export class UserData {
    static id = null;
-   static name = 'guest';
+   static name = 'bro';
    static photo = null;
    static hasPremium = false;
    static premiumEndDate = new Date();
@@ -428,6 +432,7 @@ export class Data{
     this.todoList = AppData.todoList;
     this.menuCardsStates = AppData.menuCardsStates;
     this.infoMiniPanel = AppData.infoMiniPanel;
+    this.insightCache = AppData.insightCache;
   }
 }
 
