@@ -6,11 +6,10 @@ import { theme$, lang$, fontSize$, addPanel$ } from '../../StaticClasses/HabitsB
 import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io'
 import {
     addDayToProgram, removeDayFromProgram, MuscleView, addProgram, redactProgram, removeProgram,
-    addExerciseToSchedule, removeExerciseFromSchedule
+    addExerciseToSchedule, removeExerciseFromSchedule,switchPosition
 } from '../../Classes/TrainingData.jsx'
-import { FaCalendarDay, FaPlusSquare, FaTrash, FaPencilAlt, FaPlus, FaDumbbell } from 'react-icons/fa';
+import { FaCalendarDay, FaPlusSquare, FaTrash, FaPencilAlt, FaPlus, FaDumbbell,FaChevronUp } from 'react-icons/fa';
 import { MdBook, MdDone, MdClose } from 'react-icons/md'
-import MyInput from '../../Helpers/MyInput';
 import TrainingExercise from './TrainingExercise.jsx'
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx' // Imported Component
 
@@ -164,6 +163,8 @@ const TrainingProgramm = () => {
         }
     };
 
+    
+
     // --- ANIMATION VARIANTS ---
     const accordionVariants = {
         collapsed: { height: 0, opacity: 0, overflow: 'hidden' },
@@ -249,21 +250,46 @@ const TrainingProgramm = () => {
 
                                                     {/* SCHEDULE (DAYS) */}
                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                        {program.schedule.map((day, index) => (
-                                                            <DayItem
-                                                                key={index}
-                                                                index={index}
-                                                                day={day}
-                                                                active={currentDay === index}
-                                                                onClick={() => setCurrentDay(currentDay === index ? -1 : index)}
-                                                                theme={theme}
-                                                                fSize={fSize}
-                                                                langIndex={langIndex}
-                                                                onAddEx={() => setShowExercisesList(true)}
-                                                                onRemove={() => { setCurrentDay(index); onRemove(1); }}
-                                                                onRemoveEx={(exIdx) => { setCurrentExId(exIdx); onRemove(2); }}
-                                                            />
-                                                        ))}
+                                                        {program.schedule.map((day, dayIndex) => (
+    <DayItem
+        key={dayIndex}
+        index={dayIndex}
+        day={day}
+        active={currentDay === dayIndex}
+        onClick={() => setCurrentDay(currentDay === dayIndex ? -1 : dayIndex)}
+        theme={theme}
+        fSize={fSize}
+        langIndex={langIndex}
+        onAddEx={() => { setCurrentDay(dayIndex); setShowExercisesList(true); }}
+        onRemove={() => { setCurrentDay(dayIndex); onRemove(1); }}
+        onRemoveEx={(exIdx) => { setCurrentExId(exIdx); onRemove(2); }}
+        // FIXED: Properly bound reordering handlers with program context
+        onMoveDayUp={() => {
+            if (dayIndex > 0) {
+                switchPosition(program.id, 0, 1, dayIndex); // type=0 (day), switchType=1 (up)
+                updatePrograms();
+            }
+        }}
+        onMoveDayDown={() => {
+            if (dayIndex < program.schedule.length - 1) {
+                switchPosition(program.id, 0, 0, dayIndex); // switchType=0 (down)
+                updatePrograms();
+            }
+        }}
+        onMoveExerciseUp={(exIndex) => {
+            if (exIndex > 0) {
+                switchPosition(program.id, 1, 1, dayIndex, exIndex); // type=1 (exercise)
+                updatePrograms();
+            }
+        }}
+        onMoveExerciseDown={(exIndex) => {
+            if (exIndex < day.exercises.length - 1) {
+                switchPosition(program.id, 1, 0, dayIndex, exIndex);
+                updatePrograms();
+            }
+        }}
+    />
+))}
                                                     </div>
 
                                                     {/* MUSCLE OVERVIEW */}
@@ -400,10 +426,24 @@ const TrainingProgramm = () => {
 
 // --- SUB-COMPONENTS ---
 
-const DayItem = ({ index, day, active, onClick, theme, fSize, langIndex, onAddEx, onRemove, onRemoveEx }) => (
+const DayItem = ({ 
+    index, 
+    day, 
+    active, 
+    onClick, 
+    theme, 
+    fSize, 
+    langIndex, 
+    onAddEx, 
+    onRemove, 
+    onRemoveEx,
+    onMoveDayUp,
+    onMoveDayDown,
+    onMoveExerciseUp,
+    onMoveExerciseDown
+}) => (
     <motion.div
         layout
-        onClick={onClick}
         style={{
             ...styles(theme).card,
             backgroundColor: active ? (theme === 'light' ? '#fff' : 'rgba(255,255,255,0.05)') : 'transparent',
@@ -413,13 +453,40 @@ const DayItem = ({ index, day, active, onClick, theme, fSize, langIndex, onAddEx
         }}
     >
         <div style={{ padding: '12px 15px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-            <div style={{ fontSize: '12px', color: Colors.get('subText', theme) }}>
-                {active ? <IoIosArrowUp /> : <IoIosArrowDown />}
-            </div>
+            
             <FaCalendarDay style={{ color: Colors.get('currentDateBorder', theme) }} size={16} />
-            <span style={{ fontWeight: '600', color: Colors.get('mainText', theme), flex: 1, fontSize: '15px' }}>
-                {langIndex === 0 ? `${day.name[0]}` : `${day.name[1]}`}
+            <span onClick={onClick} style={{ fontWeight: '600', color: Colors.get('mainText', theme), flex: 1, fontSize: '15px' }}>
+                {langIndex === 0 ? day.name[0] : day.name[1]}
             </span>
+            
+            {/* FIXED: Proper reorder controls with stopPropagation */}
+            {!active && <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <motion.div 
+                    whileTap={{ scale: 0.9 }} 
+                    onClick={(e) => { e.stopPropagation(); onMoveDayUp(); }}
+                    style={{ 
+                        ...styles(theme).miniBtn,backgroundColor:'transparent', 
+                        opacity: index === 0 ? 0.3 : 1,
+                        cursor: index === 0 ? 'not-allowed' : 'pointer'
+                    }}
+                
+                >
+                    <FaChevronUp size={12} color={index === 0 ? Colors.get('subText', theme) : '#5ca6ff'} />
+                </motion.div>
+                <motion.div 
+                    whileTap={{ scale: 0.9 }} 
+                    onClick={(e) => { e.stopPropagation(); onMoveDayDown(); }}
+                    style={{ 
+                        ...styles(theme).miniBtn,backgroundColor:'transparent', 
+                        opacity: index === day.scheduleLength - 1 ? 0.3 : 1,
+                        cursor: index === day.scheduleLength - 1 ? 'not-allowed' : 'pointer'
+                    }}
+                  
+                >
+                    <FaChevronUp size={12} style={{ transform: 'rotate(180deg)' }} color={index === day.scheduleLength - 1 ? Colors.get('subText', theme) : '#5ca6ff'} />
+                </motion.div>
+            </div>}
+            
             {active && (
                 <div style={{ display: 'flex', gap: '10px' }} onClick={e => e.stopPropagation()}>
                     <motion.div whileTap={{ scale: 0.9 }} onClick={onAddEx} style={styles(theme).miniBtn}><FaPlus size={12} color="#fff" /></motion.div>
@@ -430,23 +497,75 @@ const DayItem = ({ index, day, active, onClick, theme, fSize, langIndex, onAddEx
 
         <AnimatePresence>
             {active && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden' }}>
+                <motion.div 
+                    initial={{ height: 0, opacity: 0 }} 
+                    animate={{ height: 'auto', opacity: 1 }} 
+                    exit={{ height: 0, opacity: 0 }} 
+                    style={{ overflow: 'hidden' }}
+                >
                     <div style={{ padding: '0 15px 15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {day.exercises.map((item, i) => {
+                        {day.exercises.map((item, exIndex) => {
                             const ex = AppData.exercises[item.exId];
                             if (!ex) return null;
                             return (
-                                <div key={i} style={styles(theme).exerciseRow}>
+                                <div key={exIndex} style={styles(theme).exerciseRow}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-                                        
                                         <div>
-                                            <div style={{ fontSize: '14px', fontWeight: '600', color: Colors.get('mainText', theme) }}>{ex.name[langIndex]}</div>
+                                            <div style={{ fontSize: '14px', fontWeight: '600', color: Colors.get('mainText', theme) }}>
+                                                {ex.name[langIndex]}
+                                            </div>
                                             <div style={{ fontSize: '12px', color: Colors.get('subText', theme), display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                 <FaDumbbell size={10} /> {item.sets}
                                             </div>
                                         </div>
                                     </div>
-                                    <motion.div whileTap={{ scale: 0.9 }} onClick={(e) => { e.stopPropagation(); onRemoveEx(i); }} style={{ padding: '8px', opacity: 0.6 }}>
+                                    
+                                    {/* FIXED: Exercise reorder controls */}
+                                    <div style={{ display: 'flex', gap: '4px' }}>
+                                        <motion.div 
+                                            whileTap={{ scale: 0.9 }} 
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                onMoveExerciseUp(exIndex); 
+                                            }}
+                                            style={{ 
+                                                padding: '8px', 
+                                                opacity: exIndex === 0 ? 0.3 : 0.6,
+                                                cursor: exIndex === 0 ? 'not-allowed' : 'pointer'
+                                            }}
+                                            title={langIndex === 0 ? "Выше" : "Up"}
+                                        >
+                                            <FaChevronUp 
+                                                color={exIndex === 0 ? Colors.get('subText', theme) : '#5ca6ff'} 
+                                                size={14} 
+                                            />
+                                        </motion.div>
+                                        <motion.div 
+                                            whileTap={{ scale: 0.9 }} 
+                                            onClick={(e) => { 
+                                                e.stopPropagation(); 
+                                                onMoveExerciseDown(exIndex); 
+                                            }}
+                                            style={{ 
+                                                padding: '8px', 
+                                                opacity: exIndex === day.exercises.length - 1 ? 0.3 : 0.6,
+                                                cursor: exIndex === day.exercises.length - 1 ? 'not-allowed' : 'pointer'
+                                            }}
+                                            title={langIndex === 0 ? "Ниже" : "Down"}
+                                        >
+                                            <FaChevronUp 
+                                                color={exIndex === day.exercises.length - 1 ? Colors.get('subText', theme) : '#5ca6ff'} 
+                                                size={14} 
+                                                style={{ transform: 'rotate(180deg)' }} 
+                                            />
+                                        </motion.div>
+                                    </div>
+                                    
+                                    <motion.div 
+                                        whileTap={{ scale: 0.9 }} 
+                                        onClick={(e) => { e.stopPropagation(); onRemoveEx(exIndex); }} 
+                                        style={{ padding: '8px', opacity: 0.6, cursor: 'pointer' }}
+                                    >
                                         <FaTrash color="#ff4d4d" size={14} />
                                     </motion.div>
                                 </div>
@@ -517,7 +636,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
         fontFamily: "Segoe UI, Roboto, sans-serif", boxSizing: 'border-box'
     },
     card: {
-        width: '94%', margin: '0 auto 12px auto',
+        width: '100%', margin: '0 auto 12px auto',
         borderRadius: '16px', overflow: 'hidden',
         boxShadow: theme === 'light' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
     },
@@ -562,7 +681,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     bigFab: {
         position: 'fixed', bottom: '110px', right: '30px',
         width: '56px', height: '56px', borderRadius: '28px',
-        backgroundColor: Colors.get('difficulty', theme), border: 'none',
+        backgroundColor: Colors.get('scrollFont', theme), border: 'none',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         boxShadow: '0 8px 20px rgba(0,0,0,0.3)', cursor: 'pointer', zIndex: 100
     },

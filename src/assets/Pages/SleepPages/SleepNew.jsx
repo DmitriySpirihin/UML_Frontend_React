@@ -17,7 +17,6 @@ import Colors from '../../StaticClasses/Colors';
 import { saveData } from '../../StaticClasses/SaveHelper.js';
 import { addPanel$, theme$, lang$, fontSize$, setAddPanel } from '../../StaticClasses/HabitsBus';
 import { addDayToSleepingLog } from './SleepHelper.js';
-import MyInput from '../../Helpers/MyInput';
 
 // --- CONSTANTS & HELPERS ---
 const clickSound = new Audio('Audio/Click.wav');
@@ -242,15 +241,13 @@ const SleepNew = ({ dateString }) => {
                                     <FaPen style={{ marginRight: 8, opacity: 0.7 }} />
                                     <span>{langIndex === 0 ? 'Заметка' : 'Note'}</span>
                                 </div>
-                                <MyInput 
-                                    maxL={500} 
-                                    h="60px" 
-                                    w='100%' 
-                                    placeHolder={langIndex === 0 ? 'Сны, мысли...' : 'Dreams, thoughts...'} 
-                                    theme={theme} 
-                                    value={note}
-                                    onChange={setNote}
-                                />
+                                <textarea 
+                                 type="text" 
+                                  placeholder={langIndex === 0 ? 'Сны, мысли...' : 'Dreams, thoughts...'}
+                                  value={note}                                                   
+                                  onChange={(e) => setNote(e.target.value)}
+                                  style={{flex: 1, border: 'none', background: 'transparent',width:'80vw',height:'15vh', fontSize: '15px', color: Colors.get('mainText', theme),outline:'none'}}
+                                 />
                             </div>
 
                             <div style={{ marginBottom: '180px' }} /> {/* Spacer */}
@@ -400,7 +397,7 @@ const styles = (theme, fSize) => {
         },
         sectionCard: {
             backgroundColor: Colors.get('simplePanel', theme),
-            height:'96px',
+            height:'196px',
             borderRadius: '20px',
             padding: '16px',
             border: `1px solid ${Colors.get('border', theme)}50`

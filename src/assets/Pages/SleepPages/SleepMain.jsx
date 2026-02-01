@@ -291,9 +291,14 @@ const SleepMain = () => {
                         {selectedSleepEntry.note && (
                             <div style={styles(theme).noteBox}>
                                 <FaStickyNote size={14} style={{ minWidth: '16px', marginTop:'2px', opacity: 0.7 }} />
-                                <span style={{fontSize: '13px', fontStyle: 'italic', opacity: 0.9}}>
-                                    {selectedSleepEntry.note}
-                                </span>
+                                <span style={{ fontSize: '13px', fontStyle: 'italic', opacity: 0.9 }}>
+             {selectedSleepEntry.note.split('\n').map((line, i) => (
+               <React.Fragment key={i}>
+              {line}
+                  <br />
+                  </React.Fragment>
+                  ))}
+                  </span>
                             </div>
                         )}
                     </div>
@@ -310,8 +315,10 @@ const SleepMain = () => {
                 </motion.div>
             )}
          </AnimatePresence>
+        
       </div>
      <SleepNew dateString={formatDateKey(currentDate)} />
+      <div style={{marginBottom:'150px'}}></div>
     </div>
   );
 };
@@ -340,7 +347,7 @@ const styles = (theme, fSize) => ({
     marginTop:'70px',
     width: '100vw',
     fontFamily: 'Segoe UI, sans-serif',
-    overflow: 'hidden'
+    overflowY: 'scroll'
   },
   
   // Header

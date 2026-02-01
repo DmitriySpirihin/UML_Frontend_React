@@ -19,7 +19,7 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.84.5.s';
+const version = '2.c.84.6.s';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -358,8 +358,8 @@ const UltyLogo = ({ theme = 'dark' }) => {
 
   // Gradient Colors
   const gradientColors = isDark 
-    ? { top: "#9b9999", bottom: "#313a4b" } // Silver metallic
-    : { top: "#0d0d0e", bottom: "#70757b" }; // Deep Slate/Blue
+    ? { center: "#e1e1e1", edge: "#313a4b" } // Silver metallic
+    : { center: "#70757b", edge: "#0d0d0e" }; // Deep Slate/Blue
 
   return (
     <div style={{
@@ -377,14 +377,13 @@ const UltyLogo = ({ theme = 'dark' }) => {
         style={{ filter: isDark ? 'drop-shadow(0 0 8px rgba(17, 73, 146, 0.46))' : 'none' }}
       >
         <defs>
-          <linearGradient id="logoGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={gradientColors.top} />
-            <stop offset="100%" stopColor={gradientColors.bottom} />
-          </linearGradient>
+          <radialGradient id="logoGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+            <stop offset="0%" stopColor={gradientColors.center} />
+            <stop offset="100%" stopColor={gradientColors.edge} />
+          </radialGradient>
         </defs>
         
         <text
-          marginTop='16px'
           x="50%"
           y="60"
           textAnchor="middle"
@@ -400,7 +399,7 @@ const UltyLogo = ({ theme = 'dark' }) => {
 
       <p style={{
         marginTop: '-10px',
-        fontSize: '5px',
+        fontSize: '4px',
         fontWeight: '500',
         textTransform: 'uppercase',
         letterSpacing: '0.1em',
