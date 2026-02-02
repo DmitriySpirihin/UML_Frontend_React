@@ -400,8 +400,8 @@ const styles = (theme) => {
             textAlign: 'center'
         },
         mainInput: {
-            flex: 1, border: 'none', background: 'transparent', fontSize: '16px', 
-            color: text, 
+            flex: 1, border: 'none', background: 'transparent', fontSize: '16px', textSizeAdjust: '100%', webkitTextSizeAdjust: '100%',
+            color: text, WebkitUserSelect: 'auto',
             outline: `1px solid ${border}`, 
             borderRadius: '16px', padding: '14px',
             width: '100%'
@@ -477,7 +477,7 @@ const styles = (theme) => {
             marginTop: '10px'
         },
         subInput: {
-             border: 'none', background: 'transparent', fontSize: '16px', color: text, outline: 'none', width: '100%'
+             border: 'none', background: 'transparent', fontSize: '16px', color: text, outline: 'none', width: '100%',textSizeAdjust: '100%',webkitTextSizeAdjust: '100%',WebkitUserSelect: 'auto'
         },
         addBtn: {
             width: '46px', height: '46px', borderRadius: '14px',

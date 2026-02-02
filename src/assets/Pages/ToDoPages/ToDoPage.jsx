@@ -127,7 +127,7 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                     placeholder={lang === 0 ? 'Название' : 'Name'}
                     value={task.name}
                     onChange={(e) => setTask({...task, name: e.target.value})}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px',textSizeAdjust: '100%',webkitTextSizeAdjust: '100%',WebkitUserSelect: 'auto'}}
                 />
                 </div>
                                 ) : (
@@ -168,7 +168,7 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                     placeholder={lang === 0 ?  'Описание' : 'Description'}
                     value={task.description}
                     onChange={(e) => setTask({...task, description: e.target.value})}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px',textSizeAdjust: '100%',webkitTextSizeAdjust: '100%',WebkitUserSelect: 'auto'}}
                 />
                                     ) : (
                                         <p style={s.description}>{task.description || (lang === 0 ? "Нет описания" : "No description")}</p>
@@ -207,7 +207,7 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                     placeholder={lang === 0 ? "Добавить задачу..." : "Add item..."}
                     value={newSubGoalText}
                     onChange={(e) => setNewSubGoalText(e.target.value)}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px',textSizeAdjust: '100%',webkitTextSizeAdjust: '100%',WebkitUserSelect: 'auto'}}
                 />
                                             {newSubGoalText.length > 0 && <button onClick={handleAddSub} style={s.addSubBtn}>OK</button>}
                                         </div>
