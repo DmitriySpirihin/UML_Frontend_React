@@ -400,7 +400,7 @@ const styles = (theme) => {
             textAlign: 'center'
         },
         mainInput: {
-            flex: 1, border: 'none', background: 'transparent', fontSize: '15px', 
+            flex: 1, border: 'none', background: 'transparent', fontSize: '16px', 
             color: text, 
             outline: `1px solid ${border}`, 
             borderRadius: '16px', padding: '14px',
@@ -477,7 +477,7 @@ const styles = (theme) => {
             marginTop: '10px'
         },
         subInput: {
-             border: 'none', background: 'transparent', fontSize: '15px', color: text, outline: 'none', width: '100%'
+             border: 'none', background: 'transparent', fontSize: '16px', color: text, outline: 'none', width: '100%'
         },
         addBtn: {
             width: '46px', height: '46px', borderRadius: '14px',

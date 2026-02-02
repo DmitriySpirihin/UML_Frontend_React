@@ -127,7 +127,7 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                     placeholder={lang === 0 ? 'Название' : 'Name'}
                     value={task.name}
                     onChange={(e) => setTask({...task, name: e.target.value})}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                 />
                 </div>
                                 ) : (
@@ -168,7 +168,7 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                     placeholder={lang === 0 ?  'Описание' : 'Description'}
                     value={task.description}
                     onChange={(e) => setTask({...task, description: e.target.value})}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                 />
                                     ) : (
                                         <p style={s.description}>{task.description || (lang === 0 ? "Нет описания" : "No description")}</p>
@@ -207,7 +207,7 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                     placeholder={lang === 0 ? "Добавить задачу..." : "Add item..."}
                     value={newSubGoalText}
                     onChange={(e) => setNewSubGoalText(e.target.value)}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px'}}
+                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px'}}
                 />
                                             {newSubGoalText.length > 0 && <button onClick={handleAddSub} style={s.addSubBtn}>OK</button>}
                                         </div>
@@ -261,7 +261,7 @@ const styles = (theme, fSize, accentColor) => {
     return {
         // ... (Keep previous backdrop, modalContainer, etc.)
         backdrop: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', zIndex: 1000 },
-        modalContainer: { position: 'fixed', bottom: 0, left: 0, right: 0, height: '90vh', backgroundColor: bg, borderTopLeftRadius: '32px', borderTopRightRadius: '32px', zIndex: 2000, display: 'flex', flexDirection: 'column', boxShadow: '0 -10px 40px rgba(0,0,0,0.5)', overflow: 'hidden' },
+        modalContainer: { position: 'fixed', bottom: 0, left: 0, right: 0, height: '90dvh', backgroundColor: bg, borderTopLeftRadius: '32px', borderTopRightRadius: '32px', zIndex: 2000, display: 'flex', flexDirection: 'column', boxShadow: '0 -10px 40px rgba(0,0,0,0.5)', overflow: 'hidden' },
         
         // Warning Panel
         warningOverlay: { position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
