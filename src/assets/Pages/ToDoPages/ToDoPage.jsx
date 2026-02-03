@@ -7,7 +7,7 @@ import {
 } from "react-icons/fa";
 import { 
     redactGoal, deleteGoal, toggleGoal, toggleSubGoal, 
-    deleteSubGoal, addSubGoal 
+    deleteSubGoal, addSubGoal, updateSubGoal // Added new helper
 } from "./ToDoHelper";
 
 // --- CONSTANTS ---
@@ -20,27 +20,91 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
     const [task, setTask] = useState(initialTask || {});
     const [isEditing, setIsEditing] = useState(false);
     const [newSubGoalText, setNewSubGoalText] = useState('');
-    const [showDeleteWarning, setShowDeleteWarning] = useState(null); // 'main' or index of sub-goal
+    const [showDeleteWarning, setShowDeleteWarning] = useState(null);
+    // Sub-goal editing state
+    const [editingSubGoalIndex, setEditingSubGoalIndex] = useState(null);
+    const [editingSubGoalText, setEditingSubGoalText] = useState('');
 
     useEffect(() => {
         if(initialTask) setTask(initialTask);
+        // Reset sub-goal editing state when task changes
+        setEditingSubGoalIndex(null);
+        setEditingSubGoalText('');
     }, [initialTask]);
+
+    // Reset sub-goal editing when modal closes
+    useEffect(() => {
+        if (!show) {
+            setEditingSubGoalIndex(null);
+            setEditingSubGoalText('');
+        }
+    }, [show]);
 
     const totalGoals = task.goals?.length || 0;
     const completedGoals = task.goals?.filter(g => g.isDone).length || 0;
     const progressPercent = totalGoals === 0 ? (task.isDone ? 100 : 0) : Math.round((completedGoals / totalGoals) * 100);
     const s = styles(theme, fSize, task.color);
 
-    // --- HANDLERS ---
+    // --- SUB-GOAL EDITING HANDLERS ---
+    const handleEditSubGoal = (index, currentText) => {
+        setEditingSubGoalIndex(index);
+        setEditingSubGoalText(currentText);
+    };
+
+    const handleSaveSubGoalEdit = async () => {
+        if (editingSubGoalIndex === null || !task.goals) return;
+        
+        const trimmedText = editingSubGoalText.trim();
+        if (!trimmedText) {
+            // Auto-delete empty sub-goals after confirmation
+            if (window.confirm(lang === 0 ? "Удалить пустую задачу?" : "Delete empty item?")) {
+                await handleConfirmDeleteSub(editingSubGoalIndex);
+            }
+            return;
+        }
+
+        // Update local state immediately for responsiveness
+        const updatedGoals = [...task.goals];
+        updatedGoals[editingSubGoalIndex] = {
+            ...updatedGoals[editingSubGoalIndex],
+            text: trimmedText
+        };
+        setTask(prev => ({ ...prev, goals: updatedGoals }));
+        
+        // Persist to backend
+        try {
+            await updateSubGoal(task.id, editingSubGoalIndex, trimmedText);
+        } catch (error) {
+            console.error("Failed to update sub-goal:", error);
+            // Revert on failure (optional)
+            // setTask(prev => ({ ...prev, goals: [...task.goals] }));
+        }
+        
+        setEditingSubGoalIndex(null);
+    };
+
+    const handleCancelSubGoalEdit = () => {
+        setEditingSubGoalIndex(null);
+        setEditingSubGoalText('');
+    };
+
+    const handleConfirmDeleteSub = async (index) => {
+        const newGoals = task.goals.filter((_, i) => i !== index);
+        setTask(prev => ({ ...prev, goals: newGoals }));
+        await deleteSubGoal(task.id, index);
+        if (editingSubGoalIndex === index) {
+            setEditingSubGoalIndex(null);
+            setEditingSubGoalText('');
+        }
+    };
+
+    // --- EXISTING HANDLERS (unchanged) ---
     const handleConfirmDelete = async () => {
         if (showDeleteWarning === 'main') {
             await deleteGoal(task.id);
             setShow(false);
         } else if (typeof showDeleteWarning === 'number') {
-            const index = showDeleteWarning;
-            const newGoals = task.goals.filter((_, i) => i !== index);
-            setTask(prev => ({ ...prev, goals: newGoals }));
-            await deleteSubGoal(task.id, index);
+            await handleConfirmDeleteSub(showDeleteWarning);
         }
         setShowDeleteWarning(null);
     };
@@ -58,8 +122,6 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
             isDone: !newGoals[index].isDone 
         };
         setTask(prev => ({ ...prev, goals: newGoals }));
-
-        // 4. Save to backend/storage
         await toggleSubGoal(task.id, index);
     };
 
@@ -69,6 +131,12 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
         setTask(prev => ({ ...prev, goals: [...(prev.goals || []), newItem] }));
         await addSubGoal(task.id, newSubGoalText);
         setNewSubGoalText('');
+    };
+
+    // Allow Enter key to save sub-goal edits
+    const handleSubGoalKeyDown = (e) => {
+        if (e.key === 'Enter') handleSaveSubGoalEdit();
+        if (e.key === 'Escape') handleCancelSubGoalEdit();
     };
 
     return (
@@ -155,8 +223,8 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                                         </>
                                     ) : (
                                         <>
-                                            <Badge icon={<FaFlag/>} label={lang===0?'Приоритет':'Priority'} value={PRIORITY_LABELS[task.priority][lang]} color={PRIORITY_COLORS[task.priority]} theme={theme} />
-                                            <Badge icon={<FaLayerGroup/>} label={lang===0?'Сложность':'Difficulty'} value={DIFFICULTY_LABELS[task.difficulty][lang]} color={DIFFICULTY_COLORS[task.difficulty]} theme={theme} />
+                                            <Badge icon={<FaFlag/>} label={lang===0?'Приоритет':'Priority'} value={PRIORITY_LABELS[task?.priority][lang]} color={PRIORITY_COLORS[task?.priority]} theme={theme} />
+                                            <Badge icon={<FaLayerGroup/>} label={lang===0?'Сложность':'Difficulty'} value={DIFFICULTY_LABELS[task?.difficulty][lang]} color={DIFFICULTY_COLORS[task?.difficulty]} theme={theme} />
                                         </>
                                     )}
                                 </div>
@@ -190,12 +258,90 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                                     <div style={s.goalsContainer}>
                                         <AnimatePresence>
                                             {task.goals?.map((goal, idx) => (
-                                                <motion.div key={idx} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} style={{...s.goalRow,border:goal.isDone ? `2px solid  #2ed177` : 'transparent'}}>
-                                                    <div onClick={() => handleToggleSub(idx)} style={s.checkbox(goal.isDone)}>
-                                                        {goal.isDone && <FaCheck size={10} color="#2ed177" />}
-                                                    </div>
-                                                    <div style={s.goalText(goal.isDone)} onClick={() => handleToggleSub(idx)}>{goal.text}</div>
-                                                    <div onClick={() => setShowDeleteWarning(idx)} style={s.deleteSubBtn}><FaTimes /></div>
+                                                <motion.div 
+                                                    key={`goal-${idx}`} 
+                                                    initial={{ opacity: 0, x: -10 }} 
+                                                    animate={{ opacity: 1, x: 0 }} 
+                                                    exit={{ opacity: 0, x: 10 }} 
+                                                    style={{ marginBottom: 8 }}
+                                                >
+                                                    {editingSubGoalIndex === idx ? (
+                                                        // Edit mode for sub-goal
+                                                        <div style={{ ...s.goalEditRow, border: goal.isDone ? `2px solid #2ed177` : `1px solid ${Colors.get('border', theme)}` }}>
+                                                            <div 
+                                                                onClick={() => handleToggleSub(idx)} 
+                                                                style={s.checkbox(goal.isDone)}
+                                                            >
+                                                                {goal.isDone && <FaCheck size={10} color="#2ed177" />}
+                                                            </div>
+                                                            <input
+                                                                type="text"
+                                                                value={editingSubGoalText}
+                                                                onChange={(e) => setEditingSubGoalText(e.target.value)}
+                                                                onKeyDown={handleSubGoalKeyDown}
+                                                                style={s.goalInput}
+                                                                autoFocus
+                                                                aria-label={lang === 0 ? "Редактировать задачу" : "Edit task"}
+                                                            />
+                                                            <div 
+                                                                onClick={handleSaveSubGoalEdit}
+                                                                style={s.actionBtn}
+                                                                role="button"
+                                                                aria-label={lang === 0 ? "Сохранить" : "Save"}
+                                                            >
+                                                                <FaSave size={14} color={task.color} />
+                                                            </div>
+                                                            <div 
+                                                                onClick={handleCancelSubGoalEdit}
+                                                                style={{ ...s.actionBtn, color: Colors.get('subText', theme) }}
+                                                                role="button"
+                                                                aria-label={lang === 0 ? "Отмена" : "Cancel"}
+                                                            >
+                                                                <FaTimes size={14} />
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        // View mode for sub-goal
+                                                        <div style={{ ...s.goalRow, border: goal.isDone ? `2px solid #2ed177` : 'transparent' }}>
+                                                            <div 
+                                                                onClick={() => handleToggleSub(idx)} 
+                                                                style={s.checkbox(goal.isDone)}
+                                                                role="checkbox"
+                                                                aria-checked={goal.isDone}
+                                                                aria-label={lang === 0 ? "Отметить как выполнено" : "Mark as complete"}
+                                                            >
+                                                                {goal.isDone && <FaCheck size={10} color="#2ed177" />}
+                                                            </div>
+                                                            <div 
+                                                                style={s.goalText(goal.isDone)} 
+                                                                onClick={() => handleToggleSub(idx)}
+                                                            >
+                                                                {goal.text}
+                                                            </div>
+                                                            <div 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleEditSubGoal(idx, goal.text);
+                                                                }}
+                                                                style={s.actionBtn}
+                                                                role="button"
+                                                                aria-label={lang === 0 ? "Редактировать задачу" : "Edit task"}
+                                                            >
+                                                                <FaPen size={12} color={Colors.get('subText', theme)} />
+                                                            </div>
+                                                            <div 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setShowDeleteWarning(idx);
+                                                                }}
+                                                                style={s.actionBtn}
+                                                                role="button"
+                                                                aria-label={lang === 0 ? "Удалить задачу" : "Delete task"}
+                                                            >
+                                                                <FaTimes size={12} color={Colors.get('subText', theme)} />
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </motion.div>
                                             ))}
                                         </AnimatePresence>
@@ -207,9 +353,18 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                     placeholder={lang === 0 ? "Добавить задачу..." : "Add item..."}
                     value={newSubGoalText}
                     onChange={(e) => setNewSubGoalText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddSub()}
                     style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px',textSizeAdjust: '100%',webkitTextSizeAdjust: '100%',WebkitUserSelect: 'auto'}}
                 />
-                                            {newSubGoalText.length > 0 && <button onClick={handleAddSub} style={s.addSubBtn}>OK</button>}
+                                            {newSubGoalText.length > 0 && (
+                                                <button 
+                                                    onClick={handleAddSub} 
+                                                    style={s.addSubBtn}
+                                                    aria-label={lang === 0 ? "Добавить задачу" : "Add task"}
+                                                >
+                                                    OK
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -224,7 +379,7 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
     );
 };
 
-// --- SUB-COMPONENTS ---
+// --- SUB-COMPONENTS (unchanged) ---
 const Badge = ({ icon, label, value, color, theme }) => (
     <div style={{...styles(theme).modernBadge, backgroundColor: `${color}15`, border: `1px solid ${color}30`}}>
         <div style={styles(theme).badgeLabel}>{icon} <span style={{marginLeft: 6}}>{label}</span></div>
@@ -240,7 +395,6 @@ const DateBox = ({ label, value, icon, isEditing, theme, onChange }) => {
             <div style={{display:'flex', flexDirection:'column', flex: 1}}>
                 <span style={s.label}>{label}</span>
                 {isEditing ? (
-                    
                     <input type="date" style={s.dateInput} value={value || ''} onChange={(e) => onChange(e.target.value)} />
                 ) : (
                     <span style={s.dateValue}>{value || '-'}</span>
@@ -250,20 +404,19 @@ const DateBox = ({ label, value, icon, isEditing, theme, onChange }) => {
     );
 };
 
-// --- STYLES ---
+// --- STYLES (updated) ---
 const styles = (theme, fSize, accentColor) => {
     const bg = Colors.get('background', theme);
     const panel = Colors.get('simplePanel', theme);
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
     const border = Colors.get('border', theme);
+    const done = Colors.get('done', theme);
 
     return {
-        // ... (Keep previous backdrop, modalContainer, etc.)
         backdrop: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)', zIndex: 1000 },
         modalContainer: { position: 'fixed', bottom: 0, left: 0, right: 0, height: '90dvh', backgroundColor: bg, borderTopLeftRadius: '32px', borderTopRightRadius: '32px', zIndex: 2000, display: 'flex', flexDirection: 'column', boxShadow: '0 -10px 40px rgba(0,0,0,0.5)', overflow: 'hidden' },
         
-        // Warning Panel
         warningOverlay: { position: 'absolute', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
         warningBox: { backgroundColor: panel, borderRadius: 24, padding: 25, width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', border: `1px solid ${border}` },
         cancelBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: border, color: text, fontWeight: 'bold' },
@@ -274,17 +427,17 @@ const styles = (theme, fSize, accentColor) => {
         toolbar: { display: 'flex', justifyContent: 'space-between', padding: '0 24px 15px 24px' },
         iconBtn: { background: panel, border: 'none', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text },
         iconBtnRed: { background: 'rgba(244, 67, 54, 0.1)', border: 'none', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F44336' },
-        saveBtn: { background: Colors.get('done', theme), color: '#fff', border: 'none', borderRadius: '12px', padding: '0 20px', fontWeight: 'bold', display: 'flex', alignItems: 'center' },
+        saveBtn: { background: done, color: '#fff', border: 'none', borderRadius: '12px', padding: '0 20px', fontWeight: 'bold', display: 'flex', alignItems: 'center' },
         
         headerWrapper: { padding: '10px 24px 25px 24px', borderBottom: `1px solid ${border}` },
         headerTopRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
         iconBadge: { width: 64, height: 64, borderRadius: 20, fontSize: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: `${accentColor}20`, border: `1px solid ${accentColor}40` },
-        statusBadge: (isDone) => ({ padding: '10px 16px', borderRadius: 14, fontSize: 10, fontWeight: 900, border: 'none', backgroundColor: isDone ? Colors.get('done', theme) : panel, color: isDone ? '#fff' : sub }),
+        statusBadge: (isDone) => ({ padding: '10px 16px', borderRadius: 14, fontSize: 10, fontWeight: 900, border: 'none', backgroundColor: isDone ? done : panel, color: isDone ? '#fff' : sub }),
         title: { fontSize: 28, fontWeight: 900, color: text, margin: 0 },
         progressContainer: { marginTop: 20 },
         progressText: { fontSize: 12, fontWeight: 800, color: accentColor },
         progressBarBg: { width: '100%', height: 8, backgroundColor: border, borderRadius: 10, marginTop: 6, overflow: 'hidden' },
-        progressBarFill: { height: '100%', backgroundColor: accentColor },
+        progressBarFill: { height: '100%', backgroundColor: theme === 'light' ? 'rgba(94, 15, 133, 0.58)' : 'rgba(53, 111, 199, 0.94)' },
 
         bodyPadding: { padding: 24 },
         gridTwo: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 },
@@ -300,12 +453,93 @@ const styles = (theme, fSize, accentColor) => {
 
         sectionHeader: { display: 'flex', alignItems: 'center', fontSize: 17, fontWeight: 800, color: text, marginBottom: 15 },
         counterBadge: { marginLeft: 'auto', fontSize: 11, backgroundColor: panel, padding: '4px 10px', borderRadius: 8, color: sub },
-        goalRow: { display: 'flex', alignItems: 'center', padding: 14, backgroundColor: panel, borderRadius: 16, marginBottom: 8 },
-        checkbox: (checked) => ({ width: 24, height: 24, borderRadius: 8, border: `2px solid ${checked ? accentColor : border}`, backgroundColor: checked ? accentColor : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }),
-        goalText: (checked) => ({ flex: 1, fontSize: 15, color: text, opacity: checked ? 0.5 : 1, textDecoration: checked ? 'line-through' : 'none', marginLeft: 12 }),
-        deleteSubBtn: { color: sub, padding: 5 },
-        addSubRow: { display: 'flex', alignItems: 'center', padding: '16px 15px', border: `2px dashed ${border}`, borderRadius: 16 },
-        addSubBtn: { background: accentColor, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 'bold', marginLeft: 10 },
+        
+        // Updated goal row styles
+        goalRow: { 
+            display: 'flex', 
+            alignItems: 'center', 
+            padding: '12px 14px', 
+            backgroundColor: panel, 
+            borderRadius: 16,
+            transition: 'all 0.2s ease'
+        },
+        goalEditRow: {
+            display: 'flex',
+            alignItems: 'center',
+            padding: '8px 12px',
+            backgroundColor: panel,
+            borderRadius: 16,
+            border: `1px solid ${border}`
+        },
+        goalInput: {
+            flex: 1, 
+            background: 'transparent',
+            border: 'none',
+            color: text,
+            fontSize: 15,
+            outline: 'none',
+            marginLeft: 10,
+            minWidth: 0,
+            padding: '4px 0'
+        },
+        checkbox: (checked) => ({ 
+            width: 22, 
+            height: 22, 
+            borderRadius: 6, 
+            border: `2px solid ${checked ? accentColor : border}`, 
+            backgroundColor: checked ? accentColor : 'transparent', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            flexShrink: 0,
+            marginRight: 10,
+            cursor: 'pointer'
+        }),
+        goalText: (checked) => ({ 
+            flex: 1, 
+            fontSize: 15, 
+            color: text, 
+            opacity: checked ? 0.6 : 1, 
+            textDecoration: checked ? 'line-through' : 'none', 
+            marginLeft: 8,
+            cursor: 'pointer',
+            wordBreak: 'break-word'
+        }),
+        actionBtn: {
+            width: 26,
+            height: 26,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 6,
+            marginLeft: 4,
+            cursor: 'pointer',
+            color: sub,
+            flexShrink: 0,
+            transition: 'all 0.2s ease',
+            ':hover': { backgroundColor: `${border}30` } // Note: pseudo-classes require CSS-in-JS solution
+        },
+        // Fallback for hover states (inline styles don't support pseudo-classes)
+        actionBtnHover: { backgroundColor: `${border}30` },
+        
+        addSubRow: { 
+            display: 'flex', 
+            alignItems: 'center', 
+            padding: '16px 15px', 
+            border: `2px dashed ${border}`, 
+            borderRadius: 16,
+            marginTop: 8
+        },
+        addSubBtn: { 
+            background: accentColor, 
+            color: '#fff', 
+            border: 'none', 
+            borderRadius: 8, 
+            padding: '6px 12px', 
+            fontWeight: 'bold', 
+            marginLeft: 10,
+            flexShrink: 0
+        },
         description: { fontSize: 16, lineHeight: 1.6, color: text, margin: 0, opacity: 0.9 },
         selectInput: { width: '100%', padding: 12, borderRadius: 12, border: `1px solid ${border}`, backgroundColor: panel, color: text }
     };

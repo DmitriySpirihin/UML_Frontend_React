@@ -31,14 +31,13 @@ export const todoEvents$ = new BehaviorSubject(null);
 
 export async function createGoal(name, description, difficulty, priority, category, icon,  startDate, deadLine, goals, urgency) {
   const id = Date.now();
-
+  const today = new Date();
   // Compute safe deadline ONLY if needed (avoids unnecessary computation)
 const getDefaultDeadline = () => {
-  const d = new Date();
-  d.setFullYear(d.getFullYear() + 1); // +1 year from today
+  
+  today.setFullYear(d.getFullYear() + 1); // +1 year from today
   return d.toISOString().split('T')[0];
 };
-
 AppData.todoList.push({
   id,
   name: ((name ?? '').trim() || 'Untitled'), // ✅ Never empty
@@ -104,6 +103,17 @@ export async function addSubGoal(id, subGoalText) {
   if (item) {
     if (!item.goals) item.goals = [];
     item.goals.push({ text: subGoalText, isDone: false });
+    
+    await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  }
+}
+export async function updateSubGoal(goalId, index, newText) {
+  const item = AppData.todoList.find(i => i.id === goalId);
+  
+  if (item && item.goals && item.goals[index]) {
+    // Update the sub-goal text
+    item.goals[index].text = newText;
     
     await saveData();
     if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });

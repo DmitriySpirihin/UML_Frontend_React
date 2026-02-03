@@ -527,7 +527,7 @@ const CompactCard = ({ onClick, onCheck, item, theme, lang, fSize }) => {
             </div>
 
             {/* Progress Bar */}
-            {!item.isDone && totalGoals > 0 && (<div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '3px', backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)' }}><motion.div initial={{ width: 0 }} animate={{ width: `${(doneGoals / totalGoals) * 100}%` }} style={{ height: '100%', backgroundColor: accentColor }} /></div>)}
+            {!item.isDone && totalGoals > 0 && (<div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '3px', backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)' }}><motion.div initial={{ width: 0 }} animate={{ width: `${(doneGoals / totalGoals) * 100}%` }} style={{ height: '100%', backgroundColor: isLight ? 'rgba(94, 15, 133, 0.58)' : 'rgba(53, 111, 199, 0.94)' }} /></div>)}
         </motion.div>
     );
 };
