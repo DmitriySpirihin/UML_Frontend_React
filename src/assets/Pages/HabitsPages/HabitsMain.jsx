@@ -197,23 +197,23 @@ const HabitsMain = () => {
         }
     }, [habitsCards]);
 
-    const addHabit = (habitId, dateString, goals, isNegative, daysToForm) => {
+    const addHabit = (id, dateString, goals, isNegative, daysToForm) => {
         setHabitsCards(prev => {
             const newHabits = new Set(prev);
-            if (!newHabits.has(habitId)) {
-                AppData.addHabit(habitId, dateString, goals, isNegative, daysToForm);
-                return [...newHabits, habitId];
+            if (!newHabits.has(id)) {
+                AppData.addHabit(id, dateString, goals, isNegative, daysToForm);
+                return [...newHabits, id];
             }
             return prev;
         });
         setHasHabits(AppData.choosenHabits.length > 0);
     };
 
-    const removeHabit = (habitId) => {
-        if (habitsCards.includes(habitId)) {
-            AppData.removeHabit(habitId);
-            setHabitsCards(prev => prev.filter(id => id !== habitId));
-            const habitObj = getAllHabits().find(h => h.id === habitId);
+    const removeHabit = (id) => {
+        if (habitsCards.includes(id)) {
+            AppData.removeHabit(id);
+            setHabitsCards(prev => prev.filter(id => id !== id));
+            const habitObj = getAllHabits().find(h => h.id === id);
             const nameArr = habitObj?.name || ["", ""];
             const name = nameArr[langIndex] || (langIndex === 0 ? "Привычка" : "Habit");
             const popUpText = langIndex === 0 ? `Привычка: '${name}' удалена` : `Habit: '${name}' deleted`;
@@ -502,6 +502,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     const [maxTimer, setMaxTimer] = useState(isNegative ? 86400000 : 60000);
     const [time, setTime] = useState(isNegative ? Math.round(Date.now() - new Date(AppData.choosenHabitsLastSkip[id])) : 60000);
     const [progress, setProgress] = useState(0);
+    const [currentStreak,setCurrentStreak] = useState(0);
 
     const habitColor = isNegative ? '#FF3B30' : (habit.color || '#32D74B');
     const isLight = theme === 'light' || theme === 'speciallight';
@@ -540,7 +541,23 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
         iconColor = isLight ? '#C62828' : '#ffffff';
         borderColor = 'transparent';
     }
-
+    const habitsData = Array.from(Object.values(AppData.habitsByDate));
+    useEffect(() => {
+            if (id > -1) {
+                let curS = 0;
+                const today = new Date().toISOString().split('T')[0];
+                
+            
+                for (let i = habitsData.length - 2; i >= 0; i--) {
+                    if (id in habitsData[i]) {
+                        if (habitsData[i][id] > 0) curS++;
+                        else break;
+                    }
+                }
+                if (AppData.habitsByDate[today]?.[id] > 0) curS++;
+                setCurrentStreak(curS);
+            }
+        }, [id, AppData.habitsByDate,status]);
     useEffect(() => { const sub = premium$.subscribe(setHasPremium); return () => sub.unsubscribe(); }, []);
     useEffect(() => {
         if (timer) {
@@ -590,8 +607,11 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
         let newStatus = 0;
         if (isOverZero) { newStatus = (status === 0 || status === -1) ? 1 : 1; }
         else {
-            if (status === 0) newStatus = -1;
-            else if (status === 1) { newStatus = isNegative ? -1 : 0; if(isNegative) { setTime(0); AppData.choosenHabitsLastSkip[id] = Date.now(); } }
+            if (status === 0) {
+               newStatus = -1;
+               setCurrentStreak(0);
+            }
+            else if (status === 1) { newStatus = isNegative ? -1 : 0; setCurrentStreak(0); if(isNegative) { setTime(0); AppData.choosenHabitsLastSkip[id] = Date.now(); } }
             else if (status === -1) { newStatus = -1; if(isNegative) { setTime(0); AppData.choosenHabitsLastSkip[id] = Date.now(); } }
         }
         AppData.habitsByDate[dateKey][id] = newStatus;
@@ -623,21 +643,24 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
             onDrag={handledDrag} onDragEnd={onDragEnd} whileTap={{ scale: 0.99 }}
             animate={{ height: expanded ? 'auto' : '80px' }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}
         >
-            <div style={{ position: 'absolute', top: 0, left: 0, height: '3px', width: `${progress}%`, backgroundColor: habitColor, borderRadius: '24px 0 0 0' }} />
+           
             <div style={{ display: "flex", alignItems: "center", minHeight: '80px', width: '100%', padding: '15px 20px', boxSizing: 'border-box' }}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: iconBg, color: status===1 ? (isLight ? '#fff' : '#fff') : iconColor, marginRight: '16px', flexShrink: 0, alignSelf: 'flex-start', marginTop: expanded ? '5px' : '0' }}>{getHabitIcon()}</div>
                 <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
                     <span style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.5px', color: textColor, opacity: 0.5, marginBottom: '4px' }}>{habit.category[langIndex]}</span>
                     <span style={{ fontFamily: 'Segoe UI', fontWeight: '700', fontSize: '18px', color: textColor, whiteSpace: expanded ? 'normal' : 'nowrap', overflow: expanded ? 'visible' : 'hidden', textOverflow: 'ellipsis', lineHeight: '1.2' }}>{habitInfo.name[langIndex]}</span>
                     {timer && <span style={{ fontSize: '14px', fontWeight: '700', color: status===1 ? (isLight?'#2E7D32':'#FFF') : habitColor, marginTop: '4px', opacity: 0.9 }}>{parsedTime(time, maxTimer,langIndex, isNegative)}</span>}
+                     {!timer && !isNegative && currentStreak > 0 && <span style={{ fontSize: '14px', fontWeight: '700', color: status===1 ? (isLight?'#2E7D32':'#FFF') : habitColor, marginTop: '4px', opacity: 0.9 }}>{getDayName(langIndex,currentStreak)}</span>}
                 </div>
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingLeft: '10px', alignSelf: 'center' }}>
                     {!isNegative && <>
+                    
                         {!timer && status === 0 && <TimerOffIcon onClick={(e) => { e.stopPropagation(); setShowTimerSlider(true); }} style={{ color: Colors.get('icons', theme), opacity: 0.4, fontSize: '24px', marginRight: '15px' }} />}
                         {timer && <TimerIcon onClick={(e) => { e.stopPropagation(); stopTimer() }} style={{ color: habitColor, fontSize: '24px', marginRight: '15px' }} />}
                         <div onClick={(e) => {e.stopPropagation(); setNewStatus(true)}} style={{ width: '30px', height: '30px', borderRadius: '50%', border: status !== 0 ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: status === 1 ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{status === 1 && <FaCheck size={16} color="#FFF" />}</div>
                     </>}
                     {isNegative && <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(255, 69, 58, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaFire size={16} color="#FF453A" /></div>}
+                    
                 </div>
             </div>
             {expanded && (
@@ -700,7 +723,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                     {langIndex === 0 ? 'Достижения' : 'Achievements'}
                 </div>
                 {AppData.choosenHabitsAchievements[id]?.map((milestone, index) => (
-                    <Achievement key={index} index={index} milestone={milestone} habitId={id} isNegative={isNegative} percent={percent} theme={theme} fSize={fSize} langIndex={langIndex} />
+                    <Achievement key={index} index={index} milestone={milestone} id={id} isNegative={isNegative} percent={percent} theme={theme} fSize={fSize} langIndex={langIndex} />
                 ))}
             </>
         ) : (
@@ -802,9 +825,28 @@ function parsedTime(time, maxTime,langIndex, isNegative) {
   const seconds = totalSeconds % 60;
 
   if (days > 0) {
-    // Только дни, например "2d"
-    return days + (langIndex === 0 ? 'дн.' : 'd');
-  }
+    // Склонение для русского языка
+    if (langIndex === 0) {
+        let daysText = '';
+        const lastDigit = days % 10;
+        const lastTwoDigits = days % 100;
+        
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+            daysText = 'дней';
+        } else if (lastDigit === 1) {
+            daysText = 'день';
+        } else if (lastDigit >= 2 && lastDigit <= 4) {
+            daysText = 'дня';
+        } else {
+            daysText = 'дней';
+        }
+        
+        return days + ' ' + daysText;
+    } else {
+        // Английский язык
+        return days + (days === 1 ? ' day' : ' days');
+    }
+}
 
   if (hours > 0) {
     // Формат HH:MM, например "05:23"
@@ -824,13 +866,13 @@ function parsedTime(time, maxTime,langIndex, isNegative) {
 
 export function parsedTimeSimple(maxTimer) { return (Math.floor(maxTimer / 60000) + 'm'); }
 
-const Achievement = ({ milestone, index, habitId, theme, langIndex }) => {
+const Achievement = ({ milestone, index, id, theme, langIndex }) => {
     // 1. Find the index of the habit to look up related data
-    const habitIndex = AppData.choosenHabits.indexOf(habitId);
+    const habitIndex = AppData.choosenHabits.indexOf(id);
     
     // 2. Get the reference time (LastSkip or StartDate if no skip exists)
     // Using Date.now() vs the stored timestamp
-    const lastSkipMs = AppData.choosenHabitsLastSkip[habitId]; 
+    const lastSkipMs = AppData.choosenHabitsLastSkip[id]; 
     const startDateMs = AppData.choosenHabitsStartDates[habitIndex];
     
     // If they've never skipped, the streak is based on the Start Date
@@ -887,3 +929,26 @@ const Achievement = ({ milestone, index, habitId, theme, langIndex }) => {
         </div>
     );
 };
+
+const getDayName = (langIndex,days) => {
+    if (langIndex === 0) {
+        let daysText = '';
+        const lastDigit = days % 10;
+        const lastTwoDigits = days % 100;
+        
+        if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+            daysText = 'дней';
+        } else if (lastDigit === 1) {
+            daysText = 'день';
+        } else if (lastDigit >= 2 && lastDigit <= 4) {
+            daysText = 'дня';
+        } else {
+            daysText = 'дней';
+        }
+        
+        return days + ' ' + daysText;
+    } else {
+        // Английский язык
+        return days + (days === 1 ? ' day' : ' days');
+    }
+}

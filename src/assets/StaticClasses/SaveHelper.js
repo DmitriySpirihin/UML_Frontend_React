@@ -12,16 +12,10 @@ export async function initializeTelegramSDK(opts = {}) {
     await init();
     
     // 2. Safe Platform Check (Raw Telegram Object)
-    // We use the raw object because it's the source of truth
     const rawWebApp = window.Telegram?.WebApp;
     const platform = rawWebApp?.platform || 'unknown';
 
-    // Debugging: This will show you exactly what Telegram thinks the device is
-   // console.log('Detected Platform:', platform);
-
     // 3. Define Mobile Explicitly
-    // We strictly enable fullscreen ONLY for Android and iOS. 
-    // We explicitly exclude 'tdesktop' (Windows/Linux), 'macos', and 'web'.
     const isMobile = platform === 'android' || platform === 'ios';
 
     // 4. Mount & Configure Viewport
@@ -29,10 +23,8 @@ export async function initializeTelegramSDK(opts = {}) {
       await viewport.mount();
       
       if (isMobile) {
-        // ONLY expand on mobile
         viewport.expand(); 
         
-        // ONLY request fullscreen on mobile
         if (viewport.requestFullscreen.isAvailable()) {
           await viewport.requestFullscreen();
         }
@@ -46,39 +38,38 @@ export async function initializeTelegramSDK(opts = {}) {
 
     // 6. Setup Buttons (Hide them)
     if (rawWebApp) {
-      // Настройка BackButton (Контекстное меню выхода)
+      // Настройка BackButton - СИСТЕМНОЕ окно подтверждения
       rawWebApp.BackButton.onClick(() => {
         const isRussian = AppData.prefs[0] === 0;
-        rawWebApp.showPopup({
-          title: isRussian ? 'Выход из системы' : 'Exit LifeOS',
+        
+        // ✅ Используем системный метод confirm вместо showPopup
+        rawWebApp.confirm({
           message: isRussian 
-            ? 'Все данные синхронизированы. Вы уверены, что хотите завершить сессию?' 
-            : 'All data is synced. Are you sure you want to end the session?',
-          buttons: [
-            { id: 'exit', type: 'destructive', text: isRussian ? 'Выйти' : 'Exit' },
-            { id: 'cancel', type: 'cancel', text: isRussian ? 'Остаться' : 'Stay' },
-          ]
-        }, (buttonId) => {
-          if (buttonId === 'exit') rawWebApp.close();
+            ? 'Вы уверены, что хотите завершить сессию?' 
+            : 'Are you sure you want to end the session?',
+          button: isRussian ? 'Выйти' : 'Exit'
+        }, (confirmed) => {
+          if (confirmed) {
+            rawWebApp.close();
+          }
         });
       });
 
-      // Настройка SettingsButton (Вызов твоей панели)
+      // Настройка SettingsButton
       if (rawWebApp.SettingsButton) {
-        rawWebApp.SettingsButton.show(); // Обязательно вызываем show(), так как по умолчанию она скрыта
+        rawWebApp.SettingsButton.show();
         rawWebApp.SettingsButton.onClick(() => {
-          setAddPanel('settings'); // Твоя функция для открытия панели настроек
+          setAddPanel('settings');
         });
       }
 
-      // Скрываем SecondaryButton, если она не используется
+      // Скрываем неиспользуемые кнопки
       if (rawWebApp.SecondaryButton) rawWebApp.SecondaryButton.hide();
     }
 
     return true;
   } catch (error) {
     console.error('SDK Init Error:', error);
-    // ... (Your existing mock fallback code remains here) ...
     return true;
   }
 }

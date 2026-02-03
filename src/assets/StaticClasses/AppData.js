@@ -238,18 +238,18 @@ static getLastTrainingDayIndex() {
     const current = currentDate.toISOString().split('T')[0];
     if(!(current in this.habitsByDate)) {
       this.habitsByDate[current] = {};
-      this.habitsByDate[current][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 1 : 2; 
+      this.habitsByDate[current][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 1 : 1; 
      }
      else{
-      this.habitsByDate[current][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 1 : 2; 
+      this.habitsByDate[current][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 1 : 1; 
      }
      currentDate.setDate(currentDate.getDate() + 1);
    }
    if(isNegative){
        if(getHabitPerformPercent(habitId) < 100)this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = isStartDateEarlier ? 1 : -1;
-       else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = 2;
+       else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = 1;
    }
-   else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 0 : 2;
+   else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 0 : 1;
    await saveData();
   }
   static addHabitGoal(habitId,goal){
@@ -341,12 +341,12 @@ export const fillEmptyDays = () => {
         if(isNegative){
             if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime()){
             const isStartDateEarlier = Date.now() - AppData.choosenHabitsLastSkip[AppData.choosenHabits[index]] > 86400000;
-            AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? isStartDateEarlier ? 1 : -1 : 2; 
+            AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? isStartDateEarlier ? 1 : -1 : 1; 
           }
         }
         else{
            if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime()){
-           AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? -1 : 2; 
+           AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? -1 : 1; 
            }
         }
       }
@@ -365,12 +365,12 @@ export const fillEmptyDays = () => {
      if(isNegative){
             if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(now).getTime()){
             const isStartDateEarlier = Date.now() - AppData.choosenHabitsLastSkip[AppData.choosenHabits[index]] > 86400000;
-            AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? isStartDateEarlier ? 1 : -1 : 2; 
+            AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? isStartDateEarlier ? 1 : -1 : 1; 
           }
         }
         else{
            if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(now).getTime()){
-             AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? 0 : 2; 
+             AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? 0 : 1; 
            }
         }
    }

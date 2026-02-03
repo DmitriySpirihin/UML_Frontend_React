@@ -246,7 +246,7 @@ const SleepNew = ({ dateString }) => {
                                   placeholder={langIndex === 0 ? 'Сны, мысли...' : 'Dreams, thoughts...'}
                                   value={note}                                                   
                                   onChange={(e) => setNote(e.target.value)}
-                                  style={{flex: 1, border: 'none', background: 'transparent',width:'80vw',height:'15vh', fontSize: '15px', color: Colors.get('mainText', theme),outline:'none'}}
+                                  style={{flex: 1, border: 'none', background: 'transparent',width:'80vw',height:'15vh', fontSize: '16px', color: Colors.get('mainText', theme),outline:'none'}}
                                  />
                             </div>
 

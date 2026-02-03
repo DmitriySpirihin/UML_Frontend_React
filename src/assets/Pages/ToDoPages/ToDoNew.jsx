@@ -183,7 +183,7 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                                 onClick={() => setSelectedCatIndex(i)}
                                                 style={{
                                                     ...s.categoryChip,
-                                                    backgroundColor: isSelected ? Colors.get('iconsHighlited', theme) : 'transparent',
+                                                    backgroundColor: isSelected ? Colors.get('highlitedPanel', theme) : 'transparent',
                                                     borderColor: isSelected ? 'transparent' : Colors.get('border', theme),
                                                 }}
                                             >
@@ -292,7 +292,6 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                 <div style={s.addSubRow}>
                                     <div style={s.subInputContainer}>
                                         <input
-                                            ref={(input) => { if(input && show && !newSubGoal) input.focus() }} 
                                             type="text"
                                             placeholder={lang === 0 ? "Добавить шаг..." : "Add a step..."}
                                             value={newSubGoal}

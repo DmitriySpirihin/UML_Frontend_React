@@ -19,7 +19,7 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.84.8.s';
+const version = '2.c.85.0.s';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -233,7 +233,7 @@ const styles = (theme, fSize) => ({
     logo: { height: "65%", objectFit: "contain" }, // ZOOMED LOGO
     iconBtn: { width: '40px', height: '40px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.get('background', theme) },
     text: { color: Colors.get('mainText', theme), fontSize: fSize === 0 ? "13px" : "15px", fontFamily: "Segoe UI" },
-    input: { width: "90%",height:'70%', padding: "15px", border: `1px solid ${Colors.get('border', theme)}`, borderRadius: "16px", color: Colors.get('mainText', theme), backgroundColor: Colors.get('bottomPanel', theme) }
+    input: { width: "90%",height:'70%',fontSize:"16px", padding: "15px", border: `1px solid ${Colors.get('border', theme)}`, borderRadius: "16px", color: Colors.get('mainText', theme), backgroundColor: Colors.get('bottomPanel', theme) }
 });
 
 const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {

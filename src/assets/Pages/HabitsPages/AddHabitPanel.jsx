@@ -132,7 +132,7 @@ const AddHabitPanel = () => {
     const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
     const monthsArray = months[langIndex];
     const YEAR = now.getFullYear();
-    const yearsArray = [YEAR- 1, YEAR]; 
+    const yearsArray = [YEAR- 4,YEAR- 3,YEAR- 2,YEAR- 1, YEAR]; 
 
     const setNewGoal = () => {
         if (goalName.length > 0) { setGoals(prev => [...prev, goalName]); setGoalName(''); }
@@ -190,7 +190,7 @@ const AddHabitPanel = () => {
                                                                                         placeholder={langIndex === 0 ? 'поиск' : 'search'}
                                                                                      
                                                                                          onChange={(e) => searchHabitsList(e.target.value, habitList, setHabitList)}
-                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
                                                                                         />
                                                 </div>
 
@@ -244,7 +244,7 @@ const AddHabitPanel = () => {
                                                                                         placeholder={langIndex === 0 ? 'название' : 'name'}
                                                                                         value={habitName}
                                                                                          onChange={(e) => setHabitName(e.target.value)}
-                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                                                                         />
                                                 <motion.div whileTap={{ scale: 0.98 }} style={iconPickerTrigger(ui)} onClick={() => setSelectIconPanel(true)}>
                                                     <span style={{ color: ui.text, fontWeight: '700' }}>Иконка</span>
@@ -255,7 +255,7 @@ const AddHabitPanel = () => {
                                                                                         placeholder={langIndex === 0 ? 'описание' : 'description'}
                                                                                         value={habitDescription}
                                                                                          onChange={(e) => setHabitDescription(e.target.value)}
-                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                                                                         />
                                                
                                             </div>
@@ -296,7 +296,7 @@ const AddHabitPanel = () => {
                                                                                         placeholder={langIndex === 0 ? 'Добавить цель...' : 'Add goal...'}
                                                                                         value={goalName}
                                                                                          onChange={(e) => setGoalName(e.target.value)}
-                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
                                                                                         />
                                                 <motion.div whileTap={{ scale: 0.9 }} onClick={setNewGoal} style={addBtn(ui)}><FaPlus color="#FFF" size={18} /></motion.div>
                                             </div>
@@ -326,7 +326,7 @@ const AddHabitPanel = () => {
                                 </motion.div>
 
                                 {!confirmationPanel && (
-                                    <motion.div whileTap={{ scale: 0.9 }} style={btnNew(ui)} onClick={() => setshowCreatePanel(!showCreatePanel)}>
+                                    <motion.div whileTap={{ scale: 0.9 }} style={btnNew(ui)} onClick={() => {setshowCreatePanel(!showCreatePanel);if(!showCreatePanel){setGoals([])}}}>
                                            {showCreatePanel ? <MdListAlt size={24} color="#FFF" /> :  <MdFiberNew size={24} color="#FFF" />}
                                     </motion.div>
                                 )}

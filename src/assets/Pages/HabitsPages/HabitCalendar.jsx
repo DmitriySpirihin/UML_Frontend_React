@@ -38,7 +38,7 @@ const styles = (theme,fSize) => ({
          backgroundColor: Colors.get('background', theme),
          display: "flex", flexDirection: "column", justifyContent: "start", alignItems: "center",
          height: "88vh",marginTop:'100px', width: "100vw", fontFamily: "Segoe UI, Roboto, Helvetica, sans-serif",
-         overflow: 'hidden', paddingTop: '10px'
+         overflowY: 'scroll', paddingTop: '10px'
       },
       panel : {
         display:'flex', flexDirection:'column', width: "100%", maxWidth: '500px', height: "100%",
@@ -65,8 +65,7 @@ const styles = (theme,fSize) => ({
           transition: 'background 0.2s', zIndex: 10
       },
       tableWrapper: {
-        width: '100%', padding: '15px 0px 15px 0px', boxSizing: 'border-box',
-        overflow: 'hidden' 
+        width: '100%', padding: '15px 0px 15px 0px', boxSizing: 'border-box'
       },
       table: { width:'90%', borderCollapse:'collapse', textAlign:'center' },
       cell: {
@@ -76,7 +75,7 @@ const styles = (theme,fSize) => ({
          cursor: 'pointer', margin: 'auto' 
       },
       infoPanelContainer: {
-          flex: 1, width: '100%', 
+          disolay:'flex', width: '100%', 
           borderTop: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'}`,
           padding: '20px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column',
           backgroundColor: Colors.get('background', theme), 
@@ -84,7 +83,6 @@ const styles = (theme,fSize) => ({
       infoHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' },
       text : { fontFamily: "Segoe UI", fontSize: fSize === 0 ? '15px' : '17px', color: Colors.get('mainText', theme) },
       subText : { fontFamily: "Segoe UI", fontSize: fSize === 0 ? '12px' : '14px', color: Colors.get('subText', theme) },
-      scrollView: { flex: 1, overflowY: "auto", width:'100%', scrollbarWidth: 'none', msOverflowStyle: 'none', paddingBottom: '20px' },
       icon: { width:'22px', height: '22px' }
 })
 
@@ -189,16 +187,16 @@ const HabitCalendar = () => {
 
     return (
         <div style={styles(theme).container}>
-          <div style={styles(theme).panel}>
+          
             {/* Header with Navigation and Animations */}
             <div style={styles(theme).calendarHead}>
-              <motion.div whileTap={{scale: 0.9}} onClick={prevMonth} style={styles(theme).navBtn}>
+              <div whileTap={{scale: 0.9}} onClick={prevMonth} style={styles(theme).navBtn}>
                  <IoIosArrowBack size={22} color={Colors.get('mainText', theme)}/>
-              </motion.div>
+              </div>
               
               <div style={styles(theme).headerWrapper}>
-                  <AnimatePresence mode="popLayout" custom={direction}>
-                    <motion.h1 
+                 
+                    <h1 
                         key={date.toISOString()}
                         variants={textVariants}
                         custom={direction}
@@ -209,128 +207,166 @@ const HabitCalendar = () => {
                         style={styles(theme).header}
                     >
                         {monthNames[langIndex][date.getMonth()]} {date.getFullYear()}
-                    </motion.h1>
-                  </AnimatePresence>
+                    </h1>
+           
               </div>
 
-              <motion.div whileTap={{scale: 0.9}} onClick={nextMonth} style={styles(theme).navBtn}>
+              <div whileTap={{scale: 0.9}} onClick={nextMonth} style={styles(theme).navBtn}>
                  <IoIosArrowForward size={22} color={Colors.get('mainText', theme)}/>
-              </motion.div>
+              </div>
             </div>
 
             {/* Calendar Table with Sliding Animation */}
             <div style={styles(theme).tableWrapper}>
-                <AnimatePresence mode="wait" custom={direction}>
-                    <motion.div
-                        key={date.toISOString()}
-                        variants={slideVariants}
-                        custom={direction}
-                        initial="enter"
-                        animate="center"
-                        exit="exit"
-                        transition={{ type: "tween", ease: "easeInOut", duration: 0.25 }}
-                        style={{width: '100%'}}
-                    >
+                
+                  
                         <table style={styles(theme).table}>
-                        <thead>
-                            <tr>
-                            {daysOfWeek[langIndex].map((day, index) => (
-                                <th key={day} style={{paddingBottom:'15px'}}>
-                                    <p style={{
-                                        textAlign:'center', fontSize:fSize === 0 ? '13px' : '14px', fontWeight: '600',
-                                        color: (index === 5 || index === 6) ? '#ff5e5e' : Colors.get('subText', theme),
-                                        margin: 0, opacity: 0.8
-                                    }}>{day}</p>
-                                </th>
-                            ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {weeks.map((week,i)=>(
-                                <tr key={i}>
-                                {week.map((day,j)=>{
-                                    const cellMonth = date.getMonth();
-                                    const cellYear = date.getFullYear();
-                                    const isChoosen = day === currentDate.getDate() && cellMonth === currentDate.getMonth() && cellYear === currentDate.getFullYear();
-                                    const dayKey = formatDateKey(new Date(cellYear,cellMonth,day));
-                                    let percent = ''; let percentNum = 0;
-
-                                    if(Object.keys(AppData.habitsByDate).includes(dayKey)){
-                                        const allHabitsOfCurrentDay = Array.from(Object.values(AppData.habitsByDate[dayKey]));
-                                        const allHabitsOfDay = allHabitsOfCurrentDay.length;
-                                        percentNum = allHabitsOfDay > 0 ? Math.round((allHabitsOfCurrentDay.filter((v) => v > 0).length/allHabitsOfDay)*100) : 0;
-                                        percent = percentNum + '%';
-                                    }
-
-                                    let cellBg = 'transparent';
-                                    let cellColor = Colors.get('mainText', theme);
-
-                                    if (isChoosen) {
-                                        cellBg = Colors.get('currentDateBorder', theme);
-                                        cellColor = '#ffffff';
-                                    } else if (day > 0) {
-                                        if (percentNum > 0) {
-                                            cellBg = getProgressColor(percentNum, theme);
-                                            cellColor = getProgressTextColor(percentNum, theme);
-                                        }
-                                    }
-                                    
-                                    return(
-                                    <td key={j} style={{padding: '4px'}}>
-                                    {day ? (
-                                        <div style={{
-                                            ...styles(theme).cell,
-                                            backgroundColor: cellBg, color: cellColor,
-                                            border: today === day && curMonth === cellMonth ? `2px solid ${Colors.get('currentDateBorder', theme)}` : 'transparent',
-                                            boxShadow: isChoosen ? `0 4px 12px ${Colors.get('shadow', theme)}` : 'none',
-                                        }} onClick={() => {
-                                                setCurrentDate(new Date(cellYear, cellMonth, day));
-                                                setInfoPanelData(AppData.hasKey(formatDateKey(new Date(cellYear, cellMonth, day))));
-                                                playEffects(clickSound);
-                                            }}   
-                                        >
-                                            {day}
-                                            {day > 0 && percent && !isChoosen && <div style={{ fontSize: '9px', marginTop: '2px', opacity: 0.9, fontWeight: 'bold' }}>{percent}</div>}
-                                        </div>
-                                    ) : <div style={{...styles(theme).cell, pointerEvents: 'none'}}></div>}
-                                    </td>
-                                )
-                                })}
+                            <thead>
+                                <tr>
+                                    {daysOfWeek[langIndex].map((day, index) => (
+                                        <th key={day} style={{paddingBottom:'15px'}}>
+                                            <p style={{
+                                                textAlign:'center', 
+                                                fontSize: fSize === 0 ? '13px' : '14px', 
+                                                fontWeight: '600',
+                                                color: (index === 5 || index === 6) ? '#ff5e5e' : Colors.get('subText', theme),
+                                                margin: 0, 
+                                                opacity: 0.8
+                                            }}>
+                                                {day}
+                                            </p>
+                                        </th>
+                                    ))}
                                 </tr>
-                            ))}
-                        </tbody>
+                            </thead>
+                            <tbody>
+                                {weeks.map((week, i) => (
+                                    <tr key={i}>
+                                        {week.map((day, j) => {
+                                            const cellMonth = date.getMonth();
+                                            const cellYear = date.getFullYear();
+                                            const isChoosen = day === currentDate.getDate() && cellMonth === currentDate.getMonth() && cellYear === currentDate.getFullYear();
+                                            const dayKey = formatDateKey(new Date(cellYear, cellMonth, day));
+                                            let percent = ''; 
+                                            let percentNum = 0;
+
+                                            if(Object.keys(AppData.habitsByDate).includes(dayKey)){
+                                                const allHabitsOfCurrentDay = Array.from(Object.values(AppData.habitsByDate[dayKey]));
+                                                const allHabitsOfDay = allHabitsOfCurrentDay.length;
+                                                percentNum = allHabitsOfDay > 0 ? Math.round((allHabitsOfCurrentDay.filter((v) => v > 0).length / allHabitsOfDay) * 100) : 0;
+                                                percent = percentNum + '%';
+                                            }
+
+                                            let cellBg = 'transparent';
+                                            let cellColor = Colors.get('mainText', theme);
+
+                                            if (isChoosen) {
+                                                cellBg = Colors.get('currentDateBorder', theme);
+                                                cellColor = '#ffffff';
+                                            } else if (day > 0) {
+                                                if (percentNum > 0) {
+                                                    cellBg = getProgressColor(percentNum, theme);
+                                                    cellColor = getProgressTextColor(percentNum, theme);
+                                                }
+                                            }
+                                            
+                                            return (
+                                                <td key={j} style={{padding: '4px'}}>
+                                                    {day ? (
+                                                        <div 
+                                                            style={{
+                                                                ...styles(theme).cell,
+                                                                backgroundColor: cellBg, 
+                                                                color: cellColor,
+                                                                border: today === day && curMonth === cellMonth ? `2px solid ${Colors.get('currentDateBorder', theme)}` : 'transparent',
+                                                                boxShadow: isChoosen ? `0 4px 12px ${Colors.get('shadow', theme)}` : 'none',
+                                                            }} 
+                                                            onClick={() => {
+                                                                setCurrentDate(new Date(cellYear, cellMonth, day));
+                                                                setInfoPanelData(AppData.hasKey(formatDateKey(new Date(cellYear, cellMonth, day))));
+                                                                playEffects(clickSound);
+                                                            }}   
+                                                        >
+                                                            {day}
+                                                            {day > 0 && percent && !isChoosen && (
+                                                                <div style={{ 
+                                                                    fontSize: '9px', 
+                                                                    marginTop: '2px', 
+                                                                    opacity: 0.9, 
+                                                                    fontWeight: 'bold' 
+                                                                }}>
+                                                                    {percent}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{...styles(theme).cell, pointerEvents: 'none'}}></div>
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                ))}
+                            </tbody>
                         </table>
-                    </motion.div>
-                </AnimatePresence>
+                   
             </div>
-            
+
             <div style={styles(theme).infoPanelContainer}>
                 {inFoPanelData ? (
-                    <div style={{width: '100%', height: '100%', display:'flex',flexDirection:'column'}}>
+                    <div style={{width: '100%', height: '100%', display:'flex', flexDirection:'column'}}>
                         <div style={styles(theme).infoHeader}>
-                            <h2 style={{fontSize:'18px', fontWeight: 'bold', color: Colors.get('mainText', theme), margin: 0}}>
+                            <h2 style={{
+                                fontSize:'18px', 
+                                fontWeight: 'bold', 
+                                color: Colors.get('mainText', theme), 
+                                margin: 0
+                            }}>
                                 {currentDate.getDate()} {monthNames[langIndex][currentDate.getMonth()]}, {fullNames[langIndex][getMondayIndex(currentDate)]}
                             </h2>
                         </div>
                         <div style={styles(theme).scrollView}>
-                            <Habit theme={theme} langIndex={langIndex} date={currentDate} fSize={fSize} onHabitClick={onHabitClick}/>
+                            <Habit 
+                                theme={theme} 
+                                langIndex={langIndex} 
+                                date={currentDate} 
+                                fSize={fSize} 
+                                onHabitClick={onHabitClick}
+                            />
                         </div>
                     </div>
                 ) : (
-                    <div style={{display:'flex', height:'100%', alignItems:'center', justifyContent:'center', opacity: 0.6, flexDirection: 'column'}}>
-                         <h2 style={{fontSize:'18px', fontWeight: 'bold', color: Colors.get('mainText', theme), margin: '0 0 10px 0'}}>
-                                {currentDate.getDate()} {monthNames[langIndex][currentDate.getMonth()]}
+                    <div style={{
+                        display:'flex', 
+                        height:'100%', 
+                        alignItems:'center', 
+                        justifyContent:'center', 
+                        opacity: 0.6, 
+                        flexDirection: 'column'
+                    }}>
+                        <h2 style={{
+                            fontSize:'18px', 
+                            fontWeight: 'bold', 
+                            color: Colors.get('mainText', theme), 
+                            margin: '0 0 10px 0'
+                        }}>
+                            {currentDate.getDate()} {monthNames[langIndex][currentDate.getMonth()]}
                         </h2>
-                        <p style={{color: Colors.get('subText', theme), margin: 0, fontSize: '14px'}}>
+                        <p style={{
+                            color: Colors.get('subText', theme), 
+                            margin: 0, 
+                            fontSize: '14px'
+                        }}>
                             {langIndex === 0 ? "Нет привычек на этот день" : "No habits for this day"}
                         </p>
                     </div>
                 )}
             </div>
-          </div>
+            
+            <div style={{marginBottom:'150px'}}></div>
         </div>
-    )
-}
+    );
+};
 
 export default HabitCalendar
 
@@ -343,7 +379,7 @@ const Habit = ({theme, langIndex, date, fSize, onHabitClick}) => {
           const numId = Number(id);
           const found = getAllHabits().find(habit => habit.id === numId);
           if (!found) return null;
-          return <HabitRow key={`${dateKey}-${id}`} id={numId} habitData={found} theme={theme} date={date} statusInit={initStatus} langIndex={langIndex} fSize={fSize} onHabitClick={onHabitClick}/>
+          return <HabitRow key={`${dateKey}-${id}`} id={numId} habitData={found} theme={theme} date={date} statusInit={initStatus < 2 ? initStatus : 1} langIndex={langIndex} fSize={fSize} onHabitClick={onHabitClick}/>
         })
     )
 }
@@ -363,7 +399,7 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
 
     const isNegative = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(id)];
     const [status, setStatus] = useState(statusInit);
-    const [canDrag, setCanDrag] = useState(status < 2 && !isNegative);
+    const [canDrag, setCanDrag] = useState(!isNegative);
     const maxX = 70; const minX = -70;
     const x = useMotionValue(0);
     const constrainedX = useTransform(x, [-1, 1], [minX, maxX]);

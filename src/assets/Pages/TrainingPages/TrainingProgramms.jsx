@@ -327,15 +327,15 @@ const TrainingProgramm = () => {
                                                 type="text" 
                                                 placeholder={langIndex === 0 ? 'Название' : 'Name'}
                                                 value={name}
-                                                onChange={(e) => setDescription(e.target.value)}
-                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                                onChange={(e) => setName(e.target.value)}
+                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                             />
                             <input 
                                                 type="text" 
                                                 placeholder={langIndex === 0 ? 'Описание' : 'Description'}
                                                 value={description}
                                                 onChange={(e) => setDescription(e.target.value)}
-                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                             />
 
                            
@@ -352,7 +352,7 @@ const TrainingProgramm = () => {
                                                 placeholder={langIndex === 0 ? 'Название дня' : 'Day Name'}
                                                 value={dayName}
                                                 onChange={(e) => setDayName(e.target.value)}
-                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                             />
                         <ModalActions onClose={() => setShowAddDayPanel(false)} onConfirm={onAddTrainingDay} theme={theme} />
                     </Modal>
