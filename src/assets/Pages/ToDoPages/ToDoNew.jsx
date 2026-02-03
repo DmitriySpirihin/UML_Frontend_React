@@ -297,7 +297,6 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                                             placeholder={lang === 0 ? "Добавить шаг..." : "Add a step..."}
                                             value={newSubGoal}
                                             onChange={(e) => setNewSubGoal(e.target.value)}
-                                            onKeyDown={(e) => e.key === 'Enter' && addSubGoalLocal()}
                                             style={s.subInput}
                                         />
                                     </div>

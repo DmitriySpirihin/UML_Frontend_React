@@ -398,14 +398,7 @@ return (
                </div>
               );
              })}
-            
-            <div style={{width:'100vw',height:'20vh'}}/>
-             </div>}
-        </div>
-        </div>
-
-        {/* --- BOTTOM FLOATING MENU --- */}
-        <div style={styles(theme).floatingMenu}>
+            <div style={styles(theme).floatingMenu}>
              <div onClick={() => {setShowInfoPanel(true);}} style={styles(theme).menuIconBtn}>
                 <FaInfo style={{fontSize:'20px', color:Colors.get('icons', theme)}}/>
              </div>
@@ -425,6 +418,13 @@ return (
                {langIndex === 0 ? 'История' : 'History'}
              </div>
         </div>
+            <div style={{width:'100vw',height:'20vh'}}/>
+             </div>}
+        </div>
+        </div>
+
+        {/* --- BOTTOM FLOATING MENU --- */}
+        
 
 
       {showInfoPanel && <div  style={styles(theme).confirmContainer}>
@@ -1090,8 +1090,6 @@ const styles = (theme,fSize) =>
       cursor: 'pointer'
  },
  floatingMenu: {
-      position: 'fixed',
-      bottom: '90px',
       width: '88%',
       maxWidth: '400px',
       height: '40px',
@@ -1103,7 +1101,6 @@ const styles = (theme,fSize) =>
       justifyContent: 'space-between',
       padding: '0 10px',
       boxShadow: '0 10px 25px rgba(0,0,0,0.4)',
-      zIndex: 1000,
       border: `1px solid ${Colors.get('border', theme)}`
  },
  menuPillBtn: {
