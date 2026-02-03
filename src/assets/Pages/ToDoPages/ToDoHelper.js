@@ -32,20 +32,29 @@ export const todoEvents$ = new BehaviorSubject(null);
 export async function createGoal(name, description, difficulty, priority, category, icon,  startDate, deadLine, goals, urgency) {
   const id = Date.now();
 
-  AppData.todoList.push({
-    id,
-    name,
-    description,
-    difficulty,
-    priority,
-    category,
-    icon,
-    isDone: false,
-    startDate,
-    deadLine,
-    goals: goals || [],
-    urgency
-  });
+  // Compute safe deadline ONLY if needed (avoids unnecessary computation)
+const getDefaultDeadline = () => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() + 1); // +1 year from today
+  return d.toISOString().split('T')[0];
+};
+
+AppData.todoList.push({
+  id,
+  name: ((name ?? '').trim() || 'Untitled'), // ✅ Never empty
+  description: (description ?? '').trim(),    // ✅ Null-safe + clean whitespace
+  difficulty: Number.isFinite(difficulty) ? difficulty : 0,
+  priority: Number.isFinite(priority) ? priority : 0,
+  category: ((category ?? '').trim() || 'General'), // ✅ Fallback category
+  icon: (icon ?? 'task'),                          // ✅ Valid default icon name
+  isDone: false,
+  startDate: (today && typeof today === 'string') ? today : new Date().toISOString().split('T')[0],
+  deadLine: (deadLine && typeof deadLine === 'string' && !isNaN(Date.parse(deadLine))) 
+    ? deadLine 
+    : getDefaultDeadline(), // ✅ Fixed syntax + validation
+  goals: Array.isArray(goals) ? [...goals] : [], // ✅ Clone to prevent reference leaks
+  urgency: Number.isFinite(urgency) ? urgency : 0
+});;
 
   await saveData();
   // Уведомляем всех подписчиков, что список изменился

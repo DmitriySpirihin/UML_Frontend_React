@@ -318,7 +318,7 @@ const ToDoMain = () => {
                     )}
                 </AnimatePresence>
                 
-                <div style={{height: '120px', width: '100%'}}></div>
+                <div style={{marginBottom: '120px', width: '100%'}}></div>
             </div>
 
             {/* --- MODALS --- */}
@@ -558,7 +558,7 @@ const styles = (theme, fSize) => {
             backgroundColor: bg, 
             display: 'flex', flexDirection: 'column', alignItems: 'center', 
             height: '100vh', width: '100vw', 
-            fontFamily: 'Segoe UI', overflowY: 'hidden' 
+            fontFamily: 'Segoe UI', overflowY: 'scroll' 
         },
         panel: { 
             display: 'flex', flexDirection: 'column', width: '100%', flex: 1, 
