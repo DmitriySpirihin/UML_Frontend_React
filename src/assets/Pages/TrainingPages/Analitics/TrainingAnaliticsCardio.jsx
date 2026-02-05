@@ -188,12 +188,12 @@ const TrainingAnaliticsCardio = () => {
     };
 
     // Process training log data
-    if (AppData.trainingLog && typeof AppData.trainingLog === 'object') {
+    if (AppData.trainingLog && typeof AppData.trainingLog === 'object' ) {
       Object.entries(AppData.trainingLog).forEach(([date, sessionsArray]) => {
         if (Array.isArray(sessionsArray)) {
           sessionsArray.forEach((session, index) => {
             const typeKey = typeMap[session.type];
-            if (typeKey) {
+            if (typeKey && typeKey !== 'GYM') {
               sessions.push({
                 id: `${date}-${index}`,
                 type: typeKey,
@@ -984,6 +984,7 @@ const TrainingAnaliticsCardio = () => {
           )}
         </div>
       </div>
+      <div style={{marginBottom:'200px'}}></div>
     </div>
   );
 };
