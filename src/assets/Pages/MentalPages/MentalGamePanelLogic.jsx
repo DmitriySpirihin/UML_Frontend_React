@@ -260,7 +260,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
         }
         const endTime = Date.now();
         const duration = Math.round((endTime - startTime) / 1000);
-        saveSessionDuration(duration, finalScore > record, type, difficulty, finalScore);
+        saveSessionDuration(duration, finalScore > record, type, difficulty, finalScore,rightAnswers);
         setAddScores(0);
         setStage(1);
     };

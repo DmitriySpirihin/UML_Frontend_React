@@ -143,7 +143,7 @@ const TrainingAnaliticsMain = () => {
       </div>
 
       {/* --- PREMIUM LOCK --- */}
-      {!hasPremium && (
+      {hasPremium && (
         <div 
                             onClick={(e) => e.stopPropagation()} 
                             style={{

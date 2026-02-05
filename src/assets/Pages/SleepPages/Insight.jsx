@@ -7,7 +7,7 @@ import {
     MdAutoAwesome, MdFitnessCenter, MdBed, MdCheckCircle, 
     MdPsychology, MdSchedule, MdExpandMore, MdWarning 
 } from 'react-icons/md';
-import { FaRobot } from 'react-icons/fa';
+import { FaRobot, FaRunning ,FaBicycle} from 'react-icons/fa';
 
 const Insight = () => {
     // Theme and language state
@@ -85,6 +85,8 @@ const Insight = () => {
         { type: INSIGHT_TYPES.HABITS, label: langIndex === 0 ? 'Привычки' : 'Habits', icon: <MdCheckCircle /> },
         { type: INSIGHT_TYPES.FOCUS_MINDSET, label: langIndex === 0 ? 'Ментальное' : 'Focus', icon: <MdPsychology /> },
         { type: INSIGHT_TYPES.TIME_MANAGEMENT, label: langIndex === 0 ? 'График' : 'Schedule', icon: <MdSchedule /> },
+        { type: INSIGHT_TYPES.RUNNING, label: langIndex === 0 ? 'Бег' : 'Running', icon: <FaRunning /> },
+        { type: INSIGHT_TYPES.CYCLING, label: langIndex === 0 ? 'Вело' : 'Cycling', icon: <FaBicycle /> },
     ];
 
     // Medical disclaimer text with language support

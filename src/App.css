@@ -130,3 +130,4 @@ div[id^="tc-widget-root"],
 div[class^="go"] {
   z-index: 10000 !important;
 }
+@keyframes spin { to { transform: rotate(360deg); } }

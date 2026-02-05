@@ -10,7 +10,12 @@ import { theme$, lang$, fontSize$, premium$, confirmationPanel$, setShowPopUpPan
 import Colors from '../../StaticClasses/Colors'
 
 import { MdDone, MdClose } from 'react-icons/md'
-import { FaPlus, FaTrash, FaPencilAlt, FaRegWindowClose, FaListAlt, FaArrowUp, FaFire, FaChevronDown } from 'react-icons/fa'
+import { FaPlus, FaTrash, FaPencilAlt, FaArrowUp, FaFire, FaChevronDown , FaClock} from 'react-icons/fa'
+//new
+import {FiCalendar} from 'react-icons/fi'
+import {MdSkipNext} from 'react-icons/md'
+import {GiFireRay} from 'react-icons/gi'
+
 import { FaCheck } from 'react-icons/fa6'
 import { TbDotsVertical } from 'react-icons/tb'
 
@@ -210,17 +215,18 @@ const HabitsMain = () => {
     };
 
     const removeHabit = (id) => {
-        if (habitsCards.includes(id)) {
-            AppData.removeHabit(id);
-            setHabitsCards(prev => prev.filter(id => id !== id));
-            const habitObj = getAllHabits().find(h => h.id === id);
-            const nameArr = habitObj?.name || ["", ""];
-            const name = nameArr[langIndex] || (langIndex === 0 ? "Привычка" : "Habit");
-            const popUpText = langIndex === 0 ? `Привычка: '${name}' удалена` : `Habit: '${name}' deleted`;
-            setShowPopUpPanel(popUpText, 2000, true);
-            setHasHabits(AppData.choosenHabits.length > 0);
-        }
-    };
+  if (habitsCards.includes(id)) {
+    AppData.removeHabit(id);
+    setHabitsCards(prev => prev.filter(habitId => habitId !== id)); // ✅ Fixed filter
+    setDataVersion(v => v + 1); // ✅ Force rebuild of buildMenu
+    setHasHabits(AppData.choosenHabits.length > 0);
+
+    const habitObj = getAllHabits().find(h => h.id === id);
+    const name = (habitObj?.name?.[langIndex]) || (langIndex === 0 ? "Привычка" : "Habit");
+    const popUpText = langIndex === 0 ? `Привычка: '${name}' удалена` : `Habit: '${name}' deleted`;
+    setShowPopUpPanel(popUpText, 2000, true);
+  }
+};
 
     const onConfirmAction = () => {
         switch (cP.type) {
@@ -341,7 +347,7 @@ const HabitsMain = () => {
                                 placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'}
                                 value={newGoal}
                                  onChange={(e) => setNewGoal(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                 />
                                 </div>
                          }
@@ -352,7 +358,7 @@ const HabitsMain = () => {
                                 placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'}
                                 value={newGoal}
                                  onChange={(e) => setNewGoal(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                 />
                                 </div>
                          }
@@ -383,14 +389,14 @@ const HabitsMain = () => {
                                 placeholder={langIndex === 0 ? 'Название':'Name'}
                                 value={newName}
                                  onChange={(e) => setNewName(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                 />
                                 <input 
                                 type="text" 
                                 placeholder={langIndex === 0 ? 'Описание (опц.)':'Description (opt.)'}
                                 value={newDescr}
                                  onChange={(e) => setNewDescr(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                 />
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', backgroundColor: isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)', borderRadius: '14px', cursor: 'pointer' }} onClick={() => setSelectIconPanel(!selectIconPanel)}>
@@ -647,10 +653,28 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
             <div style={{ display: "flex", alignItems: "center", minHeight: '80px', width: '100%', padding: '15px 20px', boxSizing: 'border-box' }}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: iconBg, color: status===1 ? (isLight ? '#fff' : '#fff') : iconColor, marginRight: '16px', flexShrink: 0, alignSelf: 'flex-start', marginTop: expanded ? '5px' : '0' }}>{getHabitIcon()}</div>
                 <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
-                    <span style={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.5px', color: textColor, opacity: 0.5, marginBottom: '4px' }}>{habit.category[langIndex]}</span>
+                    
                     <span style={{ fontFamily: 'Segoe UI', fontWeight: '700', fontSize: '18px', color: textColor, whiteSpace: expanded ? 'normal' : 'nowrap', overflow: expanded ? 'visible' : 'hidden', textOverflow: 'ellipsis', lineHeight: '1.2' }}>{habitInfo.name[langIndex]}</span>
+
+                   {/*
+
                     {timer && <span style={{ fontSize: '14px', fontWeight: '700', color: status===1 ? (isLight?'#2E7D32':'#FFF') : habitColor, marginTop: '4px', opacity: 0.9 }}>{parsedTime(time, maxTimer,langIndex, isNegative)}</span>}
                      {!timer && !isNegative && currentStreak > 0 && <span style={{ fontSize: '14px', fontWeight: '700', color: status===1 ? (isLight?'#2E7D32':'#FFF') : habitColor, marginTop: '4px', opacity: 0.9 }}>{getDayName(langIndex,currentStreak)}</span>}
+
+                    */}
+
+                    <div style={{display:'flex',gap :'5px',marginTop:'16px'}}>
+                    <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getStartDate(id)} color={theme === 'dark' ? '#e3cb31' : '#9884008f'} />
+                    <MiniBadge theme={theme} icon={<MdSkipNext size={9}/>} text={getSkippedAmount(id)} color={theme === 'dark' ? '#e33131' : '#9800008f'} />
+                    {!isNegative && currentStreak > 0 && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDayName(langIndex,currentStreak)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
+                    {!isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={theme === 'dark' ? '#31c8e3' : '#0086988f'} />}
+                    {isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
+
+                    </div>
+
+
+
+
                 </div>
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingLeft: '10px', alignSelf: 'center' }}>
                     {!isNegative && <>
@@ -659,6 +683,10 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                         {timer && <TimerIcon onClick={(e) => { e.stopPropagation(); stopTimer() }} style={{ color: habitColor, fontSize: '24px', marginRight: '15px' }} />}
                         <div onClick={(e) => {e.stopPropagation(); setNewStatus(true)}} style={{ width: '30px', height: '30px', borderRadius: '50%', border: status !== 0 ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: status === 1 ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{status === 1 && <FaCheck size={16} color="#FFF" />}</div>
                     </>}
+
+
+
+
                     {isNegative && <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(255, 69, 58, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaFire size={16} color="#FF453A" /></div>}
                     
                 </div>
@@ -951,4 +979,52 @@ const getDayName = (langIndex,days) => {
         // Английский язык
         return days + (days === 1 ? ' day' : ' days');
     }
+}
+
+
+const MiniBadge = ({ icon, text, color , theme}) => (
+    <div style={{ 
+        display: 'flex', alignItems: 'center', gap: '3px', 
+        padding: '2px 5px', borderRadius: '5px', 
+        backgroundColor: Colors.get('background', theme) + '75',
+        color: color, fontSize: '10px', fontWeight: '700',
+        whiteSpace: 'nowrap'
+    }}>
+        {icon}
+        {text && <span>{text}</span>}
+    </div>
+);
+
+function getStartDate(id) {
+    const index = AppData.choosenHabits.indexOf(id);
+    if (index === -1) return null; // Fixed: indexOf returns -1 when not found, not null
+    
+    let dateString = AppData.choosenHabitsStartDates[index];
+    if (!dateString || dateString.length < 8) return null; // Validation check
+    
+    // Extract parts: assuming format like "YYYYMMDD" or similar
+    let day = dateString.substring(dateString.length - 2);       // Last 2 chars
+    let month = dateString.substring(dateString.length - 4, dateString.length - 2); // Chars before last 2
+    let year = dateString.substring(2, 4);                      // First 4 chars
+    
+    return `${day}-${month}${year}`;
+}
+
+function getSkippedAmount(id) {
+    let amount = 0;
+    
+    // Iterate through all dates in habitsByDate
+    for (const date in AppData.habitsByDate) {
+        const habitsOnDate = AppData.habitsByDate[date];
+        
+        // Check if the habit exists for this date and if its status indicates skipped
+        if (habitsOnDate && id in habitsOnDate) {
+            // Assuming status 2 means skipped (adjust according to your status codes)
+            if (habitsOnDate[id] === 1) { // Replace 2 with your actual "skipped" status value
+                amount++;
+            }
+        }
+    }
+    
+    return amount;
 }

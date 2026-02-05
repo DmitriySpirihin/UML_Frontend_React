@@ -19,7 +19,7 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.85.2.s';
+const version = '2.c.85.5.s';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -224,7 +224,7 @@ const settingsPanelStyles = (theme, fSize) => ({
 const styles = (theme, fSize) => ({
     logoContainer: {
         position: "fixed", top: 0, left: 0, width: "100vw", height: "13vh", minHeight: "100px",
-        backgroundColor: Colors.get('bottomPanel', theme) + 'D9', backdropFilter: "blur(15px)",
+        backgroundColor: Colors.get('background', theme), backdropFilter: "blur(15px)",
         borderBottom: `1px solid ${Colors.get('border', theme)}`,
         display: "flex", justifyContent: "center", 
         alignItems: "center", // ELEMENTS TO BOTTOM

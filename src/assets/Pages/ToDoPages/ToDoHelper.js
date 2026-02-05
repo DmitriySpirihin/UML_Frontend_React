@@ -7,17 +7,19 @@
     description: 'General digital and life maintenance',
     difficulty: 4,
     priority: 4,
+    urgency : 5,
     category: 'Life',
     icon: '🧹',
     isDone: true,
     startDate: '2026-01-15',
     deadLine: '2026-02-01',
     goals: [
-        { text: 'Clean up desktop and downloads folder', isDone: false },
-        { text: 'Unsubscribe from unused services and newsletters', isDone: false },
-        { text: 'Organize important documents into folders/cloud', isDone: false }
+      { text: 'Clean up desktop and downloads folder',aim:'',result:'', isDone: false }
     ],
-    urgency : 5
+    result:'',
+    isPinned:false,
+    isHidden:false,
+    isPending:false
 }
 ]
 
@@ -29,7 +31,7 @@ import { saveData } from "../../StaticClasses/SaveHelper"
 import { BehaviorSubject } from 'rxjs';
 export const todoEvents$ = new BehaviorSubject(null);
 
-export async function createGoal(name, description, difficulty, priority, category, icon,  startDate, deadLine, goals, urgency) {
+export async function createGoal(name, description, difficulty, priority, category, icon, startdate, deadLine, goals, urgency,result = '',isPinned = false,isHidden = false,isPending = false) {
   const id = Date.now();
   const today = new Date();
   // Compute safe deadline ONLY if needed (avoids unnecessary computation)
@@ -47,18 +49,115 @@ AppData.todoList.push({
   category: ((category ?? '').trim() || 'General'), // ✅ Fallback category
   icon: (icon ?? 'task'),                          // ✅ Valid default icon name
   isDone: false,
-  startDate: (today && typeof today === 'string') ? today : new Date().toISOString().split('T')[0],
+  startDate: (startdate && typeof startdate === 'string' && !isNaN(Date.parse(startdate))) ? startdate : today.toISOString().split('T')[0],
   deadLine: (deadLine && typeof deadLine === 'string' && !isNaN(Date.parse(deadLine))) 
     ? deadLine 
     : getDefaultDeadline(), // ✅ Fixed syntax + validation
   goals: Array.isArray(goals) ? [...goals] : [], // ✅ Clone to prevent reference leaks
-  urgency: Number.isFinite(urgency) ? urgency : 0
-});;
+  urgency: Number.isFinite(urgency) ? urgency : 0,
+  result : result,
+  isPinned : isPinned,
+  isHidden : isHidden,
+  isPending : isPending
+});
 
   await saveData();
   // Уведомляем всех подписчиков, что список изменился
   if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
 }
+
+// new methods i added
+export async function setOrRedactSubgoalAim(goalId, index, aimText) {
+  const item = AppData.todoList.find(i => i.id === goalId);
+  
+  if (item && item.goals && item.goals[index]) {
+    // Update the sub-goal text
+    item.goals[index].aim = aimText;
+    
+    await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  }
+}
+export async function deleteSubgoalAim(goalId, index) {
+  const item = AppData.todoList.find(i => i.id === goalId);
+  
+  if (item && item.goals && item.goals[index]) {
+    // Update the sub-goal text
+    item.goals[index].aim = '';
+    
+    await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  }
+}
+export async function setOrRedactSubgoalResult(goalId, index, resText) {
+  const item = AppData.todoList.find(i => i.id === goalId);
+  
+  if (item && item.goals && item.goals[index]) {
+    // Update the sub-goal text
+    item.goals[index].result = resText;
+    
+    await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  }
+}
+export async function deleteSubgoalResult(goalId, index) {
+  const item = AppData.todoList.find(i => i.id === goalId);
+  
+  if (item && item.goals && item.goals[index]) {
+    // Update the sub-goal text
+    item.goals[index].result = '';
+    
+    await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  }
+}
+export async function addOrRedactResult(id,result) {
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  if (item) {
+    item.result = result;
+    await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  }
+}
+export async function deleteResult(id) {
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  if (item) {
+    item.result = '';
+    await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  }
+}
+export async function togglePinned(id) {
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  if (item) {
+    item.isPinned = !item.isPinned;
+    await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  }
+}
+export async function toggleHidden(id) {
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  if (item) {
+    item.isHidden = !item.isHidden;
+    await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  }
+}
+export async function togglePending(id) {
+  const item = AppData.todoList.find(i => i.id === id);
+  
+  if (item) {
+    item.isPending = !item.isPending;
+    await saveData();
+    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  }
+}
+// end of new functionality
+
 
 export async function redactGoal(id, name, description, difficulty, priority, category, icon, color, startDate, deadLine, note) {
   const item = AppData.todoList.find(i => i.id === id);

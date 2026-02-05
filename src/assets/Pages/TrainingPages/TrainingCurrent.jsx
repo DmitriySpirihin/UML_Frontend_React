@@ -42,7 +42,10 @@ const TrainingCurrent = () => {
     //info
     const [tonnage,setTonnage] = useState(0);
     const [allReps,setAllReps] = useState(0);
-
+    // Session RPE & Notes
+const [sessionRPE, setSessionRPE] = useState(5); // Default to 5
+const [sessionNote, setSessionNote] = useState('');
+const [showRPEPanel, setShowRPEPanel] = useState(false);
     // prev
     const [currentSet,setCurrentSet] = useState(3);
     const [currentExId,setCurrentExId] = useState('3');
@@ -183,12 +186,20 @@ const onFinishExercise = (exId) => {
   finishExercise(trainInfo.dayKey, trainInfo.dInd, exId);
 }
 const onFinishSession = () => {
-  const records = finishSession(trainInfo.dayKey, trainInfo.dInd);
-  setShowConfirmPanel(false);
-  setIsCompleted(true);
-  setNewRmRecords(records); 
-  setShowFinishPanel(true);
-};;
+    setShowConfirmPanel(false);
+    setShowRPEPanel(true); // Show RPE/Notes modal first
+};
+
+const saveSessionWithRPE = () => {
+    // Save RPE and notes to the session
+    const records = finishSession(trainInfo.dayKey, trainInfo.dInd, sessionRPE, sessionNote);
+    
+    // Close RPE panel and show finish results
+    setShowRPEPanel(false);
+    setIsCompleted(true);
+    setNewRmRecords(records);
+    setShowFinishPanel(true);
+};
 const addExercise = (exId) => {
   setAddExId(exId);
   setShowSuggestionToAdd(true);
@@ -579,7 +590,159 @@ return (
     </div>
   </div>
 )}
+{/* --- RPE & NOTES PANEL --- */}
+{showRPEPanel && (
+    <div style={styles(theme).confirmContainer}>
+        <div style={{
+            ...styles(theme).modalCard,
+            height: 'auto',
+            padding: '25px',
+            maxWidth: '450px',
+            width: '90%'
+        }}>
+            <div style={{
+                ...styles(theme, fSize).text,
+                fontSize: '20px',
+                fontWeight: 'bold',
+                marginBottom: '20px',
+                textAlign: 'center'
+            }}>
+                {langIndex === 0 ? "Завершение тренировки" : "Finish Session"}
+            </div>
 
+            {/* RPE Slider Section */}
+            <div style={{
+                ...styles(theme).inputCard,
+                width:'80vw',
+                height: 'auto',
+                padding: '20px',
+                marginBottom: '15px'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '15px'
+                }}>
+                    <div style={{
+                        ...styles(theme, fSize).subtext,
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                    }}>
+                        {langIndex === 0 ? "Уровень нагрузки (RPE)" : "Effort Level (RPE)"}
+                    </div>
+                    <div style={{
+                        ...styles(theme, fSize).text,
+                        fontSize: '24px',
+                        fontWeight: 'bold',
+                        color: Colors.get('iconsHighlited', theme)
+                    }}>
+                        {sessionRPE}/10
+                    </div>
+                </div>
+
+                <Slider
+                    style={{
+                        width: '100%',
+                        alignSelf: 'center',
+                        color: Colors.get('difficulty', theme)
+                    }}
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={sessionRPE}
+                    valueLabelDisplay="off"
+                    onChange={(_, newValue) => setSessionRPE(newValue)}
+                />
+
+                {/* RPE Scale Labels */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginTop: '8px',
+                    fontSize: '11px',
+                    color: Colors.get('subText', theme)
+                }}>
+                    <span>{langIndex === 0 ? "Легко" : "Easy"}</span>
+                    <span>{langIndex === 0 ? "Умеренно" : "Moderate"}</span>
+                    <span>{langIndex === 0 ? "Тяжело" : "Hard"}</span>
+                    <span>{langIndex === 0 ? "Максимум" : "Max"}</span>
+                </div>
+            </div>
+
+            {/* Notes Textarea */}
+            <div style={{
+                ...styles(theme).inputCard,
+                 width:'80vw',
+                height: 'auto',
+                padding: '15px',
+                marginBottom: '20px'
+            }}>
+                <div style={{
+                    ...styles(theme, fSize).subtext,
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    marginBottom: '10px'
+                }}>
+                    {langIndex === 0 ? "Заметки о тренировке" : "Training Notes"}
+                </div>
+                <textarea
+                    value={sessionNote}
+                    onChange={(e) => setSessionNote(e.target.value)}
+                    placeholder={langIndex === 0 
+                        ? "Как прошла тренировка? Что удалось/не удалось? Погода, самочувствие..." 
+                        : "How was the session? What worked/didn't work? Weather, mood..."}
+                    style={{
+                        width: '100%',
+                        height: '100px',
+                        backgroundColor: 'rgba(0,0,0,0.2)',
+                        border: `1px solid ${Colors.get('border', theme)}`,
+                        borderRadius: '12px',
+                        padding: '12px',
+                        color: Colors.get('mainText', theme),
+                        fontSize: '14px',
+                        fontFamily: 'Segoe UI',
+                        resize: 'none',
+                        outline: 'none'
+                    }}
+                />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{
+                display: 'flex',
+                gap: '15px',
+                width: '100%'
+            }}>
+                <button
+                    onClick={() => {
+                        setShowRPEPanel(false);
+                        setShowConfirmPanel(true);
+                    }}
+                    style={{
+                        ...styles(theme).secondaryBtn,
+                        flex: 1,
+                        padding: '14px'
+                    }}
+                >
+                    <MdClose style={{ fontSize: '24px', marginRight: '8px' }} />
+                    {langIndex === 0 ? "Назад" : "Back"}
+                </button>
+                <button
+                    onClick={saveSessionWithRPE}
+                    style={{
+                        ...styles(theme).primaryBtn,
+                        flex: 2,
+                        padding: '14px'
+                    }}
+                >
+                    <MdDone style={{ fontSize: '24px', marginRight: '8px' }} />
+                    {langIndex === 0 ? "Сохранить" : "Save"}
+                </button>
+            </div>
+        </div>
+    </div>
+)}
       {/* --- REDACT SET PANEL --- */}
       {showRedactSetPanel && (
   <div style={styles(theme).confirmContainer}>
@@ -995,7 +1158,7 @@ const styles = (theme,fSize) =>
       height:'60%',
       position: 'absolute',
       bottom: 0,
-      backgroundColor: Colors.get('bottomPanel', theme),
+      backgroundColor: Colors.get('background', theme),
       borderTopLeftRadius: '25px',
       borderTopRightRadius: '25px',
       padding: '15px 20px 30px 20px',
@@ -1005,7 +1168,7 @@ const styles = (theme,fSize) =>
  },
  modalCard: {
       width: '80%',
-      backgroundColor: Colors.get('bottomPanel', theme),
+      backgroundColor: Colors.get('background', theme),
       borderRadius: '24px',
       padding: '20px',
       display: 'flex',

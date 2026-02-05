@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion'; // Added for animations
+import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors.js';
 import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus.js';
-import { IoIosArrowDown, IoIosArrowUp } from 'react-icons/io';
-import { FaChevronDown } from 'react-icons/fa'; // For modern dropdown arrow
+import { IoIosArrowDown } from 'react-icons/io';
+import { FaChevronDown } from 'react-icons/fa';
 
 // --- Helpers ---
 const getDayName = (dateStr, langIndex) => {
@@ -16,7 +16,84 @@ const getDayName = (dateStr, langIndex) => {
 
 const formatDuration = (ms) => {
   const mins = Math.floor(ms / 60000);
-  return `${mins} min`;
+  const secs = Math.floor((ms % 60000) / 1000);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+// Кардио-хелперы с поддержкой единиц измерения
+const getCardioMetrics = (session, langIndex) => {
+  const durationSec = session.duration / 1000;
+  const distance = session.distance || 0;
+  
+  let paceDisplay = '';
+  let speedDisplay = '';
+  
+  // Бег и плавание: темп, Велосипед: скорость
+  if (session.type === 'RUNNING' || session.type === 'SWIMMING') {
+    if (distance > 0 && durationSec > 0) {
+      if (session.type === 'RUNNING') {
+        // Темп в мин/км для бега
+        const paceSecPerKm = durationSec / distance;
+        const mins = Math.floor(paceSecPerKm / 60);
+        const secs = Math.floor(paceSecPerKm % 60);
+        paceDisplay = langIndex === 0 
+          ? `${mins}:${secs.toString().padStart(2, '0')} /км` 
+          : `${mins}:${secs.toString().padStart(2, '0')} min/km`;
+      } else if (session.type === 'SWIMMING') {
+        // Темп в мин/100м для плавания (предполагаем дистанцию в метрах)
+        const paceSecPer100m = (durationSec / distance) * 100;
+        const mins = Math.floor(paceSecPer100m / 60);
+        const secs = Math.floor(paceSecPer100m % 60);
+        paceDisplay = langIndex === 0 
+          ? `${mins}:${secs.toString().padStart(2, '0')} /100м` 
+          : `${mins}:${secs.toString().padStart(2, '0')} min/100m`;
+      }
+    }
+  } else if (session.type === 'CYCLING') {
+    // Скорость в км/ч для велосипеда
+    if (distance > 0 && durationSec > 0) {
+      const speedKmph = (distance * 3600) / durationSec;
+      speedDisplay = langIndex === 0 
+        ? `${speedKmph.toFixed(1)} км/ч` 
+        : `${speedKmph.toFixed(1)} km/h`;
+    }
+  }
+  
+  return { paceDisplay, speedDisplay };
+};
+
+const getDistanceDisplay = (type, distance, langIndex) => {
+  if (!distance) return '';
+  
+  if (type === 'SWIMMING') {
+    // Для плавания отображаем в метрах
+    return langIndex === 0 
+      ? `${Math.round(distance)} м` 
+      : `${Math.round(distance)} m`;
+  }
+  // Для бега и велосипеда - км
+  return langIndex === 0 
+    ? `${distance.toFixed(1)} км` 
+    : `${distance.toFixed(1)} km`;
+};
+
+const getTrainingTypeLabel = (type, langIndex) => {
+  const labels = {
+    GYM: langIndex === 0 ? 'Силовая' : 'Gym',
+    RUNNING: langIndex === 0 ? 'Бег' : 'Running',
+    CYCLING: langIndex === 0 ? 'Велосипед' : 'Cycling',
+    SWIMMING: langIndex === 0 ? 'Плавание' : 'Swimming',
+    OTHER: langIndex === 0 ? 'Тренировка' : 'Training'
+  };
+  return labels[type] || labels.OTHER;
+};
+
+// Цвета для типов кардио
+const cardioTypeColors = {
+  RUNNING: '#ff416c',
+  CYCLING: '#38ef7d',
+  SWIMMING: '#00c6ff',
+  OTHER: '#a8a8a8'
 };
 
 const colors = [
@@ -34,9 +111,10 @@ const TrainingList = () => {
   const [langIndex, setLangIndex] = useState(AppData.prefs[0] === 'ru' ? 0 : 1);
   const [fSize, setFSize] = useState(AppData.prefs[1]);
   const [expandedSessionId, setExpandedSessionId] = useState(null);
-  const [type, setType] = useState(0); // 0: all, 1: program, 2: day
+  const [filterMode, setFilterMode] = useState(0); // 0: all, 1: program, 2: day
   const [pId, setPId] = useState(0);
   const [dayIndex, setDayIndex] = useState(0);
+  const [trainingTypeFilter, setTrainingTypeFilter] = useState('all'); // 'all', 'GYM', 'RUNNING', etc.
 
   // --- Subscriptions ---
   useEffect(() => {
@@ -53,48 +131,86 @@ const TrainingList = () => {
     return () => subFontSize.unsubscribe();
   }, []);
 
+  // Сброс фильтров программы/дня при выборе кардио-типа
+  useEffect(() => {
+    if (trainingTypeFilter !== 'all' && trainingTypeFilter !== 'GYM') {
+      setFilterMode(0);
+    }
+  }, [trainingTypeFilter]);
+
   // --- Data & Filtering ---
   const { allTrainings, sessionColorMap } = useMemo(() => {
     const trainings = [];
     const colorMap = new Map();
     let colorIndex = 0;
 
+    // Сбор всех тренировок с определением типа (обратная совместимость)
     for (const [date, sessions] of Object.entries(AppData.trainingLog || {})) {
-      sessions.forEach((session, idx) => trainings.push({ date, idx, session }));
+      sessions.forEach((session, idx) => {
+        // Определяем тип тренировки с fallback для старых данных
+        const sessionType = session.type || 
+                          (session.programId !== undefined || session.exercises ? 'GYM' : 'OTHER');
+        
+        trainings.push({ 
+          date, 
+          idx, 
+          session: { ...session, type: sessionType } 
+        });
+      });
     }
 
+    // Сортировка по времени (новые сверху)
     trainings.sort((a, b) => (b.session.startTime || 0) - (a.session.startTime || 0));
 
+    // Генерация цветов для силовых тренировок (по программе-дню)
     trainings.forEach(({ session }) => {
-      const key = `${session.programId || 0}-${session.dayIndex || 0}`;
-      if (!colorMap.has(key)) {
-        colorMap.set(key, colors[colorIndex % colors.length]);
-        colorIndex++;
+      if (session.type === 'GYM') {
+        const key = `${session.programId || 0}-${session.dayIndex || 0}`;
+        if (!colorMap.has(key)) {
+          colorMap.set(key, colors[colorIndex % colors.length]);
+          colorIndex++;
+        }
       }
     });
 
-    let filtered = trainings;
-    if (type === 1) {
-      filtered = trainings.filter(t => t.session.programId === pId);
-    } else if (type === 2) {
-      filtered = trainings.filter(
-        t => t.session.programId === pId && t.session.dayIndex === dayIndex
-      );
-    }
+    // Фильтрация
+    let filtered = trainings.filter(item => {
+      const session = item.session;
+      
+      // Фильтр по типу тренировки
+      if (trainingTypeFilter !== 'all' && session.type !== trainingTypeFilter) {
+        return false;
+      }
+      
+      // Фильтр по программе/дню применяется ТОЛЬКО к силовым тренировкам
+      if (session.type === 'GYM') {
+        if (filterMode === 1) {
+          return session.programId === pId;
+        } else if (filterMode === 2) {
+          return session.programId === pId && session.dayIndex === dayIndex;
+        }
+      }
+      
+      return true;
+    });
 
     return { allTrainings: filtered, sessionColorMap: colorMap };
-  }, [AppData.trainingLog, type, pId, dayIndex]);
+  }, [AppData.trainingLog, filterMode, pId, dayIndex, trainingTypeFilter]);
 
   // --- Filter Options ---
   const programOptions = useMemo(() => {
     const ids = new Set();
     Object.values(AppData.trainingLog || {}).forEach(sessions =>
-      sessions.forEach(s => ids.add(s.programId || 0))
+      sessions.forEach(s => {
+        if ((s.type || 'GYM') === 'GYM' && s.programId !== undefined) {
+          ids.add(s.programId);
+        }
+      })
     );
 
     return Array.from(ids)
       .map(id => {
-        const prog = AppData.programs[id]; // ✅ OBJECT ACCESS
+        const prog = AppData.programs[id];
         return {
           id,
           name: prog?.name?.[langIndex] || `Program ${id}`
@@ -104,94 +220,140 @@ const TrainingList = () => {
   }, [langIndex]);
 
   const dayOptions = useMemo(() => {
-    if (type !== 2 || pId == null) return [];
-    const program = AppData.programs[pId]; // ✅ OBJECT ACCESS
+    if (filterMode !== 2 || pId == null) return [];
+    const program = AppData.programs[pId];
     const schedule = program?.schedule || [];
     return schedule.map((_, idx) => ({
       index: idx,
       name: schedule[idx]?.name?.[langIndex] || `Day ${idx + 1}`
     }));
-  }, [type, pId, langIndex]);
+  }, [filterMode, pId, langIndex]);
 
-  // Auto-select first program/day when filter mode changes
+  // Авто-выбор первой программы/дня
   useEffect(() => {
-    if ((type === 1 || type === 2) && programOptions.length > 0 && pId === 0) {
+    if ((filterMode === 1 || filterMode === 2) && programOptions.length > 0 && pId === 0) {
       setPId(programOptions[0].id);
     }
-    if (type === 2 && dayOptions.length > 0) {
+    if (filterMode === 2 && dayOptions.length > 0) {
       setDayIndex(dayOptions[0].index);
     }
-  }, [type, programOptions, dayOptions, pId]);
+  }, [filterMode, programOptions, dayOptions, pId]);
 
   // --- Labels ---
   const allLabel = langIndex === 0 ? 'Все' : 'All';
   const progLabel = langIndex === 0 ? 'Программа' : 'Program';
   const dayLabel = langIndex === 0 ? 'День' : 'Day';
+  const typeLabels = {
+    all: langIndex === 0 ? 'Все типы' : 'All Types',
+    GYM: langIndex === 0 ? 'Силовые' : 'Gym',
+    RUNNING: langIndex === 0 ? 'Бег' : 'Running',
+    CYCLING: langIndex === 0 ? 'Велосипед' : 'Cycling',
+    SWIMMING: langIndex === 0 ? 'Плавание' : 'Swimming'
+  };
+
+  // Уникальные типы тренировок из данных (для динамических фильтров)
+  const availableTrainingTypes = useMemo(() => {
+    const types = new Set(['all', 'GYM']);
+    Object.values(AppData.trainingLog || {}).forEach(sessions =>
+      sessions.forEach(s => {
+        const type = s.type || (s.programId !== undefined ? 'GYM' : 'OTHER');
+        if (['RUNNING', 'CYCLING', 'SWIMMING'].includes(type)) {
+          types.add(type);
+        }
+      })
+    );
+    return Array.from(types);
+  }, [AppData.trainingLog]);
 
   return (
     <div style={styles(theme).container}>
-      {/* === Filter Toggles (Modern Pills) === */}
-      <div style={styles(theme).filterContainer}>
-        <div style={styles(theme).toggleWrapper}>
-          {[{ key: 0, label: allLabel }, { key: 1, label: progLabel }, { key: 2, label: dayLabel }].map(({ key, label }) => {
-            const isActive = type === key;
+      {/* === Фильтр по типу тренировки === */}
+      <div style={styles(theme).typeFilterContainer}>
+        <div style={styles(theme).typeToggleWrapper}>
+          {availableTrainingTypes.map(type => {
+            const isActive = trainingTypeFilter === type;
             return (
               <motion.div
-                key={key}
-                onClick={() => setType(key)}
+                key={type}
+                onClick={() => setTrainingTypeFilter(type)}
                 whileTap={{ scale: 0.95 }}
                 style={{
-                  ...styles(theme).togglePill,
+                  ...styles(theme).typeTogglePill,
                   backgroundColor: isActive ? Colors.get('currentDateBorder', theme) : 'transparent',
                   color: isActive ? '#fff' : Colors.get('subText', theme),
                   fontSize: fSize === 0 ? '13px' : '14px',
                 }}
               >
-                {label}
+                {typeLabels[type] || type}
               </motion.div>
             );
           })}
         </div>
-
-        {/* Dropdowns */}
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {(type === 1 || type === 2) && (
-            <div style={styles(theme).selectWrapper}>
-              <select
-                value={pId}
-                onChange={(e) => {
-                  const newId = Number(e.target.value);
-                  setPId(newId);
-                  if (type === 2 && dayOptions.length > 0) {
-                    setDayIndex(dayOptions[0]?.index || 0);
-                  }
-                }}
-                style={styles(theme).select}
-              >
-                {programOptions.map(prog => (
-                  <option key={prog.id} value={prog.id}>{prog.name}</option>
-                ))}
-              </select>
-              <FaChevronDown style={styles(theme).selectIcon} />
-            </div>
-          )}
-
-          {type === 2 && (
-            <div style={styles(theme).selectWrapper}>
-              <select
-                value={dayIndex}
-                onChange={(e) => setDayIndex(Number(e.target.value))}
-                style={styles(theme).select}
-              >
-                {dayOptions.map(day => (
-                  <option key={day.index} value={day.index}>{day.name}</option>
-                ))}
-              </select>
-              <FaChevronDown style={styles(theme).selectIcon} />
-            </div>
-          )}
-        </div>
       </div>
+
+      {/* === Фильтры программы/дня (только для силовых) === */}
+      {(trainingTypeFilter === 'all' || trainingTypeFilter === 'GYM') && (
+        <div style={styles(theme).filterContainer}>
+          <div style={styles(theme).toggleWrapper}>
+            {[{ key: 0, label: allLabel }, { key: 1, label: progLabel }, { key: 2, label: dayLabel }].map(({ key, label }) => {
+              const isActive = filterMode === key;
+              return (
+                <motion.div
+                  key={key}
+                  onClick={() => setFilterMode(key)}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    ...styles(theme).togglePill,
+                    backgroundColor: isActive ? Colors.get('currentDateBorder', theme) : 'transparent',
+                    color: isActive ? '#fff' : Colors.get('subText', theme),
+                    fontSize: fSize === 0 ? '13px' : '14px',
+                  }}
+                >
+                  {label}
+                </motion.div>
+              );
+            })}
+          </div>
+
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {(filterMode === 1 || filterMode === 2) && (
+              <div style={styles(theme).selectWrapper}>
+                <select
+                  value={pId}
+                  onChange={(e) => {
+                    const newId = Number(e.target.value);
+                    setPId(newId);
+                    if (filterMode === 2 && dayOptions.length > 0) {
+                      setDayIndex(dayOptions[0]?.index || 0);
+                    }
+                  }}
+                  style={styles(theme).select}
+                >
+                  {programOptions.map(prog => (
+                    <option key={prog.id} value={prog.id}>{prog.name}</option>
+                  ))}
+                </select>
+                <FaChevronDown style={styles(theme).selectIcon} />
+              </div>
+            )}
+
+            {filterMode === 2 && (
+              <div style={styles(theme).selectWrapper}>
+                <select
+                  value={dayIndex}
+                  onChange={(e) => setDayIndex(Number(e.target.value))}
+                  style={styles(theme).select}
+                >
+                  {dayOptions.map(day => (
+                    <option key={day.index} value={day.index}>{day.name}</option>
+                  ))}
+                </select>
+                <FaChevronDown style={styles(theme).selectIcon} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* === Training List === */}
       <div style={{ width: '100%', maxWidth: '800px', paddingBottom: '50px' }}>
@@ -201,14 +363,30 @@ const TrainingList = () => {
               const { date, idx, session } = item;
               const sessionId = `${date}-${idx}`;
               const isExpanded = expandedSessionId === sessionId;
-              const programId = session.programId || 0;
-              const sessionDayIndex = session.dayIndex || 0;
-              const sessionKey = `${programId}-${sessionDayIndex}`;
-              const borderColor = sessionColorMap.get(sessionKey) || colors[0];
+              
+              // Определение цвета границы
+              let borderColor;
+              if (session.type === 'GYM') {
+                const sessionKey = `${session.programId || 0}-${session.dayIndex || 0}`;
+                borderColor = sessionColorMap.get(sessionKey) || colors[0];
+              } else {
+                borderColor = cardioTypeColors[session.type] || cardioTypeColors.OTHER;
+              }
 
-              const program = AppData.programs[programId];
-              const programName = program?.name?.[langIndex] || `Program ${programId}`;
-              const dayName = program?.schedule?.[sessionDayIndex]?.name?.[langIndex] || `Day ${sessionDayIndex + 1}`;
+              // Данные для отображения
+              let primaryInfo = '';
+              let secondaryInfo = '';
+              
+              if (session.type === 'GYM') {
+                const program = AppData.programs[session.programId || 0];
+                const programName = program?.name?.[langIndex] || `Program ${session.programId || 0}`;
+                const dayName = program?.schedule?.[session.dayIndex || 0]?.name?.[langIndex] || `Day ${session.dayIndex + 1}`;
+                primaryInfo = programName;
+                secondaryInfo = dayName;
+              } else {
+                primaryInfo = getTrainingTypeLabel(session.type, langIndex);
+                secondaryInfo = getDistanceDisplay(session.type, session.distance, langIndex);
+              }
 
               return (
                 <motion.div
@@ -231,7 +409,7 @@ const TrainingList = () => {
                         {date} • <span style={{ opacity: 0.8 }}>{getDayName(date, langIndex)}</span>
                       </div>
                       <div style={styles(theme, fSize).programText}>
-                        {programName} <span style={{ margin: '0 6px', opacity: 0.5 }}>|</span> {dayName}
+                        {primaryInfo} {secondaryInfo && <span>• {secondaryInfo}</span>}
                       </div>
                     </div>
                     <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center' }}>
@@ -251,58 +429,152 @@ const TrainingList = () => {
                         style={{ overflow: 'hidden' }}
                       >
                         <div style={styles(theme).expandedContent}>
-                          {/* Stats Row */}
-                          <div style={styles(theme).statsRow}>
-                            <div style={styles(theme).statBadge}>
-                              ⏱ {formatDuration(session.duration || 0)}
-                            </div>
-                            <div style={styles(theme).statBadge}>
-                              🏋️ {(session.tonnage / 1000).toFixed(2)} {langIndex === 0 ? 'т' : 't'}
-                            </div>
-                          </div>
-
-                          {/* Exercises */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {Object.entries(session.exercises || {})
-                              .filter(([_, ex]) => ex?.sets?.length > 0)
-                              .map(([exId, ex]) => {
-                                const exIdNum = parseInt(exId, 10);
-                                const exercise = AppData.exercises[exIdNum];
-                                const exerciseName = exercise?.name?.[langIndex] || `Exercise ${exId}`;
-
-                                return (
-                                  <div key={exId} style={styles(theme).exerciseBlock}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
-                                      <span style={styles(theme, fSize).exerciseTitle}>{exerciseName}</span>
-                                      <span style={styles(theme).tonnageSub}>{(ex.totalTonnage / 1000).toFixed(2)} {langIndex === 0 ? 'т' : 't'}</span>
-                                    </div>
-
-                                    <div style={styles(theme).setsGrid}>
-                                      {ex.sets.map((set, sIdx) => {
-                                        const isWarmUp = set.type === 0;
-                                        const setColor = isWarmUp
-                                          ? Colors.get('trainingIsolatedFont', theme)
-                                          : Colors.get('trainingBaseFont', theme);
-                                        const bgSet = isWarmUp ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.0)';
-
-                                        return (
-                                          <div key={sIdx} style={{ ...styles(theme).setRow, backgroundColor: bgSet, color: setColor, fontSize: fSize === 0 ? '13px' : '15px' }}>
-                                            <span style={{ opacity: 0.6, fontSize: '11px', marginRight: '6px' }}>{sIdx + 1}</span>
-                                            <span style={{ fontWeight: '600' }}>{set.weight}</span>
-                                            <span style={{ fontSize: '11px', margin: '0 2px' }}>{langIndex === 0 ? 'кг' : 'kg'}</span>
-                                            <span style={{ margin: '0 4px', opacity: 0.5 }}>×</span>
-                                            <span style={{ fontWeight: '600' }}>{set.reps}</span>
-                                            {set.time != null && set.time > 0 && (
-                                              <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.8 }}>({Math.round(set.time / 1000)}s)</span>
-                                            )}
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
+                          {session.type === 'GYM' ? (
+                            // Силовая тренировка
+                            <>
+                              <div style={styles(theme).statsRow}>
+                                <div style={styles(theme).statBadge}>
+                                  ⏱ {formatDuration(session.duration || 0)}
+                                </div>
+                                <div style={styles(theme).statBadge}>
+                                  🏋️ {(session.tonnage / 1000).toFixed(2)} {langIndex === 0 ? 'т' : 't'}
+                                </div>
+                                {session.RPE && (
+                                  <div style={styles(theme).statBadge}>
+                                    RPE {session.RPE}
                                   </div>
-                                );
-                              })}
-                          </div>
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {Object.entries(session.exercises || {})
+                                  .filter(([_, ex]) => ex?.sets?.length > 0)
+                                  .map(([exId, ex]) => {
+                                    const exIdNum = parseInt(exId, 10);
+                                    const exercise = AppData.exercises[exIdNum];
+                                    const exerciseName = exercise?.name?.[langIndex] || `Exercise ${exId}`;
+
+                                    return (
+                                      <div key={exId} style={styles(theme).exerciseBlock}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                                          <span style={styles(theme, fSize).exerciseTitle}>{exerciseName}</span>
+                                          <span style={styles(theme).tonnageSub}>{(ex.totalTonnage / 1000).toFixed(2)} {langIndex === 0 ? 'т' : 't'}</span>
+                                        </div>
+
+                                        <div style={styles(theme).setsGrid}>
+                                          {ex.sets.map((set, sIdx) => {
+                                            const isWarmUp = set.type === 0;
+                                            const setColor = isWarmUp
+                                              ? Colors.get('trainingIsolatedFont', theme)
+                                              : Colors.get('trainingBaseFont', theme);
+                                            const bgSet = isWarmUp ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.0)';
+
+                                            return (
+                                              <div key={sIdx} style={{ ...styles(theme).setRow, backgroundColor: bgSet, color: setColor, fontSize: fSize === 0 ? '13px' : '15px' }}>
+                                                <span style={{ opacity: 0.6, fontSize: '11px', marginRight: '6px' }}>{sIdx + 1}</span>
+                                                <span style={{ fontWeight: '600' }}>{set.weight}</span>
+                                                <span style={{ fontSize: '11px', margin: '0 2px' }}>{langIndex === 0 ? 'кг' : 'kg'}</span>
+                                                <span style={{ margin: '0 4px', opacity: 0.5 }}>×</span>
+                                                <span style={{ fontWeight: '600' }}>{set.reps}</span>
+                                                {set.time != null && set.time > 0 && (
+                                                  <span style={{ marginLeft: '6px', fontSize: '11px', opacity: 0.8 }}>({Math.round(set.time / 1000)}s)</span>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                              
+                              {session.note && (
+                                <div style={styles(theme).noteBlock}>
+                                  <div style={styles(theme).noteLabel}>
+                                    {langIndex === 0 ? 'Заметка:' : 'Note:'}
+                                  </div>
+                                  <div style={styles(theme).noteText}>{session.note}</div>
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            // Кардио тренировка
+                            <>
+                              <div style={styles(theme).statsRow}>
+                                <div style={styles(theme).statBadge}>
+                                  ⏱ {formatDuration(session.duration || 0)}
+                                </div>
+                                {session.distance && (
+                                  <div style={styles(theme).statBadge}>
+                                    📍 {getDistanceDisplay(session.type, session.distance, langIndex)}
+                                  </div>
+                                )}
+                                {session.elevationGain > 0 && (
+                                  <div style={styles(theme).statBadge}>
+                                    ⛰️ {session.elevationGain} {langIndex === 0 ? 'м' : 'm'}
+                                  </div>
+                                )}
+                                {session.avgHeartRate > 0 && (
+                                  <div style={styles(theme).statBadge}>
+                                    ❤️ {session.avgHeartRate} bpm
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Темп/Скорость */}
+                              {(() => {
+                                const { paceDisplay, speedDisplay } = getCardioMetrics(session, langIndex);
+                                if (paceDisplay || speedDisplay) {
+                                  return (
+                                    <div style={styles(theme).statRow}>
+                                      {paceDisplay && (
+                                        <div>
+                                          <div style={styles(theme).statLabel}>
+                                            {langIndex === 0 ? 'Темп:' : 'Pace:'}
+                                          </div>
+                                          <div style={styles(theme).statValue}>{paceDisplay}</div>
+                                        </div>
+                                      )}
+                                      {speedDisplay && (
+                                        <div>
+                                          <div style={styles(theme).statLabel}>
+                                            {langIndex === 0 ? 'Скорость:' : 'Speed:'}
+                                          </div>
+                                          <div style={styles(theme).statValue}>{speedDisplay}</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                              
+                              {/* Дополнительные метрики */}
+                              {(session.avgCadence > 0 || session.RPE) && (
+                                <div style={styles(theme).statsRow}>
+                                  {session.avgCadence > 0 && (
+                                    <div style={styles(theme).statBadge}>
+                                      🚴 {session.avgCadence} {langIndex === 0 ? 'об/мин' : 'rpm'}
+                                    </div>
+                                  )}
+                                  {session.RPE && (
+                                    <div style={styles(theme).statBadge}>
+                                      RPE {session.RPE}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {session.note && (
+                                <div style={styles(theme).noteBlock}>
+                                  <div style={styles(theme).noteLabel}>
+                                    {langIndex === 0 ? 'Заметка:' : 'Note:'}
+                                  </div>
+                                  <div style={styles(theme).noteText}>{session.note}</div>
+                                </div>
+                              )}
+                            </>
+                          )}
                         </div>
                       </motion.div>
                     )}
@@ -344,6 +616,37 @@ const styles = (theme, fSize) => ({
     overflowY: 'auto',
     boxSizing: 'border-box',
     padding: '0 10px',
+  },
+  // --- Type Filter Styles ---
+  typeFilterContainer: {
+    width: '100%',
+    maxWidth: '600px',
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '15px',
+    padding: '0 10px'
+  },
+  typeToggleWrapper: {
+    display: 'flex',
+    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
+    padding: '4px',
+    borderRadius: '25px',
+    width: '100%',
+    maxWidth: '500px',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: '4px'
+  },
+  typeTogglePill: {
+    flex: '1 1 auto',
+    textAlign: 'center',
+    padding: '8px 4px',
+    borderRadius: '20px',
+    cursor: 'pointer',
+    fontWeight: '500',
+    minWidth: '80px',
+    transition: 'all 0.2s ease',
+    whiteSpace: 'nowrap'
   },
   // --- Filter Styles ---
   filterContainer: {
@@ -435,8 +738,25 @@ const styles = (theme, fSize) => ({
   },
   statsRow: {
     display: 'flex',
-    gap: '12px',
+    flexWrap: 'wrap',
+    gap: '8px 12px',
     marginBottom: '16px'
+  },
+  statRow: {
+    display: 'flex',
+    gap: '20px',
+    marginBottom: '12px',
+    padding: '8px 0'
+  },
+  statLabel: {
+    fontSize: '12px',
+    color: Colors.get('subText', theme),
+    marginBottom: '4px'
+  },
+  statValue: {
+    fontSize: fSize === 0 ? '16px' : '18px',
+    fontWeight: 'bold',
+    color: Colors.get('mainText', theme)
   },
   statBadge: {
     backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
@@ -444,7 +764,8 @@ const styles = (theme, fSize) => ({
     borderRadius: '8px',
     fontSize: '12px',
     color: Colors.get('mainText', theme),
-    fontWeight: '600'
+    fontWeight: '600',
+    whiteSpace: 'nowrap'
   },
   exerciseBlock: {
     marginBottom: '8px',
@@ -473,6 +794,24 @@ const styles = (theme, fSize) => ({
     padding: '4px 8px',
     borderRadius: '6px',
     backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)',
+  },
+  noteBlock: {
+    marginTop: '12px',
+    padding: '12px',
+    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
+    borderRadius: '10px',
+    borderLeft: `3px solid ${Colors.get('subText', theme)}`
+  },
+  noteLabel: {
+    fontSize: '12px',
+    color: Colors.get('subText', theme),
+    marginBottom: '4px',
+    fontWeight: '500'
+  },
+  noteText: {
+    fontSize: fSize === 0 ? '13px' : '14px',
+    color: Colors.get('mainText', theme),
+    lineHeight: 1.4
   }
 });
 

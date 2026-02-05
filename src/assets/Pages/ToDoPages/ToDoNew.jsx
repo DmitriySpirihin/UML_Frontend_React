@@ -25,6 +25,11 @@ const CATEGORIES = [
     { icon: '💰', label: ['Финансы', 'Finance'] },
     { icon: '🎨', label: ['Хобби', 'Hobby'] },
     { icon: '💻', label: ['Код', 'Coding'] },
+    { icon: '🎮', label: ['Игры', 'Games'] },
+    { icon: '🎵', label: ['Музыка', 'Music'] },
+    { icon: '📚', label: ['Чтение', 'Reading'] },
+    { icon: '🏃', label: ['Спорт', 'Sports'] },
+    { icon: '🍽️', label: ['Еда', 'Food'] },
 ];
 
 const ToDoNew = ({ theme, lang, fSize }) => {

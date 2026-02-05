@@ -177,7 +177,7 @@ const SleepNew = ({ dateString }) => {
                             
                                 <div style={styles(theme).labelRow}>
                                     <FaRegClock style={{ marginRight: 8, opacity: 0.7 }} />
-                                    <span>{langIndex === 0 ? 'Длительность' : 'Duration'}</span>
+                                    <span>{langIndex === 0 ? 's' : 'Duration'}</span>
                                 </div>
                                 <div style={styles(theme).heroValue}>
                                     {formatMsToHhMm(duration)}

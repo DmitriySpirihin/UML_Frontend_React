@@ -244,7 +244,7 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
         }
         const endTime = Date.now();
         const duration = Math.round((endTime - startTime) / 1000);
-        saveSessionDuration(duration, scores + addScores > record, type, difficulty, scores + addScores);
+        saveSessionDuration(duration, scores + addScores > record, type, difficulty, scores + addScores ,rightAnswers);
         setAddValue(0);
         setStage(1);
     };

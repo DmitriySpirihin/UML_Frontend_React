@@ -10,23 +10,23 @@ export class Colors {
 
   static palette = {
     // Core Backgrounds - Deep Obsidian
-    background: { light: "#F8FAFC", dark: "#0A0B0D" }, 
+    background: { light: "#F8FAFC", dark: "#131519" }, 
     mainText: { light: "#0F172A", dark: "#F1F5F9" },
     subText: { light: "#64748B", dark: "#8E96A3" }, 
     
     // Panels - Layered Charcoal
     simplePanel: { light: "#FFFFFF", dark: "#16181D" }, // Slightly lighter than background
-    metricsPanel: { light: "#F1F5F9", dark: "#050506" },
+    metricsPanel: { light: "#F1F5F9", dark: "#101013" },
     highlitedPanel: { light: "#E2E8F0", dark: "#21252B" },
     
     // Gradients
     panelGradient: { 
       light: "linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%)", 
-      dark: "linear-gradient(135deg, #1C1F26 0%, #0A0B0D 100%)" 
+      dark: "linear-gradient(135deg, #1C1F26 0%, #121417 100%)" 
     },
     headGradient: { 
       light: "linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%)", 
-      dark: "linear-gradient(180deg, #050506 0%, #0A0B0D 100%)" 
+      dark: "linear-gradient(180deg, #0f0f11 0%, #111316 100%)" 
     },
 
     // Borders & Lines
@@ -76,7 +76,7 @@ export class Colors {
     difficulty5: { light: "#ef444494", dark: "#e74343" },
 
     shadow: { light: "rgba(0,0,0,0.06)", dark: "rgba(0,0,0,0.6)" },
-    bottomPanel: { light: "#FFFFFF", dark: "#08090B" },
+    bottomPanel: { light: "#FFFFFF", dark: "#0c0c0d7e" },
     svgColor: { light: "rgba(0,0,0,0.03)", dark: "rgba(255,255,255,0.02)" },
     
     veryBad: {

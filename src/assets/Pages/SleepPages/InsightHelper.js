@@ -10,7 +10,9 @@ export const INSIGHT_TYPES = {
     RECOVERY_RATE: 'recovery_rate',
     HABITS: 'habits',
     FOCUS_MINDSET: 'focus',    
-    TIME_MANAGEMENT: 'efficiency'  
+    TIME_MANAGEMENT: 'efficiency',
+    RUNNING:'running',   // NEW: Dedicated running analysis
+    CYCLING: 'cycling'  
 };
 
 const INSIGHT_SYSTEM_PROMPTS = [
@@ -45,6 +47,14 @@ const INSIGHT_USER_PROMPT_TEMPLATES = {
     [INSIGHT_TYPES.TIME_MANAGEMENT]: [
         `Управление временем:\n1) 🕒 Golden Hour: Твое самое продуктивное время на основе логов.\n2) 📉 Dead Zone: Когда эффективность падает и как это исправить.`,
         `Time Management:\n1) 🕒 Golden Hour: Your most productive window based on logs.\n2) 📉 Dead Zone: When efficiency drops and how to fix it.`
+    ],
+    [INSIGHT_TYPES.RUNNING]: [
+        `Анализ беговых тренировок (последние 7 дней):\n1) 📈 Динамика: Изменение дистанции, темпа (мин/км) и ЧСС за неделю.\n2) 🥇 Пиковая сессия: Лучший результат по дистанции/темпу с анализом условий.\n3) ⚠️ Риски: Признаки переутомления (ухудшение темпа при той же дистанции, аномальная ЧСС).\n4) 🎯 Тактика: Конкретная рекомендация по улучшению выносливости или скорости на следующую неделю. Упомяни погодные условия если есть в заметках.`,
+        `Running Analysis (Last 7 Days):\n1) 📈 Trend: Distance, pace (min/km), and heart rate progression.\n2) 🥇 Peak Session: Best distance/pace performance with context analysis.\n3) ⚠️ Risks: Overtraining signs (worsening pace at same distance, abnormal HR).\n4) 🎯 Strategy: Specific recommendation to improve endurance/speed next week. Mention weather conditions if noted in logs.`
+    ],
+    [INSIGHT_TYPES.CYCLING]: [
+        `Анализ велотренировок (последние 7 дней):\n1) 📈 Динамика: Скорость (км/ч), набор высоты (м) и каденс (об/мин) за неделю.\n2) 🥇 Пиковая сессия: Лучший результат по дистанции/средней скорости с анализом профиля маршрута (равнина/холмы).\n3) ⚠️ Риски: Признаки перетренированности (падение каденса при той же мощности, аномальная ЧСС).\n4) 🎯 Тактика: Рекомендация по интервальной тренировке или работе над техникой педалирования на следующую неделю. Упомяни влияние рельефа из заметок.`,
+        `Cycling Analysis (Last 7 Days):\n1) 📈 Trend: Speed (km/h), elevation gain (m), and cadence (rpm) progression.\n2) 🥇 Peak Session: Best distance/average speed performance with terrain analysis (flat/hilly).\n3) ⚠️ Risks: Overtraining signs (declining cadence at same power output, abnormal HR response).\n4) 🎯 Strategy: Specific interval training or pedaling technique recommendation for next week. Reference terrain impact from session notes.`
     ]
 };
 
@@ -169,40 +179,125 @@ USER CONTEXT:
     });
     const habitsBlock = formatSection('HABITS', habitLines);
 
-    // 8. TRAININGS (UNCHANGED)
-    const trainingLines = [];
-    last7Days.forEach(date => {
-        const sessions = trainings[date];
-        if (!sessions || !sessions.length) return;
-        sessions.forEach((s) => {
+    // 8. TRAININGS (UPDATED FOR CARDIO + GYM)
+const trainingLines = [];
+last7Days.forEach(date => {
+    const sessions = trainings[date];
+    if (!sessions || !sessions.length) return;
+    
+    sessions.forEach((s) => {
+        // ОПРЕДЕЛЕНИЕ ТИПА ТРЕНИРОВКИ
+        const isCardio = s.type && ['RUNNING', 'CYCLING', 'SWIMMING'].includes(s.type);
+        const isGym = !isCardio || s.type === 'GYM' || !s.type;
+        
+        if (isCardio) {
+            // === КАРДИО СЕССИЯ ===
+            // Форматирование дистанции (плавание в метрах, остальное в км)
+            let distanceStr;
+            if (s.type === 'SWIMMING') {
+                distanceStr = `${Math.round(s.distance * 1000)} m`;
+            } else {
+                distanceStr = `${s.distance.toFixed(1)} km`;
+            }
+            
+            // Длительность: для кардио хранится в минутах, для силовых в мс
+            const durationMinutes = Math.round(s.duration || 0);
+            
+            // Расчёт темпа (бег) или скорости (велосипед)
+            let paceSpeedStr = '';
+            if (s.type === 'RUNNING' && s.distance > 0 && durationMinutes > 0) {
+                const pace = durationMinutes / s.distance; // мин/км
+                const min = Math.floor(pace);
+                const sec = Math.round((pace - min) * 60);
+                paceSpeedStr = ` | Pace: ${min}:${sec.toString().padStart(2, '0')} min/km`;
+            } else if (s.type === 'CYCLING' && s.distance > 0 && durationMinutes > 0) {
+                const hours = durationMinutes / 60;
+                const speed = s.distance / hours;
+                paceSpeedStr = ` | Speed: ${speed.toFixed(1)} km/h`;
+            }
+            
+            // Сборка строки с метриками
+            const metrics = [
+                `Type: ${s.type}`,
+                `Distance: ${distanceStr}`,
+                `Duration: ${durationMinutes} min${paceSpeedStr}`
+            ];
+            
+            if (s.elevationGain > 0) metrics.push(`Elevation: ${s.elevationGain} m`);
+            if (s.avgHeartRate > 0) metrics.push(`HR: ${s.avgHeartRate} bpm`);
+            if (s.avgCadence > 0) {
+                const unit = s.type === 'CYCLING' ? 'rpm' : 'spm';
+                metrics.push(`Cadence: ${s.avgCadence} ${unit}`);
+            }
+            if (s.rpe > 0) metrics.push(`RPE: ${s.rpe}/10`);
+            if (s.notes?.trim()) {
+                const note = s.notes.trim().length > 40 
+                    ? s.notes.trim().substring(0, 40) + '...' 
+                    : s.notes.trim();
+                metrics.push(`Notes: "${note}"`);
+            }
+            
+            trainingLines.push(`  DATE: ${date} | ${metrics.join(' | ')}`);
+            
+        } else if (isGym) {
+            // === СИЛОВАЯ ТРЕНИРОВКА ===
             const program = programs[s.programId];
-            const programName = program?.name ? (program.name[1] || `Prog #${s.programId}`) : `Prog #${s.programId}`;
-            trainingLines.push(`  DATE: ${date} | Program: ${programName} | Duration: ${Math.round((s.duration || 0)/60000)} min`);
+            const programName = program?.name 
+                ? (Array.isArray(program.name) ? program.name[1] || `Prog #${s.programId}` : program.name)
+                : `Prog #${s.programId}`;
+            
+            // Длительность в минутах (силовые хранятся в миллисекундах)
+            const durationMinutes = Math.round((s.duration || 0) / 60000);
+            
+            trainingLines.push(`  DATE: ${date} | Program: ${programName} | Duration: ${durationMinutes} min`);
+            
+            // Упражнения
             const order = s.exerciseOrder || [];
             order.forEach(exId => {
                 const exData = s.exercises?.[exId];
                 if (!exData) return;
+                
                 const exMeta = exercises[exId];
-                const exName = exMeta?.name ? (exMeta.name[1] || `Ex #${exId}`) : `Ex #${exId}`;
+                const exName = exMeta?.name 
+                    ? (Array.isArray(exMeta.name) ? exMeta.name[1] || `Ex #${exId}` : exMeta.name)
+                    : `Ex #${exId}`;
+                
                 let maxWeight = 0;
                 let totalReps = 0;
                 (exData.sets || []).forEach(set => {
-                   if(set.weight > maxWeight) maxWeight = set.weight;
-                   totalReps += (set.reps || 0);
+                    if (set.weight > maxWeight) maxWeight = set.weight;
+                    totalReps += (set.reps || 0);
                 });
-                trainingLines.push(`    - ${exName}: MaxWeight=${maxWeight}kg, TotalReps=${totalReps}, Vol=${exData.totalTonnage || 0}`);
+                
+                const volume = exData.totalTonnage || 0;
+                trainingLines.push(`    - ${exName}: Max=${maxWeight}kg, Reps=${totalReps}, Vol=${volume.toFixed(1)}kg`);
             });
-        });
+        }
     });
-    const trainingsBlock = formatSection('GYM_PERFORMANCE', trainingLines);
+});
+const trainingsBlock = formatSection('TRAINING_LOG', trainingLines);
 
     // 9. MENTAL TRAINING (UNCHANGED)
     const mentalLines = [];
-    last7Days.forEach(date => {
-        const dur = mentalLog[date];
-        if (dur) mentalLines.push(`  ${date}: MentalTraining=${Math.round(dur/60)} min`);
+
+last7Days.forEach(date => {
+    const sessions = AppData.mentalLog[date];
+    
+    if (!Array.isArray(sessions) || sessions.length === 0) {
+        mentalLines.push(`  ${date}: []`);
+        return;
+    }
+    
+    mentalLines.push(`  ${date}: [`);
+    sessions.forEach((session, idx) => {
+        // Output raw session object exactly as stored (type/difficulty already strings per your structure)
+        const sessionStr = `{type:'${session.type}',difficulty:'${session.difficulty}',duration:${session.duration},scores:${session.scores},rightAnswers:'${session.rightAnswers}',maxPosibleScores:${session.maxPosibleScores}}`;
+        mentalLines.push(`    ${sessionStr}${idx < sessions.length - 1 ? ',' : ''}`);
     });
-    const mentalBlock = formatSection('BRAIN_TRAINING', mentalLines);
+    mentalLines.push(`  ]`);
+});
+
+const mentalBlock = formatSection('BRAIN_TRAINING', mentalLines);
 
     // COMPILE PROMPT WITH OPTIMIZED SECTION ORDER & PERSONALIZATION
     const systemPrompt = (INSIGHT_SYSTEM_PROMPTS[langIndex] || INSIGHT_SYSTEM_PROMPTS[0]).trim();

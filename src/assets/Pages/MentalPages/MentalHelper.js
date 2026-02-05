@@ -257,17 +257,89 @@ export const focusTrainingLevels = [
   },
 ];
 
-export async function saveSessionDuration(duration,hasRecord,cat,ind,record) {
+export async function saveSessionDuration(duration,hasRecord,cat,ind,record ,rightAnswers ) {
   if (hasRecord) {
     AppData.mentalRecords[cat][ind] = Math.round(record);
     NotificationsManager.sendMessage('setmentalrecords',JSON.stringify(AppData.mentalRecords))
   }
+  const types = ['MATH','MEMORY','LOGIC','FOCUS'];
+  const difficulties = ['NOVICE','MIDDLE','PRO','INSANE','ENDLESS','RELAXE'];
+
   const today = new Date().toISOString().split('T')[0];
-  
-  if (AppData.mentalLog[today]) {
-    AppData.mentalLog[today] += duration;
-  } else {
-    AppData.mentalLog[today] = duration;
+let base, maxTimeMult;
+  switch (cat) {
+    case 0: // MATH
+      base = [100, 200, 300, 400, 250, 50][ind] ?? 100;
+      maxTimeMult = 1.6; // time=0 → 1.3 - (0-1)*0.3 = 1.6
+      break;
+    case 1: // MEMORY
+      base = [140, 200, 260, 330][ind] ?? 140;
+      maxTimeMult = 1.6; // time=0 → 1.3 - (0-1)*0.3 = 1.6
+      break;
+    case 2: // LOGIC (uses fallback expectedTime=20 like original logic)
+      base = [100, 200, 300, 400][ind] ?? 100;
+      maxTimeMult = 1.6; // time=0 → 1.3 - (0-1)*0.3 = 1.6
+      break;
+    case 3: // FOCUS (uses fallback expectedTime=20 like original logic)
+      base = [100, 200, 300, 400][ind] ?? 100;
+      maxTimeMult = 1.9; // time=0 → 1.3 - (0-1)*0.6 = 1.9
+      break;
+    default:
+      base = 100;
+      maxTimeMult = 1.6;
   }
+
+  const MAX_STAGE_MULT = 1.3; // Achieved at stage ≥ 15
+  let totalMaxScore = 0;
+
+  // 2. Simulate 20 perfect answers with increasing streak
+  for (let q = 0; q < 20; q++) {
+    const streak = q + 1;
+    let streakMult = 1;
+    
+    if (streak >= 5) {
+      // Matches original multiplier logic: min(1 + 0.1 * min(streak/10, 4), 1.5)
+      const inner = Math.min(streak / 10, 4);
+      streakMult = Math.min(1 + 0.1 * inner, 1.5);
+    }
+    
+    // Perfect conditions per question: 
+    // closeness=1 (exact answer) * MAX_STAGE_MULT * maxTimeMult * streakMult
+    totalMaxScore += base * MAX_STAGE_MULT * maxTimeMult * streakMult;
+  }
+
+  const maxPosibleScores = Math.round(totalMaxScore); // Preserves original typo
+
+  // ===== SESSION ENTITY & LOGGING =====
+  const entity = {
+    type:types[cat],
+    difficulty:difficulties[ind],
+    duration:duration,
+    scores:record,
+    rightAnswers: `${rightAnswers}/20`, // Format as "X/20"
+    maxPosibleScores // Inject calculated max score
+  };
+
+  // Update daily mental exercise log
+  if(!(today in AppData.mentalLog)) {
+    AppData.mentalLog[today] = [];
+  }
+  AppData.mentalLog[today].push(entity);
+  //console.log(JSON.stringify(AppData.mentalLog[today]));
    await saveData();
 }
+
+
+/* new save structure
+AppData.mentalLog = {
+  "2025-12-08": [{ 
+    type:'MATH',
+    difficulty:'NOVICE',
+    duration: 2700000, 
+    scores:555,
+    rightAnswers:'12/20',
+    maxPosibleScores:5555,
+   }
+  ]
+}
+*/

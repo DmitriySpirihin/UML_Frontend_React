@@ -2,24 +2,13 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, setAddPanel,addPanel$ } from '../../StaticClasses/HabitsBus';
-// Импортируем события, но список берем напрямую из AppData для надежности
-import { todoEvents$ } from './ToDoHelper.js';
+import { theme$, lang$, fontSize$, setAddPanel, addPanel$ } from '../../StaticClasses/HabitsBus';
+import { todoEvents$, togglePinned, togglePending, toggleHidden } from './ToDoHelper.js';
 import { 
-    FaSortAmountDown, 
-    FaFilter, 
-    FaCheck, 
-    FaCalendarDay, 
-    FaListUl,
-    FaFire,
-    FaChevronDown,
-    FaSearch,
-    FaTimes,
-    FaSortNumericDown,
-    FaExclamation,
-    FaInbox,
-    FaFlag,
-    FaLayerGroup
+    FaSortAmountDown, FaFilter, FaCircle, FaCheckCircle, FaCalendarDay, 
+    FaListUl, FaFire, FaChevronDown, FaSearch, FaTimes, FaSortNumericDown, 
+    FaExclamation, FaInbox, FaFlag, FaLayerGroup, FaThumbtack, FaRegEyeSlash, 
+    FaClock, FaEllipsisV, FaEye 
 } from 'react-icons/fa';
 import ToDoPage from './ToDoPage.jsx';
 import ToDoNew from './ToDoNew.jsx';
@@ -49,12 +38,16 @@ const ToDoMain = () => {
     const [showMetrics, setShowMetrics] = useState(false);
     const [currentIndex, setCurrentIndex] = useState(0);
     
+    // NEW: Hidden tasks management state
+    const [showHiddenTasks, setShowHiddenTasks] = useState(false);
+    const [hiddenTasksCount, setHiddenTasksCount] = useState(0);
+    
     // Используем AppData.todoList как источник правды
     const [sortedList, setSortedList] = useState(AppData.todoList || []);
     const [refreshTrigger, setRefreshTrigger] = useState(0); 
 
     // --- FILTER/SORT STATE ---
-    const [filterParams, setFilterParams] = useState(0); // 0: All, 1: Done, 2: Active
+    const [filterParams, setFilterParams] = useState(0); // 0: All, 1: Done, 2: Active, 3: Pending
     const [sortParams, setSortParams] = useState(1); // 0: Diff, 1: Prio, 2: Date
     const [searchQuery, setSearchQuery] = useState('');
     
@@ -71,7 +64,6 @@ const ToDoMain = () => {
         
         const sub4 = todoEvents$.subscribe(event => {
             if (!event) return;
-            // Обновляем список при любых изменениях
             setRefreshTrigger(prev => prev + 1);
 
             if (event.type === 'OPEN_STATS') {
@@ -94,45 +86,76 @@ const ToDoMain = () => {
         };
     }, []);
    
-    // --- LOGIC ---
+    // --- CRITICAL: Enhanced sorting/filtering logic with pinned/hidden/pending handling ---
     useEffect(() => {
-        sortList();
-    }, [filterParams, sortParams, searchQuery, refreshTrigger]);
+        processTaskList();
+    }, [filterParams, sortParams, searchQuery, refreshTrigger, showHiddenTasks]);
+
+    const processTaskList = () => {
+        // 1. Start with full list
+        let processedList = AppData.todoList ? [...AppData.todoList] : [];
+        
+        // 2. Apply search filter
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            processedList = processedList.filter(task => 
+                (task.name && task.name.toLowerCase().includes(q)) || 
+                (task.category && task.category.toLowerCase().includes(q))
+            );
+        }
+        
+        // 3. Apply status filter (including NEW pending filter)
+        switch(filterParams) {
+            case 1: // Done
+                processedList = processedList.filter(task => task.isDone);
+                break;
+            case 2: // Active (not done AND not pending)
+                processedList = processedList.filter(task => !task.isDone && !task.isPending);
+                break;
+            case 3: // Pending (NEW filter option)
+                processedList = processedList.filter(task => task.isPending);
+                break;
+            // case 0: All (no filter)
+        }
+        
+        // 4. Count hidden tasks BEFORE visibility filter for button display
+        const hiddenInCurrentView = processedList.filter(task => task.isHidden).length;
+        setHiddenTasksCount(hiddenInCurrentView);
+        
+        // 5. Apply hidden tasks visibility filter
+        if (!showHiddenTasks) {
+            processedList = processedList.filter(task => !task.isHidden);
+        }
+        
+        // 6. SEPARATE PINNED TASKS (critical for "always on top" behavior)
+        const pinnedTasks = processedList.filter(task => task.isPinned);
+        const nonPinnedTasks = processedList.filter(task => !task.isPinned);
+        
+        // 7. Sort each group independently
+        const sortGroup = (list) => {
+            if (sortParams === 0) { // Difficulty (High to Low)
+                return list.sort((a, b) => (b.difficulty || 0) - (a.difficulty || 0));
+            } else if (sortParams === 1) { // Priority (High to Low)
+                return list.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+            } else if (sortParams === 2) { // Deadline (Soonest first)
+                return list.sort((a, b) => daysToDeadlineNum(a.deadLine) - daysToDeadlineNum(b.deadLine));
+            }
+            return list;
+        };
+        
+        // 8. Combine with pinned tasks ALWAYS on top
+        const sortedPinned = sortGroup(pinnedTasks);
+        const sortedNonPinned = sortGroup(nonPinnedTasks);
+        const finalList = [...sortedPinned, ...sortedNonPinned];
+        
+        setSortedList(finalList);
+    };
 
     useEffect(() => {
         if (activePanel === 'search' && searchInputRef.current) {
             setTimeout(() => searchInputRef.current.focus(), 300);
         }
     }, [activePanel]);
-
-    function sortList() {
-        // Безопасное копирование
-        let newList = AppData.todoList ? [...AppData.todoList] : [];
-
-        // 1. Filter by Search
-        if (searchQuery.trim()) {
-            const q = searchQuery.toLowerCase();
-            newList = newList.filter(task => 
-                (task.name && task.name.toLowerCase().includes(q)) || 
-                (task.category && task.category.toLowerCase().includes(q))
-            );
-        }
-
-        // 2. Filter by Status
-        if (filterParams === 1) newList = newList.filter(task => task.isDone);
-        if (filterParams === 2) newList = newList.filter(task => !task.isDone);
-        
-        // 3. Sort
-        if (sortParams === 0) { // Difficulty (High to Low)
-            newList.sort((a, b) => (b.difficulty || 0) - (a.difficulty || 0));
-        } else if (sortParams === 1) { // Priority (High to Low)
-            newList.sort((a, b) => (b.priority || 0) - (a.priority || 0));
-        } else if (sortParams === 2) { // Deadline (Soonest first)
-            newList.sort((a, b) => daysToDeadlineNum(a.deadLine) - daysToDeadlineNum(b.deadLine));
-        }
-        
-        setSortedList(newList);
-    }
 
     const onClose = () => {
         setAddPanel('');
@@ -141,7 +164,11 @@ const ToDoMain = () => {
     const handleQuickComplete = (e, item) => {
         e.stopPropagation();
         item.isDone = !item.isDone;
-        setRefreshTrigger(prev => prev + 1); // Force re-render
+        // Auto-unpin when completed (optional UX improvement)
+        if (item.isDone && item.isPinned) {
+            item.isPinned = false;
+        }
+        setRefreshTrigger(prev => prev + 1);
         playEffects(item.isDone ? doneSound : clickSound);
     };
 
@@ -151,6 +178,7 @@ const ToDoMain = () => {
         else setActivePanel(panelName);
     };
 
+    // Group tasks by category AFTER all filtering/sorting
     const groupedTasks = useMemo(() => {
         const groups = {};
         sortedList.forEach(task => {
@@ -162,13 +190,13 @@ const ToDoMain = () => {
     }, [sortedList, langIndex]);
 
     const s = styles(theme, fSize);
+    const isLight = theme === 'light' || theme === 'speciallight';
 
     return (
         <div style={s.container}>
             {<HoverInfoButton tab='ToDoMain'/>}
             {/* --- HEADER --- */}
             <div style={{ width: '92%', marginTop: '14vh', display: 'flex', flexDirection: 'column', gap: '10px', zIndex: 10 }}>
-                
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                     <div style={{ fontSize: '32px', fontWeight: '800', color: Colors.get('mainText', theme), fontFamily: 'Segoe UI', letterSpacing: '-0.5px' }}>
                         {langIndex === 0 ? 'Задачи' : 'Tasks'}
@@ -178,17 +206,20 @@ const ToDoMain = () => {
                         <HeaderIconButton 
                             icon={<FaSearch size={16}/>} 
                             isActive={activePanel === 'search' || searchQuery.length > 0} 
-                            onClick={() => togglePanel('search')} theme={theme}
+                            onClick={() => togglePanel('search')} 
+                            theme={theme}
                         />
                         <HeaderIconButton 
                             icon={<FaSortAmountDown size={16}/>} 
                             isActive={activePanel === 'sort' || sortParams !== 1} 
-                            onClick={() => togglePanel('sort')} theme={theme}
+                            onClick={() => togglePanel('sort')} 
+                            theme={theme}
                         />
                         <HeaderIconButton 
                             icon={<FaFilter size={14}/>} 
                             isActive={activePanel === 'filter' || filterParams !== 0} 
-                            onClick={() => togglePanel('filter')} theme={theme}
+                            onClick={() => togglePanel('filter')} 
+                            theme={theme}
                         />
                     </div>
                 </div>
@@ -205,17 +236,20 @@ const ToDoMain = () => {
                         >
                             <div style={s.inputContainer}>
                                 <FaSearch size={14} color={Colors.get('subText', theme)} style={{ marginLeft: '16px', opacity: 0.6 }}/>
-                               
                                 <input 
-                                type="text" 
-                                placeholder={langIndex === 0 ? 'Найти задачу...' : 'Search tasks...'}
-                                value={searchQuery}
-                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                    type="text" 
+                                    placeholder={langIndex === 0 ? 'Найти задачу...' : 'Search tasks...'}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
                                 />
-                                
                                 {searchQuery.length > 0 && (
-                                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} onClick={() => setSearchQuery('')} style={s.clearBtn}>
+                                    <motion.div 
+                                        initial={{ scale: 0 }} 
+                                        animate={{ scale: 1 }} 
+                                        onClick={() => setSearchQuery('')} 
+                                        style={s.clearBtn}
+                                    >
                                         <FaTimes size={10} color="#fff" />
                                     </motion.div>
                                 )}
@@ -236,19 +270,22 @@ const ToDoMain = () => {
                                 label={langIndex===0 ? 'Важность' : 'Priority'} 
                                 icon={<FaExclamation size={10}/>}
                                 isActive={sortParams === 1} 
-                                onClick={() => {setSortParams(1); playEffects(clickSound);}} theme={theme}
+                                onClick={() => {setSortParams(1); playEffects(clickSound);}} 
+                                theme={theme}
                             />
                             <OptionChip 
                                 label={langIndex===0 ? 'Сложность' : 'Difficulty'} 
                                 icon={<FaSortNumericDown size={12}/>}
                                 isActive={sortParams === 0} 
-                                onClick={() => {setSortParams(0); playEffects(clickSound);}} theme={theme}
+                                onClick={() => {setSortParams(0); playEffects(clickSound);}} 
+                                theme={theme}
                             />
                             <OptionChip 
                                 label={langIndex===0 ? 'Дедлайн' : 'Deadline'} 
                                 icon={<FaCalendarDay size={12}/>}
                                 isActive={sortParams === 2} 
-                                onClick={() => {setSortParams(2); playEffects(clickSound);}} theme={theme}
+                                onClick={() => {setSortParams(2); playEffects(clickSound);}} 
+                                theme={theme}
                             />
                         </motion.div>
                     )}
@@ -260,22 +297,31 @@ const ToDoMain = () => {
                             animate={{ height: 'auto', opacity: 1, marginBottom: 10 }}
                             exit={{ height: 0, opacity: 0, marginBottom: 0 }}
                             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                            style={{ overflow: 'hidden', display: 'flex', gap: '8px' }}
+                            style={{ overflow: 'hidden', display: 'flex', gap: '8px', flexWrap: 'wrap' }} // Added wrap for 4th option
                         >
                             <OptionChip 
                                 label={langIndex===0 ? 'Все' : 'All'} 
                                 isActive={filterParams === 0} 
-                                onClick={() => {setFilterParams(0); playEffects(clickSound);}} theme={theme}
+                                onClick={() => {setFilterParams(0); playEffects(clickSound);}} 
+                                theme={theme}
                             />
                             <OptionChip 
                                 label={langIndex===0 ? 'В процессе' : 'Active'} 
                                 isActive={filterParams === 2} 
-                                onClick={() => {setFilterParams(2); playEffects(clickSound);}} theme={theme}
+                                onClick={() => {setFilterParams(2); playEffects(clickSound);}} 
+                                theme={theme}
                             />
-                             <OptionChip 
+                            <OptionChip 
+                                label={langIndex===0 ? 'Отложено' : 'Pending'} // NEW PENDING FILTER
+                                isActive={filterParams === 3} 
+                                onClick={() => {setFilterParams(3); playEffects(clickSound);}} 
+                                theme={theme}
+                            />
+                            <OptionChip 
                                 label={langIndex===0 ? 'Готово' : 'Done'} 
                                 isActive={filterParams === 1} 
-                                onClick={() => {setFilterParams(1); playEffects(clickSound);}} theme={theme}
+                                onClick={() => {setFilterParams(1); playEffects(clickSound);}} 
+                                theme={theme}
                             />
                         </motion.div>
                     )}
@@ -286,13 +332,18 @@ const ToDoMain = () => {
             <div style={s.panel} className="no-scrollbar">
                 <AnimatePresence mode='popLayout'>
                     {sortedList.length === 0 ? (
-                         <motion.div 
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} 
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
                             style={s.emptyState}
-                         >
-                             <FaInbox size={40} style={{marginBottom: 10, opacity: 0.5}}/>
-                             <span>{langIndex === 0 ? 'Задач нет' : 'No tasks found'}</span>
-                         </motion.div>
+                        >
+                            <FaInbox size={40} style={{marginBottom: 10, opacity: 0.5}}/>
+                            <span>
+                                {hiddenTasksCount > 0 && !showHiddenTasks 
+                                    ? (langIndex === 0 ? 'Все задачи скрыты' : 'All tasks hidden') 
+                                    : (langIndex === 0 ? 'Задач нет' : 'No tasks found')}
+                            </span>
+                        </motion.div>
                     ) : (
                         Object.keys(groupedTasks).map((category) => (
                             <CategoryPanel key={category} title={category} theme={theme}>
@@ -300,7 +351,6 @@ const ToDoMain = () => {
                                     <CompactCard
                                         key={item.id || index + item.name}
                                         onClick={() => {
-                                            // Находим реальный индекс в полном списке AppData
                                             const realIndex = AppData.todoList.indexOf(item);
                                             setCurrentIndex(realIndex);
                                             setAddPanel('ToDoPage');
@@ -318,6 +368,57 @@ const ToDoMain = () => {
                     )}
                 </AnimatePresence>
                 
+                {/* --- HIDDEN TASKS BUTTON (appears when hidden tasks exist in current view) --- */}
+                {hiddenTasksCount > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        style={{
+                            width: '88%',
+                            padding: '12px 0',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            marginTop: '8px',
+                        }}
+                    >
+                        <button
+                            onClick={() => {
+                                setShowHiddenTasks(!showHiddenTasks);
+                                playEffects(clickSound);
+                            }}
+                            style={{
+                                background: isLight ? '#FFFFFF' : Colors.get('simplePanel', theme),
+                                border: `1px solid ${isLight ? '#E0E0E0' : Colors.get('border', theme)}`,
+                                borderRadius: '16px',
+                                padding: '8px 20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                cursor: 'pointer',
+                                color: Colors.get('mainText', theme),
+                                fontWeight: '600',
+                                fontSize: '14px',
+                                boxShadow: isLight ? '0 2px 6px rgba(0,0,0,0.05)' : '0 4px 12px rgba(0,0,0,0.15)',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            {showHiddenTasks ? (
+                                <>
+                                    <FaRegEyeSlash size={14} />
+                                    {langIndex === 0 ? 'Скрыть скрытые задачи' : 'Hide hidden tasks'}
+                                </>
+                            ) : (
+                                <>
+                                    <FaEye size={14} />
+                                    {langIndex === 0 
+                                        ? `Показать ${hiddenTasksCount} скрытую(ые) задачу(и)` 
+                                        : `Show ${hiddenTasksCount} hidden task(s)`}
+                                </>
+                            )}
+                        </button>
+                    </motion.div>
+                )}
+                
                 <div style={{marginBottom: '120px', width: '100%'}}></div>
             </div>
 
@@ -328,7 +429,6 @@ const ToDoMain = () => {
                 theme={theme} 
                 lang={langIndex} 
                 fSize={fSize} 
-                // Передаем объект задачи напрямую
                 task={AppData.todoList[currentIndex] || {}} 
             />
             {showMetrics && <ToDoMetrics theme={theme} lang={langIndex} onClose={() => setShowMetrics(false)} />}
@@ -339,7 +439,7 @@ const ToDoMain = () => {
 
 export default ToDoMain;
 
-// --- COMPONENTS ---
+// --- COMPONENTS (unchanged except CompactCard enhancements) ---
 
 const HeaderIconButton = ({ icon, isActive, onClick, theme }) => {
     const isDark = theme === 'dark';
@@ -429,110 +529,257 @@ const CategoryPanel = ({ title, children, theme }) => {
     );
 };
 
-// --- COMPACT CARD WITH CENTERED LAYOUT ---
+// --- ENHANCED COMPACT CARD WITH PIN/HIDE/PENDING VISUALS ---
 const CompactCard = ({ onClick, onCheck, item, theme, lang, fSize }) => {
-    const isOverdue = isDeadlinePassed(item.deadLine) && !item.isDone;
-    const isLight = theme === 'light' || theme === 'speciallight';
-    const totalGoals = item.goals ? item.goals.length : 0;
-    const doneGoals = item.goals ? item.goals.filter(g => g.isDone).length : 0;
-    
-    // Determine colors
-    let rawColor = item.color || Colors.get('accent', theme);
-    if (rawColor && rawColor.length > 7 && rawColor.startsWith('#')) { rawColor = rawColor.substring(0, 7); }
-    const accentColor = rawColor;
+  const [settingsPanel, setSettingsPanel] = useState(false);
 
-    let cardBg = isLight ? '#FFFFFF' : (Colors.get('simplePanel', theme) + 'CC');
-    let borderColor = isLight ? 'transparent' : `1px solid ${Colors.get('border', theme)}80`;
-    let shadow = isLight ? '0 4px 12px rgba(0,0,0,0.05)' : '0 4px 12px rgba(0,0,0,0.2)';
+  const isOverdue = isDeadlinePassed(item.deadLine) && !item.isDone;
+  const isLight = theme === 'light' || theme === 'speciallight';
+  const totalGoals = item.goals ? item.goals.length : 0;
+  const doneGoals = item.goals ? item.goals.filter(g => g.isDone).length : 0;
 
-    const iconBg = item.isDone ? `${accentColor}15` : `${accentColor}25`;
-    const iconBorder = item.isDone ? 'transparent' : `${accentColor}40`; 
+  let rawColor = item.color || Colors.get('accent', theme);
+  if (rawColor && rawColor.length > 7 && rawColor.startsWith('#')) {
+    rawColor = rawColor.substring(0, 7);
+  }
+  const accentColor = rawColor;
 
-    // Attribute colors
-    const prioColor = PRIORITY_COLORS[item.priority] || PRIORITY_COLORS[0];
-    const diffColor = DIFFICULTY_COLORS[item.difficulty] || DIFFICULTY_COLORS[0];
-    const urgColor = URGENCY_COLORS[item.urgency || 0] || URGENCY_COLORS[0];
+  const cardBg = isLight ? '#FFFFFF' : (Colors.get('simplePanel', theme) + 'CC');
+  const shadow = isLight ? '0 4px 12px rgba(0,0,0,0.05)' : '0 4px 12px rgba(0,0,0,0.2)';
 
-    return (
-        <motion.div 
-            layout 
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, transition: {duration: 0.2} }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onClick}
-            style={{
-                width: "88%",
-                minHeight: "80px", 
-                borderRadius: "20px",
-                marginBottom: "8px",
-                padding: '10px 12px',
-                display: 'flex', flexDirection: 'row', alignItems: 'center',
-                position: 'relative', overflow: 'hidden', cursor: 'pointer',
-                backgroundColor: cardBg, backdropFilter: isLight ? 'none' : 'blur(20px)',
-                border: borderColor, boxShadow: shadow,
-                opacity: item.isDone ? 0.6 : 1,
-            }}
+  // Visual indicators for special states
+  const hasVisualIndicator = item.isPending || item.isHidden || item.isPinned;
+  const indicatorColor = item.isPending ? '#FF9E3D' : (item.isHidden ? '#7E7E7E' : '#02609e');
+  const indicatorTooltip = item.isPending 
+    ? (lang === 0 ? 'Отложено' : 'Pending') 
+    : (item.isHidden ? (lang === 0 ? 'Скрыто' : 'Hidden') : (lang === 0 ? 'Закреплено' : 'Pinned'));
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      style={{
+        width: "88%",
+        minHeight: "80px",
+        borderRadius: "20px",
+        marginBottom: "8px",
+        padding: '10px 12px',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        position: 'relative',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        // PINNED: Blue border | PENDING: Orange border | HIDDEN: Gray border (when visible)
+        border: hasVisualIndicator 
+          ? `2px solid ${indicatorColor}` 
+          : 'none',
+        backgroundColor: cardBg,
+        backdropFilter: isLight ? 'none' : 'blur(20px)',
+        boxShadow: shadow,
+        opacity: item.isDone ? 0.6 : 1,
+      }}
+    >
+      {/* Visual indicator badge for special states */}
+      {hasVisualIndicator && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '-2px',
+            left: '-2px',
+            width: '24px',
+            height: '24px',
+            borderRadius: '0 0 20px 0',
+            backgroundColor: indicatorColor,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+            title: indicatorTooltip,
+          }}
         >
-            {/* Icon */}
-            <div style={{ width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: iconBg, color: accentColor, fontSize: '20px', marginRight: '14px', flexShrink: 0, border: `1px solid ${iconBorder}` }}>
-                {item.icon || '📝'}
-            </div>
+          {item.isPinned && <FaThumbtack size={10} color="#FFF" />}
+          {item.isPending && <FaClock size={10} color="#FFF" />}
+          {item.isHidden && <FaRegEyeSlash size={10} color="#FFF" />}
+        </div>
+      )}
+
+      {/* Icon */}
+      <div
+        style={{
+          width: '42px',
+          height: '42px',
+          borderRadius: '14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: item.isDone ? `${accentColor}15` : `${accentColor}25`,
+          color: accentColor,
+          fontSize: '20px',
+          marginRight: '14px',
+          flexShrink: 0,
+          border: `1px solid ${item.isDone ? 'transparent' : `${accentColor}40`}`,
+          marginTop: '6px',
+        }}
+      >
+        {item.icon || '📝'}
+      </div>
+
+      {/* Info Container */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', marginRight: '14px' }}>
+        <div style={{ fontSize: fSize === 0 ? '16px' : '17px', fontWeight: '700', color: item.isDone ? Colors.get('subText', theme) : Colors.get('mainText', theme), textDecoration: item.isDone ? 'line-through' : 'none', lineHeight: '1.2', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {item.name}
+          {/* Subtle pending indicator in title */}
+          {item.isPending && !item.isDone && (
+            <span style={{ 
+              fontSize: '12px', 
+              color: '#FF9E3D', 
+              marginLeft: '6px',
+              fontWeight: '500',
+              backgroundColor: 'rgba(255, 158, 61, 0.1)',
+              padding: '0 4px',
+              borderRadius: '4px'
+            }}>
+              {lang === 0 ? 'Отложено' : 'Pending'}
+            </span>
+          )}
+        </div>
+
+        {!item.isDone && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
+            <MiniBadge icon={<FaFlag size={8} />} text={PRIORITY_LABELS[item.priority]?.[lang]} color={PRIORITY_COLORS[item.priority] || PRIORITY_COLORS[0]} />
+            <MiniBadge icon={<FaLayerGroup size={8} />} text={DIFFICULTY_LABELS[item.difficulty]?.[lang]} color={DIFFICULTY_COLORS[item.difficulty] || DIFFICULTY_COLORS[0]} />
+            <MiniBadge icon={<FaExclamation size={8} />} text={URGENCY_LABELS[item.urgency || 0]?.[lang]} color={URGENCY_COLORS[item.urgency || 0] || URGENCY_COLORS[0]} />
+
+            {item.deadLine && (
+              <MiniBadge
+                icon={isOverdue ? <FaFire size={8} /> : <FaCalendarDay size={8} />}
+                text={getDeadlineText(item.deadLine, lang)}
+                color={isOverdue ? '#FF453A' : Colors.get('subText', theme)}
+              />
+            )}
+
+            {totalGoals > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: '700', color: Colors.get('subText', theme) }}>
+                <FaListUl size={10} style={{ opacity: 0.7 }} />
+                <span>{doneGoals}/{totalGoals}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Settings Panel */}
+        {settingsPanel && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{
+              display: 'flex',
+              flexDirection:'row',
+              gap: '5px',
+              width:'90%',
+              marginRight:'25px',
+              marginTop: '8px',
+              paddingTop: '8px',
+              borderTop: `1px dashed ${Colors.get('border', theme)}60`,
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePinned(item.id);
+                playEffects(clickSound);
+              }}
+              style={settingsButtonStyle(theme, lang)}
+            >
+              <FaThumbtack size={14} color={item.isPinned ? '#02609e' : Colors.get('subText', theme)} />
+              <span style={{ marginTop: '2px' }}>{lang === 0 ? 'Закрепить' : 'Pin'}</span>
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleHidden(item.id);
+                playEffects(clickSound);
+              }}
+              style={settingsButtonStyle(theme, lang)}
+            >
+              <FaRegEyeSlash size={14} color={item.isHidden ? '#7E7E7E' : Colors.get('subText', theme)} />
+              <span style={{ marginTop: '2px' }}>{lang === 0 ? 'Скрыть' : 'Hide'}</span>
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePending(item.id);
+                playEffects(clickSound);
+              }}
+              style={settingsButtonStyle(theme, lang)}
+            >
+              <FaClock size={14} color={item.isPending ? '#FF9E3D' : Colors.get('subText', theme)} />
+              <span style={{ marginTop: '2px' }}>{lang === 0 ? 'Отложить' : 'Snooze'}</span>
+            </button>
             
-            {/* Info Container with Centered Alignment */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', justifyContent: 'center', alignItems: 'center', gap: '6px', marginRight: '14px' }}>
-                
-                {/* Title and Category */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap: '5px', marginBottom: '2px' }}>
-                        <span style={{ fontSize: '9px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.5px', color: Colors.get('subText', theme), opacity: 0.7 }}>
-                            {item.category || (lang === 0 ? "Общее" : "General")}
-                        </span>
-                        {(isOverdue || item.priority >= 3) && !item.isDone && (<div style={{width:'5px', height:'5px', borderRadius:'50%', backgroundColor: '#FF453A'}} />)}
-                    </div>
-                    <div style={{ fontSize: fSize === 0 ? '16px' : '17px', fontWeight: '700', color: item.isDone ? Colors.get('subText', theme) : Colors.get('mainText', theme), textDecoration: item.isDone ? 'line-through' : 'none', lineHeight: '1.2', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center' }}>
-                        {item.name}
-                    </div>
-                </div>
+            <button
+              onClick={onCheck}
+              style={settingsButtonStyle(theme, lang)}
+            >
+              {!item.isDone ? <FaCircle size={14} color={Colors.get('subText', theme)} /> : <FaCheckCircle size={14} color="#4CAF50" />}
+              <span style={{ marginTop: '2px' }}>{lang === 0 ? 'Отметить' : 'Check'}</span>
+            </button>
+          </motion.div>
+        )}
+      </div>
 
-                {/* Attributes Row (Priority, Diff, Urgency, Deadline) */}
-                {!item.isDone && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', justifyContent: 'center' }}>
-                        <MiniBadge icon={<FaFlag size={8}/>} text={PRIORITY_LABELS[item.priority]?.[lang]} color={prioColor} />
-                        <MiniBadge icon={<FaLayerGroup size={8}/>} text={DIFFICULTY_LABELS[item.difficulty]?.[lang]} color={diffColor} />
-                        <MiniBadge icon={<FaExclamation size={8}/>} text={URGENCY_LABELS[item.urgency || 0]?.[lang]} color={urgColor} />
-                        
-                        {item.deadLine && (
-                            // Deadline displayed as a MiniBadge for consistency
-                            <MiniBadge 
-                                icon={isOverdue ? <FaFire size={8}/> : <FaCalendarDay size={8}/>}
-                                text={getDeadlineText(item.deadLine, lang)}
-                                color={isOverdue ? '#FF453A' : Colors.get('subText', theme)}
-                            />
-                        )}
-                        
-                        {totalGoals > 0 && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '10px', fontWeight: '700', color: Colors.get('subText', theme), marginLeft: '4px' }}>
-                                <FaListUl size={10} style={{opacity: 0.7}}/>
-                                <span>{doneGoals}/{totalGoals}</span>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
+      {/* Right-side Controls */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '8px', paddingTop: '6px' }}>
+        <FaEllipsisV
+          onClick={(e) => {
+            e.stopPropagation();
+            setSettingsPanel(prev => !prev);
+          }}
+          size={16}
+          style={{ color: Colors.get('subText', theme), cursor: 'pointer' }}
+        />
+      </div>
 
-            {/* Checkbox Button */}
-            <div onClick={onCheck} style={{ width: '26px', height: '26px', borderRadius: '9px', border: item.isDone ? 'none' : `2px solid ${Colors.get('border', theme)}`, backgroundColor: item.isDone ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                {item.isDone && <FaCheck size={12} color="#FFF" />}
-            </div>
-
-            {/* Progress Bar */}
-            {!item.isDone && totalGoals > 0 && (<div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '3px', backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)' }}><motion.div initial={{ width: 0 }} animate={{ width: `${(doneGoals / totalGoals) * 100}%` }} style={{ height: '100%', backgroundColor: isLight ? 'rgba(94, 15, 133, 0.58)' : 'rgba(53, 111, 199, 0.94)' }} /></div>)}
-        </motion.div>
-    );
+      {/* Progress Bar */}
+      {!item.isDone && totalGoals > 0 && (
+        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '3px', backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)' }}>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${(doneGoals / totalGoals) * 100}%` }}
+            style={{ height: '100%', backgroundColor: isLight ? 'rgba(94, 15, 133, 0.58)' : 'rgba(53, 111, 199, 0.94)' }}
+          />
+        </div>
+      )}
+    </motion.div>
+  );
 };
 
-// Mini Badge Component
+// Reusable settings button style
+const settingsButtonStyle = (theme, lang) => ({
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  color: Colors.get('subText', theme),
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  fontSize: '10px',
+  padding: '4px',
+  borderRadius: '6px',
+  transition: 'all 0.2s',
+  '&:hover': {
+    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.08)'
+  }
+});
+
 const MiniBadge = ({ icon, text, color }) => (
     <div style={{ 
         display: 'flex', alignItems: 'center', gap: '3px', 
@@ -546,7 +793,7 @@ const MiniBadge = ({ icon, text, color }) => (
     </div>
 );
 
-// --- STYLES ---
+// --- STYLES (unchanged) ---
 const styles = (theme, fSize) => {
     const isLight = theme === 'light' || theme === 'speciallight';
     const bg = isLight ? '#F2F4F6' : Colors.get('background', theme);
@@ -577,15 +824,6 @@ const styles = (theme, fSize) => {
             boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
             position: 'relative'
         },
-        input: {
-            flex: 1, height: '100%',
-            border: 'none', outline: 'none',
-            backgroundColor: 'transparent',
-            padding: '0 12px',
-            fontSize: '15px', fontWeight: '600',
-            fontFamily: 'Segoe UI',
-            color: Colors.get('mainText', theme)
-        },
         clearBtn: {
             width: '22px', height: '22px', borderRadius: '50%',
             backgroundColor: 'rgba(128,128,128,0.4)',
@@ -595,8 +833,7 @@ const styles = (theme, fSize) => {
     };
 };
 
-// --- HELPERS ---
-
+// --- HELPERS (unchanged) ---
 function playEffects(sound) {
     if (AppData.prefs[2] === 0 && sound) {
         if (!sound.paused) {
@@ -614,10 +851,10 @@ function playEffects(sound) {
 function parseDate(dateStr) {
     if (!dateStr) return null;
     if (dateStr.includes('-')) {
-        return new Date(dateStr); // YYYY-MM-DD
+        return new Date(dateStr);
     } else if (dateStr.includes('.')) {
         const parts = dateStr.split('.');
-        return new Date(parts[2], parts[1] - 1, parts[0]); // DD.MM.YYYY
+        return new Date(parts[2], parts[1] - 1, parts[0]);
     }
     return new Date(dateStr);
 }
@@ -640,12 +877,12 @@ function getDeadlineText(dateStr, lang) {
     if (!dateStr) return '';
     const days = daysToDeadlineNum(dateStr);
     
-    if (lang === 0) { // RU
+    if (lang === 0) {
         if (days === 0) return "Сегодня";
         if (days === 1) return "Завтра";
         if (days < 0) return `${Math.abs(days)} дн. назад`;
         return `${days} дн.`;
-    } else { // EN
+    } else {
         if (days === 0) return "Today";
         if (days === 1) return "Tmrw";
         if (days < 0) return `${Math.abs(days)}d ago`;

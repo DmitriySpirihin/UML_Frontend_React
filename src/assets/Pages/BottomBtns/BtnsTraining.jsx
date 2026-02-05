@@ -41,7 +41,7 @@ const BtnsTraining = () => {
     useEffect(() => {
         if (currentBtn === 0 || currentBtn === -1) {
             if (page === 'TrainingExercise') setCurrentBottomBtn(2);
-            else if (page === 'TrainingAnaliticsMain') setCurrentBottomBtn(1);
+            else if (page === 'TrainingAnaliticsTypes') setCurrentBottomBtn(1);
             else if (page === 'TrainingProgramm') setCurrentBottomBtn(4);
             else if (page === 'TrainingMesurments') setCurrentBottomBtn(3);
             else if (page === 'TrainingMain' && addPanel === '') setCurrentBottomBtn(0);
@@ -70,7 +70,7 @@ const BtnsTraining = () => {
                 icon={<Metrics />}
                 onClick={() => {
                     setCurrentBottomBtn(1);
-                    setPage('TrainingAnaliticsMain');
+                    setPage('TrainingAnaliticsTypes');
                     setAddPanel('');
                     setNotifyPanel(false);
                     playEffects(switchSound);

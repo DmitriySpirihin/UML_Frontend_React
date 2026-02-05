@@ -27,8 +27,11 @@ const TrainingMain = lazy(() => import('./assets/Pages/TrainingPages/TrainingMai
 const TrainingExercise = lazy(() => import('./assets/Pages/TrainingPages/TrainingExercise'));
 const TrainingProgramm = lazy(() => import('./assets/Pages/TrainingPages/TrainingProgramms'));
 const TrainingCurrent = lazy(() => import('./assets/Pages/TrainingPages/TrainingCurrent'));
+const TrainingCardio = lazy(() => import('./assets/Pages/TrainingPages/TrainingCardio'));
 const TrainingMesurments = lazy(() => import('./assets/Pages/TrainingPages/TrainingMesurments'));
 const TrainingAnaliticsMain = lazy(() => import('./assets/Pages/TrainingPages/Analitics/TrainingAnaliticsMain'));
+const TrainingAnaliticsTypes = lazy(() => import('./assets/Pages/TrainingPages/Analitics/TrainingAnaliticsTypes'));
+const TrainingAnaliticsCardio = lazy(() => import('./assets/Pages/TrainingPages/Analitics/TrainingAnaliticsCardio'));
 const TrainingList = lazy(() => import('./assets/Pages/TrainingPages/TrainingList'));
 const Premium = lazy(() => import('./assets/Pages/Premium'));
 const RecoveryMain = lazy(() => import('./assets/Pages/Recovery/RecoveryMain'));
@@ -263,6 +266,9 @@ function App() {
       {page === 'TrainingCurrent' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingCurrent/>
       </Suspense>}
+      {page === 'TrainingCardio' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingCardio/>
+      </Suspense>}
       {page === 'TrainingMesurments' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingMesurments/>
       </Suspense>}
@@ -275,6 +281,12 @@ function App() {
       </Suspense>}
       {page === 'TrainingAnaliticsMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingAnaliticsMain/>
+      </Suspense>}
+      {page === 'TrainingAnaliticsTypes' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingAnaliticsTypes/>
+      </Suspense>}
+      {page === 'TrainingAnaliticsCardio' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+        <TrainingAnaliticsCardio/>
       </Suspense>}
       {page === 'TrainingList' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingList/>

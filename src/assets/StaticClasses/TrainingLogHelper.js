@@ -3,16 +3,17 @@ import {saveData} from '../StaticClasses/SaveHelper';
 /* training log structure   store in AppData.trainingLog
 {
   "2025-12-08": [{ 
+    type:'GYM',
     programId: 0,                                 //when set also i need to update current programm id in AppData
     dayIndex: 1,                                  //on the start if the currentProgrammId is equal this id increment or set 1
-    complited: true,                              //check on app start
+    completed: true,                              //check on app start
     startTime: 1702213815432,                     //when start new training  Date.now()
     endTime: 1702213945432,                       //fixed when finish training  Date.now()
     duration: 2700000,                             //in milliseconds  45 min is 2700000 ms  endTime - startTime
     tonnage: 100,                                 //add when finish set , adding per set
     exerciseOrder: [],                            // Store exercise IDs in order
     exercises: {
-      '0' {                                       //  list of the complited exercises , id as a key
+      '0' : {                                       //  list of the complited exercises , id as a key
         mgId: 0,                                  //to get muscle group id fast
         sets: [
           { type: 0, reps: 15, weight: 40,time:60000 },   //types : o - warm up , 1 - work
@@ -22,7 +23,21 @@ import {saveData} from '../StaticClasses/SaveHelper';
         'complited':true                             //if finished
       },                                            // next  exercise
     }
+     RPE:1-10 ,
+     note:''
    },     //next training
+   {
+    type: 'RUNNING'  or  'CYCLING' or 'SWIMMING'
+    startTime: 1738951200000,
+    duration: 2100000,
+    distance: 5.2,
+    elevationGain: 42,
+    avgCadence:170,
+    avgHeartRate:142,
+    rpe: 7,
+    notes: "Холмистый парк, последние 2км тяжело"
+   }
+     
   ],       //next day
 }
 */
@@ -101,6 +116,7 @@ export async function addNewSession(date, programId, dayIndex) {
 
   const dateKey = formatDateKey(date);
   const newSession = {
+    type:'GYM',
     programId,
     dayIndex,
     completed: false,
@@ -109,6 +125,8 @@ export async function addNewSession(date, programId, dayIndex) {
     duration: 0,
     tonnage: 0,
     exercises,
+    RPE: null,      // Initialize RPE
+    note: '',
     exerciseOrder
   };
 
@@ -152,6 +170,7 @@ export async function addPreviousSession(date, programId, dayIndex, startTimeMs,
   });
 
   const newSession = {
+    type:'GYM',
     programId,
     dayIndex,
     completed: true,
@@ -184,7 +203,7 @@ export async function deleteSession(date, sessionIndex) {
   }
   await saveData();
 }
-export async function finishSession(date, sessionIndex) {
+export async function finishSession(date, sessionIndex, rpe = null, note = '') {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
   
@@ -193,6 +212,10 @@ export async function finishSession(date, sessionIndex) {
   session.endTime = Date.now();
   session.duration = session.endTime - session.startTime;
   session.completed = true;
+  if (rpe !== null) {
+        session.RPE = rpe;
+    }
+    session.note = note.trim();
 
   Object.values(session.exercises).forEach(ex => {
     ex.completed = true;
@@ -582,5 +605,386 @@ export const getWeeklyTrainingAmount = () => {
   } catch (error) {
     console.warn('Error calculating weekly training amount:', error);
     return 0;
+  }
+};
+
+
+// new functionality
+
+/**
+ * Add a cardio session from the past (fully completed)
+ * @param {Date} date - Training date
+ * @param {'RUNNING'|'CYCLING'|'SWIMMING'} type - Cardio type
+ * @param {number} distance - Distance in km
+ * @param {number} durationMinutes - Duration in minutes
+ * @param {number} startTimeMs - Start time offset in ms from date start (e.g., 28800000 = 8:00 AM)
+ * @param {Object} [params] - Optional parameters
+ */
+export async function addCardioSession(
+  date,
+  type,
+  distance,
+  durationMinutes,
+  startTimeMs,
+  params = {}
+) {
+  const durationMs = durationMinutes * 60000;
+  const baseDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const startTime = baseDate.getTime() + startTimeMs;
+  const endTime = startTime + durationMs;
+
+  const cardioSession = {
+    type: type,
+    startTime: startTime,
+    endTime: endTime,
+    duration: durationMs,
+    distance: distance,
+    elevationGain: params.elevationGain || 0,
+    avgCadence: params.avgCadence || null,
+    avgHeartRate: params.avgHeartRate || null,
+    rpe: params.rpe || 5,
+    notes: params.notes || '',
+    completed: true
+  };
+
+  const dateKey = formatDateKey(date);
+  if (!AppData.trainingLog[dateKey]) {
+    AppData.trainingLog[dateKey] = [];
+  }
+  AppData.trainingLog[dateKey].push(cardioSession);
+  await saveData();
+  return cardioSession;
+}
+
+/**
+ * Update an existing cardio session in the training log
+ * @param {string} sessionId - Format: "YYYY-MM-DD_index" (e.g., "2026-02-05_0")
+ * @param {Object} sessionData - Session data to update
+ * @returns {boolean} Success status
+ */
+export async function updateCardioSession(sessionId, sessionData) {
+  try {
+    // Parse sessionId to extract date key and index
+    const [dateKey, indexStr] = sessionId.split('_');
+    const index = parseInt(indexStr, 10);
+    
+    // Validate inputs
+    if (!dateKey || isNaN(index) || index < 0) {
+      console.error('Invalid sessionId format:', sessionId);
+      return false;
+    }
+    
+    // Check if session exists
+    if (!AppData.trainingLog[dateKey] || !AppData.trainingLog[dateKey][index]) {
+      console.error(`Session not found: ${sessionId}`);
+      return false;
+    }
+    
+    const session = AppData.trainingLog[dateKey][index];
+    
+    // Validate session type
+    if (session.type === 'GYM' || !session.type) {
+      console.warn('Cannot update GYM session with updateCardioSession');
+      return false;
+    }
+    
+    // Validate updates
+    const validationErrors = [];
+    
+    if (sessionData.distance !== undefined) {
+      if (typeof sessionData.distance !== 'number' || sessionData.distance < 0) {
+        validationErrors.push('Invalid distance');
+      }
+    }
+    
+    if (sessionData.duration !== undefined) {
+      if (typeof sessionData.duration !== 'number' || sessionData.duration <= 0) {
+        validationErrors.push('Invalid duration');
+      }
+    }
+    
+    if (sessionData.rpe !== undefined) {
+      if (sessionData.rpe < 1 || sessionData.rpe > 10) {
+        validationErrors.push('RPE must be between 1 and 10');
+      }
+    }
+    
+    if (sessionData.avgHeartRate !== undefined) {
+      if (typeof sessionData.avgHeartRate !== 'number' || sessionData.avgHeartRate < 30 || sessionData.avgHeartRate > 250) {
+        validationErrors.push('Invalid heart rate');
+      }
+    }
+    
+    if (validationErrors.length > 0) {
+      console.error('Validation errors:', validationErrors.join(', '));
+      return false;
+    }
+    
+    // Apply updates - merge with existing session data
+    const updatedSession = {
+      ...session,
+      ...sessionData,
+      // Ensure required fields are preserved
+      type: sessionData.type || session.type,
+      date: sessionData.date || session.date,
+      completed: sessionData.completed !== undefined ? sessionData.completed : (session.completed !== false)
+    };
+    
+    // Auto-recalculate duration if start/end times changed
+    if ((sessionData.startTime !== undefined || sessionData.endTime !== undefined) && updatedSession.endTime && updatedSession.startTime) {
+      updatedSession.duration = (updatedSession.endTime - updatedSession.startTime) / 60000; // Convert to minutes
+    }
+    
+    // Update session in log
+    AppData.trainingLog[dateKey][index] = updatedSession;
+    
+    // Persist to storage
+    await saveData();
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating cardio session:', error);
+    return false;
+  }
+}
+
+/**
+ * Delete a cardio session
+ * @param {Date} date - Training date
+ * @param {number} sessionIndex - Index of the session
+ */
+export async function deleteCardioSession(date, sessionIndex) {
+  return await deleteSession(date, sessionIndex); // Reuse existing function
+}
+
+// ========== UTILITIES FOR CARDIO ==========
+
+/**
+ * Calculate pace and speed from distance and duration
+ * @param {Object} session - Cardio session object
+ * @returns {Object} { pace, paceDisplay, speed, speedDisplay }
+ */
+export function calculateCardioMetrics(session) {
+  if (!session.distance || !session.duration || session.duration <= 0) {
+    return {
+      pace: null,
+      paceDisplay: '--:--',
+      speed: null,
+      speedDisplay: '--.-- км/ч'
+    };
+  }
+
+  const hours = session.duration / 3600000;
+  const speed = session.distance / hours; // km/h
+  const pace = 60 / speed; // min/km
+
+  // Format pace: 6.73 → "06:44"
+  const paceMinutes = Math.floor(pace);
+  const paceSeconds = Math.round((pace - paceMinutes) * 60);
+  const paceDisplay = `${paceMinutes.toString().padStart(2, '0')}:${paceSeconds.toString().padStart(2, '0')}`;
+
+  return {
+    pace: pace,                              // 6.73 (min/km)
+    paceDisplay: paceDisplay,                // "06:44"
+    speed: speed,                            // 8.9 (km/h)
+    speedDisplay: `${speed.toFixed(1)} км/ч` // "8.9 км/ч"
+  };
+}
+
+/**
+ * Get all cardio sessions in a date range
+ * @param {Date} startDate - Start date
+ * @param {Date} endDate - End date
+ * @param {string[]} [types] - Filter by types ['RUNNING', 'CYCLING', 'SWIMMING']
+ * @returns {Array} Array of { date, session, sessionIndex }
+ */
+export function getCardioSessionsInRange(startDate, endDate, types = null) {
+  const result = [];
+  const startKey = formatDateKey(startDate);
+  const endKey = formatDateKey(endDate);
+
+  Object.entries(AppData.trainingLog).forEach(([dateKey, sessions]) => {
+    if (dateKey < startKey || dateKey > endKey) return;
+
+    sessions.forEach((session, sessionIndex) => {
+      if (session.type === 'GYM') return;
+      if (types && !types.includes(session.type)) return;
+      
+      result.push({
+        date: dateKey,
+        session: session,
+        sessionIndex: sessionIndex
+      });
+    });
+  });
+
+  return result.sort((a, b) => 
+    new Date(a.date).getTime() - new Date(b.date).getTime() || 
+    a.sessionIndex - b.sessionIndex
+  );
+}
+
+/**
+ * Get cardio statistics for a period
+ * @param {Date} startDate - Start date
+ * @param {Date} endDate - End date
+ * @param {string[]} [types] - Filter by types
+ * @returns {Object} Statistics object
+ */
+export function getCardioStats(startDate, endDate, types = null) {
+  const sessions = getCardioSessionsInRange(startDate, endDate, types);
+  
+  let totalDistance = 0;
+  let totalDuration = 0;
+  let totalElevation = 0;
+  let totalSessions = sessions.length;
+  let avgRpe = 0;
+  let sessionCount = 0;
+
+  const typeCounts = {
+    RUNNING: 0,
+    CYCLING: 0,
+    SWIMMING: 0
+  };
+
+  sessions.forEach(({ session }) => {
+    totalDistance += session.distance || 0;
+    totalDuration += session.duration || 0;
+    totalElevation += session.elevationGain || 0;
+    
+    if (session.rpe) {
+      avgRpe += session.rpe;
+      sessionCount++;
+    }
+    
+    typeCounts[session.type] = (typeCounts[session.type] || 0) + 1;
+  });
+
+  avgRpe = sessionCount > 0 ? avgRpe / sessionCount : 0;
+
+  return {
+    totalSessions,
+    typeCounts,
+    totalDistance: parseFloat(totalDistance.toFixed(2)), // km
+    totalDuration: parseFloat((totalDuration / 3600000).toFixed(2)), // hours
+    totalElevation: totalElevation, // meters
+    avgRpe: parseFloat(avgRpe.toFixed(1)),
+    avgDistance: totalSessions > 0 ? parseFloat((totalDistance / totalSessions).toFixed(2)) : 0,
+    avgDuration: totalSessions > 0 ? parseFloat(((totalDuration / totalSessions) / 60000).toFixed(1)) : 0 // min
+  };
+}
+
+/**
+ * Get best performances for a cardio type
+ * @param {'RUNNING'|'CYCLING'|'SWIMMING'} type - Cardio type
+ * @param {string} metric - 'speed', 'distance', or 'elevation'
+ * @returns {Object} Best session with metadata
+ */
+export function getBestCardioPerformance(type, metric = 'speed') {
+  let bestValue = 0;
+  let bestSession = null;
+  let bestDate = null;
+  let bestIndex = -1;
+
+  Object.entries(AppData.trainingLog).forEach(([dateKey, sessions]) => {
+    sessions.forEach((session, index) => {
+      if (session.type !== type || !session.completed) return;
+
+      let value = 0;
+      if (metric === 'speed' && session.distance && session.duration) {
+        value = session.distance / (session.duration / 3600000); // km/h
+      } else if (metric === 'distance') {
+        value = session.distance || 0;
+      } else if (metric === 'elevation') {
+        value = session.elevationGain || 0;
+      }
+
+      if (value > bestValue) {
+        bestValue = value;
+        bestSession = session;
+        bestDate = dateKey;
+        bestIndex = index;
+      }
+    });
+  });
+
+  return {
+    value: bestValue,
+    session: bestSession,
+    date: bestDate,
+    sessionIndex: bestIndex
+  };
+}
+
+/**
+ * Get weekly cardio summary (last 7 days)
+ * @returns {Object} Weekly summary
+ */
+export function getWeeklyCardioSummary() {
+  const today = new Date();
+  const sevenDaysAgo = new Date(today);
+  sevenDaysAgo.setDate(today.getDate() - 7);
+
+  const stats = getCardioStats(sevenDaysAgo, today);
+  
+  // Get sessions from last 7 days
+  const recentSessions = getCardioSessionsInRange(sevenDaysAgo, today);
+  
+  // Group by day
+  const sessionsByDay = {};
+  recentSessions.forEach(({ date, session }) => {
+    if (!sessionsByDay[date]) sessionsByDay[date] = [];
+    sessionsByDay[date].push(session);
+  });
+
+  return {
+    ...stats,
+    sessionsByDay,
+    daysWithTraining: Object.keys(sessionsByDay).length
+  };
+}
+
+// Add this to TrainingLogHelper.js
+export const getCardioSession = (dayKey, index) => {
+  try {
+    // Validate inputs
+    if (!dayKey || typeof dayKey !== 'string' || index === undefined || index < 0) {
+      console.warn('Invalid parameters for getCardioSession:', { dayKey, index });
+      return null;
+    }
+
+    // Check if day exists in training log
+    if (!AppData.trainingLog[dayKey]) {
+      console.warn(`No training sessions found for date: ${dayKey}`);
+      return null;
+    }
+
+    // Check if index exists
+    const sessions = AppData.trainingLog[dayKey];
+    if (!sessions[index]) {
+      console.warn(`Session not found at index ${index} for date ${dayKey}`);
+      return null;
+    }
+
+    const session = sessions[index];
+    
+    // Return session data with consistent structure
+    return {
+      id: `${dayKey}_${index}`,
+      date: dayKey,
+      type: session.type || 'RUNNING',
+      distance: session.distance || 0,
+      duration: session.duration || 0, // in minutes
+      elevationGain: session.elevationGain || 0,
+      avgCadence: session.avgCadence || 0,
+      avgHeartRate: session.avgHeartRate || 0,
+      rpe: session.rpe || 0,
+      notes: session.notes || '',
+      startTime: session.startTime || (16 * 3600000), // default to 4 PM
+      completed: session.completed !== false // cardio sessions are always completed when logged
+    };
+  } catch (error) {
+    console.error('Error retrieving cardio session:', error);
+    return null;
   }
 };
