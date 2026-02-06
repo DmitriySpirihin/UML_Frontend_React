@@ -10,7 +10,7 @@ export class Colors {
 
   static palette = {
     // Core Backgrounds - Deep Obsidian
-    background: { light: "#F8FAFC", dark: "#131519" }, 
+    background: { light: "#F8FAFC", dark: "#15181c" }, 
     mainText: { light: "#0F172A", dark: "#F1F5F9" },
     subText: { light: "#64748B", dark: "#8E96A3" }, 
     
@@ -76,7 +76,7 @@ export class Colors {
     difficulty5: { light: "#ef444494", dark: "#e74343" },
 
     shadow: { light: "rgba(0,0,0,0.06)", dark: "rgba(0,0,0,0.6)" },
-    bottomPanel: { light: "#FFFFFF", dark: "#0c0c0d7e" },
+    bottomPanel: { light: "#FFFFFF", dark: "#15181c" },
     svgColor: { light: "rgba(0,0,0,0.03)", dark: "rgba(255,255,255,0.02)" },
     
     veryBad: {

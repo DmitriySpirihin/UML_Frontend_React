@@ -140,62 +140,62 @@ const TrainingList = () => {
 
   // --- Data & Filtering ---
   const { allTrainings, sessionColorMap } = useMemo(() => {
-    const trainings = [];
-    const colorMap = new Map();
-    let colorIndex = 0;
+  const trainings = [];
+  const colorMap = new Map();
+  let colorIndex = 0;
 
-    // Сбор всех тренировок с определением типа (обратная совместимость)
-    for (const [date, sessions] of Object.entries(AppData.trainingLog || {})) {
-      sessions.forEach((session, idx) => {
-        // Определяем тип тренировки с fallback для старых данных
-        const sessionType = session.type || 
-                          (session.programId !== undefined || session.exercises ? 'GYM' : 'OTHER');
-        
-        trainings.push({ 
-          date, 
-          idx, 
-          session: { ...session, type: sessionType } 
-        });
+  // Сбор всех тренировок с определением типа (обратная совместимость)
+  for (const [date, sessions] of Object.entries(AppData.trainingLog || {})) {
+    sessions.forEach((session, idx) => {
+      // Определяем тип тренировки с правильным fallback для старых данных
+      const sessionType = session.type || 
+                        (session.programId !== undefined || session.exercises ? 'GYM' : 'OTHER');
+      
+      trainings.push({ 
+        date, 
+        idx, 
+        session: { ...session, type: sessionType } 
       });
+    });
+  }
+
+  // Сортировка по времени (новые сверху)
+  trainings.sort((a, b) => (b.session.startTime || 0) - (a.session.startTime || 0));
+
+  // Генерация цветов для силовых тренировок (по программе-дню)
+  trainings.forEach(({ session }) => {
+    if (session.type === 'GYM') {
+      const key = `${session.programId || 0}-${session.dayIndex || 0}`;
+      if (!colorMap.has(key)) {
+        colorMap.set(key, colors[colorIndex % colors.length]);
+        colorIndex++;
+      }
     }
+  });
 
-    // Сортировка по времени (новые сверху)
-    trainings.sort((a, b) => (b.session.startTime || 0) - (a.session.startTime || 0));
-
-    // Генерация цветов для силовых тренировок (по программе-дню)
-    trainings.forEach(({ session }) => {
-      if (session.type === 'GYM') {
-        const key = `${session.programId || 0}-${session.dayIndex || 0}`;
-        if (!colorMap.has(key)) {
-          colorMap.set(key, colors[colorIndex % colors.length]);
-          colorIndex++;
-        }
+  // Фильтрация
+  let filtered = trainings.filter(item => {
+    const session = item.session;
+    
+    // Фильтр по типу тренировки
+    if (trainingTypeFilter !== 'all' && session.type !== trainingTypeFilter) {
+      return false;
+    }
+    
+    // Фильтр по программе/дню применяется ТОЛЬКО к силовым тренировкам
+    if (session.type === 'GYM') {
+      if (filterMode === 1) {
+        return session.programId === pId;
+      } else if (filterMode === 2) {
+        return session.programId === pId && session.dayIndex === dayIndex;
       }
-    });
+    }
+    
+    return true;
+  });
 
-    // Фильтрация
-    let filtered = trainings.filter(item => {
-      const session = item.session;
-      
-      // Фильтр по типу тренировки
-      if (trainingTypeFilter !== 'all' && session.type !== trainingTypeFilter) {
-        return false;
-      }
-      
-      // Фильтр по программе/дню применяется ТОЛЬКО к силовым тренировкам
-      if (session.type === 'GYM') {
-        if (filterMode === 1) {
-          return session.programId === pId;
-        } else if (filterMode === 2) {
-          return session.programId === pId && session.dayIndex === dayIndex;
-        }
-      }
-      
-      return true;
-    });
-
-    return { allTrainings: filtered, sessionColorMap: colorMap };
-  }, [AppData.trainingLog, filterMode, pId, dayIndex, trainingTypeFilter]);
+  return { allTrainings: filtered, sessionColorMap: colorMap };
+}, [AppData.trainingLog, filterMode, pId, dayIndex, trainingTypeFilter]);
 
   // --- Filter Options ---
   const programOptions = useMemo(() => {
@@ -243,53 +243,73 @@ const TrainingList = () => {
   const allLabel = langIndex === 0 ? 'Все' : 'All';
   const progLabel = langIndex === 0 ? 'Программа' : 'Program';
   const dayLabel = langIndex === 0 ? 'День' : 'Day';
-  const typeLabels = {
-    all: langIndex === 0 ? 'Все типы' : 'All Types',
-    GYM: langIndex === 0 ? 'Силовые' : 'Gym',
-    RUNNING: langIndex === 0 ? 'Бег' : 'Running',
-    CYCLING: langIndex === 0 ? 'Велосипед' : 'Cycling',
-    SWIMMING: langIndex === 0 ? 'Плавание' : 'Swimming'
-  };
+  const typeLabels = useMemo(() => ({
+  all: langIndex === 0 ? 'Все типы' : 'All Types',
+  GYM: langIndex === 0 ? 'Силовые' : 'Gym',
+  RUNNING: langIndex === 0 ? 'Бег' : 'Running',
+  CYCLING: langIndex === 0 ? 'Велосипед' : 'Cycling',
+  SWIMMING: langIndex === 0 ? 'Плавание' : 'Swimming',
+  OTHER: langIndex === 0 ? 'Другое' : 'Other'
+}), [langIndex]);
 
   // Уникальные типы тренировок из данных (для динамических фильтров)
   const availableTrainingTypes = useMemo(() => {
-    const types = new Set(['all', 'GYM']);
-    Object.values(AppData.trainingLog || {}).forEach(sessions =>
-      sessions.forEach(s => {
-        const type = s.type || (s.programId !== undefined ? 'GYM' : 'OTHER');
-        if (['RUNNING', 'CYCLING', 'SWIMMING'].includes(type)) {
-          types.add(type);
-        }
-      })
-    );
-    return Array.from(types);
-  }, [AppData.trainingLog]);
+  const types = new Set(['all']);
+  const typeLabels = {
+    GYM: langIndex === 0 ? 'Силовые' : 'Gym',
+    RUNNING: langIndex === 0 ? 'Бег' : 'Running',
+    CYCLING: langIndex === 0 ? 'Вело' : 'Cycling',
+    SWIMMING: langIndex === 0 ? 'Плавание' : 'Swimming',
+    OTHER: langIndex === 0 ? 'Другое' : 'Other'
+  };
+  
+  // Собираем все уникальные типы из данных
+  Object.values(AppData.trainingLog || {}).forEach(sessions => {
+    sessions.forEach(s => {
+      const type = s.type || (s.programId !== undefined ? 'GYM' : 'OTHER');
+      types.add(type);
+    });
+  });
+  
+  // Преобразуем в массив объектов для сортировки и отображения
+  return Array.from(types)
+    .map(type => ({
+      value: type,
+      label: typeLabels[type] || type
+    }))
+    .sort((a, b) => {
+      // Сортировка: 'all' первым, затем по алфавиту
+      if (a.value === 'all') return -1;
+      if (b.value === 'all') return 1;
+      return a.label.localeCompare(b.label);
+    });
+}, [AppData.trainingLog, langIndex]);
 
   return (
     <div style={styles(theme).container}>
       {/* === Фильтр по типу тренировки === */}
       <div style={styles(theme).typeFilterContainer}>
-        <div style={styles(theme).typeToggleWrapper}>
-          {availableTrainingTypes.map(type => {
-            const isActive = trainingTypeFilter === type;
-            return (
-              <motion.div
-                key={type}
-                onClick={() => setTrainingTypeFilter(type)}
-                whileTap={{ scale: 0.95 }}
-                style={{
-                  ...styles(theme).typeTogglePill,
-                  backgroundColor: isActive ? Colors.get('currentDateBorder', theme) : 'transparent',
-                  color: isActive ? '#fff' : Colors.get('subText', theme),
-                  fontSize: fSize === 0 ? '13px' : '14px',
-                }}
-              >
-                {typeLabels[type] || type}
-              </motion.div>
-            );
-          })}
-        </div>
-      </div>
+  <div style={styles(theme).typeToggleWrapper}>
+    {availableTrainingTypes.map(({ value, label }) => {
+      const isActive = trainingTypeFilter === value;
+      return (
+        <motion.div
+          key={value}
+          onClick={() => setTrainingTypeFilter(value)}
+          whileTap={{ scale: 0.95 }}
+          style={{
+            ...styles(theme).typeTogglePill,
+            backgroundColor: isActive ? Colors.get('currentDateBorder', theme) : 'transparent',
+            color: isActive ? '#fff' : Colors.get('subText', theme),
+            fontSize: fSize === 0 ? '13px' : '14px',
+          }}
+        >
+          {label}
+        </motion.div>
+      );
+    })}
+  </div>
+</div>
 
       {/* === Фильтры программы/дня (только для силовых) === */}
       {(trainingTypeFilter === 'all' || trainingTypeFilter === 'GYM') && (
@@ -599,6 +619,7 @@ const TrainingList = () => {
           </motion.div>
         )}
       </div>
+      <div style={{marginBottom:'150px'}}></div>
     </div>
   );
 };

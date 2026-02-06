@@ -680,8 +680,8 @@ const CompactCard = ({ onClick, onCheck, item, theme, lang, fSize }) => {
             exit={{ opacity: 0, height: 0 }}
             style={{
               display: 'flex',
-              flexDirection:'row',
-              gap: '5px',
+              flexDirection:'row',     
+              justifyContent:'space-between',
               width:'90%',
               marginRight:'25px',
               marginTop: '8px',

@@ -146,6 +146,10 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
         setEditingSubGoalText('');
     };
 
+    const handleEditingSubGoalTextChange = (text) => {
+       setEditingSubGoalText(text);
+    };
+
     const handleCancelSubGoalEdit = (index, field) => {
         setEditingFields(prev => ({ ...prev, [`${index}-${field}`]: false }));
         setEditingSubGoalText('');
@@ -571,6 +575,7 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
                                                         theme={theme}
                                                         lang={lang}
                                                         editingFields={editingFields}
+                                                        onEditingTextChange={handleEditingSubGoalTextChange}
                                                         editingSubGoalText={editingSubGoalText}
                                                         onEditField={handleEditSubGoalField}
                                                         onSaveField={handleSaveSubGoalField}
@@ -618,7 +623,7 @@ const ToDoPage = ({ show, setShow, theme, lang, fSize, task: initialTask }) => {
 const SubGoalCard = ({
     goal, index, idx, isExpanded, onToggleExpand, onToggleComplete, onDelete,
     task, theme, lang, editingFields, editingSubGoalText, onEditField, onSaveField,
-    onCancelEdit, onKeyDown, aimInputRef, subGoalTextInputRef
+    onCancelEdit, onKeyDown, aimInputRef, subGoalTextInputRef,onEditingTextChange
 }) => {
     const s = styles(theme, null, task.color);
     const isLight = theme === 'light' || theme === 'speciallight';
@@ -728,114 +733,110 @@ const SubGoalCard = ({
                         style={s.expandedContent}
                     >
                         {/* Aim Field */}
-                        <div style={s.expandedField}>
-                            <div style={s.fieldHeader}>
-                                <FaBullseye size={14} color={task.color} />
-                                <span style={s.fieldTitle}>
-                                    {lang === 0 ? 'Цель подзадачи' : 'Sub-goal Aim'}
-                                </span>
-                            </div>
-                            {editingFields[`${index}-aim`] ? (
-                                <div style={s.editFieldRow}>
-                                    <input
-                                        ref={aimInputRef}
-                                        type="text"
-                                        value={editingSubGoalText}
-                                        onChange={(e) => {
-                                            // Parent handles this
-                                        }}
-                                        onKeyDown={(e) => onKeyDown(e, index, 'aim')}
-                                        style={s.fieldEditInput}
-                                        placeholder={lang === 0 ? 'Что нужно достичь?' : 'What needs to be achieved?'}
-                                        autoFocus
-                                    />
-                                    <div 
-                                        onClick={() => onSaveField(index, 'aim')}
-                                        style={s.saveFieldBtn}
-                                    >
-                                        <FaSave size={12} />
-                                    </div>
-                                    <div 
-                                        onClick={() => onCancelEdit(index, 'aim')}
-                                        style={s.cancelFieldBtn}
-                                    >
-                                        <FaTimes size={12} />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div style={s.fieldDisplay}>
-                                    {goal.aim ? (
-                                        <p style={s.fieldValue}>{goal.aim}</p>
-                                    ) : (
-                                        <p style={s.fieldPlaceholder}>
-                                            {lang === 0 ? 'Цель не указана' : 'No aim specified'}
-                                        </p>
-                                    )}
-                                    <motion.div
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={() => onEditField(index, 'aim', goal.aim || '')}
-                                        style={s.editFieldBtn}
-                                    >
-                                        <FaPen size={12} />
-                                    </motion.div>
-                                </div>
-                            )}
-                        </div>
+<div style={s.expandedField}>
+  <div style={s.fieldHeader}>
+    <FaBullseye size={14} color={task.color} />
+    <span style={s.fieldTitle}>
+      {lang === 0 ? 'Цель подзадачи' : 'Sub-goal Aim'}
+    </span>
+  </div>
+  {editingFields[`${index}-aim`] ? (
+    <div style={s.editFieldRow}>
+      <input
+        ref={aimInputRef}
+        type="text"
+        value={editingSubGoalText}
+        onChange={(e) => onEditingTextChange(e.target.value)}  // <-- UPDATED
+        onKeyDown={(e) => onKeyDown(e, index, 'aim')}
+        style={s.fieldEditInput}
+        placeholder={lang === 0 ? 'Что нужно достичь?' : 'What needs to be achieved?'}
+        autoFocus
+      />
+      <div
+        onClick={() => onSaveField(index, 'aim')}
+        style={s.saveFieldBtn}
+      >
+        <FaSave size={12} />
+      </div>
+      <div
+        onClick={() => onCancelEdit(index, 'aim')}
+        style={s.cancelFieldBtn}
+      >
+        <FaTimes size={12} />
+      </div>
+    </div>
+  ) : (
+    <div style={s.fieldDisplay}>
+      {goal.aim ? (
+        <p style={s.fieldValue}>{goal.aim}</p>
+      ) : (
+        <p style={s.fieldPlaceholder}>
+          {lang === 0 ? 'Цель не указана' : 'No aim specified'}
+        </p>
+      )}
+      <motion.div
+        whileTap={{ scale: 0.9 }}
+        onClick={() => onEditField(index, 'aim', goal.aim || '')}
+        style={s.editFieldBtn}
+      >
+        <FaPen size={12} />
+      </motion.div>
+    </div>
+  )}
+</div>
 
-                        {/* Result Field (only shown when completed) */}
-                        {goal.isDone && (
-                            <div style={s.expandedField}>
-                                <div style={s.fieldHeader}>
-                                    <FaAward size={14} color="#2ed177" />
-                                    <span style={{ ...s.fieldTitle, color: '#2ed177' }}>
-                                        {lang === 0 ? 'Результат' : 'Result'}
-                                    </span>
-                                </div>
-                                {editingFields[`${index}-result`] ? (
-                                    <div style={s.editFieldRow}>
-                                        <textarea
-                                            value={editingSubGoalText}
-                                            onChange={(e) => {
-                                                // Parent handles this
-                                            }}
-                                            onKeyDown={(e) => onKeyDown(e, index, 'result')}
-                                            style={{ ...s.fieldEditInput, minHeight: '60px' }}
-                                            placeholder={lang === 0 ? 'Что было достигнуто?' : 'What was achieved?'}
-                                            autoFocus
-                                        />
-                                        <div 
-                                            onClick={() => onSaveField(index, 'result')}
-                                            style={s.saveFieldBtn}
-                                        >
-                                            <FaSave size={12} />
-                                        </div>
-                                        <div 
-                                            onClick={() => onCancelEdit(index, 'result')}
-                                            style={s.cancelFieldBtn}
-                                        >
-                                            <FaTimes size={12} />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div style={s.fieldDisplay}>
-                                        {goal.result ? (
-                                            <p style={s.fieldValue}>{goal.result}</p>
-                                        ) : (
-                                            <p style={s.fieldPlaceholder}>
-                                                {lang === 0 ? 'Результат не указан' : 'No result specified'}
-                                            </p>
-                                        )}
-                                        <motion.div
-                                            whileTap={{ scale: 0.9 }}
-                                            onClick={() => onEditField(index, 'result', goal.result || '')}
-                                            style={s.editFieldBtn}
-                                        >
-                                            <FaPen size={12} />
-                                        </motion.div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+{/* Result Field (only shown when completed) */}
+{goal.isDone && (
+  <div style={s.expandedField}>
+    <div style={s.fieldHeader}>
+      <FaAward size={14} color="#2ed177" />
+      <span style={{ ...s.fieldTitle, color: '#2ed177' }}>
+        {lang === 0 ? 'Результат' : 'Result'}
+      </span>
+    </div>
+    {editingFields[`${index}-result`] ? (
+      <div style={s.editFieldRow}>
+        <textarea
+          value={editingSubGoalText}
+          onChange={(e) => onEditingTextChange(e.target.value)}  // <-- UPDATED
+          onKeyDown={(e) => onKeyDown(e, index, 'result')}
+          style={{ ...s.fieldEditInput, minHeight: '60px' }}
+          placeholder={lang === 0 ? 'Что было достигнуто?' : 'What was achieved?'}
+          autoFocus
+        />
+        <div
+          onClick={() => onSaveField(index, 'result')}
+          style={s.saveFieldBtn}
+        >
+          <FaSave size={12} />
+        </div>
+        <div
+          onClick={() => onCancelEdit(index, 'result')}
+          style={s.cancelFieldBtn}
+        >
+          <FaTimes size={12} />
+        </div>
+      </div>
+    ) : (
+      <div style={s.fieldDisplay}>
+        {goal.result ? (
+          <p style={s.fieldValue}>{goal.result}</p>
+        ) : (
+          <p style={s.fieldPlaceholder}>
+            {lang === 0 ? 'Результат не указан' : 'No result specified'}
+          </p>
+        )}
+        <motion.div
+          whileTap={{ scale: 0.9 }}
+          onClick={() => onEditField(index, 'result', goal.result || '')}
+          style={s.editFieldBtn}
+        >
+          <FaPen size={12} />
+        </motion.div>
+      </div>
+    )}
+  </div>
+)}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -897,7 +898,7 @@ const styles = (theme, fSize, accentColor) => {
             border: `1px solid ${border}`, 
             backgroundColor: panel, 
             color: text, 
-            fontSize: '15px', 
+            fontSize: '16px', 
             resize: 'vertical',
             fontFamily: 'inherit'
         },
@@ -1049,7 +1050,7 @@ const styles = (theme, fSize, accentColor) => {
         
         dateRow: { display: 'flex', gap: 12, marginBottom: 24 },
         dateItem: { flex: 1, display: 'flex', alignItems: 'center', backgroundColor: panel, padding: 12, borderRadius: 16 },
-        dateInput: { background: 'transparent', border: 'none', color: text, fontSize: 13, width: '100%', outline: 'none' },
+        dateInput: { background: 'transparent', border: 'none', color: text, fontSize: 16, width: '100%', outline: 'none' },
         label: { fontSize: 9, color: sub, textTransform: 'uppercase' },
         dateValue: { fontSize: 13, fontWeight: 700, color: text },
 
@@ -1193,7 +1194,7 @@ const styles = (theme, fSize, accentColor) => {
             borderRadius: 8,
             padding: '8px 12px',
             color: text,
-            fontSize: 14,
+            fontSize: 16,
             outline: 'none',
             fontFamily: 'inherit',
             resize: 'vertical'
@@ -1229,7 +1230,7 @@ const styles = (theme, fSize, accentColor) => {
             borderRadius: 8,
             padding: '6px 10px',
             color: text,
-            fontSize: 15,
+            fontSize: 16,
             outline: 'none',
             fontFamily: 'inherit',
             minWidth: 0
@@ -1247,7 +1248,7 @@ const styles = (theme, fSize, accentColor) => {
             flex: 1,
             border: 'none',
             background: 'transparent',
-            fontSize: '15px',
+            fontSize: '16px',
             color: text,
             outline: 'none',
             marginLeft: '10px'
@@ -1270,11 +1271,11 @@ const styles = (theme, fSize, accentColor) => {
             border: `1px solid ${border}`,
             backgroundColor: panel,
             color: text,
-            fontSize: '15px',
+            fontSize: '16px',
             fontFamily: 'inherit',
             resize: 'vertical'
         },
-        selectInput: { width: '100%', padding: 12, borderRadius: 12, border: `1px solid ${border}`, backgroundColor: panel, color: text, fontSize: '15px' }
+        selectInput: { width: '100%', padding: 12, borderRadius: 12, border: `1px solid ${border}`, backgroundColor: panel, color: text, fontSize: '16px' }
     };
 };
 

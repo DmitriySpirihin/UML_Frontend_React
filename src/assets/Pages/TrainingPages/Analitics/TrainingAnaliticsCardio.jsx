@@ -180,59 +180,52 @@ const TrainingAnaliticsCardio = () => {
 
   // --- DATA PROCESSING FROM NEW STRUCTURE ---
   const cardioSessions = useMemo(() => {
-    const sessions = [];
-    const typeMap = {
-      'RUNNING': 'running',
-      'CYCLING': 'cycling',
-      'SWIMMING': 'swimming'
-    };
+  const sessions = [];
+  const typeMap = {
+    'RUNNING': 'running',
+    'CYCLING': 'cycling',
+    'SWIMMING': 'swimming'
+  };
 
-    // Process training log data
-    if (AppData.trainingLog && typeof AppData.trainingLog === 'object' ) {
-      Object.entries(AppData.trainingLog).forEach(([date, sessionsArray]) => {
-        if (Array.isArray(sessionsArray)) {
-          sessionsArray.forEach((session, index) => {
-            const typeKey = typeMap[session.type];
-            if (typeKey && typeKey !== 'GYM') {
-              sessions.push({
-                id: `${date}-${index}`,
-                type: typeKey,
-                distance: session.distance * 1000, // Convert km to meters
-                duration: session.duration / 1000, // Convert ms to seconds
-                date: date,
-                elevationGain: session.elevationGain || 0,
-                avgCadence: session.avgCadence || 0,
-                avgHeartRate: session.avgHeartRate || 0,
-                rpe: session.rpe || 0,
-                notes: session.notes || ''
-              });
-            }
-          });
-        }
-      });
-    }
+  // Process training log data
+  if (AppData.trainingLog && typeof AppData.trainingLog === 'object') {
+    Object.entries(AppData.trainingLog).forEach(([date, sessionsArray]) => {
+      if (Array.isArray(sessionsArray)) {
+        sessionsArray.forEach((session, index) => {
+          const typeKey = typeMap[session.type];
+          if (typeKey && typeKey !== 'GYM') {
+            sessions.push({
+              id: `${date}-${index}`,
+              type: typeKey,
+              distance: session.distance * 1000, // Convert km to meters
+              duration: session.duration / 1000, // Convert ms to seconds
+              date: date,
+              elevationGain: session.elevationGain || 0,
+              avgCadence: session.avgCadence || 0,
+              avgHeartRate: session.avgHeartRate || 0,
+              rpe: session.rpe || 0,
+              notes: session.notes || ''
+            });
+          }
+        });
+      }
+    });
+  }
 
-    // Fallback sample data if no training log exists
-    return sessions.length > 0 ? sessions : [
-      { id: '1', type: 'running', distance: 5200, duration: 1800, date: '2026-01-15', elevationGain: 42, avgHeartRate: 142, rpe: 7, notes: "Холмистый парк, последние 2км тяжело" },
-      { id: '2', type: 'cycling', distance: 12500, duration: 2400, date: '2026-01-18', elevationGain: 120, avgHeartRate: 135, rpe: 6, notes: "Длинная поездка по шоссе" },
-      { id: '3', type: 'running', distance: 3800, duration: 1320, date: '2026-01-22', elevationGain: 28, avgHeartRate: 148, rpe: 8, notes: "Интервальная тренировка" },
-      { id: '4', type: 'swimming', distance: 1200, duration: 1500, date: '2026-01-25', elevationGain: 0, avgHeartRate: 128, rpe: 5, notes: "Спокойное плавание" },
-      { id: '5', type: 'running', distance: 8500, duration: 2700, date: '2026-01-28', elevationGain: 65, avgHeartRate: 152, rpe: 9, notes: "Длительный бег в парке" },
-      { id: '6', type: 'cycling', distance: 18200, duration: 3600, date: '2026-02-01', elevationGain: 210, avgHeartRate: 140, rpe: 7, notes: "Горный маршрут" },
-    ];
-  }, []);
+  // Fallback sample data if no training log exists
+  return sessions.length > 0 ? sessions : [];
+}, []);
 
   // Filter sessions by active tab
   const filteredSessions = useMemo(() => 
-    cardioSessions.filter(session => session.type === tab),
+    cardioSessions?.filter(session => session.type === tab),
   [cardioSessions, tab]);
 
   // Process sessions with calculated metrics
   const processedSessions = useMemo(() => {
     if (isLoading) return [];
     
-    return filteredSessions.map(session => {
+    return filteredSessions?.map(session => {
       const distanceKm = session.distance / 1000;
       const durationHours = session.duration / 3600;
       const durationMins = session.duration / 60;
@@ -268,11 +261,11 @@ const TrainingAnaliticsCardio = () => {
 
   // Prepare chart data based on selected metric
   const chartData = useMemo(() => {
-    if (isLoading || processedSessions.length === 0) return [];
+    if (isLoading || processedSessions?.length === 0) return [];
     
     const activityColor = cardioTypes[tab]?.color || '#4ECDC4';
     
-    return processedSessions.map(session => {
+    return processedSessions?.map(session => {
       let value, label, unit;
       
       switch(selectedMetric) {
@@ -602,7 +595,7 @@ const TrainingAnaliticsCardio = () => {
 
   // --- METRIC SUMMARY CALCULATIONS ---
   const summaryMetrics = useMemo(() => {
-    if (processedSessions.length === 0) {
+    if (processedSessions?.length === 0) {
       return {
         totalSessions: 0,
         avgSpeed: '0.0',

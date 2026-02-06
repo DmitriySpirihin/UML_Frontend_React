@@ -300,7 +300,7 @@ const muscleLoadData = (periodInDays, langIndex, now = null) => {
     const sessionDate = new Date(dateStr);
     if (sessionDate.getTime() < cutoffTime) continue;
     for (const session of sessions) {
-      if (!session?.completed) continue;
+      if (!session?.completed || session.type !== 'GYM') continue;
       for (const [exIdStr, exercise] of Object.entries(session.exercises)) {
         const tonnage = exercise.totalTonnage || 0;
         if (tonnage <= 0) continue;

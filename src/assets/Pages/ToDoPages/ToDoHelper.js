@@ -78,17 +78,7 @@ export async function setOrRedactSubgoalAim(goalId, index, aimText) {
     if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
 }
-export async function deleteSubgoalAim(goalId, index) {
-  const item = AppData.todoList.find(i => i.id === goalId);
-  
-  if (item && item.goals && item.goals[index]) {
-    // Update the sub-goal text
-    item.goals[index].aim = '';
-    
-    await saveData();
-    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
-  }
-}
+
 export async function setOrRedactSubgoalResult(goalId, index, resText) {
   const item = AppData.todoList.find(i => i.id === goalId);
   
@@ -100,17 +90,7 @@ export async function setOrRedactSubgoalResult(goalId, index, resText) {
     if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
 }
-export async function deleteSubgoalResult(goalId, index) {
-  const item = AppData.todoList.find(i => i.id === goalId);
-  
-  if (item && item.goals && item.goals[index]) {
-    // Update the sub-goal text
-    item.goals[index].result = '';
-    
-    await saveData();
-    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
-  }
-}
+
 export async function addOrRedactResult(id,result) {
   const item = AppData.todoList.find(i => i.id === id);
   
@@ -120,15 +100,7 @@ export async function addOrRedactResult(id,result) {
     if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
 }
-export async function deleteResult(id) {
-  const item = AppData.todoList.find(i => i.id === id);
-  
-  if (item) {
-    item.result = '';
-    await saveData();
-    if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
-  }
-}
+
 export async function togglePinned(id) {
   const item = AppData.todoList.find(i => i.id === id);
   

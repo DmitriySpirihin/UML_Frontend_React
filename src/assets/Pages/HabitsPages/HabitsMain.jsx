@@ -14,7 +14,6 @@ import { FaPlus, FaTrash, FaPencilAlt, FaArrowUp, FaFire, FaChevronDown , FaCloc
 //new
 import {FiCalendar} from 'react-icons/fi'
 import {MdSkipNext} from 'react-icons/md'
-import {GiFireRay} from 'react-icons/gi'
 
 import { FaCheck } from 'react-icons/fa6'
 import { TbDotsVertical } from 'react-icons/tb'
@@ -663,9 +662,9 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
 
                     */}
 
-                    <div style={{display:'flex',gap :'5px',marginTop:'16px'}}>
-                    <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getStartDate(id)} color={theme === 'dark' ? '#e3cb31' : '#9884008f'} />
-                    <MiniBadge theme={theme} icon={<MdSkipNext size={9}/>} text={getSkippedAmount(id)} color={theme === 'dark' ? '#e33131' : '#9800008f'} />
+                    <div style={{display:'flex',gap :'5px',marginTop:'16px',justifyContent:'center'}}>
+                    
+                    <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={theme === 'dark' ? '#e33131' : '#9800008f'} />
                     {!isNegative && currentStreak > 0 && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDayName(langIndex,currentStreak)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
                     {!isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={theme === 'dark' ? '#31c8e3' : '#0086988f'} />}
                     {isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
@@ -775,12 +774,12 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                 <div style={{ display: 'flex', alignItems: 'center', position: 'absolute', borderRadius: '24px', width: '100%', height: '80px', top: 0, zIndex: 1001, backgroundColor: isLight ? '#FFF' : Colors.get('background', theme) }} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '90%', margin: '0 auto' }}>
                         <div style={{color: Colors.get('mainText', theme), fontWeight: 'bold'}}>{parsedTimeSimple(maxTimer)}</div>
-                        <Slider style={{ width: '50%', color: habitColor }} min={1} max={59} value={maxTimer / 60000} valueLabelDisplay="off" onChange={(e) => { setMaxTimer(e.target.value * 60000); e.stopPropagation(); }} />
+                        <Slider style={{ width: '50%', color: theme === 'dark' ? '#3abfe4' : '#14868878' }} min={1} max={59} value={maxTimer / 60000} valueLabelDisplay="off" onChange={(e) => { setMaxTimer(e.target.value * 60000); e.stopPropagation(); }} />
                         <MdClose onClick={(e) => { e.stopPropagation(); setShowTimerSlider(false); }} style={{ cursor: 'pointer', color: Colors.get('icons', theme), fontSize: '24px' }} />
                         <MdDone onClick={(e) => { e.stopPropagation(); startTimer(); setShowTimerSlider(false); }} style={{ cursor: 'pointer', color: habitColor, fontSize: '24px' }} />
                     </div>
                 </div>
-            )}
+            )}s
         </motion.div>
     )
 }

@@ -9,180 +9,64 @@ import { BehaviorSubject } from 'rxjs';
 import { TbRoute, TbClock, TbMountain, TbHeartbeat, TbClockBolt, TbFlame, TbNotes } from "react-icons/tb";
 import { IoArrowBack, IoTrash } from "react-icons/io5";
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx';
+import Slider from '@mui/material/Slider';
 
 // RX Subjects - ONLY for receiving data FROM TrainingMain
 export const cardioType$ = new BehaviorSubject('RUNNING');
 export const trainInfo$ = new BehaviorSubject({ mode: 'new', dayKey: '', dInd: null });
 
-// Custom Slider Component (unchanged - kept for metrics)
-const CustomSlider = ({ value, onChange, min, max, step = 1, color, marks = [], label }) => {
-  const sliderRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartX = useRef(0);
-  const currentValue = useRef(value);
-
-  // Update ref when value changes externally
-  useEffect(() => {
-    currentValue.current = value;
-  }, [value]);
-
-  // Cleanup drag listeners on unmount
-  useEffect(() => {
-    return () => {
-      document.removeEventListener('mousemove', handleDragMove);
-      document.removeEventListener('mouseup', handleDragEnd);
-      document.removeEventListener('touchmove', handleDragMove, { passive: false });
-      document.removeEventListener('touchend', handleDragEnd);
-      document.removeEventListener('touchcancel', handleDragEnd);
-    };
-  }, []);
-
-  const getNewValueFromPosition = (clientX) => {
-    if (!sliderRef.current) return value;
-    
-    const rect = sliderRef.current.getBoundingClientRect();
-    const offsetX = clientX - rect.left;
-    const percentage = Math.max(0, Math.min(100, (offsetX / rect.width) * 100));
-    const rawValue = min + (percentage / 100) * (max - min);
-    const steppedValue = Math.round(rawValue / step) * step;
-    return Math.max(min, Math.min(max, steppedValue));
-  };
-
-  const handleDragStart = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-    
-    // Get initial position
-    const clientX = e.clientX || (e.touches?.[0]?.clientX);
-    dragStartX.current = clientX;
-    currentValue.current = getNewValueFromPosition(clientX);
-    onChange(currentValue.current);
-    
-    // Add global listeners
-    document.addEventListener('mousemove', handleDragMove);
-    document.addEventListener('mouseup', handleDragEnd);
-    document.addEventListener('touchmove', handleDragMove, { passive: false });
-    document.addEventListener('touchend', handleDragEnd);
-    document.addEventListener('touchcancel', handleDragEnd);
-  };
-
-  const handleDragMove = (e) => {
-    if (!isDragging || !sliderRef.current) return;
-    
-    e.preventDefault();
-    const clientX = e.clientX || (e.touches?.[0]?.clientX);
-    const newValue = getNewValueFromPosition(clientX);
-    
-    if (newValue !== currentValue.current) {
-      currentValue.current = newValue;
-      onChange(newValue);
-    }
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-    // Remove all listeners
-    document.removeEventListener('mousemove', handleDragMove);
-    document.removeEventListener('mouseup', handleDragEnd);
-    document.removeEventListener('touchmove', handleDragMove);
-    document.removeEventListener('touchend', handleDragEnd);
-    document.removeEventListener('touchcancel', handleDragEnd);
-  };
-
-  const percentage = ((value - min) / (max - min)) * 100;
-
-  return (
-    <div style={{ width: '100%', marginTop: '12px' }}>
-      <div 
-        ref={sliderRef}
-        style={{
-          position: 'relative',
-          height: '8px',
-          background: 'rgba(255,255,255,0.1)',
-          borderRadius: '4px',
-          cursor: isDragging ? 'grabbing' : 'pointer',
-          overflow: 'hidden',
-          touchAction: 'none' // Critical for touch devices
-        }}
-        onMouseDown={handleDragStart}
-        onTouchStart={handleDragStart}
-      >
-        {/* Track fill */}
-        <div style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          height: '100%',
-          width: `${percentage}%`,
-          background: `linear-gradient(90deg, ${color}88, ${color})`,
-          borderRadius: '4px',
-          transition: isDragging ? 'none' : 'width 0.15s cubic-bezier(0.165, 0.84, 0.44, 1)'
-        }} />
-        
-        {/* Thumb */}
-        <div style={{
-          position: 'absolute',
-          left: `${percentage}%`,
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: '28px',
-          height: '28px',
-          borderRadius: '50%',
-          background: '#fff',
-          border: `3px solid ${color}`,
-          boxShadow: isDragging 
-            ? `0 0 0 8px ${color}30, 0 4px 15px rgba(0,0,0,0.3)`
-            : '0 4px 12px rgba(0,0,0,0.25)',
-          transition: 'all 0.15s ease',
-          pointerEvents: 'none',
-          zIndex: 2
-        }} />
-        
-        {/* Marks */}
-        {marks.map((mark, i) => {
-          const markPos = ((mark.value - min) / (max - min)) * 100;
-          return (
-            <div 
-              key={i} 
-              style={{
-                position: 'absolute',
-                left: `${markPos}%`,
-                top: '50%',
-                transform: 'translateX(-50%)',
-                width: '3px',
-                height: '10px',
-                background: 'rgba(255,255,255,0.7)',
-                borderRadius: '1px'
-              }} 
-            />
-          );
-        })}
-      </div>
-      
-      {/* Value display */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginTop: '8px',
-        fontSize: '14px',
-        color: 'rgba(255,255,255,0.85)',
-        userSelect: 'none'
-      }}>
-        <span>{min}</span>
-        <span style={{ 
-          fontWeight: '700', 
-          color: '#fff',
-          background: `${color}20`,
-          padding: '2px 8px',
-          borderRadius: '12px'
-        }}>
-          {value}{label}
-        </span>
-        <span>{max}</span>
-      </div>
-    </div>
-  );
-};
+const getSliderSx = (color, themeMode) => ({
+  height: 28,
+  padding: '0 0',
+  marginTop: 0,
+  '& .MuiSlider-rail': {
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: themeMode === 'dark' 
+      ? 'rgba(255,255,255,0.1)' 
+      : 'rgba(0,0,0,0.08)',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    opacity: 1,
+  },
+  '& .MuiSlider-track': {
+    height: 8,
+    borderRadius: 4,
+    background: `linear-gradient(90deg, ${color}88, ${color})`,
+    top: '50%',
+    transform: 'translateY(-50%)',
+  },
+  '& .MuiSlider-thumb': {
+    height: 28,
+    width: 28,
+    backgroundColor: '#fff',
+    border: `3px solid ${color}`,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+    '&:hover, &.Mui-focusVisible, &.Mui-active': {
+      boxShadow: `0 0 0 8px ${color}30, 0 4px 15px rgba(0,0,0,0.3)`,
+    },
+    '&:before': { display: 'none' },
+    top: '50%',
+    transform: 'translateY(-50%)',
+  },
+  '& .MuiSlider-mark': {
+    height: 10,
+    width: 3,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 1,
+    top: '50%',
+    transform: 'translateY(-50%)',
+  },
+  '& .MuiSlider-markLabel': { display: 'none' },
+  '& .MuiSlider-thumb.Mui-focusVisible': {
+    boxShadow: `0 0 0 8px ${color}30, 0 4px 15px rgba(0,0,0,0.3)`,
+  },
+  '& .MuiSlider-thumb.Mui-active': {
+    boxShadow: `0 0 0 8px ${color}30, 0 4px 15px rgba(0,0,0,0.3)`,
+  },
+  '& .MuiSlider-thumb:focus': { outline: 'none' },
+  width: '100%',
+});
 
 const TrainingCardio = () => {
   // States - NO type/date selection states
@@ -398,16 +282,12 @@ const TrainingCardio = () => {
         style={{
           background: currentType.gradient,
           width:'100vw',
-          height:'100px',
-          top: 0,
-          zIndex: 100,
+          height:'15vh',
+          marginTop:'10px',
           boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
           borderBottomLeftRadius: '32px',
           borderBottomRightRadius: '32px'
         }}
-        initial={{ y: -30, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.4 }}
       >
         <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '16px' }}>
           
@@ -420,7 +300,7 @@ const TrainingCardio = () => {
               fontSize: '15px', 
               color: 'rgba(255,255,255,0.85)',
               fontWeight: '500',
-              margin: '9px'
+              margin: '19px'
             }}>
               {selectedDate.toLocaleDateString(langIndex === 0 ? 'ru-RU' : 'en-US', { 
                 weekday: 'long', 
@@ -433,7 +313,7 @@ const TrainingCardio = () => {
               fontSize: '18px',
               fontWeight: '800',
               color: '#fff',
-              margin: 5,
+              margin: 15,
               textShadow: '0 2px 6px rgba(0,0,0,0.3)'
             }}>
               {mode === 'edit' 
@@ -590,175 +470,268 @@ const TrainingCardio = () => {
           
           {/* Elevation Slider */}
           <div style={{ marginBottom: '24px' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              marginBottom: '12px',
-              alignItems: 'center'
-            }}>
-              <label style={{ 
-                fontSize: '16px', 
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <TbMountain size={18} color="#FF9E6D" />
-                {langIndex === 0 ? 'Набор высоты' : 'Elevation'}
-              </label>
-              <span style={{ 
-                fontSize: '17px', 
-                fontWeight: '700', 
-                color: '#FF9E6D'
-              }}>
-                {elevation} m
-              </span>
-            </div>
-            <CustomSlider 
-              value={elevation} 
-              onChange={setElevation} 
-              min={0} 
-              max={500} 
-              step={5}
-              color="#FF9E6D"
-              marks={[{value: 0}, {value: 250}, {value: 500}]}
-            />
-          </div>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        marginBottom: '12px',
+        alignItems: 'center'
+      }}>
+        <label style={{ 
+          fontSize: '16px', 
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <TbMountain size={18} color="#FF9E6D" />
+          {langIndex === 0 ? 'Набор высоты' : 'Elevation'}
+        </label>
+        <span style={{ 
+          fontSize: '17px', 
+          fontWeight: '700', 
+          color: '#FF9E6D'
+        }}>
+          {elevation} m
+        </span>
+      </div>
+      <div style={{ width: '100%', marginTop: '12px' }}>
+        <Slider
+          value={elevation}
+          onChange={(_, newValue) => setElevation(newValue)}
+          min={0}
+          max={500}
+          step={5}
+          marks={[{ value: 0 }, { value: 250 }, { value: 500 }]}
+          sx={getSliderSx('#FF9E6D', theme)}
+          valueLabelDisplay="off"
+        />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: '8px',
+          fontSize: '14px',
+          color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)',
+          userSelect: 'none'
+        }}>
+          <span>0</span>
+          <span style={{ 
+            fontWeight: '700', 
+            color: '#fff',
+            background: `#FF9E6D20`,
+            padding: '2px 8px',
+            borderRadius: '12px'
+          }}>
+            {elevation} m
+          </span>
+          <span>500</span>
+        </div>
+      </div>
+    </div>
           
           {/* Heart Rate Slider */}
           <div style={{ marginBottom: '24px' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              marginBottom: '12px',
-              alignItems: 'center'
-            }}>
-              <label style={{ 
-                fontSize: '16px', 
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <TbHeartbeat size={18} color="#FF6B9D" />
-                {langIndex === 0 ? 'Пульс' : 'Heart Rate'}
-              </label>
-              <span style={{ 
-                fontSize: '17px', 
-                fontWeight: '700', 
-                color: '#FF6B9D'
-              }}>
-                {heartRate} bpm
-              </span>
-            </div>
-            <CustomSlider 
-              value={heartRate} 
-              onChange={setHeartRate} 
-              min={60} 
-              max={180} 
-              step={1}
-              color="#FF6B9D"
-              marks={[{value: 60}, {value: 120}, {value: 180}]}
-            />
-          </div>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        marginBottom: '12px',
+        alignItems: 'center'
+      }}>
+        <label style={{ 
+          fontSize: '16px', 
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <TbHeartbeat size={18} color="#FF6B9D" />
+          {langIndex === 0 ? 'Пульс' : 'Heart Rate'}
+        </label>
+        <span style={{ 
+          fontSize: '17px', 
+          fontWeight: '700', 
+          color: '#FF6B9D'
+        }}>
+          {heartRate} bpm
+        </span>
+      </div>
+      <div style={{ width: '100%', marginTop: '12px' }}>
+        <Slider
+          value={heartRate}
+          onChange={(_, newValue) => setHeartRate(newValue)}
+          min={60}
+          max={180}
+          step={1}
+          marks={[{ value: 60 }, { value: 120 }, { value: 180 }]}
+          sx={getSliderSx('#FF6B9D', theme)}
+          valueLabelDisplay="off"
+        />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: '8px',
+          fontSize: '14px',
+          color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)',
+          userSelect: 'none'
+        }}>
+          <span>60</span>
+          <span style={{ 
+            fontWeight: '700', 
+            color: '#fff',
+            background: `#FF6B9D20`,
+            padding: '2px 8px',
+            borderRadius: '12px'
+          }}>
+            {heartRate} bpm
+          </span>
+          <span>180</span>
+        </div>
+      </div>
+    </div>
+    
+    {/* Cadence Slider - REPLACED */}
+    <div style={{ marginBottom: '24px' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        marginBottom: '12px',
+        alignItems: 'center'
+      }}>
+        <label style={{ 
+          fontSize: '16px', 
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <TbClockBolt size={18} color="#4CC9F0" />
+          {langIndex === 0 ? 'Каденс' : 'Cadence'}
+          <span style={{ 
+            fontSize: '12px', 
+            fontWeight: '500',
+            color: '#888',
+            background: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+            padding: '1px 6px',
+            borderRadius: '10px',
+            marginLeft: '6px'
+          }}>
+            {selectedType === 'RUNNING' ? 'spm' : selectedType === 'CYCLING' ? 'rpm' : 'spm'}
+          </span>
+        </label>
+        <span style={{ 
+          fontSize: '17px', 
+          fontWeight: '700', 
+          color: '#4CC9F0'
+        }}>
+          {cadence}
+        </span>
+      </div>
+      <div style={{ width: '100%', marginTop: '12px' }}>
+        <Slider
+          value={cadence}
+          onChange={(_, newValue) => setCadence(newValue)}
+          min={50}
+          max={200}
+          step={1}
+          marks={[{ value: 50 }, { value: 125 }, { value: 200 }]}
+          sx={getSliderSx('#4CC9F0', theme)}
+          valueLabelDisplay="off"
+        />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: '8px',
+          fontSize: '14px',
+          color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)',
+          userSelect: 'none'
+        }}>
+          <span>50</span>
+          <span style={{ 
+            fontWeight: '700', 
+            color: '#fff',
+            background: `#4CC9F020`,
+            padding: '2px 8px',
+            borderRadius: '12px'
+          }}>
+            {cadence}
+          </span>
+          <span>200</span>
+        </div>
+      </div>
+    </div>
+    
+    {/* RPE Slider - REPLACED (with special value display) */}
+    <div style={{ marginBottom: '24px' }}>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        marginBottom: '12px',
+        alignItems: 'center'
+      }}>
+        <label style={{ 
+          fontSize: '16px', 
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <TbFlame size={18} color="#FFA500" />
+          {langIndex === 0 ? 'Воспр. (RPE)' : 'Effort (RPE)'}
+        </label>
+        <span style={{ 
+          fontSize: '20px', 
+          fontWeight: '800', 
+          color: '#FFA500',
+          background: 'rgba(255, 165, 0, 0.15)',
+          padding: '3px 12px',
+          borderRadius: '16px'
+        }}>
+          {rpe}/10
+        </span>
+      </div>
+      <div style={{ width: '100%', marginTop: '12px' }}>
+        <Slider
+          value={rpe}
+          onChange={(_, newValue) => setRpe(newValue)}
+          min={1}
+          max={10}
+          step={1}
+          marks={[{ value: 1 }, { value: 5 }, { value: 10 }]}
+          sx={getSliderSx('#FFA500', theme)}
+          valueLabelDisplay="off"
+        />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: '8px',
+          fontSize: '14px',
+          color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)',
+          userSelect: 'none'
+        }}>
+          <span>1</span>
+          <span style={{ 
+            fontWeight: '700', 
+            color: '#fff',
+            background: `#FFA50020`,
+            padding: '2px 8px',
+            borderRadius: '12px'
+          }}>
+            {rpe}/10
+          </span>
+          <span>10</span>
+        </div>
+      </div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        marginTop: '8px',
+        fontSize: '13px',
+        color: theme === 'dark' ? '#aaa' : '#666'
+      }}>
+        <span>{langIndex === 0 ? 'Легко' : 'Easy'}</span>
+        <span>{langIndex === 0 ? 'Тяжело' : 'Hard'}</span>
+      </div>
+    </div>
           
-          {/* Cadence Slider */}
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              marginBottom: '12px',
-              alignItems: 'center'
-            }}>
-              <label style={{ 
-                fontSize: '16px', 
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <TbClockBolt size={18} color="#4CC9F0" />
-                {langIndex === 0 ? 'Каденс' : 'Cadence'}
-                <span style={{ 
-                  fontSize: '12px', 
-                  fontWeight: '500',
-                  color: '#888',
-                  background: 'rgba(0,0,0,0.03)',
-                  padding: '1px 6px',
-                  borderRadius: '10px',
-                  marginLeft: '6px'
-                }}>
-                  {selectedType === 'RUNNING' ? 'spm' : selectedType === 'CYCLING' ? 'rpm' : 'spm'}
-                </span>
-              </label>
-              <span style={{ 
-                fontSize: '17px', 
-                fontWeight: '700', 
-                color: '#4CC9F0'
-              }}>
-                {cadence}
-              </span>
-            </div>
-            <CustomSlider 
-              value={cadence} 
-              onChange={setCadence} 
-              min={50} 
-              max={200} 
-              step={1}
-              color="#4CC9F0"
-              marks={[{value: 50}, {value: 125}, {value: 200}]}
-            />
-          </div>
-          
-          {/* RPE Slider */}
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              marginBottom: '12px',
-              alignItems: 'center'
-            }}>
-              <label style={{ 
-                fontSize: '16px', 
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <TbFlame size={18} color="#FFA500" />
-                {langIndex === 0 ? 'Воспр. (RPE)' : 'Effort (RPE)'}
-              </label>
-              <span style={{ 
-                fontSize: '20px', 
-                fontWeight: '800', 
-                color: '#FFA500',
-                background: 'rgba(255, 165, 0, 0.15)',
-                padding: '3px 12px',
-                borderRadius: '16px'
-              }}>
-                {rpe}/10
-              </span>
-            </div>
-            <CustomSlider 
-              value={rpe} 
-              onChange={setRpe} 
-              min={1} 
-              max={10} 
-              step={1}
-              color="#FFA500"
-              marks={[{value: 1}, {value: 5}, {value: 10}]}
-            />
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: '8px',
-              fontSize: '13px',
-              color: theme === 'dark' ? '#aaa' : '#666'
-            }}>
-              <span>{langIndex === 0 ? 'Легко' : 'Easy'}</span>
-              <span>{langIndex === 0 ? 'Тяжело' : 'Hard'}</span>
-            </div>
-          </div>
           
           {/* Notes */}
           <div>
