@@ -339,21 +339,11 @@ const mentalBlock = formatSection('BRAIN_TRAINING', mentalLines);
     const systemPrompt = (INSIGHT_SYSTEM_PROMPTS[langIndex] || INSIGHT_SYSTEM_PROMPTS[0]).trim();
     const instructionBlock = (INSIGHT_USER_PROMPT_TEMPLATES[type][langIndex] || INSIGHT_USER_PROMPT_TEMPLATES[type][0]).trim();
 
-    // CRITICAL: Inject name into analysis guidance + expanded correlation logic
-    const analysisGuidance = `
-(Task for AI:
-1. ALWAYS address the user as "${userName}" in your response.
-2. Cross-reference To-Do completion rates with ALL recovery metrics: Sleep quality, Breathing frequency/duration, Meditation duration, Hardening exposure.
-3. Analyze correlations between high-difficulty tasks (Priority/Urgency/Difficulty ≥4) and wellness metrics.
-4. Assess if consistent wellness practices correlate with improved sleep scores, gym performance, or task completion.
-5. Flag recovery deficits when high-stress tasks coincide with low wellness activity or poor sleep metrics.)
-`.trim();
+
 
     const userPrompt = `
 ${instructionBlock}
-
 ${userBlock}
-
 ${todoBlock}
 ${sleepBlock}
 ${breathingBlock}
@@ -362,7 +352,6 @@ ${hardeningBlock}
 ${habitsBlock}
 ${trainingsBlock}
 ${mentalBlock}
-${analysisGuidance}
 `.trim();
 
     return { systemPrompt, userPrompt };

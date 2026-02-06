@@ -379,15 +379,10 @@ const TrainingMain = () => {
                                 {day}
                                 {/* ICONS FOR DIFFERENT TYPES */}
                                 {trAmount > 0 &&  (
-                                  <div style={{display:'flex', flexWrap: 'wrap', gap: '2px', marginTop:'6px', justifyContent: 'center'}}>
+                                  <div style={{display:'flex', flexWrap: 'wrap', gap: '1px',  justifyContent: 'center'}}>
                                     {/* GYM sessions */}
-                                    {AppData.trainingLog[dayKey].filter(tr => tr.type === 'GYM').length > 0 && (
+                                    {AppData.trainingLog[dayKey].filter(tr => tr.type === 'GYM' || tr.type === undefined).length > 0 && (
                                       <div
-                                        style={{
-                                          width:'18px', height:'18px', borderRadius:'4px',
-                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                          opacity: 0.9
-                                        }}
                                         title={`${langIndex === 0 ? 'Силовая' : 'Strength'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'GYM').length}`}
                                       >
                                         <MdFitnessCenter size={8} color={getTrainingIconColor('GYM')}/>
@@ -396,11 +391,7 @@ const TrainingMain = () => {
                                     {/* RUNNING sessions */}
                                     {AppData.trainingLog[dayKey].filter(tr => tr.type === 'RUNNING').length > 0 && (
                                       <div
-                                        style={{
-                                          width:'18px', height:'18px', borderRadius:'4px',
-                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                          opacity: 0.9
-                                        }}
+                                       
                                         title={`${langIndex === 0 ? 'Бег' : 'Running'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'RUNNING').length}`}
                                       >
                                         <FaRunning size={8} color={getTrainingIconColor('RUNNING')}/>
@@ -409,11 +400,7 @@ const TrainingMain = () => {
                                     {/* CYCLING sessions */}
                                     {AppData.trainingLog[dayKey].filter(tr => tr.type === 'CYCLING').length > 0 && (
                                       <div
-                                        style={{
-                                          width:'18px', height:'18px', borderRadius:'4px',
-                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                          opacity: 0.9
-                                        }}
+                                        
                                         title={`${langIndex === 0 ? 'Велосипед' : 'Cycling'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'CYCLING').length}`}
                                       >
                                         <FaBicycle size={8} color={getTrainingIconColor('CYCLING')} />
@@ -422,11 +409,7 @@ const TrainingMain = () => {
                                     {/* SWIMMING sessions */}
                                     {AppData.trainingLog[dayKey].filter(tr => tr.type === 'SWIMMING').length > 0 && (
                                       <div
-                                        style={{
-                                          width:'18px', height:'18px', borderRadius:'4px',
-                                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                          opacity: 0.9
-                                        }}
+                                        
                                         title={`${langIndex === 0 ? 'Плавание' : 'Swimming'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'SWIMMING').length}`}
                                       >
                                         <FaSwimmer size={8} color={getTrainingIconColor('SWIMMING')} />
@@ -483,16 +466,15 @@ const TrainingMain = () => {
           <div
             style={{
               width: '40px', height: '40px', borderRadius: '12px',
-              backgroundColor: training.completed
-                ? getTrainingTypeData(training.type || 'GYM').color
-                : 'rgba(128,128,128,0.3)',
+              backgroundColor:'rgba(128,128,128,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: training.completed ? `0 4px 12px ${getTrainingTypeData(training.type || 'GYM').color}60` : 'none',
               flexShrink: 0
             }}
           >
             {training.completed ? (
-              React.cloneElement(getTrainingTypeData(training.type || 'GYM').icon, { size: 20, color: '#ffffff' })
+              React.cloneElement(getTrainingTypeData(training.type || 'GYM').icon, { size: 25, color: training.completed
+                ? getTrainingTypeData(training.type || 'GYM').color
+                : 'rgba(128,128,128,0.3)' })
             ) : (
               <span style={{ fontSize: '16px', fontWeight: 'bold' }}>⏳</span>
             )}
@@ -520,13 +502,13 @@ const TrainingMain = () => {
             ) : (
               // CARDIO display - ENHANCED with icons and more info
               // CARDIO display - ENHANCED with pace/speed and fixed duration
-<div style={{ fontSize: fSize === 0 ? '13px' : '14px', color: Colors.get('mainText', theme), lineHeight: 1.5 }}>
+<div style={{ fontSize: '11px', color: Colors.get('mainText', theme), lineHeight: 1.5 }}>
   {/* Distance & Duration */}
-  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}>
     <span>{cardioDistanceDisplay(training.distance, training.type, langIndex)}</span>
     <span style={{ color: Colors.get('subText', theme) }}>•</span>
     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-      <span style={{ color: Colors.get('subText', theme), fontSize: '14px' }}>⏱️</span>
+      <span style={{ color: Colors.get('subText', theme), fontSize: '11px' }}>⏱️</span>
       {formatDuration(training.duration, langIndex)}
     </span>
   
@@ -536,24 +518,21 @@ const TrainingMain = () => {
     <div style={{ 
       display: 'flex', 
       alignItems: 'center', 
-      gap: '6px', 
-      marginTop: '4px',
+      gap: '5px', 
       padding: '4px 8px',
-      backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-      borderRadius: '8px',
       width: 'fit-content'
     }}>
       {training.type === 'RUNNING' ? (
         <>
-          <span style={{ fontSize: '14px', color: '#4CC9F0' }}>🏃</span>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: '#4CC9F0' }}>
+          <span style={{ fontSize: '11px', color: '#4CC9F0' }}>🏃</span>
+          <span style={{ fontSize: '11px', fontWeight: '600', color: '#4CC9F0' }}>
             {calculatePace(training.distance, training.duration)} {langIndex === 0 ? 'мин/км' : 'min/km'}
           </span>
         </>
       ) : (
         <>
-          <span style={{ fontSize: '14px', color: '#4361EE' }}>🚴</span>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: '#4361EE' }}>
+          <span style={{ fontSize: '11px', color: '#4361EE' }}>🚴</span>
+          <span style={{ fontSize: '11px', fontWeight: '600', color: '#4361EE' }}>
             {calculateSpeed(training.distance, training.duration)} km/h
           </span>
         </>
@@ -562,13 +541,13 @@ const TrainingMain = () => {
   )}
   </div>
   {/* Elevation & Heart Rate */}
-  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginTop: '6px' }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
     
     
     {training.avgHeartRate > 0 && (
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FF6B9D' }}>
-        <span style={{ fontSize: '14px' }}>❤️</span>
-        <span style={{ fontSize: '13px', fontWeight: '600' }}>{training.avgHeartRate} bpm</span>
+        <span style={{ fontSize: '11px' }}>❤️</span>
+        <span style={{ fontSize: '11px', fontWeight: '600' }}>{training.avgHeartRate} bpm</span>
       </div>
     )}
 
@@ -577,10 +556,10 @@ const TrainingMain = () => {
   
     {training.avgCadence > 0 && (
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#4CC9F0' }}>
-        <span style={{ fontSize: '14px' }}>
+        <span style={{ fontSize: '11px' }}>
           {training.type === 'RUNNING' ? '🏃‍♂️' : training.type === 'CYCLING' ? '🚴‍♂️' : '🏊‍♂️'}
         </span>
-        <span style={{ fontSize: '13px', fontWeight: '600' }}>
+        <span style={{ fontSize: '11px', fontWeight: '600' }}>
           {training.avgCadence} {training.type === 'RUNNING' ? 'spm' : training.type === 'CYCLING' ? 'rpm' : 'spm'}
         </span>
       </div>
@@ -588,8 +567,8 @@ const TrainingMain = () => {
     
     {training.rpe && (
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FFA500' }}>
-        <span style={{ fontSize: '14px' }}>🔥</span>
-        <span style={{ fontSize: '13px', fontWeight: '600' }}>RPE {training.rpe}/10</span>
+        <span style={{ fontSize: '11px' }}>🔥</span>
+        <span style={{ fontSize: '11px', fontWeight: '600' }}>RPE {training.rpe}/10</span>
       </div>
     )}
   </div>
@@ -600,12 +579,12 @@ const TrainingMain = () => {
       display: 'flex', 
       alignItems: 'flex-start', 
       gap: '6px', 
-      marginTop: '8px', 
-      paddingTop: '8px', 
+      marginTop: '5px', 
+      paddingTop: '5px', 
       borderTop: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)'}` 
     }}>
-      <span style={{ color: Colors.get('subText', theme), fontSize: '14px', marginTop: '2px' }}>📝</span>
-      <span style={{ fontSize: '12px', color: Colors.get('subText', theme), fontStyle: 'italic', lineHeight: 1.4 }}>
+      <span style={{ color: Colors.get('subText', theme), fontSize: '11px', marginTop: '2px' }}>📝</span>
+      <span style={{ fontSize: '10px', color: Colors.get('subText', theme), fontStyle: 'italic', lineHeight: 1.4 }}>
         {training.notes.length > 60 ? training.notes.substring(0, 60) + '...' : training.notes}
       </span>
     </div>

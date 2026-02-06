@@ -299,20 +299,35 @@ const muscleLoadData = (periodInDays, langIndex, now = null) => {
   for (const [dateStr, sessions] of Object.entries(AppData.trainingLog || {})) {
     const sessionDate = new Date(dateStr);
     if (sessionDate.getTime() < cutoffTime) continue;
+    
     for (const session of sessions) {
-      if (!session?.completed || session.type !== 'GYM') continue;
-      for (const [exIdStr, exercise] of Object.entries(session.exercises)) {
+      // === FIX: Правильная фильтрация типов ===
+      // Пропускаем кардио и сессии без типа (старые данные)
+      if (session.type !== 'GYM') continue;
+      
+      // Пропускаем НЕзавершенные тренировки
+      if (!session?.completed) continue;
+      
+      for (const [exIdStr, exercise] of Object.entries(session.exercises || {})) {
         const tonnage = exercise.totalTonnage || 0;
         if (tonnage <= 0) continue;
+        
         const exId = parseInt(exIdStr, 10);
         const exerciseMeta = AppData.exercises?.[exId];
         if (!exerciseMeta) continue;
+        
         const primaryMgId = exerciseMeta.mgId;
-        const secondaryMgIds = Array.isArray(exerciseMeta.addMgIds) ? exerciseMeta.addMgIds.filter(id => id !== primaryMgId && id >= 0 && id < 13) : [];
+        const secondaryMgIds = Array.isArray(exerciseMeta.addMgIds) 
+          ? exerciseMeta.addMgIds.filter(id => id !== primaryMgId && id >= 0 && id < 13) 
+          : [];
+        
+        // Primary muscle
         if (Number.isInteger(primaryMgId) && mgIdToIndex.hasOwnProperty(primaryMgId)) {
           const idx = mgIdToIndex[primaryMgId];
           muscleLoads[idx] += tonnage * PRIMARY_SHARE;
         }
+        
+        // Secondary muscles
         if (secondaryMgIds.length > 0) {
           const sharePerSecondary = (tonnage * SECONDARY_TOTAL_SHARE) / secondaryMgIds.length;
           for (const secId of secondaryMgIds) {
@@ -325,10 +340,16 @@ const muscleLoadData = (periodInDays, langIndex, now = null) => {
       }
     }
   }
+  
   const maxLoad = Math.max(...muscleLoads);
   if (maxLoad === 0) {
-    return muscleDefs.map(def => ({ muscle: def.name[langIndex], load: 0, mgId: def.id }));
+    return muscleDefs.map(def => ({ 
+      muscle: def.name[langIndex], 
+      load: 0, 
+      mgId: def.id 
+    }));
   }
+  
   return muscleDefs.map((def, idx) => ({
     muscle: def.name[langIndex],
     load: Math.round((muscleLoads[idx] / maxLoad) * 100),
