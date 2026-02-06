@@ -24,12 +24,12 @@ const names = [
     ['Обхват талии', 'Waist circumference'],
     ['Обхват бицепса', 'Biceps circumference'],
     ['Обхват груди', 'Chest circumference'],
-    ['Обхват бедра', 'Hip circumference'],
+    ['Обхват бёдер', 'Hips circumference'],
 ]
 
 const now = new Date();
 const months = [['янв', 'фев', 'март', 'апр', 'май', 'июнь', 'июль', 'авг', 'сент', 'окт', 'нояб', 'дек'], ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']];
-const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health']]
+const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health'], ['Выносливосить', 'Endurance']]
 
 const generateRange = (start, end, step = 1) => {
     const arr = [];

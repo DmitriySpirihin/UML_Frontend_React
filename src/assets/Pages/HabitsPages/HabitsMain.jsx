@@ -522,27 +522,27 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     
     // Тени для карточек:
     let shadow = isLight 
-        ? '0 12px 24px -6px rgba(0,0,0,0.08), 0 4px 8px -3px rgba(0,0,0,0.04)' // Светлая: очень мягкая, парящая
+        ? '0 12px 24px -6px rgba(0, 0, 0, 0.27), 0 4px 8px -3px rgba(0, 0, 0, 0.06)' // Светлая: очень мягкая, парящая
         : `0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 0 0 rgba(255,255,255,0.1)`; // Темная: глубокая с подсветкой сверху
 
     if (isNegative) {
-        cardBg = isLight ? '#FFF5F5' : 'rgba(255, 59, 48, 0.08)';
+        cardBg = isLight ? '#9a4a4a' : 'rgba(255, 59, 48, 0.08)';
         borderColor = isLight ? 'rgba(255, 59, 48, 0.1)' : '1px solid rgba(255, 59, 48, 0.2)';
         iconBg = 'rgba(255, 59, 48, 0.15)';
     }
 
     if (status === 1) {
-        cardBg = isLight ? '#E8F5E9' : 'rgba(20, 60, 30, 0.85)';
+        cardBg = isLight ? '#32873961' : 'rgba(20, 60, 30, 0.85)';
         textColor = isLight ? '#1E5E25' : '#ffffff';
         subTextColor = isLight ? '#2E7D32' : 'rgba(255,255,255,0.7)';
-        iconBg = isLight ? '#FFFFFF' : 'rgba(255,255,255,0.2)';
+        iconBg = isLight ? '#ffffff5c' : 'rgba(255,255,255,0.2)';
         iconColor = isLight ? '#2E7D32' : '#ffffff';
         borderColor = 'transparent';
     } else if (status === -1) {
-        cardBg = isLight ? '#FFEBEE' : 'rgba(60, 20, 20, 0.85)';
+        cardBg = isLight ? '#bc334868' : 'rgba(60, 20, 20, 0.85)';
         textColor = isLight ? '#B71C1C' : '#ffffff';
         subTextColor = isLight ? '#C62828' : 'rgba(255,255,255,0.7)';
-        iconBg = isLight ? '#FFFFFF' : 'rgba(255,255,255,0.2)';
+        iconBg = isLight ? '#ffffff6e' : 'rgba(255,255,255,0.2)';
         iconColor = isLight ? '#C62828' : '#ffffff';
         borderColor = 'transparent';
     }
@@ -663,7 +663,8 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                     */}
 
                     <div style={{display:'flex',gap :'5px',marginTop:'16px',justifyContent:'center'}}>
-                    
+
+                    <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getDaysAmount(id)} color={theme === 'dark' ? '#a5a5a5' : '#1e1e1e8f'} />
                     <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={theme === 'dark' ? '#e33131' : '#9800008f'} />
                     {!isNegative && currentStreak > 0 && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDayName(langIndex,currentStreak)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
                     {!isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={theme === 'dark' ? '#31c8e3' : '#0086988f'} />}
@@ -761,8 +762,8 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
         )}
 
         {/* --- BOTTOM ACTIONS (Visible to All) --- */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', gap: '20px' }}>
-            <FaPencilAlt onClick={() => setCP(prev => ({ ...prev, show: true, type: 0, hId: id, gId: 0, hInfo: setHabitInfo }))} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', gap: '35px' }}>
+            {habit.isCustom && <FaPencilAlt onClick={() => setCP(prev => ({ ...prev, show: true, type: 0, hId: id, gId: 0, hInfo: setHabitInfo }))} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />}
             <FaTrash onClick={() => onDeleteHabit(id)} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
             <FaArrowUp style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} onClick={() => { toggleIsActive(); }} />
            {!isNegative && <div onClick={() => setNewStatus(true)} style={{ width: '18px', height: '18px', borderRadius: '50%', border: status !== 0 ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: status === 1 ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{status === 1 && <FaCheck size={16} color="#FFF" />}</div>}
@@ -779,7 +780,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                         <MdDone onClick={(e) => { e.stopPropagation(); startTimer(); setShowTimerSlider(false); }} style={{ cursor: 'pointer', color: habitColor, fontSize: '24px' }} />
                     </div>
                 </div>
-            )}s
+            )}
         </motion.div>
     )
 }
@@ -868,10 +869,10 @@ function parsedTime(time, maxTime,langIndex, isNegative) {
             daysText = 'дней';
         }
         
-        return days + ' ' + daysText;
+        return days;// + ' ' + daysText;
     } else {
         // Английский язык
-        return days + (days === 1 ? ' day' : ' days');
+        return days;// + (days === 1 ? ' day' : ' days');
     }
 }
 
@@ -972,11 +973,13 @@ const getDayName = (langIndex,days) => {
         } else {
             daysText = 'дней';
         }
+
+        return days;
         
-        return days + ' ' + daysText;
+      /*  return days + ' ' + daysText;
     } else {
         // Английский язык
-        return days + (days === 1 ? ' day' : ' days');
+        return days + (days === 1 ? ' day' : ' days');*/
     }
 }
 
@@ -1019,7 +1022,25 @@ function getSkippedAmount(id) {
         // Check if the habit exists for this date and if its status indicates skipped
         if (habitsOnDate && id in habitsOnDate) {
             // Assuming status 2 means skipped (adjust according to your status codes)
-            if (habitsOnDate[id] === 1) { // Replace 2 with your actual "skipped" status value
+            if (habitsOnDate[id] === -1) { // Replace 2 with your actual "skipped" status value
+                amount++;
+            }
+        }
+    }
+    
+    return amount;
+}
+function getDaysAmount(id) {
+    let amount = 0;
+    
+    // Iterate through all dates in habitsByDate
+    for (const date in AppData.habitsByDate) {
+        const habitsOnDate = AppData.habitsByDate[date];
+        
+        // Check if the habit exists for this date and if its status indicates skipped
+        if (habitsOnDate && id in habitsOnDate) {
+            // Assuming status 2 means skipped (adjust according to your status codes)
+            if (habitsOnDate[id]) { // Replace 2 with your actual "skipped" status value
                 amount++;
             }
         }

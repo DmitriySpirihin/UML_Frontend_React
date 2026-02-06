@@ -102,7 +102,7 @@ useEffect(() => {
         style={styles(theme).content}
       >
         <motion.img 
-          src={theme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png'} 
+          src={'images/Ui/Main_Dark.png'} 
           style={styles(theme).logo} 
           alt="UltyMyLife"
           animate={{ scale: [0.95, 1, 0.95] }}
@@ -193,8 +193,8 @@ const styles = (theme) => ({
     position: "absolute",
     inset: 0,
     background: theme === 'dark' 
-      ? "radial-gradient(circle at 50% 50%, #1a1a1a 0%, #000 100%)"
-      : "radial-gradient(circle at 50% 50%, #fff 0%, #f0f4f8 100%)",
+      ? "radial-gradient(circle at 50% 50%, #373e4b 0%, #0c0c10 100%)"
+      : "radial-gradient(circle at 50% 50%, #fff 0%, #6f6f6f 100%)",
     opacity: 0.6,
     zIndex: 1
   },

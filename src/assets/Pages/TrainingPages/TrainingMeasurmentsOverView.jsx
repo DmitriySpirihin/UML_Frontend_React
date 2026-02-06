@@ -22,7 +22,7 @@ export const names = [
     ['Обхват груди', 'Chest circumference'],
     ['Обхват бедра', 'Hip circumference'],
 ]
-const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health']]
+const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health'], ['Выносливосить', 'Endurance']]
 
 const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, height, age, gender, goal, wrist }) => {
     const [showInfo, setShowInfo] = useState(false);

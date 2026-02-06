@@ -14,6 +14,10 @@ const GOALS_CONFIG = {
         kcalMaxFactor: 1.15,
         macrosRu: '1.8–2.2 г / 1 г / 4–6 г',
         macrosEn: '1.8–2.2 g / 1 g / 4–6 g',
+        note: [
+            'Повышенная калорийность и белок для гипертрофии мышц. Углеводы обеспечивают энергию для интенсивных тренировок.',
+            'Caloric surplus + high protein for muscle hypertrophy. Carbs fuel intense training sessions.'
+        ]
     },
     strength: {
         id: 1,
@@ -23,6 +27,10 @@ const GOALS_CONFIG = {
         kcalMaxFactor: 1.15,
         macrosRu: '1.8–2.2 г / 1 г / 4–6 г',
         macrosEn: '1.8–2.2 g / 1 g / 4–6 g',
+        note: [
+            'Фокус на белке для восстановления ЦНС и мышц после тяжелых подходов. Умеренный профицит поддерживает нейромышечную адаптацию.',
+            'Protein-focused for CNS/muscle recovery after heavy lifts. Moderate surplus supports neuromuscular adaptation.'
+        ]
     },
     cut: {
         id: 2,
@@ -32,6 +40,10 @@ const GOALS_CONFIG = {
         kcalMaxFactor: 0.9,
         macrosRu: '1.6–2 г / 0.8 г / 2–3 г',
         macrosEn: '1.6–2 g / 0.8 g / 2–3 g',
+        note: [
+            'Высокий белок сохраняет мышцы в дефиците калорий. Сниженные углеводы ускоряют липолиз, но требуют контроля энергии на тренировках.',
+            'High protein preserves muscle mass in caloric deficit. Reduced carbs accelerate lipolysis but require energy management during workouts.'
+        ]
     },
     maintain: {
         id: 3,
@@ -41,7 +53,24 @@ const GOALS_CONFIG = {
         kcalMaxFactor: 1,
         macrosRu: '1.2–1.6 г / 1 г / 4 г',
         macrosEn: '1.2–1.6 g / 1 g / 4 g',
+        note: [
+            'Сбалансированный рацион для поддержания веса и повседневной активности. Оптимально для периодов отдыха или легких тренировок.',
+            'Balanced intake to maintain weight and daily energy levels. Ideal for deload weeks or light activity periods.'
+        ]
     },
+    endurance: {
+        id: 4,
+        titleRu: 'Выносливость',
+        titleEn: 'Endurance',
+        kcalMinFactor: 1.0,
+        kcalMaxFactor: 1.25,
+        macrosRu: '1.4–1.8 г / 1.0–1.2 г / 7–12 г',
+        macrosEn: '1.4–1.8 g / 1.0–1.2 g / 7–12 g',
+        note: [
+            'Углеводы повышены для восполнения гликогена после длительных нагрузок. Критично для тренировок >90 минут и предотвращения "стенки".',
+            'Elevated carbs replenish glycogen after long sessions. Critical for >90min workouts and preventing "hitting the wall".'
+        ]
+    }
 };
 
 const RecomendationMeasurements = ({ bmi, trains }) => {
@@ -133,8 +162,9 @@ const RecomendationMeasurements = ({ bmi, trains }) => {
                         isLight={isLight}
                     />
                 </div>
+                <div style={{fontSize:'10px',color:Colors.get('subText', theme),fontWeight: '800',marginTop:'5px'}}>{currentGoalConfig.note[langIndex]}</div>
             </div>
-
+            
             <Disclaimer theme={theme} langIndex={langIndex} fSize={fSize} />
         </div>
     );

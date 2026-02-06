@@ -15,7 +15,7 @@ import { MdClose, MdDone } from 'react-icons/md';
 import ScrollPicker from '../Helpers/ScrollPicker.jsx';
 
 // --- CONSTANTS ---
-const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health']];
+const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health'], ['Выносливосить', 'Endurance']];
 
 const generateRange = (start, end, step = 1) => {
     const arr = [];

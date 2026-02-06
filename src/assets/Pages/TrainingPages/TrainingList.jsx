@@ -288,7 +288,7 @@ const TrainingList = () => {
   return (
     <div style={styles(theme).container}>
       {/* === Фильтр по типу тренировки === */}
-      <div style={styles(theme).typeFilterContainer}>
+      <div style={{...styles(theme).typeFilterContainer,marginTop:'25px'}}>
   <div style={styles(theme).typeToggleWrapper}>
     {availableTrainingTypes.map(({ value, label }) => {
       const isActive = trainingTypeFilter === value;
@@ -661,7 +661,7 @@ const styles = (theme, fSize) => ({
   typeTogglePill: {
     flex: '1 1 auto',
     textAlign: 'center',
-    padding: '8px 4px',
+    padding: '5px 4px',
     borderRadius: '20px',
     cursor: 'pointer',
     fontWeight: '500',
@@ -691,7 +691,7 @@ const styles = (theme, fSize) => ({
   togglePill: {
     flex: 1,
     textAlign: 'center',
-    padding: '8px 0',
+    padding: '5px 0',
     borderRadius: '20px',
     cursor: 'pointer',
     fontWeight: '500',
@@ -730,7 +730,7 @@ const styles = (theme, fSize) => ({
     borderRadius: '16px',
     marginBottom: '12px',
     boxShadow: theme === 'light' ? '0 2px 10px rgba(0,0,0,0.05)' : 'none',
-    border: `1px solid ${theme === 'light' ? 'transparent' : 'rgba(255,255,255,0.05)'}`,
+    border: `1px solid ${theme === 'light' ? 'rgba(192, 192, 192, 0.05)' : 'rgba(255,255,255,0.05)'}`,
     overflow: 'hidden',
   },
   cardHeader: {

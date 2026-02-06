@@ -544,8 +544,8 @@ const CompactCard = ({ onClick, onCheck, item, theme, lang, fSize }) => {
   }
   const accentColor = rawColor;
 
-  const cardBg = isLight ? '#FFFFFF' : (Colors.get('simplePanel', theme) + 'CC');
-  const shadow = isLight ? '0 4px 12px rgba(0,0,0,0.05)' : '0 4px 12px rgba(0,0,0,0.2)';
+  const cardBg = Colors.get('simplePanel', theme);
+  const shadow = isLight ? '0 4px 12px rgba(0, 0, 0, 0.26)' : '0 4px 12px rgba(0,0,0,0.2)';
 
   // Visual indicators for special states
   const hasVisualIndicator = item.isPending || item.isHidden || item.isPinned;
@@ -617,7 +617,7 @@ const CompactCard = ({ onClick, onCheck, item, theme, lang, fSize }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: item.isDone ? `${accentColor}15` : `${accentColor}25`,
+          backgroundColor: theme === 'dark' ? '#2e2e2e94' : '#90cec867',
           color: accentColor,
           fontSize: '20px',
           marginRight: '14px',

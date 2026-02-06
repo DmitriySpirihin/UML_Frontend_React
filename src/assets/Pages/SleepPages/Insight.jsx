@@ -5,7 +5,7 @@ import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus.js';
 import { getInsight, INSIGHT_TYPES } from './InsightHelper.js';
 import { 
     MdAutoAwesome, MdFitnessCenter, MdBed, MdCheckCircle, 
-    MdPsychology, MdSchedule, MdExpandMore, MdWarning 
+    MdPsychology, MdSchedule, MdExpandMore, MdFastfood 
 } from 'react-icons/md';
 import { FaRobot, FaRunning ,FaBicycle} from 'react-icons/fa';
 
@@ -87,6 +87,7 @@ const Insight = () => {
         { type: INSIGHT_TYPES.TIME_MANAGEMENT, label: langIndex === 0 ? 'График' : 'Schedule', icon: <MdSchedule /> },
         { type: INSIGHT_TYPES.RUNNING, label: langIndex === 0 ? 'Бег' : 'Running', icon: <FaRunning /> },
         { type: INSIGHT_TYPES.CYCLING, label: langIndex === 0 ? 'Вело' : 'Cycling', icon: <FaBicycle /> },
+        { type: INSIGHT_TYPES.FOOD, label: langIndex === 0 ? 'Питание' : 'Food', icon: <MdFastfood /> },
     ];
 
     // Medical disclaimer text with language support

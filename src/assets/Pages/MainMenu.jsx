@@ -513,7 +513,7 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,set
         borderRadius: !item.icon ? '0px' : '24px',
         overflow: 'hidden',
         marginBottom: '12px',
-        backgroundColor: !item.icon ? 'transparent' : isDark ? Colors.get('simplePanel', theme) + '99' : '#FFFFFF',
+        backgroundColor: !item.icon ? 'transparent' : Colors.get('simplePanel', theme),
         backdropFilter: !item.icon ? 'none' : isDark ? 'blur(40px)' : 'none',
         border: !item.icon ? 'none' : isPinned 
             ? `1px solid ${item.color}` 
@@ -759,7 +759,7 @@ export default MainMenu
 
 const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
     const isDark = theme === 'dark';
-    const bg = isDark ? Colors.get('simplePanel', theme) : '#FFFFFF';
+    const bg = Colors.get('simplePanel', theme);
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
 

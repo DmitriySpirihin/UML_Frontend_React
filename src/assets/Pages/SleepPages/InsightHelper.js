@@ -4,6 +4,33 @@ import { allHabits } from "../../Classes/Habit";
 // FIXED: Removed trailing space in API URL (critical bug fix)
 const API_BASE = 'https://ultymylife.ru/api/insight';
 
+const getLatestMeasurements = () => {
+    const latestMeasurements = {};
+    const measurementNames = [
+        ['Вес тела', 'Body weight'],
+        ['Обхват талии', 'Waist circumference'],
+        ['Обхват бицепса', 'Biceps circumference'],
+        ['Обхват груди', 'Chest circumference'],
+        ['Обхват бёдер', 'Hips circumference']
+    ];
+    
+    measurementNames.forEach(([nameRu, nameEn], index) => {
+        const category = AppData.measurements?.[index] || [];
+        if (category.length > 0) {
+            // Get latest entry (already sorted by date in onAddDay)
+            const latest = category[category.length - 1];
+            latestMeasurements[index] = {
+                name: [nameRu, nameEn],
+                value: latest.value,
+                date: latest.date,
+                unit: index === 0 ? 'kg' : 'cm' // Weight in kg, circumferences in cm
+            };
+        }
+    });
+    
+    return latestMeasurements;
+};
+
 export const INSIGHT_TYPES = {
     GENERAL: 'general',
     PROGRESS_ANALYSE: 'progress',
@@ -12,7 +39,8 @@ export const INSIGHT_TYPES = {
     FOCUS_MINDSET: 'focus',    
     TIME_MANAGEMENT: 'efficiency',
     RUNNING:'running',   // NEW: Dedicated running analysis
-    CYCLING: 'cycling'  
+    CYCLING: 'cycling',
+    FOOD:'food'  
 };
 
 const INSIGHT_SYSTEM_PROMPTS = [
@@ -28,7 +56,7 @@ const INSIGHT_SYSTEM_PROMPTS = [
    • 📈 — тренды и корреляции
    • ✅ — рекомендация к действию
 3. Всегда обращайся к пользователю по имени
-4. Завершай сообщение подписью «— UltyMyBro»
+4. Завершай сообщение подписью необычным прощанием и используй свое имя : UltyMyBro.
 
 Формат ответа:
 💡 [Краткий вывод о главной взаимосвязи]
@@ -49,7 +77,7 @@ CORE RULES:
    • 📈 — trends & correlations
    • ✅ — actionable recommendation
 3. Always address the user by name
-4. End with signature "— UltyMyBro"
+4. End with original farewell and your name : UltyMyBro.
 
 Response format:
 💡 [Brief core insight]
@@ -61,36 +89,40 @@ NO long paragraphs, NO generic advice.`
 
 const INSIGHT_USER_PROMPT_TEMPLATES = {
     [INSIGHT_TYPES.GENERAL]: [
-        `Отчёт по общей продуктивности (Синтез всех сфер):\n1) 📊 Анализ: Как сон, дыхательные практики, медитация и закалка повлияли на закрытие задач?\n2) 💪 Главная победа: Лучший результат в спорте или дисциплине.\n3) ⚠️ Узкое горлышко: Что мешает успевать всё?\n4) 🎯 План: 3 микро-шага на неделю.Поприветствуй пользователя в начале по имени`,
-        `General Productivity Report (Life Synthesis):\n1) 📊 Analysis: How did sleep, breathing exercises, meditation, and hardening impact task completion?\n2) 💪 Key Win: Top achievement in sports or discipline.\n3) ⚠️ Bottleneck: What is hindering your overall progress?\n4) 🎯 Action Plan: 3 micro-steps for next week.Greet the user by name at the start`
+        `Отчёт по общей продуктивности (Синтез всех сфер):\n1) 📊 Анализ: Как сон, дыхательные практики, медитация и закалка повлияли на закрытие задач?\n2) 💪 Главная победа: Лучший результат в спорте или дисциплине.\n3) ⚠️ Узкое горлышко: Что мешает успевать всё?\n4) 🎯 План: 3 микро-шага на неделю.\nПоприветствуй пользователя в начале по имени.`,
+        `Overall Productivity Report (Cross-domain synthesis):\n1) 📊 Analysis: How did sleep, breathing practices, meditation, and cold exposure impact task completion?\n2) 💪 Highlight: Best result in fitness or discipline this period.\n3) ⚠️ Bottleneck: What's preventing you from accomplishing everything?\n4) 🎯 Plan: 3 micro-steps for the upcoming week.\nGreet the user by name at the start.`
     ],
     [INSIGHT_TYPES.PROGRESS_ANALYSE]: [
-        `Анализ прогресса (Кратко):\n1) 📈 Тренд: Веса и объём — рост или плато?\n2) 🔥 Пик: Самый эффективный день.\n3) 🎯 Коррекция: Одно правка в интенсивность.`,
-        `Progress Analysis (Brief):\n1) 📈 Trend: Weights & Volume — growth or plateau?\n2) 🔥 Peak: Most effective day.\n3) 🎯 Correction: One adjustment to intensity.`
+        `Анализ прогресса (Кратко, проанализируй внимательно TRAINING_LOG, если мало данных порекомендуй тренировку на основе данных из USER CONTEXT):\n1) 📈 Тренд: Веса и объём — рост или плато?\n2)`,
+        `Progress Analysis (Concise, analyze TRAINING_LOG carefully. If data is insufficient, recommend a workout based on USER CONTEXT):\n1) 📈 Trend: Weights and volume — growth or plateau?\n2)`
     ],
     [INSIGHT_TYPES.RECOVERY_RATE]: [
-        `Восстановление (Вердикт):\n1) 🛌 Ресурс: Хватает ли сна и практик восстановления (дыхание/медитация/закалка) для твоих нагрузок?\n2) ⚠️ Риск: Признаки переутомления.\n3) 🎯 Режим: Конкретный совет по отдыху сегодня.`,
-        `Recovery (Verdict):\n1) 🛌 Resource: Are sleep and recovery practices (breathing/meditation/hardening) sufficient for your load?\n2) ⚠️ Risk: Signs of overtraining.\n3) 🎯 Protocol: Specific rest advice for today.`
+        `Восстановление (Вердикт используй SLEEP_AND_RECOVERY, BREATHING_EXERCISES, MEDITATION  and HARDENING):\n1) `,
+        `Recovery Assessment (Verdict based on SLEEP_AND_RECOVERY, BREATHING_EXERCISES, MEDITATION , and HARDENING):\n1) `
     ],
     [INSIGHT_TYPES.HABITS]: [
-        `Дисциплина (Паттерны):\n1) 🧱 Якорь: Твоя самая стабильная привычка.\n2) ⚠️ Сбой: Когда и почему происходят срывы?\n3) 🎯 Укрепление: Как закрыть слабое звено.`,
-        `Discipline (Patterns):\n1) 🧱 Anchor: Your most stable habit.\n2) ⚠️ Leak: When and why do failures occur?\n3) 🎯 Fix: How to strengthen the weak link.`
+        `Дисциплина (Паттерны используй HABITS, если данных нет порекомендуй создать пару конкретных привычек или бросить негативные, в этом приложении откуда идет запрос к тебе очень удобный менеджер привычек):\n1) `,
+        `Habit Discipline (Use patterns from HABITS. If no data, recommend creating 2-3 specific positive habits or eliminating negative ones — this app has a powerful habit manager):\n1) `
     ],
     [INSIGHT_TYPES.FOCUS_MINDSET]: [
-        `Ментальный фокус:\n1) 🧠 Состояние: Уровень ментальной выносливости и риск выгорания.\n2) ⚡️ Совет: Один психологический прием для фокуса сегодня.`,
-        `Focus & Mindset:\n1) 🧠 State: Mental stamina level and burnout risk.\n2) ⚡️ Tip: One psychological tactic for focus today.`
+        `Ментальное состояние (проанализируй BRAIN_TRAINING, если не достаточно данных порекомендуй пройти несколько сессий, там есть тренировка быстрого счета в уме, памяти, реакции и логики, сравни результаты если есть и количество ошибок)`,
+        `Mental State (Analyze BRAIN_TRAINING. If insufficient data, recommend completing several sessions — the app includes mental exercises: quick math, memory, reaction, and logic. Compare results and error counts if available)`
     ],
     [INSIGHT_TYPES.TIME_MANAGEMENT]: [
-        `Управление временем:\n1) 🕒 Golden Hour: Твое самое продуктивное время на основе логов.\n2) 📉 Dead Zone: Когда эффективность падает и как это исправить.`,
-        `Time Management:\n1) 🕒 Golden Hour: Your most productive window based on logs.\n2) 📉 Dead Zone: When efficiency drops and how to fix it.`
+        `Управление временем (используй TO-DO LIST & PRODUCTIVITY, дай небольшую подсказку по задачам если есть, порекомендуй создать если нет записей в логах):\n1) `,
+        `Time Management (Use TO-DO LIST & PRODUCTIVITY. Give a small task tip if data exists, recommend creating tasks if logs are empty):\n1) `
     ],
     [INSIGHT_TYPES.RUNNING]: [
-        `Анализ беговых тренировок (последние 7 дней):\n1) 📈 Динамика: Изменение дистанции, темпа (мин/км) и ЧСС за неделю.\n2) 🥇 Пиковая сессия: Лучший результат по дистанции/темпу с анализом условий.\n3) ⚠️ Риски: Признаки переутомления (ухудшение темпа при той же дистанции, аномальная ЧСС).\n4) 🎯 Тактика: Конкретная рекомендация по улучшению выносливости или скорости на следующую неделю. Упомяни погодные условия если есть в заметках.`,
-        `Running Analysis (Last 7 Days):\n1) 📈 Trend: Distance, pace (min/km), and heart rate progression.\n2) 🥇 Peak Session: Best distance/pace performance with context analysis.\n3) ⚠️ Risks: Overtraining signs (worsening pace at same distance, abnormal HR).\n4) 🎯 Strategy: Specific recommendation to improve endurance/speed next week. Mention weather conditions if noted in logs.`
+        `Анализ беговых тренировок (последние 7 дней, если в USER CONTEXT цель endurance проанализируй данные из TRAINING_LOG особенно тип RUNNING, дай беговые советы, если данных нет порекомендуй с чего начать):\n1) `
+        `Running Training Analysis (Last 7 days. If USER CONTEXT goal is endurance, analyze TRAINING_LOG — especially RUNNING type. Give running-specific advice. If no data, recommend how to start):\n1) `
     ],
     [INSIGHT_TYPES.CYCLING]: [
-        `Анализ велотренировок (последние 7 дней):\n1) 📈 Динамика: Скорость (км/ч), набор высоты (м) и каденс (об/мин) за неделю.\n2) 🥇 Пиковая сессия: Лучший результат по дистанции/средней скорости с анализом профиля маршрута (равнина/холмы).\n3) ⚠️ Риски: Признаки перетренированности (падение каденса при той же мощности, аномальная ЧСС).\n4) 🎯 Тактика: Рекомендация по интервальной тренировке или работе над техникой педалирования на следующую неделю. Упомяни влияние рельефа из заметок.`,
-        `Cycling Analysis (Last 7 Days):\n1) 📈 Trend: Speed (km/h), elevation gain (m), and cadence (rpm) progression.\n2) 🥇 Peak Session: Best distance/average speed performance with terrain analysis (flat/hilly).\n3) ⚠️ Risks: Overtraining signs (declining cadence at same power output, abnormal HR response).\n4) 🎯 Strategy: Specific interval training or pedaling technique recommendation for next week. Reference terrain impact from session notes.`
+        `Анализ велотренировок (последние 7 дней, если в USER CONTEXT цель endurance проанализируй данные из TRAINING_LOG особенно тип CYCLING, дай вело-советы, если данных нет порекомендуй с чего начать):\n1)  `,
+        `Cycling Training Analysis (Last 7 days. If USER CONTEXT goal is endurance, analyze TRAINING_LOG — especially CYCLING type. Give cycling-specific advice. If no data, recommend how to start):\n1)  `
+    ],
+    [INSIGHT_TYPES.FOOD]: [
+        `На основании данных из USER CONTEXT и MEASUREMENTS дай персональные рекомендации по питанию, режим, калораж, примерный рацион. Особенно обрати внимание на телосложение, гендер и цель тренировок.`,
+        `Based on USER CONTEXT and MEASUREMENTS data, provide personalized nutrition recommendations: meal timing, calorie target, and sample meal plan. Pay special attention to body type, gender, and training goal.`
     ]
 };
 
@@ -120,7 +152,6 @@ export function getInsightPrompt(langIndex, type = INSIGHT_TYPES.GENERAL) {
     const meditation = AppData.meditationLog || {};    // ACTIVELY PROCESSED
     const hardening = AppData.hardeningLog || {};      // ACTIVELY PROCESSED
     const sleeping = AppData.sleepingLog || {};
-    const mentalLog = AppData.mentalLog || {};
     const todoList = AppData.todoList || [];
     const programs = AppData.programs || {};
     const exercises = AppData.exercises || {};
@@ -132,10 +163,23 @@ export function getInsightPrompt(langIndex, type = INSIGHT_TYPES.GENERAL) {
     };
 
     // 1. USER CONTEXT (ENHANCED WITH NAME)
-    const userBlock = `
+    const latestMeasurements = getLatestMeasurements();
+
+const userBlock = `
 USER CONTEXT:
-- Name: ${userName}
-- Profile: ${user.age || '?'} y.o, ${user.gender === 0 ? 'Male' : 'Female'}, Goal: ${user.goal !== undefined ? ['Mass', 'Strength', 'Cut', 'Health'][user.goal] : 'General'}
+- Name: ${userName || 'User'}
+- Profile: ${user.age || '?'} y.o, ${user.gender === 0 ? 'Male' : 'Female'}, ${user.height ? `${user.height} cm` : ''}${user.weight ? `, ${user.weight} kg` : ''}${user.height && user.weight ? `, BMI: ${(user.weight / ((user.height/100) ** 2)).toFixed(1)}` : ''}
+- Primary Goal: ${user.goal !== undefined ? ['Muscle Gain', 'Strength', 'Fat Loss', 'Maintenance', 'Endurance'][user.goal] || 'General' : 'General'}
+- Training Experience: ${user.trainingExperience ? `${user.trainingExperience} months` : 'Beginner'}
+- Current Focus: ${user.currentFocus || 'Balanced development'}
+
+MEASUREMENTS (Latest):
+${Object.entries(latestMeasurements).length > 0 
+    ? Object.values(latestMeasurements).map(m => 
+        `- ${m.name[langIndex]}: ${m.value} ${m.unit} (updated ${m.date})`
+      ).join('\n')
+    : `- No recent measurements recorded. Consider tracking for better progress insights.`
+}
 `.trim();
 
     // 2. TODO LIST (UNCHANGED)
@@ -353,6 +397,8 @@ ${habitsBlock}
 ${trainingsBlock}
 ${mentalBlock}
 `.trim();
+
+   //console.log(userPrompt);
 
     return { systemPrompt, userPrompt };
 }

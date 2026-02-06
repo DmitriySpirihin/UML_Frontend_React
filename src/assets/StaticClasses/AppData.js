@@ -33,7 +33,7 @@ export class AppData{
    static programs = programs;
    static trainingLog = {};
    static pData = {filled:false,age:20,gender:0,height:180,wrist:20,goal:1};
-   static measurements = [[],[],[],[],[]];
+   static measurements = [[],[],[],[],[]];// [[{ date: newDateStr, value: val }],[],[],[],[]]
   static ownPlates = [true,true,true,true,true,true,true,true];
   static platesAmount = [10,10,10,10,10,10,10,10];
   static barWeight = 20;

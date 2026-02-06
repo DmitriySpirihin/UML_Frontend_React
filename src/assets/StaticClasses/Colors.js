@@ -10,12 +10,12 @@ export class Colors {
 
   static palette = {
     // Core Backgrounds - Deep Obsidian
-    background: { light: "#F8FAFC", dark: "#15181c" }, 
+    background: { light: "#e5e5e5", dark: "#15181c" }, 
     mainText: { light: "#0F172A", dark: "#F1F5F9" },
     subText: { light: "#64748B", dark: "#8E96A3" }, 
     
     // Panels - Layered Charcoal
-    simplePanel: { light: "#FFFFFF", dark: "#16181D" }, // Slightly lighter than background
+    simplePanel: { light: "#ffffff", dark: "#1a1d21" }, // Slightly lighter than background
     metricsPanel: { light: "#F1F5F9", dark: "#101013" },
     highlitedPanel: { light: "#E2E8F0", dark: "#21252B" },
     

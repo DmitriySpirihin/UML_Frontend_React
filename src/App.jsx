@@ -362,7 +362,7 @@ function App() {
   )
 }
 const SuspenseSpinner = ({ theme }) => {
-    const logoSrc = theme === 'dark' ? 'images/Ui/Main_Dark.png' : 'images/Ui/Main_Light.png';
+    const logoSrc = 'images/Ui/Main_Dark.png';
     const bgColor = Colors.get('background', theme);
 
     return (
