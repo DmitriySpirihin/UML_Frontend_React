@@ -113,7 +113,7 @@ const INSIGHT_USER_PROMPT_TEMPLATES = {
         `Time Management (Use TO-DO LIST & PRODUCTIVITY. Give a small task tip if data exists, recommend creating tasks if logs are empty):\n1) `
     ],
     [INSIGHT_TYPES.RUNNING]: [
-        `Анализ беговых тренировок (последние 7 дней, если в USER CONTEXT цель endurance проанализируй данные из TRAINING_LOG особенно тип RUNNING, дай беговые советы, если данных нет порекомендуй с чего начать):\n1) `
+        `Анализ беговых тренировок (последние 7 дней, если в USER CONTEXT цель endurance проанализируй данные из TRAINING_LOG особенно тип RUNNING, дай беговые советы, если данных нет порекомендуй с чего начать):\n1) `,
         `Running Training Analysis (Last 7 days. If USER CONTEXT goal is endurance, analyze TRAINING_LOG — especially RUNNING type. Give running-specific advice. If no data, recommend how to start):\n1) `
     ],
     [INSIGHT_TYPES.CYCLING]: [
