@@ -507,7 +507,6 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     const [maxTimer, setMaxTimer] = useState(isNegative ? 86400000 : 60000);
     const [time, setTime] = useState(isNegative ? Math.round(Date.now() - new Date(AppData.choosenHabitsLastSkip[id])) : 60000);
     const [progress, setProgress] = useState(0);
-    const [currentStreak,setCurrentStreak] = useState(0);
 
     const habitColor = isNegative ? '#FF3B30' : (habit.color || '#32D74B');
     const isLight = theme === 'light' || theme === 'speciallight';
@@ -546,23 +545,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
         iconColor = isLight ? '#C62828' : '#ffffff';
         borderColor = 'transparent';
     }
-    const habitsData = Array.from(Object.values(AppData.habitsByDate));
-    useEffect(() => {
-            if (id > -1) {
-                let curS = 0;
-                const today = new Date().toISOString().split('T')[0];
-                
-            
-                for (let i = habitsData.length - 2; i >= 0; i--) {
-                    if (id in habitsData[i]) {
-                        if (habitsData[i][id] > 0) curS++;
-                        else break;
-                    }
-                }
-                if (AppData.habitsByDate[today]?.[id] > 0) curS++;
-                setCurrentStreak(curS);
-            }
-        }, [id, AppData.habitsByDate,status]);
+   
     useEffect(() => { const sub = premium$.subscribe(setHasPremium); return () => sub.unsubscribe(); }, []);
     useEffect(() => {
         if (timer) {
@@ -614,9 +597,8 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
         else {
             if (status === 0) {
                newStatus = -1;
-               setCurrentStreak(0);
             }
-            else if (status === 1) { newStatus = isNegative ? -1 : 0; setCurrentStreak(0); if(isNegative) { setTime(0); AppData.choosenHabitsLastSkip[id] = Date.now(); } }
+            else if (status === 1) { newStatus = isNegative ? -1 : 0; if(isNegative) { setTime(0); AppData.choosenHabitsLastSkip[id] = Date.now(); } }
             else if (status === -1) { newStatus = -1; if(isNegative) { setTime(0); AppData.choosenHabitsLastSkip[id] = Date.now(); } }
         }
         AppData.habitsByDate[dateKey][id] = newStatus;
@@ -666,7 +648,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
 
                     <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getDaysAmount(id)} color={theme === 'dark' ? '#a5a5a5' : '#1e1e1e8f'} />
                     <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={theme === 'dark' ? '#e33131' : '#9800008f'} />
-                    {!isNegative && currentStreak > 0 && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDayName(langIndex,currentStreak)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
+                    {!isNegative && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDoneAmount(id)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
                     {!isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={theme === 'dark' ? '#31c8e3' : '#0086988f'} />}
                     {isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
 
@@ -1022,9 +1004,28 @@ function getSkippedAmount(id) {
         // Check if the habit exists for this date and if its status indicates skipped
         if (habitsOnDate && id in habitsOnDate) {
             // Assuming status 2 means skipped (adjust according to your status codes)
-            if (habitsOnDate[id] === -1) { // Replace 2 with your actual "skipped" status value
+            if (habitsOnDate[id] < 1) { // Replace 2 with your actual "skipped" status value
                 amount++;
             }
+        }
+    }
+    
+    return amount;
+}
+function getDoneAmount(id) {
+    let amount = 0;
+    
+    // Iterate through all dates in habitsByDate
+    for (const date in AppData.habitsByDate) {
+        const habitsOnDate = AppData.habitsByDate[date];
+        
+        // Check if the habit exists for this date and if its status indicates skipped
+        if (habitsOnDate && id in habitsOnDate) {
+            // Assuming status 2 means skipped (adjust according to your status codes)
+            if (habitsOnDate[id] === 1) { // Replace 2 with your actual "skipped" status value
+                amount++;
+            }
+            else if(habitsOnDate[id] < 1)amount = 0;
         }
     }
     
