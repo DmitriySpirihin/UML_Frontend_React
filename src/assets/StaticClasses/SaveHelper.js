@@ -39,21 +39,8 @@ export async function initializeTelegramSDK(opts = {}) {
     // 6. Setup Buttons (Hide them)
     if (rawWebApp) {
       // Настройка BackButton - СИСТЕМНОЕ окно подтверждения
-      rawWebApp.BackButton.onClick(() => {
-        const isRussian = AppData.prefs[0] === 0;
+      rawWebApp.enableClosingConfirmation();
         
-        // ✅ Используем системный метод confirm вместо showPopup
-        rawWebApp.confirm({
-          message: isRussian 
-            ? 'Вы уверены, что хотите завершить сессию?' 
-            : 'Are you sure you want to end the session?',
-          button: isRussian ? 'Выйти' : 'Exit'
-        }, (confirmed) => {
-          if (confirmed) {
-            rawWebApp.close();
-          }
-        });
-      });
 
       // Настройка SettingsButton
       if (rawWebApp.SettingsButton) {
