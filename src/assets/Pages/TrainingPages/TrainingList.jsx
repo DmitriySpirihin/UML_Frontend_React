@@ -4,7 +4,7 @@ import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors.js';
 import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus.js';
 import { IoIosArrowDown } from 'react-icons/io';
-import { FaChevronDown } from 'react-icons/fa';
+import { FaChevronDown , FaChevronUp,FaCalendarAlt} from 'react-icons/fa';
 
 // --- Helpers ---
 const getDayName = (dateStr, langIndex) => {
@@ -115,6 +115,9 @@ const TrainingList = () => {
   const [pId, setPId] = useState(0);
   const [dayIndex, setDayIndex] = useState(0);
   const [trainingTypeFilter, setTrainingTypeFilter] = useState('all'); // 'all', 'GYM', 'RUNNING', etc.
+  const [selectedYear, setSelectedYear] = useState(null);
+  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [expandedFilter,setExpandedFilter] = useState(false);
 
   // --- Subscriptions ---
   useEffect(() => {
@@ -125,7 +128,33 @@ const TrainingList = () => {
       subTheme.unsubscribe();
     };
   }, []);
-
+  // --- EXTRACT UNIQUE YEARS AND MONTHS ---
+const availableYearsMonths = useMemo(() => {
+  if (!AppData.trainingLog || Object.keys(AppData.trainingLog).length === 0) {
+    return { years: [], months: [] };
+  }
+  
+  const yearsSet = new Set();
+  const monthsSet = new Set();
+  
+  Object.entries(AppData.trainingLog).forEach(([date, sessions]) => {
+    const dateObj = new Date(date);
+    const year = dateObj.getFullYear();
+    const month = dateObj.getMonth(); // 0-11
+    
+    yearsSet.add(year);
+    
+    // Only add months for the selected year (or all if no year selected)
+    if (!selectedYear || year === parseInt(selectedYear)) {
+      monthsSet.add(month);
+    }
+  });
+  
+  const years = Array.from(yearsSet).sort((a, b) => b - a); // Descending
+  const months = Array.from(monthsSet).sort((a, b) => a - b); // Ascending
+  
+  return { years, months };
+}, [AppData.trainingLog, selectedYear]);
   useEffect(() => {
     const subFontSize = fontSize$.subscribe(setFSize);
     return () => subFontSize.unsubscribe();
@@ -137,9 +166,10 @@ const TrainingList = () => {
       setFilterMode(0);
     }
   }, [trainingTypeFilter]);
-
+ 
   // --- Data & Filtering ---
-  const { allTrainings, sessionColorMap } = useMemo(() => {
+  // --- Data & Filtering ---
+const { allTrainings, sessionColorMap } = useMemo(() => {
   const trainings = [];
   const colorMap = new Map();
   let colorIndex = 0;
@@ -176,6 +206,19 @@ const TrainingList = () => {
   // Фильтрация
   let filtered = trainings.filter(item => {
     const session = item.session;
+    const date = item.date;
+    
+    // Фильтр по году
+    if (selectedYear) {
+      const sessionYear = new Date(date).getFullYear();
+      if (sessionYear !== parseInt(selectedYear)) return false;
+    }
+    
+    // Фильтр по месяцу
+    if (selectedMonth !== null && selectedMonth !== undefined) {
+      const sessionMonth = new Date(date).getMonth();
+      if (sessionMonth !== parseInt(selectedMonth)) return false;
+    }
     
     // Фильтр по типу тренировки
     if (trainingTypeFilter !== 'all' && session.type !== trainingTypeFilter) {
@@ -195,7 +238,7 @@ const TrainingList = () => {
   });
 
   return { allTrainings: filtered, sessionColorMap: colorMap };
-}, [AppData.trainingLog, filterMode, pId, dayIndex, trainingTypeFilter]);
+}, [AppData.trainingLog, filterMode, pId, dayIndex, trainingTypeFilter, selectedYear, selectedMonth]);
 
   // --- Filter Options ---
   const programOptions = useMemo(() => {
@@ -284,6 +327,133 @@ const TrainingList = () => {
       return a.label.localeCompare(b.label);
     });
 }, [AppData.trainingLog, langIndex]);
+
+// --- FILTER DROPDOWNS COMPONENT ---
+const FilterDropdowns = ({expanded,setExpanded}) => {
+  const { years, months } = availableYearsMonths;
+  
+  const monthNames = [
+    langIndex === 0 ? 'Январь' : 'January',
+    langIndex === 0 ? 'Февраль' : 'February',
+    langIndex === 0 ? 'Март' : 'March',
+    langIndex === 0 ? 'Апрель' : 'April',
+    langIndex === 0 ? 'Май' : 'May',
+    langIndex === 0 ? 'Июнь' : 'June',
+    langIndex === 0 ? 'Июль' : 'July',
+    langIndex === 0 ? 'Август' : 'August',
+    langIndex === 0 ? 'Сентябрь' : 'September',
+    langIndex === 0 ? 'Октябрь' : 'October',
+    langIndex === 0 ? 'Ноябрь' : 'November',
+    langIndex === 0 ? 'Декабрь' : 'December'
+  ];
+  
+  const hasFilters = selectedYear || selectedMonth !== null;
+  
+  return (
+    <div style={styles(theme).dateFilterContainer}>
+      <div style={styles(theme).filterHeader}>
+        <div style={styles(theme).filterTitle} onClick={() => setExpanded(prev => !prev)}>
+          <FaCalendarAlt size={15} style={{ marginRight: '6px' }} />
+          {langIndex === 0 ? 'Фильтр по дате' : 'Date Filter'}
+          {expanded ? <FaChevronUp size={12} style={{ marginLeft: '16px' }} /> : <FaChevronDown size={12} style={{ marginLeft: '16px' }} />}
+        </div>
+        {hasFilters && expanded && (
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              setSelectedYear(null);
+              setSelectedMonth(null);
+            }}
+            style={styles(theme).clearFilterButton}
+          >
+            {langIndex === 0 ? 'Сбросить' : 'Clear'}
+          </motion.button>
+        )}
+      </div>
+      
+      {expanded && <div style={styles(theme).filterDropdowns}>
+        {/* Year Dropdown */}
+        <div style={styles(theme).filterDropdownWrapper}>
+          <div style={styles(theme).filterLabel}>
+            {langIndex === 0 ? 'Год' : 'Year'}
+          </div>
+          <motion.div
+            whileHover={{ scale: 1.01 }}
+            style={styles(theme).dropdownContainer}
+          >
+            <select
+              value={selectedYear || ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedYear(value || null);
+                // Reset month when year changes
+                if (value && selectedMonth !== null) {
+                  setSelectedMonth(null);
+                }
+              }}
+              style={styles(theme).dropdownSelect}
+            >
+              <option value="">{langIndex === 0 ? 'Все годы' : 'All Years'}</option>
+              {years.map(year => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+            <FaChevronDown 
+              size={12} 
+              color={Colors.get('subText', theme)}
+              style={styles(theme).dropdownIcon}
+            />
+          </motion.div>
+        </div>
+        
+        {/* Month Dropdown - Only show if year is selected */}
+        {selectedYear && (
+          <div style={styles(theme).filterDropdownWrapper}>
+            <div style={styles(theme).filterLabel}>
+              {langIndex === 0 ? 'Месяц' : 'Month'}
+            </div>
+            <motion.div
+              whileHover={{ scale: 1.01 }}
+              style={styles(theme).dropdownContainer}
+            >
+              <select
+                value={selectedMonth !== null ? selectedMonth : ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedMonth(value === '' ? null : parseInt(value));
+                }}
+                style={styles(theme).dropdownSelect}
+              >
+                <option value="">{langIndex === 0 ? 'Все месяцы' : 'All Months'}</option>
+                {months.map(month => (
+                  <option key={month} value={month}>
+                    {monthNames[month]}
+                  </option>
+                ))}
+              </select>
+              <FaChevronDown 
+                size={12} 
+                color={Colors.get('subText', theme)}
+                style={styles(theme).dropdownIcon}
+              />
+            </motion.div>
+          </div>
+        )}
+      </div>}
+      
+      {hasFilters && expanded && (
+        <div style={styles(theme).activeFiltersBadge}>
+          {langIndex === 0 ? 'Активные фильтры' : 'Active Filters'}: 
+          {selectedYear && ` ${selectedYear}`}
+          {selectedMonth !== null && ` - ${monthNames[selectedMonth]}`}
+        </div>
+      )}
+    </div>
+  );
+};
 
   return (
     <div style={styles(theme).container}>
@@ -374,6 +544,7 @@ const TrainingList = () => {
           </div>
         </div>
       )}
+      <FilterDropdowns expanded={expandedFilter} setExpanded={setExpandedFilter}/>
 
       {/* === Training List === */}
       <div style={{ width: '100%', maxWidth: '800px', paddingBottom: '50px' }}>
@@ -644,7 +815,7 @@ const styles = (theme, fSize) => ({
     maxWidth: '600px',
     display: 'flex',
     justifyContent: 'center',
-    marginBottom: '15px',
+    marginBottom: '5px',
     padding: '0 10px'
   },
   typeToggleWrapper: {
@@ -677,7 +848,6 @@ const styles = (theme, fSize) => ({
     flexDirection: 'column',
     alignItems: 'center',
     gap: '12px',
-    marginBottom: '20px',
     padding: '0 10px'
   },
   toggleWrapper: {
@@ -833,7 +1003,97 @@ const styles = (theme, fSize) => ({
     fontSize: fSize === 0 ? '13px' : '14px',
     color: Colors.get('mainText', theme),
     lineHeight: 1.4
-  }
+  },
+  // --- Date Filter Styles ---
+dateFilterContainer: {
+  width: '96%',
+  maxWidth: '600px',
+  backgroundColor: theme === 'light' ? '#ffffff' : 'rgba(255,255,255,0.03)',
+  borderRadius: '16px',
+  padding: '6px',
+  marginBottom: '25px',
+  border: `1px solid ${theme === 'light' ? 'rgba(192, 192, 192, 0.2)' : 'rgba(255,255,255,0.1)'}`,
+  boxShadow: theme === 'light'
+    ? '0 3px 10px rgba(0, 0, 0, 0.03)'
+    : '0 4px 15px rgba(0, 0, 0, 0.2)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '6px'
+},
+filterHeader: {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: '12px'
+},
+filterTitle: {
+  fontSize: '15px',
+  fontWeight: '700',
+  color: Colors.get('mainText', theme),
+  display: 'flex',
+  alignItems: 'center'
+},
+clearFilterButton: {
+  padding: '4px 10px',
+  borderRadius: '8px',
+  fontSize: '12px',
+  fontWeight: '600',
+  backgroundColor: theme === 'light' ? '#fee2e2' : '#451616',
+  color: theme === 'light' ? '#ef4444' : '#fecaca',
+  border: 'none',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease'
+},
+filterDropdowns: {
+  display: 'flex',
+  gap: '12px',
+  flexWrap: 'wrap'
+},
+filterDropdownWrapper: {
+  flex: 1,
+  minWidth: '150px'
+},
+filterLabel: {
+  fontSize: '11px',
+  color: Colors.get('subText', theme),
+  marginBottom: '6px',
+  fontWeight: '500'
+},
+dropdownContainer: {
+  position: 'relative',
+  backgroundColor: theme === 'light' ? '#ffffff' : 'rgba(255,255,255,0.08)',
+  borderRadius: '10px',
+  border: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'}`,
+  cursor: 'pointer'
+},
+dropdownSelect: {
+  width: '100%',
+  padding: '10px 30px 10px 12px',
+  fontSize: '14px',
+  fontWeight: '500',
+  color: Colors.get('mainText', theme),
+  backgroundColor: 'transparent',
+  border: 'none',
+  borderRadius: '10px',
+  appearance: 'none',
+  cursor: 'pointer',
+  outline: 'none'
+},
+dropdownIcon: {
+  position: 'absolute',
+  right: '10px',
+  top: '50%',
+  transform: 'translateY(-50%)'
+},
+activeFiltersBadge: {
+  marginTop: '12px',
+  padding: '8px 12px',
+  backgroundColor: theme === 'light' ? '#e3f2fd' : '#1e3a8a',
+  color: theme === 'light' ? '#1e40af' : '#60a5fa',
+  borderRadius: '8px',
+  fontSize: '13px',
+  fontWeight: '600'
+},
 });
 
 export default TrainingList;
