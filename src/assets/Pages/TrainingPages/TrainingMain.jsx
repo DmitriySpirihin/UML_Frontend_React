@@ -432,185 +432,328 @@ const TrainingMain = () => {
       </div>
       
       {/* --- JOURNAL LIST SECTION --- */}
-      <div style={{flex: 1, width: '100%', display: 'flex', flexDirection: 'column', backgroundColor: Colors.get('background', theme)}}>
-        <div onClick={() => setPage('TrainingList')} style={styles(theme).journalBtn}>
-          <div style={{fontWeight: '600', fontSize: '15px'}}>{langIndex === 0 ? 'Журнал' : 'Journal'}</div>
-          <FaList size={14}/>
-        </div>
-        <div style={{flex: 1, overflowY: 'hidden', display: 'flex', flexDirection: 'column'}}>
-          <div style={{padding: '15px 20px 10px 20px'}}>
-            <h2 style={{margin: 0, fontSize: '18px', color: Colors.get('mainText', theme)}}>
-              {currentDate.getDate()} {monthNames[langIndex][currentDate.getMonth()]}, {fullNames[langIndex][getMondayIndex(currentDate)]}
-            </h2>
-            <p style={{margin: '4px 0 0 0', fontSize: '14px', color: Colors.get('subText', theme)}}>
-              {trainingAmountText(trainingAmount,langIndex)}
-            </p>
-          </div>
-          <div style={styles(theme).scrollView}>
-  {AppData.trainingLog[formatDateKey(currentDate)]?.map((training, index) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      key={index}
-      style={styles(theme).sessionCard}
-      onClick={() => onSessionCardClick(
-        training,
-        formatDateKey(new Date(currentDate)),
-        index
-      )}
-    >
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1 }}>
-          {/* TYPE ICON */}
-          <div
-            style={{
-              width: '40px', height: '40px', borderRadius: '12px',
-              backgroundColor:'rgba(128,128,128,0.3)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexShrink: 0
-            }}
+<div style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', backgroundColor: Colors.get('background', theme) }}>
+  <div 
+    onClick={() => setPage('TrainingList')} 
+    style={styles(theme).journalBtn}
+    role="button"
+    tabIndex={0}
+    onKeyPress={(e) => e.key === 'Enter' && setPage('TrainingList')}
+  >
+    <div style={{ fontWeight: '600', fontSize: '15px' }}>
+      {langIndex === 0 ? 'Журнал' : 'Journal'}
+    </div>
+    <FaList size={14} />
+  </div>
+  
+  <div style={{ flex: 1, overflowY: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ padding: '15px 20px 10px 20px' }}>
+      <h2 style={{ margin: 0, fontSize: '18px', color: Colors.get('mainText', theme) }}>
+        {currentDate.getDate()} {monthNames[langIndex][currentDate.getMonth()]}, {fullNames[langIndex][getMondayIndex(currentDate)]}
+      </h2>
+      <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: Colors.get('subText', theme) }}>
+        {trainingAmountText(trainingAmount, langIndex)}
+      </p>
+    </div>
+    
+    <div style={styles(theme).scrollView}>
+      {AppData.trainingLog[formatDateKey(currentDate)]?.map((training, index) => {
+        const isGymType = training.type === 'GYM' || !training.type;
+        const trainingKey = `${formatDateKey(currentDate)}-${index}`;
+        
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            key={trainingKey}
+            style={styles(theme).sessionCard}
+            onClick={() => onSessionCardClick(
+              training,
+              formatDateKey(new Date(currentDate)),
+              index
+            )}
+            role="button"
+            tabIndex={0}
+            onKeyPress={(e) => e.key === 'Enter' && onSessionCardClick(training, formatDateKey(new Date(currentDate)), index)}
           >
-            {training.completed ? (
-              React.cloneElement(getTrainingTypeData(training.type || 'GYM').icon, { size: 25, color: training.completed
-                ? getTrainingTypeData(training.type || 'GYM').color
-                : 'rgba(128,128,128,0.3)' })
-            ) : (
-              <span style={{ fontSize: '16px', fontWeight: 'bold' }}>⏳</span>
-            )}
-          </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span style={{ fontWeight: 'bold', color: Colors.get('mainText', theme), fontSize: fSize === 0 ? '15px' : '17px', lineHeight: 1.3 }}>
-              {training.type === 'GYM'
-                ? (Array.isArray(AppData.programs[training.programId]?.name) ? AppData.programs[training.programId]?.name?.[langIndex] : AppData.programs[training.programId]?.name)
-                : trainingTypeOptions.find(t => t.value === training.type)?.label
-              }
-            </span>
-            
-            {training.type === 'GYM' || !training.type ? (
-              <>
-                <div style={{ fontSize: fSize === 0 ? '13px' : '15px', color: Colors.get('mainText', theme), lineHeight: 1.4 }}>
-                  {(langIndex === 0 ? 'День ' : 'Day ') + (training.dayIndex + 1) + ': ' + (AppData.programs[training.programId]?.schedule?.[training.dayIndex]?.name?.[langIndex] ||
-                  (langIndex === 0 ? `День ${training.dayIndex + 1}` : `Day ${training.dayIndex + 1}`))}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              justifyContent: 'space-between', 
+              width: '100%'
+            }}>
+              {/* Training Content */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
+                {/* Type Icon */}
+                <div
+                  style={{
+                    width: '40px', 
+                    height: '40px', 
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(128,128,128,0.3)',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    flexShrink: 0
+                  }}
+                >
+                  {training.completed ? (
+                    React.cloneElement(
+                      getTrainingTypeData(training.type || 'GYM').icon, 
+                      { 
+                        size: 25, 
+                        color: getTrainingTypeData(training.type || 'GYM').color 
+                      }
+                    )
+                  ) : (
+                    <span style={{ fontSize: '16px', fontWeight: 'bold' }}>⏳</span>
+                  )}
                 </div>
-                {training.completed &&
-                  <div style={{ fontSize: '12px', color: Colors.get('subText', theme), lineHeight: 1.4 }}>
-                    {`${Math.round(training.duration / 60000)}${langIndex === 0 ? ' мин' : ' min'}  •  ${(training.tonnage * 0.001).toFixed(2)} ${langIndex === 0 ? ' т' : ' t'}${getTrainingSummary(training, langIndex)}`}
-                  </div>
-                }
-              </>
-            ) : (
-              // CARDIO display - ENHANCED with icons and more info
-              // CARDIO display - ENHANCED with pace/speed and fixed duration
-<div style={{ fontSize: '11px', color: Colors.get('mainText', theme), lineHeight: 1.5 }}>
-  {/* Distance & Duration */}
-  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '4px' }}>
-    <span>{cardioDistanceDisplay(training.distance, training.type, langIndex)}</span>
-    <span style={{ color: Colors.get('subText', theme) }}>•</span>
-    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-      <span style={{ color: Colors.get('subText', theme), fontSize: '11px' }}>⏱️</span>
-      {formatDuration(training.duration, langIndex)}
-    </span>
-  
-  
-  {/* Pace (RUNNING) or Speed (CYCLING) - NEW */}
-  {(training.type === 'RUNNING' || training.type === 'CYCLING') && training.distance > 0 && training.duration > 0 && (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      gap: '5px', 
-      padding: '4px 8px',
-      width: 'fit-content'
-    }}>
-      {training.type === 'RUNNING' ? (
-        <>
-          <span style={{ fontSize: '11px', color: '#4CC9F0' }}>🏃</span>
-          <span style={{ fontSize: '11px', fontWeight: '600', color: '#4CC9F0' }}>
-            {calculatePace(training.distance, training.duration)} {langIndex === 0 ? 'мин/км' : 'min/km'}
-          </span>
-        </>
-      ) : (
-        <>
-          <span style={{ fontSize: '11px', color: '#4361EE' }}>🚴</span>
-          <span style={{ fontSize: '11px', fontWeight: '600', color: '#4361EE' }}>
-            {calculateSpeed(training.distance, training.duration)} km/h
-          </span>
-        </>
-      )}
+                
+                {/* Content Area */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                  {isGymType ? (
+                    // GYM TRAINING DISPLAY
+                    <>
+                      <span style={{ 
+                        fontWeight: 'bold', 
+                        color: Colors.get('mainText', theme), 
+                        fontSize: fSize === 0 ? '15px' : '17px', 
+                        lineHeight: 1.3,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {training.type === 'GYM'
+                          ? (Array.isArray(AppData.programs[training.programId]?.name) 
+                              ? AppData.programs[training.programId]?.name?.[langIndex] 
+                              : AppData.programs[training.programId]?.name)
+                          : trainingTypeOptions.find(t => t.value === training.type)?.label
+                        }
+                      </span>
+                      
+                      <div style={{ 
+                        fontSize: fSize === 0 ? '13px' : '15px', 
+                        color: Colors.get('mainText', theme), 
+                        lineHeight: 1.4,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {(langIndex === 0 ? 'День ' : 'Day ') + (training.dayIndex + 1) + ': ' + 
+                         (AppData.programs[training.programId]?.schedule?.[training.dayIndex]?.name?.[langIndex] ||
+                         (langIndex === 0 ? `День ${training.dayIndex + 1}` : `Day ${training.dayIndex + 1}`))}
+                      </div>
+                      
+                      {training.completed && (
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: Colors.get('subText', theme), 
+                          lineHeight: 1.4,
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '4px'
+                        }}>
+                          <span>{`${Math.round(training.duration / 60000)}${langIndex === 0 ? ' мин' : ' min'}`}</span>
+                          <span>•</span>
+                          <span>{`${(training.tonnage * 0.001).toFixed(2)} ${langIndex === 0 ? ' т' : ' t'}`}</span>
+                          {getTrainingSummary(training, langIndex)}
+                        </div>
+                      )}
+                      
+                      {training.RPE && (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '4px', 
+                          color: '#FFA500',
+                          fontSize: '11px'
+                        }}>
+                          <span>🔥</span>
+                          <span style={{ fontWeight: '600' }}>RPE {training.rpe}/10</span>
+                        </div>
+                      )}
+                      
+                      {training.note && (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'flex-start', 
+                          gap: '6px', 
+                          marginTop: '5px', 
+                          paddingTop: '5px', 
+                          borderTop: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)'}`,
+                          fontSize: '10px',
+                          color: Colors.get('subText', theme),
+                          fontStyle: 'italic',
+                          lineHeight: 1.4
+                        }}>
+                          <span style={{ marginTop: '2px' }}>📝</span>
+                          <span>
+                            {training.note.length > 60 
+                              ? training.note.substring(0, 60) + '...' 
+                              : training.note}
+                          </span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    // CARDIO TRAINING DISPLAY
+                    <div style={{ 
+                      fontSize: '11px', 
+                      color: Colors.get('mainText', theme), 
+                      lineHeight: 1.5,
+                      width: '100%'
+                    }}>
+                      {/* Distance & Duration */}
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '5px', 
+                        marginBottom: '4px',
+                        flexWrap: 'wrap'
+                      }}>
+                        <span>{cardioDistanceDisplay(training.distance, training.type, langIndex)}</span>
+                        <span style={{ color: Colors.get('subText', theme) }}>•</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ color: Colors.get('subText', theme), fontSize: '11px' }}>⏱️</span>
+                          {formatDuration(training.duration, langIndex)}
+                        </span>
+                      </div>
+                      
+                      {/* Pace/Speed Indicator */}
+                      {(training.type === 'RUNNING' || training.type === 'CYCLING') && 
+                       training.distance > 0 && training.duration > 0 && (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '5px', 
+                          padding: '4px 8px',
+                          width: 'fit-content',
+                          background: theme === 'light' ? 'rgba(76, 201, 240, 0.1)' : 'rgba(76, 201, 240, 0.15)',
+                          borderRadius: '6px',
+                          marginBottom: '6px'
+                        }}>
+                          {training.type === 'RUNNING' ? (
+                            <>
+                              <span style={{ fontSize: '11px', color: '#4CC9F0' }}>🏃</span>
+                              <span style={{ fontSize: '11px', fontWeight: '600', color: '#4CC9F0' }}>
+                                {calculatePace(training.distance, training.duration)} {langIndex === 0 ? 'мин/км' : 'min/km'}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span style={{ fontSize: '11px', color: '#4361EE' }}>🚴</span>
+                              <span style={{ fontSize: '11px', fontWeight: '600', color: '#4361EE' }}>
+                                {calculateSpeed(training.distance, training.duration)} km/h
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Metrics Row */}
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        flexWrap: 'wrap', 
+                        marginTop: '4px',
+                        fontSize: '11px'
+                      }}>
+                        {training.avgHeartRate > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FF6B9D' }}>
+                            <span>❤️</span>
+                            <span style={{ fontWeight: '600' }}>{training.avgHeartRate} bpm</span>
+                          </div>
+                        )}
+                        
+                        {training.avgCadence > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#4CC9F0' }}>
+                            <span>
+                              {training.type === 'RUNNING' ? '🏃‍♂️' : 
+                               training.type === 'CYCLING' ? '🚴‍♂️' : '🏊‍♂️'}
+                            </span>
+                            <span style={{ fontWeight: '600' }}>
+                              {training.avgCadence} {training.type === 'RUNNING' ? 'spm' : training.type === 'CYCLING' ? 'rpm' : 'spm'}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {training.rpe && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FFA500' }}>
+                            <span>🔥</span>
+                            <span style={{ fontWeight: '600' }}>RPE {training.rpe}/10</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Notes */}
+                      {training.notes && (
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'flex-start', 
+                          gap: '6px', 
+                          marginTop: '6px', 
+                          paddingTop: '6px', 
+                          borderTop: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.12)'}`,
+                          fontSize: '10px',
+                          color: Colors.get('subText', theme),
+                          fontStyle: 'italic',
+                          lineHeight: 1.4
+                        }}>
+                          <span style={{ marginTop: '2px' }}>📝</span>
+                          <span>
+                            {training.notes.length > 60 
+                              ? training.notes.substring(0, 60) + '...' 
+                              : training.notes}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Delete Button */}
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(formatDateKey(new Date(currentDate)), index);
+                  setShowConfirmPanel(true);
+                }}
+                style={{ 
+                  padding: '8px', 
+                  cursor: 'pointer', 
+                  opacity: 0.7, 
+                  alignSelf: 'flex-start',
+                  marginTop: '4px',
+                  flexShrink: 0
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    onDelete(formatDateKey(new Date(currentDate)), index);
+                    setShowConfirmPanel(true);
+                  }
+                }}
+                aria-label={langIndex === 0 ? "Удалить тренировку" : "Delete workout"}
+              >
+                <FaTrash size={16} color={Colors.get('subText', theme)} />
+              </motion.div>
+            </div>
+          </motion.div>
+        );
+      })}
+      
+      {/* Bottom spacer for scroll area */}
+      <div style={{ height: '55px', flexShrink: 0 }}></div>
     </div>
-  )}
   </div>
-  {/* Elevation & Heart Rate */}
-  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-    
-    
-    {training.avgHeartRate > 0 && (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FF6B9D' }}>
-        <span style={{ fontSize: '11px' }}>❤️</span>
-        <span style={{ fontSize: '11px', fontWeight: '600' }}>{training.avgHeartRate} bpm</span>
-      </div>
-    )}
-
-  
-  {/* Cadence & RPE */}
-  
-    {training.avgCadence > 0 && (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#4CC9F0' }}>
-        <span style={{ fontSize: '11px' }}>
-          {training.type === 'RUNNING' ? '🏃‍♂️' : training.type === 'CYCLING' ? '🚴‍♂️' : '🏊‍♂️'}
-        </span>
-        <span style={{ fontSize: '11px', fontWeight: '600' }}>
-          {training.avgCadence} {training.type === 'RUNNING' ? 'spm' : training.type === 'CYCLING' ? 'rpm' : 'spm'}
-        </span>
-      </div>
-    )}
-    
-    {training.rpe && (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FFA500' }}>
-        <span style={{ fontSize: '11px' }}>🔥</span>
-        <span style={{ fontSize: '11px', fontWeight: '600' }}>RPE {training.rpe}/10</span>
-      </div>
-    )}
-  </div>
-  
-  {/* Notes (if exists) */}
-  {training.notes && (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'flex-start', 
-      gap: '6px', 
-      marginTop: '5px', 
-      paddingTop: '5px', 
-      borderTop: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)'}` 
-    }}>
-      <span style={{ color: Colors.get('subText', theme), fontSize: '11px', marginTop: '2px' }}>📝</span>
-      <span style={{ fontSize: '10px', color: Colors.get('subText', theme), fontStyle: 'italic', lineHeight: 1.4 }}>
-        {training.notes.length > 60 ? training.notes.substring(0, 60) + '...' : training.notes}
-      </span>
-    </div>
-  )}
 </div>
-            )}
-          </div>
-        </div>
-        <motion.div
-          whileTap={{ scale: 0.9 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(formatDateKey(new Date(currentDate)), index);
-            setShowConfirmPanel(true);
-          }}
-          style={{ padding: '8px', cursor: 'pointer', opacity: 0.7, alignSelf: 'flex-start', marginTop: '4px' }}
-        >
-          <FaTrash size={16} color={Colors.get('subText', theme)} />
-        </motion.div>
-      </div>
-    </motion.div>
-  ))}
-  <div style={{display:'flex',height:'55px'}}></div>
-</div>
-        </div>
-      </div>
       
       {/* --- MODALS --- */}
       <AnimatePresence>

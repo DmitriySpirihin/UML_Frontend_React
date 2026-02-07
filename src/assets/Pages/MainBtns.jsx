@@ -9,7 +9,7 @@ import { LuVibrate, LuVibrateOff } from 'react-icons/lu'
 import { RiFontSize2 } from 'react-icons/ri'
 import { clearAllSaves } from '../StaticClasses/SaveHelper';
 import { MdBackup,MdInfoOutline } from 'react-icons/md'
-import { setTheme as setGlobalTheme, globalTheme$,addPanel$, theme$, showPopUpPanel$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, setAddPanel } from '../StaticClasses/HabitsBus';
+import { setTheme as setGlobalTheme, globalTheme$,addPanel$, theme$, setPage$ , showPopUpPanel$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, setAddPanel } from '../StaticClasses/HabitsBus';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import KeyBoard from '../Helpers/KeyBoard';
@@ -19,7 +19,42 @@ const transitionSound = new Audio('Audio/Transition.wav');
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
 
-const version = '2.c.86.3.s';
+const slogans = {
+  'MainMenu': [
+    'Вся твоя жизнь в одном месте',
+    'Your entire life in one place'
+  ],
+  'HabitsMain': [
+    'Маленькие привычки — большая сила',
+    'Small habits, extraordinary results'
+  ],
+  'TrainingMain': [
+    'Сила рождается в дисциплине',
+    'Strength forged through discipline'
+  ],
+  'RecoveryMain': [
+    'Восстановление — часть роста',
+    'Recovery is where growth happens'
+  ],
+  'MentalMain': [
+    'Тренируй разум как тело',
+    'Train your mind like your body'
+  ],
+  'ToDoMain': [
+    'План на день — шаг к цели',
+    'Today\'s plan, tomorrow\'s progress'
+  ],
+  'SleepMain': [
+    'Глубокий сон — энергия завтра',
+    'Deep sleep fuels tomorrow\'s energy'
+  ],
+  'RobotMain': [  // AI insights & analytics
+    'Твои данные — твои решения',
+    'Your data, your wisdom'
+  ],
+};
+
+const version = '2.c.86.5.s';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -31,6 +66,7 @@ const MainBtns = () => {
     const [vibro, setVibro] = useState(0);
     const [fSize, setFSize] = useState(0);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [page,setLastPage] = useState('MainMenu');
 
     React.useEffect(() => {
         const subs = [
@@ -40,6 +76,7 @@ const MainBtns = () => {
             sound$.subscribe(setSound),
             vibro$.subscribe(setVibro),
             fontSize$.subscribe(setFSize),
+            setPage$.subscribe(setLastPage),
             addPanel$.subscribe(value => setIsSettingsOpen(value === 'settings' ? true : false)),
         ];
         return () => subs.forEach(s => s.unsubscribe());
@@ -54,7 +91,7 @@ const MainBtns = () => {
             {/* UPPER PANEL - Elements at bottom, Zoomed Logo */}
             <div style={styles(theme, fSize).logoContainer}>
                 
-                <UltyLogo theme={theme} />
+                <UltyLogo theme={theme} page={page} langIndex={langIndex}/>
                 
             </div>
 
@@ -353,13 +390,32 @@ function playEffects(sound) {
 export default MainBtns
 
 
-const UltyLogo = ({ theme = 'dark' }) => {
+const UltyLogo = ({ theme = 'dark', page, langIndex }) => {
   const isDark = theme === 'dark';
 
   // Gradient Colors
   const gradientColors = isDark 
     ? { center: "#e1e1e1", edge: "#313a4b" } // Silver metallic
     : { center: "#70757b", edge: "#0d0d0e" }; // Deep Slate/Blue
+
+  // Map page to slogan key
+  const getPageSloganKey = (pageName) => {
+    if (!pageName) return 'MainMenu';
+    
+    if (pageName.startsWith('Habit')) return 'HabitsMain';
+    if (pageName.startsWith('Training')) return 'TrainingMain';
+    if (pageName.startsWith('Recovery')) return 'RecoveryMain';
+    if (pageName.startsWith('Mental')) return 'MentalMain';
+    if (pageName.startsWith('Sleep')) return 'SleepMain';
+    if (pageName.startsWith('ToDo')) return 'ToDoMain';
+    if (pageName.startsWith('Robot')) return 'RobotMain';
+    if (pageName.startsWith('Info')) return 'MainMenu';
+    
+    return 'MainMenu';
+  };
+
+  const sloganKey = getPageSloganKey(page);
+  const currentSlogan = slogans[sloganKey]?.[langIndex] || slogans['MainMenu'][langIndex];
 
   return (
     <div style={{
@@ -399,15 +455,15 @@ const UltyLogo = ({ theme = 'dark' }) => {
 
       <p style={{
         marginTop: '-10px',
-        fontSize: '4px',
+        fontSize: '10px', // Increased from 4px for better readability
         fontWeight: '500',
-        textTransform: 'uppercase',
         letterSpacing: '0.1em',
-        fontFamily: 'sans-serif',
-        color: isDark ? 'rgba(150, 150, 150, 0.5)' : 'rgba(19, 21, 26, 0.8)',
-        transition: 'color 0.5s ease'
+        fontFamily: 'serif',
+        color: isDark ? 'rgba(150, 150, 150, 0.8)' : 'rgba(19, 21, 26, 0.7)',
+        transition: 'color 0.5s ease',
+        opacity: 0.9
       }}>
-        all your life in one place
+        {currentSlogan}
       </p>
     </div>
   );

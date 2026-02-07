@@ -190,15 +190,23 @@ const onFinishSession = () => {
     setShowRPEPanel(true); // Show RPE/Notes modal first
 };
 
-const saveSessionWithRPE = () => {
-    // Save RPE and notes to the session
-    const records = finishSession(trainInfo.dayKey, trainInfo.dInd, sessionRPE, sessionNote);
+const saveSessionWithRPE = async () => { // ✅ Add 'async'
+  try {
+    const records = await finishSession( // ✅ Add 'await'
+      trainInfo.dayKey, 
+      trainInfo.dInd, 
+      sessionRPE, 
+      sessionNote
+    );
     
-    // Close RPE panel and show finish results
     setShowRPEPanel(false);
     setIsCompleted(true);
-    setNewRmRecords(records);
+    setNewRmRecords(records); // ✅ Now 'records' is the actual array
     setShowFinishPanel(true);
+  } catch (error) {
+    console.error("Failed to finish session:", error);
+    // Optional: Show user-friendly error message
+  }
 };
 const addExercise = (exId) => {
   setAddExId(exId);

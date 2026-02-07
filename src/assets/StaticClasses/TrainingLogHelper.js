@@ -260,6 +260,7 @@ session.exerciseOrder.forEach(exIdStr => {
 await saveData();
 return newRmExercises;
 }
+
 export async function addExerciseToSession(date, sessionIndex, exerciseId) {
   const dateKey = formatDateKey(date);
   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
