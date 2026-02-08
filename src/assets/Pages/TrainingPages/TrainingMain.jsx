@@ -571,7 +571,7 @@ const TrainingMain = () => {
                           fontSize: '11px'
                         }}>
                           <span>🔥</span>
-                          <span style={{ fontWeight: '600' }}>RPE {training.rpe}/10</span>
+                          <span style={{ fontWeight: '600' }}>RPE {training.RPE}/10</span>
                         </div>
                       )}
                       
@@ -580,6 +580,7 @@ const TrainingMain = () => {
                           display: 'flex', 
                           alignItems: 'flex-start', 
                           gap: '6px', 
+                          textAlign:'left',
                           marginTop: '5px', 
                           paddingTop: '5px', 
                           borderTop: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)'}`,
@@ -590,8 +591,8 @@ const TrainingMain = () => {
                         }}>
                           <span style={{ marginTop: '2px' }}>📝</span>
                           <span>
-                            {training.note.length > 60 
-                              ? training.note.substring(0, 60) + '...' 
+                            {training.note.length > 160 
+                              ? training.note.substring(0, 160) + '...' 
                               : training.note}
                           </span>
                         </div>
@@ -693,6 +694,7 @@ const TrainingMain = () => {
                         <div style={{ 
                           display: 'flex', 
                           alignItems: 'flex-start', 
+                          textAlign:'left',
                           gap: '6px', 
                           marginTop: '6px', 
                           paddingTop: '6px', 
@@ -704,8 +706,8 @@ const TrainingMain = () => {
                         }}>
                           <span style={{ marginTop: '2px' }}>📝</span>
                           <span>
-                            {training.notes.length > 60 
-                              ? training.notes.substring(0, 60) + '...' 
+                            {training.notes.length > 160 
+                              ? training.notes.substring(0, 160) + '...' 
                               : training.notes}
                           </span>
                         </div>

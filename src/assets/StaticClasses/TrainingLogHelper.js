@@ -136,6 +136,14 @@ export async function addNewSession(date, programId, dayIndex) {
   AppData.trainingLog[dateKey].push(newSession);
   await saveData();
 }
+export async function redactRPEandNote(date,sessionIndex,rpe,note){
+   const dateKey = formatDateKey(date);
+   const session = AppData.trainingLog[dateKey]?.[sessionIndex];
+   session.RPE = rpe;
+   session.note = note.trim();
+   await saveData();
+   return true;
+}
 // In TrainingLogHelper.js
 export async function addPreviousSession(date, programId, dayIndex, startTimeMs, endTimeMs) {
   const sessionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());

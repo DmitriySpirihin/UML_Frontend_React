@@ -741,27 +741,27 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                               })()}
                               
                               {/* Дополнительные метрики */}
-                              {(session.avgCadence > 0 || session.RPE) && (
+                              {(session.avgCadence > 0 || session.rpe) && (
                                 <div style={styles(theme).statsRow}>
                                   {session.avgCadence > 0 && (
                                     <div style={styles(theme).statBadge}>
                                       🚴 {session.avgCadence} {langIndex === 0 ? 'об/мин' : 'rpm'}
                                     </div>
                                   )}
-                                  {session.RPE && (
+                                  {session.rpe && (
                                     <div style={styles(theme).statBadge}>
-                                      RPE {session.RPE}
+                                      RPE {session.rpe}
                                     </div>
                                   )}
                                 </div>
                               )}
                               
-                              {session.note && (
+                              {session.notes && (
                                 <div style={styles(theme).noteBlock}>
                                   <div style={styles(theme).noteLabel}>
                                     {langIndex === 0 ? 'Заметка:' : 'Note:'}
                                   </div>
-                                  <div style={styles(theme).noteText}>{session.note}</div>
+                                  <div style={styles(theme).noteText}>{session.notes}</div>
                                 </div>
                               )}
                             </>
@@ -1000,7 +1000,7 @@ const styles = (theme, fSize) => ({
     fontWeight: '500'
   },
   noteText: {
-    fontSize: fSize === 0 ? '13px' : '14px',
+    fontSize:'11px',textAlign:'left',
     color: Colors.get('mainText', theme),
     lineHeight: 1.4
   },

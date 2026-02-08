@@ -4,7 +4,7 @@ import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,trainInfo$,setPage} from '../../StaticClasses/HabitsBus'
 import {addExerciseToSchedule} from '../../Classes/TrainingData.jsx'
 import {findPreviousSimilarExercise, finishSession, addExerciseToSession,
-   removeExerciseFromSession, addSet, finishExercise, redactSet,getAllReps,getTonnage,getMaxOneRep,getAllSets} from '../../StaticClasses/TrainingLogHelper'
+   removeExerciseFromSession, addSet, finishExercise, redactSet,getAllReps,getTonnage,getMaxOneRep,getAllSets,redactRPEandNote} from '../../StaticClasses/TrainingLogHelper'
 import {FaTrash,FaPencilAlt,FaFlagCheckered,FaFlag,FaInfo,FaPlusCircle,FaDumbbell} from 'react-icons/fa'
 import {FaRegCircleCheck,FaRegCircle,FaPlus,FaMinus,FaStopwatch,FaCalculator,FaClock, FaListCheck} from 'react-icons/fa6'
 import {MdClose,MdDone,MdFitnessCenter, MdOutlineHistory} from 'react-icons/md'
@@ -98,6 +98,9 @@ const [showRPEPanel, setShowRPEPanel] = useState(false);
         setSession(session); 
         setTrainInfo(value);
         setIsCompleted(session.completed);
+        
+        setSessionNote(session.note !== undefined ? session.note : '');
+        setSessionRPE(session.RPE !== undefined ? session.RPE : 5);
         setTime(session.startTime);
         setDuration(Date.now() - session.startTime);
       });
@@ -417,6 +420,138 @@ return (
                </div>
               );
              })}
+
+             {isCompleted &&  
+              <div style={{
+             backgroundColor: Colors.get('background', theme),
+            borderRadius: '24px',
+               padding: '20px',
+             display: 'flex',
+              flexDirection: 'column',
+                alignItems: 'center',
+              justifyContent: 'center',
+               boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+        }}>
+            
+
+            {/* RPE Slider Section */}
+            <div style={{
+                ...styles(theme).inputCard,
+                width:'80vw',
+                height: 'auto',
+                padding: '20px',
+                marginBottom: '15px'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '15px'
+                }}>
+                    <div style={{
+                        ...styles(theme, fSize).subtext,
+                        fontSize: '14px',
+                        fontWeight: 'bold'
+                    }}>
+                        {langIndex === 0 ? "Уровень нагрузки (RPE)" : "Effort Level (RPE)"}
+                    </div>
+                    <div style={{
+                        ...styles(theme, fSize).text,
+                        fontSize: '24px',
+                        fontWeight: 'bold',
+                        color: Colors.get('iconsHighlited', theme)
+                    }}>
+                        {sessionRPE}/10
+                    </div>
+                </div>
+
+                <Slider
+                    style={{
+                        width: '100%',
+                        alignSelf: 'center',
+                        color: Colors.get('difficulty', theme)
+                    }}
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={sessionRPE}
+                    valueLabelDisplay="off"
+                    onChange={(_, newValue) => setSessionRPE(newValue)}
+                />
+
+                {/* RPE Scale Labels */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    marginTop: '8px',
+                    fontSize: '11px',
+                    color: Colors.get('subText', theme)
+                }}>
+                    <span>{langIndex === 0 ? "Легко" : "Easy"}</span>
+                    <span>{langIndex === 0 ? "Умеренно" : "Moderate"}</span>
+                    <span>{langIndex === 0 ? "Тяжело" : "Hard"}</span>
+                    <span>{langIndex === 0 ? "Максимум" : "Max"}</span>
+                </div>
+            </div>
+
+            {/* Notes Textarea */}
+            <div style={{
+                ...styles(theme).inputCard,
+                 width:'80vw',
+                height: 'auto',
+                padding: '15px',
+                marginBottom: '20px'
+            }}>
+                <div style={{
+                    ...styles(theme, fSize).subtext,
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    marginBottom: '10px'
+                }}>
+                    {langIndex === 0 ? "Заметки о тренировке" : "Training Notes"}
+                </div>
+                <textarea
+                    value={sessionNote}
+                    onChange={(e) => setSessionNote(e.target.value)}
+                    placeholder={langIndex === 0 
+                        ? "Как прошла тренировка? Что удалось/не удалось? Погода, самочувствие..." 
+                        : "How was the session? What worked/didn't work? Weather, mood..."}
+                    style={{
+                        width: '100%',
+                        height: '100px',
+                        backgroundColor: 'rgba(0,0,0,0.2)',
+                        border: `1px solid ${Colors.get('border', theme)}`,
+                        borderRadius: '12px',
+                        padding: '12px',
+                        color: Colors.get('mainText', theme),
+                        fontSize: '14px',
+                        fontFamily: 'Segoe UI',
+                        resize: 'none',
+                        outline: 'none'
+                    }}
+                />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{
+                display: 'flex',
+                gap: '15px',
+                width: '100%'
+            }}>
+                <button
+                    onClick={() => redactRPEandNote(trainInfo.dayKey,trainInfo.dInd,sessionRPE,sessionNote)}
+                    style={{
+                        ...styles(theme).primaryBtn,
+                        flex: 2,
+                        padding: '14px'
+                    }}
+                >
+                    <MdDone style={{ fontSize: '24px', marginRight: '8px' }} />
+                    {langIndex === 0 ? "Сохранить" : "Save"}
+                </button>
+            </div>
+        </div>}
+
             <div style={styles(theme).floatingMenu}>
              <div onClick={() => {setShowInfoPanel(true);}} style={styles(theme).menuIconBtn}>
                 <FaInfo style={{fontSize:'20px', color:Colors.get('icons', theme)}}/>
@@ -426,8 +561,11 @@ return (
                <FaPlus style={{fontSize:'14px', marginRight:'6px'}}/>
                {langIndex === 0 ? 'Упражнение' : 'Exercise'}
              </div>
+
+             
+
            
-             <div onClick={() => {needPrev(prev => !prev)}} 
+             {!isCompleted &&  <div onClick={() => {needPrev(prev => !prev)}} 
                   style={{...styles(theme).menuPillBtn, 
                           backgroundColor: usePrev ? Colors.get('barsColorMeasures', theme) : theme === 'dark' ? 'rgba(28, 28, 28, 0.85)' : 'rgba(235, 235, 235, 0.46)',
                           color: usePrev ? Colors.get('background', theme) : Colors.get('subText', theme),
@@ -435,7 +573,7 @@ return (
                   }}>
                <MdOutlineHistory style={{fontSize:'16px', marginRight:'6px'}}/>
                {langIndex === 0 ? 'История' : 'History'}
-             </div>
+             </div>}
         </div>
             <div style={{width:'100vw',height:'20vh'}}/>
              </div>}
@@ -1190,6 +1328,7 @@ const styles = (theme,fSize) =>
       height:'80px',
       backgroundColor: 'rgba(255,255,255,0.05)',
       borderRadius: '16px',
+      fontSize:'16px',
       padding: '10px',
       display: 'flex',
       flexDirection: 'column',

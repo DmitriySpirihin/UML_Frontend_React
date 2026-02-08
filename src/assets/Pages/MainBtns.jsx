@@ -54,7 +54,7 @@ const slogans = {
   ],
 };
 
-const version = '2.c.86.5.s';
+const version = '2.c.86.7.s';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');
@@ -444,7 +444,7 @@ const UltyLogo = ({ theme = 'dark', page, langIndex }) => {
           y="60"
           textAnchor="middle"
           fontFamily="serif"
-          fontSize="25px"
+          fontSize="28px"
           fontWeight="700"
           fill="url(#logoGradient)"
           style={{ transition: 'fill 0.5s ease' }}
@@ -459,6 +459,7 @@ const UltyLogo = ({ theme = 'dark', page, langIndex }) => {
         fontWeight: '500',
         letterSpacing: '0.1em',
         fontFamily: 'serif',
+        fontStyle:'revert-layer',
         color: isDark ? 'rgba(150, 150, 150, 0.8)' : 'rgba(19, 21, 26, 0.7)',
         transition: 'color 0.5s ease',
         opacity: 0.9
