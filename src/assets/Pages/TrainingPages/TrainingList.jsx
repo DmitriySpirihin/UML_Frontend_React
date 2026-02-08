@@ -632,7 +632,9 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                                 </div>
                                 {session.RPE && (
                                   <div style={styles(theme).statBadge}>
+                                    <span>🔥</span>
                                     RPE {session.RPE}
+                                    
                                   </div>
                                 )}
                               </div>
@@ -658,7 +660,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                                             const setColor = isWarmUp
                                               ? Colors.get('trainingIsolatedFont', theme)
                                               : Colors.get('trainingBaseFont', theme);
-                                            const bgSet = isWarmUp ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.0)';
+                                            const bgSet = !isWarmUp ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.0)';
 
                                             return (
                                               <div key={sIdx} style={{ ...styles(theme).setRow, backgroundColor: bgSet, color: setColor, fontSize: fSize === 0 ? '13px' : '15px' }}>
@@ -682,8 +684,10 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                               {session.note && (
                                 <div style={styles(theme).noteBlock}>
                                   <div style={styles(theme).noteLabel}>
+                                    <span style={{ marginTop: '2px' }}>📝</span>
                                     {langIndex === 0 ? 'Заметка:' : 'Note:'}
                                   </div>
+                                  
                                   <div style={styles(theme).noteText}>{session.note}</div>
                                 </div>
                               )}
@@ -750,6 +754,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                                   )}
                                   {session.rpe && (
                                     <div style={styles(theme).statBadge}>
+                                      <span>🔥</span>
                                       RPE {session.rpe}
                                     </div>
                                   )}
@@ -759,8 +764,10 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                               {session.notes && (
                                 <div style={styles(theme).noteBlock}>
                                   <div style={styles(theme).noteLabel}>
+                                    <span style={{ marginTop: '2px' }}>📝</span>
                                     {langIndex === 0 ? 'Заметка:' : 'Note:'}
                                   </div>
+                                  
                                   <div style={styles(theme).noteText}>{session.notes}</div>
                                 </div>
                               )}

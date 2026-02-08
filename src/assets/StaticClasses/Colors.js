@@ -34,6 +34,9 @@ export class Colors {
     currentDateBorder: { light: "#0763f7d4", dark: "#2362ce" }, 
     linesColor: { light: "#CBD5E1", dark: "#1A1D23" },
 
+    trainingIsolatedFont: { light: "#7c6b089b", dark: "#ffc85a" },
+    trainingBaseFont: { light: "#4b0c0cce", dark: "#ff6b6b" },
+
     // Status Colors
     categoryPositive: { light: "#DCFCE7", dark: "#064E3B" },
     categoryNegative: { light: "#FEE2E2", dark: "#450A0A" },
