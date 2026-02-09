@@ -175,8 +175,9 @@ static infoMiniPanel = {
       "ToDoMain": true
     };
   } 
-  static setPrefs(ind,value){
+  static async setPrefs(ind,value){
     this.prefs[ind] = value;
+    await saveData();
   }
   static getLastProgramId() {
   const allDates = Object.keys(this.trainingLog).filter(dateKey => this.trainingLog[dateKey]?.length > 0);
@@ -252,8 +253,9 @@ static getLastTrainingDayIndex() {
    else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 0 : 1;
    await saveData();
   }
-  static addHabitGoal(habitId,goal){
+  static async addHabitGoal(habitId,goal){
     this.choosenHabitsGoals[habitId].push(goal);
+    await saveData();
   }
   static async removeHabit(habitId){
     if(this.choosenHabits.includes(habitId)){
@@ -281,7 +283,7 @@ static getLastTrainingDayIndex() {
   }else  habitReminder(this.prefs[0],this.notify[0].cron,0,0,false);
   await saveData();
   }
-  static changeStatus(day, habitId, status) {
+  static async changeStatus(day, habitId, status) {
     this.habitsByDate[day][habitId] = status;
     const percent = getHabitPerformPercent(habitId);
     if (percent > 99 && !this.choosenHabitsNotified[habitId][0]) {
@@ -300,8 +302,9 @@ static getLastTrainingDayIndex() {
       : "🌱 Halfway there — don’t give up, your habit is taking root! 🤩",2500,true);
     this.choosenHabitsNotified[habitId][2] = true;
     }
+     await saveData();
   }
-  static AddCustomHabit(n, cat, desc, src, id) {
+  static async AddCustomHabit(n, cat, desc, src, id) {
     const description = desc === "" ? ["Своя привычка", "My custom habit"] : [desc, desc];
     const iconName = src === '' ? 'default' : src;
     const newHabit = new Habit(
@@ -313,7 +316,9 @@ static getLastTrainingDayIndex() {
       iconName
     );
     this.CustomHabits.push(newHabit);
+     await saveData();
     return newHabit;
+    
   }
   static IsCustomHabitExists(habitId){
     return this.CustomHabits.some(habit => habit.id === habitId);
@@ -321,6 +326,7 @@ static getLastTrainingDayIndex() {
   static IsHabitInChoosenList(habitId){
     return this.choosenHabits.includes(habitId);
   }
+  
 }
 
 export const fillEmptyDays = () => {
