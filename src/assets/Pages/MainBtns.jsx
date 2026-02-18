@@ -54,7 +54,7 @@ const slogans = {
   ],
 };
 
-const version = '2.c.87.9.s';
+const version = '2.c.88.1.s';
 
 const MainBtns = () => {
     const [globalTheme, setGlobalThemeState] = React.useState('dark');

@@ -28,7 +28,7 @@ useEffect(() => {
 
       if (user) {
         if (AppData.isFirstStart) {
-          AppData.prefs[0] = languageCode === 'ru' ? 0 : 1;
+         // AppData.prefs[0] = languageCode.startsWith 'ru' ? 0 : 1;
           AppData.prefs[1] = colorScheme === 'dark' ? 0 : 1;
           setTheme('dark');
         }
