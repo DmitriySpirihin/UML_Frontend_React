@@ -39,6 +39,8 @@ const BreathingMain = lazy(() => import('./assets/Pages/Recovery/RecoveryCategor
 const RecoveryAnalytics = lazy(() => import('./assets/Pages/Recovery/RecoveryAnalitics')); 
 const ToDoMain = lazy(() => import('./assets/Pages/ToDoPages/ToDoMain'));
 const ToDoMetrics = lazy(() => import('./assets/Pages/ToDoPages/ToDoMetrics'));
+const ToDoNew = lazy(() => import('./assets/Pages/ToDoPages/ToDoNew'));
+const SleepNew = lazy(() => import('./assets/Pages/SleepPages/SleepNew'));
 const RobotMain = lazy(() => import('./assets/Pages/Robot/RobotMain'));
 const UserPanel = lazy(() => import('./assets/Pages/UserPanel'));
 const MentalMain = lazy(() => import('./assets/Pages/MentalPages/MentalMain'));
@@ -245,7 +247,7 @@ function App() {
         </motion.div>
     
       }
-      {page !== 'LoadPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+      {page !== 'LoadPanel' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <MainBtns/>
       </Suspense>}
       
@@ -260,7 +262,7 @@ function App() {
       {page === 'HabitMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <HabitMetrics />
       </Suspense>}
-      {addPanel === 'AddHabitPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+      {page === 'AddHabitPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <AddHabitPanel/>
       </Suspense>}
       {page === 'TrainingCurrent' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
@@ -339,8 +341,14 @@ function App() {
       {page === 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <RobotMain/>
       </Suspense>}
-      {page === 'ToDoMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+      {page === 'ToDoMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <ToDoMetrics/>
+      </Suspense>}
+      {page === 'ToDoNew' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <ToDoNew/>
+      </Suspense>}
+      {page === 'SleepNew' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <SleepNew/>
       </Suspense>}
       {page === 'UserPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <UserPanel/>
@@ -349,15 +357,17 @@ function App() {
         <InfoPanel/>
       </Suspense>}
       
-      {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
-      {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
-      {bottomBtnPanel === 'BtnsRecovery' && !keyboardVisible && <BtnsRecovery/>}
-      {bottomBtnPanel === 'BtnsMental' && !keyboardVisible && <BtnsMental/>}
-      {bottomBtnPanel === 'BtnsSleep' && !keyboardVisible && <BtnsSleep/>}
-      {bottomBtnPanel === 'BtnsToDo' && !keyboardVisible && <BtnsToDo/>}
-      {bottomBtnPanel === 'BtnsRobot' && !keyboardVisible && <BtnsRobot/>}
-      {bottomBtnPanel === 'BtnsMenu' && !keyboardVisible && <BtnsMenu/>}
-      {bottomBtnPanel === 'BtnsInfo' && !keyboardVisible && <BtnsInfo/>}
+      {page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && <>
+        {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
+        {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
+        {bottomBtnPanel === 'BtnsRecovery' && !keyboardVisible && <BtnsRecovery/>}
+        {bottomBtnPanel === 'BtnsMental' && !keyboardVisible && <BtnsMental/>}
+        {bottomBtnPanel === 'BtnsSleep' && !keyboardVisible && <BtnsSleep/>}
+        {bottomBtnPanel === 'BtnsToDo' && !keyboardVisible && <BtnsToDo/>}
+        {bottomBtnPanel === 'BtnsRobot' && !keyboardVisible && <BtnsRobot/>}
+        {bottomBtnPanel === 'BtnsMenu' && !keyboardVisible && <BtnsMenu/>}
+        {bottomBtnPanel === 'BtnsInfo' && !keyboardVisible && <BtnsInfo/>}
+      </>}
     </>
   )
 }

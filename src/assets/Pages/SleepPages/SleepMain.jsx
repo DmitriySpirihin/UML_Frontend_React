@@ -4,7 +4,7 @@ import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, addNewTrainingDay$ } from '../../StaticClasses/HabitsBus';
 import { FaChevronLeft, FaChevronRight, FaMoon, FaBed, FaRegClock, FaStickyNote, FaStar } from 'react-icons/fa';
-import SleepNew from './SleepNew.jsx';
+import { selectedSleepDate$ } from '../../StaticClasses/HabitsBus';
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 
 // --- HELPERS ---
@@ -95,8 +95,8 @@ const SleepMain = () => {
 
   useEffect(() => {
     currentDateRef.current = currentDate;
-    // Auto-select entry when mounting or changing date programmatically
     const key = formatDateKey(currentDate);
+    selectedSleepDate$.next(key);
     const entry = AppData.sleepingLog?.[key];
     setSelectedSleepEntry(entry || null);
   }, [currentDate]);
@@ -317,7 +317,6 @@ const SleepMain = () => {
          </AnimatePresence>
         
       </div>
-     <SleepNew dateString={formatDateKey(currentDate)} />
       <div style={{marginBottom:'150px'}}></div>
     </div>
   );

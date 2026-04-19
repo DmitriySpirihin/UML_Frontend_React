@@ -63,7 +63,7 @@ const BtnsToDo = () => {
                 onClick={() => {
                     if (page === 'ToDoMain') {
                         setCurrentBottomBtn(6);
-                        setAddPanel('ToDoNew');
+                        setPage('ToDoNew');
                         playEffects(switchSound);
                     }
                 }}

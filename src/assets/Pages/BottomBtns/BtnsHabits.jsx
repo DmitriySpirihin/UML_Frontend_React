@@ -79,7 +79,7 @@ const BtnsHabits = () => {
                 onClick={() => {
                     if (page === 'HabitsMain') {
                         setCurrentBottomBtn(2);
-                        setAddPanel('AddHabitPanel');
+                        setPage('AddHabitPanel');
                         setNotifyPanel(false);
                         playEffects(switchSound);
                     }

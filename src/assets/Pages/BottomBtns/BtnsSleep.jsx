@@ -63,7 +63,7 @@ const BtnsSleep = () => {
                 onClick={() => {
                     if (page === 'SleepMain') {
                         setCurrentBottomBtn(3);
-                        setAddPanel('SleepNew');
+                        setPage('SleepNew');
                         playEffects(switchSound);
                     }
                 }}

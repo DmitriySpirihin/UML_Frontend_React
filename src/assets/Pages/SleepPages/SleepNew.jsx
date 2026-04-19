@@ -15,7 +15,8 @@ import { FaMoon, FaBed, FaRegClock, FaPen } from 'react-icons/fa';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { saveData } from '../../StaticClasses/SaveHelper.js';
-import { addPanel$, theme$, lang$, fontSize$, setAddPanel } from '../../StaticClasses/HabitsBus';
+import { theme$, lang$, fontSize$, setPage, lastPage$, selectedSleepDate$ } from '../../StaticClasses/HabitsBus';
+import { IoIosArrowBack } from 'react-icons/io';
 import { addDayToSleepingLog } from './SleepHelper.js';
 
 // --- CONSTANTS & HELPERS ---
@@ -77,12 +78,12 @@ function isNotFutureDate(dateString) {
 }
 
 // --- COMPONENT ---
-const SleepNew = ({ dateString }) => {
+const SleepNew = () => {
+    const dateString = selectedSleepDate$.value;
     // State
     const [theme, setTheme] = useState(theme$.value);
     const [fSize, setFontSize] = useState(fontSize$.value);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-    const [addPanelState, setAddPanelState] = useState(addPanel$.value);
     
     // Form Data
     const [mood, setMood] = useState(4); // 1-5
@@ -95,61 +96,57 @@ const SleepNew = ({ dateString }) => {
         const sub1 = theme$.subscribe(setTheme);
         const sub2 = fontSize$.subscribe(setFontSize);
         const sub3 = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
-        const sub4 = addPanel$.subscribe(setAddPanelState);
-
-        return () => {
-            sub1.unsubscribe();
-            sub2.unsubscribe();
-            sub3.unsubscribe();
-            sub4.unsubscribe();
-        };
+        return () => { sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); };
     }, []);
 
-    // Validation Check on Mount/Update
+    // Validation: if date is in the future, go back immediately
     useEffect(() => {
-        if (addPanelState === 'SleepNew' && !isNotFutureDate(dateString)) {
-            setAddPanel('');
+        if (!isNotFutureDate(dateString)) {
+            setPage(lastPage$.value || 'SleepMain');
         }
-    }, [addPanelState, dateString]);
+    }, []);
+
+    const closePanel = () => setPage(lastPage$.value || 'SleepMain');
 
     const handleSave = async () => {
         playEffects(clickSound);
         addDayToSleepingLog(dateString, duration, bedTime, mood, note);
         await saveData();
-        setAddPanel('');
+        closePanel();
     };
 
-    const isVisible = addPanelState === 'SleepNew';
     const isDark = theme === 'dark';
 
     return (
-        <AnimatePresence>
-            {isVisible && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    style={styles(theme).backdrop}
-                >
-                    <motion.div
-                        initial={{ y: "100%", opacity: 0, scale: 0.95 }}
-                        animate={{ y: "0%", opacity: 1, scale: 1 }}
-                        exit={{ y: "100%", opacity: 0, scale: 0.95 }}
-                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        style={styles(theme).panel}
-                    >
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 1000,
+                     backgroundColor: isDark ? 'rgba(16,16,17,1)' : '#ffffff',
+                     display: 'flex', flexDirection: 'column', overflowY: 'auto' }}
+        >
+                    <div style={{ ...styles(theme).panel, height: '100vh', borderRadius: 0, boxShadow: 'none' }}>
                         {/* --- Header --- */}
-                        <div style={styles(theme).header}>
-                            <div style={styles(theme).iconContainer}>
-                                <FaMoon size={24} color="#fff" />
-                                <div style={styles(theme).iconGlow} />
+                        <div style={{ ...styles(theme).header, justifyContent: 'space-between' }}>
+                            <motion.div whileTap={{ scale: 0.9 }} onClick={closePanel}
+                                style={{ width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: styles(theme).panel.backgroundColor === '#ffffff' ? '#f0f0f0' : 'rgba(255,255,255,0.1)', cursor: 'pointer', flexShrink: 0 }}>
+                                <IoIosArrowBack size={24} color={isDark ? '#fff' : '#000'} />
+                            </motion.div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={styles(theme).iconContainer}>
+                                    <FaMoon size={20} color="#fff" />
+                                    <div style={styles(theme).iconGlow} />
+                                </div>
+                                <div style={styles(theme).headerTextContainer}>
+                                    <h2 style={styles(theme, fSize).title}>
+                                        {langIndex === 0 ? 'Сон' : 'Sleep Log'}
+                                    </h2>
+                                    <span style={styles(theme).dateBadge}>{dateString}</span>
+                                </div>
                             </div>
-                            <div style={styles(theme).headerTextContainer}>
-                                <h2 style={styles(theme, fSize).title}>
-                                    {langIndex === 0 ? 'Сон' : 'Sleep Log'}
-                                </h2>
-                                <span style={styles(theme).dateBadge}>{dateString}</span>
-                            </div>
+                            <div style={{ width: '42px' }} />
                         </div>
 
                         {/* --- Scrollable Body --- */}
@@ -255,15 +252,15 @@ const SleepNew = ({ dateString }) => {
 
                         {/* --- Footer Actions --- */}
                         <div style={styles(theme).footer}>
-                             <motion.button 
+                             <motion.button
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => setAddPanel('')}
+                                onClick={closePanel}
                                 style={styles(theme).cancelButton}
                              >
                                 <MdClose size={34} color={Colors.get('mainText', theme)} />
                              </motion.button>
 
-                             <motion.button 
+                             <motion.button
                                 whileTap={{ scale: 0.95 }}
                                 onClick={handleSave}
                                 style={styles(theme).saveButton}
@@ -272,10 +269,8 @@ const SleepNew = ({ dateString }) => {
                                 <span style={{ marginLeft: 8 }}>{langIndex === 0 ? 'Сохранить' : 'Save Sleep'}</span>
                              </motion.button>
                         </div>
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                    </div>
+        </motion.div>
     );
 };
 

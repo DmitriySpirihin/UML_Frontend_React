@@ -11,7 +11,6 @@ import {
     FaClock, FaEllipsisV, FaEye 
 } from 'react-icons/fa';
 import ToDoPage from './ToDoPage.jsx';
-import ToDoNew from './ToDoNew.jsx';
 import ToDoMetrics from './ToDoMetrics.jsx';
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 
@@ -432,7 +431,6 @@ const ToDoMain = () => {
                 task={AppData.todoList[currentIndex] || {}} 
             />
             {showMetrics && <ToDoMetrics theme={theme} lang={langIndex} onClose={() => setShowMetrics(false)} />}
-            <ToDoNew theme={theme} lang={langIndex} fSize={fSize} />
         </div>
     );
 };

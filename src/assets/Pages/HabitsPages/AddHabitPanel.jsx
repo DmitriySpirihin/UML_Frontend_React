@@ -4,9 +4,10 @@ import Colors from '../../StaticClasses/Colors'
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
-import { setShowPopUpPanel, addPanel$, theme$, lang$, fontSize$, setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
+import { setShowPopUpPanel, setPage, lastPage$, theme$, lang$, fontSize$, setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
 import { FaSearch, FaTrashAlt, FaChevronRight, FaPlus, FaListUl } from 'react-icons/fa';
 import { MdFiberNew, MdDone, MdClose , MdListAlt } from 'react-icons/md';
+import { IoIosArrowBack } from 'react-icons/io';
 import Icons from '../../StaticClasses/Icons';
 import Slider from '@mui/material/Slider';
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx'; // Imported Component
@@ -25,7 +26,6 @@ const AddHabitPanel = () => {
     const [theme, setTheme] = useState(theme$.value);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [keyboardVisible, setKeyboardVisibleState] = useState(false);
-    const [addPanelVisible, setAddPanelVisible] = useState(false);
     const [showCreatePanel, setshowCreatePanel] = useState(false);
     const [confirmationPanel, setConfirmationPanel] = useState(false);
 
@@ -63,9 +63,8 @@ const AddHabitPanel = () => {
     useEffect(() => {
         const sub1 = theme$.subscribe(setTheme);
         const sub2 = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
-        const sub3 = addPanel$.subscribe(v => setAddPanelVisible(v === 'AddHabitPanel'));
         const sub4 = keyboardVisible$.subscribe(setKeyboardVisibleState);
-        return () => { sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe(); };
+        return () => { sub1.unsubscribe(); sub2.unsubscribe(); sub4.unsubscribe(); };
     }, []);
 
     // --- 1. PREPARE DATA FOR SCROLL PICKER ---
@@ -120,11 +119,13 @@ const AddHabitPanel = () => {
     };
 
     const closePanel = () => {
-        addPanel$.next('');
+        const prev = lastPage$.value;
+        const loopingPages = ['AddHabitPanel'];
         setCurrentBottomBtn(0);
         setConfirmationPanel(false);
         setshowCreatePanel(false);
         playEffects(click);
+        setPage(prev && !loopingPages.includes(prev) ? prev : 'HabitsMain');
     };
 
     // Date Logic
@@ -142,17 +143,19 @@ const AddHabitPanel = () => {
     const removeGoal = (i) => setGoals(prev => prev.filter((_, idx) => idx !== i));
 
     return (
-        <AnimatePresence>
-            {addPanelVisible && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={closePanel}>
-                    <motion.div 
-                        initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                        style={{ ...panelStyle, backgroundColor: ui.bg, backdropFilter: ui.blur }}
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <div style={dragHandle} />
-                        
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ ...pageStyle, backgroundColor: ui.bg }}
+        >
+                        <div style={pageHeader}>
+                            <motion.div whileTap={{ scale: 0.9 }} onClick={confirmationPanel ? () => setConfirmationPanel(false) : closePanel} style={backBtn(ui)}>
+                                <IoIosArrowBack size={24} color={ui.text} />
+                            </motion.div>
+                        </div>
+
                         <div style={{ padding: '0 20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
                             <AnimatePresence mode="wait">
                                 {!confirmationPanel ? (
@@ -321,35 +324,30 @@ const AddHabitPanel = () => {
 
                             {/* --- ФИНАЛЬНЫЕ КНОПКИ --- */}
                             <div style={footerButtons}>
-                                <motion.div whileTap={{ scale: 0.9 }} style={btnCancel(ui)} onClick={confirmationPanel ? () => setConfirmationPanel(false) : closePanel}>
-                                    <MdClose size={26} color={ui.text} />
-                                </motion.div>
-
                                 {!confirmationPanel && (
                                     <motion.div whileTap={{ scale: 0.9 }} style={btnNew(ui)} onClick={() => {setshowCreatePanel(!showCreatePanel);if(!showCreatePanel){setGoals([])}}}>
                                            {showCreatePanel ? <MdListAlt size={24} color="#FFF" /> :  <MdFiberNew size={24} color="#FFF" />}
                                     </motion.div>
                                 )}
 
-                                <motion.div 
-                                    whileTap={{ scale: 0.95 }} 
-                                    style={btnNext(ui)} 
+                                <motion.div
+                                    whileTap={{ scale: 0.95 }}
+                                    style={btnNext(ui)}
                                     onClick={confirmationPanel ? handleSave : () => { if(habitId !== -1 || habitName.length > 3) setConfirmationPanel(true); }}
                                 >
                                     {confirmationPanel ? <MdDone size={28} color="#FFF" /> : <FaChevronRight size={20} color="#FFF" />}
                                 </motion.div>
                             </div>
                         </div>
-                    </motion.div>
 
                     {/* Выбор иконки (Bottom Sheet) */}
                     <AnimatePresence>
                         {selectIconPanel && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={() => setSelectIconPanel(false)}>
-                                <motion.div 
+                                <motion.div
                                     initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                    style={{ ...iconSheet(ui), backgroundColor: ui.bg, backdropFilter: ui.blur }} 
+                                    style={{ ...iconSheet(ui), backgroundColor: ui.bg, backdropFilter: ui.blur }}
                                     onClick={e => e.stopPropagation()}
                                 >
                                     <div style={dragHandle} />
@@ -361,9 +359,9 @@ const AddHabitPanel = () => {
                                     </div>
                                     <div style={iconGrid}>
                                         {Object.keys(Icons.ic).map(key => (
-                                            <motion.div 
+                                            <motion.div
                                                 key={key} whileTap={{ scale: 0.9 }}
-                                                onClick={() => { setHabitIcon(key); setSelectIconPanel(false); }} 
+                                                onClick={() => { setHabitIcon(key); setSelectIconPanel(false); }}
                                                 style={{ ...iconItem(habitIcon === key, ui) }}
                                             >
                                                 {Icons.getIcon(key, { size: 30, style: { color: habitIcon === key ? ui.accent : ui.text } })}
@@ -374,15 +372,16 @@ const AddHabitPanel = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </motion.div>
-            )}
-        </AnimatePresence>
+        </motion.div>
     );
 };
 
 // --- СТИЛИ ---
+const pageStyle = { position: 'fixed', inset: 0, width: '100vw', height: '100vh', overflowY: 'auto', zIndex: 1000, paddingBottom: '100px', display: 'flex', flexDirection: 'column' };
+const pageHeader = { display: 'flex', alignItems: 'center', padding: '15px 20px 0' };
+const backBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: ui.card, cursor: 'pointer' });
+
 const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
-const panelStyle = { width: '100%', height: '92vh', borderRadius: '40px 40px 0 0', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' };
 const dragHandle = { width: '45px', height: '5px', backgroundColor: '#8E8E93', borderRadius: '3px', margin: '15px auto', opacity: 0.4 };
 
 const drumContainer = (ui) => ({ position: 'relative', height: '220px', backgroundColor: ui.card, borderRadius: '25px', overflow: 'hidden' });

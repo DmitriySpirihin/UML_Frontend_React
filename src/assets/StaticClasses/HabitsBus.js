@@ -34,6 +34,7 @@ export const recoveryType$ = new BehaviorSubject(0);
 export const isValidation$ = new BehaviorSubject(false);
 export const isServerAvailable$ = new BehaviorSubject(false);
 export const activeTab$ = new BehaviorSubject('MainCard');
+export const selectedSleepDate$ = new BehaviorSubject('');
 
 export const setActiveTab = (state) => activeTab$.next(state);
 
@@ -57,8 +58,11 @@ export function setShowPopUpPanel(text,duration,isPositive ) {
   showPopUpPanel$.next({show:true,header:text,isPositive});
   setTimeout(() => showPopUpPanel$.next({show:false,header:'',isPositive}), duration);
 }
+const OVERLAY_PAGES = new Set(['UserPanel', 'AddHabitPanel', 'premium', 'ToDoNew', 'SleepNew']);
 export const setPage = (page) => {
-  lastPage$.next(setPage$.value);
+  if (!OVERLAY_PAGES.has(setPage$.value)) {
+    lastPage$.next(setPage$.value);
+  }
   setPage$.next(page);
   if(page.startsWith('Habit')) bottomBtnPanel$.next('BtnsHabits');
   else if(page.startsWith('Training')) bottomBtnPanel$.next('BtnsTraining');

@@ -4,7 +4,8 @@ import { AppData, UserData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import Icons from "../../StaticClasses/Icons";
 import ScrollPicker from "../../Helpers/ScrollPicker";
-import { addPanel$, setAddPanel, setShowPopUpPanel } from '../../StaticClasses/HabitsBus.js';
+import { setPage, lastPage$, theme$, lang$, fontSize$, setShowPopUpPanel } from '../../StaticClasses/HabitsBus.js';
+import { IoIosArrowBack } from 'react-icons/io';
 import { createGoal } from "./ToDoHelper";
 import { FaCalendarDay, FaClock, FaPlus, FaTimes, FaTag } from 'react-icons/fa';
 
@@ -32,8 +33,10 @@ const CATEGORIES = [
     { icon: '🍽️', label: ['Еда', 'Food'] },
 ];
 
-const ToDoNew = ({ theme, lang, fSize }) => {
-    const [show, setShow] = useState(false);
+const ToDoNew = () => {
+    const [theme, setTheme] = useState(theme$.value);
+    const [lang, setLang] = useState(AppData.prefs[0]);
+    const [fSize, setFSize] = useState(fontSize$.value);
 
     // Form State
     const [name, setName] = useState('');
@@ -56,8 +59,10 @@ const ToDoNew = ({ theme, lang, fSize }) => {
     const [newSubGoal, setNewSubGoal] = useState('');
 
     useEffect(() => {
-        const sub = addPanel$.subscribe(val => setShow(val === 'ToDoNew'));
-        return () => sub.unsubscribe();
+        const sub1 = theme$.subscribe(setTheme);
+        const sub2 = lang$.subscribe(l => setLang(l === 'ru' ? 0 : 1));
+        const sub3 = fontSize$.subscribe(setFSize);
+        return () => { sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); };
     }, []);
 
     // --- Actions ---
@@ -94,7 +99,7 @@ const ToDoNew = ({ theme, lang, fSize }) => {
     };
 
     const closePanel = () => {
-        setAddPanel(null);
+        setPage(lastPage$.value || 'ToDoMain');
         setTimeout(() => {
             setName(''); setDesc(''); setSubGoals([]); setNewSubGoal('');
             setPriority(PRIORITY_LABELS[1][lang]);
@@ -116,36 +121,25 @@ const ToDoNew = ({ theme, lang, fSize }) => {
     const s = styles(theme);
 
     return (
-        <AnimatePresence>
-            {show && (
-                <>
-                    {/* Backdrop */}
-                    <motion.div
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        onClick={closePanel}
-                        style={s.backdrop}
-                    />
-
-                    {/* Main Sheet */}
-                    <motion.div
-                        initial={{ y: '100%' }}
-                        animate={{ y: 0 }}
-                        exit={{ y: '100%' }}
-                        transition={{ type: 'spring', damping: 28, stiffness: 250 }}
-                        style={s.container}
-                    >
-                        {/* Drag Handle */}
-                        <div style={s.handleContainer}>
-                            <div style={s.handle} />
-                        </div>
-
-                        {/* Header Actions */}
-                        <div style={s.header}>
-                            <motion.button whileTap={{ scale: 0.9 }} onClick={closePanel} style={s.textBtn}>
-                                {lang === 0 ? 'Отмена' : 'Cancel'}
-                            </motion.button>
-                            <span style={s.headerTitle}>{lang === 0 ? 'Новая цель' : 'New Goal'}</span>
-                            <motion.button whileTap={{ scale: 0.9 }} onClick={handleSave} style={{ ...s.textBtn, color: Colors.get('done', theme), fontWeight: '700' }}>
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ position: 'fixed', inset: 0, zIndex: 1000, backgroundColor: Colors.get('background', theme),
+                     display: 'flex', flexDirection: 'column', overflowY: 'auto', paddingBottom: '100px' }}
+        >
+                        {/* Page Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px 20px 0' }}>
+                            <motion.div whileTap={{ scale: 0.9 }} onClick={closePanel}
+                                style={{ width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.get('mathInput', theme), cursor: 'pointer' }}>
+                                <IoIosArrowBack size={24} color={Colors.get('mainText', theme)} />
+                            </motion.div>
+                            <span style={{ fontSize: '18px', fontWeight: '700', color: Colors.get('mainText', theme) }}>
+                                {lang === 0 ? 'Новая цель' : 'New Goal'}
+                            </span>
+                            <motion.button whileTap={{ scale: 0.9 }} onClick={handleSave}
+                                style={{ background: 'none', border: 'none', fontSize: '16px', color: Colors.get('done', theme), fontWeight: '700', padding: '10px', cursor: 'pointer' }}>
                                 {lang === 0 ? 'Создать' : 'Create'}
                             </motion.button>
                         </div>
@@ -337,10 +331,7 @@ const ToDoNew = ({ theme, lang, fSize }) => {
                             {/* Bottom Spacer */}
                             <div style={{ marginBottom: '100px' }}></div>
                         </div>
-                    </motion.div>
-                </>
-            )}
-        </AnimatePresence>
+        </motion.div>
     );
 };
 
