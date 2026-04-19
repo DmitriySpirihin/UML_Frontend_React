@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaCog,FaUserAlt,FaMoon,FaSun } from 'react-icons/fa';
-import { 
-    setTheme as setGlobalTheme, setAddPanel, setPage$, addPanel$, theme$, 
+import {
+    setTheme as setGlobalTheme, setAddPanel, setPage, setPage$, addPanel$, theme$,
     currentBottomBtn$,  setNotifyPanel,
 } from '../../StaticClasses/HabitsBus';
 import Colors , { THEME } from '../../StaticClasses/Colors';
@@ -51,8 +51,8 @@ const BtnsMenu = () => {
                 current={55}
                 icon={<FaUserAlt />}
                 onClick={() => {
-                    setAddPanel('UserPanel');
-                 
+                    setPage('UserPanel');
+
                     playEffects(switchSound);
                     setNotifyPanel(false);
                 }}

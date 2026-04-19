@@ -351,8 +351,9 @@ const bmiNames = (BMI, langIndex) => {
   }
 };
 const getBMIColor = (theme,data,height) =>{
+  if(data[0].length === 0) return Colors.get('light', theme);
   const bmi  = getBMI(data[0][data[0].length - 1].value,height);
-  return bmi > 18.5 && bmi < 25 ? Colors.get('light', theme) : Colors.get('heavy', theme); 
+  return bmi > 18.5 && bmi < 25 ? Colors.get('light', theme) : Colors.get('heavy', theme);
 }
 
 const bodyTypesNames = (type, langIndex) => {
@@ -374,22 +375,22 @@ const measurmentString = (data,ind, langIndex) => {
   return val;
 }
 const bmiString = (data,langIndex,height) => {
-  if(data[0][data[0].length - 1].value === null)return '-';
+  if(data[0].length === 0 || data[0][data[0].length - 1].value === null)return '-';
   const bmi  = getBMI(data[0][data[0].length - 1].value,height);
   return bmi.toFixed(1) + ' ' + bmiNames(bmi,langIndex);
 }
 const fatPercentString = (data,height,age,gender) => {
-  if(data[0][data[0].length - 1].value === null)return '-';
+  if(data[0].length === 0 || data[0][data[0].length - 1].value === null)return '-';
   const fat  = getFatPercent(getBMI(data[0][data[0].length - 1].value,height),age,gender);
   return fat.toFixed();
 }
 const baseMetabolismString = (data,langIndex,height,age,gender) => {
-  if(data[0][data[0].length - 1].value === null)return '-';
+  if(data[0].length === 0 || data[0][data[0].length - 1].value === null)return '-';
   const met  = getBaseMetabolism(data[0][data[0].length - 1].value, height, age, gender);
   return met.toFixed() + (langIndex === 0 ? ' ккал':' kcal');
 }
 const getBMIIndex = (data,height) => {
-   if(data[0][data[0].length - 1].value === null)return 1;
+   if(data[0].length === 0 || data[0][data[0].length - 1].value === null)return 1;
    const BMI  = getBMI(data[0][data[0].length - 1].value,height);
   if (BMI < 18.5) {
     return 0;

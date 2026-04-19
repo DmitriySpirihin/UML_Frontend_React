@@ -67,20 +67,24 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
   // --- START TIMER LOGIC ---
   useEffect(() => {
     if (!showStartTimer) { setSeconds(0); return; }
-    const totalSeconds = Math.ceil(startTimerDuration / 1000);
-    setSeconds(totalSeconds);
-    const intervalId = setInterval(() => {
-      setSeconds(prev => {
-        if (prev <= 1) {
-          clearInterval(intervalId);
-          handleStart();
-          setShowStartTimer(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(intervalId);
+    const total = startTimerDuration;
+    const startTs = performance.now();
+    let lastShown = Math.ceil(total / 1000);
+    let rafId;
+    const tick = (now) => {
+      const elapsed = now - startTs;
+      if (elapsed >= total) {
+        setSeconds(0);
+        handleStart();
+        setShowStartTimer(false);
+        return;
+      }
+      const current = Math.ceil((total - elapsed) / 1000);
+      if (current !== lastShown) { lastShown = current; setSeconds(current); }
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
   }, [showStartTimer]);
 
   // --- PROTOCOL PARSING ---
@@ -367,7 +371,7 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
 
                 <motion.button 
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => setShowStartTimer(true)}
+                    onClick={() => { setSeconds(Math.ceil(startTimerDuration / 1000)); setShowStartTimer(true); }}
                     style={{ 
                         padding: '15px 45px', borderRadius: '50px', border: 'none',
                         background: Colors.get('in', theme), color: '#fff', fontSize: '16px', fontWeight: 'bold',
@@ -389,13 +393,19 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', zIndex: 10 }}
         >
-            <motion.div 
-                key={seconds}
-                initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.2, opacity: 0 }}
-                style={{ fontSize: '140px', fontWeight: '200', color: textMain, fontFamily: 'Segoe UI Light' }}
-            >
-                {seconds}
-            </motion.div>
+            <div style={{ position: 'relative', width: '200px', height: '170px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <AnimatePresence mode="wait">
+                <motion.div
+                    key={seconds}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1, transition: { duration: 0.2 } }}
+                    exit={{ scale: 1.3, opacity: 0, transition: { duration: 0.15 } }}
+                    style={{ fontSize: '140px', fontWeight: '200', color: textMain, fontFamily: 'Segoe UI Light', position: 'absolute' }}
+                >
+                    {seconds}
+                </motion.div>
+              </AnimatePresence>
+            </div>
             <div style={{ marginTop: '20px', fontSize: '16px', color: textSub, letterSpacing: '1px' }}>
                 {langIndex === 0 ? 'ПРИГОТОВЬТЕСЬ...' : 'GET READY...'}
             </div>

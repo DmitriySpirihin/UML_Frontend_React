@@ -342,10 +342,10 @@ function App() {
       {page === 'ToDoMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <ToDoMetrics/>
       </Suspense>}
-      {addPanel === 'UserPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+      {page === 'UserPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <UserPanel/>
       </Suspense>}
-      {page === 'InfoPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
+      {page === 'InfoPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <InfoPanel/>
       </Suspense>}
       

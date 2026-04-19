@@ -4,13 +4,14 @@ import { AppData, UserData } from '../StaticClasses/AppData.js';
 import { saveData } from '../StaticClasses/SaveHelper.js';
 import { sendReferalLink } from '../StaticClasses/PaymentService'; 
 import Colors from '../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, premium$, setAddPanel, setPage } from '../StaticClasses/HabitsBus';
-import { 
-    FaCrown, FaUserShield, FaSignOutAlt,  FaGem, 
-    FaRulerVertical, FaBirthdayCake, FaBullseye, 
+import { theme$, lang$, fontSize$, premium$, setPage, lastPage$ } from '../StaticClasses/HabitsBus';
+import {
+    FaCrown, FaUserShield,
+    FaRulerVertical, FaBirthdayCake, FaBullseye,
     FaRunning, FaBrain, FaBed, FaMedal, FaSpa, FaUserFriends, FaShareAlt
 } from 'react-icons/fa';
 import { IoMdMale, IoMdFemale } from 'react-icons/io';
+import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 import { MdClose, MdDone } from 'react-icons/md';
 import ScrollPicker from '../Helpers/ScrollPicker.jsx';
 
@@ -96,7 +97,11 @@ const UserPanel = () => {
     };
 }, [lang, AppData.trainingLog, AppData.choosenHabits, AppData.pData]);
 
-    const close = () => setAddPanel('');
+    const goBack = () => {
+        const prev = lastPage$.value;
+        const loopingPages = ['UserPanel', 'premium', 'settings'];
+        setPage(prev && !loopingPages.includes(prev) ? prev : 'MainMenu');
+    };
     
     const onSaveMetrics = async () => {
         AppData.pData = { filled: true, age, gender, height, wrist, goal };
@@ -108,14 +113,20 @@ const UserPanel = () => {
     const accent = hasPremium ? '#FFD700' : Colors.get('accent', theme);
 
     return (
-        <motion.div 
-            initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             style={s.container}
         >
             {/* Header */}
             <div style={s.header}>
-                
+                <motion.div
+                    whileTap={{ scale: 0.9 }}
+                    onClick={goBack}
+                    style={s.backBtn}
+                >
+                    <IoIosArrowBack size={22} />
+                </motion.div>
                 <span style={s.headerTitle}>{lang === 0 ? 'Профиль' : 'Profile'}</span>
                 <div style={{ width: 40 }} />
             </div>
@@ -186,6 +197,73 @@ const UserPanel = () => {
                     <MetricChip icon={<FaBed />} label={lang === 0 ? 'Сон' : 'Sleep'} value={stats.counts.sleep} color="#A64DFF" theme={theme} />
                 </div>
 
+                {/* 2.5 Premium Card */}
+                {!hasPremium && (
+                    <motion.div
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setPage('premium')}
+                        style={{
+                            position: 'relative',
+                            borderRadius: '20px',
+                            padding: '18px 20px',
+                            marginBottom: '20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '16px',
+                            background: 'linear-gradient(135deg, #17120a 0%, #2a1f0f 55%, #17120a 100%)',
+                            border: '1px solid rgba(255, 215, 0, 0.3)',
+                            boxShadow: '0 10px 30px rgba(255, 170, 0, 0.15), inset 0 1px 0 rgba(255, 215, 0, 0.18)',
+                            cursor: 'pointer',
+                            overflow: 'hidden'
+                        }}
+                    >
+                        {/* Soft gold halo */}
+                        <div style={{
+                            position: 'absolute', inset: 0,
+                            background: 'radial-gradient(ellipse at 100% 50%, rgba(255, 200, 50, 0.14) 0%, transparent 60%)',
+                            pointerEvents: 'none'
+                        }} />
+
+                        {/* Crown badge */}
+                        <div style={{
+                            width: '46px', height: '46px',
+                            borderRadius: '13px',
+                            background: 'linear-gradient(135deg, #FFE55C 0%, #FFA000 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            boxShadow: '0 6px 18px rgba(255, 170, 0, 0.5)',
+                            flexShrink: 0, zIndex: 1
+                        }}>
+                            <FaCrown size={22} color="#1a1410" />
+                        </div>
+
+                        {/* Text */}
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, zIndex: 1 }}>
+                            <span style={{
+                                fontSize: '18px',
+                                fontWeight: '800',
+                                letterSpacing: '0.3px',
+                                background: 'linear-gradient(90deg, #FFE55C 0%, #FFA500 100%)',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text'
+                            }}>
+                                {lang === 0 ? 'UML Premium' : 'UML Premium'}
+                            </span>
+                            <span style={{
+                                fontSize: '13px',
+                                color: 'rgba(255, 255, 255, 0.6)',
+                                marginTop: '3px',
+                                fontWeight: '500'
+                            }}>
+                                {lang === 0 ? 'Расширенная аналитика, ИИ и облако' : 'Advanced analytics, AI & cloud'}
+                            </span>
+                        </div>
+
+                        {/* Chevron */}
+                        <IoIosArrowForward size={20} color="rgba(255, 215, 0, 0.6)" style={{ flexShrink: 0, zIndex: 1 }} />
+                    </motion.div>
+                )}
+
                 {/* 3. Physical Data */}
                 <div style={s.infoGrid}>
                     <InfoCard icon={<FaBirthdayCake />} label={lang === 0 ? 'Возраст' : 'Age'} value={`${stats.body.age}`} theme={theme} />
@@ -231,35 +309,9 @@ const UserPanel = () => {
                     )}
                 </div>
 
-                {/* 5. Premium */}
-                {!hasPremium && <motion.div 
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setPage('premium')}
-                    style={{ 
-                        ...s.premiumCard, 
-                        background: hasPremium 
-                            ? 'linear-gradient(135deg, #FFD700 0%, #FFA000 100%)' 
-                            : 'linear-gradient(135deg, #232526 0%, #414345 100%)' 
-                    }}
-                >
-                    <div style={s.premiumInfo}>
-                        <div style={{ color: hasPremium ? '#000' : '#FFD700' }}><FaGem size={28} /></div>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ ...s.premTitle, color: hasPremium ? '#000' : '#FFF' }}>
-                                {hasPremium ? 'UltyMyLife Premium' : (lang === 0 ? 'Активировать Premium' : 'Activate Premium')}
-                            </span>
-                            <span style={{ ...s.premSub, color: hasPremium ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)' }}>
-                                {hasPremium ? (lang === 0 ? 'Все функции разблокированы' : 'All features unlocked') : (lang === 0 ? 'Статистика, ИИ и облако' : 'Analytics, AI & Cloud')}
-                            </span>
-                        </div>
-                    </div>
-                </motion.div>}
-
                 {/* 6. Actions */}
                 <div style={s.actionList}>
-                    
-                    <ActionItem icon={<FaUserShield />} label={lang === 0 ? 'Изменить персональные данные' : 'Edit personal data'} theme={theme} onClick={() => setShowBodyMetrics(true)} />
-                    <ActionItem onClick={close} icon={<FaSignOutAlt />} label={lang === 0 ? 'Закрыть' : 'Close'} theme={theme} noBorder color="#FF4D4D" />
+                    <ActionItem icon={<FaUserShield />} label={lang === 0 ? 'Изменить персональные данные' : 'Edit personal data'} theme={theme} onClick={() => setShowBodyMetrics(true)} noBorder />
                 </div>
 
                 <div style={{ height: '100px' }} />

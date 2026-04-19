@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { AppData, UserData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors.js';
 import { theme$, lang$, fontSize$, setPage, premium$ } from '../../StaticClasses/HabitsBus.js';
-import { FaStarHalf, FaStar, FaLock, FaTrophy, FaCrosshairs, FaEye, FaBullseye } from 'react-icons/fa';
+import { FaStarHalf, FaStar, FaTrophy, FaCrosshairs, FaEye, FaBullseye, FaCrown } from 'react-icons/fa';
 import { GiStarsStack, GiCrownedSkull } from 'react-icons/gi';
 import { focusTrainingLevels } from './MentalHelper.js';
 import MentalGamePanel from './MentalGamePanelFocus.jsx';
@@ -224,16 +224,41 @@ function FocusCard({ protocol, difficulty, onClick, theme, lang, fSize, variants
 
             {/* Lock Overlay */}
             {isLocked && (
-                <div onClick={(e) => { e.stopPropagation(); }} 
+                <div onClick={(e) => { e.stopPropagation(); }}
                     style={{
                         position: 'absolute', inset: 0, zIndex: 10,
                         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-                        backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)',
-                        backdropFilter: 'blur(8px)',
+                        background: isDark ? 'rgba(10,10,14,0.82)' : 'rgba(248,248,250,0.88)',
+                        backdropFilter: 'blur(16px)',
                     }}>
-                    <FaLock size={18} color={accent} style={{marginBottom: '8px'}}/>
-                    <div style={{fontSize: '11px', fontWeight: 'bold', color: Colors.get('mainText', theme), marginBottom: '8px'}}>PREMIUM</div>
-                    
+                    <div style={{
+                        width: '44px', height: '44px',
+                        background: 'rgba(0,122,255,0.12)',
+                        borderRadius: '14px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: '8px',
+                        border: '1px solid rgba(0,122,255,0.22)',
+                    }}>
+                        <FaCrown size={20} color="#007AFF" />
+                    </div>
+                    <button onClick={() => setPage('premium')} style={{
+                        fontSize: '11px', fontWeight: '700', color: '#fff',
+                        background: '#007AFF',
+                        border: 'none', borderRadius: '11px',
+                        padding: '8px 0', marginBottom: '7px', cursor: 'pointer',
+                        boxShadow: '0 3px 12px rgba(0,122,255,0.35)',
+                        width: '130px',
+                    }}>
+                        {lang === 0 ? 'Купить подписку' : 'Buy subscription'}
+                    </button>
+                    <button onClick={() => setPage('MainMenu')} style={{
+                        fontSize: '11px', fontWeight: '500',
+                        color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
+                        background: 'transparent', border: 'none',
+                        padding: '4px 10px', cursor: 'pointer',
+                    }}>
+                        {lang === 0 ? '← На главную' : '← Home'}
+                    </button>
                 </div>
             )}
 
@@ -243,7 +268,7 @@ function FocusCard({ protocol, difficulty, onClick, theme, lang, fSize, variants
                     <div style={iconContainerStyle}>
                         {icon}
                     </div>
-                    
+
                     {/* Level Label */}
                     <div style={{
                         fontSize: '10px', 

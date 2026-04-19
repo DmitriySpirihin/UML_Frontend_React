@@ -231,7 +231,7 @@ const Premium = () => {
                     </div>
 
                     <button onClick={() => {if(currentPaymentMethod !== 1){setNeedAgreement(true)}}} style={{...styles(theme).mainButton,backgroundColor: currentPaymentMethod !== 1 ? '#007AFF' : '#d13636', boxShadow: currentPaymentMethod !== 1 ? '0 4px 20px rgba(0, 122, 255, 0.4)' : '0 4px 20px rgba(255, 0, 0, 0.4)'}}>
-                            {currentPaymentMethod !== 1 ? langIndex === 0 ? 'Продолжить' : 'Continue' : langIndex === 0 ? 'Временно недоступно' : 'Temporarily unavailable'}
+                            {currentPaymentMethod !== 1 ? langIndex === 0 ? 'Продолжить' : 'Continue' : langIndex === 0 ? 'Скоро появится' : 'Coming soon'}
                         </button>
                     <p style={styles(theme).footerHint}>{getPaymentMethodHint(currentPaymentMethod, langIndex)}</p>
                 </div>

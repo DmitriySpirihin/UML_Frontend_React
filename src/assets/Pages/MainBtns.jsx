@@ -136,7 +136,7 @@ const UserPanel = ({ theme, fSize }) => {
             boxShadow: '0 4px 12px rgba(0,0,0,0.4)', border: '2px solid #000', zIndex: 1
         }}
     return (
-        <div onClick={() => setAddPanel('UserPanel')}  style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
+        <div onClick={() => setPage('UserPanel')}  style={{ display: "flex", flexDirection: "row", alignItems: "center" }}>
             
             <div style={{ ...s.avatarWrapper, borderColor: hasPremium ? '#FFD700' : Colors.get('border', theme) }}>
                                     {UserData.photo ? (
