@@ -58,7 +58,7 @@ export function setShowPopUpPanel(text,duration,isPositive ) {
   showPopUpPanel$.next({show:true,header:text,isPositive});
   setTimeout(() => showPopUpPanel$.next({show:false,header:'',isPositive}), duration);
 }
-const OVERLAY_PAGES = new Set(['UserPanel', 'AddHabitPanel', 'premium', 'ToDoNew', 'SleepNew']);
+const OVERLAY_PAGES = new Set(['UserPanel', 'AddHabitPanel', 'premium', 'ToDoNew', 'SleepNew', 'settings']);
 export const setPage = (page) => {
   if (!OVERLAY_PAGES.has(setPage$.value)) {
     lastPage$.next(setPage$.value);

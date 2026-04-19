@@ -50,6 +50,7 @@ const LogicMain = lazy(() => import('./assets/Pages/MentalPages/LogicMain'));
 const FocusMain = lazy(() => import('./assets/Pages/MentalPages/FocusMain'));
 const Records = lazy(() => import('./assets/Pages/MentalPages/Records'));
 const InfoPanel = lazy(() => import('./assets/Pages/InfoPanel'));
+const Settings = lazy(() => import('./assets/Pages/Settings'));
 
 const SleepMetrics = lazy(() => import('./assets/Pages/SleepPages/SleepMetrics'));
 const SleepMain = lazy(() => import('./assets/Pages/SleepPages/SleepMain'));
@@ -355,6 +356,9 @@ function App() {
       </Suspense>}
       {page === 'InfoPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <InfoPanel/>
+      </Suspense>}
+      {page === 'settings' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <Settings/>
       </Suspense>}
       
       {page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && <>

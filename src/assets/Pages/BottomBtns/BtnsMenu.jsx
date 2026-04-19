@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaCog,FaUserAlt,FaMoon,FaSun } from 'react-icons/fa';
 import {
-    setTheme as setGlobalTheme, setAddPanel, setPage, setPage$, addPanel$, theme$,
-    currentBottomBtn$,  setNotifyPanel,
+    setTheme as setGlobalTheme, setPage, theme$,
+    setNotifyPanel,
 } from '../../StaticClasses/HabitsBus';
 import Colors , { THEME } from '../../StaticClasses/Colors';
 import { AppData } from '../../StaticClasses/AppData';
@@ -12,15 +12,9 @@ const switchSound = new Audio('Audio/Click.wav');
 
 const BtnsMenu = () => {
     const [theme, setthemeState] = useState('dark');
-    const [page, setPageState] = useState('');
-    const [addPanel, setAddPanelState] = useState('');
-
-
     useEffect(() => {
         const subs = [
             theme$.subscribe(setthemeState),
-            setPage$.subscribe(setPageState),
-            addPanel$.subscribe(setAddPanelState),
         ];
         return () => subs.forEach(s => s.unsubscribe());
     }, []);
@@ -64,7 +58,7 @@ const BtnsMenu = () => {
                 current={55}
                 icon={ <FaCog/>}
                 onClick={() => {
-                   setAddPanel('settings');
+                   setPage('settings');
                 
                     playEffects(switchSound);
                     setNotifyPanel(false);
