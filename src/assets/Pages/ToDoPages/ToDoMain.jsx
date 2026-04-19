@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, setAddPanel, addPanel$ } from '../../StaticClasses/HabitsBus';
+import { theme$, lang$, fontSize$, setAddPanel, selectedTodo$, setPage } from '../../StaticClasses/HabitsBus';
 import { todoEvents$, togglePinned, togglePending, toggleHidden } from './ToDoHelper.js';
 import { 
     FaSortAmountDown, FaFilter, FaCircle, FaCheckCircle, FaCalendarDay, 
@@ -10,7 +10,6 @@ import {
     FaExclamation, FaInbox, FaFlag, FaLayerGroup, FaThumbtack, FaRegEyeSlash, 
     FaClock, FaEllipsisV, FaEye 
 } from 'react-icons/fa';
-import ToDoPage from './ToDoPage.jsx';
 import ToDoMetrics from './ToDoMetrics.jsx';
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 
@@ -33,9 +32,7 @@ const ToDoMain = () => {
     const [fSize, setFSize] = useState(AppData.prefs[4]);
 
     // --- LOCAL UI STATE ---
-    const [showToDo, setShowToDo] = useState(addPanel$.value === 'ToDoPage' ? true : false);
     const [showMetrics, setShowMetrics] = useState(false);
-    const [currentIndex, setCurrentIndex] = useState(0);
     
     // NEW: Hidden tasks management state
     const [showHiddenTasks, setShowHiddenTasks] = useState(false);
@@ -59,8 +56,7 @@ const ToDoMain = () => {
         const sub1 = theme$.subscribe(setThemeState);
         const sub2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
         const sub3 = fontSize$.subscribe(setFSize);
-        const sub5 = addPanel$.subscribe(value => setShowToDo(value === 'ToDoPage'));
-        
+
         const sub4 = todoEvents$.subscribe(event => {
             if (!event) return;
             setRefreshTrigger(prev => prev + 1);
@@ -71,8 +67,8 @@ const ToDoMain = () => {
             }
             if (event.type === 'OPEN_ADD') {
                 setShowMetrics(false);
-                setCurrentIndex(-1);
-                setAddPanel('ToDoPage');
+                selectedTodo$.next({});
+                setPage('ToDoPage');
             }
             if (event.type === 'CLOSE_ALL') {
                 setShowMetrics(false);
@@ -80,8 +76,8 @@ const ToDoMain = () => {
             }
         });
 
-        return () => { 
-            sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe(); sub5.unsubscribe();
+        return () => {
+            sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe();
         };
     }, []);
    
@@ -155,10 +151,6 @@ const ToDoMain = () => {
             setTimeout(() => searchInputRef.current.focus(), 300);
         }
     }, [activePanel]);
-
-    const onClose = () => {
-        setAddPanel('');
-    }
 
     const handleQuickComplete = (e, item) => {
         e.stopPropagation();
@@ -350,9 +342,8 @@ const ToDoMain = () => {
                                     <CompactCard
                                         key={item.id || index + item.name}
                                         onClick={() => {
-                                            const realIndex = AppData.todoList.indexOf(item);
-                                            setCurrentIndex(realIndex);
-                                            setAddPanel('ToDoPage');
+                                            selectedTodo$.next(item);
+                                            setPage('ToDoPage');
                                             playEffects(clickSound);
                                         }}
                                         onCheck={(e) => handleQuickComplete(e, item)}
@@ -422,14 +413,6 @@ const ToDoMain = () => {
             </div>
 
             {/* --- MODALS --- */}
-            <ToDoPage 
-                show={showToDo} 
-                setShow={onClose} 
-                theme={theme} 
-                lang={langIndex} 
-                fSize={fSize} 
-                task={AppData.todoList[currentIndex] || {}} 
-            />
             {showMetrics && <ToDoMetrics theme={theme} lang={langIndex} onClose={() => setShowMetrics(false)} />}
         </div>
     );

@@ -40,6 +40,7 @@ const RecoveryAnalytics = lazy(() => import('./assets/Pages/Recovery/RecoveryAna
 const ToDoMain = lazy(() => import('./assets/Pages/ToDoPages/ToDoMain'));
 const ToDoMetrics = lazy(() => import('./assets/Pages/ToDoPages/ToDoMetrics'));
 const ToDoNew = lazy(() => import('./assets/Pages/ToDoPages/ToDoNew'));
+const ToDoPage = lazy(() => import('./assets/Pages/ToDoPages/ToDoPage'));
 const SleepNew = lazy(() => import('./assets/Pages/SleepPages/SleepNew'));
 const RobotMain = lazy(() => import('./assets/Pages/Robot/RobotMain'));
 const UserPanel = lazy(() => import('./assets/Pages/UserPanel'));
@@ -347,6 +348,9 @@ function App() {
       </Suspense>}
       {page === 'ToDoNew' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <ToDoNew/>
+      </Suspense>}
+      {page === 'ToDoPage' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <ToDoPage/>
       </Suspense>}
       {page === 'SleepNew' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <SleepNew/>
