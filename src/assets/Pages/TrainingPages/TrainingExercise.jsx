@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
-import { theme$, lang$, fontSize$, addPanel$, setShowPopUpPanel } from '../../StaticClasses/HabitsBus.js'
+import { theme$, lang$, fontSize$, setPage, setCurrentTrainingMuscle } from '../../StaticClasses/HabitsBus.js'
 import { IoIosArrowDown, IoIosArrowUp, IoIosSearch } from 'react-icons/io'
-import { MuscleIcon, addExercise, removeExercise, updateExercise } from '../../Classes/TrainingData.jsx'
+import { MuscleIcon, removeExercise, updateExercise } from '../../Classes/TrainingData.jsx'
 import { FaTrash, FaPencilAlt, FaPlus } from 'react-icons/fa';
 import { TbDotsVertical } from 'react-icons/tb'
 import { MdDone, MdClose } from 'react-icons/md'
@@ -14,8 +14,6 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
     const [theme, setthemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setFSize] = useState(AppData.prefs[1]);
-    const [addPanel, setAddPanel] = useState('');
-    
     const [currentMuscleGroupId, setCurrentMuscleGroupId] = useState(-1);
     const [currentExerciseId, setCurrentExerciseId] = useState(-1);
     const [currentExerciseName, setCurrentExerciseName] = useState('');
@@ -47,10 +45,8 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
         }
     }, []);
     useEffect(() => {
-        const subscriptionAddPanel = addPanel$.subscribe(setAddPanel);
         const subscriptionFontSize = fontSize$.subscribe(setFSize);
         return () => {
-            subscriptionAddPanel.unsubscribe();
             subscriptionFontSize.unsubscribe();
         };
     }, []);
@@ -66,39 +62,6 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
     function setExercise(id) {
         playEffects(null);
         setCurrentExerciseId(currentExerciseId === id ? -1 : id);
-    }
-    function onClose() {
-        playEffects(null);
-        setAddPanel('');
-        setMGroups(new Array(14).fill(false));
-        setName('');
-        setDescription('');
-        setIsBase(true);
-    }
-    function onAdd() {
-        if (name.length < 3) {
-            setShowPopUpPanel(langIndex === 0 ? 'Введите название (мин. 3 символа)' : 'Enter name (min 3 chars)', 2000, false);
-            return;
-        }
-        // Use formMainMuscle instead of currentMuscleGroupId to allow changing it in constructor
-        const targetMuscle = formMainMuscle; 
-        
-        const addMgGroups = [];
-        for (let index = 0; index < mGroups.length; index++) {
-            if (mGroups[index]) addMgGroups.push(index);
-        }
-        playEffects(null);
-        const baseName = capitalizeName(name);
-        const baseDesc = description.length > 3 ? capitalizeName(description) : '';
-
-        addExercise(
-            targetMuscle,
-            addMgGroups,
-            [langIndex === 0 ? baseName : 'Custom exercise', langIndex === 1 ? baseName : 'Своё упражнение'],
-            [langIndex === 0 ? (baseDesc || 'Своё упражнение') : 'Custom exercise', langIndex === 1 ? (baseDesc || 'Custom exercise') : 'Своё упражнение'],
-            isBase
-        );
-        onClose();
     }
     function onRedaktStart() {
         const exercise = AppData.exercises[currentExerciseId];
@@ -149,17 +112,8 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
         removeExercise(currentExerciseId);
         setCurrentExerciseId(-1);
         setShowConfirmRemove(false);
-        onClose();
     }
     
-    // Prepare modal for new entry
-    useEffect(() => {
-        if (addPanel === 'AddExercisePanel') {
-            // Default to current group or 0 if none selected
-            setFormMainMuscle(currentMuscleGroupId !== -1 ? currentMuscleGroupId : 0);
-        }
-    }, [addPanel]);
-
     // --- ANIMATION VARIANTS ---
     const accordionVariants = {
         collapsed: { height: 0, opacity: 0, overflow: 'hidden' },
@@ -322,7 +276,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                                                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
                                                     <motion.button
                                                         whileTap={{ scale: 0.95 }}
-                                                        onClick={() => { playEffects(null); setAddPanel('AddExercisePanel'); }}
+                                                        onClick={() => { playEffects(null); setCurrentTrainingMuscle(key); setPage('AddExercisePanel'); }}
                                                         style={styles(theme).fab}
                                                     >
                                                         <FaPlus style={{ fontSize: '14px', color: '#fff' }} />
@@ -341,7 +295,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
 
             {/* MODAL: ADD / EDIT EXERCISE (Constructor) */}
             <AnimatePresence>
-                {(addPanel === 'AddExercisePanel' || showRedakt) && (
+                {showRedakt && (
                     <div style={styles(theme).modalBackdrop}>
                         <motion.div
                             variants={modalVariants}
@@ -349,7 +303,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                             style={styles(theme).modalContainer}
                         >
                             <div style={styles(theme).modalHeader}>
-                                <h3 style={styles(theme, false, false, fSize).headerText}>{langIndex === 0 ? (showRedakt ? 'Редактор' : 'Конструктор') : (showRedakt ? 'Editor' : 'Constructor')}</h3>
+                                <h3 style={styles(theme, false, false, fSize).headerText}>{langIndex === 0 ? 'Редактор' : 'Editor'}</h3>
                             </div>
 
                             <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto' }}>
@@ -409,10 +363,10 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
 
                             {/* Modal Actions */}
                             <div style={styles(theme).modalActions}>
-                                <motion.div whileTap={{ scale: 0.9 }} onClick={() => showRedakt ? setShowRedakt(false) : onClose()} style={styles(theme).circleBtn}>
+                                <motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowRedakt(false)} style={styles(theme).circleBtn}>
                                     <MdClose style={{ fontSize: '24px', color: Colors.get('subText', theme) }} />
                                 </motion.div>
-                                <motion.div whileTap={{ scale: 0.9 }} onClick={() => showRedakt ? onRedakt() : onAdd()} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('done', theme) }}>
+                                <motion.div whileTap={{ scale: 0.9 }} onClick={onRedakt} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('done', theme) }}>
                                     <MdDone style={{ fontSize: '24px', color: '#fff' }} />
                                 </motion.div>
                             </div>

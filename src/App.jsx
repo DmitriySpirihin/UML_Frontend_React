@@ -52,6 +52,7 @@ const FocusMain = lazy(() => import('./assets/Pages/MentalPages/FocusMain'));
 const Records = lazy(() => import('./assets/Pages/MentalPages/Records'));
 const InfoPanel = lazy(() => import('./assets/Pages/InfoPanel'));
 const Settings = lazy(() => import('./assets/Pages/Settings'));
+const AddExercisePanel = lazy(() => import('./assets/Pages/TrainingPages/AddExercisePanel'));
 
 const SleepMetrics = lazy(() => import('./assets/Pages/SleepPages/SleepMetrics'));
 const SleepMain = lazy(() => import('./assets/Pages/SleepPages/SleepMain'));
@@ -249,7 +250,7 @@ function App() {
         </motion.div>
     
       }
-      {page !== 'LoadPanel' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+      {page !== 'LoadPanel' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <MainBtns/>
       </Suspense>}
       
@@ -364,8 +365,11 @@ function App() {
       {page === 'settings' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <Settings/>
       </Suspense>}
-      
-      {page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && <>
+      {page === 'AddExercisePanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <AddExercisePanel/>
+      </Suspense>}
+
+      {page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && <>
         {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
         {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
         {bottomBtnPanel === 'BtnsRecovery' && !keyboardVisible && <BtnsRecovery/>}

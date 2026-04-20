@@ -36,6 +36,7 @@ export const isServerAvailable$ = new BehaviorSubject(false);
 export const activeTab$ = new BehaviorSubject('MainCard');
 export const selectedSleepDate$ = new BehaviorSubject('');
 export const selectedTodo$ = new BehaviorSubject(null);
+export const currentTrainingMuscle$ = new BehaviorSubject(0);
 
 export const setActiveTab = (state) => activeTab$.next(state);
 
@@ -59,7 +60,7 @@ export function setShowPopUpPanel(text,duration,isPositive ) {
   showPopUpPanel$.next({show:true,header:text,isPositive});
   setTimeout(() => showPopUpPanel$.next({show:false,header:'',isPositive}), duration);
 }
-const OVERLAY_PAGES = new Set(['UserPanel', 'AddHabitPanel', 'premium', 'ToDoNew', 'SleepNew', 'settings', 'ToDoPage']);
+const OVERLAY_PAGES = new Set(['UserPanel', 'AddHabitPanel', 'premium', 'ToDoNew', 'SleepNew', 'settings', 'ToDoPage', 'AddExercisePanel']);
 export const setPage = (page) => {
   if (!OVERLAY_PAGES.has(setPage$.value)) {
     lastPage$.next(setPage$.value);
@@ -94,3 +95,4 @@ export const setCurrentKeyboardString = (str) => {
 export const setPremium = (state) => premium$.next(state);
 export const setAddNewTrainingDay = () => addNewTrainingDay$.next();
 export const setRecoveryType = (state) => recoveryType$.next(state);
+export const setCurrentTrainingMuscle = (id) => currentTrainingMuscle$.next(id);
