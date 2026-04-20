@@ -250,7 +250,7 @@ const AddHabitPanel = () => {
                                                                                         style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
                                                                                         />
                                                 <motion.div whileTap={{ scale: 0.98 }} style={iconPickerTrigger(ui)} onClick={() => setSelectIconPanel(true)}>
-                                                    <span style={{ color: ui.text, fontWeight: '700' }}>Иконка</span>
+                                                    <span style={{ color: ui.text, fontWeight: '700' }}>{langIndex === 0 ? 'Иконка' : 'Icon'}</span>
                                                     {Icons.getIcon(habitIcon, { size: 32, style: { color: ui.accent } })}
                                                 </motion.div>
                                                  <input 
@@ -282,7 +282,7 @@ const AddHabitPanel = () => {
                                         <div style={configCard(ui)}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                                                 <span style={{ color: ui.text, fontWeight: '700' }}>{langIndex === 0 ? 'Срок' : 'Goal'}</span>
-                                                <span style={{ color: ui.accent, fontWeight: '900', fontSize: '24px' }}>{daysToForm} дн.</span>
+                                                <span style={{ color: ui.accent, fontWeight: '900', fontSize: '24px' }}>{daysToForm} {langIndex === 0 ? 'дн.' : 'days'}</span>
                                             </div>
                                             <Slider min={21} max={180} value={daysToForm} onChange={(e, v) => setDaysToForm(v)} 
                                                 sx={{ color: ui.accent, '& .MuiSlider-thumb': { width: 24, height: 24 }, '& .MuiSlider-rail': { opacity: 0.3 } }} 
@@ -352,7 +352,7 @@ const AddHabitPanel = () => {
                                 >
                                     <div style={dragHandle} />
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 25px 15px' }}>
-                                        <h3 style={{ margin: 0, color: ui.text }}>Выбрать иконку</h3>
+                                        <h3 style={{ margin: 0, color: ui.text }}>{langIndex === 0 ? 'Выбрать иконку' : 'Choose icon'}</h3>
                                         <motion.div whileTap={{ scale: 0.9 }} onClick={() => setSelectIconPanel(false)} style={{ padding: '8px', backgroundColor: ui.card, borderRadius: '50%' }}>
                                             <MdClose color={ui.sub} />
                                         </motion.div>

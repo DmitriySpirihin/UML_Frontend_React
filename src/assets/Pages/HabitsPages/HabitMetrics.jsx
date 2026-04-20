@@ -236,7 +236,7 @@ const HabitMetrics = () => {
                                             <span style={{ fontSize: '12px', fontWeight: '800', color: ui.text }}>{daysCountText(langIndex, daysCount)}</span>
                                             <FaChevronRight size={10} color={ui.text} onClick={() => setDaysCount(prev => prev < 2 ? prev + 1 : 0)} />
                                         </div>
-                                        <span style={{ fontSize: '11px', color: ui.sub, fontWeight: '700' }}>Сегодня</span>
+                                        <span style={{ fontSize: '11px', color: ui.sub, fontWeight: '700' }}>{langIndex === 0 ? 'Сегодня' : 'Today'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -295,7 +295,7 @@ const HabitMetrics = () => {
                             <div style={{ padding: '20px 25px 60px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                                     <MdAutoGraph size={24} color={ui.accent} />
-                                    <h3 style={{ margin: 0, color: ui.text }}>Инсайты</h3>
+                                    <h3 style={{ margin: 0, color: ui.text }}>{langIndex === 0 ? 'Инсайты' : 'Insights'}</h3>
                                 </div>
                                 <p style={{ color: ui.text, fontSize: '16px', lineHeight: '1.6', whiteSpace: 'pre-line' }}>{infoTextLong(langIndex, habitId)}</p>
                             </div>

@@ -901,9 +901,9 @@ const Achievement = ({ milestone, index, id, theme, langIndex }) => {
     const daysLeft = target - currentStreak;
 
     // Translations
-    const statusText = langIndex === 0 
-        ? `${daysLeft} days left to unlock` 
-        : `Осталось ${daysLeft} дн. до открытия`;
+    const statusText = langIndex === 0
+        ? `Осталось ${daysLeft} дн. до открытия`
+        : `${daysLeft} days left to unlock`;
 
     return (
         <div style={{ 
