@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData } from '../../StaticClasses/AppData.js';
 import { NotificationsManager } from '../../StaticClasses/NotificationsManager.js';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$,premium$ } from '../../StaticClasses/HabitsBus';
+import { theme$, lang$, fontSize$,premium$, setPage } from '../../StaticClasses/HabitsBus';
 
 // Icons
-import { FaStopwatch, FaMemory, FaUserAlt, FaTrophy, FaMedal,FaGlobe, FaUserShield,FaUserFriends} from 'react-icons/fa';
+import { FaStopwatch, FaMemory, FaUserAlt, FaTrophy, FaMedal,FaGlobe, FaUserShield,FaUserFriends, FaCrown} from 'react-icons/fa';
 import { GiLogicGateNxor, GiTargetShot, GiStarsStack, GiCrownedSkull } from 'react-icons/gi';
 import { FaStarHalf, FaStar, FaInfinity } from 'react-icons/fa';
 
@@ -100,19 +100,41 @@ const Records = () => {
             {/* Controls Area */}
             <div style={styles(theme).controlsWrapper}>
                 {!hasPremium && (
-                <div 
-                    onClick={(e) => e.stopPropagation()} 
+                <div onClick={(e) => e.stopPropagation()}
                     style={{
-                        position: 'absolute', inset: 0, zIndex: 2,
+                        position: 'fixed', inset: 0, zIndex: 2555,
                         display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-                        backgroundColor: theme$.value === 'dark' ? 'rgba(10, 10, 10, 0.85)' : 'rgba(255, 255, 255, 0.9)',
-                        backdropFilter: 'blur(15px)',
-                        textAlign: 'center'
-                    }}
-                >
-                    <div style={{ color: theme$.value === 'dark' ? '#FFD700' : '#D97706', fontSize: '11px', fontWeight: 'bold', fontFamily: 'Segoe UI' }}>
-                        {langIndex === 0 ? 'ТОЛЬКО ДЛЯ ПРЕМИУМ' : 'PREMIUM USERS ONLY'}
+                        background: theme === 'dark' ? 'rgba(10,10,14,0.82)' : 'rgba(248,248,250,0.88)',
+                        backdropFilter: 'blur(20px)', textAlign: 'center'
+                    }}>
+                    <div style={{
+                        width: '72px', height: '72px', background: 'rgba(0,122,255,0.12)',
+                        borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: '16px', border: '1px solid rgba(0,122,255,0.22)',
+                    }}>
+                        <FaCrown size={30} color="#007AFF" />
                     </div>
+                    <div style={{
+                        fontSize: '13px', lineHeight: '1.6',
+                        color: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)',
+                        marginBottom: '24px', maxWidth: '210px',
+                    }}>
+                        {langIndex === 0 ? 'Откройте полный доступ ко всем рекордам' : 'Unlock full access to all records'}
+                    </div>
+                    <button onClick={() => setPage('premium')} style={{
+                        fontSize: '15px', fontWeight: '700', color: '#fff', background: '#007AFF',
+                        border: 'none', borderRadius: '14px', padding: '13px 0', marginBottom: '10px',
+                        cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,122,255,0.35)', width: '220px',
+                    }}>
+                        {langIndex === 0 ? 'Купить подписку' : 'Buy subscription'}
+                    </button>
+                    <button onClick={() => setPage('MainMenu')} style={{
+                        fontSize: '13px', fontWeight: '500',
+                        color: theme === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
+                        background: 'transparent', border: 'none', padding: '8px 20px', cursor: 'pointer',
+                    }}>
+                        {langIndex === 0 ? '← На главную' : '← Home'}
+                    </button>
                 </div>
             )}
                 {/* ✅ NEW: Filter Toggle (Global / Friends) */}
@@ -252,36 +274,63 @@ const SegmentedControl = ({ items, selectedIndex, setSelectedIndex, theme, color
     );
 };
 
-const ListItem = ({ theme, fSize, isUser,isAdmin, rank, name, score, index }) => {
+const MEDAL_COLORS = {
+    1: { bg: 'rgba(255,215,0,0.18)', border: 'rgba(255,215,0,0.5)', icon: '#FFD700' },
+    2: { bg: 'rgba(192,192,192,0.18)', border: 'rgba(192,192,192,0.5)', icon: '#C0C0C0' },
+    3: { bg: 'rgba(205,127,50,0.18)', border: 'rgba(205,127,50,0.5)', icon: '#CD7F32' },
+};
+
+const Avatar = ({ name, accent, size = 38 }) => {
+    const initials = (name || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    return (
+        <div style={{
+            width: size, height: size, borderRadius: '50%',
+            background: accent ? `${accent}33` : 'rgba(128,128,128,0.2)',
+            border: `2px solid ${accent || 'rgba(128,128,128,0.3)'}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: size * 0.38, fontWeight: '700',
+            color: accent || '#888', flexShrink: 0,
+            letterSpacing: '-0.5px'
+        }}>
+            {initials}
+        </div>
+    );
+};
+
+const ListItem = ({ theme, fSize, isUser, isAdmin, rank, name, score, index }) => {
     const isDark = theme === 'dark';
-    
-    // Animation variants for staggering
+
     const itemVariants = {
         hidden: { opacity: 0, y: 20, scale: 0.95 },
-        visible: { 
-            opacity: 1, 
-            y: 0, 
-            scale: 1,
-            transition: { delay: index * 0.05, type: 'spring', stiffness: 300, damping: 24 } 
+        visible: {
+            opacity: 1, y: 0, scale: 1,
+            transition: { delay: index * 0.05, type: 'spring', stiffness: 300, damping: 24 }
         },
         exit: { opacity: 0, scale: 0.9 }
     };
 
-    // Rank Styling
-    let RankIcon = null;
-    let rankColor = Colors.get('mainText', theme);
-    const borderColor = isUser 
-        ? Colors.get('done', theme) 
-        : (isAdmin ? Colors.get('accent', theme) : 'none');
+    const medal = MEDAL_COLORS[rank];
+    const borderColor = medal
+        ? medal.border
+        : isUser ? Colors.get('done', theme)
+        : isAdmin ? Colors.get('accent', theme) : 'transparent';
 
-    // ✅ Background Logic: User gets distinct BG, Admin gets slight tint if not user
-    const bgColor = isUser 
-        ? (isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)') 
-        : (isDark ? 'rgba(30, 30, 30, 0.4)' : '#FFFFFF');
-    
-    if (rank === 1) { RankIcon = FaTrophy; rankColor = Colors.get('barsColorWeight', theme); } // Gold
-    else if (rank === 2) { RankIcon = FaMedal; rankColor = Colors.get('icons', theme); } // Silver
-    else if (rank === 3) { RankIcon = FaMedal; rankColor = Colors.get('difficulty5', theme); } // Bronze
+    const bgColor = medal
+        ? (isDark ? medal.bg : medal.bg)
+        : isUser
+        ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)')
+        : (isDark ? 'rgba(30,30,30,0.4)' : '#FFFFFF');
+
+    const avatarAccent = medal
+        ? medal.icon
+        : isUser ? Colors.get('done', theme)
+        : isAdmin ? '#00BFFF' : null;
+
+    let RankDisplay;
+    if (rank === 1) RankDisplay = <FaTrophy size={16} color={MEDAL_COLORS[1].icon} />;
+    else if (rank === 2) RankDisplay = <FaMedal size={16} color={MEDAL_COLORS[2].icon} />;
+    else if (rank === 3) RankDisplay = <FaMedal size={16} color={MEDAL_COLORS[3].icon} />;
+    else RankDisplay = <span style={{ fontSize: '13px', fontWeight: 'bold', color: Colors.get('subText', theme) }}>{rank}</span>;
 
     return (
         <motion.div
@@ -290,60 +339,55 @@ const ListItem = ({ theme, fSize, isUser,isAdmin, rank, name, score, index }) =>
             initial="hidden" animate="visible" exit="exit"
             style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '12px 16px', borderRadius: '16px', marginBottom: '8px',
+                padding: '10px 14px', borderRadius: '16px', marginBottom: '8px',
                 backdropFilter: 'blur(10px)',
-                boxShadow: isDark ? '0 4px 6px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.05)',
-                // Apply dynamic styles
+                boxShadow: medal
+                    ? `0 4px 16px ${medal.icon}22`
+                    : (isDark ? '0 4px 6px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.05)'),
                 backgroundColor: bgColor,
-                border: isUser || isAdmin ? `1px solid ${borderColor}` : 'none'
+                border: `1px solid ${borderColor}`,
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                {/* Rank Badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {/* Rank */}
                 <div style={{
-                    width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    borderRadius: '8px', backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)',
-                    fontWeight: 'bold', color: rankColor, fontSize: '14px'
+                    width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                 }}>
-                    {RankIcon ? <RankIcon size={16} /> : rank}
+                    {RankDisplay}
                 </div>
 
-                {/* Name & Indicators */}
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ 
-                        display: 'flex', alignItems: 'center', gap: '8px',
+                {/* Avatar */}
+                <Avatar name={name} accent={avatarAccent} />
+
+                {/* Name & badges */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{
                         fontSize: fSize === 0 ? '15px' : '17px',
-                        fontWeight: (isUser || isAdmin) ? 'bold' : 'normal',
+                        fontWeight: (isUser || isAdmin || medal) ? '700' : '500',
                         color: Colors.get('mainText', theme)
                     }}>
                         {name}
-                        
-                        {/* --- ICONS SECTION --- */}
-                        
-                        {/* 1. Admin Shield (Shows for you AND other admins) */}
-                        {isAdmin && (
-                            <div style={{ 
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                backgroundColor: 'rgba(0, 191, 255, 0.15)',
-                                borderRadius: '4px', padding: '2px 4px' 
-                            }}>
-                                <FaUserShield size={12} color="#00BFFF" />
-                            </div>
-                        )}
-
-                        {/* 2. User Icon (Only shows if it is YOU) */}
-                        {isUser && (
-                            <FaUserAlt size={11} color={Colors.get('done', theme)} />
-                        )}
-
-                    </div>
+                    </span>
+                    {isAdmin && (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            backgroundColor: 'rgba(0,191,255,0.15)',
+                            borderRadius: '4px', padding: '2px 4px'
+                        }}>
+                            <FaUserShield size={11} color="#00BFFF" />
+                        </div>
+                    )}
+                    {isUser && (
+                        <FaUserAlt size={10} color={Colors.get('done', theme)} />
+                    )}
                 </div>
             </div>
 
             {/* Score */}
             <div style={{
                 fontSize: fSize === 0 ? '16px' : '18px', fontWeight: 'bold',
-                color: Colors.get('done', theme), fontFamily: 'monospace', letterSpacing: '-0.5px'
+                color: medal ? medal.icon : Colors.get('done', theme),
+                fontFamily: 'monospace', letterSpacing: '-0.5px'
             }}>
                 {score}
             </div>

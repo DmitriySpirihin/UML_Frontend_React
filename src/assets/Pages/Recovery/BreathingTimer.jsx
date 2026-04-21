@@ -3,9 +3,9 @@ import { AppData } from '../../StaticClasses/AppData'
 import Colors from "../../StaticClasses/Colors"
 import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
 import { IoPlay, IoClose, IoPause, IoVolumeMute, IoVolumeHigh, IoCheckmark } from "react-icons/io5"
-import { FaChevronLeft, FaChevronRight, FaInfoCircle, FaBullseye } from "react-icons/fa"
+import { FaMinus, FaPlus, FaInfoCircle } from "react-icons/fa"
 import BreathAudio from "../../Helpers/BreathAudio"
-import { markSessionAsDone, saveBreathingSession } from '../../StaticClasses/RecoveryLogHelper';
+import { saveBreathingSession } from '../../StaticClasses/RecoveryLogHelper';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Фоновый эмбиент
@@ -16,10 +16,64 @@ ambientAudio.volume = 0.4;
 
 const startTimerDuration = 3000;
 
-const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex, isCustom = false }) => {
-  
+const buildStepsFromPhases = (p) => {
+  const s = [];
+  if (p.in   > 0) s.push({ in:   p.in   * 1000 });
+  if (p.hold1 > 0) s.push({ hold: p.hold1 * 1000 });
+  if (p.out  > 0) s.push({ out:  p.out  * 1000 });
+  if (p.hold2 > 0) s.push({ hold: p.hold2 * 1000 });
+  return s.length ? s : [{ in: 4000 }, { out: 4000 }];
+};
+
+function PhaseStepper({ theme, label, value, min = 0, max = 20, step = 1, onChange, wide = false }) {
+  const textMain = Colors.get('mainText', theme);
+  const textSub = Colors.get('subText', theme);
+  const dec = () => onChange(Math.max(min, value - step));
+  const inc = () => onChange(Math.min(max, value + step));
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.03)', borderRadius: '14px', padding: '10px 12px',
+      display: 'flex', flexDirection: 'column', gap: '6px',
+      border: '1px solid rgba(255,255,255,0.05)'
+    }}>
+      <div style={{ fontSize: '10px', color: textSub, textTransform: 'uppercase', letterSpacing: '1px' }}>
+        {label}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={dec}
+          style={{
+            width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: 'rgba(255,255,255,0.08)', color: textMain,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none'
+          }}>
+          <FaMinus size={10} />
+        </motion.button>
+        <span style={{
+          fontSize: wide ? '22px' : '18px', fontWeight: 600, color: textMain,
+          fontVariantNumeric: 'tabular-nums', minWidth: wide ? '60px' : '30px', textAlign: 'center'
+        }}>
+          {value}
+        </span>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={inc}
+          style={{
+            width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: 'rgba(255,255,255,0.08)', color: textMain,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none'
+          }}>
+          <FaPlus size={10} />
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+const BreathingTimer = ({ show, setShow, protocol }) => {
+
   // --- STATE ---
-  const [level, setLevel] = useState(setActualLevel(categoryIndex, protocolIndex, isCustom));
+  const [customPhases, setCustomPhases] = useState({ in: 4, hold1: 4, out: 4, hold2: 4 });
+  const [mode, setMode] = useState('time'); // 'time' | 'cycles'
+  const [limitMinutes, setLimitMinutes] = useState(5);
+  const [limitCycles, setLimitCycles] = useState(10);
   const [theme, setthemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]); 
@@ -60,9 +114,6 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
     return () => { s1.unsubscribe(); s2.unsubscribe(); s3.unsubscribe(); }
   }, []);
 
-  useEffect(() => {
-    setLevel(isCustom ? 0 : setActualLevel(categoryIndex, protocolIndex, isCustom));
-  }, [protocol, protocolIndex, categoryIndex, isCustom]);
 
   // --- START TIMER LOGIC ---
   useEffect(() => {
@@ -95,10 +146,19 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
     startTimeRef.current = 0;
   }, [currentStepIndex]);
 
+  const cycleSteps = useMemo(() => buildStepsFromPhases(customPhases), [customPhases]);
+
+  const cycleDurationMs = useMemo(
+    () => cycleSteps.reduce((acc, s) => acc + (s.in ?? s.out ?? s.hold ?? s.rest ?? 0), 0),
+    [cycleSteps]
+  );
+
   const effectiveLevelData = useMemo(() => {
-    if (!protocol?.levels?.length) return { cycles: 1, steps: [{ in: 4000 }, { out: 4000 }] };
-    return isCustom ? protocol.levels[0] : protocol.levels[level] || protocol.levels[0];
-  }, [protocol, level, isCustom]);
+    const cycles = mode === 'cycles'
+      ? Math.max(1, limitCycles)
+      : Math.max(1, Math.ceil((limitMinutes * 60 * 1000) / Math.max(cycleDurationMs, 1000)) + 5);
+    return { cycles, steps: cycleSteps };
+  }, [mode, limitCycles, limitMinutes, cycleDurationMs, cycleSteps]);
 
   const allSteps = useMemo(() => {
     const steps = [];
@@ -137,10 +197,10 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
   const duration = currentStep ? (currentStep.in ?? currentStep.out ?? currentStep.hold ?? currentStep.rest ?? 1000) : 1000;
 
   const cycleInfo = () => {
-    if (!effectiveLevelData.steps) return '0 / 0';
-    return isStart
-      ? `${Math.floor(currentStepIndex / effectiveLevelData.steps.length) + 1} / ${effectiveLevelData.cycles}`
-      : '0';
+    if (!effectiveLevelData.steps?.length) return '0';
+    const current = Math.floor(currentStepIndex / effectiveLevelData.steps.length) + 1;
+    if (!isStart) return '0';
+    return mode === 'cycles' ? `${current} / ${limitCycles}` : `${current}`;
   };
 
   const timeRemaining = duration * (1 - phaseProgress);
@@ -180,8 +240,9 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
       setRenderScale(currentScale);
 
       if (progress >= 1) {
+        const timeLimitReached = mode === 'time' && startTime && (Date.now() - startTime) >= limitMinutes * 60 * 1000;
         const nextIndex = currentStepIndex + 1;
-        if (nextIndex >= allSteps.length) {
+        if (timeLimitReached || nextIndex >= allSteps.length) {
           setIsRunning(false);
           setIsStart(true);
           onFinishSession();
@@ -239,7 +300,6 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
   const handleResume = () => { setIsRunning(true); setIsPaused(false); };
   const handleReload = () => { resetSession(); };
   const onFinishSession = async() => {
-      if(!isCustom){ markSessionAsDone(0, categoryIndex, protocolIndex, level); }
       await saveBreathingSession(startTime, Date.now(), maxHoldRef.current);
       setFinishMessage(congratulations(langIndex)); setIsFinished(true);
   };
@@ -289,7 +349,7 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
                     {langIndex === 0 ? 'Дыхание' : 'Breathwork'}
                 </div>
                 <h2 style={{ fontSize: '28px', color: textMain, margin: 0, fontWeight: '300', fontFamily: 'Segoe UI Light' }}>
-                    {protocol.name[langIndex]}
+                    {protocol?.name?.[langIndex] ?? (langIndex === 0 ? 'Дыхание' : 'Breathwork')}
                 </h2>
             </div>
 
@@ -312,38 +372,64 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
                             {langIndex === 0 ? 'Цель' : 'Goal'}
                         </div>
                         <div style={{ fontSize: '15px', color: textMain, lineHeight: '1.4' }}>
-                            {protocol.aim[langIndex]}
+                            {protocol?.aim?.[langIndex] ?? (langIndex === 0 ? 'Осознанное дыхание для восстановления и фокуса.' : 'Conscious breathing for recovery and focus.')}
                         </div>
                     </div>
 
-                    {/* Level */}
+                    {/* Phases editor */}
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '11px', color: textSub, fontWeight: 'bold', textTransform: 'uppercase' }}>{langIndex === 0 ? 'Уровень' : 'Level'}</span>
-                            <span style={{ fontSize: '11px', color: Colors.get('in', theme), fontWeight: 'bold' }}>
-                                {isLevelDone(categoryIndex, protocolIndex, level, isCustom) ? (langIndex === 0 ? 'ПРОЙДЕН' : 'DONE') : ''}
-                            </span>
+                        <div style={{ fontSize: '11px', color: textSub, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
+                            {langIndex === 0 ? 'Фазы (сек)' : 'Phases (sec)'}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.2)', borderRadius: '50px', padding: '5px' }}>
-                            <CircleButton onClick={() => setLevel(p => Math.max(0, p - 1))} icon={<FaChevronLeft size={12}/>} theme={theme} />
-                            <span style={{ fontSize: '20px', fontWeight: '600', color: textMain, fontVariantNumeric: 'tabular-nums' }}>
-                                {level + 1} <span style={{fontSize: '12px', opacity: 0.5, fontWeight: '400'}}>/ {protocol.levels.length}</span>
-                            </span>
-                            <CircleButton onClick={() => setLevel(p => Math.min(protocol.levels.length - 1, p + 1))} icon={<FaChevronRight size={12}/>} theme={theme} />
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                            {[
+                                { key: 'in',    ru: 'Вдох',     en: 'Inhale' },
+                                { key: 'hold1', ru: 'Задержка', en: 'Hold' },
+                                { key: 'out',   ru: 'Выдох',    en: 'Exhale' },
+                                { key: 'hold2', ru: 'Задержка', en: 'Hold' },
+                            ].map(f => (
+                                <PhaseStepper key={f.key} theme={theme} label={langIndex === 0 ? f.ru : f.en}
+                                    value={customPhases[f.key]} min={0} max={20}
+                                    onChange={v => setCustomPhases(prev => ({ ...prev, [f.key]: v }))} />
+                            ))}
                         </div>
                     </div>
 
-                    {/* Scheme Grid */}
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '12px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '9px', color: textSub, marginBottom: '2px', textTransform: 'uppercase' }}>{langIndex === 0 ? 'СХЕМА' : 'RATIO'}</div>
-                            <div style={{ color: textMain, fontWeight: '600', fontSize: '12px' }}>{effectiveLevelData.strategy || 'Custom'}</div>
+                    {/* Mode toggle */}
+                    <div>
+                        <div style={{ fontSize: '11px', color: textSub, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
+                            {langIndex === 0 ? 'Режим' : 'Mode'}
                         </div>
-                        <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '12px', textAlign: 'center' }}>
-                            <div style={{ fontSize: '9px', color: textSub, marginBottom: '2px', textTransform: 'uppercase' }}>{langIndex === 0 ? 'ЦИКЛЫ' : 'CYCLES'}</div>
-                            <div style={{ color: textMain, fontWeight: '600', fontSize: '14px' }}>{effectiveLevelData.cycles}</div>
+                        <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: '14px', padding: '4px', gap: '4px' }}>
+                            {[
+                                { key: 'time',   ru: 'По времени', en: 'By time' },
+                                { key: 'cycles', ru: 'По циклам',  en: 'By cycles' },
+                            ].map(m => {
+                                const active = mode === m.key;
+                                return (
+                                    <motion.button key={m.key} whileTap={{ scale: 0.97 }} onClick={() => setMode(m.key)}
+                                        style={{
+                                            flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                                            background: active ? Colors.get('in', theme) : 'transparent',
+                                            color: active ? '#fff' : textSub,
+                                            fontSize: '13px', fontWeight: active ? 700 : 500, outline: 'none'
+                                        }}>
+                                        {langIndex === 0 ? m.ru : m.en}
+                                    </motion.button>
+                                );
+                            })}
                         </div>
                     </div>
+
+                    {/* Limit stepper */}
+                    <PhaseStepper theme={theme}
+                        label={mode === 'time'
+                            ? (langIndex === 0 ? 'Минут' : 'Minutes')
+                            : (langIndex === 0 ? 'Циклов' : 'Cycles')}
+                        value={mode === 'time' ? limitMinutes : limitCycles}
+                        min={1} max={mode === 'time' ? 60 : 50} step={mode === 'time' ? 1 : 1}
+                        wide
+                        onChange={v => mode === 'time' ? setLimitMinutes(v) : setLimitCycles(v)} />
 
                     {/* Instruction */}
                     <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '15px' }}>
@@ -351,7 +437,7 @@ const BreathingTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
                             <FaInfoCircle /> {langIndex === 0 ? 'Инструкция' : 'Instruction'}
                         </div>
                         <div style={{ fontSize: '13px', color: textMain, lineHeight: '1.4' }}>
-                            {protocol.instructions[langIndex]}
+                            {protocol?.instructions?.[langIndex] ?? (langIndex === 0 ? 'Следуйте ритму: вдох — задержка — выдох.' : 'Follow the rhythm: inhale — hold — exhale.')}
                         </div>
                     </div>
 
@@ -610,21 +696,3 @@ const congratulations = (langIndex) => {
   return list[Math.floor(Math.random() * list.length)];
 };
 
-const setActualLevel = (categoryIndex, protocolIndex, isCustom) => {
-  if(isCustom) return 0;
-  let ind = -1;
-  const protocol = AppData.recoveryProtocols[0][categoryIndex][protocolIndex];
-  for(let i = 0; i < protocol.length; i++) {
-     if(!protocol[i]) {
-       ind = i;
-       break;
-     }
-  }
-  return ind > -1 ? ind : protocol.length - 1;
-}
-
-const isLevelDone = (categoryIndex, protocolIndex, levelIndex, isCustom) => {
-  if(isCustom) return false;
-  const protocol = AppData.recoveryProtocols[0][categoryIndex][protocolIndex];
-  return protocol[levelIndex];
-}

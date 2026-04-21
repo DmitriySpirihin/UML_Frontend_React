@@ -3,8 +3,8 @@ import { AppData } from '../../StaticClasses/AppData';
 import Colors, { THEME } from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
 import { IoPlay, IoClose, IoPause, IoVolumeMute, IoVolumeHigh, IoCheckmark } from 'react-icons/io5';
-import { FaChevronLeft, FaChevronRight, FaInfoCircle, FaBullseye, FaLayerGroup } from 'react-icons/fa';
-import { markSessionAsDone, saveMeditationSession } from '../../StaticClasses/RecoveryLogHelper';
+import { FaInfoCircle, FaMinus, FaPlus } from 'react-icons/fa';
+import { saveMeditationSession } from '../../StaticClasses/RecoveryLogHelper';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // === FREE AMBIENT SOUND (CC0) ===
@@ -15,15 +15,52 @@ audio.volume = 0.3;
 
 const startTimerDuration = 3000;
 
-const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex, isCustom = false }) => {
+function PhaseStepper({ theme, label, value, min = 0, max = 60, step = 1, onChange, wide = false }) {
+  const textMain = Colors.get('mainText', theme);
+  const textSub = Colors.get('subText', theme);
+  const dec = () => onChange(Math.max(min, value - step));
+  const inc = () => onChange(Math.min(max, value + step));
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.03)', borderRadius: '14px', padding: '10px 12px',
+      display: 'flex', flexDirection: 'column', gap: '6px',
+      border: '1px solid rgba(255,255,255,0.05)'
+    }}>
+      <div style={{ fontSize: '10px', color: textSub, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={dec}
+          style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: 'rgba(255,255,255,0.08)', color: textMain,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>
+          <FaMinus size={10} />
+        </motion.button>
+        <span style={{ fontSize: wide ? '22px' : '18px', fontWeight: 600, color: textMain,
+          fontVariantNumeric: 'tabular-nums', minWidth: wide ? '60px' : '30px', textAlign: 'center' }}>{value}</span>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={inc}
+          style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: 'rgba(255,255,255,0.08)', color: textMain,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>
+          <FaPlus size={10} />
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+const MeditationTimer = ({ show, setShow, protocol }) => {
   // --- STATE ---
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [audioEnabled, setAudioEnabled] = useState(false);
 
+  // Config
+  const [meditateMinutes, setMeditateMinutes] = useState(10);
+  const [restSeconds, setRestSeconds] = useState(0);
+  const [mode, setMode] = useState('time'); // 'time' | 'cycles'
+  const [cyclesCount, setCyclesCount] = useState(1);
+
   // Timer Logic
-  const [level, setLevel] = useState(setActualLevel(categoryIndex, protocolIndex, isCustom));
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -45,25 +82,25 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
     return () => { s1.unsubscribe(); s2.unsubscribe(); s3.unsubscribe(); };
   }, []);
 
-  useEffect(() => {
-    setLevel(isCustom ? 0 : setActualLevel(categoryIndex, protocolIndex, isCustom));
-  }, [protocol, protocolIndex, categoryIndex, isCustom]);
-
   // --- LOGIC CALCULATIONS ---
   const session = useMemo(() => {
-    if (!protocol?.levels?.length) return { cycles: 1, steps: [{ meditateSeconds: 300, restSeconds: 0 }] };
-    return isCustom ? protocol.levels[0] : protocol.levels[level] || protocol.levels[0];
-  }, [protocol, level, isCustom]);
+    const meditateSeconds = mode === 'time'
+      ? Math.round((meditateMinutes * 60) / Math.max(cyclesCount, 1))
+      : meditateMinutes * 60;
+    return {
+      cycles: mode === 'cycles' ? Math.max(1, cyclesCount) : 1,
+      steps: [{ meditateSeconds, restSeconds }]
+    };
+  }, [mode, meditateMinutes, restSeconds, cyclesCount]);
 
   const allSteps = useMemo(() => {
     const { cycles, steps } = session;
-    if (!steps?.length) return [{ type: 'meditate', duration: 300000, cycle: 0 }];
-    const { meditateSeconds, restSeconds } = steps[0];
+    const { meditateSeconds, restSeconds: rs } = steps[0];
     const result = [];
     for (let cycle = 0; cycle < cycles; cycle++) {
       result.push({ type: 'meditate', duration: meditateSeconds * 1000, cycle });
-      if (restSeconds > 0 && cycle < cycles - 1) {
-        result.push({ type: 'rest', duration: restSeconds * 1000, cycle });
+      if (rs > 0 && cycle < cycles - 1) {
+        result.push({ type: 'rest', duration: rs * 1000, cycle });
       }
     }
     return result.length > 0 ? result : [{ type: 'meditate', duration: 300000, cycle: 0 }];
@@ -141,7 +178,6 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
   const handleResume = () => { setIsRunning(true); setIsPaused(false); };
   const handleReload = () => { setCurrentStepIndex(0); setElapsed(0); setIsRunning(false); setIsStart(false); setIsPaused(false); setIsFinished(false); };
   const onFinishSession = async () => {
-    if (!isCustom) markSessionAsDone(1, categoryIndex, protocolIndex, level);
     await saveMeditationSession(startTime, Date.now());
     setFinishMessage(congratulations(langIndex)); setIsFinished(true);
   };
@@ -218,36 +254,56 @@ const MeditationTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex
                         </div>
                     </div>
 
-                    {/* Level Selector */}
+                    {/* Mode Toggle */}
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '11px', color: textSub, fontWeight: 'bold', textTransform: 'uppercase' }}>{langIndex === 0 ? 'Уровень' : 'Level'}</span>
-                            <span style={{ fontSize: '11px', color: accent, fontWeight: 'bold' }}>
-                                {isLevelDone(categoryIndex, protocolIndex, level, isCustom) ? (langIndex === 0 ? 'ПРОЙДЕН' : 'COMPLETED') : ''}
-                            </span>
+                        <div style={{ fontSize: '11px', color: textSub, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
+                            {langIndex === 0 ? 'Режим' : 'Mode'}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.2)', borderRadius: '50px', padding: '5px' }}>
-                            <CircleButton onClick={() => setLevel(p => Math.max(0, p - 1))} icon={<FaChevronLeft size={12}/>} theme={theme} />
-                            <span style={{ fontSize: '20px', fontWeight: '600', color: textMain, fontVariantNumeric: 'tabular-nums' }}>
-                                {level + 1} <span style={{fontSize: '12px', opacity: 0.5, fontWeight: '400'}}>/ {protocol.levels.length}</span>
-                            </span>
-                            <CircleButton onClick={() => setLevel(p => Math.min(protocol.levels.length - 1, p + 1))} icon={<FaChevronRight size={12}/>} theme={theme} />
+                        <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: '14px', padding: '4px', gap: '4px' }}>
+                            {[
+                                { key: 'time',   ru: 'По времени', en: 'By time' },
+                                { key: 'cycles', ru: 'По циклам',  en: 'By cycles' },
+                            ].map(m => {
+                                const active = mode === m.key;
+                                return (
+                                    <motion.button key={m.key} whileTap={{ scale: 0.97 }} onClick={() => setMode(m.key)}
+                                        style={{
+                                            flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                                            background: active ? accent : 'transparent',
+                                            color: active ? '#fff' : textSub,
+                                            fontSize: '13px', fontWeight: active ? 700 : 500, outline: 'none'
+                                        }}>
+                                        {langIndex === 0 ? m.ru : m.en}
+                                    </motion.button>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* Strategy & Instruction */}
-                    <div style={{ display: 'flex', gap: '15px' }}>
-                        <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '12px' }}>
-                            <div style={{ fontSize: '10px', color: textSub, marginBottom: '2px' }}>{langIndex === 0 ? 'ВРЕМЯ' : 'TIME'}</div>
-                            <div style={{ color: textMain, fontWeight: '600' }}>
-                                {Math.floor((session.steps[0].meditateSeconds * session.cycles) / 60)} min
-                            </div>
-                        </div>
-                        <div style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '12px' }}>
-                            <div style={{ fontSize: '10px', color: textSub, marginBottom: '2px' }}>{langIndex === 0 ? 'ЦИКЛЫ' : 'CYCLES'}</div>
-                            <div style={{ color: textMain, fontWeight: '600' }}>{session.cycles}</div>
-                        </div>
+                    {/* Duration & Cycles Steppers */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                        <PhaseStepper theme={theme}
+                            label={langIndex === 0 ? 'Минут' : 'Minutes'}
+                            value={meditateMinutes} min={1} max={120} wide
+                            onChange={setMeditateMinutes} />
+                        {mode === 'cycles' ? (
+                            <PhaseStepper theme={theme}
+                                label={langIndex === 0 ? 'Циклов' : 'Cycles'}
+                                value={cyclesCount} min={1} max={20} wide
+                                onChange={setCyclesCount} />
+                        ) : (
+                            <PhaseStepper theme={theme}
+                                label={langIndex === 0 ? 'Отдых (с)' : 'Rest (s)'}
+                                value={restSeconds} min={0} max={120} step={5} wide
+                                onChange={setRestSeconds} />
+                        )}
                     </div>
+                    {mode === 'cycles' && (
+                        <PhaseStepper theme={theme}
+                            label={langIndex === 0 ? 'Отдых между циклами (с)' : 'Rest between cycles (s)'}
+                            value={restSeconds} min={0} max={120} step={5} wide
+                            onChange={setRestSeconds} />
+                    )}
 
                     {/* INSTRUCTION (Restored) */}
                     <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '15px' }}>
@@ -502,21 +558,3 @@ const congratulations = (langIndex) => {
   return list[Math.floor(Math.random() * list.length)];
 };
 
-const setActualLevel = (categoryIndex, protocolIndex, isCustom) => {
-  if(isCustom) return 0;
-  let ind = -1;
-  const protocol = AppData.recoveryProtocols[1][categoryIndex][protocolIndex];
-  for(let i = 0; i < protocol.length; i++) {
-     if(!protocol[i]) {
-       ind = i;
-       break;
-     }
-  }
-  return ind > -1 ? ind : protocol.length - 1;
-}
-
-const isLevelDone = (categoryIndex, protocolIndex, levelIndex, isCustom) => {
-  if(isCustom) return false;
-  const protocol = AppData.recoveryProtocols[1][categoryIndex][protocolIndex];
-  return protocol[levelIndex];
-}

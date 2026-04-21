@@ -73,7 +73,7 @@ export const quickMathCategories = [
 export const memorySequenceLevels = [
   {
     id: 'easy',
-    level: ['легко', 'easy'],
+    level: ['Легко', 'Easy'],
     title: ['разогрев памяти', 'memory warm-up'],
     elementsRange: [3, 4],           // Short sequences
     charShowMs: 1100,                 // Each char shown for 800ms
@@ -86,7 +86,7 @@ export const memorySequenceLevels = [
   },
   {
     id: 'medium',
-    level: ['средний', 'medium'],
+    level: ['Средний', 'Medium'],
     title: ['удерживаю и обновляю', 'hold and update'],
     elementsRange: [4, 6],
     charShowMs: 900,
@@ -99,7 +99,7 @@ export const memorySequenceLevels = [
   },
   {
     id: 'hard',
-    level: ['сложно', 'hard'],
+    level: ['Сложно', 'Hard'],
     title: ['сложные цепочки', 'complex chains'],
     elementsRange: [6, 12],
     charShowMs: 800,                 // Faster flashes
@@ -112,7 +112,7 @@ export const memorySequenceLevels = [
   },
   {
     id: 'max',
-    level: ['про-режим', 'max pro'],
+    level: ['Про-режим', 'Max Pro'],
     title: ['PRO-режим', 'pro mode'],
     elementsRange: [8, 14],
     charShowMs: 700,                 // Very fast — almost subliminal
@@ -127,7 +127,7 @@ export const memorySequenceLevels = [
 export const logicOddOneOutLevels = [ 
   {
     id: 'easy',
-    level: ['легко', 'easy'],
+    level: ['Легко', 'Easy'],
     title: ['найди лишний', 'find the odd one'],
     itemsCountRange: [4, 5], // сколько элементов в ряду
     rules: [
@@ -142,7 +142,7 @@ export const logicOddOneOutLevels = [
   },
   {
     id: 'medium',
-    level: ['средний', 'medium'],
+    level: ['Средний', 'Medium'],
     title: ['ловлю закономерность', 'spot the pattern'],
     itemsCountRange: [5, 6],
     rules: [
@@ -157,7 +157,7 @@ export const logicOddOneOutLevels = [
   },
   {
     id: 'hard',
-    level: ['сложно', 'hard'],
+    level: ['Сложно', 'Hard'],
     title: ['сложные закономерности', 'complex patterns'],
     itemsCountRange: [6, 7],
     rules: [
@@ -172,7 +172,7 @@ export const logicOddOneOutLevels = [
   },
   {
     id: 'max',
-    level: ['про-режим', 'max pro'],
+    level: ['Про-режим', 'Max Pro'],
     title: ['логический вызов', 'logic challenge'],
     itemsCountRange: [7, 9],
     rules: [

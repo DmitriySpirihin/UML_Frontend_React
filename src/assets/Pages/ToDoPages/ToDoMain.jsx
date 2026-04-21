@@ -500,7 +500,7 @@ const CategoryPanel = ({ title, children, theme }) => {
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                        style={{ overflow: 'hidden', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                        style={{ overflow: 'hidden', width: '100%', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', padding: '0 16px 8px' }}
                     >
                         {children}
                     </motion.div>
@@ -544,20 +544,19 @@ const CompactCard = ({ onClick, onCheck, item, theme, lang, fSize }) => {
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       style={{
-        width: "88%",
-        minHeight: "80px",
-        borderRadius: "20px",
-        marginBottom: "8px",
-        padding: '10px 12px',
+        width: '100%',
+        minHeight: '80px',
+        borderRadius: '16px',
+        marginBottom: '0',
+        padding: '16px',
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'flex-start',
         position: 'relative',
         overflow: 'hidden',
         cursor: 'pointer',
-        // PINNED: Blue border | PENDING: Orange border | HIDDEN: Gray border (when visible)
-        border: hasVisualIndicator 
-          ? `2px solid ${indicatorColor}` 
+        border: hasVisualIndicator
+          ? `2px solid ${indicatorColor}`
           : 'none',
         backgroundColor: cardBg,
         backdropFilter: isLight ? 'none' : 'blur(20px)',
@@ -611,7 +610,7 @@ const CompactCard = ({ onClick, onCheck, item, theme, lang, fSize }) => {
       </div>
 
       {/* Info Container */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px', marginRight: '14px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '6px', marginRight: '14px' }}>
         <div style={{ fontSize: fSize === 0 ? '16px' : '17px', fontWeight: '700', color: item.isDone ? Colors.get('subText', theme) : Colors.get('mainText', theme), textDecoration: item.isDone ? 'line-through' : 'none', lineHeight: '1.2', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {item.name}
           {/* Subtle pending indicator in title */}

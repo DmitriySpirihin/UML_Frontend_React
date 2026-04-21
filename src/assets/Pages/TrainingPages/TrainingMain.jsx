@@ -1125,9 +1125,10 @@ const styles = (theme,fSize) => ({
   },
   sessionCard: {
     backgroundColor: theme === 'light' ? '#fff' : 'rgba(255,255,255,0.05)',
-    borderRadius: '16px', padding: '5px', marginBottom: '12px',marginRight:'35px',
+    borderRadius: '16px', padding: '16px', marginBottom: '12px',
     boxShadow: theme === 'light' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-    border: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)'}`
+    border: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)'}`,
+    display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
   },
   backdrop: {
     position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',

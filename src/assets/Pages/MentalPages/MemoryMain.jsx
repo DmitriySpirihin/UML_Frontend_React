@@ -255,7 +255,6 @@ function MemoryCard({ protocol, difficulty, onClick, theme, lang, fSize, variant
                         fontSize: '10px', 
                         fontWeight: '700', 
                         color: accent,
-                        textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                         marginTop: '4px'
                     }}>

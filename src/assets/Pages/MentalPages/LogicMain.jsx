@@ -277,7 +277,6 @@ function LogicCard({ protocol, difficulty, onClick, theme, lang, fSize, variants
                         fontSize: '10px', 
                         fontWeight: '700', 
                         color: accent,
-                        textTransform: 'uppercase',
                         letterSpacing: '0.5px',
                         marginTop: '4px'
                     }}>

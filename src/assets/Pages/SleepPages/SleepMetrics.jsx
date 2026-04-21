@@ -93,7 +93,7 @@ const SleepMetrics = () => {
 
     useEffect(() => {
         const themeSub = theme$.subscribe(setThemeState);
-        const langSub = lang$.subscribe(setLangIndex);
+        const langSub = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
         const fSizeSub = fontSize$.subscribe(setFSize);
         const premiumSub = premium$.subscribe(setHasPremium);
         return () => {

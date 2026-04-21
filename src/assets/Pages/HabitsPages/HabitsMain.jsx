@@ -619,7 +619,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
             id={id}
             style={{
                 display: 'flex', flexDirection: 'column', width: '95%', margin: '5px', overflow: 'hidden', position: 'relative',
-                borderRadius: '24px', backgroundColor: cardBg, backdropFilter: isLight ? 'none' : 'blur(40px)',
+                borderRadius: '16px', backgroundColor: cardBg, backdropFilter: isLight ? 'none' : 'blur(40px)',
                 border: isLight ? 'none' : borderColor, boxShadow: shadow, x: constrainedX
             }}
             onClick={(event) => {
@@ -631,9 +631,9 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
             animate={{ height: expanded ? 'auto' : '80px' }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}
         >
            
-            <div style={{ display: "flex", alignItems: "center", minHeight: '80px', width: '100%', padding: '15px 20px', boxSizing: 'border-box' }}>
+            <div style={{ display: "flex", alignItems: "center", minHeight: '80px', width: '100%', padding: '16px', boxSizing: 'border-box' }}>
                 <div style={{ width: '44px', height: '44px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: iconBg, color: status===1 ? (isLight ? '#fff' : '#fff') : iconColor, marginRight: '16px', flexShrink: 0, alignSelf: 'flex-start', marginTop: expanded ? '5px' : '0' }}>{getHabitIcon()}</div>
-                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' }}>
+                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
                     
                     <span style={{ fontFamily: 'Segoe UI', fontWeight: '700', fontSize: '18px', color: textColor, whiteSpace: expanded ? 'normal' : 'nowrap', overflow: expanded ? 'visible' : 'hidden', textOverflow: 'ellipsis', lineHeight: '1.2' }}>{habitInfo.name[langIndex]}</span>
 

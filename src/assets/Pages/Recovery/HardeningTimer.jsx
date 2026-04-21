@@ -3,20 +3,57 @@ import { AppData } from '../../StaticClasses/AppData';
 import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, recoveryType$ } from '../../StaticClasses/HabitsBus';
 import { IoPlay, IoClose, IoPause, IoVolumeMute, IoVolumeHigh, IoCheckmark } from 'react-icons/io5';
-import { FaChevronLeft, FaChevronRight, FaInfoCircle, FaFire, FaSnowflake } from 'react-icons/fa';
-import { markSessionAsDone, saveHardeningSession } from '../../StaticClasses/RecoveryLogHelper';
+import { FaInfoCircle, FaFire, FaSnowflake, FaMinus, FaPlus } from 'react-icons/fa';
+import { saveHardeningSession } from '../../StaticClasses/RecoveryLogHelper';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const startTimerDuration = 3000;
 
-const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex, isCustom = false }) => {
+function PhaseStepper({ theme, label, value, min = 0, max = 60, step = 1, onChange, wide = false }) {
+  const textMain = Colors.get('mainText', theme);
+  const textSub = Colors.get('subText', theme);
+  const dec = () => onChange(Math.max(min, value - step));
+  const inc = () => onChange(Math.min(max, value + step));
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.03)', borderRadius: '14px', padding: '10px 12px',
+      display: 'flex', flexDirection: 'column', gap: '6px',
+      border: '1px solid rgba(255,255,255,0.05)'
+    }}>
+      <div style={{ fontSize: '10px', color: textSub, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={dec}
+          style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: 'rgba(255,255,255,0.08)', color: textMain,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>
+          <FaMinus size={10} />
+        </motion.button>
+        <span style={{ fontSize: wide ? '22px' : '18px', fontWeight: 600, color: textMain,
+          fontVariantNumeric: 'tabular-nums', minWidth: wide ? '60px' : '30px', textAlign: 'center' }}>{value}</span>
+        <motion.button whileTap={{ scale: 0.9 }} onClick={inc}
+          style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: 'rgba(255,255,255,0.08)', color: textMain,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>
+          <FaPlus size={10} />
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+const HardeningTimer = ({ show, setShow, protocol }) => {
   // --- STATE ---
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [audioEnabled, setAudioEnabled] = useState(false);
 
-  const [level, setLevel] = useState(setActualLevel(categoryIndex, protocolIndex, isCustom));
+  // Config
+  const [hotSeconds, setHotSeconds] = useState(60);
+  const [coldSeconds, setColdSeconds] = useState(30);
+  const [restSeconds, setRestSeconds] = useState(0);
+  const [cyclesCount, setCyclesCount] = useState(3);
+
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [phaseProgress, setPhaseProgress] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -41,15 +78,11 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
     return () => { s1.unsubscribe(); s2.unsubscribe(); s3.unsubscribe(); };
   }, []);
 
-  useEffect(() => {
-    setLevel(isCustom ? 0 : setActualLevel(categoryIndex, protocolIndex, isCustom));
-  }, [protocol, protocolIndex, categoryIndex, isCustom]);
-
   // --- LOGIC ---
-  const session = useMemo(() => {
-    if (!protocol?.levels?.length) return { cycles: 1, steps: [{ hotSeconds: 180, coldSeconds: 30, restSeconds: 0 }] };
-    return isCustom ? protocol.levels[0] : protocol.levels[level] || protocol.levels[0];
-  }, [protocol, level, isCustom]);
+  const session = useMemo(() => ({
+    cycles: Math.max(1, cyclesCount),
+    steps: [{ hotSeconds, coldSeconds, restSeconds }]
+  }), [cyclesCount, hotSeconds, coldSeconds, restSeconds]);
 
   const allSteps = useMemo(() => {
     const { cycles, steps } = session;
@@ -132,11 +165,10 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
 
   // --- HANDLERS ---
   const handleStart = () => { setAudioEnabled(true); setStartTime(Date.now()); setIsStart(true); setIsRunning(true); setIsPaused(false); };
-  const handlePause = () => { setEndTime(Date.now()); setIsRunning(false); setIsPaused(true); audio.pause(); };
+  const handlePause = () => { setEndTime(Date.now()); setIsRunning(false); setIsPaused(true); };
   const handleResume = () => { setIsRunning(true); setIsPaused(false); };
   const handleReload = () => { setCurrentStepIndex(0); setPhaseProgress(0); setIsRunning(false); setIsStart(false); setIsPaused(false); setIsFinished(false); coldTimeRef.current = 0; startTimeRef.current = 0; };
   const onFinishSession = async () => {
-    if (!isCustom) markSessionAsDone(2, categoryIndex, protocolIndex, level);
     await saveHardeningSession(startTime, Date.now(), coldTimeRef.current);
     setFinishMessage(congratulations(langIndex)); setIsFinished(true);
   };
@@ -210,35 +242,43 @@ const HardeningTimer = ({ show, setShow, protocol, protocolIndex, categoryIndex,
                         </div>
                     </div>
 
-                    {/* Level */}
+                    {/* Config Steppers */}
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span style={{ fontSize: '11px', color: textSub, fontWeight: 'bold', textTransform: 'uppercase' }}>{langIndex === 0 ? 'Уровень' : 'Level'}</span>
-                            <span style={{ fontSize: '11px', color: Colors.get('cold', theme), fontWeight: 'bold' }}>
-                                {isLevelDone(categoryIndex, protocolIndex, level, isCustom) ? (langIndex === 0 ? 'ПРОЙДЕН' : 'DONE') : ''}
-                            </span>
+                        <div style={{ fontSize: '11px', color: textSub, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
+                            {langIndex === 0 ? 'Настройки' : 'Settings'}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.2)', borderRadius: '50px', padding: '5px' }}>
-                            <CircleButton onClick={() => setLevel(p => Math.max(0, p - 1))} icon={<FaChevronLeft size={12}/>} theme={theme} />
-                            <span style={{ fontSize: '20px', fontWeight: '600', color: textMain, fontVariantNumeric: 'tabular-nums' }}>
-                                {level + 1} <span style={{fontSize: '12px', opacity: 0.5, fontWeight: '400'}}>/ {protocol.levels.length}</span>
-                            </span>
-                            <CircleButton onClick={() => setLevel(p => Math.min(protocol.levels.length - 1, p + 1))} icon={<FaChevronRight size={12}/>} theme={theme} />
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                            <PhaseStepper theme={theme}
+                                label={langIndex === 0 ? 'Тепло (с)' : 'Warm (s)'}
+                                value={hotSeconds} min={0} max={600} step={10} wide
+                                onChange={setHotSeconds} />
+                            <PhaseStepper theme={theme}
+                                label={langIndex === 0 ? 'Холод (с)' : 'Cold (s)'}
+                                value={coldSeconds} min={0} max={600} step={5} wide
+                                onChange={setColdSeconds} />
+                            <PhaseStepper theme={theme}
+                                label={langIndex === 0 ? 'Отдых (с)' : 'Rest (s)'}
+                                value={restSeconds} min={0} max={300} step={5} wide
+                                onChange={setRestSeconds} />
+                            <PhaseStepper theme={theme}
+                                label={langIndex === 0 ? 'Циклов' : 'Cycles'}
+                                value={cyclesCount} min={1} max={20} wide
+                                onChange={setCyclesCount} />
                         </div>
                     </div>
 
-                    {/* Strategy */}
+                    {/* Summary */}
                     <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '15px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: Colors.get('hot', theme) }}>
-                                <FaFire size={14}/> <span style={{fontSize: '15px', fontWeight: 'bold'}}>{session.steps[0].hotSeconds / 60}m</span>
+                                <FaFire size={14}/> <span style={{fontSize: '15px', fontWeight: 'bold'}}>{hotSeconds}s</span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: Colors.get('cold', theme) }}>
-                                <FaSnowflake size={14}/> <span style={{fontSize: '15px', fontWeight: 'bold'}}>{session.steps[0].coldSeconds}s</span>
+                                <FaSnowflake size={14}/> <span style={{fontSize: '15px', fontWeight: 'bold'}}>{coldSeconds}s</span>
                             </div>
-                        </div>
-                        <div style={{ fontSize: '11px', color: textSub, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                            {session.cycles} {langIndex === 0 ? 'циклов' : 'cycles'}
+                            <div style={{ fontSize: '13px', color: textSub, fontWeight: 'bold' }}>
+                                × {cyclesCount}
+                            </div>
                         </div>
                     </div>
 
@@ -405,25 +445,6 @@ const styles = (theme, show) => ({
     boxShadow: '0 -20px 60px rgba(0,0,0,0.5)'
   }
 });
-
-const setActualLevel = (categoryIndex, protocolIndex, isCustom) => {
-  if(isCustom) return 0;
-  let ind = -1;
-  const protocol = AppData.recoveryProtocols[2][categoryIndex][protocolIndex]; 
-  for(let i = 0; i < protocol.length; i++) {
-     if(!protocol[i]) {
-       ind = i;
-       break;
-     }
-  }
-  return ind > -1 ? ind : protocol.length - 1;
-}
-
-const isLevelDone = (categoryIndex, protocolIndex, levelIndex, isCustom) => {
-  if(isCustom) return false;
-  const protocol = AppData.recoveryProtocols[2][categoryIndex][protocolIndex];
-  return protocol[levelIndex];
-}
 
 const disclaimer = (langIndex) => {
   if (langIndex === 0) return "Внимание: Закаливание требует осторожности. Если вам стало плохо, немедленно прекратите и согрейтесь.";
