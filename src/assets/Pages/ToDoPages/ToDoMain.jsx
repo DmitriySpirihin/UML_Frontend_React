@@ -40,7 +40,8 @@ const ToDoMain = () => {
     
     // Используем AppData.todoList как источник правды
     const [sortedList, setSortedList] = useState(AppData.todoList || []);
-    const [refreshTrigger, setRefreshTrigger] = useState(0); 
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [fieldVisibility, setFieldVisibility] = useState(() => AppData.todoFieldsVisibility || {});
 
     // --- FILTER/SORT STATE ---
     const [filterParams, setFilterParams] = useState(0); // 0: All, 1: Done, 2: Active, 3: Pending
@@ -60,6 +61,7 @@ const ToDoMain = () => {
         const sub4 = todoEvents$.subscribe(event => {
             if (!event) return;
             setRefreshTrigger(prev => prev + 1);
+            setFieldVisibility({ ...(AppData.todoFieldsVisibility || {}) });
 
             if (event.type === 'OPEN_STATS') {
                 setShowMetrics(true);
@@ -144,6 +146,7 @@ const ToDoMain = () => {
         const finalList = [...sortedPinned, ...sortedNonPinned];
         
         setSortedList(finalList);
+        setFieldVisibility({ ...(AppData.todoFieldsVisibility || {}) });
     };
 
     useEffect(() => {
@@ -351,6 +354,7 @@ const ToDoMain = () => {
                                         theme={theme}
                                         lang={langIndex}
                                         fSize={fSize}
+                                        fieldVisibility={fieldVisibility}
                                     />
                                 ))}
                             </CategoryPanel>
@@ -511,7 +515,7 @@ const CategoryPanel = ({ title, children, theme }) => {
 };
 
 // --- ENHANCED COMPACT CARD WITH PIN/HIDE/PENDING VISUALS ---
-const CompactCard = ({ onClick, onCheck, item, theme, lang, fSize }) => {
+const CompactCard = ({ onClick, onCheck, item, theme, lang, fSize, fieldVisibility = {} }) => {
   const [settingsPanel, setSettingsPanel] = useState(false);
 
   const isOverdue = isDeadlinePassed(item.deadLine) && !item.isDone;
@@ -631,15 +635,27 @@ const CompactCard = ({ onClick, onCheck, item, theme, lang, fSize }) => {
 
         {!item.isDone && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
-            <MiniBadge icon={<FaFlag size={8} />} text={PRIORITY_LABELS[item.priority]?.[lang]} color={PRIORITY_COLORS[item.priority] || PRIORITY_COLORS[0]} />
-            <MiniBadge icon={<FaLayerGroup size={8} />} text={DIFFICULTY_LABELS[item.difficulty]?.[lang]} color={DIFFICULTY_COLORS[item.difficulty] || DIFFICULTY_COLORS[0]} />
-            <MiniBadge icon={<FaExclamation size={8} />} text={URGENCY_LABELS[item.urgency || 0]?.[lang]} color={URGENCY_COLORS[item.urgency || 0] || URGENCY_COLORS[0]} />
+            {(fieldVisibility.priority ?? true) && item.priority != null && (
+              <MiniBadge icon={<FaFlag size={8} />} text={PRIORITY_LABELS[item.priority]?.[lang]} color={PRIORITY_COLORS[item.priority] || PRIORITY_COLORS[0]} />
+            )}
+            {(fieldVisibility.difficulty ?? true) && item.difficulty != null && (
+              <MiniBadge icon={<FaLayerGroup size={8} />} text={DIFFICULTY_LABELS[item.difficulty]?.[lang]} color={DIFFICULTY_COLORS[item.difficulty] || DIFFICULTY_COLORS[0]} />
+            )}
+            {(fieldVisibility.urgency ?? true) && item.urgency != null && (
+              <MiniBadge icon={<FaExclamation size={8} />} text={URGENCY_LABELS[item.urgency]?.[lang]} color={URGENCY_COLORS[item.urgency] || URGENCY_COLORS[0]} />
+            )}
 
-            {item.deadLine && (
+            {item.deadLine ? (
               <MiniBadge
                 icon={isOverdue ? <FaFire size={8} /> : <FaCalendarDay size={8} />}
                 text={getDeadlineText(item.deadLine, lang)}
                 color={isOverdue ? '#FF453A' : Colors.get('subText', theme)}
+              />
+            ) : (
+              <MiniBadge
+                icon={<FaCalendarDay size={8} />}
+                text={lang === 0 ? 'Без дедлайна' : 'No deadline'}
+                color={Colors.get('subText', theme)}
               />
             )}
 

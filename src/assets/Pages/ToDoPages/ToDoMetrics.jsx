@@ -1,255 +1,381 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { AppData, UserData } from '../../StaticClasses/AppData.js';
+import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, premium$ } from '../../StaticClasses/HabitsBus';
-import ToDoAreaChart from '../../Helpers/MyAreaChart.jsx';
-import ToDoChart from '../../Helpers/ToDoChart.jsx';
+import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
+import { FaCheckDouble, FaFire, FaHourglassHalf, FaChartBar } from 'react-icons/fa';
+
+// --- Dark Luxury palette ---
+const GOLD = '#D4AF37';
+const GOLD_SOFT = '#E5C454';
+const DARK_BG = '#0D0D0F';
+const CARD_BG = 'linear-gradient(145deg, rgba(30,30,34,0.95), rgba(18,18,22,0.95))';
+const CARD_BORDER = 'rgba(212, 175, 55, 0.22)';
+
+const PERIODS = [
+    { key: 7,  label: ['7 дней',  '7 days']  },
+    { key: 30, label: ['30 дней', '30 days'] },
+    { key: 90, label: ['90 дней', '90 days'] },
+    { key: 0,  label: ['Всё',     'All']     },
+];
 
 const ToDoMetrics = () => {
     const [theme, setThemeState] = useState('dark');
     const [lang, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setFSize] = useState(AppData.prefs[4]);
-    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
+    const [periodDays, setPeriodDays] = useState(30);
 
     useEffect(() => {
-        const themeSub = theme$.subscribe(setThemeState);
-        const langSub = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
-        const fSizeSub = fontSize$.subscribe(setFSize);
-        const premiumSub = premium$.subscribe(setHasPremium);
-        return () => {
-            themeSub.unsubscribe(); langSub.unsubscribe();
-            fSizeSub.unsubscribe(); premiumSub.unsubscribe();
-        };
+        const subs = [
+            theme$.subscribe(setThemeState),
+            lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1)),
+            fontSize$.subscribe(setFSize),
+        ];
+        return () => subs.forEach(s => s.unsubscribe());
     }, []);
 
-    // --- DATA PROCESSING ---
     const stats = useMemo(() => {
-        // Ensure list exists
         const list = AppData.todoList || [];
-        const completed = list.filter(t => t.isDone);
-        
-        // 1. Basic Stats
-        const total = list.length;
-        const completedCount = completed.length;
-        const rate = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+        const now = new Date();
+        const cutoff = periodDays > 0 ? new Date(now.getTime() - periodDays * 86400000) : null;
 
-        // 2. Heatmap (28 Days)
-        const heatmapDays = Array.from({length: 28}, (_, i) => {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
-            const count = completed.filter(t => t.startDate === dateStr).length;
-            return { date: dateStr, count };
-        }).reverse();
+        const inPeriod = (dateStr) => {
+            if (!cutoff) return true;
+            if (!dateStr) return false;
+            const d = new Date(dateStr);
+            return !isNaN(d) && d >= cutoff;
+        };
 
-        // 3. Best Day Calculation
-        const dayNames = lang === 0 
-            ? ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'] 
-            : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        
-        const dayStats = [0, 0, 0, 0, 0, 0, 0];
-        completed.forEach(t => {
-            const d = new Date(t.startDate);
-            if (!isNaN(d)) dayStats[d.getDay()]++;
+        // Completed tasks in period (uses completedAt if present, else startDate as fallback)
+        const completedInPeriod = list.filter(t => {
+            if (!t.isDone) return false;
+            return inPeriod(t.completedAt || t.startDate);
         });
-        const maxTasks = Math.max(...dayStats);
-        const bestDayIndex = dayStats.indexOf(maxTasks);
-        const bestDay = maxTasks > 0 ? dayNames[bestDayIndex] : '--';
 
-        // 4. Streak Calculation
+        // Average completion time (days) — completedAt - startDate
+        const durations = completedInPeriod
+            .map(t => {
+                if (!t.completedAt || !t.startDate) return null;
+                const s = new Date(t.startDate);
+                const e = new Date(t.completedAt);
+                if (isNaN(s) || isNaN(e)) return null;
+                return Math.max(0, (e - s) / 86400000);
+            })
+            .filter(v => v !== null);
+        const avgDays = durations.length > 0
+            ? durations.reduce((a, b) => a + b, 0) / durations.length
+            : null;
+
+        // Categories breakdown (tasks in period, by category, completed/total)
+        const catMap = {};
+        list.forEach(t => {
+            const d = t.completedAt || t.startDate;
+            if (!inPeriod(d) && !(cutoff === null)) {
+                // For "All", include everything; otherwise filter by date.
+                if (cutoff) return;
+            }
+            if (cutoff && !inPeriod(d)) return;
+            const key = t.category || (lang === 0 ? 'Общее' : 'General');
+            if (!catMap[key]) catMap[key] = { name: key, total: 0, done: 0 };
+            catMap[key].total++;
+            if (t.isDone) catMap[key].done++;
+        });
+        const categories = Object.values(catMap)
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 6);
+        const maxCat = Math.max(1, ...categories.map(c => c.total));
+
+        // Streak: consecutive days (ending today) with >=1 completed task
+        const doneByDay = new Set();
+        list.forEach(t => {
+            if (!t.isDone) return;
+            const d = t.completedAt || t.startDate;
+            if (!d) return;
+            const dateObj = new Date(d);
+            if (isNaN(dateObj)) return;
+            doneByDay.add(dateObj.toISOString().split('T')[0]);
+        });
         let streak = 0;
         const todayStr = new Date().toISOString().split('T')[0];
-        // Check past 30 days
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 365; i++) {
             const d = new Date();
             d.setDate(d.getDate() - i);
-            const dStr = d.toISOString().split('T')[0];
-            const hasTasks = completed.some(t => t.startDate === dStr);
-            
-            // Allow today to be incomplete if checking streak, otherwise break
-            if (dStr === todayStr && !hasTasks) continue; 
-            if (hasTasks) streak++;
+            const key = d.toISOString().split('T')[0];
+            if (doneByDay.has(key)) streak++;
+            else if (i === 0 && key === todayStr) continue; // allow today to be empty
             else break;
         }
 
-        // 5. Area Chart Data (Weekly Velocity)
-        // Format: { date: "Mon", value: 5 }
-        const areaData = heatmapDays.slice(-7).map(d => {
-            const dateObj = new Date(d.date);
-            return {
-                date: dayNames[dateObj.getDay()], 
-                value: d.count
-            };
-        });
+        return {
+            completedCount: completedInPeriod.length,
+            avgDays,
+            categories,
+            maxCat,
+            streak,
+        };
+    }, [AppData.todoList, lang, periodDays]);
 
-        // 6. Bar Chart Data (Categories)
-        // Format: { name: "Category", count: 5 }
-        const cats = {};
-        list.forEach(t => {
-            const cat = t.category || (lang === 0 ? 'General' : 'General');
-            cats[cat] = (cats[cat] || 0) + 1;
-        });
-        
-        // Convert to array and sort by count desc
-        const barData = Object.keys(cats)
-            .map(k => ({ name: k, count: cats[k] }))
-            .sort((a, b) => b.count - a.count)
-            .slice(0, 5); // Top 5 categories
+    const s = styles();
 
-        return { total, completedCount, rate, heatmapDays, bestDay, streak, areaData, barData };
-    }, [AppData.todoList, lang]);
-
-    const s = styles(theme, fSize);
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 15 },
-        show: { opacity: 1, y: 0 }
+    const formatAvg = (days) => {
+        if (days === null || days === undefined) return '—';
+        if (days < 1) {
+            const hours = Math.max(1, Math.round(days * 24));
+            return lang === 0 ? `${hours} ч` : `${hours}h`;
+        }
+        return lang === 0 ? `${days.toFixed(1)} дн` : `${days.toFixed(1)}d`;
     };
+
+    const itemV = { hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } };
 
     return (
         <div style={s.container}>
-            <motion.div 
-                style={s.scrollContent} 
+            <motion.div
+                style={s.scroll}
                 className="no-scrollbar"
                 initial="hidden" animate="show"
-                variants={{ show: { transition: { staggerChildren: 0.05 } } }}
+                variants={{ show: { transition: { staggerChildren: 0.06 } } }}
             >
                 {/* Header */}
-                <motion.div variants={itemVariants} style={s.header}>
-                    <h2 style={s.pageTitle}>{lang === 0 ? 'Дашборд' : 'Dashboard'}</h2>
-                    <span style={s.pageSubtitle}>{lang === 0 ? 'Твои достижения' : 'Your achievements'}</span>
+                <motion.div variants={itemV} style={s.header}>
+                    <div style={s.eyebrow}>
+                        {lang === 0 ? 'АНАЛИТИКА' : 'ANALYTICS'}
+                    </div>
+                    <h2 style={s.title}>
+                        {lang === 0 ? 'Достижения' : 'Achievements'}
+                    </h2>
+                    <div style={s.titleUnderline} />
                 </motion.div>
 
-                {/* Insights Row */}
-                <motion.div variants={itemVariants} style={s.insightRow}>
-                    <div style={{...s.insightCard, background: 'linear-gradient(135deg, #FF6B6B 0%, #EE5253 100%)'}}>
-                        <span style={s.insightIcon}>🔥</span>
-                        <div style={s.insightText}>
-                            <div style={s.insightVal}>{stats.streak}</div>
-                            <div style={s.insightLabel}>{lang === 0 ? 'Стрик (дней)' : 'Day Streak'}</div>
+                {/* Period selector */}
+                <motion.div variants={itemV} style={s.periodRow}>
+                    {PERIODS.map(p => {
+                        const active = p.key === periodDays;
+                        return (
+                            <motion.div
+                                key={p.key}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setPeriodDays(p.key)}
+                                style={{
+                                    ...s.periodChip,
+                                    backgroundColor: active ? GOLD : 'rgba(255,255,255,0.04)',
+                                    color: active ? '#0D0D0F' : GOLD_SOFT,
+                                    borderColor: active ? GOLD : CARD_BORDER,
+                                    fontWeight: active ? 800 : 600,
+                                }}
+                            >
+                                {p.label[lang]}
+                            </motion.div>
+                        );
+                    })}
+                </motion.div>
+
+                {/* Hero: Completed & Streak */}
+                <motion.div variants={itemV} style={s.heroRow}>
+                    <div style={s.heroCard}>
+                        <div style={s.heroIconWrap}>
+                            <FaCheckDouble size={16} color={GOLD} />
+                        </div>
+                        <div style={s.heroValue}>{stats.completedCount}</div>
+                        <div style={s.heroLabel}>
+                            {lang === 0 ? 'Задач завершено' : 'Tasks completed'}
                         </div>
                     </div>
-                    <div style={{...s.insightCard, background: 'linear-gradient(135deg, #4834d4 0%, #686de0 100%)'}}>
-                        <span style={s.insightIcon}>⭐</span>
-                        <div style={s.insightText}>
-                            <div style={s.insightVal}>{stats.bestDay}</div>
-                            <div style={s.insightLabel}>{lang === 0 ? 'Пик формы' : 'Prime Day'}</div>
+                    <div style={s.heroCard}>
+                        <div style={s.heroIconWrap}>
+                            <FaFire size={16} color={GOLD} />
+                        </div>
+                        <div style={s.heroValue}>
+                            {stats.streak}
+                        </div>
+                        <div style={s.heroLabel}>
+                            {lang === 0 ? 'Серия (дней)' : 'Streak (days)'}
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Heatmap */}
-                <motion.div variants={itemVariants} style={s.chartBox}>
-                    <div style={s.chartHeaderRow}>
-                        <h3 style={s.chartTitle}>{lang === 0 ? 'Активность' : 'Activity'}</h3>
-                        <span style={s.chartBadge}>28 Days</span>
+                {/* Avg time card */}
+                <motion.div variants={itemV} style={s.wideCard}>
+                    <div style={s.wideIconWrap}>
+                        <FaHourglassHalf size={18} color={GOLD} />
                     </div>
-                    <div style={s.heatmapGrid}>
-                        {stats.heatmapDays.map((d, i) => (
-                            <div key={i} style={{
-                                ...s.heatmapSquare,
-                                backgroundColor: Colors.get('areaChart', theme),
-                                opacity: d.count === 0 ? 0.08 : Math.min(0.3 + (d.count * 0.15), 1)
-                            }} />
-                        ))}
+                    <div style={{ flex: 1 }}>
+                        <div style={s.wideLabel}>
+                            {lang === 0 ? 'Средний срок выполнения' : 'Average completion time'}
+                        </div>
+                        <div style={s.wideValue}>
+                            {formatAvg(stats.avgDays)}
+                        </div>
                     </div>
                 </motion.div>
 
-                {/* Summary Metrics */}
-                <div style={s.summaryGrid}>
-                    <MetricCard label={lang === 0 ? 'Всего' : 'Total'} value={stats.total} theme={theme} variants={itemVariants} icon="📋" />
-                    <MetricCard label={lang === 0 ? 'Готово' : 'Done'} value={stats.completedCount} theme={theme} color={Colors.get('done', theme)} variants={itemVariants} icon="✔️" />
-                    <MetricCard label={lang === 0 ? 'Успех' : 'Rate'} value={stats.rate + '%'} theme={theme} color={Colors.get('areaChart', theme)} variants={itemVariants} isHighlight={true} icon="⚡" />
-                </div>
-
-                {/* Area Chart (Velocity) */}
-                <motion.div variants={itemVariants} style={s.chartBox}>
-                    <h3 style={s.chartTitle}>{lang === 0 ? 'Темп (Задачи/День)' : 'Velocity (Tasks/Day)'}</h3>
-                    <div style={{ height: '150px', width: '100%' }}>
-                        <ToDoAreaChart 
-                            data={stats.areaData} 
-                            fillColor={Colors.get('areaChart', theme)} 
-                            textColor={Colors.get('subText', theme)}
-                            linesColor={Colors.get('subText', theme)} // Using subtext for grid lines opacity handled in chart
-                            backgroundColor={Colors.get('simplePanel', theme)}
-                        />
+                {/* Categories progress */}
+                <motion.div variants={itemV} style={s.categoriesCard}>
+                    <div style={s.catHeader}>
+                        <FaChartBar size={14} color={GOLD} />
+                        <span style={s.catTitle}>
+                            {lang === 0 ? 'По категориям' : 'By categories'}
+                        </span>
                     </div>
+                    {stats.categories.length === 0 ? (
+                        <div style={s.empty}>
+                            {lang === 0 ? 'Нет данных за период' : 'No data for period'}
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
+                            {stats.categories.map((c, i) => {
+                                const pctTotal = (c.total / stats.maxCat) * 100;
+                                const pctDone  = c.total > 0 ? (c.done / c.total) * 100 : 0;
+                                return (
+                                    <div key={i} style={s.catRow}>
+                                        <div style={s.catRowHead}>
+                                            <span style={s.catName}>{c.name}</span>
+                                            <span style={s.catCount}>{c.done}/{c.total}</span>
+                                        </div>
+                                        <div style={s.barTrack}>
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${pctTotal}%` }}
+                                                transition={{ duration: 0.6, delay: 0.05 * i }}
+                                                style={s.barTotal}
+                                            />
+                                            <motion.div
+                                                initial={{ width: 0 }}
+                                                animate={{ width: `${(pctTotal * pctDone) / 100}%` }}
+                                                transition={{ duration: 0.7, delay: 0.1 * i }}
+                                                style={s.barDone}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </motion.div>
 
-                {/* Bar Chart (Categories) */}
-                <motion.div variants={itemVariants} style={s.chartBox}>
-                    <h3 style={s.chartTitle}>{lang === 0 ? 'Топ Категории' : 'Top Categories'}</h3>
-                    <div style={{ height: '180px', width: '100%' }}>
-                         <ToDoChart 
-                            data={stats.barData} 
-                            theme={theme}
-                            textColor={Colors.get('subText', theme)}
-                            barColor={Colors.get('barsColorTonnage', theme)}
-                        />
-                    </div>
-                </motion.div>
-
+                <div style={{ height: 120 }} />
             </motion.div>
-            
-            {/* Premium Overlay logic remains... */}
         </div>
     );
 };
 
-// ... MetricCard and styles remain identical to your source ...
-const MetricCard = ({ label, value, theme, color, variants, icon, isHighlight }) => (
-    <motion.div variants={variants} style={{
-        backgroundColor: Colors.get('simplePanel', theme),
-        borderRadius: '20px', padding: '15px', display: 'flex', flexDirection: 'column', flex: 1,
-        boxShadow: Colors.get('shadow', theme), border: isHighlight ? `1px solid ${color}44` : '1px solid transparent'
-    }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '5px' }}>
-            <span>{icon}</span>
-            <span style={{ fontSize: '10px', color: Colors.get('subText', theme), fontWeight: '700', textTransform: 'uppercase' }}>{label}</span>
-        </div>
-        <span style={{ fontSize: '22px', fontWeight: '800', color: color || Colors.get('mainText', theme) }}>{value}</span>
-    </motion.div>
-);
-
-const styles = (theme, fSize) => ({
+const styles = () => ({
     container: {
-        backgroundColor: Colors.get('background', theme),
-        height: '100%', width: '100vw', paddingTop: '100px',
-        display: 'flex', flexDirection: 'column', fontFamily: 'SF Pro Display, Segoe UI, sans-serif'
+        backgroundColor: DARK_BG,
+        height: '100%', width: '100vw', paddingTop: 80,
+        display: 'flex', flexDirection: 'column',
+        fontFamily: 'SF Pro Display, Segoe UI, sans-serif',
+        backgroundImage: 'radial-gradient(ellipse at top, rgba(212,175,55,0.08) 0%, transparent 55%)',
     },
-    scrollContent: {
-        flex: 1, overflowY: 'auto', padding: '10px 20px 120px 20px',
-        display: 'flex', flexDirection: 'column', gap: '18px'
+    scroll: {
+        flex: 1, overflowY: 'auto', padding: '16px 22px 120px',
+        display: 'flex', flexDirection: 'column', gap: 20,
     },
-    header: { marginBottom: '5px',marginTop: '15px' },
-    pageTitle: { fontSize: '28px', fontWeight: '800', color: Colors.get('mainText', theme), margin: 0 },
-    pageSubtitle: { fontSize: '14px', color: Colors.get('subText', theme) },
-    insightRow: { display: 'flex', gap: '12px' },
-    insightCard: {
-        flex: 1, borderRadius: '24px', padding: '15px', display: 'flex', alignItems: 'center', gap: '12px',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.15)', color: '#fff'
+    header: { marginTop: 8, marginBottom: 4 },
+    eyebrow: {
+        fontSize: 11, letterSpacing: 4, color: GOLD_SOFT,
+        fontWeight: 700, textTransform: 'uppercase', marginBottom: 6
     },
-    insightIcon: { fontSize: '24px' },
-    insightText: { display: 'flex', flexDirection: 'column'},
-    insightVal: { fontSize: '20px', fontWeight: '800', lineHeight: 1 },
-    insightLabel: { fontSize: '10px', opacity: 0.8, fontWeight: '600', textTransform: 'uppercase', marginTop: '2px' },
-    heatmapGrid: {
-        display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px',
-        margin: '15px 0 5px 0'
+    title: {
+        fontSize: 30, fontWeight: 800, color: '#F5F5F0',
+        margin: 0, letterSpacing: -0.5,
     },
-    heatmapSquare: {
-        aspectRatio: '1/1', borderRadius: '6px', width: '100%'
+    titleUnderline: {
+        width: 42, height: 2, marginTop: 10,
+        background: `linear-gradient(90deg, ${GOLD}, transparent)`,
+        borderRadius: 2,
     },
-    summaryGrid: { display: 'flex', gap: '10px' },
-    chartBox: {
-        backgroundColor: Colors.get('simplePanel', theme), borderRadius: '24px', padding: '20px',
-        boxShadow: Colors.get('shadow', theme), border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'}`
+    periodRow: { display: 'flex', gap: 8, flexWrap: 'wrap' },
+    periodChip: {
+        padding: '8px 14px', borderRadius: 12,
+        fontSize: 12, cursor: 'pointer',
+        border: `1px solid ${CARD_BORDER}`,
+        transition: 'all 0.2s ease',
     },
-    chartHeaderRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-    chartTitle: { fontSize: '13px', fontWeight: '700', color: Colors.get('subText', theme), margin: 0, textTransform: 'uppercase', marginBottom: '10px' },
-    chartBadge: { fontSize: '9px', backgroundColor: 'rgba(127,127,127,0.1)', padding: '2px 6px', borderRadius: '5px', color: Colors.get('subText', theme) }
+    heroRow: { display: 'flex', gap: 12 },
+    heroCard: {
+        flex: 1, padding: 18, borderRadius: 20,
+        background: CARD_BG,
+        border: `1px solid ${CARD_BORDER}`,
+        boxShadow: '0 10px 30px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
+        display: 'flex', flexDirection: 'column', gap: 6,
+        position: 'relative', overflow: 'hidden',
+    },
+    heroIconWrap: {
+        width: 34, height: 34, borderRadius: 10,
+        backgroundColor: 'rgba(212,175,55,0.08)',
+        border: `1px solid ${CARD_BORDER}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: 4,
+    },
+    heroValue: {
+        fontSize: 32, fontWeight: 800, color: '#F5F5F0',
+        lineHeight: 1, letterSpacing: -1,
+    },
+    heroLabel: {
+        fontSize: 11, color: 'rgba(245,245,240,0.55)',
+        fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1,
+    },
+    wideCard: {
+        padding: 18, borderRadius: 20, background: CARD_BG,
+        border: `1px solid ${CARD_BORDER}`,
+        boxShadow: '0 10px 30px rgba(0,0,0,0.45)',
+        display: 'flex', alignItems: 'center', gap: 14,
+    },
+    wideIconWrap: {
+        width: 46, height: 46, borderRadius: 14,
+        backgroundColor: 'rgba(212,175,55,0.08)',
+        border: `1px solid ${CARD_BORDER}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+    },
+    wideLabel: {
+        fontSize: 11, color: 'rgba(245,245,240,0.55)',
+        fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4,
+    },
+    wideValue: {
+        fontSize: 22, fontWeight: 800, color: GOLD_SOFT,
+    },
+    categoriesCard: {
+        padding: 20, borderRadius: 20, background: CARD_BG,
+        border: `1px solid ${CARD_BORDER}`,
+        boxShadow: '0 10px 30px rgba(0,0,0,0.45)',
+    },
+    catHeader: { display: 'flex', alignItems: 'center', gap: 8 },
+    catTitle: {
+        fontSize: 12, color: GOLD_SOFT, fontWeight: 700,
+        textTransform: 'uppercase', letterSpacing: 1.5,
+    },
+    catRow: {},
+    catRowHead: {
+        display: 'flex', justifyContent: 'space-between',
+        alignItems: 'baseline', marginBottom: 6,
+    },
+    catName: {
+        fontSize: 13, color: '#F5F5F0', fontWeight: 600,
+    },
+    catCount: {
+        fontSize: 11, color: GOLD_SOFT, fontWeight: 700,
+    },
+    barTrack: {
+        position: 'relative', width: '100%', height: 8,
+        borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.04)',
+        overflow: 'hidden',
+    },
+    barTotal: {
+        position: 'absolute', top: 0, left: 0, bottom: 0,
+        background: 'linear-gradient(90deg, rgba(212,175,55,0.18), rgba(212,175,55,0.35))',
+        borderRadius: 8,
+    },
+    barDone: {
+        position: 'absolute', top: 0, left: 0, bottom: 0,
+        background: `linear-gradient(90deg, ${GOLD}, ${GOLD_SOFT})`,
+        borderRadius: 8,
+        boxShadow: `0 0 10px ${GOLD}55`,
+    },
+    empty: {
+        marginTop: 16, fontSize: 13, color: 'rgba(245,245,240,0.4)',
+        textAlign: 'center',
+    },
 });
 
 export default ToDoMetrics;
-

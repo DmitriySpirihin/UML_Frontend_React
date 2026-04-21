@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Colors from '../../StaticClasses/Colors';
 import { AppData } from '../../StaticClasses/AppData';
+import ScrollPicker from '../../Helpers/ScrollPicker';
 import { IoIosArrowBack } from 'react-icons/io';
 import {
     FaCheck, FaCalendarDay, FaFlag, FaTimes, FaClock,
-    FaTasks, FaLayerGroup, FaTrash, FaPen, FaSave, FaPlus,
-    FaExclamationTriangle, FaEllipsisV, FaChevronDown, FaChevronUp,
+    FaTasks, FaLayerGroup, FaPen, FaSave, FaPlus,
+    FaExclamationTriangle, FaExclamation, FaChevronDown, FaChevronUp,
     FaBullseye, FaAward
 } from "react-icons/fa";
 import {
@@ -21,8 +22,11 @@ import { selectedTodo$, theme$, lang$, fontSize$, setPage, lastPage$ } from '../
 // --- CONSTANTS ---
 const PRIORITY_LABELS = [['Низкий', 'Low'], ['Обычный', 'Normal'], ['Важный', 'Important'], ['Высокий', 'High'], ['Критический', 'Critical']];
 const DIFFICULTY_LABELS = [['Очень легко', 'Very Easy'], ['Легко', 'Easy'], ['Средне', 'Medium'], ['Сложно', 'Hard'], ['Кошмар', 'Nightmare']];
+const URGENCY_LABELS = [['Не горит', 'Not Urgent'], ['Обычная', 'Normal'], ['Срочно', 'Urgent'], ['Очень срочно', 'Very Urgent'], ['ASAP', 'ASAP']];
+const NOT_SET_LABELS = ['Не задано', 'Not set'];
 const PRIORITY_COLORS = ['#B0BEC5', '#29B6F6', '#FFCA28', '#FB8C00', '#F44336'];
 const DIFFICULTY_COLORS = ['#66BB6A', '#9CCC65', '#FFCA28', '#FF7043', '#D32F2F'];
+const URGENCY_COLORS = ['#81C784', '#64B5F6', '#FFD54F', '#FF8A65', '#E57373'];
 
 const ToDoPage = () => {
     const [task, setTask] = useState(null);
@@ -31,6 +35,9 @@ const ToDoPage = () => {
     const [fSize, setFSize] = useState(AppData.prefs[4]);
 
     const [isEditing, setIsEditing] = useState(false);
+    const [editPriority, setEditPriority] = useState('');
+    const [editDifficulty, setEditDifficulty] = useState('');
+    const [editUrgency, setEditUrgency] = useState('');
     const [newSubGoalText, setNewSubGoalText] = useState('');
     const [showDeleteWarning, setShowDeleteWarning] = useState(null);
     const [showResultModal, setShowResultModal] = useState(false);
@@ -40,7 +47,6 @@ const ToDoPage = () => {
 
     const [editingSubGoalIndex, setEditingSubGoalIndex] = useState(null);
     const [editingSubGoalText, setEditingSubGoalText] = useState('');
-    const [showToolbar, setShowToolbar] = useState(false);
 
     const resultInputRef = useRef(null);
     const aimInputRef = useRef(null);
@@ -60,7 +66,6 @@ const ToDoPage = () => {
                     setExpandedSubGoals({});
                     setEditingFields({});
                     setIsEditing(false);
-                    setShowToolbar(false);
                 }
             }),
         ];
@@ -192,19 +197,42 @@ const ToDoPage = () => {
         setShowDeleteWarning(null);
     };
 
+    const enterEditMode = () => {
+        const pStr = task.priority != null ? (PRIORITY_LABELS[task.priority]?.[lang] ?? NOT_SET_LABELS[lang]) : NOT_SET_LABELS[lang];
+        const dStr = task.difficulty != null ? (DIFFICULTY_LABELS[task.difficulty]?.[lang] ?? NOT_SET_LABELS[lang]) : NOT_SET_LABELS[lang];
+        const uStr = task.urgency != null ? (URGENCY_LABELS[task.urgency]?.[lang] ?? NOT_SET_LABELS[lang]) : NOT_SET_LABELS[lang];
+        setEditPriority(pStr);
+        setEditDifficulty(dStr);
+        setEditUrgency(uStr);
+        setIsEditing(true);
+    };
+
     const handleSaveEdit = async () => {
+        const toIdx = (val, labels) => {
+            if (val === NOT_SET_LABELS[lang]) return null;
+            const i = labels.findIndex(l => l[lang] === val);
+            return i === -1 ? null : i;
+        };
+        const updatedTask = {
+            ...task,
+            priority: toIdx(editPriority, PRIORITY_LABELS),
+            difficulty: toIdx(editDifficulty, DIFFICULTY_LABELS),
+            urgency: toIdx(editUrgency, URGENCY_LABELS),
+        };
+        setTask(updatedTask);
         await redactGoal(
-            task.id,
-            task.name,
-            task.description,
-            task.difficulty,
-            task.priority,
-            task.category,
-            task.icon,
-            task.color,
-            task.startDate,
-            task.deadLine,
-            task.note
+            updatedTask.id,
+            updatedTask.name,
+            updatedTask.description,
+            updatedTask.difficulty,
+            updatedTask.priority,
+            updatedTask.category,
+            updatedTask.icon,
+            updatedTask.color,
+            updatedTask.startDate,
+            updatedTask.deadLine,
+            updatedTask.note,
+            updatedTask.urgency
         );
         setIsEditing(false);
     };
@@ -324,8 +352,8 @@ const ToDoPage = () => {
                 )}
             </AnimatePresence>
 
-            {/* BACK BUTTON */}
-            <div style={{ display: 'flex', alignItems: 'center', padding: '60px 20px 0' }}>
+            {/* iOS-STYLE TOP BAR */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '60px 20px 0' }}>
                 <motion.div
                     whileTap={{ scale: 0.9 }}
                     onClick={goBack}
@@ -333,60 +361,18 @@ const ToDoPage = () => {
                 >
                     <IoIosArrowBack size={20} />
                 </motion.div>
-            </div>
-
-            {/* TOOLBAR ROW */}
-            <div style={{display:'flex',flexDirection:'row',width:'90vw',marginLeft:'5vw',justifyContent:'flex-end'}}>
-                {!isEditing && (
-                    <div style={s.statusBadge(task.isDone)}>
-                        {task.isDone ?
-                            (lang === 0 ? 'ВЫПОЛНЕНО' : 'COMPLETED') :
-                            (lang === 0 ? 'В ПРОЦЕССЕ' : 'IN PROGRESS')
-                        }
-                    </div>
-                )}
-                {showToolbar && <div style={{...s.toolbar, width: '40vw'}}>
-                    <motion.div
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => setShowDeleteWarning('main')}
-                        style={s.iconBtnRed}
-                    >
-                        <FaTrash size={16} />
-                    </motion.div>
-                    <div style={s.toolbarRight}>
-                        {isEditing ? (
-                            <motion.div
-                                whileTap={{ scale: 0.9 }}
-                                onClick={handleSaveEdit}
-                                style={{...s.iconBtn, backgroundColor:'#09b038a2'}}
-                            >
-                                <FaSave size={16} />
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => setIsEditing(true)}
-                                style={s.iconBtn}
-                            >
-                                <FaPen size={16} />
-                            </motion.div>
-                        )}
-                    </div>
-                    <motion.div
-                        whileTap={{ scale: 0.9 }}
-                        onClick={handleToggleMainTask}
-                        style={s.mainCheckbox(task.isDone)}
-                    >
-                        {task.isDone && <FaCheck size={12} color="#fff" />}
-                    </motion.div>
-                </div>}
-                <div style={s.toolbar}>
-                    <FaEllipsisV onClick={() => setShowToolbar(prev => !prev)} />
-                </div>
+                <motion.div whileTap={{ scale: 0.95 }} onClick={isEditing ? handleSaveEdit : enterEditMode} style={{ padding: '8px 4px' }}>
+                    <span style={{ fontSize: 17, fontWeight: 600, color: isEditing ? task.color : Colors.get('subText', theme) }}>
+                        {isEditing ? (lang === 0 ? 'Готово' : 'Done') : (lang === 0 ? 'Изменить' : 'Edit')}
+                    </span>
+                </motion.div>
             </div>
 
             {/* CONTENT */}
             <div style={s.headerWrapper}>
+                <motion.div whileTap={{ scale: 0.95 }} onClick={handleToggleMainTask} style={s.statusBadge(task.isDone)}>
+                    {task.isDone ? (lang === 0 ? 'ВЫПОЛНЕНО ✓' : 'COMPLETED ✓') : (lang === 0 ? 'В ПРОЦЕССЕ' : 'IN PROGRESS')}
+                </motion.div>
                 <div style={s.fixedHeader}>
                     <div style={s.headerLeft}>
                         <div style={s.iconBadge}>{task.icon}</div>
@@ -447,47 +433,86 @@ const ToDoPage = () => {
             </div>
 
             <div style={s.bodyPadding}>
-                <div style={s.gridTwo}>
-                    {isEditing ? (
-                        <>
-                            <select
-                                style={s.selectInput}
-                                value={task.priority}
-                                onChange={(e) => setTask({...task, priority: parseInt(e.target.value)})}
-                            >
-                                {PRIORITY_LABELS.map((l, i) => (
-                                    <option key={i} value={i}>{l[lang]}</option>
-                                ))}
-                            </select>
-                            <select
-                                style={s.selectInput}
-                                value={task.difficulty}
-                                onChange={(e) => setTask({...task, difficulty: parseInt(e.target.value)})}
-                            >
-                                {DIFFICULTY_LABELS.map((l, i) => (
-                                    <option key={i} value={i}>{l[lang]}</option>
-                                ))}
-                            </select>
-                        </>
-                    ) : (
-                        <>
+                {isEditing && (
+                    <div style={s.pickerCard}>
+                        <div style={s.pickerRow}>
+                            {(AppData.todoFieldsVisibility?.priority ?? true) && (
+                                <div style={s.pickerCol}>
+                                    <span style={s.smallLabel}>{lang===0?'Приоритет':'Priority'}</span>
+                                    <ScrollPicker
+                                        items={[NOT_SET_LABELS[lang], ...PRIORITY_LABELS.map(l => l[lang])]}
+                                        value={editPriority}
+                                        onChange={setEditPriority}
+                                        theme={theme}
+                                        width="100%"
+                                    />
+                                </div>
+                            )}
+                            {(AppData.todoFieldsVisibility?.priority ?? true) && (AppData.todoFieldsVisibility?.difficulty ?? true) && (
+                                <div style={s.pickerDivider} />
+                            )}
+                            {(AppData.todoFieldsVisibility?.difficulty ?? true) && (
+                                <div style={s.pickerCol}>
+                                    <span style={s.smallLabel}>{lang===0?'Сложность':'Difficulty'}</span>
+                                    <ScrollPicker
+                                        items={[NOT_SET_LABELS[lang], ...DIFFICULTY_LABELS.map(l => l[lang])]}
+                                        value={editDifficulty}
+                                        onChange={setEditDifficulty}
+                                        theme={theme}
+                                        width="100%"
+                                    />
+                                </div>
+                            )}
+                            {(AppData.todoFieldsVisibility?.difficulty ?? true) && (AppData.todoFieldsVisibility?.urgency ?? true) && (
+                                <div style={s.pickerDivider} />
+                            )}
+                            {(AppData.todoFieldsVisibility?.urgency ?? true) && (
+                                <div style={s.pickerCol}>
+                                    <span style={s.smallLabel}>{lang===0?'Срочность':'Urgency'}</span>
+                                    <ScrollPicker
+                                        items={[NOT_SET_LABELS[lang], ...URGENCY_LABELS.map(l => l[lang])]}
+                                        value={editUrgency}
+                                        onChange={setEditUrgency}
+                                        theme={theme}
+                                        width="100%"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {!isEditing && (task.priority != null || task.difficulty != null || task.urgency != null) && (
+                    <div style={s.gridTwo}>
+                        {(AppData.todoFieldsVisibility?.priority ?? true) && task.priority != null && (
                             <Badge
                                 icon={<FaFlag/>}
                                 label={lang===0?'Приоритет':'Priority'}
-                                value={PRIORITY_LABELS[task?.priority]?.[lang]}
-                                color={PRIORITY_COLORS[task?.priority] || PRIORITY_COLORS[0]}
+                                value={PRIORITY_LABELS[task.priority]?.[lang]}
+                                color={PRIORITY_COLORS[task.priority] || PRIORITY_COLORS[0]}
                                 theme={theme}
                             />
+                        )}
+                        {(AppData.todoFieldsVisibility?.difficulty ?? true) && task.difficulty != null && (
                             <Badge
                                 icon={<FaLayerGroup/>}
                                 label={lang===0?'Сложность':'Difficulty'}
-                                value={DIFFICULTY_LABELS[task?.difficulty]?.[lang]}
-                                color={DIFFICULTY_COLORS[task?.difficulty] || DIFFICULTY_COLORS[0]}
+                                value={DIFFICULTY_LABELS[task.difficulty]?.[lang]}
+                                color={DIFFICULTY_COLORS[task.difficulty] || DIFFICULTY_COLORS[0]}
                                 theme={theme}
                             />
-                        </>
-                    )}
-                </div>
+                        )}
+                        {(AppData.todoFieldsVisibility?.urgency ?? true) && task.urgency != null && (
+                            <Badge
+                                icon={<FaExclamation/>}
+                                label={lang===0?'Срочность':'Urgency'}
+                                value={URGENCY_LABELS[task.urgency]?.[lang]}
+                                color={URGENCY_COLORS[task.urgency] || URGENCY_COLORS[0]}
+                                theme={theme}
+                            />
+                        )}
+                    </div>
+                )}
 
                 <div style={{width: '100%', display: 'flex', flexDirection: 'column', marginBottom: 12}}>
                     {isEditing ? (
@@ -520,6 +545,7 @@ const ToDoPage = () => {
                         icon={<FaClock/>}
                         isEditing={isEditing}
                         theme={theme}
+                        emptyLabel={lang === 0 ? 'Без дедлайна' : 'No deadline'}
                         onChange={(v) => setTask({...task, deadLine: v})}
                     />
                 </div>
@@ -582,6 +608,23 @@ const ToDoPage = () => {
                         </div>
                     </div>
                 </div>
+                <AnimatePresence>
+                    {isEditing && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                        >
+                            <motion.button
+                                whileTap={{ scale: 0.97 }}
+                                onClick={() => setShowDeleteWarning('main')}
+                                style={s.deleteBtn}
+                            >
+                                {lang === 0 ? 'Удалить задачу' : 'Delete task'}
+                            </motion.button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
                 <div style={{ marginBottom: '120px' }} />
             </div>
         </motion.div>
@@ -785,7 +828,7 @@ const Badge = ({ icon, label, value, color, theme }) => (
     </div>
 );
 
-const DateBox = ({ label, value, icon, isEditing, theme, onChange }) => {
+const DateBox = ({ label, value, icon, isEditing, theme, onChange, emptyLabel }) => {
     const s = styles(theme);
     return (
         <div style={s.dateItem}>
@@ -793,9 +836,17 @@ const DateBox = ({ label, value, icon, isEditing, theme, onChange }) => {
             <div style={{display:'flex', flexDirection:'column', flex: 1}}>
                 <span style={s.label}>{label}</span>
                 {isEditing ? (
-                    <input type="date" style={s.dateInput} value={value || ''} onChange={(e) => onChange(e.target.value)} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input type="date" style={s.dateInput} value={value || ''} onChange={(e) => onChange(e.target.value)} />
+                        {value && (
+                            <motion.div whileTap={{ scale: 0.9 }} onClick={() => onChange('')}
+                                style={{ cursor: 'pointer', color: Colors.get('subText', theme), flexShrink: 0 }}>
+                                <FaTimes size={12} />
+                            </motion.div>
+                        )}
+                    </div>
                 ) : (
-                    <span style={s.dateValue}>{value || '-'}</span>
+                    <span style={s.dateValue}>{value || emptyLabel || '-'}</span>
                 )}
             </div>
         </div>
@@ -823,11 +874,6 @@ const styles = (theme, fSize, accentColor) => {
         skipBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: border, color: text, fontWeight: 'bold' },
         saveResultBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: accentColor, color: '#fff', fontWeight: 'bold' },
 
-        toolbar: { display: 'flex', justifyContent: 'space-between', padding: '0 24px 15px 24px', alignItems: 'center' },
-        iconBtn: { background: panel, border: 'none', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: text },
-        iconBtnRed: { background: 'rgba(244, 67, 54, 0.1)', border: 'none', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F44336' },
-        toolbarRight: { display: 'flex', gap: 8 },
-
         headerWrapper: { padding: '0 24px 25px 24px', borderBottom: `1px solid ${border}` },
         fixedHeader: { display: 'flex', alignItems: 'center', padding: '20px 0', gap: 20 },
         headerLeft: { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 },
@@ -842,12 +888,13 @@ const styles = (theme, fSize, accentColor) => {
         headerCenter: { flex: 1, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 },
         headerRight: { display: 'flex', width:'100vw', alignItems: 'center', flexShrink: 0 },
         title: { fontSize: 24, fontWeight: 900, color: text, margin: 0, width:"70%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-        titleInput: { width: '100%', border: 'none', background: 'transparent', fontSize: '24px', fontWeight: '900', color: text, outline: `solid 1px ${border}`, borderRadius: '12px', padding: '8px 12px' },
+        titleInput: { width: '100%', border: 'none', background: 'rgba(255,255,255,0.05)', fontSize: '24px', fontWeight: '900', color: text, outline: 'none', borderRadius: '14px', padding: '8px 12px' },
         statusBadge: (isDone) => ({
             padding: '8px 16px', borderRadius: 12, fontSize: 10, fontWeight: 900, border: 'none',
             backgroundColor: isDone ? done : panel, color: isDone ? '#fff' : sub,
-            width: 'fit-content', marginRight: 'auto'
+            width: 'fit-content', marginBottom: 8, cursor: 'pointer', userSelect: 'none'
         }),
+        deleteBtn: { width: '100%', padding: '16px', borderRadius: 16, border: 'none', backgroundColor: 'rgba(244,67,54,0.10)', color: '#F44336', fontSize: 17, fontWeight: 700, textAlign: 'center', cursor: 'pointer', marginTop: 24, marginBottom: 8 },
 
         resultDisplayCard: { backgroundColor: `${accentColor}10`, border: `1px solid ${accentColor}30`, borderRadius: 16, padding: '16px', marginTop: '16px' },
         resultDisplayHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 },
@@ -861,7 +908,7 @@ const styles = (theme, fSize, accentColor) => {
         progressBarFill: { height: '100%', backgroundColor: accentColor, borderRadius: 10 },
 
         bodyPadding: { padding: 24 },
-        gridTwo: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 },
+        gridTwo: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 12, marginBottom: 24 },
         modernBadge: { borderRadius: 20, padding: 15, display: 'flex', flexDirection: 'column', alignItems: 'center' },
         badgeLabel: { display: 'flex', alignItems: 'center', fontSize: 10, color: sub, textTransform: 'uppercase', letterSpacing: 1 },
         badgeValue: { fontSize: 14, fontWeight: 800, marginTop: 4 },
@@ -909,8 +956,13 @@ const styles = (theme, fSize, accentColor) => {
         addSubInput: { flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: text, outline: 'none', marginLeft: '10px' },
         addSubBtn: { background: accentColor, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 'bold', marginLeft: 10, flexShrink: 0 },
         description: { fontSize: 15, lineHeight: 1.6, color: text, margin: 0, opacity: 0.9 },
-        descriptionInput: { width: '90%', padding: '12px', borderRadius: 12, border: `1px solid ${border}`, backgroundColor: panel, color: text, fontSize: '16px', fontFamily: 'inherit', resize: 'vertical' },
-        selectInput: { width: '100%', padding: 12, borderRadius: 12, border: `1px solid ${border}`, backgroundColor: panel, color: text, fontSize: '16px' }
+        descriptionInput: { width: '90%', padding: '12px', borderRadius: '14px', border: 'none', backgroundColor: 'rgba(255,255,255,0.05)', color: text, fontSize: '16px', fontFamily: 'inherit', resize: 'vertical', outline: 'none' },
+
+        pickerCard: { backgroundColor: panel, borderRadius: 20, padding: '15px', marginBottom: 24, border: `1px solid ${border}30` },
+        pickerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+        pickerCol: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' },
+        pickerDivider: { width: 1, height: 60, backgroundColor: border, margin: '0 5px' },
+        smallLabel: { fontSize: 11, color: sub, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }
     };
 };
 

@@ -34,26 +34,24 @@ export const todoEvents$ = new BehaviorSubject(null);
 export async function createGoal(name, description, difficulty, priority, category, icon, startdate, deadLine, goals, urgency,result = '',isPinned = false,isHidden = false,isPending = false) {
   const id = Date.now();
   const today = new Date();
-  // Compute safe deadline ONLY if needed (avoids unnecessary computation)
-const getDefaultDeadline = () => {
-  
-  today.setFullYear(d.getFullYear() + 1); // +1 year from today
-  return d.toISOString().split('T')[0];
-};
+
+  const validDeadline = (deadLine && typeof deadLine === 'string' && !isNaN(Date.parse(deadLine)))
+    ? deadLine
+    : null;
+
 AppData.todoList.push({
   id,
-  name: ((name ?? '').trim() || 'Untitled'), // ✅ Never empty
-  description: (description ?? '').trim(),    // ✅ Null-safe + clean whitespace
+  name: ((name ?? '').trim() || 'Untitled'),
+  description: (description ?? '').trim(),
   difficulty: Number.isFinite(difficulty) ? difficulty : 0,
   priority: Number.isFinite(priority) ? priority : 0,
-  category: ((category ?? '').trim() || 'General'), // ✅ Fallback category
-  icon: (icon ?? 'task'),                          // ✅ Valid default icon name
+  category: ((category ?? '').trim() || 'General'),
+  icon: (icon ?? 'task'),
   isDone: false,
   startDate: (startdate && typeof startdate === 'string' && !isNaN(Date.parse(startdate))) ? startdate : today.toISOString().split('T')[0],
-  deadLine: (deadLine && typeof deadLine === 'string' && !isNaN(Date.parse(deadLine))) 
-    ? deadLine 
-    : getDefaultDeadline(), // ✅ Fixed syntax + validation
-  goals: Array.isArray(goals) ? [...goals] : [], // ✅ Clone to prevent reference leaks
+  deadLine: validDeadline,
+  completedAt: null,
+  goals: Array.isArray(goals) ? [...goals] : [],
   urgency: Number.isFinite(urgency) ? urgency : 0,
   result : result,
   isPinned : isPinned,
@@ -131,9 +129,9 @@ export async function togglePending(id) {
 // end of new functionality
 
 
-export async function redactGoal(id, name, description, difficulty, priority, category, icon, color, startDate, deadLine, note) {
+export async function redactGoal(id, name, description, difficulty, priority, category, icon, color, startDate, deadLine, note, urgency) {
   const item = AppData.todoList.find(i => i.id === id);
-  
+
   if (item) {
     item.name = name;
     item.description = description;
@@ -145,6 +143,7 @@ export async function redactGoal(id, name, description, difficulty, priority, ca
     item.startDate = startDate;
     item.deadLine = deadLine;
     item.note = note;
+    if (urgency !== undefined) item.urgency = urgency;
     
     await saveData();
     if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
@@ -160,12 +159,41 @@ export async function deleteGoal(id) {
 
 export async function toggleGoal(id) {
   const item = AppData.todoList.find(i => i.id === id);
-  
+
   if (item) {
     item.isDone = !item.isDone;
+    item.completedAt = item.isDone ? new Date().toISOString() : null;
     await saveData();
     if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
+}
+
+// ---- Custom categories ----
+export async function addCustomCategory(icon, labelRu, labelEn) {
+  if (!Array.isArray(AppData.todoCustomCategories)) AppData.todoCustomCategories = [];
+  const ru = (labelRu || '').trim();
+  const en = (labelEn || ru || '').trim();
+  if (!ru && !en) return null;
+  const entry = { icon: icon || '🏷️', label: [ru || en, en || ru] };
+  AppData.todoCustomCategories.push(entry);
+  await saveData();
+  if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  return entry;
+}
+
+export async function removeCustomCategory(index) {
+  if (!Array.isArray(AppData.todoCustomCategories)) return;
+  AppData.todoCustomCategories.splice(index, 1);
+  await saveData();
+  if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+}
+
+// ---- Fields visibility (advanced mode) ----
+export async function setTodoFieldVisibility(field, visible) {
+  if (!AppData.todoFieldsVisibility) AppData.todoFieldsVisibility = { priority: true, difficulty: true, urgency: true };
+  AppData.todoFieldsVisibility[field] = !!visible;
+  await saveData();
+  if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
 }
 
 export async function addSubGoal(id, subGoalText) {

@@ -6,8 +6,8 @@ import Icons from "../../StaticClasses/Icons";
 import ScrollPicker from "../../Helpers/ScrollPicker";
 import { setPage, lastPage$, theme$, lang$, fontSize$, setShowPopUpPanel } from '../../StaticClasses/HabitsBus.js';
 import { IoIosArrowBack } from 'react-icons/io';
-import { createGoal } from "./ToDoHelper";
-import { FaCalendarDay, FaClock, FaPlus, FaTimes, FaTag } from 'react-icons/fa';
+import { createGoal, addCustomCategory, removeCustomCategory, setTodoFieldVisibility } from "./ToDoHelper";
+import { FaCalendarDay, FaClock, FaPlus, FaTimes, FaTag, FaCog, FaTrash } from 'react-icons/fa';
 
 // --- Configuration ---
 const PRIORITY_LABELS = [['Низкий', 'Low'], ['Обычный', 'Normal'], ['Важный', 'Important'], ['Высокий', 'High'], ['Критический', 'Critical']];
@@ -15,7 +15,7 @@ const DIFFICULTY_LABELS = [['Очень легко', 'Very Easy'], ['Легко'
 const URGENCY_LABELS = [['Не горит', 'Not Urgent'], ['Обычная', 'Normal'], ['Срочно', 'Urgent'], ['Очень срочно', 'Very Urgent'], ['ASAP', 'ASAP']];
 
 // Defined Categories with Icons and Labels [Russian, English]
-const CATEGORIES = [
+const BASE_CATEGORIES = [
     { icon: '📝', label: ['Общее', 'General'] },
     { icon: '💼', label: ['Работа', 'Work'] },
     { icon: '🏠', label: ['Дом', 'Home'] },
@@ -32,6 +32,8 @@ const CATEGORIES = [
     { icon: '🏃', label: ['Спорт', 'Sports'] },
     { icon: '🍽️', label: ['Еда', 'Food'] },
 ];
+
+const EMOJI_POOL = ['🏷️','⭐','🔥','🌟','💡','🎯','🧩','🪴','🚀','🧠','📌','🗂️','🎭','🎬','🌍','⚙️','🧪','🛠️'];
 
 const ToDoNew = () => {
     const [theme, setTheme] = useState(theme$.value);
@@ -58,12 +60,50 @@ const ToDoNew = () => {
     const [subGoals, setSubGoals] = useState([]);
     const [newSubGoal, setNewSubGoal] = useState('');
 
+    // Custom categories & advanced mode
+    const [customCats, setCustomCats] = useState(AppData.todoCustomCategories || []);
+    const [showCatModal, setShowCatModal] = useState(false);
+    const [newCatName, setNewCatName] = useState('');
+    const [newCatIcon, setNewCatIcon] = useState(EMOJI_POOL[0]);
+
+    const [visibility, setVisibility] = useState(AppData.todoFieldsVisibility || { priority: true, difficulty: true, urgency: true });
+    const [showAdvancedPanel, setShowAdvancedPanel] = useState(false);
+
+    const CATEGORIES = React.useMemo(() => [...BASE_CATEGORIES, ...customCats], [customCats]);
+
     useEffect(() => {
         const sub1 = theme$.subscribe(setTheme);
         const sub2 = lang$.subscribe(l => setLang(l === 'ru' ? 0 : 1));
         const sub3 = fontSize$.subscribe(setFSize);
         return () => { sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); };
     }, []);
+
+    const handleCreateCustomCat = async () => {
+        const name = newCatName.trim();
+        if (!name) return;
+        const entry = await addCustomCategory(newCatIcon, name, name);
+        if (entry) {
+            const updated = [...(AppData.todoCustomCategories || [])];
+            setCustomCats(updated);
+            setSelectedCatIndex(BASE_CATEGORIES.length + updated.length - 1);
+        }
+        setNewCatName('');
+        setNewCatIcon(EMOJI_POOL[0]);
+        setShowCatModal(false);
+    };
+
+    const handleRemoveCustomCat = async (customIdx) => {
+        await removeCustomCategory(customIdx);
+        const updated = [...(AppData.todoCustomCategories || [])];
+        setCustomCats(updated);
+        if (selectedCatIndex >= BASE_CATEGORIES.length + updated.length) setSelectedCatIndex(0);
+    };
+
+    const handleToggleVisibility = async (field) => {
+        const next = { ...visibility, [field]: !visibility[field] };
+        setVisibility(next);
+        await setTodoFieldVisibility(field, next[field]);
+    };
 
     // --- Actions ---
 
@@ -74,13 +114,13 @@ const ToDoNew = () => {
         }
 
         // Find Indexes for storage
-        const pIdx = PRIORITY_LABELS.findIndex(l => l.includes(priority));
-        const dIdx = DIFFICULTY_LABELS.findIndex(l => l.includes(difficulty));
-        const uIdx = URGENCY_LABELS.findIndex(l => l.includes(urgency));
+        const pIdx = visibility.priority ? PRIORITY_LABELS.findIndex(l => l.includes(priority)) : 1;
+        const dIdx = visibility.difficulty ? DIFFICULTY_LABELS.findIndex(l => l.includes(difficulty)) : 2;
+        const uIdx = visibility.urgency ? URGENCY_LABELS.findIndex(l => l.includes(urgency)) : 1;
 
         // Get selected category data
-        const currentCat = CATEGORIES[selectedCatIndex];
-        const categoryName = currentCat.label[1]; // Always save English name or ID for consistency
+        const currentCat = CATEGORIES[selectedCatIndex] || CATEGORIES[0];
+        const categoryName = currentCat.label[lang] || currentCat.label[0];
         const categoryIcon = currentCat.icon;
 
         await createGoal(
@@ -88,10 +128,10 @@ const ToDoNew = () => {
             desc,
             dIdx,
             pIdx,
-            categoryName, // Dynamic Category
-            categoryIcon, // Dynamic Icon
+            categoryName,
+            categoryIcon,
             startDate,
-            deadLine,
+            deadLine || null, // optional deadline
             subGoals,
             uIdx
         );
@@ -138,11 +178,61 @@ const ToDoNew = () => {
                             <span style={{ fontSize: '18px', fontWeight: '700', color: Colors.get('mainText', theme) }}>
                                 {lang === 0 ? 'Новая цель' : 'New Goal'}
                             </span>
-                            <motion.button whileTap={{ scale: 0.9 }} onClick={handleSave}
-                                style={{ background: 'none', border: 'none', fontSize: '16px', color: Colors.get('done', theme), fontWeight: '700', padding: '10px', cursor: 'pointer' }}>
-                                {lang === 0 ? 'Создать' : 'Create'}
-                            </motion.button>
+                            <div style={{ display:'flex', alignItems:'center', gap: 4 }}>
+                                <motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowAdvancedPanel(v => !v)}
+                                    style={{ width:'36px', height:'36px', borderRadius:'12px', display:'flex', alignItems:'center', justifyContent:'center', backgroundColor: showAdvancedPanel ? Colors.get('highlitedPanel', theme) : Colors.get('mathInput', theme), cursor:'pointer' }}>
+                                    <FaCog size={14} color={Colors.get('mainText', theme)} />
+                                </motion.div>
+                                <motion.button whileTap={{ scale: 0.9 }} onClick={handleSave}
+                                    style={{ background: 'none', border: 'none', fontSize: '16px', color: Colors.get('done', theme), fontWeight: '700', padding: '10px', cursor: 'pointer' }}>
+                                    {lang === 0 ? 'Создать' : 'Create'}
+                                </motion.button>
+                            </div>
                         </div>
+
+                        {/* Advanced mode toggles */}
+                        <AnimatePresence>
+                        {showAdvancedPanel && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                style={{ overflow: 'hidden', padding: '10px 20px 0' }}
+                            >
+                                <div style={{
+                                    backgroundColor: Colors.get('simplePanel', theme),
+                                    borderRadius: 16,
+                                    padding: 14,
+                                    border: `1px solid ${Colors.get('border', theme)}`
+                                }}>
+                                    <div style={{ fontSize: 11, color: Colors.get('subText', theme), fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 10 }}>
+                                        {lang === 0 ? 'Продвинутый режим' : 'Advanced mode'}
+                                    </div>
+                                    {['priority','difficulty','urgency'].map(f => {
+                                        const labelRu = f === 'priority' ? 'Приоритет' : f === 'difficulty' ? 'Сложность' : 'Срочность';
+                                        const labelEn = f === 'priority' ? 'Priority' : f === 'difficulty' ? 'Difficulty' : 'Urgency';
+                                        const on = !!visibility[f];
+                                        return (
+                                            <div key={f} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0' }}>
+                                                <span style={{ color: Colors.get('mainText', theme), fontSize: 14, fontWeight: 600 }}>
+                                                    {lang === 0 ? labelRu : labelEn}
+                                                </span>
+                                                <motion.div whileTap={{ scale: 0.9 }} onClick={() => handleToggleVisibility(f)}
+                                                    style={{
+                                                        width: 42, height: 24, borderRadius: 20, padding: 2,
+                                                        backgroundColor: on ? Colors.get('done', theme) : Colors.get('border', theme),
+                                                        display: 'flex', alignItems: 'center', cursor: 'pointer',
+                                                        justifyContent: on ? 'flex-end' : 'flex-start', transition: 'all 0.2s'
+                                                    }}>
+                                                    <div style={{ width: 20, height: 20, borderRadius: '50%', backgroundColor: '#fff' }} />
+                                                </motion.div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
 
                         {/* Scrollable Content */}
                         <div style={s.scrollContent} className="no-scrollbar">
@@ -175,6 +265,7 @@ const ToDoNew = () => {
                                 <div style={s.iconScrollContainer}>
                                     {CATEGORIES.map((cat, i) => {
                                         const isSelected = i === selectedCatIndex;
+                                        const isCustom = i >= BASE_CATEGORIES.length;
                                         return (
                                             <motion.div
                                                 key={i}
@@ -188,56 +279,83 @@ const ToDoNew = () => {
                                             >
                                                 <span style={{ fontSize: '1.4rem' }}>{cat.icon}</span>
                                                 {isSelected && (
-                                                    <motion.span 
-                                                        initial={{opacity:0, width: 0}} 
-                                                        animate={{opacity:1, width: 'auto'}} 
+                                                    <motion.span
+                                                        initial={{opacity:0, width: 0}}
+                                                        animate={{opacity:1, width: 'auto'}}
                                                         style={s.categoryLabel}
                                                     >
                                                         {cat.label[lang]}
                                                     </motion.span>
                                                 )}
+                                                {isSelected && isCustom && (
+                                                    <motion.div
+                                                        initial={{opacity:0}} animate={{opacity:1}}
+                                                        onClick={(e) => { e.stopPropagation(); handleRemoveCustomCat(i - BASE_CATEGORIES.length); }}
+                                                        style={{ marginLeft: 6, cursor: 'pointer', color: '#F44336' }}
+                                                    >
+                                                        <FaTrash size={11} />
+                                                    </motion.div>
+                                                )}
                                             </motion.div>
                                         );
                                     })}
+                                    <motion.div
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => setShowCatModal(true)}
+                                        style={{
+                                            ...s.categoryChip,
+                                            backgroundColor: 'transparent',
+                                            borderStyle: 'dashed',
+                                            color: Colors.get('subText', theme)
+                                        }}
+                                    >
+                                        <FaPlus size={12} />
+                                        <span style={{ ...s.categoryLabel, marginLeft: 6 }}>
+                                            {lang === 0 ? 'Создать свою' : 'Create own'}
+                                        </span>
+                                    </motion.div>
                                 </div>
                             </div>
 
                             {/* 3. Settings Card (Priority, Difficulty, Urgency) */}
+                            {(visibility.priority || visibility.difficulty || visibility.urgency) && (
                             <div style={s.card}>
                                 <div style={s.pickerRow}>
-                                    {/* Priority */}
-                                    <div style={s.pickerCol}>
-                                        <label style={s.label}>{lang === 0 ? 'Приоритет' : 'Priority'}</label>
-                                        <ScrollPicker
-                                            items={PRIORITY_LABELS.map(l => l[lang])}
-                                            value={priority} onChange={setPriority}
-                                            theme={theme} width="100%"
-                                        />
-                                    </div>
-                                    <div style={s.divider} />
-
-                                    {/* Difficulty */}
-                                    <div style={s.pickerCol}>
-                                        <label style={s.label}>{lang === 0 ? 'Сложность' : 'Difficulty'}</label>
-                                        <ScrollPicker
-                                            items={DIFFICULTY_LABELS.map(l => l[lang])}
-                                            value={difficulty} onChange={setDifficulty}
-                                            theme={theme} width="100%"
-                                        />
-                                    </div>
-                                    <div style={s.divider} />
-
-                                    {/* Urgency */}
-                                    <div style={s.pickerCol}>
-                                        <label style={s.label}>{lang === 0 ? 'Срочность' : 'Urgency'}</label>
-                                        <ScrollPicker
-                                            items={URGENCY_LABELS.map(l => l[lang])}
-                                            value={urgency} onChange={setUrgency}
-                                            theme={theme} width="100%"
-                                        />
-                                    </div>
+                                    {visibility.priority && (
+                                        <div style={s.pickerCol}>
+                                            <label style={s.label}>{lang === 0 ? 'Приоритет' : 'Priority'}</label>
+                                            <ScrollPicker
+                                                items={PRIORITY_LABELS.map(l => l[lang])}
+                                                value={priority} onChange={setPriority}
+                                                theme={theme} width="100%"
+                                            />
+                                        </div>
+                                    )}
+                                    {visibility.priority && visibility.difficulty && <div style={s.divider} />}
+                                    {visibility.difficulty && (
+                                        <div style={s.pickerCol}>
+                                            <label style={s.label}>{lang === 0 ? 'Сложность' : 'Difficulty'}</label>
+                                            <ScrollPicker
+                                                items={DIFFICULTY_LABELS.map(l => l[lang])}
+                                                value={difficulty} onChange={setDifficulty}
+                                                theme={theme} width="100%"
+                                            />
+                                        </div>
+                                    )}
+                                    {visibility.difficulty && visibility.urgency && <div style={s.divider} />}
+                                    {visibility.urgency && (
+                                        <div style={s.pickerCol}>
+                                            <label style={s.label}>{lang === 0 ? 'Срочность' : 'Urgency'}</label>
+                                            <ScrollPicker
+                                                items={URGENCY_LABELS.map(l => l[lang])}
+                                                value={urgency} onChange={setUrgency}
+                                                theme={theme} width="100%"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
+                            )}
 
                             {/* 4. Dates Section */}
                             <div style={s.dateSection}>
@@ -261,13 +379,21 @@ const ToDoNew = () => {
                                     <div style={s.dateRow}>
                                         <FaClock style={{ marginRight: 10, color: Colors.get('subText', theme) }} />
                                         <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                                            <span style={s.label}>{lang === 0 ? 'Срок' : 'Deadline'}</span>
-                                            <input
-                                                type="date"
-                                                style={s.dateInput}
-                                                value={deadLine}
-                                                onChange={(e) => setDeadLine(e.target.value)}
-                                            />
+                                            <span style={s.label}>{lang === 0 ? 'Срок (необязательно)' : 'Deadline (optional)'}</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <input
+                                                    type="date"
+                                                    style={s.dateInput}
+                                                    value={deadLine}
+                                                    onChange={(e) => setDeadLine(e.target.value)}
+                                                />
+                                                {deadLine && (
+                                                    <motion.div whileTap={{ scale: 0.9 }} onClick={() => setDeadLine('')}
+                                                        style={{ cursor: 'pointer', color: Colors.get('subText', theme) }}>
+                                                        <FaTimes size={12} />
+                                                    </motion.div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -331,6 +457,68 @@ const ToDoNew = () => {
                             {/* Bottom Spacer */}
                             <div style={{ marginBottom: '100px' }}></div>
                         </div>
+
+                        {/* Custom Category Modal */}
+                        <AnimatePresence>
+                        {showCatModal && (
+                            <motion.div
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+                                onClick={() => setShowCatModal(false)}
+                            >
+                                <motion.div
+                                    initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    style={{
+                                        backgroundColor: Colors.get('simplePanel', theme),
+                                        borderRadius: 24, padding: 24, width: '100%', maxWidth: 360,
+                                        border: `1px solid ${Colors.get('border', theme)}`
+                                    }}
+                                >
+                                    <h3 style={{ margin: 0, color: Colors.get('mainText', theme), fontSize: 18, fontWeight: 800 }}>
+                                        {lang === 0 ? 'Новая категория' : 'New category'}
+                                    </h3>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '16px 0' }}>
+                                        {EMOJI_POOL.map(e => (
+                                            <motion.div key={e} whileTap={{ scale: 0.9 }}
+                                                onClick={() => setNewCatIcon(e)}
+                                                style={{
+                                                    width: 38, height: 38, borderRadius: 10,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: 20, cursor: 'pointer',
+                                                    backgroundColor: newCatIcon === e ? Colors.get('highlitedPanel', theme) : 'transparent',
+                                                    border: `1px solid ${newCatIcon === e ? 'transparent' : Colors.get('border', theme)}`
+                                                }}>
+                                                {e}
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={newCatName}
+                                        onChange={(e) => setNewCatName(e.target.value)}
+                                        placeholder={lang === 0 ? 'Название категории' : 'Category name'}
+                                        style={{
+                                            width: '100%', padding: 12, borderRadius: 12,
+                                            border: `1px solid ${Colors.get('border', theme)}`,
+                                            backgroundColor: Colors.get('background', theme),
+                                            color: Colors.get('mainText', theme), fontSize: 15, outline: 'none', boxSizing: 'border-box'
+                                        }}
+                                    />
+                                    <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                                        <button onClick={() => setShowCatModal(false)}
+                                            style={{ flex: 1, padding: 12, borderRadius: 12, border: 'none', backgroundColor: Colors.get('border', theme), color: Colors.get('mainText', theme), fontWeight: 700, cursor: 'pointer' }}>
+                                            {lang === 0 ? 'Отмена' : 'Cancel'}
+                                        </button>
+                                        <button onClick={handleCreateCustomCat}
+                                            style={{ flex: 1, padding: 12, borderRadius: 12, border: 'none', backgroundColor: Colors.get('done', theme), color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
+                                            {lang === 0 ? 'Создать' : 'Create'}
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
         </motion.div>
     );
 };

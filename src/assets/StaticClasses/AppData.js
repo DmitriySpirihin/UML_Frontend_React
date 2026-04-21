@@ -50,7 +50,9 @@ export class AppData{
   //
   static sleepingLog = {};
   static todoList = [];
-  static menuCardsStates = 
+  static todoCustomCategories = []; // [{icon, label:[ru,en]}]
+  static todoFieldsVisibility = { priority: true, difficulty: true, urgency: true };
+  static menuCardsStates =
 {
   "MainCard": {
     "pinned": false,
@@ -133,6 +135,8 @@ static infoMiniPanel = {
     this.mentalRecords = data.mentalRecords;
     this.sleepingLog = data.sleepingLog;
     this.todoList = data.todoList || [];
+    this.todoCustomCategories = Array.isArray(data.todoCustomCategories) ? data.todoCustomCategories : [];
+    this.todoFieldsVisibility = data.todoFieldsVisibility || { priority: true, difficulty: true, urgency: true };
     this.insightCache = data.insightCache || {};
     this.menuCardsStates = data.menuCardsStates ||
 {
@@ -436,6 +440,8 @@ export class Data{
     this.sleepingLog = AppData.sleepingLog;
     this.mentalLog = AppData.mentalLog;
     this.todoList = AppData.todoList;
+    this.todoCustomCategories = AppData.todoCustomCategories;
+    this.todoFieldsVisibility = AppData.todoFieldsVisibility;
     this.menuCardsStates = AppData.menuCardsStates;
     this.infoMiniPanel = AppData.infoMiniPanel;
     this.insightCache = AppData.insightCache;
