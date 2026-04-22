@@ -11,6 +11,7 @@ import MentalInput from './MentalInput';
 import { memorySequenceLevels, saveSessionDuration } from './MentalHelper';
 
 const startTimerDuration = 3000;
+const capFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
 const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
     // === CORE LOGIC STATES (UNCHANGED) ===
@@ -54,6 +55,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
     const [message, setMessage] = useState('');
     const [statusColor, setStatusColor] = useState('');
     const [addScores, setAddScores] = useState(0);
+    const [wrongData, setWrongData] = useState(null);
 
     // Statistics
     const [rightAnswers, setRightAnswers] = useState(0);
@@ -67,7 +69,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
     
     // Input Handling
     useEffect(() => {
-        if (!isStart || isFinished || phase !== 'recall') {
+        if (!isStart || isFinished || phase !== 'recall' || wrongData) {
             setInput('');
             return;
         }
@@ -84,7 +86,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
 
     // Auto-submit if max length reached
     useEffect(() => {
-        if (!isStart || isFinished || delayTimer || phase !== 'recall') return;
+        if (!isStart || isFinished || delayTimer || phase !== 'recall' || wrongData) return;
         if (handledInput.length === answer.length) {
             handleAnswer();
         }
@@ -224,31 +226,39 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
         const precision = getPrecision(type, expectedAnswer, handledInput);
         playVibro(precision === 0 ? 'light' : 'medium');
 
-        let addmessage = '';
-        if (precision === 0) {
-            addmessage = getPraise(langIndex);
-            setRightAnswers((prev) => prev + 1);
-        } else if (precision < 0.15) {
-            addmessage = getSupport(langIndex);
-        } else {
-            addmessage = (langIndex === 0 ? 'Правильный ответ: ' : 'Correct answer: ') + expectedAnswer;
-        }
-
-        const col = precision === 0
-            ? Colors.get('maxValColor', theme)
-            : precision < 0.15
-            ? Colors.get('difficulty2', theme)
-            : Colors.get('minValColor', theme);
-
-        setStatusColor(col);
-        setMessage(addmessage);
-        setAddScores(points);
         setStreakLength((prev) => (hasStreak(type, expectedAnswer, handledInput) ? prev + 1 : 0));
         precision === 0 ? playRight() : playWrong();
 
-        setFinishAfterFeedback(stage >= 20);
-        setPhase('feedback');
-        setDelayTimer(true);
+        if (precision === 0) {
+            setRightAnswers((prev) => prev + 1);
+            setStatusColor(Colors.get('maxValColor', theme));
+            setMessage(getPraise(langIndex));
+            setAddScores(points);
+            setFinishAfterFeedback(stage >= 20);
+            setPhase('feedback');
+            setDelayTimer(true);
+        } else {
+            setWrongData({
+                correctAnswer: expectedAnswer,
+                userInput: handledInput,
+                isReverse,
+                isLast: stage >= 20,
+                pendingNext: pendingStage,
+            });
+            setHandledInput('');
+        }
+    };
+
+    const handleAcknowledgeWrong = () => {
+        const { isLast, pendingNext } = wrongData;
+        setWrongData(null);
+        setHandledInput('');
+        if (isLast) {
+            onFinishSession(scores);
+        } else {
+            setStage(pendingNext);
+            setNewProblem(pendingNext);
+        }
     };
 
     const handleReload = () => {
@@ -326,7 +336,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
 
                                 <div style={styles(theme).card}>
                                     <div style={{...styles(theme).title, textAlign:'center', fontSize: '16px', marginBottom: 10}}>
-                                        {memorySequenceLevels[difficulty].title[langIndex]}
+                                        {capFirst(memorySequenceLevels[difficulty].title[langIndex])}
                                     </div>
                                     <p style={styles(theme).description}>{memorySequenceLevels[difficulty].description[langIndex]}</p>
                                     
@@ -350,7 +360,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
                                         />
                                     </div>
 
-                                    <p style={styles(theme).disclaimer}>{disclaimer(langIndex)}</p>
+                                    <MemoryInstructionsBlock theme={theme} langIndex={langIndex} isReverse={memorySequenceLevels[difficulty].reverse} />
                                 </div>
 
                                 <div style={styles(theme).playButtonContainer}>
@@ -383,8 +393,57 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
                             </motion.div>
                         )}
 
+                        {/* WRONG ANSWER PAUSE SCREEN */}
+                        {!isFinished && wrongData && (
+                            <motion.div key="wrong-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).gameContainer}>
+                                <div style={styles(theme).gameHeader}>
+                                    <div style={{ width: 28 }} />
+                                    <div style={styles(theme).gameStat}><FaStopwatch style={{ marginRight: 6 }} /> {getParsedTime(time)}</div>
+                                    <div style={{...styles(theme).gameStat, color: Colors.get('maxValColor', theme)}}><FaStar style={{ marginRight: 6 }} /> {scores}</div>
+                                </div>
+                                <div style={styles(theme).subStatsBar}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: Colors.get('minValColor', theme) }}><FaFire /> {streakLength}</div>
+                                    <div style={{ color: Colors.get('difficulty', theme), fontWeight: 'bold' }}>{`${stage} / 20`}</div>
+                                </div>
+                                <div style={{ width: '90%', backgroundColor: theme === 'dark' ? 'rgba(220,50,50,0.12)' : 'rgba(220,50,50,0.07)', border: '2px solid rgba(220,50,50,0.35)', borderRadius: '24px', padding: '24px', marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                        {wrongData.correctAnswer.split('').map((ch, i) => (
+                                            <div key={i} style={{ width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.get('bottomPanel', theme), borderRadius: '10px', border: `2px solid ${Colors.get('maxValColor', theme)}`, fontSize: '22px', fontWeight: 'bold', color: Colors.get('maxValColor', theme) }}>
+                                                {ch}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {wrongData.userInput && (
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                            {wrongData.userInput.split('').map((ch, i) => (
+                                                <div key={i} style={{ width: '42px', height: '42px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.get('bottomPanel', theme), borderRadius: '10px', border: `2px solid ${Colors.get('minValColor', theme)}`, fontSize: '22px', fontWeight: 'bold', color: Colors.get('minValColor', theme) }}>
+                                                    {ch}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '12px', color: Colors.get('subText', theme), opacity: 0.7 }}>{langIndex === 0 ? '↑ правильно · ↓ ввёл(а)' : '↑ correct · ↓ you typed'}</span>
+                                        {wrongData.isReverse && <span style={{ fontSize: '12px', color: Colors.get('minValColor', theme) }}>{langIndex === 0 ? '(нужно было в обратном порядке)' : '(reverse order required)'}</span>}
+                                    </div>
+                                    <div style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderRadius: '14px', padding: '10px 14px', display: 'flex', gap: '8px', alignItems: 'flex-start', width: '100%', boxSizing: 'border-box' }}>
+                                        <span style={{ fontSize: '16px', flexShrink: 0 }}>💡</span>
+                                        <span style={{ fontSize: '13px', color: Colors.get('subText', theme), lineHeight: '1.5' }}>
+                                            {langIndex === 0 ? 'Запоминай символы по одному — каждый раз сначала' : 'Memorize each symbol one at a time from the start'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style={{ marginTop: 'auto', paddingBottom: '50px', paddingTop: '24px' }}>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={handleAcknowledgeWrong}
+                                        style={{ backgroundColor: Colors.get('barsColorMeasures', theme), color: '#fff', border: 'none', borderRadius: '16px', padding: '16px 40px', fontSize: '17px', fontWeight: 'bold', cursor: 'pointer' }}>
+                                        {langIndex === 0 ? 'Понял → Дальше' : 'Got it → Next'}
+                                    </motion.button>
+                                </div>
+                            </motion.div>
+                        )}
+
                         {/* 3. GAME SCREEN */}
-                        {!isFinished && isStart && (
+                        {!isFinished && isStart && !wrongData && (
                             <motion.div key="game-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).gameContainer}>
                                 {/* Top Bar */}
                                 <div style={styles(theme).gameHeader}>
@@ -509,6 +568,37 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
     );
 };
 
+const MemoryInstructionsBlock = ({ theme, langIndex, isReverse }) => {
+    const isDark = theme === 'dark';
+    const items = langIndex === 0 ? [
+        { icon: '👁', text: 'Символы мелькают один за другим — запомни порядок' },
+        { icon: '✍️', text: 'Воспроизведи последовательность по памяти' },
+        { icon: '↩️', text: isReverse ? 'На этом уровне вводи в ОБРАТНОМ порядке!' : 'Вводи в прямом порядке, как запомнил(а)' },
+        { icon: '🔥', text: '5 правильных подряд — множитель растёт (макс. ×1.5)' },
+    ] : [
+        { icon: '👁', text: 'Symbols flash one by one — memorize the order' },
+        { icon: '✍️', text: 'Reproduce the sequence from memory' },
+        { icon: '↩️', text: isReverse ? 'At this level type in REVERSE order!' : 'Type in the same order as shown' },
+        { icon: '🔥', text: '5 correct in a row — multiplier grows (max ×1.5)' },
+    ];
+    return (
+        <div style={{
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+            borderRadius: '14px',
+            padding: '12px 14px',
+            marginTop: '10px',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+        }}>
+            {items.map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: i < items.length - 1 ? '8px' : 0 }}>
+                    <span style={{ fontSize: '15px', flexShrink: 0, lineHeight: '1.4' }}>{item.icon}</span>
+                    <span style={{ fontSize: '13px', color: Colors.get('subText', theme), lineHeight: '1.4', fontWeight: item.text.includes('ОБРАТНОМ') || item.text.includes('REVERSE') ? '700' : 'normal' }}>{item.text}</span>
+                </div>
+            ))}
+        </div>
+    );
+};
+
 export default MentalGamePanel;
 
 // === HELPER COMPONENTS ===
@@ -579,7 +669,7 @@ const styles = (theme, fSize = 14) => ({
         fontSize: '20px',
         fontWeight: 'bold',
         color: Colors.get('mainText', theme),
-        margin: 0
+        margin: 0,
     },
     card: {
         width: '100%',

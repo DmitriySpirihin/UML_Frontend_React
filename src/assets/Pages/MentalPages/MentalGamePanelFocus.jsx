@@ -10,6 +10,7 @@ import { IoArrowBackCircle } from "react-icons/io5";
 import { focusTrainingLevels, saveSessionDuration } from './MentalHelper';
 
 const startTimerDuration = 3000;
+const capFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
 const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
     // === CORE LOGIC STATES ===
@@ -54,6 +55,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
     const [addScores, setAddScores] = useState(0);
     const [message, setMessage] = useState('');
     const [statusColor, setStatusColor] = useState('');
+    const [wrongData, setWrongData] = useState(null);
 
     // === EFFECTS ===
 
@@ -147,7 +149,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
     // === LOGIC HANDLERS ===
 
     const handleSymbolClick = useCallback((index) => {
-        if (!isStart || isFinished || delayTimer || isPaused) return;
+        if (!isStart || isFinished || delayTimer || isPaused || wrongData) return;
 
         const symbol = currentProblem.items[index];
         const isTarget = symbol === currentProblem.targetSymbol;
@@ -170,10 +172,10 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
         if (!isTarget) {
             playWrong();
         }
-    }, [currentProblem, isStart, isFinished, delayTimer, isPaused, playWrong]);
+    }, [currentProblem, isStart, isFinished, delayTimer, isPaused, wrongData, playWrong]);
 
     const handleSubmit = () => {
-        if (!currentProblem || delayTimer) return;
+        if (!currentProblem || delayTimer || wrongData) return;
 
         const { items, targetSymbol } = currentProblem;
         const correctIndices = items
@@ -184,36 +186,46 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
         const userCorrect = Array.from(userSelection).filter(i => items[i] === targetSymbol).length;
         const userWrong = Array.from(userSelection).filter(i => items[i] !== targetSymbol).length;
 
-        const userAnswer = userCorrect; 
+        const userAnswer = userCorrect;
         const expectedAnswer = correctCount;
 
         const answerTime = Date.now() - problemStartTime;
         const points = getPoints(type, difficulty, stage, answerTime, expectedAnswer, userAnswer, streakLength);
         const isPerfect = userWrong === 0 && userCorrect === expectedAnswer;
 
-        let addMessage = '';
-        if (isPerfect) {
-            addMessage = getPraise(langIndex);
-            setRightAnswers(prev => prev + 1);
-        } else {
-            addMessage = langIndex === 0
-                ? `Найдено: ${userCorrect}/${expectedAnswer}`
-                : `Found: ${userCorrect}/${expectedAnswer}`;
-        }
-
-        const col = isPerfect
-            ? Colors.get('maxValColor', theme)
-            : Colors.get('minValColor', theme);
-
-        setStatusColor(col);
-        setMessage(addMessage);
-        setAddScores(points);
         setStreakLength(prev => (isPerfect ? prev + 1 : 0));
         isPerfect ? playRight() : playWrong();
-
-        setDelayTimer(true);
         setProblemTimerActive(false);
         setRoundTimerActive(false);
+
+        if (isPerfect) {
+            setRightAnswers(prev => prev + 1);
+            setStatusColor(Colors.get('maxValColor', theme));
+            setMessage(getPraise(langIndex));
+            setAddScores(points);
+            setDelayTimer(true);
+        } else {
+            setWrongData({
+                found: userCorrect,
+                expected: expectedAnswer,
+                isLast: stage >= 20,
+            });
+            setUserSelection(new Set());
+        }
+    };
+
+    const handleAcknowledgeWrong = () => {
+        const { isLast } = wrongData;
+        setWrongData(null);
+        setUserSelection(new Set());
+        setFeedback({});
+        if (isLast) {
+            onFinishSession(scores);
+        } else {
+            const nextStage = stage + 1;
+            setStage(nextStage);
+            setNewProblem(nextStage);
+        }
     };
 
     const handleStart = () => {
@@ -381,7 +393,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
 
                                 <div style={styles(theme).card}>
                                     <div style={{...styles(theme).title, textAlign:'center', fontSize: '16px', marginBottom: 10}}>
-                                        {focusTrainingLevels[difficulty].title[langIndex]}
+                                        {capFirst(focusTrainingLevels[difficulty].title[langIndex])}
                                     </div>
                                     <p style={styles(theme).description}>{focusTrainingLevels[difficulty].description[langIndex]}</p>
                                     
@@ -396,7 +408,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
                                         />
                                     </div>
 
-                                    <p style={styles(theme).disclaimer}>{disclaimer(langIndex)}</p>
+                                    <FocusInstructionsBlock theme={theme} langIndex={langIndex} />
                                 </div>
 
                                 <div style={styles(theme).playButtonContainer}>
@@ -429,8 +441,43 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
                             </motion.div>
                         )}
 
+                        {/* WRONG ANSWER PAUSE SCREEN */}
+                        {!isFinished && wrongData && (
+                            <motion.div key="wrong-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).gameContainer}>
+                                <div style={styles(theme).gameHeader}>
+                                    <div style={{ width: 28 }} />
+                                    <div style={styles(theme).gameStat}><FaStopwatch style={{ marginRight: 6 }} /> {getParsedTime(time)}</div>
+                                    <div style={{...styles(theme).gameStat, color: Colors.get('maxValColor', theme)}}><FaStar style={{ marginRight: 6 }} /> {scores}</div>
+                                </div>
+                                <div style={styles(theme).subStatsBar}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: Colors.get('minValColor', theme) }}><FaFire /> {streakLength}</div>
+                                    <div style={{ color: Colors.get('difficulty', theme), fontWeight: 'bold' }}>{`${stage} / 20`}</div>
+                                </div>
+                                <div style={{ width: '90%', backgroundColor: theme === 'dark' ? 'rgba(220,50,50,0.12)' : 'rgba(220,50,50,0.07)', border: '2px solid rgba(220,50,50,0.35)', borderRadius: '24px', padding: '24px', marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                                    <div style={{ fontSize: '48px' }}>★</div>
+                                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: Colors.get('minValColor', theme) }}>
+                                        {langIndex === 0 ? `Найдено: ${wrongData.found} / ${wrongData.expected}` : `Found: ${wrongData.found} / ${wrongData.expected}`}
+                                    </div>
+                                    <div style={{ backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderRadius: '14px', padding: '10px 14px', display: 'flex', gap: '8px', alignItems: 'flex-start', width: '100%', boxSizing: 'border-box' }}>
+                                        <span style={{ fontSize: '16px', flexShrink: 0 }}>💡</span>
+                                        <span style={{ fontSize: '13px', color: Colors.get('subText', theme), lineHeight: '1.5' }}>
+                                            {langIndex === 0
+                                                ? `Нужно было найти все ${wrongData.expected} символов ★. Ищи внимательно до конца раунда.`
+                                                : `You needed to find all ${wrongData.expected} ★ symbols. Look carefully until the round ends.`}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style={{ marginTop: 'auto', paddingBottom: '50px', paddingTop: '24px' }}>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={handleAcknowledgeWrong}
+                                        style={{ backgroundColor: Colors.get('barsColorMeasures', theme), color: '#fff', border: 'none', borderRadius: '16px', padding: '16px 40px', fontSize: '17px', fontWeight: 'bold', cursor: 'pointer' }}>
+                                        {langIndex === 0 ? 'Понял → Дальше' : 'Got it → Next'}
+                                    </motion.button>
+                                </div>
+                            </motion.div>
+                        )}
+
                         {/* 3. GAME SCREEN */}
-                        {!isFinished && isStart && (
+                        {!isFinished && isStart && !wrongData && (
                             <motion.div key="game-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).gameContainer}>
                                 {/* Top Bar */}
                                 <div style={styles(theme).gameHeader}>
@@ -639,7 +686,7 @@ const styles = (theme, fSize = 14) => ({
         fontSize: '20px',
         fontWeight: 'bold',
         color: Colors.get('mainText', theme),
-        margin: 0
+        margin: 0,
     },
     card: {
         width: '100%',
@@ -796,3 +843,33 @@ const styles = (theme, fSize = 14) => ({
     }
 });
 
+const FocusInstructionsBlock = ({ theme, langIndex }) => {
+    const isDark = theme === 'dark';
+    const items = langIndex === 0 ? [
+        { icon: '★', text: 'Найди все звёздочки ★ среди других символов' },
+        { icon: '👆', text: 'Нажми на каждую ★ до истечения времени' },
+        { icon: '🚫', text: 'Не трогай другие символы — это штраф к серии' },
+        { icon: '⚡', text: 'Чем быстрее и точнее — тем выше счёт' },
+    ] : [
+        { icon: '★', text: 'Find all ★ symbols among the distractors' },
+        { icon: '👆', text: 'Tap each ★ before the round ends' },
+        { icon: '🚫', text: 'Don\'t tap other symbols — it breaks your streak' },
+        { icon: '⚡', text: 'Faster and more accurate = higher score' },
+    ];
+    return (
+        <div style={{
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+            borderRadius: '14px',
+            padding: '12px 14px',
+            marginTop: '10px',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+        }}>
+            {items.map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: i < items.length - 1 ? '8px' : 0 }}>
+                    <span style={{ fontSize: '15px', flexShrink: 0, lineHeight: '1.4' }}>{item.icon}</span>
+                    <span style={{ fontSize: '13px', color: Colors.get('subText', theme), lineHeight: '1.4' }}>{item.text}</span>
+                </div>
+            ))}
+        </div>
+    );
+};

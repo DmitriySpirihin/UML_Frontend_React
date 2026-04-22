@@ -422,6 +422,46 @@ export function hasStreak(type,rightAnswer, yourAnswer) {
   
   return false;
 }
+export function getExplanation(problem, langIndex) {
+  if (!problem) return '';
+  const p = String(problem);
+  const ru = langIndex === 0;
+
+  if (p.includes('=')) {
+    return ru ? 'Изолируй X: перенеси числа в правую часть уравнения.' : 'Isolate X: move numbers to the right side.';
+  }
+  if (p.includes('log')) {
+    return ru ? 'log_a(b) = c означает aᶜ = b — найди нужный показатель степени.' : 'log_a(b) = c means aᶜ = b — find the exponent.';
+  }
+  if (p.includes('√')) {
+    return ru ? 'Сначала вычисли корень √, затем выполни остальные операции.' : 'Compute √ first, then the remaining operations.';
+  }
+  if (/[²³⁴⁵⁶⁷⁸⁹]/.test(p)) {
+    return ru
+      ? 'Порядок: сначала скобки, потом степени, затем × и ÷, в конце + и −.'
+      : 'Order: brackets first, then powers, then × and ÷, finally + and −.';
+  }
+  if (p.includes('(')) {
+    return ru ? 'Начни со скобок — вычисли выражение внутри них первым.' : 'Start with brackets — evaluate the expression inside first.';
+  }
+  if ((p.includes('÷') || p.includes('/')) && (p.includes('+') || p.includes('−') || p.includes('-'))) {
+    return ru ? 'Деление выполняется раньше сложения и вычитания.' : 'Division comes before addition and subtraction.';
+  }
+  if (p.includes('×') && (p.includes('+') || p.includes('−') || p.includes('-'))) {
+    return ru ? 'Сначала умножение, потом сложение/вычитание.' : 'Multiplication comes before addition/subtraction.';
+  }
+  if (p.includes('×')) {
+    return ru ? 'Умножение: перемножи оба числа.' : 'Multiplication: multiply both numbers.';
+  }
+  if (p.includes('÷') || p.includes('/')) {
+    return ru ? 'Деление: раздели левое число на правое.' : 'Division: divide the left number by the right.';
+  }
+  if (p.includes('−') || p.includes('-')) {
+    return ru ? 'Вычитание: отними меньшее число из большего.' : 'Subtraction: subtract the right from the left.';
+  }
+  return ru ? 'Пересчитай пример ещё раз внимательно.' : 'Try computing it again carefully.';
+}
+
 export function getPrecision(type,rightAnswer, yourAnswer){
   if (type === 0) {
     const numAnswer = Number(yourAnswer);

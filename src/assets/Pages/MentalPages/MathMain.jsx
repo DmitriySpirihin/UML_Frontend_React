@@ -175,6 +175,8 @@ const getMathThemeColors = (difficulty) => {
     }
 }
 
+const capFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
 function MathCard({ protocol, difficulty, onClick, theme, lang, fSize, variants, needBlur, hasPremium, record, isFullWidth }) {
     
     const isDark = theme === 'dark';
@@ -184,26 +186,27 @@ function MathCard({ protocol, difficulty, onClick, theme, lang, fSize, variants,
     // Card Styles
     const cardStyle = {
         position: 'relative',
-        width: '100%', 
-        height: isFullWidth ? '120px' : '185px',
+        width: '100%',
+        height: isFullWidth ? '90px' : '185px',
         display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        borderRadius: "22px", 
+        flexDirection: isFullWidth ? 'row' : 'column',
+        justifyContent: isFullWidth ? 'flex-start' : 'space-between',
+        alignItems: isFullWidth ? 'center' : 'stretch',
+        borderRadius: "22px",
         overflow: 'hidden',
         cursor: isLocked ? 'default' : 'pointer',
-        
-        // Background & Depth
-        backgroundColor: Colors.get('simplePanel', theme), 
-        boxShadow: isDark 
-            ? '0 4px 20px rgba(0,0,0,0.3)' 
+
+        backgroundColor: Colors.get('simplePanel', theme),
+        boxShadow: isDark
+            ? '0 4px 20px rgba(0,0,0,0.3)'
             : '0 4px 15px rgba(0,0,0,0.05)',
-        border: isDark 
-            ? '1px solid rgba(255,255,255,0.05)' 
+        border: isDark
+            ? '1px solid rgba(255,255,255,0.05)'
             : '1px solid rgba(0,0,0,0.02)',
-            
+
         padding: '16px',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        gap: isFullWidth ? '14px' : 0,
     }
 
     const iconContainerStyle = {
@@ -273,70 +276,62 @@ function MathCard({ protocol, difficulty, onClick, theme, lang, fSize, variants,
                 </div>
             )}
 
-            {/* Header Content */}
-            <div style={{ zIndex: 2 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <div style={iconContainerStyle}>
-                        {icon}
+            {isFullWidth ? (
+                /* === FULL-WIDTH HORIZONTAL LAYOUT (Endless & Zen) === */
+                <>
+                    <div style={{ ...iconContainerStyle, flexShrink: 0 }}>{icon}</div>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', zIndex: 2 }}>
+                        <div style={{ fontSize: '10px', fontWeight: '700', color: accent, letterSpacing: '0.5px' }}>
+                            {capFirst(protocol.level[lang])}
+                        </div>
+                        <div style={{ fontSize: fSize === 0 ? '15px' : '16px', fontWeight: '700', color: Colors.get('mainText', theme), lineHeight: '1.2' }}>
+                            {capFirst(protocol.difficulty ? protocol.difficulty[lang] : protocol.title[lang])}
+                        </div>
+                        <div style={{ fontSize: '11px', color: Colors.get('subText', theme), opacity: 0.75 }}>
+                            {difficulty === 5 ? (lang === 0 ? 'Без таймера' : 'No Timer') :
+                             difficulty === 4 ? (lang === 0 ? 'До первой ошибки' : 'Until first mistake') :
+                             (lang === 0 ? `Таймер: ${protocol.timeLimitSec} сек` : `Timer: ${protocol.timeLimitSec} sec`)}
+                        </div>
                     </div>
-
-                    {/* Level Label */}
-                    <div style={{
-                        fontSize: '10px', 
-                        fontWeight: '700', 
-                        color: accent,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
-                        marginTop: '4px'
-                    }}>
-                        {protocol.level[lang]}
+                    {!isLocked && (
+                        <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', padding: '4px 10px', borderRadius: '8px' }}>
+                                <FaTrophy size={10} color={accent} />
+                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: Colors.get('mainText', theme), opacity: 0.9 }}>{record}</span>
+                            </div>
+                            <span style={{ fontSize: '10px', color: Colors.get('subText', theme), opacity: 0.5 }}>{lang === 0 ? 'рекорд' : 'best'}</span>
+                        </div>
+                    )}
+                </>
+            ) : (
+                /* === NORMAL VERTICAL LAYOUT === */
+                <>
+                    <div style={{ zIndex: 2 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                            <div style={iconContainerStyle}>{icon}</div>
+                            <div style={{ fontSize: '10px', fontWeight: '700', color: accent, letterSpacing: '0.5px', marginTop: '4px' }}>
+                                {capFirst(protocol.level[lang])}
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <div style={{ fontSize: fSize === 0 ? '16px' : '18px', fontWeight: '700', color: Colors.get('mainText', theme), lineHeight: '1.2' }}>
+                                {capFirst(protocol.difficulty ? protocol.difficulty[lang] : protocol.title[lang])}
+                            </div>
+                            <div style={{ fontSize: '12px', color: Colors.get('subText', theme), opacity: 0.8, lineHeight: '1.3' }}>
+                                {lang === 0 ? `Таймер: ${protocol.timeLimitSec} сек` : `Timer: ${protocol.timeLimitSec} sec`}
+                            </div>
+                        </div>
                     </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <div style={{ 
-                        fontSize: isFullWidth ? '17px' : (fSize === 0 ? "16px" : "18px"), 
-                        fontWeight: "700", 
-                        color: Colors.get('mainText', theme), 
-                        lineHeight: '1.2'
-                    }}>
-                        {protocol.difficulty ? protocol.difficulty[lang] : protocol.title[lang]}
-                    </div>
-                    
-                    <div style={{ 
-                        fontSize: "12px", 
-                        color: Colors.get('subText', theme), 
-                        opacity: 0.8,
-                        lineHeight: '1.3'
-                    }}>
-                        {/* Custom description based on Math levels */}
-                         {difficulty === 5 ? (lang === 0 ? 'Без таймера' : 'No Timer') : 
-                          difficulty === 4 ? (lang === 0 ? 'До первой ошибки' : 'Until first mistake') :
-                          (lang === 0 ? `Таймер: ${protocol.timeLimitSec} сек` : `Timer: ${protocol.timeLimitSec} sec`)}
-                    </div>
-                </div>
-            </div>
-
-            {/* Bottom Info: Record/Score */}
-            {!isLocked && (
-                <div style={{ zIndex: 2, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                     <div style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '6px',
-                        background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
-                        padding: '4px 10px',
-                        borderRadius: '8px'
-                     }}>
-                        <FaTrophy size={10} color={accent} />
-                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: Colors.get('mainText', theme), opacity: 0.9 }}>
-                            {record}
-                        </span>
-                     </div>
-                     <span style={{ fontSize: '10px', color: Colors.get('subText', theme), opacity: 0.5 }}>
-                        {lang === 0 ? 'рекорд' : 'best'}
-                     </span>
-                </div>
+                    {!isLocked && (
+                        <div style={{ zIndex: 2, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', padding: '4px 10px', borderRadius: '8px' }}>
+                                <FaTrophy size={10} color={accent} />
+                                <span style={{ fontSize: '12px', fontWeight: 'bold', color: Colors.get('mainText', theme), opacity: 0.9 }}>{record}</span>
+                            </div>
+                            <span style={{ fontSize: '10px', color: Colors.get('subText', theme), opacity: 0.5 }}>{lang === 0 ? 'рекорд' : 'best'}</span>
+                        </div>
+                    )}
+                </>
             )}
         </motion.div>
     )

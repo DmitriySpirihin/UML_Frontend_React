@@ -170,6 +170,8 @@ const getMemoryThemeColors = (difficulty) => {
     }
 }
 
+const capFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
 function MemoryCard({ protocol, difficulty, onClick, theme, lang, fSize, variants, needBlur, hasPremium, record, isFullWidth }) {
     
     const isDark = theme === 'dark';
@@ -252,24 +254,24 @@ function MemoryCard({ protocol, difficulty, onClick, theme, lang, fSize, variant
                     
                     {/* Level Label */}
                     <div style={{
-                        fontSize: '10px', 
-                        fontWeight: '700', 
+                        fontSize: '10px',
+                        fontWeight: '700',
                         color: accent,
                         letterSpacing: '0.5px',
                         marginTop: '4px'
                     }}>
-                        {protocol.level[lang]}
+                        {capFirst(protocol.level[lang])}
                     </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <div style={{ 
-                        fontSize: isFullWidth ? '17px' : (fSize === 0 ? "16px" : "18px"), 
-                        fontWeight: "700", 
-                        color: Colors.get('mainText', theme), 
-                        lineHeight: '1.2'
+                    <div style={{
+                        fontSize: isFullWidth ? '17px' : (fSize === 0 ? "16px" : "18px"),
+                        fontWeight: "700",
+                        color: Colors.get('mainText', theme),
+                        lineHeight: '1.2',
                     }}>
-                        {protocol.title[lang]}
+                        {capFirst(protocol.title[lang])}
                     </div>
                     
                     <div style={{ 

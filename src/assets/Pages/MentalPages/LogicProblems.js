@@ -290,3 +290,107 @@ export function hasStreak(type, rightAnswer, yourAnswer) {
 export function getPrecision(type, rightAnswer, yourAnswer) {
   return type === 2 ? (yourAnswer === rightAnswer ? 0 : 1) : 0;
 }
+
+const SHAPE_NAMES = {
+  ru:  { circle: 'круг', square: 'квадрат', triangle: 'треугольник', hexagon: 'шестиугольник' },
+  en:  { circle: 'circle', square: 'square', triangle: 'triangle', hexagon: 'hexagon' },
+};
+
+export function getLogicExplanation(items, correctIndex, langIndex) {
+  if (!items || items.length === 0 || correctIndex < 1) return '';
+  const ru = langIndex === 0;
+  const oddIdx = correctIndex - 1;
+  const oddItem = items[oddIdx];
+  const others = items.filter((_, i) => i !== oddIdx);
+  if (!oddItem || others.length === 0) return '';
+
+  // --- Pure numbers ---
+  if (typeof oddItem === 'number') {
+    const allSame = others.every(v => v === others[0]);
+    if (allSame) {
+      return ru
+        ? `Все остальные числа равны ${others[0]}, а элемент №${correctIndex} = ${oddItem}.`
+        : `All others equal ${others[0]}, but item #${correctIndex} = ${oddItem}.`;
+    }
+    // Detect arithmetic step
+    const diffs = [];
+    for (let i = 1; i < others.length; i++) diffs.push(others[i] - others[i - 1]);
+    const step = diffs[0];
+    if (diffs.every(d => d === step)) {
+      return ru
+        ? `Шаг между остальными числами: ${step > 0 ? '+' : ''}${step}. Число ${oddItem} нарушает правило.`
+        : `The step between other numbers is ${step > 0 ? '+' : ''}${step}. ${oddItem} breaks this rule.`;
+    }
+    return ru
+      ? `Число ${oddItem} (элемент №${correctIndex}) не вписывается в числовой ряд.`
+      : `Number ${oddItem} (item #${correctIndex}) doesn't fit the sequence.`;
+  }
+
+  // --- Objects (shape / color / value) ---
+  if (typeof oddItem === 'object') {
+    const shapeNames = ru ? SHAPE_NAMES.ru : SHAPE_NAMES.en;
+    const reasons = [];
+
+    // Color check
+    if (oddItem.color !== undefined) {
+      const otherColors = others.map(o => o.color);
+      const dominantColor = otherColors[0];
+      if (otherColors.every(c => c === dominantColor) && oddItem.color !== dominantColor) {
+        reasons.push(ru ? `другой цвет` : `different color`);
+      }
+    }
+    // Shape check
+    if (oddItem.shape !== undefined) {
+      const otherShapes = others.map(o => o.shape);
+      const dominantShape = otherShapes[0];
+      if (otherShapes.every(s => s === dominantShape) && oddItem.shape !== dominantShape) {
+        const nameCurr = shapeNames[oddItem.shape] || oddItem.shape;
+        const nameOther = shapeNames[dominantShape] || dominantShape;
+        reasons.push(ru ? `другая форма (${nameCurr} вместо ${nameOther})` : `different shape (${nameCurr} instead of ${nameOther})`);
+      }
+    }
+    // Value check
+    if (oddItem.value !== undefined) {
+      const otherVals = others.map(o => o.value);
+      const allSameVal = otherVals.every(v => v === otherVals[0]);
+      if (!allSameVal) {
+        const diffs2 = [];
+        for (let i = 1; i < otherVals.length; i++) diffs2.push(otherVals[i] - otherVals[i - 1]);
+        const step2 = diffs2[0];
+        if (diffs2.every(d => d === step2)) {
+          reasons.push(ru
+            ? `значение ${oddItem.value} нарушает шаг ${step2 > 0 ? '+' : ''}${step2}`
+            : `value ${oddItem.value} breaks the step ${step2 > 0 ? '+' : ''}${step2}`);
+        } else {
+          reasons.push(ru ? `значение ${oddItem.value} не вписывается в ряд` : `value ${oddItem.value} doesn't fit`);
+        }
+      }
+      // Parity check (hard level rule)
+      if (oddItem.color !== undefined) {
+        const colorParityMismatch = others.some(o => {
+          const expectedColor = o.value % 2 === 0 ? 'red' : 'blue';
+          return o.color !== expectedColor;
+        });
+        if (!colorParityMismatch) {
+          const expectedColor = oddItem.value % 2 === 0 ? 'red' : 'blue';
+          if (oddItem.color !== expectedColor) {
+            reasons.push(ru
+              ? `цвет не соответствует чётности числа (чётное → красный, нечётное → синий)`
+              : `color doesn't match number parity (even → red, odd → blue)`);
+          }
+        }
+      }
+    }
+
+    if (reasons.length > 0) {
+      return ru
+        ? `Элемент №${correctIndex}: ${reasons.join('; ')}.`
+        : `Item #${correctIndex}: ${reasons.join('; ')}.`;
+    }
+    return ru
+      ? `Элемент №${correctIndex} нарушает общее правило ряда.`
+      : `Item #${correctIndex} breaks the overall rule of the sequence.`;
+  }
+
+  return '';
+}

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData';
 import Colors from "../../StaticClasses/Colors";
 import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
-import { getProblem, getPoints, hasStreak, getPrecision } from './MathProblems';
+import { getProblem, getPoints, hasStreak, getPrecision, getExplanation } from './MathProblems';
 import BreathAudio from "../../Helpers/BreathAudio";
 import { FaStar, FaFire, FaMedal, FaStopwatch, FaTimes, FaPlay, FaRedo } from 'react-icons/fa';
 import { IoArrowBackCircle } from "react-icons/io5";
@@ -51,6 +51,7 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
     const [message, setMessage] = useState('');
     const [statusColor, setStatusColor] = useState('');
     const [addScores, setAddScores] = useState(0);
+    const [wrongData, setWrongData] = useState(null);
     
     // statistics
     const [rightAnswers, setRightAnswers] = useState(0);
@@ -172,37 +173,42 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
         const points = getPoints(type, difficulty, stage, currTimer, answer, handledInput, streakLength);
         const precision = getPrecision(type, answer, handledInput);
         playVibro(precision === 0 ? 'light' : 'medium');
-        
-        let addmessage = '';
-        if (precision === 0) {
-            addmessage = getPraise(langIndex);
-            setRightAnswers(prev => prev + 1);
-        } else if (precision < 0.15) {
-            addmessage = getSupport(langIndex);
-        } else {
-            addmessage = langIndex === 0 ? 'Правильный ответ: ' + answer : 'Correct answer: ' + answer;
-        }
-
-        const col = precision === 0 
-            ? Colors.get('maxValColor', theme) 
-            : precision < 0.15 
-                ? Colors.get('difficulty2', theme) 
-                : Colors.get('minValColor', theme);
-                
-        setStatusColor(col);
-        setMessage(addmessage);
-        setAddScores(points);
-        setNewProblem();
-        setHandledInput('');
-        setStreakLength(prev => hasStreak(type, answer, handledInput) ? prev + 1 : 0);
-        setStage(prev => prev + 1 < 20 ? prev + 1 : 20);
         precision === 0 ? playRight() : playWrong();
-        
-        if (stage === 20) onFinishSession();
-        if (difficulty === 4 && stage % 5 === 0) setAddValue(prev => prev + 1000);
-        if (difficulty === 4 && precision > 0.15) onFinishSession();
-        
-        setDelayTimer(true);
+        setStreakLength(prev => hasStreak(type, answer, handledInput) ? prev + 1 : 0);
+
+        if (precision === 0) {
+            setRightAnswers(prev => prev + 1);
+            setStatusColor(Colors.get('maxValColor', theme));
+            setMessage(getPraise(langIndex));
+            setAddScores(points);
+            setHandledInput('');
+            setNewProblem();
+            setStage(prev => prev + 1 < 20 ? prev + 1 : 20);
+            if (stage === 20) { onFinishSession(); return; }
+            if (difficulty === 4 && stage % 5 === 0) setAddValue(prev => prev + 1000);
+            setDelayTimer(true);
+        } else {
+            if (difficulty === 4) { onFinishSession(); return; }
+            setStage(prev => prev + 1 < 20 ? prev + 1 : 20);
+            setWrongData({
+                problem,
+                correctAnswer: answer,
+                explanation: getExplanation(problem, langIndex),
+                isLast: stage === 20,
+            });
+            setHandledInput('');
+        }
+    };
+
+    const handleAcknowledgeWrong = () => {
+        const wasLast = wrongData?.isLast;
+        setWrongData(null);
+        if (wasLast) {
+            onFinishSession();
+        } else {
+            setNewProblem();
+            setTimer(true);
+        }
     };
 
     const handleReload = () => {
@@ -296,7 +302,7 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
                                         <StatItem theme={theme} label={langIndex === 0 ? 'Операции' : 'Operations'} value={quickMathCategories[difficulty].operations} fullWidth />
                                     </div>
 
-                                    <p style={styles(theme).disclaimer}>{disclaimer(langIndex)}</p>
+                                    <MathInstructionsBlock theme={theme} langIndex={langIndex} />
                                 </div>
 
                                 <div style={styles(theme).playButtonContainer}>
@@ -329,8 +335,45 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
                             </motion.div>
                         )}
 
+                        {/* WRONG ANSWER PAUSE SCREEN */}
+                        {!isFinished && wrongData && (
+                            <motion.div key="wrong-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).gameContainer}>
+                                <div style={styles(theme).gameHeader}>
+                                    <div style={{ width: 28 }} />
+                                    <div style={styles(theme).gameStat}><FaStopwatch style={{ marginRight: 6 }} /> {getParsedTime(time)}</div>
+                                    <div style={{...styles(theme).gameStat, color: Colors.get('maxValColor', theme)}}><FaStar style={{ marginRight: 6 }} /> {scores}</div>
+                                </div>
+                                <div style={styles(theme).subStatsBar}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: Colors.get('minValColor', theme) }}><FaFire /> {streakLength}</div>
+                                    <div style={{ color: Colors.get('difficulty', theme), fontWeight: 'bold' }}>
+                                        {difficulty > 3 ? `${langIndex === 0 ? 'Этап' : 'Stage'} ${stage}` : `${stage} / 20`}
+                                    </div>
+                                </div>
+                                <div style={{ width: '90%', backgroundColor: isDark ? 'rgba(220,50,50,0.12)' : 'rgba(220,50,50,0.07)', border: '2px solid rgba(220,50,50,0.35)', borderRadius: '24px', padding: '24px', marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                                    <div style={{ fontSize: '38px', fontWeight: 'bold', color: Colors.get('mainText', theme), textAlign: 'center' }}>
+                                        {wrongData.problem}
+                                    </div>
+                                    <div style={{ fontSize: '17px', color: Colors.get('minValColor', theme), fontWeight: 'bold' }}>
+                                        {langIndex === 0 ? `Правильно: ${wrongData.correctAnswer}` : `Correct: ${wrongData.correctAnswer}`}
+                                    </div>
+                                    {wrongData.explanation ? (
+                                        <div style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderRadius: '14px', padding: '12px 14px', display: 'flex', gap: '8px', alignItems: 'flex-start', width: '100%', boxSizing: 'border-box' }}>
+                                            <span style={{ fontSize: '16px', flexShrink: 0 }}>💡</span>
+                                            <span style={{ fontSize: '13px', color: Colors.get('subText', theme), lineHeight: '1.5' }}>{wrongData.explanation}</span>
+                                        </div>
+                                    ) : null}
+                                </div>
+                                <div style={{ marginTop: 'auto', paddingBottom: '50px', paddingTop: '24px' }}>
+                                    <motion.button whileTap={{ scale: 0.95 }} onClick={handleAcknowledgeWrong}
+                                        style={{ backgroundColor: Colors.get('barsColorMeasures', theme), color: '#fff', border: 'none', borderRadius: '16px', padding: '16px 40px', fontSize: '17px', fontWeight: 'bold', cursor: 'pointer' }}>
+                                        {langIndex === 0 ? 'Понял → Дальше' : 'Got it → Next'}
+                                    </motion.button>
+                                </div>
+                            </motion.div>
+                        )}
+
                         {/* 3. GAME SCREEN */}
-                        {!isFinished && isStart && (
+                        {!isFinished && isStart && !wrongData && (
                             <motion.div key="game-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).gameContainer}>
                                 {/* Top Bar */}
                                 <div style={styles(theme).gameHeader}>
@@ -369,7 +412,7 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
                                 </div>
 
                                 {/* Problem Card */}
-                                <motion.div 
+                                <motion.div
                                     style={{
                                         ...styles(theme).problemCard,
                                         backgroundColor: delayTimer ? (statusColor || Colors.get('simplePanel', theme)) : Colors.get('simplePanel', theme),
@@ -382,7 +425,7 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
                                             <div style={{ fontSize: '28px', fontWeight: 'bold', color: addScores > 0 ? '#fff' : '#fff' }}>
                                                 {addScores > 0 ? `+${addScores}` : (langIndex === 0 ? 'Ошибка' : 'Wrong')}
                                             </div>
-                                            <div style={{ fontSize: '16px', color: 'rgba(255,255,255,0.9)', marginTop: 5 }}>{message}</div>
+                                            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.9)', marginTop: 5, textAlign: 'center' }}>{message}</div>
                                         </div>
                                     ) : (
                                         <div style={{ fontSize: '42px', fontWeight: 'bold', color: Colors.get('mainText', theme) }}>
@@ -449,6 +492,37 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
                 </motion.div>
             )}
         </AnimatePresence>
+    );
+};
+
+const MathInstructionsBlock = ({ theme, langIndex }) => {
+    const isDark = theme === 'dark';
+    const items = langIndex === 0 ? [
+        { icon: '📐', text: 'Порядок операций: скобки → степени → ×÷ → +−' },
+        { icon: '⚡', text: 'Отвечай быстрее — скорость даёт бонус к очкам' },
+        { icon: '🔥', text: '5 правильных подряд — множитель растёт (макс. ×1.5)' },
+        { icon: '✖️', text: 'Ошибка — показываем правильный ответ и объяснение' },
+    ] : [
+        { icon: '📐', text: 'Order of ops: brackets → powers → ×÷ → +−' },
+        { icon: '⚡', text: 'Answer faster — speed gives a score bonus' },
+        { icon: '🔥', text: '5 correct in a row — multiplier grows (max ×1.5)' },
+        { icon: '✖️', text: 'On a mistake we show the answer and a tip' },
+    ];
+    return (
+        <div style={{
+            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+            borderRadius: '14px',
+            padding: '12px 14px',
+            marginTop: '10px',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+        }}>
+            {items.map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: i < items.length - 1 ? '8px' : 0 }}>
+                    <span style={{ fontSize: '15px', flexShrink: 0, lineHeight: '1.4' }}>{item.icon}</span>
+                    <span style={{ fontSize: '13px', color: Colors.get('subText', theme), lineHeight: '1.4' }}>{item.text}</span>
+                </div>
+            ))}
+        </div>
     );
 };
 
@@ -520,7 +594,7 @@ const styles = (theme, fSize = 14) => ({
         fontSize: '20px',
         fontWeight: 'bold',
         color: Colors.get('mainText', theme),
-        margin: 0
+        margin: 0,
     },
     card: {
         width: '100%',
