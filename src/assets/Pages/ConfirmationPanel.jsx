@@ -1,14 +1,16 @@
 import React from 'react'
 import Colors from 'src/assets/StaticClasses/Colors.js'
 import { theme$ , lang$,fontSize$} from 'assets/StaticClasses/HabitsBus'
-import { setConfirmationPanel,header$} from 'assets/StaticClasses/HabitsBus'
+import { setConfirmationPanel, header$, confirmationAction$, setConfirmationAction } from 'assets/StaticClasses/HabitsBus'
 import { removeHabitFn , currentId} from 'assets/Pages/HabitsPages/HabitsMain'
 import {AppData} from 'assets/StaticClasses/AppData'
 import {FaExclamationTriangle} from 'react-icons/fa'
 import {MdClose,MdDone} from 'react-icons/md'
 
 function confirmAction(){
-    removeHabitFn(currentId);
+    const action = confirmationAction$.value;
+    if (typeof action === 'function') action();
+    else removeHabitFn(currentId);
 }
 
 const ConfirmationPanel = () => {
@@ -40,8 +42,8 @@ const ConfirmationPanel = () => {
                 <FaExclamationTriangle style={styles(theme).miniIcon}/>
                 <h1 style={styles(theme,fSize).text}>{header}</h1>
                 <div style={{display:'flex',flexDirection:'row',width:'60%',justifyContent:'space-between'}}>
-                  <div style={styles(theme).button} onClick={() => {setConfirmationPanel(false);if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');}}><MdClose style={styles(theme).miniIcon}/></div>  
-                  <div style={styles(theme).button} onClick={() => {confirmAction(); setConfirmationPanel(false);if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');}}><MdDone style={styles(theme).miniIcon}/></div>  
+                  <div style={styles(theme).button} onClick={() => {setConfirmationAction(null);setConfirmationPanel(false);if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');}}><MdClose style={styles(theme).miniIcon}/></div>  
+                  <div style={styles(theme).button} onClick={() => {confirmAction(); setConfirmationAction(null); setConfirmationPanel(false);if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');}}><MdDone style={styles(theme).miniIcon}/></div>  
                 </div>
             </div>
         </div>

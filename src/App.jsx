@@ -12,7 +12,7 @@ import BtnsRobot from './assets/Pages/BottomBtns/BtnsRobot'
 import NotifyPanel from './assets/Pages/NotifyPanel'
 import BtnsMenu from './assets/Pages/BottomBtns/BtnsMenu';
 import BtnsInfo from './assets/Pages/BottomBtns/BtnsInfo';
-import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, keyboardVisible$,notifyPanel$,isServerAvailable$} from './assets/StaticClasses/HabitsBus'
+import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, keyboardVisible$,notifyPanel$,isServerAvailable$, confirmationPanel$} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaServer, FaCog, FaTools } from 'react-icons/fa';
@@ -125,7 +125,12 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const subscription = keyboardVisible$.subscribe(setKeyboardVisibleState);  
+    const subscription = keyboardVisible$.subscribe(setKeyboardVisibleState);
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const subscription = confirmationPanel$.subscribe(setConfirmationPanel);
     return () => subscription.unsubscribe();
   }, []);
 

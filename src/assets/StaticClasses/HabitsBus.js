@@ -12,6 +12,7 @@ export const fontSize$ = new BehaviorSubject(0);
 export const globalTheme$ = new BehaviorSubject('dark');
 export const confirmationPanel$ = new BehaviorSubject(false);
 export const header$ = new BehaviorSubject('');
+export const confirmationAction$ = new BehaviorSubject(null);
 export const showPopUpPanel$ = new BehaviorSubject({show:false,header:'',isPositive:true});
 export const addPanel$ = new BehaviorSubject('');
 export const setPage$ = new BehaviorSubject('LoadPanel');
@@ -44,6 +45,7 @@ export const setValidation = (state) => isValidation$.next(state);
 export const setIsServerAvailable = (state) => isServerAvailable$.next(state);
 
 export const setConfirmationPanel = (state) => confirmationPanel$.next(state);
+export const setConfirmationAction = (action) => confirmationAction$.next(action);
 export const setTheme = (theme) => {
   theme$.next(theme);
   Colors.setTheme(theme);
@@ -52,7 +54,8 @@ export const setTheme = (theme) => {
 };
 export const setLang = (lang) => lang$.next(lang);
 export const setFontSize = (fontSize) => fontSize$.next(fontSize);
-export const updateConfirmationPanel = (text) => {
+export const updateConfirmationPanel = (text, action = null) => {
+  confirmationAction$.next(action);
   setConfirmationPanel(true);
   header$.next(text);
 };

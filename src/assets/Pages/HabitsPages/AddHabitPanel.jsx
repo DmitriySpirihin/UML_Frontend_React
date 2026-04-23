@@ -4,8 +4,8 @@ import Colors from '../../StaticClasses/Colors'
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
-import { setShowPopUpPanel, setPage, lastPage$, theme$, lang$, fontSize$, setCurrentBottomBtn, keyboardVisible$ } from '../../StaticClasses/HabitsBus';
-import { FaSearch, FaTrashAlt, FaChevronRight, FaPlus, FaListUl } from 'react-icons/fa';
+import { setShowPopUpPanel, setPage, lastPage$, theme$, lang$, fontSize$, setCurrentBottomBtn, keyboardVisible$, updateConfirmationPanel } from '../../StaticClasses/HabitsBus';
+import { FaSearch, FaTrashAlt, FaChevronRight, FaPlus, FaListUl, FaUndo } from 'react-icons/fa';
 import { MdFiberNew, MdDone, MdClose , MdListAlt } from 'react-icons/md';
 import { IoIosArrowBack } from 'react-icons/io';
 import Icons from '../../StaticClasses/Icons';
@@ -120,7 +120,7 @@ const AddHabitPanel = () => {
     const [newCategoryIsNegative, setNewCategoryIsNegative] = useState(false);
     const [iconSearchQuery, setIconSearchQuery] = useState('');
     const [categoriesVersion, setCategoriesVersion] = useState(0);
-    const allCategories = useMemo(() => AppData.GetAllHabitCategories(langIndex), [langIndex, categoriesVersion]);
+    const allCategories = useMemo(() => AppData.GetAllHabitCategories(langIndex, true), [langIndex, categoriesVersion]);
     const [filterCategory, setFilterCategory] = useState(allCategories[0]?.label[langIndex] || 'Здоровье');
 
     const filteredIconKeys = useMemo(() => {
@@ -213,6 +213,7 @@ const AddHabitPanel = () => {
     };
 
     const selectCategory = (cat) => {
+        if (cat.isDeleted) return;
         setFilterCategory(cat.label[langIndex]);
         setHabitCategory(cat.label[0]);
         setIsNegative(cat.isNegative || false);
@@ -311,6 +312,19 @@ const AddHabitPanel = () => {
         setShowPopUpPanel(langIndex === 0 ? 'Категория удалена' : 'Category deleted', 2000, true);
     };
 
+    const requestDeleteCategory = (index) => {
+        updateConfirmationPanel(
+            langIndex === 0 ? 'Удалить категорию?' : 'Delete category?',
+            () => handleDeleteCategoryByIndex(index)
+        );
+    };
+
+    const handleRestoreCategory = (key) => {
+        AppData.RestoreDefaultHabitCategory(key);
+        setCategoriesVersion(v => v + 1);
+        setShowPopUpPanel(langIndex === 0 ? 'Категория восстановлена' : 'Category restored', 2000, true);
+    };
+
     const closePanel = () => {
         const prev = lastPage$.value;
         const loopingPages = ['AddHabitPanel'];
@@ -372,7 +386,8 @@ const AddHabitPanel = () => {
                                                                 fontSize: '13px', fontWeight: '700', transition: '0.2s all',
                                                                 boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none',
                                                                 cursor: 'pointer',
-                                                                display: 'flex', alignItems: 'center', gap: '8px'
+                                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                                opacity: cat.isDeleted ? 0.5 : 1
                                                             }}
                                                         >
                                                             <span style={{ display: 'inline-flex', alignItems: 'center' }}>
@@ -387,12 +402,21 @@ const AddHabitPanel = () => {
                                                                     >
                                                                         ✏️
                                                                     </span>
-                                                                    <span
-                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteCategoryByIndex(idx); }}
-                                                                        style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)' }}
-                                                                    >
-                                                                        <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
-                                                                    </span>
+                                                                    {cat.isDeleted ? (
+                                                                        <span
+                                                                            onClick={(e) => { e.stopPropagation(); handleRestoreCategory(cat.key); }}
+                                                                            style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(52,199,89,0.18)' }}
+                                                                        >
+                                                                            <FaUndo size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#34C759'} />
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span
+                                                                            onClick={(e) => { e.stopPropagation(); requestDeleteCategory(idx); }}
+                                                                            style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)' }}
+                                                                        >
+                                                                            <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
+                                                                        </span>
+                                                                    )}
                                                                 </span>
                                                             )}
                                                         </motion.div>
@@ -466,7 +490,8 @@ const AddHabitPanel = () => {
                                                                 color: filterCategory === cat.label[langIndex] ? '#FFF' : ui.text,
                                                                 fontSize: '13px', fontWeight: '700', transition: '0.2s all',
                                                                 boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none',
-                                                                display: 'flex', alignItems: 'center', gap: '8px'
+                                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                                opacity: cat.isDeleted ? 0.5 : 1
                                                             }}
                                                         >
                                                             <span style={{ display: 'inline-flex', alignItems: 'center' }}>
@@ -481,12 +506,21 @@ const AddHabitPanel = () => {
                                                                     >
                                                                         ✏️
                                                                     </span>
-                                                                    <span
-                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteCategoryByIndex(idx); }}
-                                                                        style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)' }}
-                                                                    >
-                                                                        <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
-                                                                    </span>
+                                                                    {cat.isDeleted ? (
+                                                                        <span
+                                                                            onClick={(e) => { e.stopPropagation(); handleRestoreCategory(cat.key); }}
+                                                                            style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(52,199,89,0.18)' }}
+                                                                        >
+                                                                            <FaUndo size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#34C759'} />
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span
+                                                                            onClick={(e) => { e.stopPropagation(); requestDeleteCategory(idx); }}
+                                                                            style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)' }}
+                                                                        >
+                                                                            <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
+                                                                        </span>
+                                                                    )}
                                                                 </span>
                                                             )}
                                                         </motion.div>

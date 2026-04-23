@@ -351,8 +351,8 @@ static getLastTrainingDayIndex() {
   static IsHabitInChoosenList(habitId){
     return this.choosenHabits.includes(habitId);
   }
-  static GetAllHabitCategories(langIndex) {
-    const defaults = DEFAULT_HABIT_CATEGORIES
+  static GetAllHabitCategories(langIndex, includeDeleted = false) {
+    const activeDefaults = DEFAULT_HABIT_CATEGORIES
       .filter((category) => !this.deletedDefaultHabitCategories.includes(category.key))
       .map((category) => {
         const override = this.habitCategoryOverrides[category.key] || {};
@@ -361,10 +361,27 @@ static getLastTrainingDayIndex() {
           ...override,
           key: category.key,
           label: override.label || category.label,
-          isDefault: true
+          isDefault: true,
+          isDeleted: false
         };
       });
-    return [...defaults, ...this.habitCustomCategories.map((category, index) => ({ ...category, isDefault: false, customIndex: index }))];
+    const custom = this.habitCustomCategories.map((category, index) => ({ ...category, isDefault: false, customIndex: index, isDeleted: false }));
+    const deletedDefaults = includeDeleted
+      ? DEFAULT_HABIT_CATEGORIES
+          .filter((category) => this.deletedDefaultHabitCategories.includes(category.key))
+          .map((category) => {
+            const override = this.habitCategoryOverrides[category.key] || {};
+            return {
+              ...category,
+              ...override,
+              key: category.key,
+              label: override.label || category.label,
+              isDefault: true,
+              isDeleted: true
+            };
+          })
+      : [];
+    return [...activeDefaults, ...custom, ...deletedDefaults];
   }
   static AddHabitCustomCategory(icon, labelRu, labelEn, isNegative = false) {
     const newCategory = { icon, label: [labelRu, labelEn], isNegative };
@@ -373,7 +390,7 @@ static getLastTrainingDayIndex() {
     return newCategory;
   }
   static RemoveHabitCustomCategory(index) {
-    const categories = this.GetAllHabitCategories(0);
+    const categories = this.GetAllHabitCategories(0, true);
     const category = categories[index];
     if (!category) return;
 
@@ -392,7 +409,7 @@ static getLastTrainingDayIndex() {
     }
   }
   static UpdateHabitCustomCategory(index, icon, labelRu, labelEn, isNegative) {
-    const categories = this.GetAllHabitCategories(0);
+    const categories = this.GetAllHabitCategories(0, true);
     const category = categories[index];
     if (!category) return;
 
@@ -409,7 +426,11 @@ static getLastTrainingDayIndex() {
     }
   }
   static GetHabitCustomCategory(index) {
-    return this.GetAllHabitCategories(0)[index] || null;
+    return this.GetAllHabitCategories(0, true)[index] || null;
+  }
+  static RestoreDefaultHabitCategory(key) {
+    this.deletedDefaultHabitCategories = this.deletedDefaultHabitCategories.filter((categoryKey) => categoryKey !== key);
+    saveData();
   }
 }
 
