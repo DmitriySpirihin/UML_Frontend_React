@@ -8,6 +8,13 @@ import { saveData } from "../StaticClasses/SaveHelper";
 import {exercises,programs} from "../Classes/TrainingData";
 
 const DEFAULT_PREFS = [1,0,1,0,0];
+const DEFAULT_HABIT_CATEGORIES = [
+  { key: 'health', icon: 'heart', label: ['Здоровье', 'Health'], isNegative: false },
+  { key: 'growth', icon: 'book', label: ['Развитие', 'Growth'], isNegative: false },
+  { key: 'productivity', icon: 'chart', label: ['Продуктивность', 'Productivity'], isNegative: false },
+  { key: 'relationships', icon: 'people', label: ['Отношения и отдых', 'Relationships & recreation'], isNegative: false },
+  { key: 'bad_habits', icon: 'ban', label: ['Отказ от вредного', 'Bad habits to quit'], isNegative: true }
+];
 
 export class AppData{
    static insightData = '';
@@ -19,6 +26,8 @@ export class AppData{
    static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
    //  habits
    static habitCustomCategories = []; // [{icon, label:[ru,en]}]
+   static habitCategoryOverrides = {};
+   static deletedDefaultHabitCategories = [];
    static CustomHabits = [];
    static choosenHabitsGoals = {};//{id:[{text:'',isDone:false}]}
    static choosenHabitsStartDates = [];
@@ -144,6 +153,8 @@ static infoMiniPanel = {
     this.todoList = data.todoList || [];
     this.todoCustomCategories = Array.isArray(data.todoCustomCategories) ? data.todoCustomCategories : [];
     this.habitCustomCategories = Array.isArray(data.habitCustomCategories) ? data.habitCustomCategories : [];
+    this.habitCategoryOverrides = data.habitCategoryOverrides && typeof data.habitCategoryOverrides === 'object' ? data.habitCategoryOverrides : {};
+    this.deletedDefaultHabitCategories = Array.isArray(data.deletedDefaultHabitCategories) ? data.deletedDefaultHabitCategories : [];
     this.sectionVisits = data.sectionVisits || { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
     this.todoFieldsVisibility = data.todoFieldsVisibility || { priority: true, difficulty: true, urgency: true };
     this.insightCache = data.insightCache || {};
@@ -341,14 +352,19 @@ static getLastTrainingDayIndex() {
     return this.choosenHabits.includes(habitId);
   }
   static GetAllHabitCategories(langIndex) {
-    const defaults = [
-      { icon: 'heart', label: ['Здоровье', 'Health'], isNegative: false },
-      { icon: 'book', label: ['Развитие', 'Growth'], isNegative: false },
-      { icon: 'chart', label: ['Продуктивность', 'Productivity'], isNegative: false },
-      { icon: 'people', label: ['Отношения и отдых', 'Relationships & recreation'], isNegative: false },
-      { icon: 'ban', label: ['Отказ от вредного', 'Bad habits to quit'], isNegative: true }
-    ];
-    return [...defaults, ...this.habitCustomCategories];
+    const defaults = DEFAULT_HABIT_CATEGORIES
+      .filter((category) => !this.deletedDefaultHabitCategories.includes(category.key))
+      .map((category) => {
+        const override = this.habitCategoryOverrides[category.key] || {};
+        return {
+          ...category,
+          ...override,
+          key: category.key,
+          label: override.label || category.label,
+          isDefault: true
+        };
+      });
+    return [...defaults, ...this.habitCustomCategories.map((category, index) => ({ ...category, isDefault: false, customIndex: index }))];
   }
   static AddHabitCustomCategory(icon, labelRu, labelEn, isNegative = false) {
     const newCategory = { icon, label: [labelRu, labelEn], isNegative };
@@ -357,22 +373,43 @@ static getLastTrainingDayIndex() {
     return newCategory;
   }
   static RemoveHabitCustomCategory(index) {
-    if (index >= 5 && index < this.habitCustomCategories.length + 5) {
-      this.habitCustomCategories.splice(index - 5, 1);
+    const categories = this.GetAllHabitCategories(0);
+    const category = categories[index];
+    if (!category) return;
+
+    if (category.isDefault) {
+      if (!this.deletedDefaultHabitCategories.includes(category.key)) {
+        this.deletedDefaultHabitCategories.push(category.key);
+      }
+      delete this.habitCategoryOverrides[category.key];
+      saveData();
+      return;
+    }
+
+    if (typeof category.customIndex === 'number' && category.customIndex >= 0 && category.customIndex < this.habitCustomCategories.length) {
+      this.habitCustomCategories.splice(category.customIndex, 1);
       saveData();
     }
   }
   static UpdateHabitCustomCategory(index, icon, labelRu, labelEn, isNegative) {
-    if (index >= 5 && index < this.habitCustomCategories.length + 5) {
-      this.habitCustomCategories[index - 5] = { icon, label: [labelRu, labelEn], isNegative };
+    const categories = this.GetAllHabitCategories(0);
+    const category = categories[index];
+    if (!category) return;
+
+    if (category.isDefault) {
+      this.deletedDefaultHabitCategories = this.deletedDefaultHabitCategories.filter((key) => key !== category.key);
+      this.habitCategoryOverrides[category.key] = { icon, label: [labelRu, labelEn], isNegative };
+      saveData();
+      return;
+    }
+
+    if (typeof category.customIndex === 'number' && category.customIndex >= 0 && category.customIndex < this.habitCustomCategories.length) {
+      this.habitCustomCategories[category.customIndex] = { icon, label: [labelRu, labelEn], isNegative };
       saveData();
     }
   }
   static GetHabitCustomCategory(index) {
-    if (index >= 5 && index < this.habitCustomCategories.length + 5) {
-      return this.habitCustomCategories[index - 5];
-    }
-    return null;
+    return this.GetAllHabitCategories(0)[index] || null;
   }
 }
 
@@ -551,6 +588,8 @@ export class Data{
     this.choosenHabitsGoals = AppData.choosenHabitsGoals;
     this.CustomHabits = AppData.CustomHabits;
     this.habitCustomCategories = AppData.habitCustomCategories;
+    this.habitCategoryOverrides = AppData.habitCategoryOverrides;
+    this.deletedDefaultHabitCategories = AppData.deletedDefaultHabitCategories;
     this.choosenHabitsDaysToForm = AppData.choosenHabitsDaysToForm;
     this.notify = AppData.notify;
     this.exercises = AppData.exercises;

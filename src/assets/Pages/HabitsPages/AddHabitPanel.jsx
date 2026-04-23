@@ -202,7 +202,7 @@ const AddHabitPanel = () => {
 
     const openEditCategory = (idx) => {
         const cat = allCategories[idx];
-        if (cat && idx >= 5) {
+        if (cat) {
             setEditingCategoryIndex(idx);
             setNewCategoryName(cat.label[0]);
             setNewCategoryNameEn(cat.label[1]);
@@ -379,7 +379,7 @@ const AddHabitPanel = () => {
                                                                 {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
                                                                 {cat.label[langIndex]}
                                                             </span>
-                                                            {idx >= 5 && (
+                                                            {cat && (
                                                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                                                     <span
                                                                         onClick={(e) => { e.stopPropagation(); openEditCategory(idx); }}
@@ -473,7 +473,7 @@ const AddHabitPanel = () => {
                                                                 {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
                                                                 {cat.label[langIndex]}
                                                             </span>
-                                                            {idx >= 5 && (
+                                                            {cat && (
                                                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                                                     <span
                                                                         onClick={(e) => { e.stopPropagation(); openEditCategory(idx); }}
