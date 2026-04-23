@@ -120,7 +120,10 @@ const AddHabitPanel = () => {
     const [newCategoryIsNegative, setNewCategoryIsNegative] = useState(false);
     const [iconSearchQuery, setIconSearchQuery] = useState('');
     const [categoriesVersion, setCategoriesVersion] = useState(0);
+    const [showDeletedCategories, setShowDeletedCategories] = useState(false);
     const allCategories = useMemo(() => AppData.GetAllHabitCategories(langIndex, true), [langIndex, categoriesVersion]);
+    const activeCategories = useMemo(() => allCategories.map((cat, idx) => ({ ...cat, _idx: idx })).filter(cat => !cat.isDeleted), [allCategories]);
+    const deletedCategories = useMemo(() => allCategories.map((cat, idx) => ({ ...cat, _idx: idx })).filter(cat => cat.isDeleted), [allCategories]);
     const [filterCategory, setFilterCategory] = useState(allCategories[0]?.label[langIndex] || 'Здоровье');
 
     const filteredIconKeys = useMemo(() => {
@@ -323,6 +326,7 @@ const AddHabitPanel = () => {
         AppData.RestoreDefaultHabitCategory(key);
         setCategoriesVersion(v => v + 1);
         setShowPopUpPanel(langIndex === 0 ? 'Категория восстановлена' : 'Category restored', 2000, true);
+        if (AppData.deletedDefaultHabitCategories.length === 0) setShowDeletedCategories(false);
     };
 
     const closePanel = () => {
@@ -373,11 +377,11 @@ const AddHabitPanel = () => {
 
                                         {!showCreatePanel ? (
                                             <>
-                                                {/* Фильтр категорий (Drum-style) */}
-                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '15px', paddingBottom: '5px', scrollbarWidth: 'none', flexWrap: 'nowrap' }}>
-                                                    {allCategories.map((cat, idx) => (
+                                                {/* Фильтр категорий */}
+                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '8px', paddingBottom: '5px', scrollbarWidth: 'none', flexWrap: 'nowrap' }}>
+                                                    {activeCategories.map((cat) => (
                                                         <motion.div
-                                                            key={idx} whileTap={{ scale: 0.95 }}
+                                                            key={cat._idx} whileTap={{ scale: 0.95 }}
                                                             onClick={() => selectCategory(cat)}
                                                             style={{
                                                                 padding: '10px 12px', borderRadius: '14px', whiteSpace: 'nowrap',
@@ -385,40 +389,19 @@ const AddHabitPanel = () => {
                                                                 color: filterCategory === cat.label[langIndex] ? '#FFF' : ui.text,
                                                                 fontSize: '13px', fontWeight: '700', transition: '0.2s all',
                                                                 boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none',
-                                                                cursor: 'pointer',
-                                                                display: 'flex', alignItems: 'center', gap: '8px',
-                                                                opacity: cat.isDeleted ? 0.5 : 1
+                                                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
                                                             }}
                                                         >
                                                             <span style={{ display: 'inline-flex', alignItems: 'center' }}>
                                                                 {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
                                                                 {cat.label[langIndex]}
                                                             </span>
-                                                            {cat && (
-                                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                                                    <span
-                                                                        onClick={(e) => { e.stopPropagation(); openEditCategory(idx); }}
-                                                                        style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' }}
-                                                                    >
-                                                                        ✏️
-                                                                    </span>
-                                                                    {cat.isDeleted ? (
-                                                                        <span
-                                                                            onClick={(e) => { e.stopPropagation(); handleRestoreCategory(cat.key); }}
-                                                                            style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(52,199,89,0.18)' }}
-                                                                        >
-                                                                            <FaUndo size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#34C759'} />
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span
-                                                                            onClick={(e) => { e.stopPropagation(); requestDeleteCategory(idx); }}
-                                                                            style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)' }}
-                                                                        >
-                                                                            <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
-                                                                        </span>
-                                                                    )}
+                                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                                <span onClick={(e) => { e.stopPropagation(); openEditCategory(cat._idx); }} style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)', cursor: 'pointer' }}>✏️</span>
+                                                                <span onClick={(e) => { e.stopPropagation(); requestDeleteCategory(cat._idx); }} style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)', cursor: 'pointer' }}>
+                                                                    <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
                                                                 </span>
-                                                            )}
+                                                            </span>
                                                         </motion.div>
                                                     ))}
                                                     {langIndex === 0 && (
@@ -428,6 +411,28 @@ const AddHabitPanel = () => {
                                                         </motion.div>
                                                     )}
                                                 </div>
+
+                                                {deletedCategories.length > 0 && (
+                                                    <div style={{ marginBottom: '10px' }}>
+                                                        <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowDeletedCategories(v => !v)}
+                                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '10px', backgroundColor: ui.card, cursor: 'pointer', marginBottom: showDeletedCategories ? '8px' : 0 }}>
+                                                            <FaUndo size={10} color={ui.sub} />
+                                                            <span style={{ color: ui.sub, fontSize: '12px', fontWeight: '700' }}>{langIndex === 0 ? 'Восстановить удалённые' : 'Restore deleted'}</span>
+                                                        </motion.div>
+                                                        {showDeletedCategories && (
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                                {deletedCategories.map((cat) => (
+                                                                    <motion.div key={cat._idx} whileTap={{ scale: 0.95 }} onClick={() => handleRestoreCategory(cat.key)}
+                                                                        style={{ padding: '8px 12px', borderRadius: '12px', backgroundColor: 'rgba(52,199,89,0.1)', border: '1px solid rgba(52,199,89,0.3)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                                                                        {Icons.getIcon(cat.icon, { size: 12 })}
+                                                                        <span style={{ color: ui.text, fontSize: '13px', fontWeight: '600' }}>{cat.label[langIndex]}</span>
+                                                                        <FaUndo size={10} color='#34C759' />
+                                                                    </motion.div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 <div style={{  borderRadius: '16px', display: 'flex', alignItems: 'center',justifyContent: 'space-between', padding: '0 15px', marginBottom: '15px', height: '50px' }}>
                                                     <FaSearch color={ui.sub} style={{marginRight:'15px',marginTop:'5px'}}/>
@@ -478,11 +483,11 @@ const AddHabitPanel = () => {
                                             </>
                                         ) : (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                                {/* Фильтр категорий (Drum-style) */}
-                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '15px', paddingBottom: '5px', scrollbarWidth: 'none', flexWrap: 'nowrap' }}>
-                                                    {allCategories.map((cat, idx) => (
+                                                {/* Фильтр категорий */}
+                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '0', paddingBottom: '5px', scrollbarWidth: 'none', flexWrap: 'nowrap' }}>
+                                                    {activeCategories.map((cat) => (
                                                         <motion.div
-                                                            key={idx} whileTap={{ scale: 0.95 }}
+                                                            key={cat._idx} whileTap={{ scale: 0.95 }}
                                                             onClick={() => selectCategory(cat)}
                                                             style={{
                                                                 padding: '10px 12px', borderRadius: '14px', whiteSpace: 'nowrap',
@@ -490,39 +495,19 @@ const AddHabitPanel = () => {
                                                                 color: filterCategory === cat.label[langIndex] ? '#FFF' : ui.text,
                                                                 fontSize: '13px', fontWeight: '700', transition: '0.2s all',
                                                                 boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none',
-                                                                display: 'flex', alignItems: 'center', gap: '8px',
-                                                                opacity: cat.isDeleted ? 0.5 : 1
+                                                                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
                                                             }}
                                                         >
                                                             <span style={{ display: 'inline-flex', alignItems: 'center' }}>
                                                                 {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
                                                                 {cat.label[langIndex]}
                                                             </span>
-                                                            {cat && (
-                                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                                                    <span
-                                                                        onClick={(e) => { e.stopPropagation(); openEditCategory(idx); }}
-                                                                        style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' }}
-                                                                    >
-                                                                        ✏️
-                                                                    </span>
-                                                                    {cat.isDeleted ? (
-                                                                        <span
-                                                                            onClick={(e) => { e.stopPropagation(); handleRestoreCategory(cat.key); }}
-                                                                            style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(52,199,89,0.18)' }}
-                                                                        >
-                                                                            <FaUndo size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#34C759'} />
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span
-                                                                            onClick={(e) => { e.stopPropagation(); requestDeleteCategory(idx); }}
-                                                                            style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)' }}
-                                                                        >
-                                                                            <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
-                                                                        </span>
-                                                                    )}
+                                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                                <span onClick={(e) => { e.stopPropagation(); openEditCategory(cat._idx); }} style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)', cursor: 'pointer' }}>✏️</span>
+                                                                <span onClick={(e) => { e.stopPropagation(); requestDeleteCategory(cat._idx); }} style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)', cursor: 'pointer' }}>
+                                                                    <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
                                                                 </span>
-                                                            )}
+                                                            </span>
                                                         </motion.div>
                                                     ))}
                                                     {langIndex === 0 && (
@@ -532,6 +517,28 @@ const AddHabitPanel = () => {
                                                         </motion.div>
                                                     )}
                                                 </div>
+
+                                                {deletedCategories.length > 0 && (
+                                                    <div>
+                                                        <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowDeletedCategories(v => !v)}
+                                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '10px', backgroundColor: ui.card, cursor: 'pointer', marginBottom: showDeletedCategories ? '8px' : 0 }}>
+                                                            <FaUndo size={10} color={ui.sub} />
+                                                            <span style={{ color: ui.sub, fontSize: '12px', fontWeight: '700' }}>{langIndex === 0 ? 'Восстановить удалённые' : 'Restore deleted'}</span>
+                                                        </motion.div>
+                                                        {showDeletedCategories && (
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                                                {deletedCategories.map((cat) => (
+                                                                    <motion.div key={cat._idx} whileTap={{ scale: 0.95 }} onClick={() => handleRestoreCategory(cat.key)}
+                                                                        style={{ padding: '8px 12px', borderRadius: '12px', backgroundColor: 'rgba(52,199,89,0.1)', border: '1px solid rgba(52,199,89,0.3)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                                                                        {Icons.getIcon(cat.icon, { size: 12 })}
+                                                                        <span style={{ color: ui.text, fontSize: '13px', fontWeight: '600' }}>{cat.label[langIndex]}</span>
+                                                                        <FaUndo size={10} color='#34C759' />
+                                                                    </motion.div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 <input
                                                     type="text" 
