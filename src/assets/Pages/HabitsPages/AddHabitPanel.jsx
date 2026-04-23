@@ -322,11 +322,12 @@ const AddHabitPanel = () => {
         );
     };
 
-    const handleRestoreCategory = (key) => {
-        AppData.RestoreDefaultHabitCategory(key);
+    const handleRestoreCategory = (cat) => {
+        if (cat.isDefault) AppData.RestoreDefaultHabitCategory(cat.key);
+        else AppData.RestoreCustomHabitCategory(cat.customIndex);
         setCategoriesVersion(v => v + 1);
         setShowPopUpPanel(langIndex === 0 ? 'Категория восстановлена' : 'Category restored', 2000, true);
-        if (AppData.deletedDefaultHabitCategories.length === 0) setShowDeletedCategories(false);
+        if (AppData.deletedDefaultHabitCategories.length === 0 && !AppData.habitCustomCategories.some(c => c.isDeleted)) setShowDeletedCategories(false);
     };
 
     const closePanel = () => {
@@ -422,7 +423,7 @@ const AddHabitPanel = () => {
                                                         {showDeletedCategories && (
                                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                                                 {deletedCategories.map((cat) => (
-                                                                    <motion.div key={cat._idx} whileTap={{ scale: 0.95 }} onClick={() => handleRestoreCategory(cat.key)}
+                                                                    <motion.div key={cat._idx} whileTap={{ scale: 0.95 }} onClick={() => handleRestoreCategory(cat)}
                                                                         style={{ padding: '8px 12px', borderRadius: '12px', backgroundColor: 'rgba(52,199,89,0.1)', border: '1px solid rgba(52,199,89,0.3)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                                                                         {Icons.getIcon(cat.icon, { size: 12 })}
                                                                         <span style={{ color: ui.text, fontSize: '13px', fontWeight: '600' }}>{cat.label[langIndex]}</span>
@@ -528,7 +529,7 @@ const AddHabitPanel = () => {
                                                         {showDeletedCategories && (
                                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                                                 {deletedCategories.map((cat) => (
-                                                                    <motion.div key={cat._idx} whileTap={{ scale: 0.95 }} onClick={() => handleRestoreCategory(cat.key)}
+                                                                    <motion.div key={cat._idx} whileTap={{ scale: 0.95 }} onClick={() => handleRestoreCategory(cat)}
                                                                         style={{ padding: '8px 12px', borderRadius: '12px', backgroundColor: 'rgba(52,199,89,0.1)', border: '1px solid rgba(52,199,89,0.3)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
                                                                         {Icons.getIcon(cat.icon, { size: 12 })}
                                                                         <span style={{ color: ui.text, fontSize: '13px', fontWeight: '600' }}>{cat.label[langIndex]}</span>

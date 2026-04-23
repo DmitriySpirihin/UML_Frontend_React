@@ -365,7 +365,7 @@ static getLastTrainingDayIndex() {
           isDeleted: false
         };
       });
-    const custom = this.habitCustomCategories.map((category, index) => ({ ...category, isDefault: false, customIndex: index, isDeleted: false }));
+    const custom = this.habitCustomCategories.map((category, index) => ({ ...category, isDefault: false, customIndex: index, isDeleted: category.isDeleted === true })).filter(cat => includeDeleted || !cat.isDeleted);
     const deletedDefaults = includeDeleted
       ? DEFAULT_HABIT_CATEGORIES
           .filter((category) => this.deletedDefaultHabitCategories.includes(category.key))
@@ -404,7 +404,13 @@ static getLastTrainingDayIndex() {
     }
 
     if (typeof category.customIndex === 'number' && category.customIndex >= 0 && category.customIndex < this.habitCustomCategories.length) {
-      this.habitCustomCategories.splice(category.customIndex, 1);
+      this.habitCustomCategories[category.customIndex].isDeleted = true;
+      saveData();
+    }
+  }
+  static RestoreCustomHabitCategory(customIndex) {
+    if (typeof customIndex === 'number' && customIndex >= 0 && customIndex < this.habitCustomCategories.length) {
+      this.habitCustomCategories[customIndex].isDeleted = false;
       saveData();
     }
   }
