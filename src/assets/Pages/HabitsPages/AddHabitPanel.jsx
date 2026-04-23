@@ -22,6 +22,71 @@ const getAllHabits = () => {
     );
 }
 
+const iconSearchAliases = {
+    default: ['default', 'обычно', 'дефолт', 'смайл', 'улыбка'],
+    star: ['star', 'звезда', 'звёзды', 'избранное'],
+    clock: ['clock', 'time', 'часы', 'время', 'таймер'],
+    calendar: ['calendar', 'date', 'календарь', 'дата'],
+    search: ['search', 'find', 'поиск', 'лупа'],
+    settings: ['settings', 'gear', 'настройки', 'шестеренка'],
+    gift: ['gift', 'present', 'подарок'],
+    health: ['health', 'здоровье'],
+    meditation: ['meditation', 'медитация'],
+    workout: ['workout', 'gym', 'тренировка', 'зал'],
+    running: ['running', 'run', 'бег'],
+    exercise: ['exercise', 'упражнение'],
+    yoga: ['yoga', 'йога'],
+    walking: ['walking', 'walk', 'ходьба', 'прогулка'],
+    pulse: ['pulse', 'heart', 'пульс', 'сердце'],
+    pill: ['pill', 'medicine', 'таблетка', 'лекарство'],
+    sleep: ['sleep', 'сон'],
+    bedtime: ['bedtime', 'ночь', 'луна'],
+    wakeup: ['wakeup', 'утро', 'подъем', 'рассвет'],
+    zzz: ['zzz', 'sleepy', 'сонный', 'спать'],
+    food: ['food', 'еда'],
+    meal: ['meal', 'блюдо', 'прием пищи'],
+    cooking: ['cooking', 'cook', 'готовка'],
+    water: ['water', 'вода'],
+    coffee: ['coffee', 'кофе'],
+    tea: ['tea', 'чай'],
+    reading: ['reading', 'book', 'чтение', 'книга'],
+    learning: ['learning', 'study', 'обучение', 'учеба'],
+    journaling: ['journaling', 'diary', 'дневник'],
+    planning: ['planning', 'plan', 'планирование', 'план'],
+    goals: ['goals', 'goal', 'цель', 'цели'],
+    idea: ['idea', 'идея'],
+    success: ['success', 'успех', 'награда'],
+    work: ['work', 'job', 'работа'],
+    study: ['study', 'учеба'],
+    school: ['school', 'школа'],
+    hobby: ['hobby', 'хобби'],
+    music: ['music', 'музыка'],
+    movies: ['movies', 'movie', 'фильм', 'кино'],
+    games: ['games', 'game', 'игры', 'игра'],
+    art: ['art', 'творчество'],
+    writing: ['writing', 'писать', 'письмо'],
+    photography: ['photography', 'camera', 'фото', 'камера'],
+    family: ['family', 'семья'],
+    friends: ['friends', 'друзья'],
+    social: ['social', 'общение', 'соцсети'],
+    gratitude: ['gratitude', 'благодарность'],
+    money: ['money', 'деньги'],
+    budget: ['budget', 'бюджет'],
+    investment: ['investment', 'инвестиции'],
+    home: ['home', 'дом'],
+    cleaning: ['cleaning', 'уборка'],
+    grocery: ['grocery', 'покупки', 'магазин'],
+    garden: ['garden', 'сад'],
+    english: ['english', 'английский'],
+    russian: ['russian', 'русский'],
+    forbidden: ['forbidden', 'ban', 'запрет'],
+    noSmoking: ['nosmoking', 'smoking', 'курение', 'сигарета'],
+    noAlcohol: ['noalcohol', 'alcohol', 'алкоголь'],
+    noMobile: ['nomobile', 'phone', 'телефон', 'гаджет'],
+    warning: ['warning', 'опасность', 'внимание'],
+    fail: ['fail', 'cross', 'крест', 'ошибка'],
+};
+
 const AddHabitPanel = () => {
     const [theme, setTheme] = useState(theme$.value);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
@@ -45,7 +110,7 @@ const AddHabitPanel = () => {
     const [isNegative, setIsNegative] = useState(false);
     const [daysToForm, setDaysToForm] = useState(66);
 
-    const [habitList, setHabitList] = useState(getAllHabits());
+    const [habitSearchQuery, setHabitSearchQuery] = useState('');
     const [selectIconPanel, setSelectIconPanel] = useState(false);
     const [selectCategoryPanel, setSelectCategoryPanel] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
@@ -54,14 +119,18 @@ const AddHabitPanel = () => {
     const [editingCategoryIndex, setEditingCategoryIndex] = useState(null);
     const [newCategoryIsNegative, setNewCategoryIsNegative] = useState(false);
     const [iconSearchQuery, setIconSearchQuery] = useState('');
-    const allCategories = useMemo(() => AppData.GetAllHabitCategories(langIndex), [langIndex]);
+    const [categoriesVersion, setCategoriesVersion] = useState(0);
+    const allCategories = useMemo(() => AppData.GetAllHabitCategories(langIndex), [langIndex, categoriesVersion]);
     const [filterCategory, setFilterCategory] = useState(allCategories[0]?.label[langIndex] || 'Здоровье');
 
     const filteredIconKeys = useMemo(() => {
         const allIcons = Object.keys(Icons.ic);
         if (!iconSearchQuery.trim()) return allIcons;
         const query = iconSearchQuery.toLowerCase();
-        return allIcons.filter(key => key.toLowerCase().includes(query));
+        return allIcons.filter((key) => {
+            const aliases = iconSearchAliases[key] || [];
+            return key.toLowerCase().includes(query) || aliases.some(alias => alias.toLowerCase().includes(query));
+        });
     }, [iconSearchQuery]);
 
     const isLight = theme === 'light' || theme === 'speciallight';
@@ -84,9 +153,14 @@ const AddHabitPanel = () => {
 
     // --- 1. PREPARE DATA FOR SCROLL PICKER ---
     const filteredHabits = useMemo(() => {
-        const targetCategory = langIndex === 0 ? filterCategory : getCategory(filterCategory)[1];
-        return habitList.filter(h => !AppData.choosenHabits.includes(h.id) && h.category[langIndex] === targetCategory);
-    }, [habitList, filterCategory, langIndex]);
+        const query = habitSearchQuery.trim().toLowerCase();
+        return getAllHabits().filter((habit) => {
+            if (AppData.choosenHabits.includes(habit.id)) return false;
+            if (habit.category[langIndex] !== filterCategory) return false;
+            if (!query) return true;
+            return habit.name.some(name => name.toLowerCase().includes(query));
+        });
+    }, [filterCategory, langIndex, habitSearchQuery, categoriesVersion]);
 
     const pickerItems = useMemo(() => {
         return filteredHabits.map(h => h.name[langIndex]);
@@ -123,7 +197,7 @@ const AddHabitPanel = () => {
                handlePickerChange(filteredHabits[0].name[langIndex]);
             }
         }
-    }, [filterCategory, habitList]);
+    }, [filterCategory, filteredHabits, habitId, langIndex, showCreatePanel]);
 
 
     const openEditCategory = (idx) => {
@@ -138,12 +212,103 @@ const AddHabitPanel = () => {
         }
     };
 
+    const selectCategory = (cat) => {
+        setFilterCategory(cat.label[langIndex]);
+        setHabitCategory(cat.label[0]);
+        setIsNegative(cat.isNegative || false);
+    };
+
+    const openCreatePanelFromSearch = () => {
+        const selectedCat = allCategories.find(c => c.label[langIndex] === filterCategory);
+        setshowCreatePanel(true);
+        setHabitName(habitSearchQuery.trim());
+        setHabitDescription('');
+        setHabitIcon('default');
+        setGoals([]);
+        setGoalName('');
+        setHabitCategory(selectedCat?.label?.[0] || 'Здоровье');
+        setIsNegative(selectedCat?.isNegative || false);
+        setDaysToForm(selectedCat?.isNegative ? 120 : 66);
+        setHabitId(-1);
+    };
+
     const handleSave = () => {
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         const finalGoals = goals.map(g => ({ text: g, isDone: false }));
         if (showCreatePanel) createHabit(habitName, getCategory(habitCategory), habitDescription, habitIcon, dateStr, finalGoals, isNegative, daysToForm);
         else addHabit(habitId, habitName, false, dateStr, finalGoals, isNegative, daysToForm);
         closePanel();
+    };
+
+    const resetCategoryForm = () => {
+        setNewCategoryName('');
+        setNewCategoryNameEn('');
+        setNewCategoryIcon('star');
+        setNewCategoryIsNegative(false);
+        setEditingCategoryIndex(null);
+        setIconSearchQuery('');
+    };
+
+    const handleSaveCategory = () => {
+        if (newCategoryName.trim().length <= 0) {
+            setShowPopUpPanel(langIndex === 0 ? 'Введите название' : 'Enter name', 2000, false);
+            return;
+        }
+
+        const prevLabel = editingCategoryIndex !== null ? allCategories[editingCategoryIndex]?.label : null;
+        const labelRu = langIndex === 0 ? newCategoryName.trim() : (newCategoryNameEn.trim() || newCategoryName.trim());
+        const labelEn = (langIndex === 1 ? newCategoryName.trim() : newCategoryNameEn.trim()) || labelRu;
+
+        if (editingCategoryIndex !== null) {
+            AppData.UpdateHabitCustomCategory(editingCategoryIndex, newCategoryIcon, labelRu, labelEn, newCategoryIsNegative);
+            setShowPopUpPanel(langIndex === 0 ? 'Категория обновлена' : 'Category updated', 2000, true);
+        } else {
+            AppData.AddHabitCustomCategory(newCategoryIcon, labelRu, labelEn, newCategoryIsNegative);
+            setShowPopUpPanel(langIndex === 0 ? 'Категория создана' : 'Category created', 2000, true);
+        }
+
+        setCategoriesVersion(v => v + 1);
+
+        if (!prevLabel || filterCategory === prevLabel[langIndex]) {
+            setFilterCategory(langIndex === 0 ? labelRu : labelEn);
+        }
+
+        setHabitCategory(labelRu);
+        setIsNegative(newCategoryIsNegative);
+        resetCategoryForm();
+        setSelectCategoryPanel(false);
+    };
+
+    const handleDeleteCategory = () => {
+        if (editingCategoryIndex === null) return;
+
+        const deletedCategory = allCategories[editingCategoryIndex];
+        AppData.RemoveHabitCustomCategory(editingCategoryIndex);
+        setCategoriesVersion(v => v + 1);
+
+        if (deletedCategory && filterCategory === deletedCategory.label[langIndex]) {
+            setFilterCategory(langIndex === 0 ? 'Здоровье' : 'Health');
+            setHabitCategory('Здоровье');
+            setIsNegative(false);
+        }
+
+        setShowPopUpPanel(langIndex === 0 ? 'Категория удалена' : 'Category deleted', 2000, true);
+        resetCategoryForm();
+        setSelectCategoryPanel(false);
+    };
+
+    const handleDeleteCategoryByIndex = (index) => {
+        const deletedCategory = allCategories[index];
+        AppData.RemoveHabitCustomCategory(index);
+        setCategoriesVersion(v => v + 1);
+
+        if (deletedCategory && filterCategory === deletedCategory.label[langIndex]) {
+            setFilterCategory(langIndex === 0 ? 'Здоровье' : 'Health');
+            setHabitCategory('Здоровье');
+            setIsNegative(false);
+        }
+
+        setShowPopUpPanel(langIndex === 0 ? 'Категория удалена' : 'Category deleted', 2000, true);
     };
 
     const closePanel = () => {
@@ -199,20 +364,37 @@ const AddHabitPanel = () => {
                                                     {allCategories.map((cat, idx) => (
                                                         <motion.div
                                                             key={idx} whileTap={{ scale: 0.95 }}
-                                                            onClick={() => {setFilterCategory(cat.label[langIndex]);setHabitCategory(cat.label[0]);}}
-                                                            onLongPress={() => idx >= 5 && openEditCategory(idx)}
-                                                            whileLongPress={{ scale: 0.95 }}
+                                                            onClick={() => selectCategory(cat)}
                                                             style={{
-                                                                padding: '10px 18px', borderRadius: '14px', whiteSpace: 'nowrap',
+                                                                padding: '10px 12px', borderRadius: '14px', whiteSpace: 'nowrap',
                                                                 backgroundColor: filterCategory === cat.label[langIndex] ? ui.accent : ui.card,
                                                                 color: filterCategory === cat.label[langIndex] ? '#FFF' : ui.text,
                                                                 fontSize: '13px', fontWeight: '700', transition: '0.2s all',
                                                                 boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none',
-                                                                cursor: idx >= 5 ? 'pointer' : 'default'
+                                                                cursor: 'pointer',
+                                                                display: 'flex', alignItems: 'center', gap: '8px'
                                                             }}
                                                         >
-                                                            {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
-                                                            {cat.label[langIndex]}
+                                                            <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                                                {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
+                                                                {cat.label[langIndex]}
+                                                            </span>
+                                                            {idx >= 5 && (
+                                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span
+                                                                        onClick={(e) => { e.stopPropagation(); openEditCategory(idx); }}
+                                                                        style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' }}
+                                                                    >
+                                                                        ✏️
+                                                                    </span>
+                                                                    <span
+                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteCategoryByIndex(idx); }}
+                                                                        style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)' }}
+                                                                    >
+                                                                        <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
+                                                                    </span>
+                                                                </span>
+                                                            )}
                                                         </motion.div>
                                                     ))}
                                                     {langIndex === 0 && (
@@ -229,8 +411,8 @@ const AddHabitPanel = () => {
                                                         <input 
                                                                                         type="text" 
                                                                                         placeholder={langIndex === 0 ? 'поиск' : 'search'}
-                                                                                     
-                                                                                         onChange={(e) => searchHabitsList(e.target.value, habitList, setHabitList)}
+                                                                                        value={habitSearchQuery}
+                                                                                         onChange={(e) => setHabitSearchQuery(e.target.value)}
                                                                                         style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
                                                                                         />
                                                 </div>
@@ -253,8 +435,19 @@ const AddHabitPanel = () => {
                                                             visibleItems={8}
                                                         />
                                                     ) : (
-                                                        <div style={{color: ui.sub, fontSize:'14px'}}>
-                                                            {langIndex === 0 ? 'Нет привычек' : 'No habits found'}
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '20px', textAlign: 'center' }}>
+                                                            <div style={{color: ui.sub, fontSize:'14px'}}>
+                                                                {langIndex === 0 ? 'Нет привычек' : 'No habits found'}
+                                                            </div>
+                                                            {habitSearchQuery.trim().length > 0 && (
+                                                                <motion.div
+                                                                    whileTap={{ scale: 0.96 }}
+                                                                    onClick={openCreatePanelFromSearch}
+                                                                    style={{ padding: '12px 16px', borderRadius: '14px', backgroundColor: ui.accent, color: '#FFF', fontWeight: '700', cursor: 'pointer' }}
+                                                                >
+                                                                    {langIndex === 0 ? `Создать привычку "${habitSearchQuery.trim()}"` : `Create habit "${habitSearchQuery.trim()}"`}
+                                                                </motion.div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -266,17 +459,36 @@ const AddHabitPanel = () => {
                                                     {allCategories.map((cat, idx) => (
                                                         <motion.div
                                                             key={idx} whileTap={{ scale: 0.95 }}
-                                                            onClick={() => {setFilterCategory(cat.label[langIndex]);setHabitCategory(cat.label[0]);}}
+                                                            onClick={() => selectCategory(cat)}
                                                             style={{
-                                                                padding: '10px 18px', borderRadius: '14px', whiteSpace: 'nowrap',
+                                                                padding: '10px 12px', borderRadius: '14px', whiteSpace: 'nowrap',
                                                                 backgroundColor: filterCategory === cat.label[langIndex] ? ui.accent : ui.card,
                                                                 color: filterCategory === cat.label[langIndex] ? '#FFF' : ui.text,
                                                                 fontSize: '13px', fontWeight: '700', transition: '0.2s all',
-                                                                boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none'
+                                                                boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none',
+                                                                display: 'flex', alignItems: 'center', gap: '8px'
                                                             }}
                                                         >
-                                                            {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
-                                                            {cat.label[langIndex]}
+                                                            <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                                                {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
+                                                                {cat.label[langIndex]}
+                                                            </span>
+                                                            {idx >= 5 && (
+                                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span
+                                                                        onClick={(e) => { e.stopPropagation(); openEditCategory(idx); }}
+                                                                        style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)' }}
+                                                                    >
+                                                                        ✏️
+                                                                    </span>
+                                                                    <span
+                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteCategoryByIndex(idx); }}
+                                                                        style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)' }}
+                                                                    >
+                                                                        <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
+                                                                    </span>
+                                                                </span>
+                                                            )}
                                                         </motion.div>
                                                     ))}
                                                     {langIndex === 0 && (
@@ -402,8 +614,20 @@ const AddHabitPanel = () => {
                                             <MdClose color={ui.sub} />
                                         </motion.div>
                                     </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', borderRadius: '10px', padding: '0 25px 12px', gap: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', borderRadius: '10px', padding: '0 10px', backgroundColor: ui.card, width: '100%' }}>
+                                            <FaSearch color={ui.sub} style={{ marginRight: '8px' }} />
+                                            <input
+                                                type="text"
+                                                placeholder={langIndex === 0 ? 'Поиск иконки...' : 'Search icon...'}
+                                                value={iconSearchQuery}
+                                                onChange={(e) => setIconSearchQuery(e.target.value)}
+                                                style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '14px', color: ui.text, padding: '10px 0', outline: 'none' }}
+                                            />
+                                        </div>
+                                    </div>
                                     <div style={iconGrid}>
-                                        {Object.keys(Icons.ic).map(key => (
+                                        {filteredIconKeys.map(key => (
                                             <motion.div
                                                 key={key} whileTap={{ scale: 0.9 }}
                                                 onClick={() => { setHabitIcon(key); setSelectIconPanel(false); }}
@@ -601,13 +825,6 @@ const createHabit = (name, category, description, icon, dateString, goals, isNeg
     setTimeout(() => { addHabit(habitId, name, true, dateString, goals, category[0] === 'Отказ от вредного', daysToForm); }, 100);
 }
 
-const searchHabitsList = (val, habitList, setHabitList) => {
-    if (val.length > 0) {
-        const newList = getAllHabits().filter((habit) => habit.name[AppData.prefs[0]].toLowerCase().startsWith(val.toLowerCase()));
-        setHabitList(newList);
-    } else { setHabitList(getAllHabits()); }
-}
-
 const translateToEnglish = (ruText) => {
     const translations = {
         'здоровье': 'Health', 'развитие': 'Growth', 'продуктивность': 'Productivity',
@@ -647,42 +864,6 @@ const translateToRussian = (enText) => {
         result = result.replace(regex, ru);
     });
     return result;
-};
-
-const resetCategoryForm = () => {
-    setNewCategoryName('');
-    setNewCategoryNameEn('');
-    setNewCategoryIcon('star');
-    setNewCategoryIsNegative(false);
-    setEditingCategoryIndex(null);
-    setIconSearchQuery('');
-};
-
-const handleSaveCategory = () => {
-    if (newCategoryName.trim().length > 0) {
-        const labelRu = langIndex === 0 ? newCategoryName.trim() : (newCategoryNameEn.trim() || newCategoryName.trim());
-        const labelEn = langIndex === 1 ? newCategoryName.trim() : newCategoryNameEn.trim();
-        if (editingCategoryIndex !== null) {
-            AppData.UpdateHabitCustomCategory(editingCategoryIndex, newCategoryIcon, labelRu, labelEn, newCategoryIsNegative);
-            setShowPopUpPanel(langIndex === 0 ? 'Категория обновлена' : 'Category updated', 2000, true);
-        } else {
-            AppData.AddHabitCustomCategory(newCategoryIcon, labelRu, labelEn, newCategoryIsNegative);
-            setShowPopUpPanel(langIndex === 0 ? 'Категория создана' : 'Category created', 2000, true);
-        }
-        resetCategoryForm();
-        setSelectCategoryPanel(false);
-    } else {
-        setShowPopUpPanel(langIndex === 0 ? 'Введите название' : 'Enter name', 2000, false);
-    }
-};
-
-const handleDeleteCategory = () => {
-    if (editingCategoryIndex !== null) {
-        AppData.RemoveHabitCustomCategory(editingCategoryIndex);
-        setShowPopUpPanel(langIndex === 0 ? 'Категория удалена' : 'Category deleted', 2000, true);
-        resetCategoryForm();
-        setSelectCategoryPanel(false);
-    }
 };
 
 const setGoalForDefault = (habitName,langIndex) => {
