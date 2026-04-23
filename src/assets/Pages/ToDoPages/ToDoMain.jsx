@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
+import { logSectionVisit } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, setAddPanel, selectedTodo$, setPage } from '../../StaticClasses/HabitsBus';
 import { todoEvents$, togglePinned, togglePending, toggleHidden } from './ToDoHelper.js';
@@ -82,6 +83,8 @@ const ToDoMain = () => {
             sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe();
         };
     }, []);
+
+    useEffect(() => { logSectionVisit('todo'); }, []);
    
     // --- CRITICAL: Enhanced sorting/filtering logic with pinned/hidden/pending handling ---
     useEffect(() => {

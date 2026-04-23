@@ -7,15 +7,18 @@ import { getAchievements } from "../Helpers/Achievements";
 import { saveData } from "../StaticClasses/SaveHelper";
 import {exercises,programs} from "../Classes/TrainingData";
 
+const DEFAULT_PREFS = [1,0,1,0,0];
+
 export class AppData{
    static insightData = '';
    // Format: { [category]: { text: "...", date: "2023-10-27" } }
    static insightCache = {};
    static lastSave = new Date().toISOString();
    static isFirstStart = true;
-   static prefs = [1,0,0,0,0]; //language, theme, sound, vibro,font size main 16,14 sub 14,12
+   static prefs = [...DEFAULT_PREFS]; // language, theme, sound, vibro, font size
    static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
-   //  habits 
+   //  habits
+   static habitCustomCategories = []; // [{icon, label:[ru,en]}]
    static CustomHabits = [];
    static choosenHabitsGoals = {};//{id:[{text:'',isDone:false}]}
    static choosenHabitsStartDates = [];
@@ -51,7 +54,7 @@ export class AppData{
   static sleepingLog = {};
   static todoList = [];
   static todoCustomCategories = []; // [{icon, label:[ru,en]}]
-  static todoFieldsVisibility = { priority: true, difficulty: true, urgency: true };
+  static sectionVisits = { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
   static menuCardsStates =
 {
   "MainCard": {
@@ -98,7 +101,11 @@ static infoMiniPanel = {
     //console.log(JSON.stringify(data));  //log for tests
     this.lastSave = data.lastSave;
     this.isFirstStart = data.isFirstStart;
-    if(this.isFirstStart === false)this.prefs = data.prefs;
+    if (this.isFirstStart === false) {
+      this.prefs = Array.isArray(data.prefs)
+        ? DEFAULT_PREFS.map((defaultValue, index) => data.prefs[index] ?? defaultValue)
+        : [...DEFAULT_PREFS];
+    }
     else this.isFirstStart = false;
     setLang(this.prefs[0] === 0 ? 'ru' : 'en');
     setTheme(this.prefs[1]  === 0 ? THEME.DARK : THEME.LIGHT );
@@ -136,8 +143,11 @@ static infoMiniPanel = {
     this.sleepingLog = data.sleepingLog;
     this.todoList = data.todoList || [];
     this.todoCustomCategories = Array.isArray(data.todoCustomCategories) ? data.todoCustomCategories : [];
+    this.habitCustomCategories = Array.isArray(data.habitCustomCategories) ? data.habitCustomCategories : [];
+    this.sectionVisits = data.sectionVisits || { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
     this.todoFieldsVisibility = data.todoFieldsVisibility || { priority: true, difficulty: true, urgency: true };
     this.insightCache = data.insightCache || {};
+    this.sectionVisits = data.sectionVisits || { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
     this.menuCardsStates = data.menuCardsStates ||
 {
   "MainCard": {
@@ -330,7 +340,40 @@ static getLastTrainingDayIndex() {
   static IsHabitInChoosenList(habitId){
     return this.choosenHabits.includes(habitId);
   }
-  
+  static GetAllHabitCategories(langIndex) {
+    const defaults = [
+      { icon: 'heart', label: ['Здоровье', 'Health'], isNegative: false },
+      { icon: 'book', label: ['Развитие', 'Growth'], isNegative: false },
+      { icon: 'chart', label: ['Продуктивность', 'Productivity'], isNegative: false },
+      { icon: 'people', label: ['Отношения и отдых', 'Relationships & recreation'], isNegative: false },
+      { icon: 'ban', label: ['Отказ от вредного', 'Bad habits to quit'], isNegative: true }
+    ];
+    return [...defaults, ...this.habitCustomCategories];
+  }
+  static AddHabitCustomCategory(icon, labelRu, labelEn, isNegative = false) {
+    const newCategory = { icon, label: [labelRu, labelEn], isNegative };
+    this.habitCustomCategories.push(newCategory);
+    saveData();
+    return newCategory;
+  }
+  static RemoveHabitCustomCategory(index) {
+    if (index >= 5 && index < this.habitCustomCategories.length + 5) {
+      this.habitCustomCategories.splice(index - 5, 1);
+      saveData();
+    }
+  }
+  static UpdateHabitCustomCategory(index, icon, labelRu, labelEn, isNegative) {
+    if (index >= 5 && index < this.habitCustomCategories.length + 5) {
+      this.habitCustomCategories[index - 5] = { icon, label: [labelRu, labelEn], isNegative };
+      saveData();
+    }
+  }
+  static GetHabitCustomCategory(index) {
+    if (index >= 5 && index < this.habitCustomCategories.length + 5) {
+      return this.habitCustomCategories[index - 5];
+    }
+    return null;
+  }
 }
 
 export const fillEmptyDays = () => {
@@ -388,6 +431,92 @@ export const fillEmptyDays = () => {
 }
 
 
+export const logSectionVisit = async (sectionId) => {
+  const today = new Date().toISOString().split('T')[0];
+  if (!AppData.sectionVisits[sectionId]) {
+    AppData.sectionVisits[sectionId] = [];
+  }
+  if (!AppData.sectionVisits[sectionId].includes(today)) {
+    AppData.sectionVisits[sectionId].push(today);
+    await saveData();
+  }
+};
+
+export const getSectionStreak = (sectionId) => {
+  // Collect all dates from section visits
+  const visitDates = new Set(AppData.sectionVisits[sectionId] || []);
+
+  // Collect dates from activity logs based on section
+  switch (sectionId) {
+    case 'habits': {
+      Object.keys(AppData.habitsByDate).forEach(date => {
+        const habitsOnDate = AppData.habitsByDate[date];
+        if (habitsOnDate) {
+          const hasActivity = Object.values(habitsOnDate).some(status => status > 0);
+          if (hasActivity) visitDates.add(date);
+        }
+      });
+      break;
+    }
+    case 'todo': {
+      AppData.todoList.forEach(task => {
+        if (task.completedAt) visitDates.add(task.completedAt.split('T')[0]);
+      });
+      break;
+    }
+    case 'mental': {
+      Object.keys(AppData.mentalLog).forEach(date => visitDates.add(date));
+      break;
+    }
+    case 'recovery': {
+      ['breathingLog', 'meditationLog', 'hardeningLog'].forEach(logKey => {
+        const log = AppData[logKey];
+        if (log) Object.keys(log).forEach(date => visitDates.add(date));
+      });
+      break;
+    }
+    case 'training': {
+      Object.keys(AppData.trainingLog).forEach(date => visitDates.add(date));
+      break;
+    }
+    case 'sleep': {
+      Object.keys(AppData.sleepingLog).forEach(date => visitDates.add(date));
+      break;
+    }
+    default:
+      break;
+  }
+
+  if (visitDates.size === 0) return 0;
+
+  // Sort dates descending
+  const sortedDates = Array.from(visitDates).sort((a, b) => b.localeCompare(a));
+
+  // Calculate streak (consecutive days from today/yesterday)
+  let streak = 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = 0; i < sortedDates.length; i++) {
+    const date = new Date(sortedDates[i]);
+    date.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+
+    // Allow gap of 0 (today) or 1 (yesterday) days
+    if (i === 0 && diffDays > 1) return 0;
+    if (i > 0) {
+      const prevDate = new Date(sortedDates[i - 1]);
+      prevDate.setHours(0, 0, 0, 0);
+      const gap = Math.floor((prevDate - date) / (1000 * 60 * 60 * 24));
+      if (gap !== 1) break;
+    }
+    streak++;
+  }
+
+  return streak;
+};
+
 export class UserData {
    static id = null;
    static name = 'bro';
@@ -421,6 +550,7 @@ export class Data{
     this.choosenHabitsNotified = AppData.choosenHabitsNotified;
     this.choosenHabitsGoals = AppData.choosenHabitsGoals;
     this.CustomHabits = AppData.CustomHabits;
+    this.habitCustomCategories = AppData.habitCustomCategories;
     this.choosenHabitsDaysToForm = AppData.choosenHabitsDaysToForm;
     this.notify = AppData.notify;
     this.exercises = AppData.exercises;
@@ -441,6 +571,7 @@ export class Data{
     this.mentalLog = AppData.mentalLog;
     this.todoList = AppData.todoList;
     this.todoCustomCategories = AppData.todoCustomCategories;
+    this.sectionVisits = AppData.sectionVisits;
     this.todoFieldsVisibility = AppData.todoFieldsVisibility;
     this.menuCardsStates = AppData.menuCardsStates;
     this.infoMiniPanel = AppData.infoMiniPanel;

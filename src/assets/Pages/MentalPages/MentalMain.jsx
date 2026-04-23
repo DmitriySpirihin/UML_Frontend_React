@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js'
+import { logSectionVisit } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$, lang$, fontSize$, setPage } from '../../StaticClasses/HabitsBus'
 import { FaStar, FaChevronRight } from 'react-icons/fa'
@@ -26,6 +27,8 @@ const MentalMain = () => {
             subscription3.unsubscribe();
         }
     }, []);
+
+    useEffect(() => { logSectionVisit('mental'); }, []);
 
     const menuItems = [
         {

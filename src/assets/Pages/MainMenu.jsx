@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import Colors from '../StaticClasses/Colors'
 import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, isValidation$, setPage, setPremium } from '../StaticClasses/HabitsBus'
-import { AppData, UserData } from '../StaticClasses/AppData'
+import { AppData, UserData, getSectionStreak } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
 import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot,FaStar, FaMedal, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift , FaTelegramPlane } from "react-icons/fa";
@@ -640,7 +640,7 @@ const Info = ({ id, theme, lang }) => {
         fontSize: '13px',
         fontWeight: '700',
         color: Colors.get('mainText', theme),
-       
+
       }}
     >
       {info.length > 0 ? info : '-'}
@@ -715,6 +715,10 @@ function playEffects(sound) {
 }
 
 function getInfo(id,langIndex = 0) {
+    const sectionMap = { HabitsMain: 'habits', ToDoMain: 'todo', MentalMain: 'mental', RecoveryMain: 'recovery', TrainingMain: 'training', SleepMain: 'sleep' };
+    const sectionId = sectionMap[id];
+    const streak = sectionId ? getSectionStreak(sectionId) : 0;
+    if (streak > 0) return `${streak}🔥`;
     if (id === 'HabitsMain') return AppData.choosenHabits.length > 0 ? AppData.choosenHabits.length.toString() : '';
     else if (id === 'TrainingMain') {
         const tonnage = getCurrentCycleAnalysis().currentTonnage;

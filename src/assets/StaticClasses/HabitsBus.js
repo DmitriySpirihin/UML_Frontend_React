@@ -6,7 +6,7 @@ export const setExpandedCard = (idOrNull) => expandedCard$.next(idOrNull);
 
 export const theme$ = new BehaviorSubject('dark');
 export const lang$ = new BehaviorSubject('ru');
-export const sound$ = new BehaviorSubject(0);
+export const sound$ = new BehaviorSubject(1);
 export const vibro$ = new BehaviorSubject(0);
 export const fontSize$ = new BehaviorSubject(0);
 export const globalTheme$ = new BehaviorSubject('dark');

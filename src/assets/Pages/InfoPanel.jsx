@@ -12,6 +12,8 @@ import {
 } from "react-icons/fa";
 import { MdOutlineSelfImprovement } from "react-icons/md";
 
+const HEADER_TOP_PADDING = "calc(env(safe-area-inset-top, 0px) + 14px)";
+
 const InfoPanel = () => {
   const [theme, setThemeState] = useState(() =>
     AppData?.prefs?.[1] === 0 ? "dark" : "light"
@@ -217,7 +219,8 @@ function getStyles(theme, fontSize) {
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      padding: "52px 16px 12px 16px",
+      padding: `${HEADER_TOP_PADDING} 16px 12px 16px`,
+      minHeight: "68px",
     },
 
     backBtn: {

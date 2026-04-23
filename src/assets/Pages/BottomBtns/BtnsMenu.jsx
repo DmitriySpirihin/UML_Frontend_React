@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FaCog,FaUserAlt,FaMoon,FaSun } from 'react-icons/fa';
+import { FaCog,FaUserAlt } from 'react-icons/fa';
 import {
-    setTheme as setGlobalTheme, setPage, theme$,
+    setPage, theme$,
     setNotifyPanel,
 } from '../../StaticClasses/HabitsBus';
-import Colors , { THEME } from '../../StaticClasses/Colors';
+import Colors from '../../StaticClasses/Colors';
 import { AppData } from '../../StaticClasses/AppData';
 
 const switchSound = new Audio('Audio/Click.wav');
@@ -25,20 +24,6 @@ const BtnsMenu = () => {
             <div style={glassOverlay(theme)} />
 
             
-
-            {/* Records / Medal Button */}
-            <NavButton 
-                id={1}
-                current={55}
-                icon={theme === 'dark' ? <FaSun /> : <FaMoon />}
-                onClick={() => {
-                   
-                    toggleTheme();
-                    playEffects(switchSound);
-                    setNotifyPanel(false);
-                }}
-                theme={theme}
-            />
             {/* Back / Home Button */}
             <NavButton 
                 id={0}
@@ -68,22 +53,12 @@ const BtnsMenu = () => {
         </div>
     );
 };
-const toggleTheme = () => {
-    let next; let themeNum = 0;
-    if (Colors.theme === THEME.DARK) { themeNum = 1; next = THEME.LIGHT; }
-    else { themeNum = 0; next = THEME.DARK; }
-    AppData.setPrefs(1, themeNum); Colors.setTheme(next); setGlobalTheme(next);
-}
 
 // NavButton Component for micro-interactions
 const NavButton = ({ id, current, icon, onClick, theme }) => {
     const isActive = current === id;
     return (
-        <motion.div 
-            whileTap={{ scale: 0.9 }}
-            onClick={onClick}
-            style={navBtnWrapper}
-        >
+        <div onClick={onClick} style={navBtnWrapper}>
             <div style={{
                 color: isActive ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
                 fontSize: '26px',
@@ -93,18 +68,8 @@ const NavButton = ({ id, current, icon, onClick, theme }) => {
             }}>
                 {icon}
             </div>
-            <AnimatePresence>
-                {isActive && (
-                    <motion.div 
-                        layoutId="mentalActiveTab"
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 5 }}
-                        style={activeIndicator(theme)}
-                    />
-                )}
-            </AnimatePresence>
-        </motion.div>
+            {isActive && <div style={activeIndicator(theme)} />}
+        </div>
     );
 };
 
@@ -123,11 +88,11 @@ function playEffects(sound) {
 ;
 
 // Styles
-const containerStyle = (theme) => ({
+const containerStyle = () => ({
     position: 'fixed',
     bottom: '7vw',
-    left: '15vw', // Narrower because there are fewer buttons
-    width: '70vw',
+    left: '22vw',
+    width: '56vw',
     height: '65px',
     borderRadius: '25px',
     display: 'flex',

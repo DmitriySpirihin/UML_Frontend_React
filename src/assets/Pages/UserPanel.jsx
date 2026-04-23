@@ -17,6 +17,7 @@ import ScrollPicker from '../Helpers/ScrollPicker.jsx';
 
 // --- CONSTANTS ---
 const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health'], ['Выносливосить', 'Endurance']];
+const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 14px)';
 
 const generateRange = (start, end, step = 1) => {
     const arr = [];
@@ -499,7 +500,7 @@ const styles = (theme, fSize) => {
         },
         header: {
             display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%',
-            padding: '50px 20px 20px 20px', position: 'relative'
+            padding: `${HEADER_TOP_PADDING} 20px 20px 20px`, minHeight: '72px', position: 'relative'
         },
         backBtn: {
             position: 'absolute', left: '20px', width: '40px', height: '40px', 

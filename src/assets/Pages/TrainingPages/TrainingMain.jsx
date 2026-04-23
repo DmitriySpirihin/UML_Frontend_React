@@ -1,6 +1,7 @@
 import React, {useState, useEffect, useRef, useMemo} from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
+import { logSectionVisit } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel,addNewTrainingDay$} from '../../StaticClasses/HabitsBus'
 import {addNewSession, addPreviousSession, deleteSession, addCardioSession} from '../../StaticClasses/TrainingLogHelper.js'
@@ -78,6 +79,8 @@ const TrainingMain = () => {
     const subscription3 = fontSize$.subscribe((fontSize) => { setFSize(fontSize); });
     return () => { subscription.unsubscribe(); subscription2.unsubscribe(); subscription3.unsubscribe(); }
   }, []);
+
+  useEffect(() => { logSectionVisit('training'); }, []);
 
   // --- CALENDAR LOGIC ---
   const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);

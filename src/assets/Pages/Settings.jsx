@@ -15,11 +15,12 @@ import { cloudBackup, cloudRestore, deleteCloudBackup } from '../StaticClasses/N
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const version = '2.c.88.1.s';
+const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 18px)';
 
 const Settings = () => {
     const [theme, setThemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-    const [sound, setSound] = useState(0);
+    const [sound, setSound] = useState(1);
     const [vibro, setVibro] = useState(0);
     const [fSize, setFSize] = useState(0);
     const [additionalPanel, setAdditionalPanel] = useState(false);
@@ -47,7 +48,7 @@ const Settings = () => {
             <style>{`@keyframes shine-effect { 0% { left: -100%; } 20% { left: 100%; } 100% { left: 100%; } }`}</style>
 
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '60px 20px 20px', borderBottom: `1px solid ${Colors.get('border', theme)}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: `${HEADER_TOP_PADDING} 20px 20px`, minHeight: '76px', borderBottom: `1px solid ${Colors.get('border', theme)}` }}>
                 <motion.div
                     whileTap={{ scale: 0.9 }}
                     onClick={() => { setPage(lastPage$.value || 'MainMenu'); playEffects(transitionSound); }}

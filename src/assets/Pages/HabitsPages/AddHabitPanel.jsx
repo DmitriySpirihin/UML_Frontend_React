@@ -47,7 +47,22 @@ const AddHabitPanel = () => {
 
     const [habitList, setHabitList] = useState(getAllHabits());
     const [selectIconPanel, setSelectIconPanel] = useState(false);
-    const [filterCategory, setfilterCategory] = useState(AppData.prefs[0] === 0 ? 'Здоровье' : 'Health');
+    const [selectCategoryPanel, setSelectCategoryPanel] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const [newCategoryIcon, setNewCategoryIcon] = useState('star');
+    const [newCategoryNameEn, setNewCategoryNameEn] = useState('');
+    const [editingCategoryIndex, setEditingCategoryIndex] = useState(null);
+    const [newCategoryIsNegative, setNewCategoryIsNegative] = useState(false);
+    const [iconSearchQuery, setIconSearchQuery] = useState('');
+    const allCategories = useMemo(() => AppData.GetAllHabitCategories(langIndex), [langIndex]);
+    const [filterCategory, setFilterCategory] = useState(allCategories[0]?.label[langIndex] || 'Здоровье');
+
+    const filteredIconKeys = useMemo(() => {
+        const allIcons = Object.keys(Icons.ic);
+        if (!iconSearchQuery.trim()) return allIcons;
+        const query = iconSearchQuery.toLowerCase();
+        return allIcons.filter(key => key.toLowerCase().includes(query));
+    }, [iconSearchQuery]);
 
     const isLight = theme === 'light' || theme === 'speciallight';
     const ui = {
@@ -87,13 +102,14 @@ const AddHabitPanel = () => {
     // --- 2. HANDLE PICKER CHANGE ---
     const handlePickerChange = (selectedName) => {
         const selectedHabit = filteredHabits.find(h => h.name[langIndex] === selectedName);
-        
+        const selectedCat = allCategories.find(c => c.label[langIndex] === filterCategory);
+
         if (selectedHabit && selectedHabit.id !== habitId) {
             setHabitId(selectedHabit.id);
-            //setHabitName(selectedHabit.name[langIndex]);
-            setIsNegative(selectedHabit.category[0] === 'Отказ от вредного');
+            const isNeg = selectedCat?.isNegative ?? (selectedHabit.category[0] === 'Отказ от вредного');
+            setIsNegative(isNeg);
             setGoals(setGoalForDefault(selectedHabit.name[0], langIndex));
-            setDaysToForm(selectedHabit.category[0] === 'Отказ от вредного' ? 120 : 66);
+            setDaysToForm(isNeg ? 120 : 66);
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
     };
@@ -109,6 +125,18 @@ const AddHabitPanel = () => {
         }
     }, [filterCategory, habitList]);
 
+
+    const openEditCategory = (idx) => {
+        const cat = allCategories[idx];
+        if (cat && idx >= 5) {
+            setEditingCategoryIndex(idx);
+            setNewCategoryName(cat.label[0]);
+            setNewCategoryNameEn(cat.label[1]);
+            setNewCategoryIcon(cat.icon);
+            setNewCategoryIsNegative(cat.isNegative || false);
+            setSelectCategoryPanel(true);
+        }
+    };
 
     const handleSave = () => {
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
@@ -167,22 +195,32 @@ const AddHabitPanel = () => {
                                         {!showCreatePanel ? (
                                             <>
                                                 {/* Фильтр категорий (Drum-style) */}
-                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '15px', paddingBottom: '5px', scrollbarWidth: 'none' }}>
-                                                    {['Здоровье', 'Развитие', 'Продуктивность', 'Отношения и отдых', 'Отказ от вредного'].map(cat => (
-                                                        <motion.div 
-                                                            key={cat} whileTap={{ scale: 0.95 }}
-                                                            onClick={() => {setfilterCategory(cat);setHabitCategory(cat);}}
-                                                            style={{ 
+                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '15px', paddingBottom: '5px', scrollbarWidth: 'none', flexWrap: 'nowrap' }}>
+                                                    {allCategories.map((cat, idx) => (
+                                                        <motion.div
+                                                            key={idx} whileTap={{ scale: 0.95 }}
+                                                            onClick={() => {setFilterCategory(cat.label[langIndex]);setHabitCategory(cat.label[0]);}}
+                                                            onLongPress={() => idx >= 5 && openEditCategory(idx)}
+                                                            whileLongPress={{ scale: 0.95 }}
+                                                            style={{
                                                                 padding: '10px 18px', borderRadius: '14px', whiteSpace: 'nowrap',
-                                                                backgroundColor: filterCategory === cat ? ui.accent : ui.card,
-                                                                color: filterCategory === cat ? '#FFF' : ui.text,
+                                                                backgroundColor: filterCategory === cat.label[langIndex] ? ui.accent : ui.card,
+                                                                color: filterCategory === cat.label[langIndex] ? '#FFF' : ui.text,
                                                                 fontSize: '13px', fontWeight: '700', transition: '0.2s all',
-                                                                boxShadow: filterCategory === cat ? `0 4px 12px ${ui.accent}40` : 'none'
+                                                                boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none',
+                                                                cursor: idx >= 5 ? 'pointer' : 'default'
                                                             }}
                                                         >
-                                                            {langIndex === 0 ? cat : getCategory(cat)[1]}
+                                                            {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
+                                                            {cat.label[langIndex]}
                                                         </motion.div>
                                                     ))}
+                                                    {langIndex === 0 && (
+                                                        <motion.div whileTap={{ scale: 0.95 }} onClick={() => setSelectCategoryPanel(true)}
+                                                            style={{ padding: '10px 14px', borderRadius: '14px', whiteSpace: 'nowrap', backgroundColor: ui.card, color: ui.accent, fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <FaPlus size={12} /> Добавить
+                                                        </motion.div>
+                                                    )}
                                                 </div>
 
                                                 <div style={{  borderRadius: '16px', display: 'flex', alignItems: 'center',justifyContent: 'space-between', padding: '0 15px', marginBottom: '15px', height: '50px' }}>
@@ -224,26 +262,33 @@ const AddHabitPanel = () => {
                                         ) : (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                                 {/* Фильтр категорий (Drum-style) */}
-                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '15px', paddingBottom: '5px', scrollbarWidth: 'none' }}>
-                                                    {['Здоровье', 'Развитие', 'Продуктивность', 'Отношения и отдых', 'Отказ от вредного'].map(cat => (
-                                                        <motion.div 
-                                                            key={cat} whileTap={{ scale: 0.95 }}
-                                                            onClick={() => {setfilterCategory(cat);setHabitCategory(cat);}}
-                                                            style={{ 
+                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '15px', paddingBottom: '5px', scrollbarWidth: 'none', flexWrap: 'nowrap' }}>
+                                                    {allCategories.map((cat, idx) => (
+                                                        <motion.div
+                                                            key={idx} whileTap={{ scale: 0.95 }}
+                                                            onClick={() => {setFilterCategory(cat.label[langIndex]);setHabitCategory(cat.label[0]);}}
+                                                            style={{
                                                                 padding: '10px 18px', borderRadius: '14px', whiteSpace: 'nowrap',
-                                                                backgroundColor: filterCategory === cat ? ui.accent : ui.card,
-                                                                color: filterCategory === cat ? '#FFF' : ui.text,
+                                                                backgroundColor: filterCategory === cat.label[langIndex] ? ui.accent : ui.card,
+                                                                color: filterCategory === cat.label[langIndex] ? '#FFF' : ui.text,
                                                                 fontSize: '13px', fontWeight: '700', transition: '0.2s all',
-                                                                boxShadow: filterCategory === cat ? `0 4px 12px ${ui.accent}40` : 'none'
+                                                                boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none'
                                                             }}
                                                         >
-                                                            {langIndex === 0 ? cat : getCategory(cat)[1]}
+                                                            {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
+                                                            {cat.label[langIndex]}
                                                         </motion.div>
                                                     ))}
+                                                    {langIndex === 0 && (
+                                                        <motion.div whileTap={{ scale: 0.95 }} onClick={() => setSelectCategoryPanel(true)}
+                                                            style={{ padding: '10px 14px', borderRadius: '14px', whiteSpace: 'nowrap', backgroundColor: ui.card, color: ui.accent, fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            <FaPlus size={12} /> Добавить
+                                                        </motion.div>
+                                                    )}
                                                 </div>
-                                                
-                                                    <input 
-                                                                                        type="text" 
+
+                                                <input
+                                                    type="text" 
                                                                                         placeholder={langIndex === 0 ? 'название' : 'name'}
                                                                                         value={habitName}
                                                                                          onChange={(e) => setHabitName(e.target.value)}
@@ -372,6 +417,122 @@ const AddHabitPanel = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {/* Добавление/редактирование категории (Bottom Sheet) */}
+                    <AnimatePresence>
+                        {selectCategoryPanel && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={() => { setSelectCategoryPanel(false); resetCategoryForm(); }}>
+                                <motion.div
+                                    initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                    style={{ ...iconSheet(ui), backgroundColor: ui.bg, backdropFilter: ui.blur }}
+                                    onClick={e => e.stopPropagation()}
+                                >
+                                    <div style={dragHandle} />
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 25px 15px' }}>
+                                        <h3 style={{ margin: 0, color: ui.text }}>{editingCategoryIndex !== null ? (langIndex === 0 ? 'Редактировать' : 'Edit') : (langIndex === 0 ? 'Новая категория' : 'New Category')}</h3>
+                                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => { setSelectCategoryPanel(false); resetCategoryForm(); }} style={{ padding: '8px', backgroundColor: ui.card, borderRadius: '50%' }}>
+                                            <MdClose color={ui.sub} />
+                                        </motion.div>
+                                    </div>
+                                    <div style={{ padding: '0 25px 30px', display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '65vh', overflowY: 'auto' }}>
+                                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                                            <input
+                                                type="text"
+                                                placeholder={langIndex === 0 ? 'Название' : 'Name'}
+                                                value={newCategoryName}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setNewCategoryName(val);
+                                                    if (langIndex === 0 && val.length > 0) {
+                                                        const translated = translateToEnglish(val);
+                                                        setNewCategoryNameEn(translated);
+                                                    } else if (langIndex === 1 && val.length > 0) {
+                                                        const translated = translateToRussian(val);
+                                                        setNewCategoryName(translated);
+                                                    }
+                                                }}
+                                                style={{ flex: 1, ...inputStyle(ui), border: `1px solid ${ui.border}`, borderRadius: '14px', padding: '14px' }}
+                                            />
+                                        </div>
+
+                                        {/* Toggle для типа */}
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <motion.div
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => setNewCategoryIsNegative(false)}
+                                                style={{
+                                                    flex: 1, padding: '12px', borderRadius: '14px', cursor: 'pointer',
+                                                    backgroundColor: !newCategoryIsNegative ? '#34C75920' : ui.card,
+                                                    border: `1px solid ${!newCategoryIsNegative ? '#34C759' : ui.border}`,
+                                                    textAlign: 'center'
+                                                }}
+                                            >
+                                                <span style={{ color: !newCategoryIsNegative ? '#34C759' : ui.text, fontWeight: '700', fontSize: '13px' }}>
+                                                    {langIndex === 0 ? '✅ Хорошая' : '✅ Good'}
+                                                </span>
+                                            </motion.div>
+                                            <motion.div
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => setNewCategoryIsNegative(true)}
+                                                style={{
+                                                    flex: 1, padding: '12px', borderRadius: '14px', cursor: 'pointer',
+                                                    backgroundColor: newCategoryIsNegative ? '#FF3B3020' : ui.card,
+                                                    border: `1px solid ${newCategoryIsNegative ? '#FF3B30' : ui.border}`,
+                                                    textAlign: 'center'
+                                                }}
+                                            >
+                                                <span style={{ color: newCategoryIsNegative ? '#FF3B30' : ui.text, fontWeight: '700', fontSize: '13px' }}>
+                                                    {langIndex === 0 ? '❌ Плохая' : '❌ Bad'}
+                                                </span>
+                                            </motion.div>
+                                        </div>
+
+                                        {/* Выбор иконки */}
+                                        <div style={{ padding: '12px', backgroundColor: ui.card, borderRadius: '14px' }}>
+                                            <p style={{ color: ui.sub, fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '8px' }}>{langIndex === 0 ? 'Иконка' : 'Icon'}</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', borderRadius: '10px', padding: '0 10px', marginBottom: '10px', backgroundColor: ui.bg }}>
+                                                <FaSearch color={ui.sub} style={{ marginRight: '8px' }} />
+                                                <input
+                                                    type="text"
+                                                    placeholder={langIndex === 0 ? 'Поиск...' : 'Search...'}
+                                                    value={iconSearchQuery}
+                                                    onChange={(e) => setIconSearchQuery(e.target.value)}
+                                                    style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '14px', color: ui.text, padding: '10px 0', outline: 'none' }}
+                                                />
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
+                                                {filteredIconKeys.map(iconKey => (
+                                                    <motion.div key={iconKey} whileTap={{ scale: 0.9 }} onClick={() => setNewCategoryIcon(iconKey)}
+                                                        style={{ ...iconItem(newCategoryIcon === iconKey, ui), padding: '10px', cursor: 'pointer' }}>
+                                                        {Icons.getIcon(iconKey, { size: 24, style: { color: newCategoryIcon === iconKey ? ui.accent : ui.text } })}
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Кнопки */}
+                                        <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                                            {editingCategoryIndex !== null && (
+                                                <motion.div whileTap={{ scale: 0.95 }} onClick={handleDeleteCategory}
+                                                    style={{ flex: 1, padding: '14px', backgroundColor: '#FF3B30', borderRadius: '14px', cursor: 'pointer', textAlign: 'center' }}>
+                                                    <span style={{ color: '#FFF', fontWeight: '700', fontSize: '14px' }}>
+                                                        {langIndex === 0 ? 'Удалить' : 'Delete'}
+                                                    </span>
+                                                </motion.div>
+                                            )}
+                                            <motion.div whileTap={{ scale: 0.95 }} onClick={handleSaveCategory}
+                                                style={{ flex: editingCategoryIndex !== null ? 1 : 2, padding: '14px', backgroundColor: ui.accent, borderRadius: '14px', cursor: 'pointer', textAlign: 'center' }}>
+                                                <span style={{ color: '#FFF', fontWeight: '700', fontSize: '14px' }}>
+                                                    {langIndex === 0 ? (editingCategoryIndex !== null ? 'Сохранить' : 'Создать') : (editingCategoryIndex !== null ? 'Save' : 'Create')}
+                                                </span>
+                                            </motion.div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
         </motion.div>
     );
 };
@@ -404,6 +565,7 @@ const iconItem = (active, ui) => ({ display: 'flex', alignItems: 'center', justi
 const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: ui.card, borderRadius: '20px' });
 const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: ui.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '15px', marginTop: '10px' });
 const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: ui.bg, borderRadius: '16px' });
+const inputStyle = (ui) => ({ width: '100%', border: 'none', background: 'transparent', fontSize: '16px', color: ui.text, outline: 'none' });
 
 // --- ЛОГИКА (ОРИГИНАЛ) ---
 const months = [['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'], ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
@@ -445,6 +607,83 @@ const searchHabitsList = (val, habitList, setHabitList) => {
         setHabitList(newList);
     } else { setHabitList(getAllHabits()); }
 }
+
+const translateToEnglish = (ruText) => {
+    const translations = {
+        'здоровье': 'Health', 'развитие': 'Growth', 'продуктивность': 'Productivity',
+        'отношения': 'Relationships', 'отдых': 'Recreation', 'вредного': 'Bad habits',
+        'привычка': 'Habit', 'работа': 'Work', 'учеба': 'Study', 'спорт': 'Sport',
+        'отказ': 'Quit', 'финансы': 'Finance', 'семья': 'Family', 'друзья': 'Friends',
+        'творчество': 'Creativity', 'медитация': 'Meditation', 'сон': 'Sleep',
+        'питание': 'Nutrition', 'обучение': 'Learning', 'йога': 'Yoga',
+        'спорт': 'Sports', 'еда': 'Food', 'деньги': 'Money', 'дом': 'Home',
+        'уборка': 'Cleaning', 'хобби': 'Hobby', 'музыка': 'Music', 'чтение': 'Reading',
+        'план': 'Plan', 'цель': 'Goal', 'успех': 'Success', 'путешествия': 'Travel',
+    };
+    let result = ruText;
+    Object.entries(translations).forEach(([ru, en]) => {
+        const regex = new RegExp(ru, 'gi');
+        result = result.replace(regex, en);
+    });
+    // Capitalize first letter
+    return result.charAt(0).toUpperCase() + result.slice(1);
+};
+
+const translateToRussian = (enText) => {
+    const translations = {
+        'health': 'Здоровье', 'growth': 'Развитие', 'productivity': 'Продуктивность',
+        'relationships': 'Отношения', 'recreation': 'Отдых', 'recreation': 'Отдых',
+        'bad': 'Вредного', 'habits': 'привычка', 'work': 'Работа', 'study': 'Учеба',
+        'sport': 'Спорт', 'quit': 'Отказ', 'finance': 'Финансы', 'family': 'Семья',
+        'friends': 'Друзья', 'creativity': 'Творчество', 'meditation': 'Медитация',
+        'sleep': 'Сон', 'nutrition': 'Питание', 'learning': 'Обучение', 'yoga': 'Йога',
+        'food': 'Еда', 'money': 'Деньги', 'home': 'Дом', 'cleaning': 'Уборка',
+        'hobby': 'Хобби', 'music': 'Музыка', 'reading': 'Чтение', 'plan': 'План',
+        'goal': 'Цель', 'success': 'Успех', 'travel': 'Путешествия',
+    };
+    let result = enText.toLowerCase();
+    Object.entries(translations).forEach(([en, ru]) => {
+        const regex = new RegExp('\\b' + en + '\\b', 'gi');
+        result = result.replace(regex, ru);
+    });
+    return result;
+};
+
+const resetCategoryForm = () => {
+    setNewCategoryName('');
+    setNewCategoryNameEn('');
+    setNewCategoryIcon('star');
+    setNewCategoryIsNegative(false);
+    setEditingCategoryIndex(null);
+    setIconSearchQuery('');
+};
+
+const handleSaveCategory = () => {
+    if (newCategoryName.trim().length > 0) {
+        const labelRu = langIndex === 0 ? newCategoryName.trim() : (newCategoryNameEn.trim() || newCategoryName.trim());
+        const labelEn = langIndex === 1 ? newCategoryName.trim() : newCategoryNameEn.trim();
+        if (editingCategoryIndex !== null) {
+            AppData.UpdateHabitCustomCategory(editingCategoryIndex, newCategoryIcon, labelRu, labelEn, newCategoryIsNegative);
+            setShowPopUpPanel(langIndex === 0 ? 'Категория обновлена' : 'Category updated', 2000, true);
+        } else {
+            AppData.AddHabitCustomCategory(newCategoryIcon, labelRu, labelEn, newCategoryIsNegative);
+            setShowPopUpPanel(langIndex === 0 ? 'Категория создана' : 'Category created', 2000, true);
+        }
+        resetCategoryForm();
+        setSelectCategoryPanel(false);
+    } else {
+        setShowPopUpPanel(langIndex === 0 ? 'Введите название' : 'Enter name', 2000, false);
+    }
+};
+
+const handleDeleteCategory = () => {
+    if (editingCategoryIndex !== null) {
+        AppData.RemoveHabitCustomCategory(editingCategoryIndex);
+        setShowPopUpPanel(langIndex === 0 ? 'Категория удалена' : 'Category deleted', 2000, true);
+        resetCategoryForm();
+        setSelectCategoryPanel(false);
+    }
+};
 
 const setGoalForDefault = (habitName,langIndex) => {
   const goals = {

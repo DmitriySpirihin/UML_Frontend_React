@@ -27,6 +27,7 @@ const NOT_SET_LABELS = ['Не задано', 'Not set'];
 const PRIORITY_COLORS = ['#B0BEC5', '#29B6F6', '#FFCA28', '#FB8C00', '#F44336'];
 const DIFFICULTY_COLORS = ['#66BB6A', '#9CCC65', '#FFCA28', '#FF7043', '#D32F2F'];
 const URGENCY_COLORS = ['#81C784', '#64B5F6', '#FFD54F', '#FF8A65', '#E57373'];
+const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 18px)';
 
 const ToDoPage = () => {
     const [task, setTask] = useState(null);
@@ -353,7 +354,7 @@ const ToDoPage = () => {
             </AnimatePresence>
 
             {/* iOS-STYLE TOP BAR */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '60px 20px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `${HEADER_TOP_PADDING} 20px 0`, minHeight: '56px' }}>
                 <motion.div
                     whileTap={{ scale: 0.9 }}
                     onClick={goBack}

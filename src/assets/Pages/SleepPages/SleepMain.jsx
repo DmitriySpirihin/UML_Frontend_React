@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
+import { logSectionVisit } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, addNewTrainingDay$ } from '../../StaticClasses/HabitsBus';
 import { FaChevronLeft, FaChevronRight, FaMoon, FaBed, FaRegClock, FaStickyNote, FaStar } from 'react-icons/fa';
@@ -92,6 +93,8 @@ const SleepMain = () => {
       sub3.unsubscribe();
     };
   }, []);
+
+  useEffect(() => { logSectionVisit('sleep'); }, []);
 
   useEffect(() => {
     currentDateRef.current = currentDate;

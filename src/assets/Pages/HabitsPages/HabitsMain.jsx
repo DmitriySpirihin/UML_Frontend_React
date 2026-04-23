@@ -3,6 +3,7 @@ import { motion, useTransform, useMotionValue, animate, AnimatePresence } from '
 import Icons from '../../StaticClasses/Icons';
 import { allHabits } from '../../Classes/Habit.js'
 import { AppData, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
+import { logSectionVisit } from '../../StaticClasses/AppData.js'
 
 // --- ИМПОРТЫ ---
 import { expandedCard$, setExpandedCard } from '../../StaticClasses/HabitsBus.js';
@@ -28,10 +29,51 @@ const dateKey = new Date().toISOString().split('T')[0];
 const clickSound = new Audio('Audio/Click.wav');
 const skipSound = new Audio('Audio/Skip.wav');
 const isDoneSound = new Audio('Audio/IsDone.wav');
+const NEGATIVE_CATEGORY = 'Отказ от вредного';
+const HABITS_CATEGORY_COLLAPSE_KEY = 'uml_habits_category_collapsed_v1';
 
 export let removeHabitFn;
 export let addHabitFn;
 export let currentId;
+
+function getStoredCollapsedCategories() {
+    if (typeof window === 'undefined') return {};
+
+    try {
+        const raw = window.localStorage.getItem(HABITS_CATEGORY_COLLAPSE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+        return {};
+    }
+}
+
+function isCategoryCollapsed(categoryKey) {
+    return Boolean(getStoredCollapsedCategories()[categoryKey]);
+}
+
+function setCategoryCollapsed(categoryKey, isCollapsed) {
+    if (typeof window === 'undefined') return;
+
+    const nextState = {
+        ...getStoredCollapsedCategories(),
+        [categoryKey]: isCollapsed,
+    };
+
+    window.localStorage.setItem(HABITS_CATEGORY_COLLAPSE_KEY, JSON.stringify(nextState));
+}
+
+function sortCategoriesWithNegativeLast(categories) {
+    const normal = [];
+    const negative = [];
+
+    categories.forEach((category) => {
+        if (category === NEGATIVE_CATEGORY) negative.push(category);
+        else normal.push(category);
+    });
+
+    return [...normal, ...negative];
+}
 
 // --- СТИЛИ (ОРИГИНАЛЬНЫЕ + УЛУЧШЕННЫЕ ТЕНИ) ---
 const styles = (theme, fSize = 0) => {
@@ -183,6 +225,8 @@ const HabitsMain = () => {
         return () => { subscription.unsubscribe(); subscription2.unsubscribe(); subscription3.unsubscribe(); };
     }, []);
 
+    useEffect(() => { logSectionVisit('habits'); }, []);
+
     useEffect(() => {
         const subscription = lang$.subscribe((lang) => { setLangIndex(lang === 'ru' ? 0 : 1); });
         return () => subscription.unsubscribe();
@@ -197,11 +241,14 @@ const HabitsMain = () => {
                 const h = getAllHabits().find(h => h.id === id);
                 if (h && !cats.has(h.category[0])) { cats.add(h.category[0]); }
             });
-            setCategories(Array.from(cats));
+            setCategories(sortCategoriesWithNegativeLast(Array.from(cats)));
         }
     }, [habitsCards]);
 
     const addHabit = (id, dateString, goals, isNegative, daysToForm) => {
+        const addedHabit = getAllHabits().find(h => h.id === id);
+        const addedCategory = addedHabit?.category?.[0];
+
         setHabitsCards(prev => {
             const newHabits = new Set(prev);
             if (!newHabits.has(id)) {
@@ -210,7 +257,13 @@ const HabitsMain = () => {
             }
             return prev;
         });
-        setHasHabits(AppData.choosenHabits.length > 0);
+
+        if (addedCategory) {
+            setCategoryCollapsed(addedCategory, false);
+        }
+
+        setHasHabits(true);
+        setDataVersion(v => v + 1);
     };
 
     const removeHabit = (id) => {
@@ -367,18 +420,19 @@ const HabitsMain = () => {
         
         {/* --- ADD CATEGORY SELECTOR HERE --- */}
         <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', paddingBottom: '5px', scrollbarWidth: 'none' }}>
-            {['Здоровье', 'Развитие', 'Продуктивность', 'Отношения и отдых', 'Отказ от вредного'].map(cat => (
-                <div 
-                    key={cat} 
-                    onClick={() => setNewCategory(cat)}
-                    style={{ 
+            {AppData.GetAllHabitCategories(langIndex).map((cat, idx) => (
+                <div
+                    key={idx}
+                    onClick={() => setNewCategory(cat.label[0])}
+                    style={{
                         padding: '8px 14px', borderRadius: '12px', whiteSpace: 'nowrap', cursor: 'pointer',
-                        backgroundColor: newCategory === cat ? Colors.get('scrollFont', theme) : (isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)'),
-                        color: newCategory === cat ? '#FFF' : Colors.get('subText', theme),
+                        backgroundColor: newCategory === cat.label[0] ? Colors.get('scrollFont', theme) : (isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)'),
+                        color: newCategory === cat.label[0] ? '#FFF' : Colors.get('subText', theme),
                         fontSize: '12px', fontWeight: '700', transition: '0.2s all',
                     }}
                 >
-                    {langIndex === 0 ? cat : getCategory(cat)[1]}
+                    {Icons.getIcon(cat.icon, { size: 12, style: { marginRight: 4 } })}
+                    {cat.label[langIndex]}
                 </div>
             ))}
         </div>
@@ -457,9 +511,10 @@ function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize,
         return (
             <CategoryPanel 
                 key={category} 
+                categoryKey={category}
                 text={habitsInCategory[0].category} 
                 theme={theme} 
-                isNegative={category === 'Отказ от вредного'}
+                isNegative={category === NEGATIVE_CATEGORY}
             >
                 {habitsInCategory.map(habit => (
                     <HabitCard
@@ -492,7 +547,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
         icon: habit?.iconName || "default"
     });
 
-    const isNegative = habit.category[0] === 'Отказ от вредного';
+    const isNegative = habit.category[0] === NEGATIVE_CATEGORY;
     const percent = getHabitPerformPercent(id);
     const maxX = 120;
     const minX = -maxX;
@@ -767,15 +822,26 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     )
 }
 
-function CategoryPanel({ text = ["Имя", "Name"], children, theme }) {
-    const [isOpen, setIsOpen] = useState(true); // Состояние сворачивания
+function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme }) {
+    const [isOpen, setIsOpen] = useState(() => !isCategoryCollapsed(categoryKey));
     const isLight = theme === 'light' || theme === 'speciallight';
     const langIndex = AppData.prefs[0];
+
+    useEffect(() => {
+        setIsOpen(!isCategoryCollapsed(categoryKey));
+    }, [categoryKey]);
+
+    const toggleOpen = () => {
+        const nextIsOpen = !isOpen;
+        setIsOpen(nextIsOpen);
+        setCategoryCollapsed(categoryKey, !nextIsOpen);
+        playEffects(clickSound);
+    };
 
     return (
         <div style={{ width: '100%', marginBottom: '20px' }}>
             <div 
-                onClick={() => { setIsOpen(!isOpen); playEffects(clickSound); }}
+                onClick={toggleOpen}
                 style={{ 
                     display: 'flex', 
                     alignItems: 'center', 

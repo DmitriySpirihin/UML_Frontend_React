@@ -7,6 +7,8 @@ import { IoIosArrowBack } from 'react-icons/io'
 import { MuscleIcon, addExercise } from '../../Classes/TrainingData.jsx'
 import { MdDone } from 'react-icons/md'
 
+const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 18px)';
+
 const AddExercisePanel = () => {
     const [theme, setTheme] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
@@ -63,7 +65,8 @@ const AddExercisePanel = () => {
             {/* Header */}
             <div style={{
                 display: 'flex', alignItems: 'center',
-                padding: '60px 20px 20px',
+                padding: `${HEADER_TOP_PADDING} 20px 20px`,
+                minHeight: '76px',
                 borderBottom: `1px solid ${Colors.get('border', theme)}`
             }}>
                 <motion.div whileTap={{ scale: 0.9 }} onClick={goBack} style={{ marginRight: '15px', cursor: 'pointer' }}>
