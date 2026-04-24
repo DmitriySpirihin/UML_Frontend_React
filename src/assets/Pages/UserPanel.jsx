@@ -5,10 +5,11 @@ import { saveData } from '../StaticClasses/SaveHelper.js';
 import { sendReferalLink } from '../StaticClasses/PaymentService'; 
 import Colors from '../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, premium$, setPage, lastPage$ } from '../StaticClasses/HabitsBus';
+import { calculateStats, LEVEL_RANKS, XP_RULES } from '../Helpers/UserStats.js';
 import {
     FaCrown, FaUserShield,
     FaRulerVertical, FaBirthdayCake, FaBullseye,
-    FaRunning, FaBrain, FaBed, FaMedal, FaSpa, FaUserFriends, FaShareAlt
+    FaRunning, FaBrain, FaBed, FaMedal, FaSpa, FaUserFriends, FaShareAlt, FaQuestionCircle
 } from 'react-icons/fa';
 import { IoMdMale, IoMdFemale } from 'react-icons/io';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
@@ -18,6 +19,15 @@ import ScrollPicker from '../Helpers/ScrollPicker.jsx';
 // --- CONSTANTS ---
 const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health'], ['Выносливосить', 'Endurance']];
 const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 14px)';
+const MotionDiv = motion.div;
+const MotionButton = motion.button;
+const XP_RULE_ICONS = {
+    training: <FaRunning />,
+    mental: <FaBrain />,
+    sleep: <FaBed />,
+    recovery: <FaSpa />,
+    habits: <FaMedal />
+};
 
 const generateRange = (start, end, step = 1) => {
     const arr = [];
@@ -30,11 +40,11 @@ const generateRange = (start, end, step = 1) => {
 const UserPanel = () => {
     const [theme, setThemeState] = useState('dark');
     const [lang, setLangIndex] = useState(AppData.prefs[0]);
-    const [fSize, setFSize] = useState(AppData.prefs[4]);
+    const [, setFSize] = useState(AppData.prefs[4]);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
 
     // --- FRIENDS STATE (Loaded directly from UserData) ---
-    const [friends, setFriends] = useState(UserData.friends || []);
+    const [friends] = useState(UserData.friends || []);
 
     // --- METRICS EDIT STATE ---
     const [showBodyMetrics, setShowBodyMetrics] = useState(false);
@@ -44,6 +54,8 @@ const UserPanel = () => {
     const [wrist, setWrist] = useState(AppData.pData.wrist || 17);
     const [goal, setGoal] = useState(AppData.pData.goal || 0);
     const [showFriendsPanel, setShowFriendsPanel] = useState(false);
+    const [showXpGuide, setShowXpGuide] = useState(false);
+    const [selectedXpRule, setSelectedXpRule] = useState('training');
 
     // --- LISTS FOR PICKERS ---
     const agesList = useMemo(() => generateRange(10, 100), []);
@@ -66,28 +78,21 @@ const UserPanel = () => {
     // --- DERIVED METRICS ---
    const stats = useMemo(() => {
     const coreStats = calculateStats();
-    
-    const ranks = [
-        { title: ['Новичок', 'Novice'], color: '#4f4f4f' },
-        { title: ['Искатель', 'Seeker'], color: '#4CAF50' },
-        { title: ['Достигатор', 'Achiever'], color: '#2196F3' },
-        { title: ['Элита', 'Elite'], color: '#9C27B0' },
-        { title: ['Легенда', 'Legend'], color: '#FFD700' }
-    ];
-    
-    let rankIndex = 0;
     const lvl = coreStats.level.current;
-    if (lvl >= 50) rankIndex = 4;
-    else if (lvl >= 20) rankIndex = 3;
-    else if (lvl >= 10) rankIndex = 2;
-    else if (lvl >= 5) rankIndex = 1;
+    const currentRank = [...LEVEL_RANKS].reverse().find(rank => lvl >= rank.minLevel) || LEVEL_RANKS[0];
+    const nextRank = LEVEL_RANKS.find(rank => rank.minLevel > lvl);
 
     return {
         ...coreStats,
         level: {
             ...coreStats.level,
-            title: ranks[rankIndex].title[lang],
-            color: ranks[rankIndex].color
+            title: currentRank.title[lang],
+            color: currentRank.color,
+            nextRank: nextRank ? {
+                level: nextRank.minLevel,
+                title: nextRank.title[lang],
+                color: nextRank.color
+            } : null
         },
         body: {
             age: AppData.pData?.age || '--',
@@ -96,7 +101,10 @@ const UserPanel = () => {
             goal: currentGoalNames[AppData.pData?.goal] || '--'
         }
     };
-}, [lang, AppData.trainingLog, AppData.choosenHabits, AppData.pData]);
+}, [lang, currentGoalNames]);
+
+    const selectedXpRuleBase = XP_RULES.find(rule => rule.key === selectedXpRule) || XP_RULES[0];
+    const selectedXpRuleData = { ...selectedXpRuleBase, icon: XP_RULE_ICONS[selectedXpRuleBase.key] };
 
     const goBack = () => {
         const prev = lastPage$.value;
@@ -110,24 +118,24 @@ const UserPanel = () => {
         setShowBodyMetrics(false);
     };
 
-    const s = styles(theme, fSize);
+    const s = styles(theme);
     const accent = hasPremium ? '#FFD700' : Colors.get('accent', theme);
 
     return (
-        <motion.div
+        <MotionDiv
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             style={s.container}
         >
             {/* Header */}
             <div style={s.header}>
-                <motion.div
+                <MotionDiv
                     whileTap={{ scale: 0.9 }}
                     onClick={goBack}
                     style={s.backBtn}
                 >
                     <IoIosArrowBack size={22} />
-                </motion.div>
+                </MotionDiv>
                 <span style={s.headerTitle}>{lang === 0 ? 'Профиль' : 'Profile'}</span>
                 <div style={{ width: 40 }} />
             </div>
@@ -175,11 +183,14 @@ const UserPanel = () => {
                     {/* XP Progress Bar */}
                     <div style={s.xpContainer}>
                         <div style={s.xpInfo}>
-                            <span>XP</span>
+                            <button type="button" onClick={() => setShowXpGuide(true)} style={s.xpInfoButton}>
+                                <span>XP</span>
+                                <FaQuestionCircle size={12} />
+                            </button>
                             <span>{Math.floor(stats.level.xp)} / {stats.level.needed}</span>
                         </div>
                         <div style={s.xpTrack}>
-                            <motion.div 
+                            <MotionDiv 
                                 initial={{ width: 0 }}
                                 animate={{ width: `${stats.level.percent}%` }}
                                 transition={{ duration: 1, ease: "easeOut" }}
@@ -200,7 +211,7 @@ const UserPanel = () => {
 
                 {/* 2.5 Premium Card */}
                 {!hasPremium && (
-                    <motion.div
+                    <MotionDiv
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setPage('premium')}
                         style={{
@@ -262,7 +273,7 @@ const UserPanel = () => {
 
                         {/* Chevron */}
                         <IoIosArrowForward size={20} color="rgba(255, 215, 0, 0.6)" style={{ flexShrink: 0, zIndex: 1 }} />
-                    </motion.div>
+                    </MotionDiv>
                 )}
 
                 {/* 3. Physical Data */}
@@ -282,9 +293,9 @@ const UserPanel = () => {
                             </span>
                         </div>
                         {friends.length > 0 && (
-                            <motion.button whileTap={{scale:0.9}} onClick={sendReferalLink} style={{background:'none', border:'none', color:accent, fontWeight:'700', fontSize:'12px', cursor:'pointer'}}>
+                            <MotionButton whileTap={{scale:0.9}} onClick={sendReferalLink} style={{background:'none', border:'none', color:accent, fontWeight:'700', fontSize:'12px', cursor:'pointer'}}>
                                 + {lang === 0 ? 'Пригласить' : 'Invite'}
-                            </motion.button>
+                            </MotionButton>
                         )}
                     </div>
 
@@ -293,18 +304,18 @@ const UserPanel = () => {
                             <span style={{fontSize:'14px', color:Colors.get('subText', theme), textAlign:'center', marginBottom:'10px'}}>
                                 {lang === 0 ? 'У вас пока нет друзей в приложении.' : 'No friends yet. Invite them to earn Premium!'}
                             </span>
-                            <motion.button 
+                            <MotionButton 
                                 whileTap={{scale:0.95}} 
                                 onClick={sendReferalLink}
                                 style={{...s.priBtn, width: 'auto', padding: '10px 25px', fontSize: '14px'}}
                             >
                                 <FaShareAlt style={{marginRight:'8px'}}/> {lang === 0 ? 'Пригласить друга' : 'Invite a Friend'}
-                            </motion.button>
+                            </MotionButton>
                         </div>
                     ) : (
                         showFriendsPanel ? (<div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
                             {friends.map((friend, i) => (
-                                <FriendCard key={i} friend={friend} theme={theme} lang={lang} />
+                                <FriendCard key={i} friend={friend} theme={theme} />
                             ))}
                         </div>) : null
                     )}
@@ -317,6 +328,21 @@ const UserPanel = () => {
 
                 <div style={{ height: '100px' }} />
             </div>
+
+            {/* --- XP GUIDE MODAL --- */}
+            <AnimatePresence>
+                {showXpGuide && (
+                    <BottomSheet onClose={() => setShowXpGuide(false)} theme={theme}>
+                        <XpGuide
+                            stats={stats}
+                            lang={lang}
+                            theme={theme}
+                            selectedRule={selectedXpRuleData}
+                            onSelectRule={setSelectedXpRule}
+                        />
+                    </BottomSheet>
+                )}
+            </AnimatePresence>
 
             {/* --- BODY METRICS EDIT MODAL --- */}
             <AnimatePresence>
@@ -360,13 +386,107 @@ const UserPanel = () => {
                 )}
             </AnimatePresence>
 
-        </motion.div>
+        </MotionDiv>
     );
 };
 
 // --- SUB-COMPONENTS ---
 
-const FriendCard = ({ friend, theme, lang }) => {
+const XpGuide = ({ stats, lang, theme, selectedRule, onSelectRule }) => {
+    const s = styles(theme);
+    const remainingXp = Math.max(0, Math.ceil(stats.level.needed - stats.level.xp));
+    const selectedCount = stats.counts[selectedRule.key] || 0;
+    const selectedEarned = selectedCount * selectedRule.xp;
+    const nextLevel = stats.level.current + 1;
+
+    return (
+        <div style={s.xpGuide}>
+            <div style={s.xpGuideHeader}>
+                <div>
+                    <h3 style={{ ...s.modalTitle, textAlign: 'left', margin: 0 }}>
+                        {lang === 0 ? 'Как начисляется XP' : 'How XP works'}
+                    </h3>
+                    <div style={s.xpGuideSubtitle}>
+                        {lang === 0
+                            ? `${remainingXp} XP до уровня ${nextLevel}`
+                            : `${remainingXp} XP to level ${nextLevel}`}
+                    </div>
+                </div>
+                <div style={{ ...s.xpNextBadge, borderColor: stats.level.color, color: stats.level.color }}>
+                    LVL {nextLevel}
+                </div>
+            </div>
+
+            <div style={s.xpUnlockPanel}>
+                <div style={s.xpUnlockTitle}>
+                    {lang === 0 ? 'Следующий уровень откроет' : 'Next level unlocks'}
+                </div>
+                <div style={s.xpUnlockText}>
+                    {stats.level.nextRank && nextLevel >= stats.level.nextRank.level
+                        ? (lang === 0
+                            ? `новый ранг: ${stats.level.nextRank.title}`
+                            : `new rank: ${stats.level.nextRank.title}`)
+                        : (lang === 0
+                            ? `уровень ${nextLevel} и прогресс к следующему рангу`
+                            : `level ${nextLevel} and progress toward the next rank`)}
+                </div>
+                {stats.level.nextRank && nextLevel < stats.level.nextRank.level && (
+                    <div style={s.xpUnlockHint}>
+                        {lang === 0
+                            ? `Ближайший ранг: ${stats.level.nextRank.title} на уровне ${stats.level.nextRank.level}`
+                            : `Next rank: ${stats.level.nextRank.title} at level ${stats.level.nextRank.level}`}
+                    </div>
+                )}
+            </div>
+
+            <div style={s.xpRuleGrid}>
+                {XP_RULES.map(rule => {
+                    const active = rule.key === selectedRule.key;
+                    const icon = XP_RULE_ICONS[rule.key];
+                    return (
+                        <MotionButton
+                            key={rule.key}
+                            type="button"
+                            whileTap={{ scale: 0.96 }}
+                            onClick={() => onSelectRule(rule.key)}
+                            style={{
+                                ...s.xpRuleButton,
+                                borderColor: active ? rule.color : `${Colors.get('border', theme)}50`,
+                                backgroundColor: active ? `${rule.color}18` : Colors.get('simplePanel', theme)
+                            }}
+                        >
+                            <span style={{ ...s.xpRuleIcon, color: rule.color }}>{icon}</span>
+                            <span style={s.xpRuleLabel}>{rule.label[lang]}</span>
+                            <span style={{ ...s.xpRuleValue, color: rule.color }}>+{rule.xp}</span>
+                        </MotionButton>
+                    );
+                })}
+            </div>
+
+            <MotionDiv
+                key={selectedRule.key}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.18 }}
+                style={s.xpRuleDetails}
+            >
+                <div style={{ ...s.xpRuleDetailsIcon, color: selectedRule.color, backgroundColor: `${selectedRule.color}18` }}>
+                    {selectedRule.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                    <div style={s.xpDetailsTitle}>{selectedRule.label[lang]}</div>
+                    <div style={s.xpDetailsText}>{selectedRule.description[lang]}</div>
+                </div>
+                <div style={s.xpDetailsScore}>
+                    <span style={{ color: selectedRule.color }}>+{selectedRule.xp} XP</span>
+                    <small>{selectedCount} x = {selectedEarned}</small>
+                </div>
+            </MotionDiv>
+        </div>
+    );
+};
+
+const FriendCard = ({ friend, theme }) => {
     // Calculate progress based on friend.xp and friend.level
     // Assuming xp needed for next level is level * 500
     const level = friend.level || 1;
@@ -414,19 +534,19 @@ const FriendCard = ({ friend, theme, lang }) => {
 
 const BottomSheet = ({ children, onClose, theme }) => (
     <div style={styles(theme).backdrop} onClick={onClose}>
-        <motion.div 
+        <MotionDiv 
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             style={styles(theme).sheet} onClick={e => e.stopPropagation()}
         >
             <div style={styles(theme).handle} />
             {children}
-        </motion.div>
+        </MotionDiv>
     </div>
 );
 
 const GenderToggle = ({ active, icon, color, onClick, theme }) => (
-    <motion.div 
+    <MotionDiv 
         whileTap={{scale:0.9}} onClick={onClick}
         style={{
             width:'40px', height:'40px', borderRadius:'12px', 
@@ -436,13 +556,13 @@ const GenderToggle = ({ active, icon, color, onClick, theme }) => (
         }}
     >
         {icon}
-    </motion.div>
+    </MotionDiv>
 );
 
 const ModalActions = ({ onClose, onConfirm, theme }) => (
     <div style={{display:'flex', gap:'15px', marginTop:'25px'}}>
-        <motion.button whileTap={{scale:0.95}} onClick={onClose} style={styles(theme).secBtn}><MdClose size={22}/></motion.button>
-        <motion.button whileTap={{scale:0.95}} onClick={onConfirm} style={styles(theme).priBtn}><MdDone size={22}/></motion.button>
+        <MotionButton whileTap={{scale:0.95}} onClick={onClose} style={styles(theme).secBtn}><MdClose size={22}/></MotionButton>
+        <MotionButton whileTap={{scale:0.95}} onClick={onConfirm} style={styles(theme).priBtn}><MdDone size={22}/></MotionButton>
     </div>
 );
 
@@ -475,7 +595,7 @@ const InfoCard = ({ icon, label, value, theme, fullWidth }) => (
 );
 
 const ActionItem = ({ icon, label, theme, noBorder, color, onClick }) => (
-    <motion.div 
+    <MotionDiv 
         whileTap={{ backgroundColor: 'rgba(255,255,255,0.05)' }} onClick={onClick}
         style={{
             display: 'flex', alignItems: 'center', padding: '18px', cursor: 'pointer',
@@ -484,10 +604,10 @@ const ActionItem = ({ icon, label, theme, noBorder, color, onClick }) => (
     >
         <div style={{ marginRight: '15px', color: color || Colors.get('subText', theme), fontSize: '18px' }}>{icon}</div>
         <span style={{ fontSize: '16px', fontWeight: '600', color: color || Colors.get('mainText', theme), flex: 1 }}>{label}</span>
-    </motion.div>
+    </MotionDiv>
 );
 
-const styles = (theme, fSize) => {
+const styles = (theme) => {
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
     const panel = Colors.get('simplePanel', theme);
@@ -538,8 +658,60 @@ const styles = (theme, fSize) => {
         // XP Bar
         xpContainer: { width: '100%', marginTop: '15px', padding: '0 10px' },
         xpInfo: { display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: '700', color: sub, marginBottom: '6px' },
+        xpInfoButton: {
+            border: 'none', background: 'transparent', color: sub, padding: 0, margin: 0,
+            display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px',
+            fontWeight: '800', cursor: 'pointer'
+        },
         xpTrack: { width: '100%', height: '8px', backgroundColor: panel, borderRadius: '4px', overflow: 'hidden' },
         xpFill: { height: '100%', borderRadius: '4px' },
+        xpGuide: { display: 'flex', flexDirection: 'column', gap: '16px' },
+        xpGuideHeader: {
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: '12px', marginBottom: '2px'
+        },
+        xpGuideSubtitle: { color: sub, fontSize: '13px', fontWeight: '700', marginTop: '5px' },
+        xpNextBadge: {
+            border: '1px solid', borderRadius: '14px', padding: '10px 12px',
+            fontSize: '13px', fontWeight: '900', flexShrink: 0
+        },
+        xpUnlockPanel: {
+            backgroundColor: panel, border: `1px solid ${Colors.get('border', theme)}50`,
+            borderRadius: '18px', padding: '15px'
+        },
+        xpUnlockTitle: { color: sub, fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '6px' },
+        xpUnlockText: { color: text, fontSize: '16px', fontWeight: '800' },
+        xpUnlockHint: { color: sub, fontSize: '12px', fontWeight: '600', marginTop: '7px' },
+        xpRuleGrid: {
+            display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: '10px'
+        },
+        xpRuleButton: {
+            minHeight: '78px', borderRadius: '16px', border: '1px solid',
+            padding: '10px', display: 'grid', gridTemplateColumns: '24px 1fr',
+            gridTemplateRows: '1fr auto', alignItems: 'center', gap: '4px 8px',
+            textAlign: 'left', cursor: 'pointer'
+        },
+        xpRuleIcon: { fontSize: '18px', display: 'flex', alignItems: 'center' },
+        xpRuleLabel: { color: text, fontSize: '13px', fontWeight: '800', lineHeight: 1.15 },
+        xpRuleValue: { gridColumn: '1 / span 2', fontSize: '12px', fontWeight: '900' },
+        xpRuleDetails: {
+            backgroundColor: panel, border: `1px solid ${Colors.get('border', theme)}50`,
+            borderRadius: '18px', padding: '14px', display: 'flex',
+            alignItems: 'center', gap: '12px'
+        },
+        xpRuleDetailsIcon: {
+            width: '42px', height: '42px', borderRadius: '13px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '19px', flexShrink: 0
+        },
+        xpDetailsTitle: { color: text, fontSize: '15px', fontWeight: '850', marginBottom: '3px' },
+        xpDetailsText: { color: sub, fontSize: '12px', fontWeight: '600', lineHeight: 1.35 },
+        xpDetailsScore: {
+            minWidth: '70px', display: 'flex', flexDirection: 'column',
+            alignItems: 'flex-end', gap: '2px', fontSize: '14px',
+            fontWeight: '900'
+        },
 
         metricsScrollContainer: {
             display: 'flex', overflowX: 'auto', padding: '5px', margin: '15px 0',
@@ -598,37 +770,3 @@ const styles = (theme, fSize) => {
 };
 
 export default UserPanel;
-
-
-export const calculateStats = () => {
-    const habitsCount = AppData.choosenHabits?.length || 0;
-    const trainingCount = Object.keys(AppData.trainingLog || {}).length;
-    const mentalCount = Object.keys(AppData.mentalLog || {}).length;
-    const sleepCount = Object.keys(AppData.sleepingLog || {}).length;
-    const recoveryCount = 
-        Object.keys(AppData.meditationLog || {}).length +
-        Object.keys(AppData.breathingLog || {}).length +
-        Object.keys(AppData.hardeningLog || {}).length;
-
-    // XP Logic: Match your specific multipliers
-    const totalXP = (trainingCount * 50) + (mentalCount * 30) + (sleepCount * 20) + (recoveryCount * 20) + (habitsCount * 10);
-    
-    let level = 1;
-    let xpThreshold = 500; 
-    let prevThreshold = 0;
-    while (totalXP >= xpThreshold) {
-        prevThreshold = xpThreshold;
-        level++;
-        xpThreshold += (level * 500); 
-    }
-
-    return {
-        counts: { habits: habitsCount, training: trainingCount, mental: mentalCount, sleep: sleepCount, recovery: recoveryCount },
-        level: {
-            current: level,
-            xp: totalXP - prevThreshold,
-            needed: xpThreshold - prevThreshold,
-            percent: Math.min(100, Math.max(0, ((totalXP - prevThreshold) / (xpThreshold - prevThreshold)) * 100))
-        }
-    };
-};

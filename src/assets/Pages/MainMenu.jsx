@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import Colors from '../StaticClasses/Colors'
-import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, isValidation$, setPage, setPremium } from '../StaticClasses/HabitsBus'
+import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, isValidation$, setPage } from '../StaticClasses/HabitsBus'
 import { AppData, UserData, getSectionStreak } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
-import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot,FaStar, FaMedal, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift , FaTelegramPlane } from "react-icons/fa";
+import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot,FaStar, FaMedal, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift , FaTelegramPlane, FaSlidersH, FaCheck } from "react-icons/fa";
 import { MdOutlineSelfImprovement } from "react-icons/md";
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 import { sendReferalLink } from '../StaticClasses/PaymentService'
@@ -25,8 +25,10 @@ const MainMenu = () => {
     const [showReferralModal, setShowReferralModal] = useState(false);
     
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium); 
-    const [isValidation, setIsValidation] = useState(UserData.isValidation);
+    const [, setIsValidation] = useState(UserData.isValidation);
     const [showGuideBanner, setShowGuideBanner] = useState(false);
+    const [showWidgetSettings, setShowWidgetSettings] = useState(false);
+    const [infoMiniPanel, setInfoMiniPanel] = useState(AppData.infoMiniPanel || {});
     useEffect(() => {
       // показываем только один раз
       const key = "uml_guide_banner_seen_v1";
@@ -81,6 +83,16 @@ useEffect(() => {
         persist();
     }
 }, [itemsState]);
+
+    const handleToggleWidget = async (id) => {
+        const next = {
+            ...infoMiniPanel,
+            [id]: !infoMiniPanel[id]
+        };
+        setInfoMiniPanel(next);
+        AppData.infoMiniPanel = next;
+        await saveData();
+    };
 
     useEffect(() => {
         const subscription = premium$.subscribe(setHasPremium);
@@ -215,11 +227,20 @@ useEffect(() => {
                 theme={theme}
                 lang={lang}
             />
+            <WidgetSettingsModal
+                isOpen={showWidgetSettings}
+                onClose={() => setShowWidgetSettings(false)}
+                items={initialMenuItems.filter(item => item.icon)}
+                values={infoMiniPanel}
+                onToggle={handleToggleWidget}
+                theme={theme}
+                lang={lang}
+            />
             <AnimatePresence>
               {showGuideBanner && !devConsolePanel && !showReferralModal && (
                 <>
                   {/* Backdrop */}
-                  <motion.div
+                  <Motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
@@ -234,7 +255,7 @@ useEffect(() => {
                   />
             
                   {/* Banner */}
-                  <motion.div
+                  <Motion.div
                     initial={{ y: 40, opacity: 0, scale: 0.98 }}
                     animate={{ y: 0, opacity: 1, scale: 1 }}
                     exit={{ y: 40, opacity: 0, scale: 0.98 }}
@@ -319,7 +340,7 @@ useEffect(() => {
                       </div>
             
                       <div style={{ display: "flex", gap: "10px", marginTop: 14 }}>
-                        <motion.button
+                        <Motion.button
                           whileTap={{ scale: 0.97 }}
                           onClick={openGuide}
                           style={{
@@ -335,9 +356,9 @@ useEffect(() => {
                           }}
                         >
                           {lang === 0 ? "Открыть инструкцию" : "Open guide"}
-                        </motion.button>
+                        </Motion.button>
             
-                        <motion.button
+                        <Motion.button
                           whileTap={{ scale: 0.97 }}
                           onClick={closeGuideBanner}
                           style={{
@@ -352,10 +373,10 @@ useEffect(() => {
                           }}
                         >
                           {lang === 0 ? "Позже" : "Later"}
-                        </motion.button>
+                        </Motion.button>
                       </div>
                     </div>
-                  </motion.div>
+                  </Motion.div>
                 </>
               )}
             </AnimatePresence>
@@ -366,9 +387,16 @@ useEffect(() => {
                 <div style={styles(theme).scrollView}>
                     <div style={{ height: '2vh', width: '100%' }} onClick={() => { handleClick(true) }} ></div>
 
-                    
+                    <Motion.button
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setShowWidgetSettings(true)}
+                        style={styles(theme, fSize).widgetSettingsBtn}
+                    >
+                        <FaSlidersH />
+                        <span>{lang === 0 ? 'Виджеты карточек' : 'Card widgets'}</span>
+                    </Motion.button>
 
-                    <motion.div
+                    <Motion.div
                         variants={containerAnim}
                         initial="hidden"
                         animate="show"
@@ -388,13 +416,14 @@ useEffect(() => {
                                     onPin={() => handlePin(menuItem.id)}
                                     onHide={() => handleHide(menuItem.id)}
                                     setShowReferralModal={setShowReferralModal}
+                                    showInfo={infoMiniPanel[menuItem.id] !== false}
                                 />
                             ))}
                         </AnimatePresence>
-                    </motion.div>
+                    </Motion.div>
 
                     {hasHiddenItems && (
-                        <motion.div 
+                        <Motion.div 
                             initial={{opacity: 0}} animate={{opacity: 1}}
                             onClick={resetHidden}
                             style={{
@@ -409,7 +438,7 @@ useEffect(() => {
                             }}
                         >
                             <FaTrashRestore /> {lang === 0 ? 'Вернуть скрытые разделы' : 'Restore hidden sections'}
-                        </motion.div>
+                        </Motion.div>
                     )}
 
                     <div style={{ height: '10vh', width: '100%' }} onClick={() => { handleClick(false) }} ></div>
@@ -424,7 +453,7 @@ function AIInsightButton({ theme, lang, onClick }) {
     const mainColor = '#00E5FF';
 
     return (
-        <motion.div
+        <Motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             whileTap={{ scale: 0.96 }}
@@ -456,7 +485,7 @@ function AIInsightButton({ theme, lang, onClick }) {
             }}>
                 {lang === 0 ? 'AI Ассистент' : 'AI Assistant'}
             </span>
-        </motion.div>
+        </Motion.div>
     );
 }
 function ReferalButton({ theme, lang, onClick }) {
@@ -464,7 +493,7 @@ function ReferalButton({ theme, lang, onClick }) {
     const mainColor = '#ffd500';
 
     return (
-        <motion.div
+        <Motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             whileTap={{ scale: 0.96 }}
@@ -496,10 +525,10 @@ function ReferalButton({ theme, lang, onClick }) {
             }}>
                 {lang === 0 ? 'Пригласи друга' : 'Invite a friend'}
             </span>
-        </motion.div>
+        </Motion.div>
     );
 }
-function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,setShowReferralModal }) {
+function MenuCard({ item, theme, fSize, lang, isPinned, onPin, onHide,setShowReferralModal, showInfo }) {
     const isDark = theme === 'dark';
 
     const cardStyle = {
@@ -536,7 +565,7 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,set
     };
 
     return (
-        <motion.div
+        <Motion.div
             layout 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -598,7 +627,7 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,set
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', marginLeft: '8px' }}>
-                <Info id = {item.id} theme={theme} lang={lang} />
+                {showInfo && <Info id = {item.id} theme={theme} lang={lang} />}
                 
             </div>
             </div>) : 
@@ -620,7 +649,7 @@ function MenuCard({ item, theme, index, fSize, lang, isPinned, onPin, onHide,set
             }
 
             
-        </motion.div>
+        </Motion.div>
     );
 }
 
@@ -677,6 +706,23 @@ const styles = (theme, fontSize) => ({
         gap: '4px', 
         marginTop: '5px'
     },
+    widgetSettingsBtn: {
+        width: '92%',
+        minHeight: '42px',
+        borderRadius: '18px',
+        border: `1px solid ${Colors.get('border', theme)}55`,
+        background: Colors.get('simplePanel', theme),
+        color: Colors.get('mainText', theme),
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '9px',
+        fontFamily: 'Segoe UI',
+        fontSize: fontSize === 0 ? '13px' : '15px',
+        fontWeight: '800',
+        marginBottom: '10px',
+        cursor: 'pointer'
+    },
     title: {
         fontFamily: 'Segoe UI',
         fontSize: fontSize === 0 ? '19px' : '21px',
@@ -714,7 +760,7 @@ function playEffects(sound) {
     }
 }
 
-function getInfo(id,langIndex = 0) {
+function getInfo(id) {
     const sectionMap = { HabitsMain: 'habits', ToDoMain: 'todo', MentalMain: 'mental', RecoveryMain: 'recovery', TrainingMain: 'training', SleepMain: 'sleep' };
     const sectionId = sectionMap[id];
     const streak = sectionId ? getSectionStreak(sectionId) : 0;
@@ -725,13 +771,13 @@ function getInfo(id,langIndex = 0) {
         return tonnage > 0 ? (tonnage / 1000).toFixed(1) + (AppData.prefs[0] === 0 ? 'т' : 't') : '';
     }
     else if (id === 'ToDoMain') return AppData.todoList.length > 0 ? AppData.todoList.length.toString() : '';
-    else if (id === 'SleepMain') return getTodaySleepHours(langIndex).toString();
+    else if (id === 'SleepMain') return getTodaySleepHours().toString();
     else if (id === 'RecoveryMain') return getTodaySessionCount().toString();
     else if (id === 'MentalMain') return getMentalScoresSummary().toString();
 
     return '';
 }
-function getTodaySleepHours(langIndex) {
+function getTodaySleepHours() {
   const entry = AppData.sleepingLog[new Date().toISOString().split('T')[0]];
   if (!entry || typeof entry.duration !== 'number') return '';
   return formatMsToHhMm(entry.duration);
@@ -761,8 +807,130 @@ function getMentalScoresSummary() {
 }
 export default MainMenu
 
-const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
+const WidgetSettingsModal = ({ isOpen, onClose, items, values, onToggle, theme, lang }) => {
     const isDark = theme === 'dark';
+    const bg = Colors.get('simplePanel', theme);
+    const text = Colors.get('mainText', theme);
+    const sub = Colors.get('subText', theme);
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    <Motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            backgroundColor: 'rgba(0,0,0,0.6)',
+                            backdropFilter: 'blur(6px)',
+                            zIndex: 1800
+                        }}
+                    />
+                    <Motion.div
+                        initial={{ y: 40, opacity: 0, scale: 0.98 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        exit={{ y: 40, opacity: 0, scale: 0.98 }}
+                        transition={{ type: 'spring', damping: 23, stiffness: 260 }}
+                        style={{
+                            position: 'fixed',
+                            left: '4%',
+                            right: '4%',
+                            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)',
+                            maxWidth: '560px',
+                            margin: '0 auto',
+                            borderRadius: '26px',
+                            padding: '18px',
+                            background: isDark ? 'rgba(20,20,22,0.94)' : 'rgba(255,255,255,0.96)',
+                            border: `1px solid ${Colors.get('border', theme)}66`,
+                            boxShadow: isDark ? '0 28px 80px rgba(0,0,0,0.72)' : '0 24px 70px rgba(0,0,0,0.2)',
+                            zIndex: 1801
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                            <div style={{
+                                width: '42px',
+                                height: '42px',
+                                borderRadius: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                                color: '#4DA6FF',
+                                flexShrink: 0
+                            }}>
+                                <FaSlidersH />
+                            </div>
+                            <div>
+                                <div style={{ color: text, fontSize: '18px', fontWeight: 900 }}>
+                                    {lang === 0 ? 'Виджеты карточек' : 'Card widgets'}
+                                </div>
+                                <div style={{ color: sub, fontSize: '12px', fontWeight: 700, marginTop: '3px' }}>
+                                    {lang === 0 ? 'Выберите, какие мини-ячейки показывать справа' : 'Choose which mini cells are shown on the right'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {items.map(item => {
+                                const enabled = values[item.id] !== false;
+                                return (
+                                    <Motion.button
+                                        key={item.id}
+                                        type="button"
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => onToggle(item.id)}
+                                        style={{
+                                            minHeight: '54px',
+                                            borderRadius: '18px',
+                                            border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}66`,
+                                            background: enabled ? `${item.color}18` : bg,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '10px 12px',
+                                            cursor: 'pointer',
+                                            textAlign: 'left'
+                                        }}
+                                    >
+                                        <div style={{ color: item.color, width: '24px', display: 'flex', justifyContent: 'center' }}>
+                                            {React.cloneElement(item.icon, { size: 18 })}
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ color: text, fontSize: '14px', fontWeight: 850 }}>{item.title}</div>
+                                            <div style={{ color: sub, fontSize: '11px', fontWeight: 650, marginTop: '2px' }}>
+                                                {lang === 0 ? 'Мини-метрика на главном экране' : 'Mini metric on the main screen'}
+                                            </div>
+                                        </div>
+                                        <div style={{
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: '10px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: enabled ? item.color : 'transparent',
+                                            color: enabled ? '#111' : sub,
+                                            border: enabled ? 'none' : `1px solid ${Colors.get('border', theme)}88`,
+                                            flexShrink: 0
+                                        }}>
+                                            {enabled && <FaCheck size={13} />}
+                                        </div>
+                                    </Motion.button>
+                                );
+                            })}
+                        </div>
+                    </Motion.div>
+                </>
+            )}
+        </AnimatePresence>
+    );
+};
+
+const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
     const bg = Colors.get('simplePanel', theme);
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
@@ -775,7 +943,7 @@ const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
             {isOpen && (
                 <>
                     {/* Backdrop */}
-                    <motion.div
+                    <Motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -788,7 +956,7 @@ const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
                     />
 
                     {/* Modal Panel */}
-                    <motion.div
+                    <Motion.div
                         initial={{ y: '100%' }}
                         animate={{ y: 0 }}
                         exit={{ y: '100%' }}
@@ -807,7 +975,7 @@ const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
                         <div style={{ width: '40px', height: '5px', borderRadius: '10px', backgroundColor: sub, opacity: 0.3, marginBottom: '20px' }} />
 
                         {/* Animated Icon */}
-                        <motion.div
+                        <Motion.div
                             initial={{ scale: 0.5, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ delay: 0.1 }}
@@ -820,7 +988,7 @@ const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
                             }}
                         >
                             <FaGift size={40} color="#FFF" />
-                        </motion.div>
+                        </Motion.div>
 
                         {/* Title */}
                         <h2 style={{ 
@@ -843,7 +1011,7 @@ const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
 
                         {/* Action Buttons */}
                         <div style={{ width: '100%', display: 'flex', gap: '12px', flexDirection: 'column' }}>
-                            <motion.button
+                            <Motion.button
                                 whileTap={{ scale: 0.96 }}
                                 onClick={() => { onSend(); onClose(); }}
                                 style={{
@@ -855,9 +1023,9 @@ const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
                             >
                                 <FaTelegramPlane size={20} />
                                 {lang === 0 ? 'Отправить приглашение' : 'Send Invitation'}
-                            </motion.button>
+                            </Motion.button>
 
-                            <motion.button
+                            <Motion.button
                                 whileTap={{ scale: 0.96 }}
                                 onClick={onClose}
                                 style={{
@@ -868,9 +1036,9 @@ const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
                                 }}
                             >
                                 {lang === 0 ? 'Позже' : 'Maybe later'}
-                            </motion.button>
+                            </Motion.button>
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 </>
             )}
         </AnimatePresence>

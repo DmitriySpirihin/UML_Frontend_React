@@ -95,7 +95,7 @@ export class AppData{
     "hidden": false
   }
 };
-static infoMiniPanel = {
+  static infoMiniPanel = {
   "MainCard": true,
   "HabitsMain": true,
   "TrainingMain": true,
@@ -103,6 +103,15 @@ static infoMiniPanel = {
   "RecoveryMain": true,
   "SleepMain": true,
   "ToDoMain": true
+};
+static habitCardWidgets = {
+  days: true,
+  skips: true,
+  streak: true,
+  timer: true,
+  description: true,
+  goals: true,
+  achievements: true
 };
   // methods
   static init(data) {
@@ -198,6 +207,17 @@ static infoMiniPanel = {
       "RecoveryMain": true,
       "SleepMain": true,
       "ToDoMain": true
+    };
+    const savedHabitCardWidgets = data.habitCardWidgets || {};
+    const statsFallback = savedHabitCardWidgets.stats;
+    this.habitCardWidgets = {
+      days: savedHabitCardWidgets.days ?? statsFallback ?? true,
+      skips: savedHabitCardWidgets.skips ?? statsFallback ?? true,
+      streak: savedHabitCardWidgets.streak ?? statsFallback ?? true,
+      timer: savedHabitCardWidgets.timer ?? statsFallback ?? true,
+      description: savedHabitCardWidgets.description ?? true,
+      goals: savedHabitCardWidgets.goals ?? true,
+      achievements: savedHabitCardWidgets.achievements ?? true
     };
   } 
   static async setPrefs(ind,value){

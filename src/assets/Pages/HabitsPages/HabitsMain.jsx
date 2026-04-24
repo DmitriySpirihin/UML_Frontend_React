@@ -9,9 +9,10 @@ import { logSectionVisit } from '../../StaticClasses/AppData.js'
 import { expandedCard$, setExpandedCard } from '../../StaticClasses/HabitsBus.js';
 import { theme$, lang$, fontSize$, premium$, confirmationPanel$, setShowPopUpPanel, setPage,setActiveTab } from '../../StaticClasses/HabitsBus'
 import Colors from '../../StaticClasses/Colors'
+import { saveData } from '../../StaticClasses/SaveHelper.js';
 
 import { MdDone, MdClose } from 'react-icons/md'
-import { FaPlus, FaTrash, FaPencilAlt, FaArrowUp, FaFire, FaChevronDown , FaClock} from 'react-icons/fa'
+import { FaPlus, FaTrash, FaPencilAlt, FaArrowUp, FaFire, FaChevronDown , FaClock, FaSlidersH } from 'react-icons/fa'
 //new
 import {FiCalendar} from 'react-icons/fi'
 import {MdSkipNext} from 'react-icons/md'
@@ -31,6 +32,38 @@ const skipSound = new Audio('Audio/Skip.wav');
 const isDoneSound = new Audio('Audio/IsDone.wav');
 const NEGATIVE_CATEGORY = 'Отказ от вредного';
 const HABITS_CATEGORY_COLLAPSE_KEY = 'uml_habits_category_collapsed_v1';
+const DEFAULT_HABIT_CARD_WIDGETS = {
+    days: true,
+    skips: true,
+    streak: true,
+    timer: true,
+    description: true,
+    goals: true,
+    achievements: true
+};
+const HABIT_CARD_WIDGET_OPTIONS = [
+    { key: 'days', label: ['Дни', 'Days'], hint: ['сколько дней привычка есть в трекере', 'how many days the habit is tracked'] },
+    { key: 'skips', label: ['Пропуски', 'Skips'], hint: ['сколько раз привычка была пропущена', 'how many times the habit was skipped'] },
+    { key: 'streak', label: ['Серии', 'Streaks'], hint: ['текущая серия выполнений', 'current completion streak'] },
+    { key: 'timer', label: ['Таймер', 'Timer'], hint: ['обратный таймер или время без срыва', 'countdown or time without relapse'] },
+    { key: 'description', label: ['Описание', 'Description'], hint: ['текст с пояснением привычки', 'habit explanation text'] },
+    { key: 'goals', label: ['Микроцели', 'Micro goals'], hint: ['список целей внутри карточки', 'goal list inside the card'] },
+    { key: 'achievements', label: ['Достижения', 'Achievements'], hint: ['прогресс по этапам привычки', 'habit milestone progress'] }
+];
+
+function normalizeHabitCardWidgets(widgets = {}) {
+    const statsFallback = widgets.stats;
+    return {
+        ...DEFAULT_HABIT_CARD_WIDGETS,
+        days: widgets.days ?? statsFallback ?? DEFAULT_HABIT_CARD_WIDGETS.days,
+        skips: widgets.skips ?? statsFallback ?? DEFAULT_HABIT_CARD_WIDGETS.skips,
+        streak: widgets.streak ?? statsFallback ?? DEFAULT_HABIT_CARD_WIDGETS.streak,
+        timer: widgets.timer ?? statsFallback ?? DEFAULT_HABIT_CARD_WIDGETS.timer,
+        description: widgets.description ?? DEFAULT_HABIT_CARD_WIDGETS.description,
+        goals: widgets.goals ?? DEFAULT_HABIT_CARD_WIDGETS.goals,
+        achievements: widgets.achievements ?? DEFAULT_HABIT_CARD_WIDGETS.achievements
+    };
+}
 
 export let removeHabitFn;
 export let addHabitFn;
@@ -149,6 +182,23 @@ const styles = (theme, fSize = 0) => {
             color: '#FFF',
             display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '600', fontSize: '15px'
         },
+        widgetSettingsBtn: {
+            width: '95%',
+            minHeight: '44px',
+            margin: '0 auto 10px auto',
+            borderRadius: '18px',
+            border: isLight ? '1px solid rgba(0,0,0,0.05)' : `1px solid ${Colors.get('border', theme)}80`,
+            backgroundColor: modalBg,
+            color: Colors.get('mainText', theme),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '9px',
+            fontWeight: '800',
+            fontSize: fSize === 0 ? '13px' : '15px',
+            cursor: 'pointer',
+            boxShadow: isLight ? '0 6px 14px rgba(0,0,0,0.06)' : '0 10px 24px rgba(0,0,0,0.22)'
+        },
         icon: { color: Colors.get('icons', theme), fontSize: '24px' }
     }
 }
@@ -178,6 +228,8 @@ const HabitsMain = () => {
     const [hasHabits, setHasHabits] = useState(AppData.choosenHabits.length > 0);
     const [currentId, setCurrentId] = useState(0);
     const [dataVersion, setDataVersion] = useState(0);
+    const [showWidgetSettings, setShowWidgetSettings] = useState(false);
+    const [habitCardWidgets, setHabitCardWidgets] = useState(normalizeHabitCardWidgets(AppData.habitCardWidgets));
 
     const [cP, setCP] = useState({ show: false, type: -1, hId: 0, gId: 0, setGoals: null, hInfo: null })
     const [newGoal, setNewGoal] = useState('');
@@ -354,12 +406,30 @@ const HabitsMain = () => {
     removeHabitFn = removeHabit;
     addHabitFn = addHabit;
 
+    const toggleHabitWidget = async (key) => {
+        const next = normalizeHabitCardWidgets({
+            ...habitCardWidgets,
+            [key]: !habitCardWidgets[key]
+        });
+        setHabitCardWidgets(next);
+        AppData.habitCardWidgets = next;
+        await saveData();
+    };
+
     const isLight = theme === 'light' || theme === 'speciallight';
     const pageBg = isLight ? '#F2F4F6' : Colors.get('background', theme);
 
     return (
         <div style={{ ...styles(theme).container, backgroundColor: pageBg }}>
             {<HoverInfoButton tab='HabitsMain'/>}
+            <HabitWidgetSettingsModal
+                isOpen={showWidgetSettings}
+                onClose={() => setShowWidgetSettings(false)}
+                values={habitCardWidgets}
+                onToggle={toggleHabitWidget}
+                theme={theme}
+                langIndex={langIndex}
+            />
             {needConfirmation && <div style={styles(theme).confirmContainer}>
                 <div style={styles(theme).cP}>
                     <div style={styles(theme, fSize).mainText}>{confirmMessage}</div>
@@ -378,7 +448,15 @@ const HabitsMain = () => {
             </div>}
             
             {hasHabits && <div style={styles(theme).scrollView} key={dataVersion}>
-                {buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete })}
+                <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => setShowWidgetSettings(true)}
+                    style={styles(theme, fSize).widgetSettingsBtn}
+                >
+                    <FaSlidersH />
+                    <span>{langIndex === 0 ? 'Виджеты карточек' : 'Card widgets'}</span>
+                </motion.button>
+                {buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete, habitCardWidgets })}
                 <div style={{ marginBottom: '150px' }} />
             </div>}
 
@@ -500,7 +578,7 @@ function getAllHabits() {
     );
 }
 
-function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete }) {
+function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete, habitCardWidgets }) {
     return categories.map(category => {
         const habitsInCategory = habitsCards
             .map(id => getAllHabits().find(h => h.id === id))
@@ -527,6 +605,7 @@ function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize,
                         setConfirmMessage={setConfirmMessage}
                         setNeedConfirmation={setNeedConfirmation}
                         setHabitToDelete={setHabitToDelete}
+                        habitCardWidgets={habitCardWidgets}
                     />
                 ))}
             </CategoryPanel>
@@ -534,7 +613,7 @@ function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize,
     });
 }
 
-function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete }) {
+function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete, habitCardWidgets }) {
     const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
@@ -565,6 +644,8 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
 
     const habitColor = isNegative ? '#FF3B30' : (habit.color || '#32D74B');
     const isLight = theme === 'light' || theme === 'speciallight';
+    const widgets = normalizeHabitCardWidgets(habitCardWidgets);
+    const showStatsRow = widgets.days || widgets.skips || widgets.streak || widgets.timer;
 
     // --- УЛУЧШЕННЫЕ ТЕНИ ДЛЯ КАРТОЧЕК (Многослойные, мягкие) ---
     let cardBg = isLight ? '#FFFFFF' : (Colors.get('simplePanel', theme) + '99');
@@ -699,15 +780,15 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
 
                     */}
 
-                    <div style={{display:'flex',gap :'5px',marginTop:'16px',justifyContent:'center'}}>
+	                    {showStatsRow && <div style={{display:'flex',gap :'5px',marginTop:'16px',justifyContent:'center'}}>
 
-                    <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getDaysAmount(id)} color={theme === 'dark' ? '#a5a5a5' : '#1e1e1e8f'} />
-                    <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={theme === 'dark' ? '#e33131' : '#9800008f'} />
-                    {!isNegative && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDoneAmount(id)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
-                    {!isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={theme === 'dark' ? '#31c8e3' : '#0086988f'} />}
-                    {isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
+	                    {widgets.days && <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getDaysAmount(id)} color={theme === 'dark' ? '#a5a5a5' : '#1e1e1e8f'} />}
+	                    {widgets.skips && <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={theme === 'dark' ? '#e33131' : '#9800008f'} />}
+                    {widgets.streak && !isNegative && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDoneAmount(id)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
+                    {widgets.timer && !isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={theme === 'dark' ? '#31c8e3' : '#0086988f'} />}
+	                    {widgets.timer && isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
 
-                    </div>
+	                    </div>}
 
 
 
@@ -738,10 +819,10 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
         {/* Separator Line */}
         <div style={{ height: '1px', width: '100%', backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)', marginBottom: '15px' }} />
         {/* Description */}
-                {habitInfo.descr[langIndex] && (
-                    <div style={{ color: subTextColor, fontSize: '14px', marginBottom: '20px', lineHeight: '1.4' }}>
-                        {habitInfo.descr[langIndex]}
-                    </div>
+	                {widgets.description && habitInfo.descr[langIndex] && (
+	                    <div style={{ color: subTextColor, fontSize: '14px', marginBottom: '20px', lineHeight: '1.4' }}>
+	                        {habitInfo.descr[langIndex]}
+	                    </div>
                 )}
         {/* --- CONTENT BASED ON PREMIUM STATUS --- */}
         {hasPremium ? (
@@ -749,9 +830,9 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                 
 
                 {/* Goals List */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {habitsGoals?.map((goal, index) => (
-                        <motion.div key={index} whileTap={{ scale: 0.98 }} style={{ display: 'flex', alignItems: 'center', width: '90%', padding: '14px 16px', borderRadius: '16px', backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.05)', border: isLight ? '1px solid rgba(0,0,0,0.05)' : 'none', boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none' }}>
+	                {widgets.goals && <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+	                    {habitsGoals?.map((goal, index) => (
+	                        <motion.div key={index} whileTap={{ scale: 0.98 }} style={{ display: 'flex', alignItems: 'center', width: '90%', padding: '14px 16px', borderRadius: '16px', backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.05)', border: isLight ? '1px solid rgba(0,0,0,0.05)' : 'none', boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none' }}>
                             <div style={{ fontSize: '14px', flexGrow: 1, fontWeight: '500', color: goal.isDone ? (isLight ? '#AEAEB2' : '#636366') : textColor, textDecoration: goal.isDone ? 'line-through' : 'none' }}>{goal.text}</div>
                             
                             {/* Edit/Delete Goal Options */}
@@ -771,25 +852,25 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                             <div onClick={() => setHabitGoals(prev => { const updated = prev.map((h, i) => i === index ? { ...h, isDone: !h.isDone } : h); AppData.choosenHabitsGoals[id] = updated; return updated; })} style={{ width: '24px', height: '24px', borderRadius: '8px', border: goal.isDone ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: goal.isDone ? habitColor : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                 {goal.isDone && <FaCheck size={12} color="#FFF" />}
                             </div>
-                        </motion.div>
-                    ))}
-                </div>
+	                        </motion.div>
+	                    ))}
+	                </div>}
 
-                {/* Add Goal Button */}
-                <div onClick={() => setCP({ show: true, type: 1, hId: id, gId: 0, setGoals: setHabitGoals })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '15px', cursor: 'pointer', padding: '12px', borderRadius: '16px', border: `2px dashed ${habitColor}66`, backgroundColor: `${habitColor}10` }}>
-                    <FaPlus style={{ fontSize: '12px', color: habitColor }} />
-                    <span style={{ fontSize: '13px', marginLeft: '8px', color: habitColor, fontWeight: '600' }}>
-                        {langIndex === 0 ? 'Добавить цель' : 'Add goal'}
-                    </span>
-                </div>
+	                {/* Add Goal Button */}
+	                {widgets.goals && <div onClick={() => setCP({ show: true, type: 1, hId: id, gId: 0, setGoals: setHabitGoals })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '15px', cursor: 'pointer', padding: '12px', borderRadius: '16px', border: `2px dashed ${habitColor}66`, backgroundColor: `${habitColor}10` }}>
+	                    <FaPlus style={{ fontSize: '12px', color: habitColor }} />
+	                    <span style={{ fontSize: '13px', marginLeft: '8px', color: habitColor, fontWeight: '600' }}>
+	                        {langIndex === 0 ? 'Добавить цель' : 'Add goal'}
+	                    </span>
+	                </div>}
 
-                {/* Achievements Section */}
-                <div style={{ marginTop: '25px', marginBottom: '10px', fontSize: '12px', fontWeight: 'bold', color: Colors.get('subText', theme), textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    {langIndex === 0 ? 'Достижения' : 'Achievements'}
-                </div>
-                {AppData.choosenHabitsAchievements[id]?.map((milestone, index) => (
-                    <Achievement key={index} index={index} milestone={milestone} id={id} isNegative={isNegative} percent={percent} theme={theme} fSize={fSize} langIndex={langIndex} />
-                ))}
+	                {/* Achievements Section */}
+	                {widgets.achievements && <div style={{ marginTop: '25px', marginBottom: '10px', fontSize: '12px', fontWeight: 'bold', color: Colors.get('subText', theme), textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+	                    {langIndex === 0 ? 'Достижения' : 'Achievements'}
+	                </div>}
+	                {widgets.achievements && AppData.choosenHabitsAchievements[id]?.map((milestone, index) => (
+	                    <Achievement key={index} index={index} milestone={milestone} id={id} isNegative={isNegative} percent={percent} theme={theme} fSize={fSize} langIndex={langIndex} />
+	                ))}
             </>
         ) : (
             /* --- NO PREMIUM VIEW --- */
@@ -820,6 +901,124 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
             )}
         </motion.div>
     )
+}
+
+function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, langIndex }) {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const bg = isLight ? '#FFFFFF' : Colors.get('simplePanel', theme);
+    const text = Colors.get('mainText', theme);
+    const sub = Colors.get('subText', theme);
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            backgroundColor: 'rgba(0,0,0,0.6)',
+                            backdropFilter: 'blur(6px)',
+                            zIndex: 5000
+                        }}
+                    />
+                    <motion.div
+                        initial={{ y: 40, opacity: 0, scale: 0.98 }}
+                        animate={{ y: 0, opacity: 1, scale: 1 }}
+                        exit={{ y: 40, opacity: 0, scale: 0.98 }}
+                        transition={{ type: 'spring', damping: 23, stiffness: 260 }}
+                        style={{
+                            position: 'fixed',
+                            left: '4%',
+                            right: '4%',
+                            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)',
+                            maxWidth: '560px',
+                            margin: '0 auto',
+                            borderRadius: '26px',
+                            padding: '18px',
+                            backgroundColor: bg,
+                            border: isLight ? '1px solid rgba(0,0,0,0.06)' : `1px solid ${Colors.get('border', theme)}80`,
+                            boxShadow: isLight ? '0 24px 70px rgba(0,0,0,0.18)' : '0 28px 80px rgba(0,0,0,0.72)',
+                            zIndex: 5001
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                            <div style={{
+                                width: '42px',
+                                height: '42px',
+                                borderRadius: '14px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
+                                color: '#FFD700',
+                                flexShrink: 0
+                            }}>
+                                <FaSlidersH />
+                            </div>
+                            <div>
+                                <div style={{ color: text, fontSize: '18px', fontWeight: 900 }}>
+                                    {langIndex === 0 ? 'Карточки привычек' : 'Habit cards'}
+                                </div>
+                                <div style={{ color: sub, fontSize: '12px', fontWeight: 700, marginTop: '3px' }}>
+                                    {langIndex === 0 ? 'Выберите, какие блоки показывать' : 'Choose which blocks are visible'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {HABIT_CARD_WIDGET_OPTIONS.map(option => {
+                                const enabled = values[option.key] !== false;
+                                return (
+                                    <motion.button
+                                        key={option.key}
+                                        type="button"
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => onToggle(option.key)}
+                                        style={{
+                                            minHeight: '56px',
+                                            borderRadius: '18px',
+                                            border: `1px solid ${enabled ? '#FFD700' : Colors.get('border', theme)}66`,
+                                            backgroundColor: enabled ? 'rgba(255, 215, 0, 0.12)' : (isLight ? '#F7F7F8' : 'rgba(255,255,255,0.04)'),
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '10px 12px',
+                                            cursor: 'pointer',
+                                            textAlign: 'left'
+                                        }}
+                                    >
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ color: text, fontSize: '14px', fontWeight: 850 }}>{option.label[langIndex]}</div>
+                                            <div style={{ color: sub, fontSize: '11px', fontWeight: 650, marginTop: '2px' }}>{option.hint[langIndex]}</div>
+                                        </div>
+                                        <div style={{
+                                            width: '28px',
+                                            height: '28px',
+                                            borderRadius: '10px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            backgroundColor: enabled ? '#FFD700' : 'transparent',
+                                            color: enabled ? '#1D1D1F' : sub,
+                                            border: enabled ? 'none' : `1px solid ${Colors.get('border', theme)}88`,
+                                            flexShrink: 0
+                                        }}>
+                                            {enabled && <FaCheck size={13} />}
+                                        </div>
+                                    </motion.button>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
+    );
 }
 
 function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme }) {

@@ -1,4 +1,4 @@
-import { useEffect, useState,useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData, fillEmptyDays } from '../StaticClasses/AppData';
 import { theme$, lang$, setPage, setTheme } from '../StaticClasses/HabitsBus';
@@ -7,7 +7,10 @@ import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud, loadData } from '../StaticClasses/SaveHelper';
 import { initializeTelegramSDK, getTelegramContext } from '../StaticClasses/SaveHelper';
 import { isUserHasPremium ,sendXp,getFriendsList} from '../StaticClasses/NotificationsManager';
-import { calculateStats } from './UserPanel';
+import { calculateStats } from '../Helpers/UserStats.js';
+
+const MotionDiv = motion.div;
+const MotionImg = motion.img;
 
 function LoadPanel() {
   const [theme, setThemeState] = useState('dark');
@@ -24,7 +27,7 @@ useEffect(() => {
       await initializeTelegramSDK({ mock: outsideTelegram });
 
       const tgContext = getTelegramContext(); 
-      const { user, languageCode, colorScheme, start_param } = tgContext;
+      const { user, colorScheme, start_param } = tgContext;
 
       if (user) {
         if (AppData.isFirstStart) {
@@ -95,13 +98,13 @@ useEffect(() => {
       {/* Animated Background Overlay */}
       <div style={styles(theme).bgOverlay} />
 
-      <motion.div 
+      <MotionDiv 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
         style={styles(theme).content}
       >
-        <motion.img 
+        <MotionImg 
           src={'images/Ui/Main_Dark.png'} 
           style={styles(theme).logo} 
           alt="UltyMyLife"
@@ -112,7 +115,7 @@ useEffect(() => {
         <div style={styles(theme).loaderSection}>
           <AnimatePresence mode="wait">
             {loading ? (
-              <motion.div
+              <MotionDiv
                 key="loader"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -121,9 +124,9 @@ useEffect(() => {
               >
                 <div style={styles(theme).ring} />
                 <img src={userPhoto} style={styles(theme).loadingPhoto} alt="Loading..." />
-              </motion.div>
+              </MotionDiv>
             ) : (
-              <motion.div
+              <MotionDiv
                 key="user"
                 initial={{ scale: 0, rotate: -10 }}
                 animate={{ scale: 1, rotate: 0 }}
@@ -131,17 +134,17 @@ useEffect(() => {
                 style={styles(theme).photoWrapper}
               >
                 <img src={userPhoto} style={styles(theme).userPhoto} alt="User" />
-                <motion.div 
+                <MotionDiv 
                    initial={{ opacity: 0 }} 
                    animate={{ opacity: 1 }} 
                    style={styles(theme).premiumBadge} 
                 />
-              </motion.div>
+              </MotionDiv>
             )}
           </AnimatePresence>
         </div>
 
-        <motion.div 
+        <MotionDiv 
           animate={{ opacity: [0.4, 1, 0.4] }}
           transition={{ duration: 2, repeat: Infinity }}
           style={styles(theme).textContainer}
@@ -155,14 +158,14 @@ useEffect(() => {
             }
           </h2>
           <div style={styles(theme).progressBar}>
-            <motion.div 
+            <MotionDiv 
               initial={{ width: "0%" }}
               animate={{ width: loading ? "70%" : "100%" }}
               style={styles(theme).progressFill}
             />
           </div>
-        </motion.div>
-      </motion.div>
+        </MotionDiv>
+      </MotionDiv>
 
       {/* Modern Spinner CSS */}
       <style>{`
@@ -281,5 +284,3 @@ const styles = (theme) => ({
 });
 
 // Helper to avoid code duplication
-
-
