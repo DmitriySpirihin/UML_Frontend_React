@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Colors from '../../StaticClasses/Colors'
 import { allHabits } from '../../Classes/Habit.js';
@@ -155,35 +155,54 @@ const AddHabitPanel = () => {
     }, []);
 
     // --- 1. PREPARE DATA FOR SCROLL PICKER ---
+    const availableHabits = useMemo(() => {
+        return getAllHabits().filter((habit) => !AppData.choosenHabits.includes(habit.id));
+    }, [categoriesVersion]);
+
     const filteredHabits = useMemo(() => {
         const query = habitSearchQuery.trim().toLowerCase();
-        return getAllHabits().filter((habit) => {
-            if (AppData.choosenHabits.includes(habit.id)) return false;
-            if (habit.category[langIndex] !== filterCategory) return false;
-            if (!query) return true;
-            return habit.name.some(name => name.toLowerCase().includes(query));
-        });
-    }, [filterCategory, langIndex, habitSearchQuery, categoriesVersion]);
+        return availableHabits
+            .filter((habit) => {
+                if (!query) return habit.category[langIndex] === filterCategory;
+                const searchableText = [
+                    ...habit.name,
+                    ...habit.category,
+                    ...habit.description
+                ].join(' ').toLowerCase();
+                return searchableText.includes(query);
+            })
+            .sort((a, b) => {
+                if (!query) return 0;
+                const aStarts = a.name.some(name => name.toLowerCase().startsWith(query));
+                const bStarts = b.name.some(name => name.toLowerCase().startsWith(query));
+                if (aStarts === bStarts) return 0;
+                return aStarts ? -1 : 1;
+            });
+    }, [availableHabits, filterCategory, langIndex, habitSearchQuery]);
 
-    const pickerItems = useMemo(() => {
-        return filteredHabits.map(h => h.name[langIndex]);
-    }, [filteredHabits, langIndex]);
+    const selectedHabit = useMemo(() => {
+        return filteredHabits.find(h => h.id === habitId) || filteredHabits[0] || null;
+    }, [filteredHabits, habitId]);
 
-    // Find current selected name for the picker value
-    const currentPickerValue = useMemo(() => {
-        const found = filteredHabits.find(h => h.id === habitId);
-        return found ? found.name[langIndex] : (pickerItems[0] || '');
-    }, [habitId, filteredHabits, pickerItems, langIndex]);
+    const getLibraryHabitIcon = (habit, size = 26) => {
+        if (!habit) return Icons.getIcon('default', { size, style: { color: ui.accent } });
+        if (habit.iconName) return Icons.getIcon(habit.iconName, { size, style: { color: ui.accent } });
+        return Icons.getHabitIcon(habit.name ? habit.name[0] : 'default', { size, style: { color: ui.accent } });
+    };
 
 
     // --- 2. HANDLE PICKER CHANGE ---
-    const handlePickerChange = (selectedName) => {
-        const selectedHabit = filteredHabits.find(h => h.name[langIndex] === selectedName);
-        const selectedCat = allCategories.find(c => c.label[langIndex] === filterCategory);
+    const handleHabitSelect = (selectedHabit) => {
+        const selectedCat = selectedHabit
+            ? allCategories.find(c => c.label[langIndex] === selectedHabit.category[langIndex])
+            : allCategories.find(c => c.label[langIndex] === filterCategory);
 
         if (selectedHabit && selectedHabit.id !== habitId) {
             setHabitId(selectedHabit.id);
             const isNeg = selectedCat?.isNegative ?? (selectedHabit.category[0] === 'Отказ от вредного');
+            if (habitSearchQuery.trim()) setFilterCategory(selectedHabit.category[langIndex]);
+            setHabitName(selectedHabit.name[langIndex]);
+            setHabitCategory(selectedHabit.category[0]);
             setIsNegative(isNeg);
             setGoals(setGoalForDefault(selectedHabit.name[0], langIndex));
             setDaysToForm(isNeg ? 120 : 66);
@@ -197,7 +216,7 @@ const AddHabitPanel = () => {
             // If currently selected ID is not in the new list, select the first one
             const currentInList = filteredHabits.find(h => h.id === habitId);
             if (!currentInList) {
-               handlePickerChange(filteredHabits[0].name[langIndex]);
+               handleHabitSelect(filteredHabits[0]);
             }
         }
     }, [filterCategory, filteredHabits, habitId, langIndex, showCreatePanel]);
@@ -435,51 +454,46 @@ const AddHabitPanel = () => {
                                                     </div>
                                                 )}
 
-                                                <div style={{  borderRadius: '16px', display: 'flex', alignItems: 'center',justifyContent: 'space-between', padding: '0 15px', marginBottom: '15px', height: '50px' }}>
-                                                    <FaSearch color={ui.sub} style={{marginRight:'15px',marginTop:'5px'}}/>
-                                                   
-                                                        <input 
-                                                                                        type="text" 
-                                                                                        placeholder={langIndex === 0 ? 'поиск' : 'search'}
-                                                                                        value={habitSearchQuery}
-                                                                                         onChange={(e) => setHabitSearchQuery(e.target.value)}
-                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
-                                                                                        />
-                                                </div>
-
-                                                {/* --- REPLACED WITH SCROLLPICKER --- */}
-                                                <div style={{
-                                                    ...drumContainer(ui), 
-                                                    display: 'flex', 
-                                                    justifyContent: 'center', 
-                                                    alignItems: 'center',
-                                                    height: '250px' // Adjust height to fit ScrollPicker comfortably
-                                                }}>
-                                                    {pickerItems.length > 0 ? (
-                                                        <ScrollPicker 
-                                                            items={pickerItems} 
-                                                            value={currentPickerValue} 
-                                                            onChange={handlePickerChange} 
-                                                            theme={theme} 
-                                                            width="100%" 
-                                                            visibleItems={8}
+                                                <div style={libraryPanel(ui)}>
+                                                    <div style={librarySearchRow(ui)}>
+                                                        <FaSearch color={ui.sub} size={15} style={{ flexShrink: 0 }} />
+                                                        <input
+                                                            type="text"
+                                                            placeholder={langIndex === 0 ? 'Поиск по базе привычек' : 'Search habit library'}
+                                                            value={habitSearchQuery}
+                                                            onChange={(e) => setHabitSearchQuery(e.target.value)}
+                                                            style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '15px', color: Colors.get('mainText', theme), outline: 'none', minWidth: 0 }}
                                                         />
-                                                    ) : (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '20px', textAlign: 'center' }}>
-                                                            <div style={{color: ui.sub, fontSize:'14px'}}>
-                                                                {langIndex === 0 ? 'Нет привычек' : 'No habits found'}
+                                                        <span style={libraryCount(ui)}>{availableHabits.length}</span>
+                                                    </div>
+
+                                                    <div style={pickerArea()}>
+                                                        {filteredHabits.length > 0 ? (
+                                                            <HabitLibraryPicker
+                                                                habits={filteredHabits}
+                                                                selectedHabit={selectedHabit}
+                                                                onSelect={handleHabitSelect}
+                                                                langIndex={langIndex}
+                                                                ui={ui}
+                                                                getIcon={getLibraryHabitIcon}
+                                                            />
+                                                        ) : (
+                                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '18px', textAlign: 'center' }}>
+                                                                <div style={{color: ui.sub, fontSize:'14px'}}>
+                                                                    {langIndex === 0 ? 'Нет привычек' : 'No habits found'}
+                                                                </div>
+                                                                {habitSearchQuery.trim().length > 0 && (
+                                                                    <motion.div
+                                                                        whileTap={{ scale: 0.96 }}
+                                                                        onClick={openCreatePanelFromSearch}
+                                                                        style={{ padding: '11px 15px', borderRadius: '14px', backgroundColor: ui.accent, color: '#FFF', fontWeight: '700', cursor: 'pointer' }}
+                                                                    >
+                                                                        {langIndex === 0 ? `Создать "${habitSearchQuery.trim()}"` : `Create "${habitSearchQuery.trim()}"`}
+                                                                    </motion.div>
+                                                                )}
                                                             </div>
-                                                            {habitSearchQuery.trim().length > 0 && (
-                                                                <motion.div
-                                                                    whileTap={{ scale: 0.96 }}
-                                                                    onClick={openCreatePanelFromSearch}
-                                                                    style={{ padding: '12px 16px', borderRadius: '14px', backgroundColor: ui.accent, color: '#FFF', fontWeight: '700', cursor: 'pointer' }}
-                                                                >
-                                                                    {langIndex === 0 ? `Создать привычку "${habitSearchQuery.trim()}"` : `Create habit "${habitSearchQuery.trim()}"`}
-                                                                </motion.div>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </>
                                         ) : (
@@ -803,6 +817,72 @@ const AddHabitPanel = () => {
     );
 };
 
+const HABIT_PICKER_ITEM_HEIGHT = 96;
+const HABIT_PICKER_VISIBLE_ITEMS = 5;
+
+function HabitLibraryPicker({ habits, selectedHabit, onSelect, langIndex, ui, getIcon }) {
+    const scrollRef = useRef(null);
+    const selectedId = selectedHabit?.id;
+    const spacerHeight = ((HABIT_PICKER_VISIBLE_ITEMS - 1) / 2) * HABIT_PICKER_ITEM_HEIGHT;
+
+    useEffect(() => {
+        const node = scrollRef.current;
+        if (!node || selectedId === undefined) return;
+        const index = habits.findIndex(habit => habit.id === selectedId);
+        if (index < 0) return;
+        const targetTop = index * HABIT_PICKER_ITEM_HEIGHT;
+        if (Math.abs(node.scrollTop - targetTop) > 1) {
+            node.scrollTo({ top: targetTop, behavior: 'smooth' });
+        }
+    }, [habits, selectedId]);
+
+    const handleScroll = (event) => {
+        const index = Math.max(0, Math.min(habits.length - 1, Math.round(event.currentTarget.scrollTop / HABIT_PICKER_ITEM_HEIGHT)));
+        const nextHabit = habits[index];
+        if (nextHabit && nextHabit.id !== selectedId) onSelect(nextHabit);
+    };
+
+    return (
+        <div style={habitPickerFrame(ui)}>
+            <div style={habitPickerLens(ui)} />
+            <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="no-scrollbar"
+                style={habitPickerScroll}
+            >
+                <div style={{ height: spacerHeight, flexShrink: 0 }} />
+                {habits.map((habit) => {
+                    const isSelected = habit.id === selectedId;
+                    return (
+                        <div
+                            key={habit.id}
+                            onClick={() => onSelect(habit)}
+                            style={habitPickerItem(isSelected, ui)}
+                        >
+                            <div style={habitPickerContent(isSelected)}>
+                                <div style={habitPickerIconSlot(isSelected)}>
+                                    <div style={habitPickerIcon(isSelected, ui)}>{getIcon(habit, isSelected ? 46 : 16)}</div>
+                                </div>
+                                <div style={habitPickerText()}>
+                                    <div style={habitPickerTitle(isSelected, ui)}>
+                                        {habit.name[langIndex]}
+                                    </div>
+                                    <div style={habitPickerDescription(isSelected, ui)}>
+                                        {habit.category[langIndex]} · {habit.description[langIndex]}
+                                    </div>
+                                </div>
+                                <div style={habitPickerBalanceSlot(isSelected)} />
+                            </div>
+                        </div>
+                    );
+                })}
+                <div style={{ height: spacerHeight, flexShrink: 0 }} />
+            </div>
+        </div>
+    );
+}
+
 // --- СТИЛИ ---
 const pageStyle = { position: 'fixed', inset: 0, width: '100vw', height: '100vh', overflowY: 'auto', zIndex: 1000, paddingBottom: '100px', display: 'flex', flexDirection: 'column' };
 const pageHeader = { display: 'flex', alignItems: 'center', padding: '15px 20px 0' };
@@ -811,6 +891,131 @@ const backBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', 
 const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
 const dragHandle = { width: '45px', height: '5px', backgroundColor: '#8E8E93', borderRadius: '3px', margin: '15px auto', opacity: 0.4 };
 
+const libraryPanel = (ui) => ({
+    backgroundColor: ui.card,
+    borderRadius: '22px',
+    border: `1px solid ${ui.border}`,
+    overflow: 'hidden'
+});
+const librarySearchRow = (ui) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '0 14px',
+    height: '50px',
+    borderBottom: `1px solid ${ui.border}`
+});
+const libraryCount = (ui) => ({
+    minWidth: '30px',
+    padding: '5px 8px',
+    borderRadius: '999px',
+    backgroundColor: `${ui.accent}18`,
+    color: ui.accent,
+    fontSize: '12px',
+    fontWeight: '800',
+    textAlign: 'center'
+});
+const pickerArea = () => ({
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: `${HABIT_PICKER_ITEM_HEIGHT * HABIT_PICKER_VISIBLE_ITEMS}px`
+});
+const habitPickerFrame = (ui) => ({
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+    backgroundColor: ui.card
+});
+const habitPickerLens = (ui) => ({
+    position: 'absolute',
+    left: '5%',
+    right: '5%',
+    top: '50%',
+    height: `${HABIT_PICKER_ITEM_HEIGHT}px`,
+    transform: 'translateY(-50%)',
+    borderTop: `1px solid ${ui.border}`,
+    borderBottom: `1px solid ${ui.border}`,
+    pointerEvents: 'none',
+    zIndex: 2
+});
+const habitPickerScroll = {
+    width: '100%',
+    height: '100%',
+    overflowY: 'auto',
+    scrollSnapType: 'y mandatory',
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
+    WebkitOverflowScrolling: 'touch'
+};
+const habitPickerItem = (selected, ui) => ({
+    height: `${HABIT_PICKER_ITEM_HEIGHT}px`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: selected ? '10px 18px' : '8px 16px',
+    boxSizing: 'border-box',
+    scrollSnapAlign: 'center',
+    opacity: selected ? 1 : 0.26,
+    transform: `scale(${selected ? 1.16 : 0.8})`,
+    transition: 'opacity 0.18s ease, transform 0.18s ease, padding 0.18s ease, filter 0.18s ease',
+    cursor: 'pointer',
+    color: selected ? ui.text : ui.sub,
+    filter: selected ? 'drop-shadow(0 8px 18px rgba(0,0,0,0.26))' : 'none'
+});
+const habitPickerContent = (selected) => ({
+    width: selected ? 'min(720px, 92%)' : 'min(500px, 68%)',
+    display: 'grid',
+    gridTemplateColumns: selected ? '96px minmax(0, 1fr) 96px' : '40px minmax(0, 1fr) 40px',
+    alignItems: 'center',
+    columnGap: selected ? '14px' : '8px'
+});
+const habitPickerIconSlot = () => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+});
+const habitPickerBalanceSlot = () => ({
+    width: '100%',
+    height: 1
+});
+const habitPickerIcon = (selected, ui) => ({
+    width: selected ? '82px' : '22px',
+    height: selected ? '82px' : '22px',
+    borderRadius: selected ? '24px' : '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    backgroundColor: selected ? `${ui.accent}24` : 'transparent',
+    boxShadow: selected ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px ${ui.accent}18` : 'none',
+    transition: 'all 0.18s ease',
+    opacity: selected ? 1 : 0.75
+});
+const habitPickerText = () => ({
+    minWidth: 0,
+    textAlign: 'center'
+});
+const habitPickerTitle = (selected, ui) => ({
+    color: selected ? ui.text : ui.sub,
+    fontSize: selected ? '21px' : '12px',
+    fontWeight: selected ? '900' : '600',
+    lineHeight: 1.15,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+});
+const habitPickerDescription = (selected, ui) => ({
+    color: ui.sub,
+    display: selected ? 'block' : 'none',
+    fontSize: '14px',
+    marginTop: '8px',
+    lineHeight: 1.2,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+});
 const drumContainer = (ui) => ({ position: 'relative', height: '220px', backgroundColor: ui.card, borderRadius: '25px', overflow: 'hidden' });
 const drumScroll = { width: '100%', height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' };
 const drumItem = (active, ui) => ({ height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center', color: active ? ui.accent : ui.text, fontSize: active ? '20px' : '17px', fontWeight: active ? '900' : '400', opacity: active ? 1 : 0.4, transition: '0.3s all' });
@@ -875,7 +1080,7 @@ const translateToEnglish = (ruText) => {
         'отказ': 'Quit', 'финансы': 'Finance', 'семья': 'Family', 'друзья': 'Friends',
         'творчество': 'Creativity', 'медитация': 'Meditation', 'сон': 'Sleep',
         'питание': 'Nutrition', 'обучение': 'Learning', 'йога': 'Yoga',
-        'спорт': 'Sports', 'еда': 'Food', 'деньги': 'Money', 'дом': 'Home',
+        'еда': 'Food', 'деньги': 'Money', 'дом': 'Home',
         'уборка': 'Cleaning', 'хобби': 'Hobby', 'музыка': 'Music', 'чтение': 'Reading',
         'план': 'Plan', 'цель': 'Goal', 'успех': 'Success', 'путешествия': 'Travel',
     };
@@ -891,7 +1096,7 @@ const translateToEnglish = (ruText) => {
 const translateToRussian = (enText) => {
     const translations = {
         'health': 'Здоровье', 'growth': 'Развитие', 'productivity': 'Продуктивность',
-        'relationships': 'Отношения', 'recreation': 'Отдых', 'recreation': 'Отдых',
+        'relationships': 'Отношения', 'recreation': 'Отдых',
         'bad': 'Вредного', 'habits': 'привычка', 'work': 'Работа', 'study': 'Учеба',
         'sport': 'Спорт', 'quit': 'Отказ', 'finance': 'Финансы', 'family': 'Семья',
         'friends': 'Друзья', 'creativity': 'Творчество', 'meditation': 'Медитация',

@@ -708,7 +708,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     useEffect(() => { AppData.changeStatus(dateKey, id, status); }, [status]);
 
     const getHabitIcon = () => {
-        if (habit.isCustom && habit.iconName) return Icons.getIcon(habit.iconName, { size: 22 });
+        if (habit.iconName) return Icons.getIcon(habit.iconName, { size: 22 });
         return Icons.getHabitIcon(habit.name ? habit.name[0] : 'default', { size: 22 });
     };
 

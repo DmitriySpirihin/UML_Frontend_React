@@ -393,7 +393,7 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
     } else category = langIndex === 0 ? "Общее" : "General";
 
     const getIcon = () => {
-        if (habitData.isCustom && habitData.iconName) return Icons.getIcon(habitData.iconName, { size: 24, style: { color: 'inherit' } });
+        if (habitData.iconName) return Icons.getIcon(habitData.iconName, { size: 24, style: { color: 'inherit' } });
         else return Icons.getHabitIcon(habitData.name ? habitData.name[0] : 'default', { size: 24, style: { color: 'inherit' } });
     };
 
