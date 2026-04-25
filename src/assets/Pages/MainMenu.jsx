@@ -693,11 +693,14 @@ const styles = (theme, fontSize) => ({
     },
     scrollView: {
         width: "100vw",
-        maxHeight: "90vh",
+        flex: 1,
+        minHeight: 0,
         overflowY: "scroll",
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center'
+        alignItems: 'center',
+        paddingBottom: 'calc(70px + 7vw + env(safe-area-inset-bottom, 0px) + 24px)',
+        boxSizing: 'border-box'
     },
     grid: {
         width: '92%',

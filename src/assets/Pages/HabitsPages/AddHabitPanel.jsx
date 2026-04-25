@@ -822,6 +822,11 @@ const HABIT_PICKER_VISIBLE_ITEMS = 5;
 
 function HabitLibraryPicker({ habits, selectedHabit, onSelect, langIndex, ui, getIcon }) {
     const scrollRef = useRef(null);
+    const scrollFrameRef = useRef(null);
+    const settleTimerRef = useRef(null);
+    const isUserScrollingRef = useRef(false);
+    const [scrollTop, setScrollTop] = useState(0);
+    const [centerIndex, setCenterIndex] = useState(0);
     const selectedId = selectedHabit?.id;
     const spacerHeight = ((HABIT_PICKER_VISIBLE_ITEMS - 1) / 2) * HABIT_PICKER_ITEM_HEIGHT;
 
@@ -831,15 +836,50 @@ function HabitLibraryPicker({ habits, selectedHabit, onSelect, langIndex, ui, ge
         const index = habits.findIndex(habit => habit.id === selectedId);
         if (index < 0) return;
         const targetTop = index * HABIT_PICKER_ITEM_HEIGHT;
-        if (Math.abs(node.scrollTop - targetTop) > 1) {
+        setScrollTop(targetTop);
+        setCenterIndex(index);
+        if (!isUserScrollingRef.current && Math.abs(node.scrollTop - targetTop) > 1) {
             node.scrollTo({ top: targetTop, behavior: 'smooth' });
         }
     }, [habits, selectedId]);
 
+    useEffect(() => {
+        return () => {
+            if (scrollFrameRef.current) cancelAnimationFrame(scrollFrameRef.current);
+            if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+        };
+    }, []);
+
     const handleScroll = (event) => {
-        const index = Math.max(0, Math.min(habits.length - 1, Math.round(event.currentTarget.scrollTop / HABIT_PICKER_ITEM_HEIGHT)));
-        const nextHabit = habits[index];
-        if (nextHabit && nextHabit.id !== selectedId) onSelect(nextHabit);
+        const node = event.currentTarget;
+        const nextTop = node.scrollTop;
+        isUserScrollingRef.current = true;
+
+        if (scrollFrameRef.current) cancelAnimationFrame(scrollFrameRef.current);
+        scrollFrameRef.current = requestAnimationFrame(() => {
+            const nextIndex = Math.max(0, Math.min(habits.length - 1, Math.round(nextTop / HABIT_PICKER_ITEM_HEIGHT)));
+            setScrollTop(nextTop);
+            setCenterIndex(nextIndex);
+        });
+
+        if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+        settleTimerRef.current = setTimeout(() => {
+            const index = Math.max(0, Math.min(habits.length - 1, Math.round(node.scrollTop / HABIT_PICKER_ITEM_HEIGHT)));
+            const targetTop = index * HABIT_PICKER_ITEM_HEIGHT;
+            const nextHabit = habits[index];
+
+            setCenterIndex(index);
+            if (Math.abs(node.scrollTop - targetTop) > 1) {
+                node.scrollTo({ top: targetTop, behavior: 'smooth' });
+            } else {
+                setScrollTop(targetTop);
+            }
+            if (nextHabit && nextHabit.id !== selectedId) onSelect(nextHabit);
+
+            setTimeout(() => {
+                isUserScrollingRef.current = false;
+            }, 180);
+        }, 110);
     };
 
     return (
@@ -852,27 +892,31 @@ function HabitLibraryPicker({ habits, selectedHabit, onSelect, langIndex, ui, ge
                 style={habitPickerScroll}
             >
                 <div style={{ height: spacerHeight, flexShrink: 0 }} />
-                {habits.map((habit) => {
-                    const isSelected = habit.id === selectedId;
+                {habits.map((habit, index) => {
+                    const distance = Math.abs(index - (scrollTop / HABIT_PICKER_ITEM_HEIGHT));
+                    const focus = Math.max(0, 1 - Math.min(distance, 1));
+                    const nearby = Math.max(0, 1 - Math.min(distance / 2, 1));
+                    const isCentered = index === centerIndex;
+                    const iconSize = Math.round(18 + (28 * focus));
                     return (
                         <div
                             key={habit.id}
                             onClick={() => onSelect(habit)}
-                            style={habitPickerItem(isSelected, ui)}
+                            style={habitPickerItem(focus, nearby, ui)}
                         >
-                            <div style={habitPickerContent(isSelected)}>
-                                <div style={habitPickerIconSlot(isSelected)}>
-                                    <div style={habitPickerIcon(isSelected, ui)}>{getIcon(habit, isSelected ? 46 : 16)}</div>
+                            <div style={habitPickerContent()}>
+                                <div style={habitPickerIconSlot()}>
+                                    <div style={habitPickerIcon(focus, ui)}>{getIcon(habit, iconSize)}</div>
                                 </div>
                                 <div style={habitPickerText()}>
-                                    <div style={habitPickerTitle(isSelected, ui)}>
+                                    <div style={habitPickerTitle(focus, nearby, ui)}>
                                         {habit.name[langIndex]}
                                     </div>
-                                    <div style={habitPickerDescription(isSelected, ui)}>
+                                    <div style={habitPickerDescription(isCentered, focus, ui)}>
                                         {habit.category[langIndex]} · {habit.description[langIndex]}
                                     </div>
                                 </div>
-                                <div style={habitPickerBalanceSlot(isSelected)} />
+                                <div style={habitPickerBalanceSlot()} />
                             </div>
                         </div>
                     );
@@ -944,32 +988,33 @@ const habitPickerScroll = {
     width: '100%',
     height: '100%',
     overflowY: 'auto',
-    scrollSnapType: 'y mandatory',
+    scrollSnapType: 'y proximity',
     scrollbarWidth: 'none',
     msOverflowStyle: 'none',
     WebkitOverflowScrolling: 'touch'
 };
-const habitPickerItem = (selected, ui) => ({
+const habitPickerItem = (focus, nearby, ui) => ({
     height: `${HABIT_PICKER_ITEM_HEIGHT}px`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: selected ? '10px 18px' : '8px 16px',
+    padding: '8px 16px',
     boxSizing: 'border-box',
     scrollSnapAlign: 'center',
-    opacity: selected ? 1 : 0.26,
-    transform: `scale(${selected ? 1.16 : 0.8})`,
-    transition: 'opacity 0.18s ease, transform 0.18s ease, padding 0.18s ease, filter 0.18s ease',
+    opacity: 0.2 + (0.8 * nearby),
+    transform: `scale(${0.78 + (0.34 * focus)})`,
+    transition: 'opacity 0.08s linear, filter 0.12s ease',
     cursor: 'pointer',
-    color: selected ? ui.text : ui.sub,
-    filter: selected ? 'drop-shadow(0 8px 18px rgba(0,0,0,0.26))' : 'none'
+    color: focus > 0.5 ? ui.text : ui.sub,
+    filter: focus > 0.72 ? 'drop-shadow(0 8px 18px rgba(0,0,0,0.24))' : 'none',
+    willChange: 'transform, opacity'
 });
-const habitPickerContent = (selected) => ({
-    width: selected ? 'min(720px, 92%)' : 'min(500px, 68%)',
+const habitPickerContent = () => ({
+    width: 'min(760px, 92%)',
     display: 'grid',
-    gridTemplateColumns: selected ? '96px minmax(0, 1fr) 96px' : '40px minmax(0, 1fr) 40px',
+    gridTemplateColumns: '110px minmax(0, 1fr) 110px',
     alignItems: 'center',
-    columnGap: selected ? '14px' : '8px'
+    columnGap: '14px'
 });
 const habitPickerIconSlot = () => ({
     display: 'flex',
@@ -980,41 +1025,45 @@ const habitPickerBalanceSlot = () => ({
     width: '100%',
     height: 1
 });
-const habitPickerIcon = (selected, ui) => ({
-    width: selected ? '82px' : '22px',
-    height: selected ? '82px' : '22px',
-    borderRadius: selected ? '24px' : '8px',
+const habitPickerIcon = (focus, ui) => {
+    const boxSize = 28 + (54 * focus);
+    return ({
+    width: `${boxSize}px`,
+    height: `${boxSize}px`,
+    borderRadius: `${10 + (14 * focus)}px`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    backgroundColor: selected ? `${ui.accent}24` : 'transparent',
-    boxShadow: selected ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px ${ui.accent}18` : 'none',
-    transition: 'all 0.18s ease',
-    opacity: selected ? 1 : 0.75
-});
+    backgroundColor: `rgba(88, 134, 255, ${0.02 + (0.12 * focus)})`,
+    boxShadow: focus > 0.7 ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px ${ui.accent}18` : 'none',
+    opacity: 0.72 + (0.28 * focus),
+    willChange: 'width, height, border-radius'
+})};
 const habitPickerText = () => ({
     minWidth: 0,
     textAlign: 'center'
 });
-const habitPickerTitle = (selected, ui) => ({
-    color: selected ? ui.text : ui.sub,
-    fontSize: selected ? '21px' : '12px',
-    fontWeight: selected ? '900' : '600',
+const habitPickerTitle = (focus, nearby, ui) => ({
+    color: focus > 0.5 ? ui.text : ui.sub,
+    fontSize: `${12 + (9 * focus)}px`,
+    fontWeight: focus > 0.62 ? '900' : '600',
     lineHeight: 1.15,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
+    opacity: 0.7 + (0.3 * nearby)
 });
-const habitPickerDescription = (selected, ui) => ({
+const habitPickerDescription = (visible, focus, ui) => ({
     color: ui.sub,
-    display: selected ? 'block' : 'none',
+    display: visible ? 'block' : 'none',
     fontSize: '14px',
     marginTop: '8px',
     lineHeight: 1.2,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
+    opacity: Math.max(0, Math.min(1, focus))
 });
 const drumContainer = (ui) => ({ position: 'relative', height: '220px', backgroundColor: ui.card, borderRadius: '25px', overflow: 'hidden' });
 const drumScroll = { width: '100%', height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' };

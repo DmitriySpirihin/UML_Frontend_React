@@ -64,6 +64,7 @@ export class AppData{
   static todoList = [];
   static todoCustomCategories = []; // [{icon, label:[ru,en]}]
   static sectionVisits = { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
+  static profileFriendsExpanded = true;
   static menuCardsStates =
 {
   "MainCard": {
@@ -165,6 +166,7 @@ static habitCardWidgets = {
     this.habitCategoryOverrides = data.habitCategoryOverrides && typeof data.habitCategoryOverrides === 'object' ? data.habitCategoryOverrides : {};
     this.deletedDefaultHabitCategories = Array.isArray(data.deletedDefaultHabitCategories) ? data.deletedDefaultHabitCategories : [];
     this.sectionVisits = data.sectionVisits || { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
+    this.profileFriendsExpanded = data.profileFriendsExpanded ?? true;
     this.todoFieldsVisibility = data.todoFieldsVisibility || { priority: true, difficulty: true, urgency: true };
     this.insightCache = data.insightCache || {};
     this.sectionVisits = data.sectionVisits || { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
@@ -658,6 +660,7 @@ export class Data{
     this.todoList = AppData.todoList;
     this.todoCustomCategories = AppData.todoCustomCategories;
     this.sectionVisits = AppData.sectionVisits;
+    this.profileFriendsExpanded = AppData.profileFriendsExpanded;
     this.todoFieldsVisibility = AppData.todoFieldsVisibility;
     this.menuCardsStates = AppData.menuCardsStates;
     this.infoMiniPanel = AppData.infoMiniPanel;

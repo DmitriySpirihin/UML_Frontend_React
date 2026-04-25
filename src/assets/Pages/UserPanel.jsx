@@ -53,7 +53,7 @@ const UserPanel = () => {
     const [height, setHeight] = useState(AppData.pData.height || 175);
     const [wrist, setWrist] = useState(AppData.pData.wrist || 17);
     const [goal, setGoal] = useState(AppData.pData.goal || 0);
-    const [showFriendsPanel, setShowFriendsPanel] = useState(false);
+    const [showFriendsPanel, setShowFriendsPanel] = useState(AppData.profileFriendsExpanded ?? true);
     const [showXpGuide, setShowXpGuide] = useState(false);
     const [selectedXpRule, setSelectedXpRule] = useState('training');
 
@@ -116,6 +116,13 @@ const UserPanel = () => {
         AppData.pData = { filled: true, age, gender, height, wrist, goal };
         await saveData();
         setShowBodyMetrics(false);
+    };
+
+    const toggleFriendsPanel = async () => {
+        const nextValue = !showFriendsPanel;
+        setShowFriendsPanel(nextValue);
+        AppData.profileFriendsExpanded = nextValue;
+        await saveData();
     };
 
     const s = styles(theme);
@@ -286,7 +293,7 @@ const UserPanel = () => {
                 {/* 4. Friends List Section (Direct from UserData) */}
                 <div style={{ marginTop: '25px', marginBottom: '10px' }}>
                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 5px' }}>
-                        <div onClick={() => setShowFriendsPanel(prev => !prev)} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div onClick={toggleFriendsPanel} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <FaUserFriends color={Colors.get('subText', theme)} />
                             <span style={{ fontSize: '14px', fontWeight: '800', color: Colors.get('mainText', theme), textTransform: 'uppercase' }}>
                                 {lang === 0 ? 'Друзья' : 'Friends'}
