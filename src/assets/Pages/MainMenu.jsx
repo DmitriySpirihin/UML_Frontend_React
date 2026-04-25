@@ -9,6 +9,7 @@ import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot,FaStar, FaMedal, FaChevron
 import { MdOutlineSelfImprovement } from "react-icons/md";
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 import { sendReferalLink } from '../StaticClasses/PaymentService'
+import MainMenuRedesign from './MainMenuRedesign'
 
 const MainMenu = () => {
     const [theme, setThemeState] = useState(AppData.prefs[1] === 0 ? 'dark' : 'light');
@@ -28,7 +29,7 @@ const MainMenu = () => {
     const [, setIsValidation] = useState(UserData.isValidation);
     const [showGuideBanner, setShowGuideBanner] = useState(false);
     const [showWidgetSettings, setShowWidgetSettings] = useState(false);
-    const [infoMiniPanel, setInfoMiniPanel] = useState(AppData.infoMiniPanel || {});
+    const [mainHeroWidgets, setMainHeroWidgets] = useState(AppData.mainHeroWidgets || ['HabitsMain', 'TrainingMain', 'MentalMain']);
     useEffect(() => {
       // показываем только один раз
       const key = "uml_guide_banner_seen_v1";
@@ -84,14 +85,32 @@ useEffect(() => {
     }
 }, [itemsState]);
 
-    const handleToggleWidget = async (id) => {
-        const next = {
-            ...infoMiniPanel,
-            [id]: !infoMiniPanel[id]
-        };
-        setInfoMiniPanel(next);
-        AppData.infoMiniPanel = next;
+    const handleToggleHeroWidget = async (id) => {
+        const current = mainHeroWidgets.length > 0 ? mainHeroWidgets : ['HabitsMain', 'TrainingMain', 'MentalMain'];
+        let next;
+        if (current.includes(id)) {
+            next = current.length > 1 ? current.filter((itemId) => itemId !== id) : current;
+        } else {
+            if (current.length >= 3) return;
+            next = [...current, id];
+        }
+        setMainHeroWidgets(next);
+        AppData.mainHeroWidgets = next;
         await saveData();
+    };
+
+    const handleToggleSectionVisibility = (id) => {
+        setItemsState(prev => {
+            const isHidden = prev[id]?.hidden;
+            return {
+                ...prev,
+                [id]: {
+                    ...prev[id],
+                    hidden: !isHidden,
+                    pinned: isHidden ? prev[id]?.pinned || false : false
+                }
+            };
+        });
     };
 
     useEffect(() => {
@@ -199,6 +218,13 @@ useEffect(() => {
 
     const visibleItems = getVisibleItems();
     const hasHiddenItems = initialMenuItems.some(item => itemsState[item.id]?.hidden);
+    const mainMenuSummary = buildMainMenuSummary(lang, visibleItems, mainHeroWidgets);
+
+    const openSection = (id) => {
+        if (!id) return;
+        setPage(id);
+        playEffects(null);
+    };
 
     const containerAnim = {
         hidden: { opacity: 0 },
@@ -231,8 +257,10 @@ useEffect(() => {
                 isOpen={showWidgetSettings}
                 onClose={() => setShowWidgetSettings(false)}
                 items={initialMenuItems.filter(item => item.icon)}
-                values={infoMiniPanel}
-                onToggle={handleToggleWidget}
+                sectionStates={itemsState}
+                heroValues={mainHeroWidgets}
+                onToggleHeroWidget={handleToggleHeroWidget}
+                onToggleSectionVisibility={handleToggleSectionVisibility}
                 theme={theme}
                 lang={lang}
             />
@@ -380,72 +408,195 @@ useEffect(() => {
                 </>
               )}
             </AnimatePresence>
-            <div style={styles(theme).container}>
-                <div style={{ height: '16vh' }} />
-                {passwordInput && <input style={{ width: '85vw', height: '2vh', fontSize: '12px', borderRadius: '12px', zIndex: 1001, marginBottom: '10px' }} type="password" onChange={(e) => checkPassword(e.target.value)} />}
-                
-                <div style={styles(theme).scrollView}>
-                    <div style={{ height: '2vh', width: '100%' }} onClick={() => { handleClick(true) }} ></div>
-
-                    <Motion.button
-                        whileTap={{ scale: 0.96 }}
-                        onClick={() => setShowWidgetSettings(true)}
-                        style={styles(theme, fSize).widgetSettingsBtn}
-                    >
-                        <FaSlidersH />
-                        <span>{lang === 0 ? 'Виджеты карточек' : 'Card widgets'}</span>
-                    </Motion.button>
-
-                    <Motion.div
-                        variants={containerAnim}
-                        initial="hidden"
-                        animate="show"
-                        style={styles(theme).grid}
-                    >
-                        <AnimatePresence mode='popLayout'>
-                            {visibleItems.map((menuItem, index) => (
-                                <MenuCard
-                                    key={menuItem.id}
-                                    item={menuItem}
-                                    theme={theme}
-                                    hasPremium={hasPremium}
-                                    index={index}
-                                    fSize={fSize}
-                                    lang={lang}
-                                    isPinned={itemsState[menuItem.id]?.pinned}
-                                    onPin={() => handlePin(menuItem.id)}
-                                    onHide={() => handleHide(menuItem.id)}
-                                    setShowReferralModal={setShowReferralModal}
-                                    showInfo={infoMiniPanel[menuItem.id] !== false}
-                                />
-                            ))}
-                        </AnimatePresence>
-                    </Motion.div>
-
-                    {hasHiddenItems && (
-                        <Motion.div 
-                            initial={{opacity: 0}} animate={{opacity: 1}}
-                            onClick={resetHidden}
-                            style={{
-                                marginTop: '20px', 
-                                padding: '10px 20px', 
-                                display: 'flex', alignItems: 'center', gap: '8px',
-                                background: Colors.get('simplePanel', theme),
-                                borderRadius: '20px',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                color: Colors.get('subText', theme)
-                            }}
-                        >
-                            <FaTrashRestore /> {lang === 0 ? 'Вернуть скрытые разделы' : 'Restore hidden sections'}
-                        </Motion.div>
-                    )}
-
-                    <div style={{ height: '10vh', width: '100%' }} onClick={() => { handleClick(false) }} ></div>
-                </div>
-            </div>
+            {passwordInput && (
+                <input
+                    style={{
+                        position: 'fixed',
+                        top: '12vh',
+                        left: '7.5vw',
+                        width: '85vw',
+                        height: '34px',
+                        fontSize: '13px',
+                        borderRadius: '12px',
+                        zIndex: 10001,
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(0,0,0,0.8)',
+                        color: '#fff',
+                        padding: '0 12px',
+                        boxSizing: 'border-box'
+                    }}
+                    type="password"
+                    onChange={(e) => checkPassword(e.target.value)}
+                />
+            )}
+            <MainMenuRedesign
+                theme={theme}
+                lang={lang}
+                visibleItems={visibleItems}
+                itemsState={itemsState}
+                hasHiddenItems={hasHiddenItems}
+                hasPremium={hasPremium}
+                summary={mainMenuSummary}
+                onOpenSection={openSection}
+                onOpenRobot={() => openSection('RobotMain')}
+                onOpenReferral={() => setShowReferralModal(true)}
+                onOpenUser={() => openSection('UserPanel')}
+                onOpenSettings={() => openSection('settings')}
+                onOpenWidgets={() => setShowWidgetSettings(true)}
+                onPin={handlePin}
+                onHide={handleHide}
+                onRestoreHidden={resetHidden}
+                onTopSecretTap={() => handleClick(true)}
+                onBottomSecretTap={() => handleClick(false)}
+                getInfo={getInfo}
+            />
         </>
     )
+}
+
+function buildMainMenuSummary(lang, visibleItems, heroWidgetIds = ['HabitsMain', 'TrainingMain', 'MentalMain']) {
+    const todayKey = new Date().toISOString().split('T')[0];
+    const chosenHabits = AppData.choosenHabits || [];
+    const chosenHabitIds = new Set(chosenHabits.map((id) => String(id)));
+    const todayHabits = AppData.habitsByDate?.[todayKey] || {};
+    const totalHabits = chosenHabits.length;
+    const doneHabits = Object.entries(todayHabits).filter(([id, status]) => {
+        const isTracked = chosenHabitIds.size === 0 || chosenHabitIds.has(String(id));
+        return isTracked && status > 0;
+    }).length;
+
+    let trainingAnalysis = { currentTonnage: 0, progressPercent: 0, currentCycle: [] };
+    try {
+        trainingAnalysis = getCurrentCycleAnalysis();
+    } catch (error) {
+        console.warn('Main menu training summary failed', error);
+    }
+    const tonnageT = trainingAnalysis.currentTonnage ? trainingAnalysis.currentTonnage / 1000 : 0;
+    const mentalTotal = Array.isArray(AppData.mentalRecords)
+        ? AppData.mentalRecords.flat().reduce((sum, value) => sum + (Number(value) || 0), 0)
+        : 0;
+    const todoCount = AppData.todoList?.length || 0;
+    const sleepValue = getTodaySleepHours();
+    const sleepEntry = AppData.sleepingLog?.[todayKey];
+    const sleepDuration = typeof sleepEntry?.duration === 'number' ? sleepEntry.duration : 0;
+    const recoveryCount = getTodaySessionCount();
+    const sectionIds = ['habits', 'training', 'mental', 'recovery', 'sleep', 'todo'];
+    const bestStreak = Math.max(0, ...sectionIds.map((id) => getSectionStreak(id)));
+    const firstVisibleSection = visibleItems.find((item) => item.icon)?.id || 'HabitsMain';
+    const hour = new Date().getHours();
+    const greeting = lang === 0
+        ? (hour < 5 ? 'Доброй ночи' : hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер')
+        : (hour < 5 ? 'Good night' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening');
+
+    const metricMap = {
+        HabitsMain: {
+            id: 'HabitsMain',
+            label: lang === 0 ? 'Привычки' : 'Habits',
+            value: totalHabits > 0 ? `${doneHabits}/${totalHabits}` : '0/0',
+            progress: totalHabits > 0 ? doneHabits / totalHabits : 0
+        },
+        TrainingMain: {
+            id: 'TrainingMain',
+            label: lang === 0 ? 'Тоннаж' : 'Volume',
+            value: tonnageT > 0 ? `${tonnageT.toFixed(1)} ${lang === 0 ? 'т' : 't'}` : '—',
+            progress: Math.min(1, (trainingAnalysis.progressPercent || 0) / 100)
+        },
+        MentalMain: {
+            id: 'MentalMain',
+            label: lang === 0 ? 'Мозг' : 'Brain',
+            value: mentalTotal > 0 ? `${(mentalTotal / 1000).toFixed(1)}k` : '—',
+            progress: Math.min(1, mentalTotal / 5000)
+        },
+        RecoveryMain: {
+            id: 'RecoveryMain',
+            label: lang === 0 ? 'Восстановление' : 'Recovery',
+            value: recoveryCount > 0 ? recoveryCount.toString() : '0',
+            progress: Math.min(1, recoveryCount / 3)
+        },
+        SleepMain: {
+            id: 'SleepMain',
+            label: lang === 0 ? 'Сон' : 'Sleep',
+            value: sleepValue || '—',
+            progress: Math.min(1, sleepDuration / (8 * 60 * 60 * 1000))
+        },
+        ToDoMain: {
+            id: 'ToDoMain',
+            label: lang === 0 ? 'Задачи' : 'Tasks',
+            value: todoCount > 0 ? todoCount.toString() : '0',
+            progress: Math.min(1, todoCount / 5)
+        }
+    };
+    const selectedStats = (Array.isArray(heroWidgetIds) && heroWidgetIds.length > 0 ? heroWidgetIds : ['HabitsMain', 'TrainingMain', 'MentalMain'])
+        .map((id) => metricMap[id])
+        .filter(Boolean)
+        .slice(0, 3);
+    const progressItems = selectedStats.filter((item) => typeof item.progress === 'number');
+    const summaryProgress = progressItems.length
+        ? progressItems.reduce((sum, item) => sum + item.progress, 0) / progressItems.length
+        : 0;
+
+    const hasActivity = totalHabits > 0 || tonnageT > 0 || mentalTotal > 0 || todoCount > 0 || recoveryCount > 0 || sleepValue;
+    let focus = {
+        targetId: firstVisibleSection,
+        empty: true,
+        status: lang === 0 ? 'БЫСТРЫЙ СТАРТ' : 'QUICK START',
+        title: lang === 0 ? 'Начнём?' : 'Ready to start?',
+        meta: lang === 0 ? 'Выбери первую категорию, чтобы настроить день.' : 'Choose a section to set up your day.'
+    };
+
+    if (bestStreak > 0) {
+        focus = {
+            targetId: 'HabitsMain',
+            empty: false,
+            status: lang === 0 ? 'СЕРИЯ ДНЕЙ' : 'STREAK',
+            title: lang === 0 ? `${bestStreak} дней подряд` : `${bestStreak} days in a row`,
+            meta: lang === 0 ? 'Лучший активный ритм сегодня' : 'Your active rhythm today'
+        };
+    } else if (tonnageT > 0) {
+        focus = {
+            targetId: 'TrainingMain',
+            empty: false,
+            status: lang === 0 ? 'ТРЕНИРОВКИ' : 'TRAINING',
+            title: lang === 0 ? `${tonnageT.toFixed(1)} т в цикле` : `${tonnageT.toFixed(1)} t this cycle`,
+            meta: lang === 0 ? `${trainingAnalysis.currentCycle?.length || 0} сессий в текущем цикле` : `${trainingAnalysis.currentCycle?.length || 0} sessions this cycle`
+        };
+    } else if (todoCount > 0) {
+        focus = {
+            targetId: 'ToDoMain',
+            empty: false,
+            status: lang === 0 ? 'ЗАДАЧИ' : 'TASKS',
+            title: lang === 0 ? `${todoCount} активных задач` : `${todoCount} active tasks`,
+            meta: lang === 0 ? 'Открой список и закрой важное' : 'Open the list and close the important items'
+        };
+    } else if (hasActivity) {
+        focus = {
+            targetId: firstVisibleSection,
+            empty: false,
+            status: lang === 0 ? 'СЕГОДНЯ' : 'TODAY',
+            title: lang === 0 ? 'День уже начался' : 'Your day has started',
+            meta: lang === 0 ? 'Продолжай в активном разделе' : 'Continue in an active section'
+        };
+    }
+
+    return {
+        hero: {
+            name: UserData.name || (lang === 0 ? 'гость' : 'guest'),
+            greeting,
+            streak: bestStreak,
+            habitsValue: totalHabits > 0 ? `${doneHabits}/${totalHabits}` : '0/0',
+            trainingValue: tonnageT > 0 ? `${tonnageT.toFixed(1)} ${lang === 0 ? 'т' : 't'}` : '—',
+            mentalValue: mentalTotal > 0 ? `${(mentalTotal / 1000).toFixed(1)}k` : '—',
+            stats: selectedStats,
+            progressLabel: lang === 0 ? 'Сводка выбранных метрик' : 'Selected metrics',
+            progressValue: summaryProgress,
+            rings: {
+                habits: totalHabits > 0 ? doneHabits / totalHabits : 0,
+                training: Math.min(1, (trainingAnalysis.progressPercent || 0) / 100),
+                mental: Math.min(1, mentalTotal / 5000)
+            }
+        },
+        focus
+    };
 }
 
 function AIInsightButton({ theme, lang, onClick }) {
@@ -810,11 +961,12 @@ function getMentalScoresSummary() {
 }
 export default MainMenu
 
-const WidgetSettingsModal = ({ isOpen, onClose, items, values, onToggle, theme, lang }) => {
+const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues, onToggleHeroWidget, onToggleSectionVisibility, theme, lang }) => {
     const isDark = theme === 'dark';
     const bg = Colors.get('simplePanel', theme);
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
+    const selectedHeroIds = Array.isArray(heroValues) && heroValues.length > 0 ? heroValues : ['HabitsMain', 'TrainingMain', 'MentalMain'];
 
     return (
         <AnimatePresence>
@@ -850,7 +1002,10 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, values, onToggle, theme, 
                             background: isDark ? 'rgba(20,20,22,0.94)' : 'rgba(255,255,255,0.96)',
                             border: `1px solid ${Colors.get('border', theme)}66`,
                             boxShadow: isDark ? '0 28px 80px rgba(0,0,0,0.72)' : '0 24px 70px rgba(0,0,0,0.2)',
-                            zIndex: 1801
+                            zIndex: 1801,
+                            maxHeight: '82vh',
+                            overflowY: 'auto',
+                            boxSizing: 'border-box'
                         }}
                     >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
@@ -869,23 +1024,136 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, values, onToggle, theme, 
                             </div>
                             <div>
                                 <div style={{ color: text, fontSize: '18px', fontWeight: 900 }}>
-                                    {lang === 0 ? 'Виджеты карточек' : 'Card widgets'}
+                                    {lang === 0 ? 'Виджеты меню' : 'Menu widgets'}
                                 </div>
                                 <div style={{ color: sub, fontSize: '12px', fontWeight: 700, marginTop: '3px' }}>
-                                    {lang === 0 ? 'Выберите, какие мини-ячейки показывать справа' : 'Choose which mini cells are shown on the right'}
+                                    {lang === 0 ? 'Настройте главный блок и мини-метрики карточек' : 'Customize the hero block and card mini metrics'}
                                 </div>
                             </div>
                         </div>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ color: text, fontSize: '13px', fontWeight: 900, marginBottom: '2px' }}>
+                                {lang === 0 ? 'Верхняя карточка' : 'Top card'}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: '-6px' }}>
+                                <div style={{ color: sub, fontSize: '11px', fontWeight: 650 }}>
+                                    {lang === 0 ? 'Выберите, что показывать сверху' : 'Choose what appears at the top'}
+                                </div>
+                                <div style={{
+                                    color: selectedHeroIds.length >= 3 ? '#111' : sub,
+                                    background: selectedHeroIds.length >= 3 ? '#FFD700' : 'transparent',
+                                    border: `1px solid ${selectedHeroIds.length >= 3 ? '#FFD700' : Colors.get('border', theme)}88`,
+                                    borderRadius: '999px',
+                                    padding: '3px 8px',
+                                    fontSize: '11px',
+                                    fontWeight: 900,
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    {selectedHeroIds.length}/3
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
+                                {[0, 1, 2].map((slotIndex) => {
+                                    const selectedId = selectedHeroIds[slotIndex];
+                                    const selectedItem = items.find((item) => item.id === selectedId);
+                                    return (
+                                        <div
+                                            key={slotIndex}
+                                            style={{
+                                                minHeight: '44px',
+                                                borderRadius: '14px',
+                                                border: `1px solid ${selectedItem ? selectedItem.color : Colors.get('border', theme)}66`,
+                                                background: selectedItem ? `${selectedItem.color}18` : bg,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '2px',
+                                                padding: '6px',
+                                                boxSizing: 'border-box'
+                                            }}
+                                        >
+                                            <div style={{ color: selectedItem ? selectedItem.color : sub, fontSize: '10px', fontWeight: 900 }}>
+                                                {slotIndex + 1}
+                                            </div>
+                                            <div style={{ color: selectedItem ? text : sub, fontSize: '11px', fontWeight: 850, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {selectedItem ? selectedItem.title : (lang === 0 ? 'Пусто' : 'Empty')}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                             {items.map(item => {
-                                const enabled = values[item.id] !== false;
+                                const enabled = selectedHeroIds.includes(item.id);
+                                const disabledByLimit = !enabled && selectedHeroIds.length >= 3;
+                                return (
+                                    <Motion.button
+                                        key={`hero-${item.id}`}
+                                        type="button"
+                                        whileTap={disabledByLimit ? undefined : { scale: 0.98 }}
+                                        onClick={() => { if (!disabledByLimit) onToggleHeroWidget(item.id); }}
+                                        style={{
+                                            minHeight: '50px',
+                                            borderRadius: '16px',
+                                            border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}66`,
+                                            background: enabled ? `${item.color}18` : bg,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '12px',
+                                            padding: '9px 12px',
+                                            cursor: disabledByLimit ? 'not-allowed' : 'pointer',
+                                            textAlign: 'left',
+                                            opacity: disabledByLimit ? 0.45 : 1
+                                        }}
+                                    >
+                                        <div style={{ color: item.color, width: '24px', display: 'flex', justifyContent: 'center' }}>
+                                            {React.cloneElement(item.icon, { size: 18 })}
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ color: text, fontSize: '14px', fontWeight: 850 }}>{item.title}</div>
+                                            <div style={{ color: sub, fontSize: '11px', fontWeight: 650, marginTop: '2px' }}>
+                                                {enabled
+                                                    ? (lang === 0 ? 'Нажмите, чтобы убрать' : 'Tap to remove')
+                                                    : disabledByLimit
+                                                        ? (lang === 0 ? 'Сначала уберите одну метрику' : 'Remove one metric first')
+                                                        : (lang === 0 ? 'Добавить в верхнюю карточку' : 'Add to top card')}
+                                            </div>
+                                        </div>
+                                        <div style={{
+                                            minWidth: '28px',
+                                            height: '28px',
+                                            padding: enabled ? '0 8px' : 0,
+                                            borderRadius: '10px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            background: enabled ? item.color : 'transparent',
+                                            color: enabled ? '#111' : sub,
+                                            border: enabled ? 'none' : `1px solid ${Colors.get('border', theme)}88`,
+                                            flexShrink: 0,
+                                            fontSize: '12px',
+                                            fontWeight: 900
+                                        }}>
+                                            {enabled ? selectedHeroIds.indexOf(item.id) + 1 : ''}
+                                        </div>
+                                    </Motion.button>
+                                );
+                            })}
+
+                            <div style={{ height: '1px', background: Colors.get('border', theme), opacity: 0.5, margin: '4px 0' }} />
+                            <div style={{ color: text, fontSize: '13px', fontWeight: 900 }}>
+                                {lang === 0 ? 'Разделы на главном экране' : 'Main screen sections'}
+                            </div>
+                            {items.map(item => {
+                                const enabled = !sectionStates[item.id]?.hidden;
                                 return (
                                     <Motion.button
                                         key={item.id}
                                         type="button"
                                         whileTap={{ scale: 0.98 }}
-                                        onClick={() => onToggle(item.id)}
+                                        onClick={() => onToggleSectionVisibility(item.id)}
                                         style={{
                                             minHeight: '54px',
                                             borderRadius: '18px',
@@ -905,7 +1173,9 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, values, onToggle, theme, 
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div style={{ color: text, fontSize: '14px', fontWeight: 850 }}>{item.title}</div>
                                             <div style={{ color: sub, fontSize: '11px', fontWeight: 650, marginTop: '2px' }}>
-                                                {lang === 0 ? 'Мини-метрика на главном экране' : 'Mini metric on the main screen'}
+                                                {enabled
+                                                    ? (lang === 0 ? 'Раздел показывается в меню' : 'Section is visible in the menu')
+                                                    : (lang === 0 ? 'Раздел скрыт из меню' : 'Section is hidden from the menu')}
                                             </div>
                                         </div>
                                         <div style={{

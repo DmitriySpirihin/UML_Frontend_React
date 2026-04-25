@@ -1,6 +1,7 @@
 import {AppData, UserData } from './AppData';
 import { serializeData, deserializeData ,saveData} from './SaveHelper';
 import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel,setValidation,setIsServerAvailable} from './HabitsBus';
+import { applyLocalTestPremium } from './PremiumTestHelper';
 import pako from 'pako';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
@@ -61,6 +62,15 @@ export const sendBugreport = (message) => {
 }
 
 export async function isUserHasPremium(uid) {
+  if (applyLocalTestPremium()) {
+    return {
+      hasPremium: true,
+      premiumEndDate: UserData.premiumEndDate,
+      isValidation: false,
+      isServerAvailable: false
+    };
+  }
+
   try {
     const response = await fetch(BASE_URL, {
       method: 'POST',

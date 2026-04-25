@@ -256,7 +256,7 @@ function App() {
         </motion.div>
     
       }
-      {page !== 'LoadPanel' && page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <MainBtns/>
       </Suspense>}
       
@@ -386,7 +386,7 @@ function App() {
         {bottomBtnPanel === 'BtnsSleep' && !keyboardVisible && <BtnsSleep/>}
         {bottomBtnPanel === 'BtnsToDo' && !keyboardVisible && <BtnsToDo/>}
         {bottomBtnPanel === 'BtnsRobot' && !keyboardVisible && <BtnsRobot/>}
-        {bottomBtnPanel === 'BtnsMenu' && !keyboardVisible && <BtnsMenu/>}
+        {bottomBtnPanel === 'BtnsMenu' && page !== 'MainMenu' && !keyboardVisible && <BtnsMenu/>}
         {bottomBtnPanel === 'BtnsInfo' && !keyboardVisible && <BtnsInfo/>}
       </>}
     </>

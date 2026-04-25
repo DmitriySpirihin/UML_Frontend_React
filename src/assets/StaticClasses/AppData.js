@@ -117,6 +117,7 @@ export class AppData{
   "SleepMain": true,
   "ToDoMain": true
 };
+static mainHeroWidgets = ["HabitsMain", "TrainingMain", "MentalMain"];
 static habitCardWidgets = {
   days: true,
   skips: true,
@@ -234,6 +235,9 @@ static habitCardWidgets = {
       "SleepMain": true,
       "ToDoMain": true
     };
+    this.mainHeroWidgets = Array.isArray(data.mainHeroWidgets) && data.mainHeroWidgets.length > 0
+      ? data.mainHeroWidgets.slice(0, 3)
+      : ["HabitsMain", "TrainingMain", "MentalMain"];
     const savedHabitCardWidgets = data.habitCardWidgets || {};
     const statsFallback = savedHabitCardWidgets.stats;
     this.habitCardWidgets = {
@@ -742,6 +746,7 @@ export class Data{
     this.todoFieldsVisibility = AppData.todoFieldsVisibility;
     this.menuCardsStates = AppData.menuCardsStates;
     this.infoMiniPanel = AppData.infoMiniPanel;
+    this.mainHeroWidgets = AppData.mainHeroWidgets;
     this.insightCache = AppData.insightCache;
   }
 }

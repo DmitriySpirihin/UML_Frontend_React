@@ -7,6 +7,7 @@ import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud, loadData } from '../StaticClasses/SaveHelper';
 import { initializeTelegramSDK, getTelegramContext } from '../StaticClasses/SaveHelper';
 import { isUserHasPremium ,sendXp,getFriendsList} from '../StaticClasses/NotificationsManager';
+import { applyLocalTestPremium } from '../StaticClasses/PremiumTestHelper';
 import { calculateStats } from '../Helpers/UserStats.js';
 
 const MotionDiv = motion.div;
@@ -65,13 +66,16 @@ useEffect(() => {
         UserData.name = AppData.profileCustomNickname.trim();
         setUserName(UserData.name);
       }
+      const hasLocalTestPremium = applyLocalTestPremium();
       fillEmptyDays();
       setAllHabits();
 
       // --- SYNC & SOCIAL LOGIC ---
       if (UserData.id && UserData.id !== 0) { 
         // 1. Check Premium
-        await isUserHasPremium(UserData.id); 
+        if (!hasLocalTestPremium) {
+          await isUserHasPremium(UserData.id);
+        }
         
         const currentStats = calculateStats(); // Helper to get the XP values
         await sendXp(currentStats.level.xp, currentStats.level.current);
