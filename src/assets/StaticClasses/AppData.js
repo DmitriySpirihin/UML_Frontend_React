@@ -32,6 +32,8 @@ export class AppData{
    static choosenHabitsGoals = {};//{id:[{text:'',isDone:false}]}
    static choosenHabitsStartDates = [];
    static choosenHabitsLastSkip = {};
+   static choosenHabitsAutoComplete = {};
+   static habitEventTimes = {};
    static choosenHabits = []; // id array
    static choosenHabitsAchievements = {};
    static choosenHabitsNotified = {};
@@ -45,6 +47,11 @@ export class AppData{
    static programs = programs;
    static trainingLog = {};
    static pData = {filled:false,age:20,gender:0,height:180,wrist:20,goal:1};
+   static profileOnboardingShown = false;
+   static profileNicknameMode = 'telegram';
+   static profileCustomNickname = '';
+   static profileDiscoverySource = '';
+   static profilePreferredSections = [];
    static measurements = [[],[],[],[],[]];// [[{ date: newDateStr, value: val }],[],[],[],[]]
   static ownPlates = [true,true,true,true,true,true,true,true];
   static platesAmount = [10,10,10,10,10,10,10,10];
@@ -61,6 +68,11 @@ export class AppData{
   static mentalRecords = [[0,0,0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
   //
   static sleepingLog = {};
+  static sleepIntegrations = {
+    appleHealth: { connected: false, autoSync: false, lastSync: '', error: '' },
+    whoop: { connected: false, autoSync: false, lastSync: '', error: '' },
+    oura: { connected: false, autoSync: false, lastSync: '', error: '' }
+  };
   static todoList = [];
   static todoCustomCategories = []; // [{icon, label:[ru,en]}]
   static sectionVisits = { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
@@ -136,13 +148,20 @@ static habitCardWidgets = {
     this.choosenHabits = [...data.choosenHabits];
     this.choosenHabitsTypes = [...data.choosenHabitsTypes];
     this.choosenHabitsGoals = data.choosenHabitsGoals;
+    this.choosenHabitsAutoComplete = data.choosenHabitsAutoComplete || {};
+    this.habitEventTimes = data.habitEventTimes || {};
     this.choosenHabitsNotified = data.choosenHabitsNotified;
     this.choosenHabitsDaysToForm = data.choosenHabitsDaysToForm;
     this.CustomHabits = data.CustomHabits;
     this.habitsByDate = data.habitsByDate;
     this.notify = data.notify;
     setNotify(this.notify);
-    this.pData = data.pData;
+    this.pData = data.pData || {filled:false,age:20,gender:0,height:180,wrist:20,goal:1};
+    this.profileOnboardingShown = data.profileOnboardingShown ?? this.pData.filled === true;
+    this.profileNicknameMode = data.profileNicknameMode || 'telegram';
+    this.profileCustomNickname = data.profileCustomNickname || '';
+    this.profileDiscoverySource = data.profileDiscoverySource || '';
+    this.profilePreferredSections = Array.isArray(data.profilePreferredSections) ? data.profilePreferredSections : [];
     this.lastBackupDate = data.lastBackupDate;
     this.measurements = data.measurements;
     if (data.exercises && typeof data.exercises === 'object' && !Array.isArray(data.exercises)) this.exercises = data.exercises;
@@ -159,7 +178,12 @@ static habitCardWidgets = {
     this.hardeningLog = data.hardeningLog;
     this.mentalLog = data.mentalLog;
     this.mentalRecords = data.mentalRecords;
-    this.sleepingLog = data.sleepingLog;
+    this.sleepingLog = data.sleepingLog || {};
+    this.sleepIntegrations = {
+      appleHealth: { connected: false, autoSync: false, lastSync: '', error: '', ...(data.sleepIntegrations?.appleHealth || {}) },
+      whoop: { connected: false, autoSync: false, lastSync: '', error: '', ...(data.sleepIntegrations?.whoop || {}) },
+      oura: { connected: false, autoSync: false, lastSync: '', error: '', ...(data.sleepIntegrations?.oura || {}) }
+    };
     this.todoList = data.todoList || [];
     this.todoCustomCategories = Array.isArray(data.todoCustomCategories) ? data.todoCustomCategories : [];
     this.habitCustomCategories = Array.isArray(data.habitCustomCategories) ? data.habitCustomCategories : [];
@@ -264,7 +288,44 @@ static getLastTrainingDayIndex() {
      }
      return false;
   } 
-  static async addHabit(habitId,dateString,goals,isNegative,daysToForm){
+  static isHabitAutoComplete(habitId) {
+    return this.choosenHabitsAutoComplete?.[habitId] === true;
+  }
+  static getHabitEventTimestamp(day, habitId) {
+    return this.habitEventTimes?.[habitId]?.[day] || null;
+  }
+  static normalizeHabitEventTimestamp(day, eventTimestamp = null) {
+    if (Number.isFinite(eventTimestamp)) return eventTimestamp;
+    if (day === new Date().toISOString().split('T')[0]) return Date.now();
+    const [year, month, date] = day.split('-').map(Number);
+    return new Date(year, month - 1, date, 23, 59, 0, 0).getTime();
+  }
+  static setHabitEventTimestamp(day, habitId, status, eventTimestamp = null) {
+    const habitIndex = this.choosenHabits.indexOf(Number(habitId));
+    const isNegative = habitIndex !== -1 && this.choosenHabitsTypes[habitIndex];
+    if (status === -1 && isNegative) {
+      if (!this.habitEventTimes[habitId]) this.habitEventTimes[habitId] = {};
+      this.habitEventTimes[habitId][day] = this.normalizeHabitEventTimestamp(day, eventTimestamp);
+      return;
+    }
+    if (this.habitEventTimes[habitId]) {
+      delete this.habitEventTimes[habitId][day];
+      if (Object.keys(this.habitEventTimes[habitId]).length === 0) delete this.habitEventTimes[habitId];
+    }
+  }
+  static syncLastSkip(habitId) {
+    const habitIndex = this.choosenHabits.indexOf(Number(habitId));
+    if (habitIndex === -1 || !this.choosenHabitsTypes[habitIndex]) return;
+    let latestSkip = null;
+    Object.entries(this.habitsByDate).forEach(([day, habits]) => {
+      if (habits?.[habitId] < 1) {
+        const timestamp = this.getHabitEventTimestamp(day, habitId) || this.normalizeHabitEventTimestamp(day);
+        if (!latestSkip || timestamp > latestSkip) latestSkip = timestamp;
+      }
+    });
+    this.choosenHabitsLastSkip[habitId] = latestSkip || new Date(this.choosenHabitsStartDates[habitIndex]).getTime();
+  }
+  static async addHabit(habitId,dateString,goals,isNegative,daysToForm,autoComplete = false){
     const now = new Date();
     const habitDate = new Date(dateString);
     const isStartDateEarlier = Date.now() - new Date(dateString).getTime() > 86400000;
@@ -277,6 +338,8 @@ static getLastTrainingDayIndex() {
        this.choosenHabitsDaysToForm.push(daysToForm);
        this.choosenHabitsLastSkip[habitId] = isStartDateEarlier ? new Date(dateString).getTime()  : Date.now();
        this.choosenHabitsTypes.push(isNegative);
+       if (!isNegative) this.choosenHabitsAutoComplete[habitId] = autoComplete === true;
+       else delete this.choosenHabitsAutoComplete[habitId];
        habitReminder(this.prefs[0],this.notify[0].cron,0,0,false);
     }
     const startDate = new Date(dateString);
@@ -297,7 +360,7 @@ static getLastTrainingDayIndex() {
        if(getHabitPerformPercent(habitId) < 100)this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = isStartDateEarlier ? 1 : -1;
        else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = 1;
    }
-   else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 0 : 1;
+   else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = this.isHabitAutoComplete(habitId) || getHabitPerformPercent(habitId) >= 100 ? 1 : 0;
    await saveData();
   }
   static async addHabitGoal(habitId,goal){
@@ -311,6 +374,8 @@ static getLastTrainingDayIndex() {
     delete this.choosenHabitsAchievements[habitId];
     this.choosenHabitsDaysToForm.splice(index,1);
     delete this.choosenHabitsLastSkip[habitId];
+    delete this.choosenHabitsAutoComplete[habitId];
+    delete this.habitEventTimes[habitId];
     this.choosenHabitsTypes.splice(index,1);
     delete this.choosenHabitsGoals[habitId];
     this.choosenHabitsStartDates.splice(index,1);
@@ -330,8 +395,11 @@ static getLastTrainingDayIndex() {
   }else  habitReminder(this.prefs[0],this.notify[0].cron,0,0,false);
   await saveData();
   }
-  static async changeStatus(day, habitId, status) {
+  static async changeStatus(day, habitId, status, eventTimestamp = null) {
+    if (!this.habitsByDate[day]) this.habitsByDate[day] = {};
     this.habitsByDate[day][habitId] = status;
+    this.setHabitEventTimestamp(day, habitId, status, eventTimestamp);
+    this.syncLastSkip(habitId);
     const percent = getHabitPerformPercent(habitId);
     if (percent > 99 && !this.choosenHabitsNotified[habitId][0]) {
      setShowPopUpPanel(this.prefs[0] === 0
@@ -485,7 +553,8 @@ export const fillEmptyDays = () => {
         }
         else{
            if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime()){
-           AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? -1 : 1; 
+           const habitId = AppData.choosenHabits[index];
+           AppData.habitsByDate[current][habitId] = AppData.isHabitAutoComplete(habitId) || getHabitPerformPercent(habitId) >= 100 ? 1 : -1;
            }
         }
       }
@@ -509,7 +578,8 @@ export const fillEmptyDays = () => {
         }
         else{
            if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(now).getTime()){
-             AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? -1 : 1; 
+             const habitId = AppData.choosenHabits[index];
+             AppData.habitsByDate[now][habitId] = AppData.isHabitAutoComplete(habitId) || getHabitPerformPercent(habitId) >= 100 ? 1 : -1;
            }
         }
    }
@@ -630,6 +700,8 @@ export class Data{
     this.choosenHabits = AppData.choosenHabits;
     this.choosenHabitsTypes = AppData.choosenHabitsTypes;
     this.habitsByDate = AppData.habitsByDate;
+    this.choosenHabitsAutoComplete = AppData.choosenHabitsAutoComplete;
+    this.habitEventTimes = AppData.habitEventTimes;
     this.choosenHabitsAchievements = AppData.choosenHabitsAchievements;
     this.choosenHabitsLastSkip = AppData.choosenHabitsLastSkip;
     this.choosenHabitsStartDates = AppData.choosenHabitsStartDates;
@@ -645,6 +717,11 @@ export class Data{
     this.programs = AppData.programs;
     this.trainingLog = AppData.trainingLog;
     this.pData = AppData.pData;
+    this.profileOnboardingShown = AppData.profileOnboardingShown;
+    this.profileNicknameMode = AppData.profileNicknameMode;
+    this.profileCustomNickname = AppData.profileCustomNickname;
+    this.profileDiscoverySource = AppData.profileDiscoverySource;
+    this.profilePreferredSections = AppData.profilePreferredSections;
     this.measurements = AppData.measurements;
     this.ownPlates = AppData.ownPlates;
     this.platesAmount = AppData.platesAmount;
@@ -656,6 +733,7 @@ export class Data{
     this.hardeningLog = AppData.hardeningLog;
     this.mentalRecords = AppData.mentalRecords;
     this.sleepingLog = AppData.sleepingLog;
+    this.sleepIntegrations = AppData.sleepIntegrations;
     this.mentalLog = AppData.mentalLog;
     this.todoList = AppData.todoList;
     this.todoCustomCategories = AppData.todoCustomCategories;

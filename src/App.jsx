@@ -21,6 +21,7 @@ const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'
 const HabitsMain = lazy(() => import('./assets/Pages/HabitsPages/HabitsMain'));
 const MainMenu = lazy(() => import('./assets/Pages/MainMenu'));
 const LoadPanel = lazy(() => import('./assets/Pages/LoadPanel'));
+const ProfileOnboarding = lazy(() => import('./assets/Pages/ProfileOnboarding'));
 const ConfirmationPanel = lazy(() => import('./assets/Pages/ConfirmationPanel'));
 const AddHabitPanel = lazy(() => import('./assets/Pages/HabitsPages/AddHabitPanel')); 
 const TrainingMain = lazy(() => import('./assets/Pages/TrainingPages/TrainingMain'));
@@ -255,11 +256,14 @@ function App() {
         </motion.div>
     
       }
-      {page !== 'LoadPanel' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+      {page !== 'LoadPanel' && page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <MainBtns/>
       </Suspense>}
       
       {page === 'LoadPanel' && <LoadPanel/>}
+      {page === 'ProfileOnboarding' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <ProfileOnboarding/>
+      </Suspense>}
       {page === 'MainMenu' && <MainMenu/>}
       {page === 'HabitsMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <HabitsMain />
@@ -374,7 +378,7 @@ function App() {
         <AddExercisePanel/>
       </Suspense>}
 
-      {page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && <>
+      {page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && <>
         {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
         {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
         {bottomBtnPanel === 'BtnsRecovery' && !keyboardVisible && <BtnsRecovery/>}

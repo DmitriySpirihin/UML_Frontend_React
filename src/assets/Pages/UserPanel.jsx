@@ -114,6 +114,7 @@ const UserPanel = () => {
     
     const onSaveMetrics = async () => {
         AppData.pData = { filled: true, age, gender, height, wrist, goal };
+        AppData.profileOnboardingShown = true;
         await saveData();
         setShowBodyMetrics(false);
     };

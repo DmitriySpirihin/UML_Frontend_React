@@ -109,6 +109,7 @@ const AddHabitPanel = () => {
     const [goalName, setGoalName] = useState('');
     const [isNegative, setIsNegative] = useState(false);
     const [daysToForm, setDaysToForm] = useState(66);
+    const [habitAutoComplete, setHabitAutoComplete] = useState(false);
 
     const [habitSearchQuery, setHabitSearchQuery] = useState('');
     const [selectIconPanel, setSelectIconPanel] = useState(false);
@@ -204,6 +205,7 @@ const AddHabitPanel = () => {
             setHabitName(selectedHabit.name[langIndex]);
             setHabitCategory(selectedHabit.category[0]);
             setIsNegative(isNeg);
+            setHabitAutoComplete(false);
             setGoals(setGoalForDefault(selectedHabit.name[0], langIndex));
             setDaysToForm(isNeg ? 120 : 66);
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
@@ -239,6 +241,7 @@ const AddHabitPanel = () => {
         setFilterCategory(cat.label[langIndex]);
         setHabitCategory(cat.label[0]);
         setIsNegative(cat.isNegative || false);
+        if (cat.isNegative) setHabitAutoComplete(false);
     };
 
     const openCreatePanelFromSearch = () => {
@@ -251,6 +254,7 @@ const AddHabitPanel = () => {
         setGoalName('');
         setHabitCategory(selectedCat?.label?.[0] || 'Здоровье');
         setIsNegative(selectedCat?.isNegative || false);
+        setHabitAutoComplete(false);
         setDaysToForm(selectedCat?.isNegative ? 120 : 66);
         setHabitId(-1);
     };
@@ -258,8 +262,8 @@ const AddHabitPanel = () => {
     const handleSave = () => {
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         const finalGoals = goals.map(g => ({ text: g, isDone: false }));
-        if (showCreatePanel) createHabit(habitName, getCategory(habitCategory), habitDescription, habitIcon, dateStr, finalGoals, isNegative, daysToForm);
-        else addHabit(habitId, habitName, false, dateStr, finalGoals, isNegative, daysToForm);
+        if (showCreatePanel) createHabit(habitName, getCategory(habitCategory), habitDescription, habitIcon, dateStr, finalGoals, isNegative, daysToForm, habitAutoComplete);
+        else addHabit(habitId, habitName, false, dateStr, finalGoals, isNegative, daysToForm, habitAutoComplete);
         closePanel();
     };
 
@@ -602,6 +606,35 @@ const AddHabitPanel = () => {
                                             />
                                             <p style={{ fontSize: '12px', color: ui.sub, marginTop: '10px', textAlign: 'center' }}>{needDaysInfo(langIndex, daysToForm, isNegative)}</p>
                                         </div>
+
+                                        {!isNegative && (
+                                            <div style={configCard(ui)}>
+                                                <p style={cardLabel(ui)}>{langIndex === 0 ? 'отметка выполнения' : 'completion mode'}</p>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                                    <motion.button
+                                                        type="button"
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={() => setHabitAutoComplete(false)}
+                                                        style={completionModeButton(ui, !habitAutoComplete)}
+                                                    >
+                                                        {langIndex === 0 ? 'Вручную' : 'Manual'}
+                                                    </motion.button>
+                                                    <motion.button
+                                                        type="button"
+                                                        whileTap={{ scale: 0.98 }}
+                                                        onClick={() => setHabitAutoComplete(true)}
+                                                        style={completionModeButton(ui, habitAutoComplete)}
+                                                    >
+                                                        {langIndex === 0 ? 'Авто' : 'Auto'}
+                                                    </motion.button>
+                                                </div>
+                                                <p style={{ fontSize: '12px', color: ui.sub, marginTop: '10px', textAlign: 'center' }}>
+                                                    {habitAutoComplete
+                                                        ? (langIndex === 0 ? 'Привычка будет отмечаться выполненной автоматически каждый день.' : 'The habit will be marked done automatically each day.')
+                                                        : (langIndex === 0 ? 'Отмечайте выполнение сами через карточку привычки.' : 'Mark completion yourself from the habit card.')}
+                                                </p>
+                                            </div>
+                                        )}
 
                                         <div style={configCard(ui)}>
                                             <p style={cardLabel(ui)}>{langIndex === 0 ? 'микро-цели' : 'sub-goals'}</p>
@@ -1086,6 +1119,16 @@ const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-bet
 const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: ui.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '15px', marginTop: '10px' });
 const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: ui.bg, borderRadius: '16px' });
 const inputStyle = (ui) => ({ width: '100%', border: 'none', background: 'transparent', fontSize: '16px', color: ui.text, outline: 'none' });
+const completionModeButton = (ui, active) => ({
+    border: `1px solid ${active ? ui.accent : ui.border}`,
+    background: active ? `${ui.accent}22` : 'transparent',
+    color: active ? ui.accent : ui.text,
+    borderRadius: '14px',
+    padding: '12px',
+    fontSize: '14px',
+    fontWeight: '800',
+    cursor: 'pointer'
+});
 
 // --- ЛОГИКА (ОРИГИНАЛ) ---
 const months = [['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'], ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
@@ -1107,18 +1150,18 @@ function needDaysInfo(lang, days, isNegative) {
     return lang === 0 ? 'мне нужно ' + days + ' дней для формирования' : 'it takes ' + days + ' days to form';
 }
 
-const addHabit = (habitId, habitName, isCustom, dateString, goals, isNegative, daysToForm) => {
+const addHabit = (habitId, habitName, isCustom, dateString, goals, isNegative, daysToForm, autoComplete = false) => {
     if (AppData.IsHabitInChoosenList(habitId)) { setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list', 2500, false); return; }
-    addHabitFn(habitId, dateString, goals, isNegative, daysToForm);
+    addHabitFn(habitId, dateString, goals, isNegative, daysToForm, autoComplete);
     setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка добавлена' : 'habit added', 2500, true);
 }
 
-const createHabit = (name, category, description, icon, dateString, goals, isNegative, daysToForm) => {
+const createHabit = (name, category, description, icon, dateString, goals, isNegative, daysToForm, autoComplete = false) => {
     const currentAll = getAllHabits();
     const maxId = currentAll.length > 0 ? Math.max(...currentAll.map(h => h.id)) : 0;
     const habitId = maxId + 1;
     AppData.AddCustomHabit(name, category, description, icon, habitId);
-    setTimeout(() => { addHabit(habitId, name, true, dateString, goals, category[0] === 'Отказ от вредного', daysToForm); }, 100);
+    setTimeout(() => { addHabit(habitId, name, true, dateString, goals, category[0] === 'Отказ от вредного', daysToForm, autoComplete); }, 100);
 }
 
 const translateToEnglish = (ruText) => {

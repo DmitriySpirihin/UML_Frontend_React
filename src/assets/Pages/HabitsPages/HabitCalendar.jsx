@@ -1,4 +1,4 @@
-import React, {useState,useEffect} from 'react'
+import React, {useState,useEffect,useRef} from 'react'
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'framer-motion'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
@@ -19,6 +19,18 @@ const formatDateKey = (d) => {
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+};
+
+const formatTimeInput = (timestamp, fallbackDate) => {
+    const date = timestamp ? new Date(timestamp) : fallbackDate;
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+};
+
+const buildTimestampFromTime = (date, time) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const result = new Date(date);
+    result.setHours(hours || 0, minutes || 0, 0, 0);
+    return result.getTime();
 };
 
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
@@ -182,7 +194,7 @@ const HabitCalendar = () => {
     const onHabitClick = (habitId) => {
         playEffects(clickSound);
         if(setExpandedCard) setExpandedCard(habitId);
-        if(setPage) setPage(0);
+        if(setPage) setPage('HabitsMain');
     };
 
     return (
@@ -399,17 +411,53 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
 
     const isNegative = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(id)];
     const [status, setStatus] = useState(statusInit);
-    const [canDrag, setCanDrag] = useState(!isNegative);
+    const [canDrag, setCanDrag] = useState(true);
+    const [showResetPanel, setShowResetPanel] = useState(false);
+    const didDragAction = useRef(false);
+    const dragHandled = useRef(false);
+    const dateKey = formatDateKey(date);
+    const savedEventTime = AppData.getHabitEventTimestamp(dateKey, id);
+    const [eventTime, setEventTime] = useState(() => formatTimeInput(savedEventTime, date));
     const maxX = 70; const minX = -70;
     const x = useMotionValue(0);
     const constrainedX = useTransform(x, [-1, 1], [minX, maxX]);
     
-    useEffect(() => { setStatus(statusInit); }, [statusInit, date]);
+    useEffect(() => {
+        setStatus(statusInit);
+        setEventTime(formatTimeInput(AppData.getHabitEventTimestamp(formatDateKey(date), id), date));
+    }, [statusInit, date, id]);
+
+    const saveNegativeReset = async () => {
+        const dayKey = formatDateKey(date);
+        await AppData.changeStatus(dayKey, id, -1, buildTimestampFromTime(date, eventTime));
+        setStatus(-1);
+        setShowResetPanel(false);
+        emitHabitsChanged();
+        if (AppData.prefs[2] == 0) playEffects(skipSound);
+    };
+
+    const saveCleanDay = async () => {
+        const dayKey = formatDateKey(date);
+        await AppData.changeStatus(dayKey, id, 1);
+        setStatus(1);
+        setShowResetPanel(false);
+        emitHabitsChanged();
+        if (AppData.prefs[2] == 0) playEffects(isDoneSound);
+    };
 
     const onDrag = (event, info) => {
         const dx = info.offset.x;
         if (Math.abs(dx) > maxX) {
-            if (!canDrag) return;
+            if (!canDrag || dragHandled.current) return;
+            dragHandled.current = true;
+            didDragAction.current = true;
+            if (isNegative) {
+                if (dx < 0) setShowResetPanel(true);
+                else saveCleanDay();
+                setCanDrag(false);
+                animate(constrainedX, 0, { type: 'tween', duration: 0.2 });
+                return;
+            }
             let newStatus = status;
             if (dx > 0) { if (status === 0) newStatus = 1; else if (status === -1) newStatus = 0; } 
             else { if (status === 0) newStatus = -1; else if (status === 1) newStatus = 0; }
@@ -427,7 +475,11 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
         }
     };
 
-    const onDragEnd = () => { animate(constrainedX, 0, { type: 'tween', duration: 0.2 }); setCanDrag(true); };
+    const onDragEnd = () => {
+        dragHandled.current = false;
+        animate(constrainedX, 0, { type: 'tween', duration: 0.2 });
+        setCanDrag(true);
+    };
 
     let cardBg = theme === 'light' ? Colors.get('background', theme) : 'rgba(255,255,255,0.05)';
     let cardBorder = theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)';
@@ -450,20 +502,139 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
                     backgroundColor: cardBg, border: `1px solid ${cardBorder}`, display:'flex', flexDirection:'row', width:'100%', padding: '16px 20px', alignItems:'center', borderRadius:'18px', boxSizing: 'border-box', x: constrainedX, cursor: 'pointer', position: 'relative'
                 }}
                 drag={canDrag ? 'x' : false} dragConstraints={{ left: minX, right: status === 1 ? 0 : maxX }} dragElastic={0.1} onDrag={onDrag} onDragEnd={onDragEnd}
+                onClick={() => {
+                    if (didDragAction.current) {
+                        didDragAction.current = false;
+                        return;
+                    }
+                    if (isNegative) setShowResetPanel(true);
+                    else onHabitClick?.(id);
+                }}
             >
                 <div style={{ fontSize: '24px', marginRight: '15px', width: '30px', textAlign: 'center', color: iconColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{getIcon()}</div>
                 <div style={{flex: 1, display: 'flex', flexDirection: 'column'}}>
                     <span style={{ fontFamily: "Segoe UI", color: subTextColor, fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.8px', pointerEvents: 'none' }}>{category}</span>
                     <p style={{ fontFamily: "Segoe UI", color: textColor, margin: 0, fontWeight: '600', fontSize: fSize === 0 ? '16px' : '18px', pointerEvents: 'none' }}>{name}</p>
+                    {isNegative && status === -1 && (
+                        <span style={{ fontFamily: "Segoe UI", color: subTextColor, fontSize: '12px', marginTop: '5px', fontWeight: '700' }}>
+                            {langIndex === 0 ? 'Срыв' : 'Reset'} · {eventTime}
+                        </span>
+                    )}
                 </div>
                 <div style={{ width: '28px', height: '28px', borderRadius: '50%', backgroundColor: status !== 0 ? checkBg : 'transparent', border: status === 0 ? `2px solid ${Colors.get('subText', theme)}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '10px' }}>
                     {status === 1 && <Check style={{color: '#fff', fontSize: '18px'}}/>}
                     {status === -1 && <Close style={{color: '#fff', fontSize: '18px'}}/>}
                 </div>
             </motion.div>
+            <AnimatePresence>
+                {showResetPanel && (
+                    <NegativeHabitResetPanel
+                        theme={theme}
+                        langIndex={langIndex}
+                        time={eventTime}
+                        onTimeChange={setEventTime}
+                        onClose={() => setShowResetPanel(false)}
+                        onReset={saveNegativeReset}
+                        onClean={saveCleanDay}
+                    />
+                )}
+            </AnimatePresence>
         </div>
     );
 }
+
+const NegativeHabitResetPanel = ({ theme, langIndex, time, onTimeChange, onClose, onReset, onClean }) => {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const bg = isLight ? '#FFFFFF' : Colors.get('simplePanel', theme);
+    const text = Colors.get('mainText', theme);
+    const sub = Colors.get('subText', theme);
+
+    return (
+        <>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={onClose}
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(0,0,0,0.55)',
+                    backdropFilter: 'blur(5px)',
+                    zIndex: 5000
+                }}
+            />
+            <motion.div
+                initial={{ y: 35, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 35, opacity: 0 }}
+                transition={{ type: 'spring', damping: 24, stiffness: 260 }}
+                style={{
+                    position: 'fixed',
+                    left: '4%',
+                    right: '4%',
+                    bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)',
+                    maxWidth: '520px',
+                    margin: '0 auto',
+                    borderRadius: '24px',
+                    padding: '18px',
+                    backgroundColor: bg,
+                    border: isLight ? '1px solid rgba(0,0,0,0.06)' : `1px solid ${Colors.get('border', theme)}80`,
+                    boxShadow: isLight ? '0 24px 70px rgba(0,0,0,0.18)' : '0 28px 80px rgba(0,0,0,0.72)',
+                    zIndex: 5001
+                }}
+            >
+                <div style={{ color: text, fontSize: '18px', fontWeight: 900, marginBottom: '6px' }}>
+                    {langIndex === 0 ? 'Записать срыв' : 'Record reset'}
+                </div>
+                <div style={{ color: sub, fontSize: '13px', fontWeight: 650, marginBottom: '16px' }}>
+                    {langIndex === 0 ? 'Выберите точное время для выбранной даты.' : 'Choose the exact time for the selected date.'}
+                </div>
+                <input
+                    type="time"
+                    value={time}
+                    onChange={(e) => onTimeChange(e.target.value)}
+                    style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        border: `1px solid ${Colors.get('border', theme)}88`,
+                        borderRadius: '16px',
+                        padding: '13px 14px',
+                        backgroundColor: isLight ? '#F7F7F8' : 'rgba(255,255,255,0.05)',
+                        color: text,
+                        fontSize: '18px',
+                        fontWeight: 800,
+                        outline: 'none',
+                        marginBottom: '14px'
+                    }}
+                />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={onClean} style={calendarActionButton('#32D74B')}>
+                        <MdDoneAll size={18} /> {langIndex === 0 ? 'Чистый день' : 'Clean day'}
+                    </motion.button>
+                    <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={onReset} style={calendarActionButton('#FF453A')}>
+                        <Close style={{ fontSize: '18px' }} /> {langIndex === 0 ? 'Срыв' : 'Reset'}
+                    </motion.button>
+                </div>
+            </motion.div>
+        </>
+    );
+};
+
+const calendarActionButton = (color) => ({
+    minHeight: '48px',
+    border: 'none',
+    borderRadius: '16px',
+    backgroundColor: color,
+    color: '#FFF',
+    fontSize: '13px',
+    fontWeight: 850,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '7px',
+    cursor: 'pointer'
+});
 
 function habitAmountString(date,langIndex) {
    const names = [['привычка','привычки','привычек'],['habit','habits','habits']];

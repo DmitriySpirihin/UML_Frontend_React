@@ -4,9 +4,18 @@ import { AppData } from '../../StaticClasses/AppData.js';
 import { logSectionVisit } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, addNewTrainingDay$ } from '../../StaticClasses/HabitsBus';
-import { FaChevronLeft, FaChevronRight, FaMoon, FaBed, FaRegClock, FaStickyNote, FaStar } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaMoon, FaBed, FaRegClock, FaStickyNote, FaStar, FaSyncAlt } from 'react-icons/fa';
 import { selectedSleepDate$ } from '../../StaticClasses/HabitsBus';
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
+import {
+  SLEEP_INTEGRATION_PROVIDERS,
+  getSleepIntegration,
+  setSleepIntegrationState,
+  startSleepIntegrationConnect,
+  syncAutoSleepIntegrations,
+  syncSleepIntegrationProvider,
+  toggleSleepIntegrationAutoSync
+} from '../../StaticClasses/SleepIntegrationService.js';
 
 // --- HELPERS ---
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
@@ -80,6 +89,9 @@ const SleepMain = () => {
   const currentDateRef = useRef(currentDate);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [selectedSleepEntry, setSelectedSleepEntry] = useState(null);
+  const [integrationVersion, setIntegrationVersion] = useState(0);
+  const [syncingProvider, setSyncingProvider] = useState('');
+  const [syncMessage, setSyncMessage] = useState('');
   const today = new Date().getDate(); 
     const curMonth = new Date().getMonth();
   // Subscriptions
@@ -95,6 +107,23 @@ const SleepMain = () => {
   }, []);
 
   useEffect(() => { logSectionVisit('sleep'); }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    syncAutoSleepIntegrations().then(results => {
+      if (!cancelled && results.length > 0) {
+        const imported = results.reduce((sum, item) => sum + (item.imported || 0), 0);
+        setSyncMessage(imported > 0
+          ? (langIndex === 0 ? `Импортировано записей сна: ${imported}` : `Imported sleep records: ${imported}`)
+          : ''
+        );
+        setIntegrationVersion(prev => prev + 1);
+        const key = formatDateKey(currentDateRef.current);
+        setSelectedSleepEntry(AppData.sleepingLog?.[key] || null);
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     currentDateRef.current = currentDate;
@@ -132,6 +161,39 @@ const SleepMain = () => {
   const nextMonth = () => {
     setDate(new Date(date.getFullYear(), date.getMonth() + 1));
     playEffects(clickSound);
+  };
+
+  const updateIntegration = async (provider, patch) => {
+    await setSleepIntegrationState(provider, patch);
+    setIntegrationVersion(prev => prev + 1);
+  };
+
+  const handleConnect = async (provider) => {
+    try {
+      startSleepIntegrationConnect(provider);
+      await updateIntegration(provider, { connected: true, error: '' });
+    } catch (error) {
+      await updateIntegration(provider, { error: error.message || 'Connection unavailable' });
+    }
+  };
+
+  const handleToggleAutoSync = async (provider) => {
+    await toggleSleepIntegrationAutoSync(provider);
+    setIntegrationVersion(prev => prev + 1);
+  };
+
+  const handleSync = async (provider) => {
+    setSyncingProvider(provider);
+    setSyncMessage('');
+    const result = await syncSleepIntegrationProvider(provider);
+    setSyncingProvider('');
+    setIntegrationVersion(prev => prev + 1);
+    const key = formatDateKey(currentDateRef.current);
+    setSelectedSleepEntry(AppData.sleepingLog?.[key] || null);
+    setSyncMessage(result.success
+      ? (langIndex === 0 ? `Импортировано записей: ${result.imported}` : `Imported records: ${result.imported}`)
+      : result.error
+    );
   };
 
   const cellMonth = date.getMonth();
@@ -237,6 +299,17 @@ const SleepMain = () => {
         </div>
       </div>
 
+      <SleepIntegrationsPanel
+        theme={theme}
+        langIndex={langIndex}
+        version={integrationVersion}
+        syncingProvider={syncingProvider}
+        syncMessage={syncMessage}
+        onConnect={handleConnect}
+        onSync={handleSync}
+        onToggleAutoSync={handleToggleAutoSync}
+      />
+
       {/* --- Selected Date Info --- */}
       <div style={styles(theme).detailsContainer}>
          <div style={styles(theme).dateLabel}>
@@ -326,6 +399,59 @@ const SleepMain = () => {
 };
 
 // Sub-component for clean layout
+const SleepIntegrationsPanel = ({ theme, langIndex, version, syncingProvider, syncMessage, onConnect, onSync, onToggleAutoSync }) => (
+  <div style={styles(theme).integrationPanel}>
+    <div style={styles(theme).integrationHeader}>
+      <div>
+        <div style={styles(theme).integrationTitle}>{langIndex === 0 ? 'Носимые устройства' : 'Wearables'}</div>
+        <div style={styles(theme).integrationSubtitle}>
+          {langIndex === 0 ? 'Apple Health, WHOOP и Oura для автоимпорта сна' : 'Apple Health, WHOOP and Oura sleep auto-import'}
+        </div>
+      </div>
+      <FaSyncAlt color={Colors.get('accent', theme)} />
+    </div>
+
+    <div style={styles(theme).integrationList}>
+      {SLEEP_INTEGRATION_PROVIDERS.map(provider => {
+        const state = getSleepIntegration(provider.key);
+        const connected = state.connected === true;
+        const isSyncing = syncingProvider === provider.key;
+        return (
+          <div key={`${provider.key}-${version}`} style={styles(theme).integrationRow}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={styles(theme).providerName}>
+                {provider.label[langIndex]}
+                <span style={styles(theme).providerBadge(connected)}>
+                  {connected ? (langIndex === 0 ? 'подключено' : 'connected') : (langIndex === 0 ? 'не подключено' : 'off')}
+                </span>
+              </div>
+              <div style={styles(theme).providerNote}>{provider.note[langIndex]}</div>
+              {state.lastSync && (
+                <div style={styles(theme).providerMeta}>
+                  {langIndex === 0 ? 'Синхронизация:' : 'Synced:'} {new Date(state.lastSync).toLocaleDateString(langIndex === 0 ? 'ru-RU' : 'en-US')}
+                </div>
+              )}
+              {state.error && <div style={styles(theme).providerError}>{state.error}</div>}
+            </div>
+            <div style={styles(theme).integrationActions}>
+              <button type="button" onClick={() => onConnect(provider.key)} style={styles(theme).miniButton}>
+                {connected ? (langIndex === 0 ? 'Заново' : 'Reconnect') : (langIndex === 0 ? 'Связать' : 'Connect')}
+              </button>
+              <button type="button" onClick={() => onToggleAutoSync(provider.key)} style={styles(theme).miniButtonActive(state.autoSync)}>
+                {langIndex === 0 ? 'Авто' : 'Auto'}
+              </button>
+              <button type="button" disabled={isSyncing} onClick={() => onSync(provider.key)} style={styles(theme).syncButton}>
+                {isSyncing ? '...' : (langIndex === 0 ? 'Импорт' : 'Sync')}
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+    {syncMessage && <div style={styles(theme).syncMessage}>{syncMessage}</div>}
+  </div>
+);
+
 const MetricItem = ({ icon, label, value, theme, color }) => (
     <div style={styles(theme).metricBox}>
         <div style={{...styles(theme).iconBox, color: color}}>
@@ -418,11 +544,134 @@ const styles = (theme, fSize) => ({
     cursor: 'pointer',
     boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.1)' : 'none'
   }),
+  integrationPanel: {
+    width: '90%',
+    marginTop: '18px',
+    backgroundColor: Colors.get('simplePanel', theme),
+    borderRadius: '22px',
+    padding: '15px',
+    border: `1px solid ${Colors.get('border', theme)}50`,
+    boxSizing: 'border-box'
+  },
+  integrationHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '10px',
+    marginBottom: '12px'
+  },
+  integrationTitle: {
+    color: Colors.get('mainText', theme),
+    fontSize: '16px',
+    fontWeight: '900'
+  },
+  integrationSubtitle: {
+    color: Colors.get('subText', theme),
+    fontSize: '12px',
+    fontWeight: '650',
+    marginTop: '3px'
+  },
+  integrationList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  },
+  integrationRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '10px',
+    borderRadius: '16px',
+    backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.035)'
+  },
+  providerName: {
+    color: Colors.get('mainText', theme),
+    fontSize: '14px',
+    fontWeight: '850',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '7px',
+    flexWrap: 'wrap'
+  },
+  providerBadge: (connected) => ({
+    color: connected ? Colors.get('done', theme) : Colors.get('subText', theme),
+    backgroundColor: connected ? 'rgba(50, 215, 80, 0.14)' : 'rgba(128,128,128,0.12)',
+    borderRadius: '999px',
+    padding: '2px 7px',
+    fontSize: '10px',
+    fontWeight: '900',
+    textTransform: 'uppercase'
+  }),
+  providerNote: {
+    color: Colors.get('subText', theme),
+    fontSize: '11px',
+    fontWeight: '600',
+    marginTop: '4px',
+    lineHeight: 1.25
+  },
+  providerMeta: {
+    color: Colors.get('subText', theme),
+    fontSize: '10px',
+    fontWeight: '750',
+    marginTop: '4px'
+  },
+  providerError: {
+    color: Colors.get('skipped', theme),
+    fontSize: '10px',
+    fontWeight: '750',
+    marginTop: '4px'
+  },
+  integrationActions: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    flexShrink: 0
+  },
+  miniButton: {
+    minWidth: '74px',
+    minHeight: '30px',
+    border: `1px solid ${Colors.get('border', theme)}70`,
+    borderRadius: '10px',
+    backgroundColor: 'transparent',
+    color: Colors.get('mainText', theme),
+    fontSize: '11px',
+    fontWeight: '800',
+    cursor: 'pointer'
+  },
+  miniButtonActive: (active) => ({
+    minWidth: '74px',
+    minHeight: '30px',
+    border: `1px solid ${active ? Colors.get('done', theme) : Colors.get('border', theme)}70`,
+    borderRadius: '10px',
+    backgroundColor: active ? 'rgba(50, 215, 80, 0.14)' : 'transparent',
+    color: active ? Colors.get('done', theme) : Colors.get('mainText', theme),
+    fontSize: '11px',
+    fontWeight: '800',
+    cursor: 'pointer'
+  }),
+  syncButton: {
+    minWidth: '74px',
+    minHeight: '30px',
+    border: 'none',
+    borderRadius: '10px',
+    backgroundColor: Colors.get('accent', theme),
+    color: '#fff',
+    fontSize: '11px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+  syncMessage: {
+    marginTop: '10px',
+    color: Colors.get('subText', theme),
+    fontSize: '12px',
+    fontWeight: '700',
+    textAlign: 'center'
+  },
 
   // Details
   detailsContainer: {
     width: '90%',
-    marginTop: '55px',
+    marginTop: '18px',
     marginBottom: '40px',
     display: 'flex',
     flexDirection: 'column',

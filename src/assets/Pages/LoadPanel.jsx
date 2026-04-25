@@ -61,6 +61,10 @@ useEffect(() => {
       }
 
       await loadData();
+      if (AppData.profileNicknameMode === 'custom' && AppData.profileCustomNickname?.trim()) {
+        UserData.name = AppData.profileCustomNickname.trim();
+        setUserName(UserData.name);
+      }
       fillEmptyDays();
       setAllHabits();
 
@@ -76,12 +80,14 @@ useEffect(() => {
       }
 
       setLoading(false);
-      setTimeout(() => setPage('MainMenu'), 1200);
+      const nextPage = !AppData.pData?.filled && !AppData.profileOnboardingShown ? 'ProfileOnboarding' : 'MainMenu';
+      setTimeout(() => setPage(nextPage), 1200);
 
     } catch (error) {
       console.error('Initialization error:', error);
       setLoading(false);
-      setTimeout(() => setPage('MainMenu'), 1200);
+      const nextPage = !AppData.pData?.filled && !AppData.profileOnboardingShown ? 'ProfileOnboarding' : 'MainMenu';
+      setTimeout(() => setPage(nextPage), 1200);
     }
   }
   initializeApp();

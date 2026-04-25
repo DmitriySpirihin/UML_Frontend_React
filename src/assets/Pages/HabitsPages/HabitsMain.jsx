@@ -297,14 +297,14 @@ const HabitsMain = () => {
         }
     }, [habitsCards]);
 
-    const addHabit = (id, dateString, goals, isNegative, daysToForm) => {
+    const addHabit = (id, dateString, goals, isNegative, daysToForm, autoComplete = false) => {
         const addedHabit = getAllHabits().find(h => h.id === id);
         const addedCategory = addedHabit?.category?.[0];
 
         setHabitsCards(prev => {
             const newHabits = new Set(prev);
             if (!newHabits.has(id)) {
-                AppData.addHabit(id, dateString, goals, isNegative, daysToForm);
+                AppData.addHabit(id, dateString, goals, isNegative, daysToForm, autoComplete);
                 return [...newHabits, id];
             }
             return prev;
@@ -627,6 +627,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     });
 
     const isNegative = habit.category[0] === NEGATIVE_CATEGORY;
+    const isAutoComplete = !isNegative && AppData.isHabitAutoComplete(id);
     const percent = getHabitPerformPercent(id);
     const maxX = 120;
     const minX = -maxX;
@@ -684,6 +685,9 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
    
     useEffect(() => { const sub = premium$.subscribe(setHasPremium); return () => sub.unsubscribe(); }, []);
     useEffect(() => {
+        if (isAutoComplete && status !== 1) setStatus(1);
+    }, [isAutoComplete, status]);
+    useEffect(() => {
         if (timer) {
             let temp = 0;
             const interval = setInterval(() => {
@@ -716,6 +720,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     const constrainedX = useTransform(x, [-1, 1], [minX, maxX]);
 
     const handledDrag = (event, info) => {
+        if (isAutoComplete) return;
         if (isNegative) {
             if (info.offset.x < minX && canDrag) { setNewStatus(false); animate(constrainedX, 0, { type: 'tween', duration: 0.2 }); setCanDrag(false); }
         } else {
@@ -746,7 +751,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     useEffect(() => { const sub = expandedCard$.subscribe(cId => setExpanded(cId === id)); return () => sub.unsubscribe(); }, [id]);
     useEffect(() => { setCanDrag(!showTimerSlider); }, [showTimerSlider]);
 
-    const startTimer = () => { if (status < 1 && !isNegative) { setTimer(true); setTime(0); } }
+    const startTimer = () => { if (status < 1 && !isNegative && !isAutoComplete) { setTimer(true); setTime(0); } }
     const stopTimer = () => { if (!isNegative) { setTimer(false); setProgress(0); setTime(0); } }
     const onDeleteHabit = (id) => { setHabitToDelete(id); setNeedConfirmation(true); setConfirmMessage(AppData.prefs[0] === 0 ? `⚠️ Вы уверены?` : `⚠️ Are you sure?`); }
 
@@ -762,7 +767,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                 const el = document.getElementById(id);
                 if (el.clientHeight < 80 || (event.nativeEvent.pageY - (el.getBoundingClientRect().top + window.scrollY)) < 80) toggleIsActive();
             }}
-            drag={canDrag ? 'x' : false} dragConstraints={{ left: minX, right: status > 0 || isNegative ? 0 : maxX }}
+            drag={canDrag && !isAutoComplete ? 'x' : false} dragConstraints={{ left: minX, right: status > 0 || isNegative ? 0 : maxX }}
             onDrag={handledDrag} onDragEnd={onDragEnd} whileTap={{ scale: 0.99 }}
             animate={{ height: expanded ? 'auto' : '80px' }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}
         >
@@ -795,7 +800,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
 
                 </div>
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingLeft: '10px', alignSelf: 'center' }}>
-                    {!isNegative && <>
+                    {!isNegative && !isAutoComplete && <>
                     
                         {!timer && status === 0 && <TimerOffIcon onClick={(e) => { e.stopPropagation(); setShowTimerSlider(true); }} style={{ color: Colors.get('icons', theme), opacity: 0.4, fontSize: '24px', marginRight: '15px' }} />}
                         {timer && <TimerIcon onClick={(e) => { e.stopPropagation(); stopTimer() }} style={{ color: habitColor, fontSize: '24px', marginRight: '15px' }} />}
@@ -805,6 +810,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
 
 
 
+                    {isAutoComplete && <div style={{ padding: '7px 10px', borderRadius: '999px', backgroundColor: 'rgba(50, 215, 80, 0.16)', color: '#32D74B', fontSize: '11px', fontWeight: 900 }}>{langIndex === 0 ? 'АВТО' : 'AUTO'}</div>}
                     {isNegative && <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(255, 69, 58, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaFire size={16} color="#FF453A" /></div>}
                     
                 </div>
@@ -884,7 +890,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
             {habit.isCustom && <FaPencilAlt onClick={() => setCP(prev => ({ ...prev, show: true, type: 0, hId: id, gId: 0, hInfo: setHabitInfo }))} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />}
             <FaTrash onClick={() => onDeleteHabit(id)} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
             <FaArrowUp style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} onClick={() => { toggleIsActive(); }} />
-           {!isNegative && <div onClick={() => setNewStatus(true)} style={{ width: '18px', height: '18px', borderRadius: '50%', border: status !== 0 ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: status === 1 ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{status === 1 && <FaCheck size={16} color="#FFF" />}</div>}
+           {!isNegative && !isAutoComplete && <div onClick={() => setNewStatus(true)} style={{ width: '18px', height: '18px', borderRadius: '50%', border: status !== 0 ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: status === 1 ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{status === 1 && <FaCheck size={16} color="#FFF" />}</div>}
         </div>
 
     </motion.div>
