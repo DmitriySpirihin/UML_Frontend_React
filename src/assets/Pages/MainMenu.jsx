@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import Colors from '../StaticClasses/Colors'
-import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, isValidation$, setPage } from '../StaticClasses/HabitsBus'
+import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, isValidation$, setPage, lastPage$ } from '../StaticClasses/HabitsBus'
 import { AppData, UserData, getSectionStreak } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
@@ -56,12 +56,12 @@ const openGuide = () => {
 
     const initialMenuItems = [
         { id: 'MainCard', icon: null, title: lang === 0 ? '' : '', subtitle: lang === 0 ? '' : '', color: '#00ff6600' },
-        { id: 'HabitsMain', icon: <FaMedal />, title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Трекер дисциплины' : 'Discipline tracker', color: '#FFD700' },
-        { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Тренировки' : 'Workout', subtitle: lang === 0 ? 'Дневник силы' : 'Gym diary', color: '#FF4D4D'},
-        { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Мозг' : 'Brain', subtitle: lang === 0 ? 'Развитие интеллекта' : 'Intelligence', color: '#4DA6FF' },
-        { id: 'RecoveryMain', icon: <MdOutlineSelfImprovement />, title: lang === 0 ? 'Восстановление' : 'Recovery', subtitle: lang === 0 ? 'Медитации и отдых' : 'Meditation & Rest', color: '#4DFF88'},
-        { id: 'SleepMain', icon: <FaBed />, title: lang === 0 ? 'Сон' : 'Sleep', subtitle: lang === 0 ? 'Анализ качества' : 'Quality analysis', color: '#A64DFF'},
-        { id: 'ToDoMain', icon: <FaListUl />, title: lang === 0 ? 'Задачи' : 'To-Do', subtitle: lang === 0 ? 'Список дел' : 'Task list', color: '#FFA64D' }
+        { id: 'ToDoMain', icon: <FaListUl />, title: lang === 0 ? 'Задачи' : 'Tasks', subtitle: lang === 0 ? 'Планы и дела' : 'Plans and tasks', color: '#FFA64D' },
+        { id: 'HabitsMain', icon: <FaMedal />, title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Ежедневные ритуалы' : 'Daily rituals', color: '#FFD700' },
+        { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Тренировка ума' : 'Mind Training', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: '#4DA6FF' },
+        { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Дневник тренировок' : 'Training Log', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: '#FF4D4D'},
+        { id: 'RecoveryMain', icon: <MdOutlineSelfImprovement />, title: lang === 0 ? 'Антистресс' : 'Stress Reset', subtitle: lang === 0 ? 'Дыхание, медитации, холод' : 'Breathing, meditation, cold', color: '#4DFF88'},
+        { id: 'SleepMain', icon: <FaBed />, title: lang === 0 ? 'Качество сна' : 'Sleep Quality', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: '#A64DFF'}
     ];
 
     useEffect(() => {
@@ -223,6 +223,13 @@ useEffect(() => {
     const openSection = (id) => {
         if (!id) return;
         setPage(id);
+        playEffects(null);
+    };
+
+    const goBack = () => {
+        const prev = lastPage$.value;
+        if (!prev || prev === 'MainMenu') return;
+        setPage(prev);
         playEffects(null);
     };
 
@@ -443,6 +450,7 @@ useEffect(() => {
                 onOpenPremium={() => openSection('premium')}
                 onOpenUser={() => openSection('UserPanel')}
                 onOpenSettings={() => openSection('settings')}
+                onBack={goBack}
                 onOpenWidgets={() => setShowWidgetSettings(true)}
                 onPin={handlePin}
                 onHide={handleHide}
@@ -504,13 +512,13 @@ function buildMainMenuSummary(lang, visibleItems, heroWidgetIds = ['HabitsMain',
         },
         MentalMain: {
             id: 'MentalMain',
-            label: lang === 0 ? 'Мозг' : 'Brain',
+            label: lang === 0 ? 'Ум' : 'Mind',
             value: mentalTotal > 0 ? `${(mentalTotal / 1000).toFixed(1)}k` : '—',
             progress: Math.min(1, mentalTotal / 5000)
         },
         RecoveryMain: {
             id: 'RecoveryMain',
-            label: lang === 0 ? 'Восстановление' : 'Recovery',
+            label: lang === 0 ? 'Антистресс' : 'Reset',
             value: recoveryCount > 0 ? recoveryCount.toString() : '0',
             progress: Math.min(1, recoveryCount / 3)
         },
@@ -1000,22 +1008,22 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)',
                             maxWidth: '560px',
                             margin: '0 auto',
-                            borderRadius: '26px',
-                            padding: '18px',
-                            background: isDark ? 'rgba(20,20,22,0.94)' : 'rgba(255,255,255,0.96)',
+                            borderRadius: '28px',
+                            padding: '20px',
+                            background: isDark ? 'rgba(19,20,22,0.96)' : 'rgba(255,255,255,0.97)',
                             border: `1px solid ${Colors.get('border', theme)}66`,
                             boxShadow: isDark ? '0 28px 80px rgba(0,0,0,0.72)' : '0 24px 70px rgba(0,0,0,0.2)',
                             zIndex: 1801,
-                            maxHeight: '80vh',
+                            maxHeight: '82vh',
                             overflowY: 'auto',
                             boxSizing: 'border-box'
                         }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
                             <div style={{
-                                width: '36px',
-                                height: '36px',
-                                borderRadius: '12px',
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '14px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -1026,7 +1034,7 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                 <FaSlidersH />
                             </div>
                             <div>
-                                <div style={{ color: text, fontSize: '17px', fontWeight: 900 }}>
+                                <div style={{ color: text, fontSize: '18px', fontWeight: 900, lineHeight: 1.1 }}>
                                     {lang === 0 ? 'Настройка меню' : 'Menu setup'}
                                 </div>
                             </div>
@@ -1039,7 +1047,7 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                             padding: 4,
                             borderRadius: 16,
                             background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.045)',
-                            marginBottom: 12
+                            marginBottom: 18
                         }}>
                             {[
                                 { id: 'hero', label: lang === 0 ? 'Карточка' : 'Card', count: `${selectedHeroIds.length}/3` },
@@ -1084,8 +1092,24 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                         </div>
 
                         {activePanel === 'hero' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 7 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                <div style={{
+                                    padding: '10px',
+                                    borderRadius: 18,
+                                    background: isDark ? 'rgba(255,255,255,0.026)' : 'rgba(15,23,42,0.026)',
+                                    border: `1px solid ${Colors.get('border', theme)}55`
+                                }}>
+                                    <div style={{
+                                        color: sub,
+                                        fontSize: 10,
+                                        fontWeight: 850,
+                                        letterSpacing: '0.08em',
+                                        textTransform: 'uppercase',
+                                        margin: '0 0 9px 2px'
+                                    }}>
+                                        {lang === 0 ? 'Верхняя карточка' : 'Top card'}
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
                                     {[0, 1, 2].map((slotIndex) => {
                                         const selectedId = selectedHeroIds[slotIndex];
                                         const selectedItem = items.find((item) => item.id === selectedId);
@@ -1093,29 +1117,31 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                             <div
                                                 key={slotIndex}
                                                 style={{
-                                                    minHeight: 38,
+                                                    minHeight: 34,
                                                     borderRadius: 13,
-                                                    border: `1px solid ${selectedItem ? selectedItem.color : Colors.get('border', theme)}66`,
-                                                    background: selectedItem ? `${selectedItem.color}18` : bg,
+                                                    border: `1px solid ${selectedItem ? selectedItem.color : Colors.get('border', theme)}44`,
+                                                    background: selectedItem ? `${selectedItem.color}12` : bg,
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
                                                     gap: 6,
-                                                    padding: '7px 8px',
+                                                    padding: '6px 8px',
                                                     boxSizing: 'border-box'
                                                 }}
                                             >
                                                 <div style={{ color: selectedItem ? selectedItem.color : sub, fontSize: 10, fontWeight: 900, flexShrink: 0 }}>
                                                     {slotIndex + 1}
                                                 </div>
-                                                <div style={{ color: selectedItem ? text : sub, fontSize: 11, fontWeight: 850, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <div style={{ color: selectedItem ? text : sub, fontSize: 11, fontWeight: 820, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {selectedItem ? selectedItem.title : (lang === 0 ? 'Пусто' : 'Empty')}
                                                 </div>
                                             </div>
                                         );
                                     })}
+                                    </div>
                                 </div>
 
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
                                 {items.map(item => {
                                     const enabled = selectedHeroIds.includes(item.id);
                                     const disabledByLimit = !enabled && selectedHeroIds.length >= 3;
@@ -1126,14 +1152,14 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                             whileTap={disabledByLimit ? undefined : { scale: 0.985 }}
                                             onClick={() => { if (!disabledByLimit) onToggleHeroWidget(item.id); }}
                                             style={{
-                                                minHeight: 52,
-                                                borderRadius: 17,
-                                                border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}66`,
-                                                background: enabled ? `${item.color}18` : bg,
+                                                minHeight: 56,
+                                                borderRadius: 18,
+                                                border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}44`,
+                                                background: enabled ? `${item.color}12` : (isDark ? 'rgba(255,255,255,0.026)' : 'rgba(15,23,42,0.022)'),
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: 11,
-                                                padding: '10px 12px',
+                                                gap: 13,
+                                                padding: '11px 14px',
                                                 cursor: disabledByLimit ? 'not-allowed' : 'pointer',
                                                 textAlign: 'left',
                                                 opacity: disabledByLimit ? 0.38 : 1
@@ -1165,9 +1191,10 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                         </Motion.button>
                                     );
                                 })}
+                                </div>
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
                                 {items.map(item => {
                                     const enabled = !sectionStates[item.id]?.hidden;
                                     return (
@@ -1177,14 +1204,14 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                             whileTap={{ scale: 0.985 }}
                                             onClick={() => onToggleSectionVisibility(item.id)}
                                             style={{
-                                                minHeight: 52,
-                                                borderRadius: 17,
-                                                border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}66`,
-                                                background: enabled ? `${item.color}16` : bg,
+                                                minHeight: 56,
+                                                borderRadius: 18,
+                                                border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}44`,
+                                                background: enabled ? `${item.color}12` : (isDark ? 'rgba(255,255,255,0.026)' : 'rgba(15,23,42,0.022)'),
                                                 display: 'flex',
                                                 alignItems: 'center',
-                                                gap: 11,
-                                                padding: '10px 12px',
+                                                gap: 13,
+                                                padding: '11px 14px',
                                                 cursor: 'pointer',
                                                 textAlign: 'left',
                                                 opacity: enabled ? 1 : 0.58

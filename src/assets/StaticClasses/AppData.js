@@ -46,7 +46,7 @@ export class AppData{
    static exercises = exercises;
    static programs = programs;
    static trainingLog = {};
-   static pData = {filled:false,age:20,gender:0,height:180,wrist:20,goal:1};
+   static pData = {filled:false,age:20,gender:0,height:180,weight:70,goal:1,activityLevel:1};
    static profileOnboardingShown = false;
    static profileNicknameMode = 'telegram';
    static profileCustomNickname = '';
@@ -157,7 +157,7 @@ static habitCardWidgets = {
     this.habitsByDate = data.habitsByDate;
     this.notify = data.notify;
     setNotify(this.notify);
-    this.pData = data.pData || {filled:false,age:20,gender:0,height:180,wrist:20,goal:1};
+    this.pData = data.pData || {filled:false,age:20,gender:0,height:180,weight:70,goal:1,activityLevel:1};
     this.profileOnboardingShown = data.profileOnboardingShown ?? this.pData.filled === true;
     this.profileNicknameMode = data.profileNicknameMode || 'telegram';
     this.profileCustomNickname = data.profileCustomNickname || '';

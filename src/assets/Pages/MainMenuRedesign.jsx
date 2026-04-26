@@ -6,7 +6,10 @@ const EASE = [0.2, 0.8, 0.2, 1];
 
 const tokens = {
   dark: {
+    isLight: false,
     bg: '#0E1013',
+    settingsTop: '#15181c',
+    settingsBorder: '#242830',
     panel: 'rgba(26,29,33,0.84)',
     panelStrong: 'rgba(20,23,25,0.92)',
     border: 'rgba(255,255,255,0.07)',
@@ -16,7 +19,10 @@ const tokens = {
     faint: 'rgba(255,255,255,0.04)'
   },
   light: {
+    isLight: true,
     bg: '#F4F5F7',
+    settingsTop: '#e5e5e5',
+    settingsBorder: '#E2E8F0',
     panel: 'rgba(255,255,255,0.86)',
     panelStrong: 'rgba(255,255,255,0.96)',
     border: 'rgba(15,23,42,0.08)',
@@ -43,7 +49,7 @@ const Icon = ({ children, size = 22, stroke = 1.6 }) => (
   </svg>
 );
 
-const IconHabits = (p) => <Icon {...p}><circle cx="12" cy="14" r="6" /><path d="M8.5 18.5L6 22l3-1 2 2 1-4" /><path d="M15.5 18.5L18 22l-3-1-2 2-1-4" /><path d="M8 2l2 4M16 2l-2 4M12 4v3" /></Icon>;
+const IconHabits = (p) => <Icon {...p} stroke={p.stroke || 1.9}><rect x="5" y="4.5" width="14" height="15.5" rx="4" /><path d="M8.4 12.2l2.4 2.5 4.8-5.2" /><path d="M8.2 3v3M15.8 3v3" /></Icon>;
 const IconTraining = (p) => <Icon {...p}><path d="M6.5 7v10M17.5 7v10" /><path d="M4 10v4M20 10v4" /><path d="M6.5 12h11" /></Icon>;
 const IconBrain = (p) => <Icon {...p}><path d="M9 4a3 3 0 013 3v10a3 3 0 01-3 3 3 3 0 01-3-3 3 3 0 01-2-5 3 3 0 012-5 3 3 0 013-3z" /><path d="M15 4a3 3 0 00-3 3v10a3 3 0 003 3 3 3 0 003-3 3 3 0 002-5 3 3 0 00-2-5 3 3 0 00-3-3z" /></Icon>;
 const IconRecovery = (p) => <Icon {...p}><path d="M12 8c-1.5 2-1.5 4 0 6 1.5-2 1.5-4 0-6z" /><path d="M12 8c2 1 3 3 3 6-2-1-3-3-3-6z" /><path d="M12 8c-2 1-3 3-3 6 2-1 3-3 3-6z" /><path d="M4 14c2 4 5 5 8 5s6-1 8-5" /><circle cx="12" cy="5" r="1.5" /></Icon>;
@@ -57,6 +63,18 @@ const IconChevron = (p) => <Icon {...p}><path d="M9 6l6 6-6 6" /></Icon>;
 const IconFlame = (p) => <Icon {...p}><path d="M12 3c1.5 3 4 5 4 9a4 4 0 11-8 0c0-2 1-3 2-4-1-2 1-4 2-5z" /></Icon>;
 const IconArrow = (p) => <Icon {...p}><path d="M7 17L17 7M9 7h8v8" /></Icon>;
 const IconSliders = (p) => <Icon {...p}><path d="M4 7h7" /><path d="M15 7h5" /><circle cx="13" cy="7" r="2" /><path d="M4 17h5" /><path d="M13 17h7" /><circle cx="11" cy="17" r="2" /></Icon>;
+const StreakFlame = ({ size = 15 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>
+    <path
+      d="M12.7 2.6c2.1 3.6 5.8 5.7 5.8 11a6.5 6.5 0 01-13 0c0-2.9 1.6-5 3.5-6.4-.2 1.5.1 2.7.9 3.7.7-3.1 1.6-5.8 2.8-8.3z"
+      fill="#FF7A3D"
+    />
+    <path
+      d="M13 19.5a3.5 3.5 0 003.3-3.7c0-2-1.2-3.2-2.6-4.7-.4 1.9-1.1 3.4-2.2 4.5-.6-.8-.9-1.7-.8-2.8-1.1.9-1.8 2.1-1.8 3.5A3.5 3.5 0 0013 19.5z"
+      fill="#FFD36A"
+    />
+  </svg>
+);
 const DockUserIcon = ({ color }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
     <path d="M12 12.2c2.7 0 4.9-2.2 4.9-4.9S14.7 2.4 12 2.4 7.1 4.6 7.1 7.3s2.2 4.9 4.9 4.9Z" />
@@ -66,6 +84,11 @@ const DockUserIcon = ({ color }) => (
 const DockSettingsIcon = ({ color }) => (
   <svg width="25" height="25" viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
     <path d="M10.8 2.3h2.4c.6 0 1.1.4 1.2 1l.3 1.5c.5.2 1 .4 1.4.7l1.4-.8c.5-.3 1.1-.2 1.5.2l1.2 2.1c.3.5.2 1.1-.2 1.5l-1.2 1c.1.5.1 1 .1 1.5s0 1-.1 1.5l1.2 1c.4.4.5 1 .2 1.5L19 17.1c-.4.4-1 .5-1.5.2l-1.4-.8c-.4.3-.9.5-1.4.7l-.3 1.5c-.1.6-.6 1-1.2 1h-2.4c-.6 0-1.1-.4-1.2-1l-.3-1.5c-.5-.2-1-.4-1.4-.7l-1.4.8c-.5.3-1.1.2-1.5-.2l-1.2-2.1c-.3-.5-.2-1.1.2-1.5l1.2-1c-.1-.5-.1-1-.1-1.5s0-1 .1-1.5l-1.2-1c-.4-.4-.5-1-.2-1.5L5 4.9c.4-.4 1-.5 1.5-.2l1.4.8c.4-.3.9-.5 1.4-.7l.3-1.5c.1-.6.6-1 1.2-1Zm1.2 5.9a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z" />
+  </svg>
+);
+const DockBackIcon = ({ color }) => (
+  <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
+    <path d="M15 6l-6 6 6 6" />
   </svg>
 );
 
@@ -80,6 +103,15 @@ const iconMap = {
 
 function getAccent(id) {
   return tokens.accents[id] || tokens.accents.HabitsMain;
+}
+
+function getMetricParts(metric) {
+  const text = `${metric}`.trim();
+  if (!text) return { value: '', isStreak: false };
+
+  return text.endsWith('🔥')
+    ? { value: text.replace('🔥', '').trim(), isStreak: true }
+    : { value: text, isStreak: false };
 }
 
 function Pill({ children, style }) {
@@ -137,9 +169,13 @@ function RingStack({ rings }) {
   );
 }
 
-function HeroStat({ dot, label, value, palette }) {
+function HeroStat({ dot, label, value, palette, onClick }) {
   return (
-    <div style={{
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      style={{
       minHeight: 46,
       padding: '9px 10px',
       borderRadius: 15,
@@ -149,14 +185,21 @@ function HeroStat({ dot, label, value, palette }) {
       flexDirection: 'column',
       justifyContent: 'space-between',
       gap: 5,
-      minWidth: 0
+      minWidth: 0,
+      fontFamily: 'inherit',
+      cursor: 'pointer',
+      textAlign: 'left',
+      outline: 'none',
+      appearance: 'none',
+      WebkitAppearance: 'none',
+      WebkitTapHighlightColor: 'transparent'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
         <div style={{ width: 5, height: 5, borderRadius: 999, background: dot, flexShrink: 0 }} />
         <div style={{ fontSize: 10, color: palette.sub, fontWeight: 750, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
       </div>
       <div style={{ fontSize: 15, color: palette.text, fontWeight: 850, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-    </div>
+    </motion.button>
   );
 }
 
@@ -241,13 +284,14 @@ function BrandHeader({ lang, palette }) {
   );
 }
 
-function Hero({ data, palette, lang, onOpenWidgets }) {
+function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection }) {
+  const heroAccent = '#5fb6c6';
   const selectedStats = Array.isArray(data.stats) && data.stats.length > 0
     ? data.stats
     : [
         { id: 'HabitsMain', label: lang === 0 ? 'Привычки' : 'Habits', value: data.habitsValue },
         { id: 'TrainingMain', label: lang === 0 ? 'Тоннаж' : 'Volume', value: data.trainingValue },
-        { id: 'MentalMain', label: lang === 0 ? 'Мозг' : 'Brain', value: data.mentalValue }
+        { id: 'MentalMain', label: lang === 0 ? 'Ум' : 'Mind', value: data.mentalValue }
       ];
 
   return (
@@ -259,32 +303,52 @@ function Hero({ data, palette, lang, onOpenWidgets }) {
         margin: '0 20px',
         padding: 18,
         borderRadius: 24,
-        background: `linear-gradient(145deg, ${palette.panelStrong} 0%, ${palette.panel} 58%, rgba(201,162,75,0.055) 100%)`,
-        border: `1px solid ${palette.border}`,
-        boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 20px 44px -26px rgba(0,0,0,0.74)',
+        background: palette.isLight
+          ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(201,162,75,0.08) 100%)`
+          : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(201,162,75,0.09) 100%)`,
+        border: `1px solid ${heroAccent}22`,
+        boxShadow: palette.isLight
+          ? `0 18px 44px -34px ${heroAccent}55, 0 1px 0 rgba(255,255,255,0.72) inset`
+          : `0 22px 48px -34px ${heroAccent}60, 0 1px 0 rgba(255,255,255,0.055) inset`,
         position: 'relative',
         overflow: 'hidden'
       }}
     >
       <div style={{
         position: 'absolute',
-        inset: '-40% -20% auto auto',
-        width: 260,
-        height: 260,
+        inset: '-50% -24% auto auto',
+        width: 280,
+        height: 280,
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(201,162,75,0.13) 0%, transparent 62%)',
+        background: `radial-gradient(circle, ${heroAccent}22 0%, transparent 62%)`,
         pointerEvents: 'none'
       }} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, position: 'relative' }}>
-        <div style={{ minWidth: 0, flex: 1 }}>
+        <motion.button
+          type="button"
+          whileTap={{ scale: 0.98 }}
+          onClick={onOpenUser}
+          style={{
+            minWidth: 0,
+            flex: 1,
+            padding: 0,
+            border: 'none',
+            background: 'transparent',
+            textAlign: 'left',
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            outline: 'none',
+            WebkitTapHighlightColor: 'transparent'
+          }}
+        >
           <div style={{ fontSize: 10, color: palette.muted, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>
             {data.greeting}
           </div>
           <div style={{ fontSize: 23, fontWeight: 850, lineHeight: 1.05, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {data.name}
           </div>
-        </div>
+        </motion.button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {data.streak > 0 && (
             <Pill style={{ color: tokens.accents.HabitsMain.hue, borderColor: tokens.accents.HabitsMain.ring, background: tokens.accents.HabitsMain.soft }}>
@@ -332,6 +396,7 @@ function Hero({ data, palette, lang, onOpenWidgets }) {
             label={stat.label}
             value={stat.value}
             palette={palette}
+            onClick={() => onOpenSection(stat.id)}
           />
         ))}
       </div>
@@ -420,6 +485,7 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
   const accent = getAccent(item.id);
   const IconComponent = iconMap[item.id] || (() => item.icon);
   const metric = showInfo && info ? info : '';
+  const metricParts = getMetricParts(metric);
 
   return (
     <motion.div
@@ -465,7 +531,7 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
       }}>
         <IconComponent size={19} />
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ fontSize: 15, fontWeight: 850, color: palette.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {item.title}
@@ -477,10 +543,32 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
         </div>
       </div>
       {metric ? (
-        <div style={{ textAlign: 'right', minWidth: 44 }}>
-          <div style={{ fontSize: 14, fontWeight: 850, color: palette.text, fontVariantNumeric: 'tabular-nums' }}>
-            {metric}
-          </div>
+        <div style={{ textAlign: 'right', minWidth: metricParts.isStreak ? 58 : 44, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          {metricParts.isStreak ? (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 5,
+              minWidth: 42,
+              height: 27,
+              padding: '0 8px',
+              borderRadius: 999,
+              background: 'linear-gradient(135deg, rgba(255,122,61,0.18), rgba(255,211,106,0.08))',
+              border: '1px solid rgba(255,122,61,0.3)',
+              boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset',
+              boxSizing: 'border-box'
+            }}>
+              <span style={{ fontSize: 15, fontWeight: 900, color: palette.text, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                {metricParts.value}
+              </span>
+              <StreakFlame />
+            </div>
+          ) : (
+            <div style={{ fontSize: 14, fontWeight: 850, color: palette.text, fontVariantNumeric: 'tabular-nums' }}>
+              {metricParts.value}
+            </div>
+          )}
           <div style={{ fontSize: 9, color: palette.muted, fontWeight: 750, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>
             {lang === 0 ? 'сейчас' : 'now'}
           </div>
@@ -602,7 +690,7 @@ function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
   );
 }
 
-function Dock({ palette, onOpenUser, onOpenSettings }) {
+function Dock({ palette, onBack, onOpenUser, onOpenSettings }) {
   return (
     <div style={{
       position: 'fixed',
@@ -610,7 +698,7 @@ function Dock({ palette, onOpenUser, onOpenSettings }) {
       bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
       transform: 'translateX(-50%)',
       zIndex: 40,
-      width: 178,
+      width: 230,
       height: 64,
       display: 'flex',
       alignItems: 'center',
@@ -624,6 +712,7 @@ function Dock({ palette, onOpenUser, onOpenSettings }) {
       backdropFilter: 'blur(24px) saturate(180%)',
       WebkitBackdropFilter: 'blur(24px) saturate(180%)'
     }}>
+      <DockBtn Icon={DockBackIcon} onClick={onBack} palette={palette} />
       <DockBtn Icon={DockUserIcon} onClick={onOpenUser} palette={palette} />
       <DockBtn Icon={DockSettingsIcon} onClick={onOpenSettings} palette={palette} />
     </div>
@@ -671,6 +760,7 @@ export default function MainMenuRedesign({
   onOpenPremium,
   onOpenUser,
   onOpenSettings,
+  onBack,
   onOpenWidgets,
   onPin,
   onHide,
@@ -709,7 +799,14 @@ export default function MainMenuRedesign({
         paddingBottom: 'calc(104px + env(safe-area-inset-bottom, 0px))'
       }}>
         <BrandHeader lang={lang} palette={palette} />
-        <Hero data={summary.hero} palette={palette} lang={lang} onOpenWidgets={onOpenWidgets} />
+        <Hero
+          data={summary.hero}
+          palette={palette}
+          lang={lang}
+          onOpenWidgets={onOpenWidgets}
+          onOpenUser={onOpenUser}
+          onOpenSection={onOpenSection}
+        />
 
         <div style={{ padding: '18px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 11, color: palette.muted, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -793,7 +890,7 @@ export default function MainMenuRedesign({
           <div style={{ height: 28, width: '100%' }} onClick={onBottomSecretTap} />
         </div>
       </div>
-      <Dock palette={palette} onOpenUser={onOpenUser} onOpenSettings={onOpenSettings} />
+      <Dock palette={palette} onBack={onBack} onOpenUser={onOpenUser} onOpenSettings={onOpenSettings} />
     </div>
   );
 }

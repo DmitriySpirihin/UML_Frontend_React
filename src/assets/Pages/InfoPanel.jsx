@@ -30,12 +30,12 @@ const InfoPanel = () => {
   const menuItems = useMemo(
     () => [
       { id: "MainCard",     icon: <FaInfoCircle />,             title: lang === 0 ? "Общее"          : "General",  color: "#404040" },
+      { id: "ToDoMain",     icon: <FaListUl />,                 title: lang === 0 ? "Задачи"         : "Tasks",    color: "#FFA64D" },
       { id: "HabitsMain",   icon: <FaMedal />,                  title: lang === 0 ? "Привычки"       : "Habits",   color: "#FFD700" },
-      { id: "TrainingMain", icon: <FaRunning />,                title: lang === 0 ? "Тренировки"     : "Workout",  color: "#FF4D4D" },
-      { id: "MentalMain",   icon: <FaBrain />,                  title: lang === 0 ? "Мозг"           : "Brain",    color: "#4DA6FF" },
-      { id: "RecoveryMain", icon: <MdOutlineSelfImprovement />, title: lang === 0 ? "Восстановление" : "Recovery", color: "#4DFF88" },
-      { id: "SleepMain",    icon: <FaBed />,                    title: lang === 0 ? "Сон"            : "Sleep",    color: "#A64DFF" },
-      { id: "ToDoMain",     icon: <FaListUl />,                 title: lang === 0 ? "Задачи"         : "To-Do",    color: "#FFA64D" },
+      { id: "MentalMain",   icon: <FaBrain />,                  title: lang === 0 ? "Тренировка ума" : "Mind Training", color: "#4DA6FF" },
+      { id: "TrainingMain", icon: <FaRunning />,                title: lang === 0 ? "Дневник тренировок" : "Training Log", color: "#FF4D4D" },
+      { id: "RecoveryMain", icon: <MdOutlineSelfImprovement />, title: lang === 0 ? "Антистресс" : "Stress Reset", color: "#4DFF88" },
+      { id: "SleepMain",    icon: <FaBed />,                    title: lang === 0 ? "Качество сна"   : "Sleep Quality", color: "#A64DFF" },
     ],
     [lang]
   );
@@ -405,11 +405,11 @@ function getGoToLabel(lang, sectionId) {
   const map = {
     MainCard:     isRu ? "Перейти в главное меню"     : "Go to Main Menu",
     HabitsMain:   isRu ? "Открыть Привычки"           : "Open Habits",
-    TrainingMain: isRu ? "Открыть Тренировки"         : "Open Workout",
-    MentalMain:   isRu ? "Открыть Мозг"               : "Open Brain",
-    RecoveryMain: isRu ? "Открыть Восстановление"     : "Open Recovery",
-    SleepMain:    isRu ? "Открыть Сон"                : "Open Sleep",
-    ToDoMain:     isRu ? "Открыть Задачи"             : "Open To-Do",
+    TrainingMain: isRu ? "Открыть Дневник тренировок"   : "Open Training Log",
+    MentalMain:   isRu ? "Открыть Тренировку ума"        : "Open Mind Training",
+    RecoveryMain: isRu ? "Открыть Антистресс"            : "Open Stress Reset",
+    SleepMain:    isRu ? "Открыть Качество сна"          : "Open Sleep Quality",
+    ToDoMain:     isRu ? "Открыть Задачи"                : "Open Tasks",
   };
   return map[sectionId] || (isRu ? "Открыть раздел" : "Open Section");
 }
@@ -421,19 +421,19 @@ function getCoachText(langIndex, sectionId) {
   const RU = {
     MainCard:     "Сверху вкладки — это телепорт по разделам",
     HabitsMain:   "Привычки — это автопилот",
-    TrainingMain: "Тренировки — это доказательства, а не ощущения",
-    MentalMain:   "Мозг — это мини-игры: выбери режим, уровень и жми «Начать»",
-    RecoveryMain: "Восстановление — это быстрый сброс стресса",
-    SleepMain:    "Сон — это чит-код жизни",
+    TrainingMain: "Дневник тренировок — это доказательства, а не ощущения",
+    MentalMain:   "Тренировка ума — это мини-игры: выбери режим, уровень и жми «Начать»",
+    RecoveryMain: "Антистресс — это быстрый сброс напряжения",
+    SleepMain:    "Качество сна — это чит-код жизни",
     ToDoMain:     "Задачи — это порядок в голове",
   };
   const EN = {
     MainCard:     "Top tabs are your teleport between sections",
     HabitsMain:   "Habits are autopilot",
-    TrainingMain: "Workouts are proof, not feelings",
-    MentalMain:   "Brain mini-games: pick mode, level and hit Start",
-    RecoveryMain: "Recovery is a quick stress reset",
-    SleepMain:    "Sleep is the cheat code of life",
+    TrainingMain: "Training Log is proof, not feelings",
+    MentalMain:   "Mind Training mini-games: pick mode, level and hit Start",
+    RecoveryMain: "Stress Reset is a quick way to downshift",
+    SleepMain:    "Sleep Quality is the cheat code of life",
     ToDoMain:     "Tasks are clarity in motion",
   };
   const dict = isRu ? RU : EN;
@@ -581,7 +581,7 @@ function getInstructions(langIndex, sectionId, accent) {
   /* ── TRAINING ── */
   // Icons: ⚙️ setup, 📅 pick day, ▶️ start, 💪 exercises, 📝 log sets, 🏁 finish — tip: 🏋️
   const TrainingRu = wrap(
-    "Тренировки",
+    "Дневник тренировок",
     "Программа → День → Сессия → Упражнения → Подходы",
     "ТРЕНИРОВКА", "2–8 мин",
     [
@@ -602,7 +602,7 @@ function getInstructions(langIndex, sectionId, accent) {
   );
 
   const TrainingEn = wrap(
-    "Workout",
+    "Training Log",
     "Program → Day → Session → Exercises → Sets",
     "WORKOUT", "2–8 min",
     [
@@ -619,15 +619,15 @@ function getInstructions(langIndex, sectionId, accent) {
   /* ── BRAIN ── */
   // Icons: 🎯 mode, 🔢 level, 🕹️ play — tip: 🧠 (different from step 1 icon 🎯)
   const MindRu = wrap(
-    "Мозг",
+    "Тренировка ума",
     "Режим → Уровень → Раунды → Очки → Рекорд",
-    "МОЗГ", "3–8 мин",
+    "УМ", "3–8 мин",
     [
       step(icoTarget, "Выбери режим", `<b>Фокус</b> — считай символы среди помех. <b>Память</b> — запомни и введи. <b>Счёт</b> — быстрые примеры. <b>Логика</b> — найди «лишнее».`),
       step(icoBar,    "Выбери уровень", "Чем выше — тем больше элементов и меньше времени. Часть уровней — Премиум."),
       step(icoPad,    "Играй раундами", "Каждый раунд = очки. Итог сравнивается с рекордом и сохраняется автоматически."),
     ].join(""),
-    `<div class="uxTipIcon">${icoBrain}</div><div class="uxTipText">Старт: <b>1 режим + 1 уровень + 7 дней</b>. Мозг любит повторение.</div>`,
+    `<div class="uxTipIcon">${icoBrain}</div><div class="uxTipText">Старт: <b>1 режим + 1 уровень + 7 дней</b>. Ум любит повторение.</div>`,
     `<div class="uxMini">
       <div class="uxMiniCard"><div class="uxMiniTitle">Фокус</div><div class="uxMiniText">Найди и посчитай символы за лимит времени.</div></div>
       <div class="uxMiniCard"><div class="uxMiniTitle">Память</div><div class="uxMiniText">Запомни последовательность → введи. На высоких уровнях — обратный режим.</div></div>
@@ -638,9 +638,9 @@ function getInstructions(langIndex, sectionId, accent) {
 
   // Icons: 🎯 mode, 🔢 level, 🕹️ play — tip: 🧠
   const MindEn = wrap(
-    "Brain",
+    "Mind Training",
     "Mode → Level → Rounds → Score → Record",
-    "BRAIN", "3–8 min",
+    "MIND", "3–8 min",
     [
       step(icoTarget, "Pick a mode", `<b>Focus</b> — count symbols among distractors. <b>Memory</b> — memorize & enter. <b>Math</b> — fast calculations. <b>Logic</b> — find the odd one out.`),
       step(icoBar,    "Pick difficulty", "Higher = more elements, less time. Some levels are Premium."),
@@ -652,8 +652,8 @@ function getInstructions(langIndex, sectionId, accent) {
   /* ── RECOVERY ── */
   // Icons: 🌿 direction, 📋 protocol, ⏸️ session, 🔄 repeat — tip: 🧘
   const RecoveryRu = wrap(
-    "Восстановление",
-    "Дыхание, медитация, закалка — быстрый сброс стресса",
+    "Антистресс",
+    "Дыхание, медитация, закалка — быстрый сброс напряжения",
     "ПРАКТИКА", "3–10 мин",
     [
       step(icoLeaf,  "Выбери направление", "Дыхание / Медитация / Закалка — у каждого свои протоколы."),
@@ -669,9 +669,9 @@ function getInstructions(langIndex, sectionId, accent) {
   );
 
   const RecoveryEn = wrap(
-    "Recovery",
+    "Stress Reset",
     "Breathing, meditation, hardening — reset fast",
-    "RECOVERY", "3–10 min",
+    "RESET", "3–10 min",
     [
       step(icoLeaf,  "Pick a direction", "Breathing / Meditation / Hardening — each has its own protocols."),
       step(icoClip,  "Open a protocol", "Tap the card → start session. Some items require Premium."),
@@ -684,7 +684,7 @@ function getInstructions(langIndex, sectionId, accent) {
   /* ── SLEEP ── */
   // Icons: 📅 pick day, 🛌 add entry (not 🌙 to avoid dup with tip), 📝 note, 💾 save — tip: 🌙
   const SleepRu = wrap(
-    "Сон",
+    "Качество сна",
     "3 поля — и ты видишь, что реально влияет на энергию",
     "ЖУРНАЛ СНА", "30 сек",
     [
@@ -702,7 +702,7 @@ function getInstructions(langIndex, sectionId, accent) {
 
   // Icons: 📅 pick day, 🛌 add entry, 📝 note, 💾 save — tip: 🌙
   const SleepEn = wrap(
-    "Sleep",
+    "Sleep Quality",
     "3 fields — discover what truly impacts your energy",
     "SLEEP LOG", "30 sec",
     [
@@ -733,9 +733,9 @@ function getInstructions(langIndex, sectionId, accent) {
   );
 
   const ToDoEn = wrap(
-    "To-Do",
+    "Tasks",
     "A clear mind moves faster",
-    "TO-DO", "daily",
+    "TASKS", "daily",
     [
       step(icoEdit,   "Add tasks", `Tap <span class="uxChip uxChipPlus">＋</span> and dump everything on your mind.`),
       step(icoStar,   "Pick priorities", "Keep 1–3 main tasks for today."),
