@@ -8,7 +8,7 @@ import { lastPage$, setPage, theme$, lang$, premium$, fontSize$, isValidation$, 
 import { FaBrain, FaChartPie, FaRobot, FaStar, FaCrown, FaTimes, FaInfinity,FaCheckCircle,FaCalendarAlt } from 'react-icons/fa';
 import { MdOutlineDiamond } from "react-icons/md";
 import { BiRuble } from "react-icons/bi";
-import { initiateSbpPayment, fetchTonInvoice, initiateTgStarsPayment } from '../StaticClasses/PaymentService';
+import { initiateSbpPayment, fetchTonInvoice, initiateTgStarsPayment, sendReferalLink } from '../StaticClasses/PaymentService';
 import { isUserHasPremium } from '../StaticClasses/NotificationsManager';
 
 const futureDate = new Date();
@@ -195,42 +195,59 @@ const Premium = () => {
             {/* 3. Main Content Section */}
             {!isValidation && !needAgreement && !hasPremium && (
                 <div style={styles(theme).contentWrapper}>
-                    <header style={{ textAlign: 'center', marginBottom: '5px', marginTop: '10px' }}>
-                        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{width: '54px', height: '154px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 15px auto'}}>
-                            <img style={{ width: '15vh' }} src={'images/Premium_Bro.png'} alt="logo" />
+                    <header style={styles(theme).heroHeader}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={styles(theme).heroImageWrap}>
+                            <img style={styles(theme).heroImage} src={'images/Premium_Bro.png'} alt="logo" />
                         </motion.div>
-                        <h1 style={styles(theme).title}>UltyMyLife <span style={{ color: '#007AFF' }}>Pro</span></h1>
-                        <p style={styles(theme).subtitle}>{langIndex === 0 ? 'Твоя лучшая версия' : 'Your best version'}</p>
+                        <div>
+                            <h1 style={styles(theme).title}>UltyMyLife <span style={{ color: '#4DA6FF' }}>Pro</span></h1>
+                            <p style={styles(theme).subtitle}>{langIndex === 0 ? 'Глубже аналитика. Умнее рекомендации.' : 'Deeper analytics. Smarter guidance.'}</p>
+                        </div>
                     </header>
 
+                    <div style={styles(theme).sectionLabel}>{langIndex === 0 ? 'Что входит' : 'Included'}</div>
+                    <BenefitsGrid theme={theme} langIndex={langIndex} />
+
+                    <ReferralCard theme={theme} langIndex={langIndex} onClick={sendReferalLink} />
+
+                    <div style={styles(theme).sectionLabel}>{langIndex === 0 ? 'Тариф' : 'Plan'}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', width: '100%', marginBottom: '16px' }}>
+                        <PlanOption
+                            active={chosenCard === 3}
+                            onClick={() => setChosenCard(3)}
+                            theme={theme}
+                            price={tarifs[currentPaymentMethod - 1][2]}
+                            label={langIndex === 0 ? '12 месяцев' : '12 months'}
+                            sub={`${paymentInMonth[currentPaymentMethod - 1][2]} / ${langIndex === 0 ? 'мес' : 'mo'}`}
+                            currencyIcon={currencies[currentPaymentMethod - 1]}
+                            badge={langIndex === 0 ? 'выгодно' : 'best'}
+                        />
+                        <PlanOption
+                            active={chosenCard === 2}
+                            onClick={() => setChosenCard(2)}
+                            theme={theme}
+                            price={tarifs[currentPaymentMethod - 1][1]}
+                            label={langIndex === 0 ? '3 месяца' : '3 months'}
+                            currencyIcon={currencies[currentPaymentMethod - 1]}
+                        />
+                        <PlanOption
+                            active={chosenCard === 1}
+                            onClick={() => setChosenCard(1)}
+                            theme={theme}
+                            price={tarifs[currentPaymentMethod - 1][0]}
+                            label={langIndex === 0 ? '1 месяц' : '1 month'}
+                            currencyIcon={currencies[currentPaymentMethod - 1]}
+                        />
+                    </div>
+
+                    <div style={styles(theme).sectionLabel}>{langIndex === 0 ? 'Оплата' : 'Payment'}</div>
                     <div style={styles(theme).segmentedControl}>
                         <SegmentOption id={1} current={currentPaymentMethod} set={setCurrentPaymentMethod} label={langIndex === 0 ? "СБП" : "SBP"} icon={<BiRuble size={14} />} isDark={isDark} />
                         <SegmentOption id={2} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="Stars" icon={<FaStar size={12} />} isDark={isDark} />
                         <SegmentOption id={3} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="TON" icon={<MdOutlineDiamond size={14} />} isDark={isDark} />
                     </div>
 
-                    <motion.div variants={containerVariants} initial="hidden" animate="show" style={styles(theme).featuresGrid}>
-                        
-                        <FeatureItem theme={theme} variants={itemVariants} icon={<FaRobot />} title={langIndex === 0 ? "ИИ Анализ" : "AI Analysis"} sub={langIndex === 0 ? "Умные инсайты" : "Smart insights"} />
-                        <FeatureItem theme={theme} variants={itemVariants} icon={<FaBrain />} title={langIndex === 0 ? "Нейро-рост" : "Neuro-growth"} sub={langIndex === 0 ? "Развитие" : "Training"} />
-                        <FeatureItem theme={theme} variants={itemVariants} icon={<FaChartPie />} title={langIndex === 0 ? "Аналитика" : "Analytics"} sub={langIndex === 0 ? "Вся история" : "History"} />
-                    </motion.div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', marginBottom: '25px' }}>
-                        
-                        <BigPlanCard 
-                            active={chosenCard === 3} onClick={() => setChosenCard(3)} theme={theme}
-                            price={tarifs[currentPaymentMethod - 1][2]} label={langIndex === 0 ? '12 месяцев' : '1 Year'}
-                            sub={paymentInMonth[currentPaymentMethod - 1][2]} currencyIcon={currencies[currentPaymentMethod - 1]}
-                            saveLabel={langIndex === 0 ? 'ВЫГОДНО -35%' : 'SAVE 35%'} langIndex={langIndex}
-                        />
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <SmallPlanCard theme={theme} active={chosenCard === 2} onClick={() => setChosenCard(2)} price={tarifs[currentPaymentMethod - 1][1]} label={langIndex === 0 ? '3 месяца' : '3 Months'} currencyIcon={currencies[currentPaymentMethod - 1]} />
-                            <SmallPlanCard theme={theme} active={chosenCard === 1} onClick={() => setChosenCard(1)} price={tarifs[currentPaymentMethod - 1][0]} label={langIndex === 0 ? '1 месяц' : '1 Month'} currencyIcon={currencies[currentPaymentMethod - 1]} />
-                        </div>
-                    </div>
-
-                    <button onClick={() => {if(currentPaymentMethod !== 1){setNeedAgreement(true)}}} style={{...styles(theme).mainButton,backgroundColor: currentPaymentMethod !== 1 ? '#007AFF' : '#d13636', boxShadow: currentPaymentMethod !== 1 ? '0 4px 20px rgba(0, 122, 255, 0.4)' : '0 4px 20px rgba(255, 0, 0, 0.4)'}}>
+                    <button onClick={() => {if(currentPaymentMethod !== 1){setNeedAgreement(true)}}} style={{...styles(theme).mainButton,backgroundColor: currentPaymentMethod !== 1 ? '#4DA6FF' : '#d13636', boxShadow: currentPaymentMethod !== 1 ? '0 16px 36px rgba(77, 166, 255, 0.28)' : '0 4px 20px rgba(255, 0, 0, 0.4)'}}>
                             {currentPaymentMethod !== 1 ? langIndex === 0 ? 'Продолжить' : 'Continue' : langIndex === 0 ? 'Скоро появится' : 'Coming soon'}
                         </button>
                     <p style={styles(theme).footerHint}>{getPaymentMethodHint(currentPaymentMethod, langIndex)}</p>
@@ -258,7 +275,7 @@ const Premium = () => {
             </div>
         </div>
 
-        {/* 2. Avatar with Animated Golden Ring */}
+        {/* 2. Avatar with Animated Ring */}
         <div style={styles(theme).avatarSection}>
             <div style={styles(theme).avatarWrapper}>
                 {/* Spinning Gradient Border */}
@@ -348,7 +365,7 @@ const Premium = () => {
                     width: '70%', height: '70%',
                     borderRadius: '50%',
                     border: `2px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
-                    borderBottom: '2px solid #FFD700', // Gold accent
+                    borderBottom: '2px solid #4DA6FF',
                     borderRight: '2px solid transparent',
                 }}
                 animate={{ rotate: -360 }}
@@ -483,8 +500,8 @@ export function PremiumButton({
     textToShow = ['Получить UltyMyLife Pro', 'Get UltyMyLife Pro']
 }) {
     const isDark = theme === 'dark';
-    const goldColor = '#FFD700'; // Standard Gold
-    const goldGradient = 'linear-gradient(135deg, #FFD700 0%, #FDB931 100%)'; // Metallic Gold
+    const accentColor = '#4DA6FF';
+    const accentGradient = 'linear-gradient(135deg, #4DA6FF 0%, #66D9E8 100%)';
 
     return (
         <motion.button
@@ -514,7 +531,7 @@ export function PremiumButton({
                 
                 // Glow Shadow
                 boxShadow: isDark 
-                    ? '0  0 10px 1px rgba(255, 217, 0, 0.32)' // Subtle Gold Glow
+                    ? '0  0 10px 1px rgba(77, 166, 255, 0.28)'
                     : '0 8px 20px -6px rgba(0, 0, 0, 0.1)'
             }}
         >
@@ -536,14 +553,14 @@ export function PremiumButton({
                     background: isDark ? 'rgba(255, 215, 0, 0.1)' : '#FFF9E6',
                     border: `1px solid ${isDark ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 215, 0, 0.1)'}`,
                 }}>
-                    <FaCrown size={16} color={ isDark ? '#ffe96c' : '#685900c5'} style={{ filter: 'drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3))' }} />
+                    <FaCrown size={16} color={ isDark ? '#8FD3FF' : '#2F6EA5'} style={{ filter: 'drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3))' }} />
                 </div>
 
                 {/* Text */}
                 <span style={{ 
                     fontSize: '14px', 
                     fontWeight: '700', 
-                    color: isDark ? '#ffe96c' : '#826e00be',
+                    color: isDark ? '#8FD3FF' : '#2F6EA5',
                     fontFamily: 'Segoe UI, sans-serif',
                     letterSpacing: '0.4px'
                 }}>
@@ -564,11 +581,13 @@ export function PremiumButton({
 
 const SegmentOption = ({ id, current, set, label, icon, isDark }) => (
     <div onClick={() => set(id)} style={{
-        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '32px', borderRadius: '7px',
-        background: current === id ? (isDark ? '#636366' : '#FFFFFF') : 'transparent', 
-        color: current === id ? (isDark ? 'white' : 'black') : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'),
-        fontSize: '13px', transition: 'all 0.2s ease', fontWeight: current === id ? '600' : '400',
-        boxShadow: (current === id && !isDark) ? '0 2px 5px rgba(0,0,0,0.1)' : 'none'
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '36px', borderRadius: '13px',
+        background: current === id ? (isDark ? 'rgba(77,166,255,0.18)' : '#FFFFFF') : 'transparent',
+        border: current === id ? '1px solid rgba(77,166,255,0.38)' : '1px solid transparent',
+        color: current === id ? (isDark ? '#F2F3F5' : '#111827') : (isDark ? 'rgba(166,173,184,0.75)' : 'rgba(17,24,39,0.55)'),
+        fontSize: '13px', transition: 'all 0.2s ease', fontWeight: current === id ? '800' : '650',
+        boxShadow: current === id ? '0 1px 0 rgba(255,255,255,0.05) inset' : 'none',
+        cursor: 'pointer'
     }}>
         {icon} <span>{label}</span>
     </div>
@@ -578,12 +597,229 @@ const FeatureItem = ({ icon, title, sub, variants, theme }) => {
     const isDark = theme === 'dark';
     return (
         <motion.div variants={variants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-            <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: 'rgba(0,122,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px', color: '#007AFF' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '13px', background: 'rgba(77,166,255,0.14)', border: '1px solid rgba(77,166,255,0.26)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px', color: '#4DA6FF' }}>
                 {icon}
             </div>
-            <div style={{ fontSize: '12px', fontWeight: '600', color: isDark ? 'white' : '#000' }}>{title}</div>
-            <div style={{ fontSize: '10px', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>{sub}</div>
+            <div style={{ fontSize: '12px', fontWeight: '850', color: isDark ? '#F2F3F5' : '#111827' }}>{title}</div>
+            <div style={{ fontSize: '10px', color: isDark ? '#6B7280' : '#596273', marginTop: 2 }}>{sub}</div>
         </motion.div>
+    );
+}
+
+const BenefitsGrid = ({ theme, langIndex }) => {
+    const items = [
+        {
+            icon: <FaRobot />,
+            title: langIndex === 0 ? 'ИИ-анализ' : 'AI analysis',
+            sub: langIndex === 0 ? 'инсайты по данным' : 'data insights',
+            color: '#66D9E8',
+            soft: 'rgba(102,217,232,0.13)',
+            ring: 'rgba(102,217,232,0.28)'
+        },
+        {
+            icon: <FaChartPie />,
+            title: langIndex === 0 ? 'Аналитика' : 'Analytics',
+            sub: langIndex === 0 ? 'полная история' : 'full history',
+            color: '#4DA6FF',
+            soft: 'rgba(77,166,255,0.13)',
+            ring: 'rgba(77,166,255,0.28)'
+        },
+        {
+            icon: <FaBrain />,
+            title: langIndex === 0 ? 'Развитие' : 'Growth',
+            sub: langIndex === 0 ? 'больше практик' : 'more practice',
+            color: '#8A7CD6',
+            soft: 'rgba(138,124,214,0.13)',
+            ring: 'rgba(138,124,214,0.28)'
+        },
+        {
+            icon: <FaInfinity />,
+            title: langIndex === 0 ? 'Без лимитов' : 'No limits',
+            sub: langIndex === 0 ? 'доступ к Pro' : 'Pro access',
+            color: '#7AA988',
+            soft: 'rgba(122,169,136,0.13)',
+            ring: 'rgba(122,169,136,0.28)'
+        }
+    ];
+    const isDark = theme === 'dark';
+
+    return (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 9, marginBottom: 14 }}>
+            {items.map((item) => (
+                <div
+                    key={item.title}
+                    style={{
+                        minHeight: 74,
+                        borderRadius: 17,
+                        border: `1px solid ${item.ring}`,
+                        background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.88)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '12px',
+                        boxSizing: 'border-box'
+                    }}
+                >
+                    <div style={{
+                        width: 34,
+                        height: 34,
+                        borderRadius: 12,
+                        background: item.soft,
+                        color: item.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                    }}>
+                        {React.cloneElement(item.icon, { size: 15 })}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                        <div style={{ color: isDark ? '#F2F3F5' : '#111827', fontSize: 12, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {item.title}
+                        </div>
+                        <div style={{ color: isDark ? '#A6ADB8' : '#596273', fontSize: 10, fontWeight: 650, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {item.sub}
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+const ReferralCard = ({ theme, langIndex, onClick }) => {
+    const isDark = theme === 'dark';
+    return (
+        <motion.button
+            type="button"
+            whileTap={{ scale: 0.985 }}
+            onClick={onClick}
+            style={{
+                width: '100%',
+                minHeight: 76,
+                borderRadius: 22,
+                border: '1px solid rgba(77,166,255,0.28)',
+                background: isDark
+                    ? 'linear-gradient(145deg, rgba(26,29,33,0.88), rgba(20,23,25,0.92) 58%, rgba(77,166,255,0.09))'
+                    : 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(255,255,255,0.84) 58%, rgba(77,166,255,0.12))',
+                color: isDark ? '#F2F3F5' : '#111827',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '14px 16px',
+                marginBottom: 16,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'left',
+                boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 16px 34px -26px rgba(0,0,0,0.72)'
+            }}
+        >
+            <div style={{
+                width: 46,
+                height: 46,
+                borderRadius: 15,
+                background: 'rgba(77,166,255,0.16)',
+                border: '1px solid rgba(77,166,255,0.32)',
+                color: '#4DA6FF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+            }}>
+                <FaCrown size={19} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 900 }}>
+                    {langIndex === 0 ? 'Пригласи друга' : 'Invite a friend'}
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 650, color: isDark ? '#A6ADB8' : '#596273', marginTop: 3, lineHeight: 1.35 }}>
+                    {langIndex === 0 ? 'Вы оба получите месяц Premium' : 'You both get one Premium month'}
+                </div>
+            </div>
+            <div style={{
+                minWidth: 72,
+                height: 34,
+                borderRadius: 999,
+                background: 'rgba(77,166,255,0.16)',
+                border: '1px solid rgba(77,166,255,0.32)',
+                color: '#4DA6FF',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 12,
+                fontWeight: 900,
+                flexShrink: 0
+            }}>
+                {langIndex === 0 ? 'Подарить' : 'Share'}
+            </div>
+        </motion.button>
+    );
+}
+
+const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, theme }) => {
+    const isDark = theme === 'dark';
+    return (
+        <motion.button
+            type="button"
+            whileTap={{ scale: 0.985 }}
+            onClick={onClick}
+            style={{
+                minHeight: 62,
+                width: '100%',
+                borderRadius: 18,
+                border: active ? '1px solid rgba(77,166,255,0.72)' : `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}`,
+                background: active ? 'rgba(77,166,255,0.14)' : (isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.88)'),
+                color: isDark ? '#F2F3F5' : '#111827',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 14px',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                boxShadow: active ? '0 1px 0 rgba(255,255,255,0.05) inset, 0 16px 32px -26px rgba(77,166,255,0.75)' : '0 1px 0 rgba(255,255,255,0.04) inset',
+                textAlign: 'left',
+                boxSizing: 'border-box'
+            }}
+        >
+            <div style={{
+                width: 24,
+                height: 24,
+                borderRadius: 999,
+                border: active ? 'none' : `1px solid ${isDark ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)'}`,
+                background: active ? '#4DA6FF' : 'transparent',
+                color: '#111',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+            }}>
+                {active && <FaCheckCircle size={13} />}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+                    {badge && (
+                        <span style={{
+                            fontSize: 9,
+                            fontWeight: 900,
+                            color: '#111',
+                            background: '#4DA6FF',
+                            borderRadius: 999,
+                            padding: '3px 7px',
+                            textTransform: 'uppercase',
+                            flexShrink: 0
+                        }}>
+                            {badge}
+                        </span>
+                    )}
+                </div>
+                {sub && <div style={{ fontSize: 11, color: isDark ? '#A6ADB8' : '#596273', marginTop: 3, fontWeight: 650 }}>{sub}</div>}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: active ? '#4DA6FF' : (isDark ? '#F2F3F5' : '#111827'), fontSize: 20, fontWeight: 900, flexShrink: 0 }}>
+                {price}
+                <span style={{ fontSize: 14 }}>{currencyIcon}</span>
+            </div>
+        </motion.button>
     );
 }
 
@@ -592,21 +828,22 @@ const BigPlanCard = ({ active, onClick, price, label, sub, currencyIcon, saveLab
     return (
         <motion.div whileTap={{ scale: 0.98 }} onClick={onClick} style={{
             padding: '20px', borderRadius: '22px', position: 'relative', overflow: 'hidden',
-            background: active 
-                ? 'linear-gradient(145deg, rgba(0, 122, 255, 0.1), transparent)' 
-                : (isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF'),
-            border: active ? '2px solid #007AFF' : `2px solid ${isDark ? 'transparent' : '#E5E7EB'}`, 
+            background: active
+                ? 'linear-gradient(145deg, rgba(77,166,255,0.13), rgba(255,255,255,0.03))'
+                : (isDark ? 'rgba(255,255,255,0.045)' : '#FFFFFF'),
+            border: active ? '2px solid #4DA6FF' : `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : '#E5E7EB'}`,
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            boxShadow: (!isDark && !active) ? '0 4px 10px rgba(0,0,0,0.03)' : 'none'
+            boxShadow: active ? '0 18px 38px -28px rgba(77,166,255,0.75)' : ((!isDark && !active) ? '0 4px 10px rgba(0,0,0,0.03)' : 'none'),
+            cursor: 'pointer'
         }}>
-            {saveLabel && <div style={{ position: 'absolute', top: 0, right: 0, background: '#007AFF', padding: '4px 10px', borderBottomLeftRadius: '14px', fontSize: '10px', fontWeight: '800', color: 'white' }}>{saveLabel}</div>}
+            {saveLabel && <div style={{ position: 'absolute', top: 0, right: 0, background: '#4DA6FF', padding: '4px 10px', borderBottomLeftRadius: '14px', fontSize: '10px', fontWeight: '900', color: '#111' }}>{saveLabel}</div>}
             <div>
                 <div style={{ fontSize: '14px', color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)', marginBottom: '4px' }}>{label}</div>
-                <div style={{ color: isDark ? 'white' : 'black', fontSize: '26px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '5px' }}>{price} <span style={{ color: '#007AFF', fontSize: '18px' }}>{currencyIcon}</span></div>
+                <div style={{ color: isDark ? '#F2F3F5' : '#111827', fontSize: '26px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '5px' }}>{price} <span style={{ color: '#4DA6FF', fontSize: '18px' }}>{currencyIcon}</span></div>
             </div>
             <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '11px', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>{langIndex === 0 ? 'всего' : 'only'}</div>
-                <div style={{ fontSize: '14px', color: '#007AFF', fontWeight: '600' }}>{sub} {currencyIcon} <span style={{fontWeight:400, fontSize:'11px'}}>/ {langIndex === 0 ? 'мес' : 'mo'}</span></div>
+                <div style={{ fontSize: '14px', color: '#4DA6FF', fontWeight: '800' }}>{sub} {currencyIcon} <span style={{fontWeight:500, fontSize:'11px'}}>/ {langIndex === 0 ? 'мес' : 'mo'}</span></div>
             </div>
         </motion.div>
     );
@@ -617,15 +854,16 @@ const SmallPlanCard = ({ active, onClick, price, label, currencyIcon, theme }) =
     return (
         <motion.div whileTap={{ scale: 0.98 }} onClick={onClick} style={{
             flex: 1, padding: '16px', borderRadius: '20px', 
-            background: active 
-                ? (isDark ? 'rgba(0, 122, 255, 0.1)' : 'rgba(0, 122, 255, 0.05)') 
+            background: active
+                ? (isDark ? 'rgba(77,166,255,0.12)' : 'rgba(77,166,255,0.08)')
                 : (isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF'),
-            border: active ? '2px solid #007AFF' : `2px solid ${isDark ? 'transparent' : '#E5E7EB'}`, 
+            border: active ? '2px solid #4DA6FF' : `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : '#E5E7EB'}`,
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-            boxShadow: (!isDark && !active) ? '0 4px 10px rgba(0,0,0,0.03)' : 'none'
+            boxShadow: (!isDark && !active) ? '0 4px 10px rgba(0,0,0,0.03)' : 'none',
+            cursor: 'pointer'
         }}>
             <div style={{ fontSize: '12px', color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>{label}</div>
-            <div style={{ color: isDark ? 'white' : 'black', fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '3px' }}>{price} <span style={{fontSize:'13px', color: active ? '#007AFF' : 'inherit'}}>{currencyIcon}</span></div>
+            <div style={{ color: isDark ? '#F2F3F5' : '#111827', fontSize: '18px', fontWeight: '850', display: 'flex', alignItems: 'center', gap: '3px' }}>{price} <span style={{fontSize:'13px', color: active ? '#4DA6FF' : 'inherit'}}>{currencyIcon}</span></div>
         </motion.div>
     );
 }
@@ -637,30 +875,52 @@ const styles = (theme) => {
     return {
         container: { 
             position: 'fixed', inset: 0, 
-            backgroundColor: isDark ? '#000' : '#F9FAFB', 
+            backgroundColor: isDark ? '#0E1013' : '#F4F5F7',
             zIndex: 5000, display: 'flex', flexDirection: 'column', 
             backgroundImage: isDark 
-                ? 'radial-gradient(circle at 50% -20%, #1c1c1e 0%, #000 60%)' 
-                : 'radial-gradient(circle at 50% -20%, #E0E7FF 0%, #F9FAFB 60%)', 
-            fontFamily: 'Segoe UI' 
+                ? 'radial-gradient(1000px 500px at 80% -10%, rgba(77,166,255,0.08), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013'
+                : 'radial-gradient(900px 450px at 80% -10%, rgba(77,166,255,0.11), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
         },
-        contentWrapper: { padding: '20px 24px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto',marginTop:'10%' },
-        title: { fontSize: '28px', fontWeight: '800', color: isDark ? 'white' : '#111827', margin: 0, textAlign: 'center' },
-        subtitle: { fontSize: '15px', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', marginTop: '5px', textAlign: 'center' },
-        closeBtn: { position: 'absolute', top: '85px', right: '25px', zIndex: 10 },
-        iconCircle: { width: '32px', height: '32px', borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' },
-        segmentedControl: { background: isDark ? 'rgba(118, 118, 128, 0.24)' : '#E5E7EB', borderRadius: '9px', padding: '2px', display: 'flex', width: '100%', margin: '25px 0' },
-        featuresGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', width: '100%', marginBottom: '30px' },
-        footerHint: { textAlign: 'center', fontSize: '12px', color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.4)', marginTop: '15px' },
+        contentWrapper: { padding: '22px 20px 28px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', boxSizing: 'border-box' },
+        heroHeader: {
+            margin: '10px 0 14px',
+            padding: '16px',
+            borderRadius: '24px',
+            background: isDark ? 'linear-gradient(145deg, rgba(20,23,25,0.94), rgba(26,29,33,0.84) 58%, rgba(77,166,255,0.07))' : 'rgba(255,255,255,0.9)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 20px 44px -26px rgba(0,0,0,0.74)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px'
+        },
+        heroImageWrap: {
+            width: '74px',
+            height: '84px',
+            borderRadius: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+        },
+        heroImage: { width: '88px', maxHeight: '104px', objectFit: 'contain', filter: 'drop-shadow(0 16px 22px rgba(0,0,0,0.34))' },
+        title: { fontSize: '24px', fontWeight: '850', color: isDark ? '#F2F3F5' : '#111827', margin: 0, lineHeight: 1.05 },
+        subtitle: { fontSize: '12px', color: isDark ? '#A6ADB8' : '#596273', margin: '7px 0 0', lineHeight: 1.35, fontWeight: 650 },
+        closeBtn: { position: 'absolute', top: 'calc(env(safe-area-inset-top, 0px) + 18px)', right: '20px', zIndex: 10 },
+        iconCircle: { width: '36px', height: '36px', borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', color: isDark ? '#F2F3F5' : '#111827' },
+        segmentedControl: { background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.045)', borderRadius: '16px', padding: '4px', display: 'flex', width: '100%', margin: '0 0 16px', boxSizing: 'border-box' },
+        sectionLabel: { fontSize: 11, color: isDark ? '#6B7280' : '#8A94A6', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '2px 0 8px' },
+        featuresGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', width: '100%', marginBottom: '18px' },
+        footerHint: { textAlign: 'center', fontSize: '11px', color: isDark ? 'rgba(166,173,184,0.55)' : 'rgba(89,98,115,0.72)', marginTop: '13px', lineHeight: 1.4 },
         bottomSheet: { position: 'absolute', bottom: 0, left: 0, width: '100%', background: isDark ? '#1C1C1E' : '#FFFFFF', borderTopLeftRadius: '28px', borderTopRightRadius: '28px', padding: '20px 24px 40px 24px', boxSizing: 'border-box', zIndex: 6000, boxShadow: isDark ? '0 -20px 40px rgba(0,0,0,0.6)' : '0 -10px 30px rgba(0,0,0,0.1)' },
         sheetHandle: { width: '36px', height: '5px', background: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)', borderRadius: '3px', margin: '0 auto 20px auto' },
         sheetTitle: { textAlign: 'center', color: isDark ? 'white' : 'black', fontSize: '20px', fontWeight: 700, margin: '0 0 20px 0' },
         miniPolicyBox: { background: isDark ? 'rgba(255,255,255,0.05)' : '#F3F4F6', borderRadius: '16px', padding: '16px', maxHeight: '160px', overflowY: 'auto', marginBottom: '20px' },
-        textLinkBtn: { background: 'none', border: 'none', color: '#007AFF', fontSize: '12px', fontWeight: '600', marginTop: '12px', padding: 0 },
+        textLinkBtn: { background: 'none', border: 'none', color: '#4DA6FF', fontSize: '12px', fontWeight: '600', marginTop: '12px', padding: 0 },
         checkoutTotalBox: { background: isDark ? 'rgba(255,255,255,0.03)' : '#F9FAFB', borderRadius: '16px', padding: '16px', marginBottom: '20px' },
         checkoutRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', fontSize: '14px' },
-        totalPriceDisplay: { color: '#007AFF', fontWeight: '800', fontSize: '22px', display:'flex', alignItems:'center', gap:'5px' },
-        mainButton: { width: '100%', padding: '16px', borderRadius: '16px', background: '#007AFF', color: 'white', fontSize: '17px', fontWeight: '700', border: 'none', boxShadow: '0 4px 20px rgba(0, 122, 255, 0.4)' },
+        totalPriceDisplay: { color: '#4DA6FF', fontWeight: '800', fontSize: '22px', display:'flex', alignItems:'center', gap:'5px' },
+        mainButton: { width: '100%', padding: '16px', borderRadius: '18px', background: '#4DA6FF', color: '#111', fontSize: '17px', fontWeight: '850', border: 'none', boxShadow: '0 16px 36px rgba(77, 166, 255, 0.28)' },
         cancelBtn: { background: 'transparent', border: 'none', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', width: '100%', padding: '15px', fontSize: '15px' },
         fullPolicyOverlay: { position: 'fixed', inset: 0, background: isDark ? '#000' : '#FFF', zIndex: 7000, padding: '20px', display: 'flex', flexDirection: 'column' },
         policyHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: isDark ? 'white' : 'black', marginBottom: '20px',marginTop:'75px', paddingBottom: '15px', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` },
@@ -702,7 +962,7 @@ const styles = (theme) => {
         position: 'absolute',
         bottom: '0',
         right: '0',
-        backgroundColor: '#FFD700',
+        backgroundColor: '#4DA6FF',
         width: '24px',
         height: '24px',
         borderRadius: '50%',
@@ -941,5 +1201,3 @@ function getPaymentMethodHint(currentPaymentMethod, langIndex) {
 
 
 export default Premium;
-
-

@@ -140,22 +140,22 @@ function RingStack({ rings }) {
 function HeroStat({ dot, label, value, palette }) {
   return (
     <div style={{
-      minHeight: 58,
-      padding: '12px 13px',
-      borderRadius: 18,
+      minHeight: 46,
+      padding: '9px 10px',
+      borderRadius: 15,
       background: 'rgba(255,255,255,0.035)',
       border: '1px solid rgba(255,255,255,0.055)',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      gap: 9,
+      gap: 5,
       minWidth: 0
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 6, height: 6, borderRadius: 999, background: dot, flexShrink: 0 }} />
-        <div style={{ fontSize: 11, color: palette.sub, fontWeight: 750, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <div style={{ width: 5, height: 5, borderRadius: 999, background: dot, flexShrink: 0 }} />
+        <div style={{ fontSize: 10, color: palette.sub, fontWeight: 750, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
       </div>
-      <div style={{ fontSize: 17, color: palette.text, fontWeight: 850, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
+      <div style={{ fontSize: 15, color: palette.text, fontWeight: 850, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
     </div>
   );
 }
@@ -215,12 +215,12 @@ function TopIconButton({ Icon, onClick, palette, active }) {
 function BrandHeader({ lang, palette }) {
   return (
     <div style={{
-      padding: '16px 20px 22px',
+      padding: '10px 20px 16px',
       textAlign: 'center'
     }}>
       <div style={{
         fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: 25,
+        fontSize: 24,
         fontWeight: 700,
         lineHeight: 1.05,
         color: palette.text,
@@ -229,8 +229,8 @@ function BrandHeader({ lang, palette }) {
         UltyMyLife
       </div>
       <div style={{
-        marginTop: 6,
-        fontSize: 10,
+        marginTop: 5,
+        fontSize: 9,
         fontWeight: 600,
         letterSpacing: '0.16em',
         color: palette.muted
@@ -249,7 +249,6 @@ function Hero({ data, palette, lang, onOpenWidgets }) {
         { id: 'TrainingMain', label: lang === 0 ? 'Тоннаж' : 'Volume', value: data.trainingValue },
         { id: 'MentalMain', label: lang === 0 ? 'Мозг' : 'Brain', value: data.mentalValue }
       ];
-  const summaryProgress = Math.max(0, Math.min(1, data.progressValue ?? data.rings.habits ?? 0));
 
   return (
     <motion.div
@@ -258,8 +257,8 @@ function Hero({ data, palette, lang, onOpenWidgets }) {
       transition={{ duration: 0.45, ease: EASE }}
       style={{
         margin: '0 20px',
-        padding: 22,
-        borderRadius: 26,
+        padding: 18,
+        borderRadius: 24,
         background: `linear-gradient(145deg, ${palette.panelStrong} 0%, ${palette.panel} 58%, rgba(201,162,75,0.055) 100%)`,
         border: `1px solid ${palette.border}`,
         boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 20px 44px -26px rgba(0,0,0,0.74)',
@@ -277,16 +276,16 @@ function Hero({ data, palette, lang, onOpenWidgets }) {
         pointerEvents: 'none'
       }} />
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, position: 'relative' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, position: 'relative' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 11, color: palette.muted, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 7 }}>
+          <div style={{ fontSize: 10, color: palette.muted, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>
             {data.greeting}
           </div>
-          <div style={{ fontSize: 25, fontWeight: 850, lineHeight: 1.05, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 23, fontWeight: 850, lineHeight: 1.05, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {data.name}
           </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {data.streak > 0 && (
             <Pill style={{ color: tokens.accents.HabitsMain.hue, borderColor: tokens.accents.HabitsMain.ring, background: tokens.accents.HabitsMain.soft }}>
               <IconFlame size={12} />
@@ -299,64 +298,31 @@ function Hero({ data, palette, lang, onOpenWidgets }) {
             onClick={onOpenWidgets}
             aria-label={lang === 0 ? 'Настроить верхнюю карточку' : 'Customize top card'}
             style={{
-              minHeight: 32,
-              borderRadius: 999,
+              width: 34,
+              height: 34,
+              borderRadius: 12,
               border: `1px solid ${palette.border}`,
               background: 'rgba(255,255,255,0.055)',
               color: palette.sub,
-              padding: '7px 10px',
+              padding: 0,
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 6,
-              fontSize: 11,
-              fontWeight: 850,
               fontFamily: 'inherit',
               cursor: 'pointer',
-              whiteSpace: 'nowrap',
               boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
             }}
           >
-            <IconSliders size={13} />
-            <span>{lang === 0 ? 'Настроить' : 'Edit'}</span>
+            <IconSliders size={15} />
           </motion.button>
-        </div>
-      </div>
-
-      <div style={{ marginTop: 22, position: 'relative' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 9 }}>
-          <div style={{ fontSize: 12, color: palette.sub, fontWeight: 750 }}>
-            {data.progressLabel || (lang === 0 ? 'Сводка' : 'Summary')}
-          </div>
-          <div style={{ fontSize: 12, color: tokens.accents.HabitsMain.hue, fontWeight: 850, fontVariantNumeric: 'tabular-nums' }}>
-            {Math.round(summaryProgress * 100)}%
-          </div>
-        </div>
-        <div style={{
-          height: 7,
-          borderRadius: 999,
-          background: 'rgba(255,255,255,0.075)',
-          overflow: 'hidden',
-          boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
-        }}>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${summaryProgress * 100}%` }}
-            transition={{ duration: 0.8, ease: EASE }}
-            style={{
-              height: '100%',
-              borderRadius: 999,
-              background: `linear-gradient(90deg, ${tokens.accents.HabitsMain.hue}, #E0B95A)`
-            }}
-          />
         </div>
       </div>
 
       <div style={{
         display: 'grid',
         gridTemplateColumns: `repeat(${Math.min(3, selectedStats.length)}, minmax(0, 1fr))`,
-        gap: 10,
-        marginTop: 16,
+        gap: 8,
+        marginTop: 18,
         position: 'relative'
       }}>
         {selectedStats.map((stat) => (
@@ -471,24 +437,24 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
       }}
       onClick={onOpen}
       style={{
-        minHeight: 84,
-        padding: '16px 20px',
-        borderRadius: 20,
-        marginBottom: 14,
+        minHeight: 72,
+        padding: '13px 16px',
+        borderRadius: 18,
+        marginBottom: 10,
         background: palette.panel,
         border: `1px solid ${isPinned ? accent.ring : palette.border}`,
         boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px -18px rgba(0,0,0,0.65)',
         display: 'flex',
         alignItems: 'center',
-        gap: 16,
+        gap: 13,
         cursor: 'pointer',
         touchAction: 'pan-y'
       }}
     >
       <div style={{
-        width: 48,
-        height: 48,
-        borderRadius: 14,
+        width: 42,
+        height: 42,
+        borderRadius: 13,
         flexShrink: 0,
         background: accent.soft,
         color: accent.hue,
@@ -497,25 +463,25 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
         alignItems: 'center',
         justifyContent: 'center'
       }}>
-        <IconComponent size={22} />
+        <IconComponent size={19} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ fontSize: 16, fontWeight: 850, color: palette.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ fontSize: 15, fontWeight: 850, color: palette.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {item.title}
           </div>
           {isPinned && <FaThumbtack size={11} color={accent.hue} style={{ transform: 'rotate(45deg)', flexShrink: 0 }} />}
         </div>
-        <div style={{ fontSize: 12, color: palette.sub, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontSize: 11, color: palette.sub, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {item.subtitle}
         </div>
       </div>
       {metric ? (
         <div style={{ textAlign: 'right', minWidth: 44 }}>
-          <div style={{ fontSize: 15, fontWeight: 850, color: palette.text, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ fontSize: 14, fontWeight: 850, color: palette.text, fontVariantNumeric: 'tabular-nums' }}>
             {metric}
           </div>
-          <div style={{ fontSize: 10, color: palette.muted, fontWeight: 750, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>
+          <div style={{ fontSize: 9, color: palette.muted, fontWeight: 750, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>
             {lang === 0 ? 'сейчас' : 'now'}
           </div>
         </div>
@@ -575,6 +541,63 @@ function ActionButton({ Icon, label, accent, onClick, palette }) {
     >
       <Icon size={18} />
       <span style={{ color: palette.text }}>{label}</span>
+    </motion.button>
+  );
+}
+
+function HeaderIconAction({ Icon, accent, onClick, label }) {
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.94 }}
+      onClick={onClick}
+      aria-label={label}
+      style={{
+        width: 34,
+        height: 34,
+        borderRadius: 12,
+        border: `1px solid ${accent.ring}`,
+        background: accent.soft,
+        color: accent.hue,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer'
+      }}
+    >
+      <Icon size={15} />
+    </motion.button>
+  );
+}
+
+function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
+  return (
+    <motion.button
+      type="button"
+      whileTap={{ scale: 0.96 }}
+      onClick={onClick}
+      aria-label={label}
+      style={{
+        height: 34,
+        minWidth: compact ? 46 : 92,
+        borderRadius: 12,
+        border: `1px solid ${accent.ring}`,
+        background: accent.soft,
+        color: accent.hue,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        padding: compact ? '0 10px' : '0 12px',
+        cursor: 'pointer',
+        fontFamily: 'inherit',
+        fontSize: 12,
+        fontWeight: 900,
+        whiteSpace: 'nowrap'
+      }}
+    >
+      <Icon size={14} />
+      <span>{label}</span>
     </motion.button>
   );
 }
@@ -645,6 +668,7 @@ export default function MainMenuRedesign({
   onOpenSection,
   onOpenRobot,
   onOpenReferral,
+  onOpenPremium,
   onOpenUser,
   onOpenSettings,
   onOpenWidgets,
@@ -659,7 +683,6 @@ export default function MainMenuRedesign({
   const palette = isLight ? tokens.light : tokens.dark;
   const actionItemVisible = visibleItems.some((item) => item.id === 'MainCard');
   const sectionItems = visibleItems.filter((item) => item.icon);
-  const focusTarget = summary.focus.targetId;
 
   return (
     <div style={{
@@ -682,37 +705,42 @@ export default function MainMenuRedesign({
         inset: 0,
         overflowY: 'auto',
         overflowX: 'hidden',
-        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 20px)',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
         paddingBottom: 'calc(104px + env(safe-area-inset-bottom, 0px))'
       }}>
         <BrandHeader lang={lang} palette={palette} />
         <Hero data={summary.hero} palette={palette} lang={lang} onOpenWidgets={onOpenWidgets} />
-        <Focus data={summary.focus} palette={palette} lang={lang} onOpen={() => onOpenSection(focusTarget)} />
-        <ActionStrip visible={actionItemVisible} lang={lang} onOpenReferral={onOpenReferral} onOpenRobot={onOpenRobot} palette={palette} />
 
-        <div style={{ padding: '24px 20px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '18px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 11, color: palette.muted, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             {lang === 0 ? 'Разделы' : 'Sections'}
           </div>
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.96 }}
-            onClick={onOpenWidgets}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: palette.muted,
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 750,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              fontFamily: 'inherit'
-            }}
-          >
-            {lang === 0 ? 'Настроить меню' : 'Customize menu'} <IconChevron size={12} />
-          </motion.button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {actionItemVisible && (
+              <HeaderTextAction
+                Icon={IconSparkle}
+                accent={tokens.accents.RobotMain}
+                onClick={onOpenRobot}
+                label="AI"
+                compact
+              />
+            )}
+            {!hasPremium && (
+              <HeaderTextAction
+                Icon={IconCrown}
+                accent={tokens.accents.premium}
+                onClick={onOpenPremium || onOpenReferral}
+                label="Premium"
+              />
+            )}
+            <HeaderTextAction
+              Icon={IconSliders}
+              accent={{ hue: palette.sub, soft: palette.faint, ring: palette.border }}
+              onClick={onOpenWidgets}
+              label={lang === 0 ? 'Меню' : 'Menu'}
+              compact
+            />
+          </div>
         </div>
 
         <div style={{ padding: '0 20px' }}>

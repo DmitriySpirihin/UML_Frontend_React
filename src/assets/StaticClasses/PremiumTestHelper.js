@@ -10,18 +10,25 @@ function isLocalRuntime() {
 }
 
 export function isLocalTestPremiumEnabled() {
-  if (typeof window === 'undefined') return false;
+  return getLocalTestPremiumOverride() === true;
+}
+
+export function getLocalTestPremiumOverride() {
+  if (typeof window === 'undefined') return null;
 
   const params = new URLSearchParams(window.location.search);
-  const requestedByUrl = params.get('testPremium') === '1';
-  const savedLocalFlag = window.localStorage.getItem(TEST_PREMIUM_STORAGE_KEY) === '1';
-  const isDevRuntime = Boolean(import.meta.env?.DEV);
+  const requestedMode = params.get('testPremium');
 
-  if (requestedByUrl && isLocalRuntime()) {
-    window.localStorage.setItem(TEST_PREMIUM_STORAGE_KEY, '1');
+  if (isLocalRuntime() && (requestedMode === '1' || requestedMode === '0')) {
+    window.localStorage.setItem(TEST_PREMIUM_STORAGE_KEY, requestedMode);
+    return requestedMode === '1';
   }
 
-  return isDevRuntime || (isLocalRuntime() && (requestedByUrl || savedLocalFlag));
+  const savedLocalFlag = window.localStorage.getItem(TEST_PREMIUM_STORAGE_KEY);
+  if (isLocalRuntime() && savedLocalFlag === '1') return true;
+  if (isLocalRuntime() && savedLocalFlag === '0') return false;
+
+  return null;
 }
 
 export function applyLocalTestPremium() {
@@ -35,6 +42,20 @@ export function applyLocalTestPremium() {
   UserData.isValidation = false;
 
   setPremium(true);
+  setValidation(false);
+  setIsServerAvailable(false);
+
+  return true;
+}
+
+export function applyLocalNoPremium() {
+  if (getLocalTestPremiumOverride() !== false) return false;
+
+  UserData.hasPremium = false;
+  UserData.premiumEndDate = null;
+  UserData.isValidation = false;
+
+  setPremium(false);
   setValidation(false);
   setIsServerAvailable(false);
 

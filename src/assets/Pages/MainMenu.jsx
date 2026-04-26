@@ -440,6 +440,7 @@ useEffect(() => {
                 onOpenSection={openSection}
                 onOpenRobot={() => openSection('RobotMain')}
                 onOpenReferral={() => setShowReferralModal(true)}
+                onOpenPremium={() => openSection('premium')}
                 onOpenUser={() => openSection('UserPanel')}
                 onOpenSettings={() => openSection('settings')}
                 onOpenWidgets={() => setShowWidgetSettings(true)}
@@ -967,6 +968,8 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
     const selectedHeroIds = Array.isArray(heroValues) && heroValues.length > 0 ? heroValues : ['HabitsMain', 'TrainingMain', 'MentalMain'];
+    const [activePanel, setActivePanel] = useState('hero');
+    const visibleSectionsCount = items.filter(item => !sectionStates[item.id]?.hidden).length;
 
     return (
         <AnimatePresence>
@@ -1003,16 +1006,16 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                             border: `1px solid ${Colors.get('border', theme)}66`,
                             boxShadow: isDark ? '0 28px 80px rgba(0,0,0,0.72)' : '0 24px 70px rgba(0,0,0,0.2)',
                             zIndex: 1801,
-                            maxHeight: '82vh',
+                            maxHeight: '80vh',
                             overflowY: 'auto',
                             boxSizing: 'border-box'
                         }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                             <div style={{
-                                width: '42px',
-                                height: '42px',
-                                borderRadius: '14px',
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '12px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -1023,179 +1026,202 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                 <FaSlidersH />
                             </div>
                             <div>
-                                <div style={{ color: text, fontSize: '18px', fontWeight: 900 }}>
-                                    {lang === 0 ? 'Виджеты меню' : 'Menu widgets'}
-                                </div>
-                                <div style={{ color: sub, fontSize: '12px', fontWeight: 700, marginTop: '3px' }}>
-                                    {lang === 0 ? 'Настройте главный блок и мини-метрики карточек' : 'Customize the hero block and card mini metrics'}
+                                <div style={{ color: text, fontSize: '17px', fontWeight: 900 }}>
+                                    {lang === 0 ? 'Настройка меню' : 'Menu setup'}
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <div style={{ color: text, fontSize: '13px', fontWeight: 900, marginBottom: '2px' }}>
-                                {lang === 0 ? 'Верхняя карточка' : 'Top card'}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginTop: '-6px' }}>
-                                <div style={{ color: sub, fontSize: '11px', fontWeight: 650 }}>
-                                    {lang === 0 ? 'Выберите, что показывать сверху' : 'Choose what appears at the top'}
-                                </div>
-                                <div style={{
-                                    color: selectedHeroIds.length >= 3 ? '#111' : sub,
-                                    background: selectedHeroIds.length >= 3 ? '#FFD700' : 'transparent',
-                                    border: `1px solid ${selectedHeroIds.length >= 3 ? '#FFD700' : Colors.get('border', theme)}88`,
-                                    borderRadius: '999px',
-                                    padding: '3px 8px',
-                                    fontSize: '11px',
-                                    fontWeight: 900,
-                                    whiteSpace: 'nowrap'
-                                }}>
-                                    {selectedHeroIds.length}/3
-                                </div>
-                            </div>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                            gap: 4,
+                            padding: 4,
+                            borderRadius: 16,
+                            background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.045)',
+                            marginBottom: 12
+                        }}>
+                            {[
+                                { id: 'hero', label: lang === 0 ? 'Карточка' : 'Card', count: `${selectedHeroIds.length}/3` },
+                                { id: 'sections', label: lang === 0 ? 'Разделы' : 'Sections', count: `${visibleSectionsCount}/${items.length}` }
+                            ].map(tab => {
+                                const active = activePanel === tab.id;
+                                return (
+                                    <Motion.button
+                                        key={tab.id}
+                                        type="button"
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => setActivePanel(tab.id)}
+                                        style={{
+                                            minHeight: 38,
+                                            borderRadius: 12,
+                                            border: 'none',
+                                            background: active ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.95)') : 'transparent',
+                                            color: active ? text : sub,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 7,
+                                            fontSize: 13,
+                                            fontWeight: 900,
+                                            fontFamily: 'inherit',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <span>{tab.label}</span>
+                                        <span style={{
+                                            color: active ? '#111' : sub,
+                                            background: active ? '#FFD700' : 'transparent',
+                                            border: `1px solid ${active ? '#FFD700' : Colors.get('border', theme)}88`,
+                                            borderRadius: 999,
+                                            padding: '2px 7px',
+                                            fontSize: 10,
+                                            fontWeight: 900
+                                        }}>{tab.count}</span>
+                                    </Motion.button>
+                                );
+                            })}
+                        </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
-                                {[0, 1, 2].map((slotIndex) => {
-                                    const selectedId = selectedHeroIds[slotIndex];
-                                    const selectedItem = items.find((item) => item.id === selectedId);
+                        {activePanel === 'hero' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 7 }}>
+                                    {[0, 1, 2].map((slotIndex) => {
+                                        const selectedId = selectedHeroIds[slotIndex];
+                                        const selectedItem = items.find((item) => item.id === selectedId);
+                                        return (
+                                            <div
+                                                key={slotIndex}
+                                                style={{
+                                                    minHeight: 38,
+                                                    borderRadius: 13,
+                                                    border: `1px solid ${selectedItem ? selectedItem.color : Colors.get('border', theme)}66`,
+                                                    background: selectedItem ? `${selectedItem.color}18` : bg,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: 6,
+                                                    padding: '7px 8px',
+                                                    boxSizing: 'border-box'
+                                                }}
+                                            >
+                                                <div style={{ color: selectedItem ? selectedItem.color : sub, fontSize: 10, fontWeight: 900, flexShrink: 0 }}>
+                                                    {slotIndex + 1}
+                                                </div>
+                                                <div style={{ color: selectedItem ? text : sub, fontSize: 11, fontWeight: 850, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {selectedItem ? selectedItem.title : (lang === 0 ? 'Пусто' : 'Empty')}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {items.map(item => {
+                                    const enabled = selectedHeroIds.includes(item.id);
+                                    const disabledByLimit = !enabled && selectedHeroIds.length >= 3;
                                     return (
-                                        <div
-                                            key={slotIndex}
+                                        <Motion.button
+                                            key={`hero-${item.id}`}
+                                            type="button"
+                                            whileTap={disabledByLimit ? undefined : { scale: 0.985 }}
+                                            onClick={() => { if (!disabledByLimit) onToggleHeroWidget(item.id); }}
                                             style={{
-                                                minHeight: '44px',
-                                                borderRadius: '14px',
-                                                border: `1px solid ${selectedItem ? selectedItem.color : Colors.get('border', theme)}66`,
-                                                background: selectedItem ? `${selectedItem.color}18` : bg,
+                                                minHeight: 52,
+                                                borderRadius: 17,
+                                                border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}66`,
+                                                background: enabled ? `${item.color}18` : bg,
                                                 display: 'flex',
-                                                flexDirection: 'column',
                                                 alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '2px',
-                                                padding: '6px',
-                                                boxSizing: 'border-box'
+                                                gap: 11,
+                                                padding: '10px 12px',
+                                                cursor: disabledByLimit ? 'not-allowed' : 'pointer',
+                                                textAlign: 'left',
+                                                opacity: disabledByLimit ? 0.38 : 1
                                             }}
                                         >
-                                            <div style={{ color: selectedItem ? selectedItem.color : sub, fontSize: '10px', fontWeight: 900 }}>
-                                                {slotIndex + 1}
+                                            <div style={{ color: item.color, width: 25, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                                                {React.cloneElement(item.icon, { size: 18 })}
                                             </div>
-                                            <div style={{ color: selectedItem ? text : sub, fontSize: '11px', fontWeight: 850, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {selectedItem ? selectedItem.title : (lang === 0 ? 'Пусто' : 'Empty')}
+                                            <div style={{ color: text, fontSize: 14, fontWeight: 850, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {item.title}
                                             </div>
-                                        </div>
+                                            <div style={{
+                                                minWidth: 32,
+                                                height: 28,
+                                                padding: enabled ? '0 9px' : 0,
+                                                borderRadius: 11,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: enabled ? item.color : 'transparent',
+                                                color: enabled ? '#111' : sub,
+                                                border: enabled ? 'none' : `1px solid ${Colors.get('border', theme)}77`,
+                                                flexShrink: 0,
+                                                fontSize: 13,
+                                                fontWeight: 900
+                                            }}>
+                                                {enabled ? selectedHeroIds.indexOf(item.id) + 1 : '+'}
+                                            </div>
+                                        </Motion.button>
                                     );
                                 })}
                             </div>
-                            {items.map(item => {
-                                const enabled = selectedHeroIds.includes(item.id);
-                                const disabledByLimit = !enabled && selectedHeroIds.length >= 3;
-                                return (
-                                    <Motion.button
-                                        key={`hero-${item.id}`}
-                                        type="button"
-                                        whileTap={disabledByLimit ? undefined : { scale: 0.98 }}
-                                        onClick={() => { if (!disabledByLimit) onToggleHeroWidget(item.id); }}
-                                        style={{
-                                            minHeight: '50px',
-                                            borderRadius: '16px',
-                                            border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}66`,
-                                            background: enabled ? `${item.color}18` : bg,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                            padding: '9px 12px',
-                                            cursor: disabledByLimit ? 'not-allowed' : 'pointer',
-                                            textAlign: 'left',
-                                            opacity: disabledByLimit ? 0.45 : 1
-                                        }}
-                                    >
-                                        <div style={{ color: item.color, width: '24px', display: 'flex', justifyContent: 'center' }}>
-                                            {React.cloneElement(item.icon, { size: 18 })}
-                                        </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ color: text, fontSize: '14px', fontWeight: 850 }}>{item.title}</div>
-                                            <div style={{ color: sub, fontSize: '11px', fontWeight: 650, marginTop: '2px' }}>
-                                                {enabled
-                                                    ? (lang === 0 ? 'Нажмите, чтобы убрать' : 'Tap to remove')
-                                                    : disabledByLimit
-                                                        ? (lang === 0 ? 'Сначала уберите одну метрику' : 'Remove one metric first')
-                                                        : (lang === 0 ? 'Добавить в верхнюю карточку' : 'Add to top card')}
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                                {items.map(item => {
+                                    const enabled = !sectionStates[item.id]?.hidden;
+                                    return (
+                                        <Motion.button
+                                            key={item.id}
+                                            type="button"
+                                            whileTap={{ scale: 0.985 }}
+                                            onClick={() => onToggleSectionVisibility(item.id)}
+                                            style={{
+                                                minHeight: 52,
+                                                borderRadius: 17,
+                                                border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}66`,
+                                                background: enabled ? `${item.color}16` : bg,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 11,
+                                                padding: '10px 12px',
+                                                cursor: 'pointer',
+                                                textAlign: 'left',
+                                                opacity: enabled ? 1 : 0.58
+                                            }}
+                                        >
+                                            <div style={{ color: item.color, width: 25, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+                                                {React.cloneElement(item.icon, { size: 18 })}
                                             </div>
-                                        </div>
-                                        <div style={{
-                                            minWidth: '28px',
-                                            height: '28px',
-                                            padding: enabled ? '0 8px' : 0,
-                                            borderRadius: '10px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            background: enabled ? item.color : 'transparent',
-                                            color: enabled ? '#111' : sub,
-                                            border: enabled ? 'none' : `1px solid ${Colors.get('border', theme)}88`,
-                                            flexShrink: 0,
-                                            fontSize: '12px',
-                                            fontWeight: 900
-                                        }}>
-                                            {enabled ? selectedHeroIds.indexOf(item.id) + 1 : ''}
-                                        </div>
-                                    </Motion.button>
-                                );
-                            })}
-
-                            <div style={{ height: '1px', background: Colors.get('border', theme), opacity: 0.5, margin: '4px 0' }} />
-                            <div style={{ color: text, fontSize: '13px', fontWeight: 900 }}>
-                                {lang === 0 ? 'Разделы на главном экране' : 'Main screen sections'}
+                                            <div style={{ color: text, fontSize: 14, fontWeight: 850, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {item.title}
+                                            </div>
+                                            <div style={{
+                                                width: 46,
+                                                height: 26,
+                                                borderRadius: 999,
+                                                padding: 3,
+                                                background: enabled ? item.color : 'transparent',
+                                                border: enabled ? 'none' : `1px solid ${Colors.get('border', theme)}88`,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: enabled ? 'flex-end' : 'flex-start',
+                                                flexShrink: 0,
+                                                boxSizing: 'border-box'
+                                            }}>
+                                                <div style={{
+                                                    width: 20,
+                                                    height: 20,
+                                                    borderRadius: 999,
+                                                    background: enabled ? '#111' : sub,
+                                                    opacity: enabled ? 1 : 0.72
+                                                }} />
+                                            </div>
+                                        </Motion.button>
+                                    );
+                                })}
                             </div>
-                            {items.map(item => {
-                                const enabled = !sectionStates[item.id]?.hidden;
-                                return (
-                                    <Motion.button
-                                        key={item.id}
-                                        type="button"
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => onToggleSectionVisibility(item.id)}
-                                        style={{
-                                            minHeight: '54px',
-                                            borderRadius: '18px',
-                                            border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}66`,
-                                            background: enabled ? `${item.color}18` : bg,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '12px',
-                                            padding: '10px 12px',
-                                            cursor: 'pointer',
-                                            textAlign: 'left'
-                                        }}
-                                    >
-                                        <div style={{ color: item.color, width: '24px', display: 'flex', justifyContent: 'center' }}>
-                                            {React.cloneElement(item.icon, { size: 18 })}
-                                        </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ color: text, fontSize: '14px', fontWeight: 850 }}>{item.title}</div>
-                                            <div style={{ color: sub, fontSize: '11px', fontWeight: 650, marginTop: '2px' }}>
-                                                {enabled
-                                                    ? (lang === 0 ? 'Раздел показывается в меню' : 'Section is visible in the menu')
-                                                    : (lang === 0 ? 'Раздел скрыт из меню' : 'Section is hidden from the menu')}
-                                            </div>
-                                        </div>
-                                        <div style={{
-                                            width: '28px',
-                                            height: '28px',
-                                            borderRadius: '10px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            background: enabled ? item.color : 'transparent',
-                                            color: enabled ? '#111' : sub,
-                                            border: enabled ? 'none' : `1px solid ${Colors.get('border', theme)}88`,
-                                            flexShrink: 0
-                                        }}>
-                                            {enabled && <FaCheck size={13} />}
-                                        </div>
-                                    </Motion.button>
-                                );
-                            })}
-                        </div>
+                        )}
                     </Motion.div>
                 </>
             )}
