@@ -53,7 +53,13 @@ export const setTheme = (theme) => {
   globalTheme$.next(theme === THEME.DARK ? 'dark' : 'light');
 };
 export const setLang = (lang) => lang$.next(lang);
-export const setFontSize = (fontSize) => fontSize$.next(fontSize);
+export const setFontSize = (fontSize) => {
+  fontSize$.next(fontSize);
+  if (typeof document !== 'undefined') {
+    document.documentElement.style.setProperty('--uml-font-scale', fontSize === 0 ? '1' : '1.14');
+    document.documentElement.dataset.umlFontSize = fontSize === 0 ? 'regular' : 'large';
+  }
+};
 export const updateConfirmationPanel = (text, action = null) => {
   confirmationAction$.next(action);
   setConfirmationPanel(true);

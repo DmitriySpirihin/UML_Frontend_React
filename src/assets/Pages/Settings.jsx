@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { AppData, UserData } from '../StaticClasses/AppData'
 import { motion, AnimatePresence } from 'framer-motion'
 import Colors, { THEME } from "../StaticClasses/Colors";
-import TelegramIcon from '@mui/icons-material/Telegram';
 import { sendBugreport } from '../StaticClasses/NotificationsManager'
-import { FaAddressCard, FaLanguage, FaHighlighter, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight } from 'react-icons/fa'
+import { FaAddressCard, FaLanguage, FaHighlighter, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight, FaHome, FaUser, FaCog, FaPaperPlane, FaTelegramPlane, FaTimes } from 'react-icons/fa'
 import { LuVibrate, LuVibrateOff } from 'react-icons/lu'
 import { RiFontSize2 } from 'react-icons/ri'
 import { clearAllSaves } from '../StaticClasses/SaveHelper';
@@ -39,66 +38,96 @@ const Settings = () => {
         return () => subs.forEach(s => s.unsubscribe());
     }, []);
 
+    const goBack = () => {
+        const prev = lastPage$.value;
+        setPage(prev && prev !== 'settings' ? prev : 'MainMenu');
+        playEffects(transitionSound);
+    };
+
+    const setFontPreference = async (nextSize) => {
+        setFSize(nextSize);
+        setFontSize(nextSize);
+        await AppData.setPrefs(4, nextSize);
+        playEffects(null);
+    };
+
+    const styles = s(theme, fSize);
+
     return (
         <motion.div
-            initial={{ opacity: 0 }}
+            initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
-            style={{ position: 'fixed', inset: 0, zIndex: 1001, paddingBottom: '100px', overflowY: 'auto', backgroundColor: Colors.get('background', theme) }}
+            style={styles.screen}
         >
             <style>{`@keyframes shine-effect { 0% { left: -100%; } 20% { left: 100%; } 100% { left: 100%; } }`}</style>
 
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: `${HEADER_TOP_PADDING} 20px 20px`, minHeight: '76px', borderBottom: `1px solid ${Colors.get('border', theme)}` }}>
-                <motion.div
-                    whileTap={{ scale: 0.9 }}
-                    onClick={() => { setPage(lastPage$.value || 'MainMenu'); playEffects(transitionSound); }}
-                    style={{ width: '36px', height: '36px', borderRadius: '12px', flexShrink: 0, backgroundColor: Colors.get('bottomPanel', theme), display: 'flex', alignItems: 'center', justifyContent: 'center', color: Colors.get('icons', theme) }}
-                >
-                    <IoIosArrowBack size={20} />
-                </motion.div>
-                <UserPanelInner theme={theme} fSize={fSize} />
-            </div>
-
-            {/* Settings list */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '16px 0' }}>
-                {!hasPremium ? (
-                    <motion.div style={s(theme).premiumEl} whileTap={{ scale: 0.98 }} onClick={() => { setPage('premium'); playEffects(null); }}>
-                        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', overflow: 'hidden', borderRadius: '20px' }}>
-                            <div style={{ position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent)', transform: 'skewX(-20deg)', animation: 'shine-effect 4s infinite' }} />
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', zIndex: 2 }}>
-                            <div style={{ ...s(theme).iconBox, border: '1px solid #E0AA3E', color: '#E0AA3E' }}><FaCrown size={18} /></div>
-                            <p style={s(theme, fSize).premiumText}>{langIndex === 0 ? 'Премиум версия' : 'Premium Version'}</p>
-                        </div>
-                        <FaChevronRight color="#E0AA3E" size={14} style={{ zIndex: 2 }} />
-                    </motion.div>
-                ) : (
-                    <SettingsItem theme={theme} fSize={fSize} icon={<FaCrown />} label={langIndex === 0 ? 'Премиум' : 'Premium'} value={langIndex === 0 ? 'Активен' : 'Active'} color="#E0AA3E" onClick={() => { setPage('premium'); playEffects(null); }} />
+            <div style={styles.content} className="no-scrollbar">
+                {!hasPremium && (
+                    <PremiumSettingsCard
+                        theme={theme}
+                        langIndex={langIndex}
+                        onClick={() => { setPage('premium'); playEffects(null); }}
+                    />
                 )}
 
-                <SettingsItem theme={theme} fSize={fSize} icon={<FaLanguage />} label={langIndex === 0 ? 'Язык' : 'Language'} value={langIndex === 0 ? 'Русский' : 'English'} color="#4DA6FF"
-                    onClick={() => { changeSettings(0); const n = langIndex === 0 ? 1 : 0; setLang(n === 0 ? 'ru' : 'en'); AppData.setPrefs(0, n); }} />
-                <SettingsItem theme={theme} fSize={fSize} icon={<FaHighlighter />} label={langIndex === 0 ? 'Тема' : 'Theme'} value={getThemeShortName(langIndex, theme)} color="#A64DFF"
-                    onClick={() => { changeSettings(1); playEffects(null); }} />
-                <SettingsItem theme={theme} fSize={fSize} icon={<RiFontSize2 />} label={langIndex === 0 ? 'Шрифт' : 'Font Size'} value={fSize === 0 ? (langIndex === 0 ? 'Малый' : 'Small') : (langIndex === 0 ? 'Обычный' : 'Regular')} color="#FF4D88"
-                    onClick={() => changeSettings(4, fSize)} />
-                <SettingsItem theme={theme} fSize={fSize} icon={sound === 0 ? <FaVolumeUp /> : <FaVolumeMute />} label={langIndex === 0 ? 'Звук' : 'Sound'} value={sound === 0 ? (langIndex === 0 ? 'Вкл' : 'On') : (langIndex === 0 ? 'Выкл' : 'Off')} color="#00E5FF" isActive={sound === 0}
-                    onClick={() => { changeSettings(2); setSound(sound === 0 ? 1 : 0); }} />
-                <SettingsItem theme={theme} fSize={fSize} icon={vibro === 0 ? <LuVibrate /> : <LuVibrateOff />} label={langIndex === 0 ? 'Вибрация' : 'Haptics'} value={vibro === 0 ? (langIndex === 0 ? 'Вкл' : 'On') : (langIndex === 0 ? 'Выкл' : 'Off')} color="#FFD700" isActive={vibro === 0}
-                    onClick={() => { changeSettings(3); setVibro(vibro === 0 ? 1 : 0); playEffects(null); }} />
-                <SettingsItem theme={theme} fSize={fSize} icon={<FaBug />} label={langIndex === 0 ? 'Ошибка' : 'Bug Report'} color="#FF4D4D"
-                    onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(1); }} />
-                <SettingsItem theme={theme} fSize={fSize} icon={<FaAddressCard />} label={langIndex === 0 ? 'Контакты' : 'Contacts'} color="#4DFF88"
-                    onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(3); playEffects(null); }} />
-                <SettingsItem theme={theme} fSize={fSize} icon={<MdBackup />} label={langIndex === 0 ? 'Бекап' : 'Backup'} color="#FFA64D"
-                    onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(4); }} />
-                <SettingsItem theme={theme} fSize={fSize} icon={<MdInfoOutline />} label={langIndex === 0 ? 'Как пользоваться' : 'How to use'} color="#8b98ff"
-                    onClick={() => { setPage('InfoPanel'); playEffects(null); }} />
+                <div style={styles.heroCard}>
+                    <div style={styles.heroGlow} />
+                    <div style={styles.heroMainRow}>
+                        <UserPanelInner theme={theme} fSize={fSize} />
+                        <div style={styles.heroSettingsBadge}>
+                            <FaCog size={13} />
+                            <span>{langIndex === 0 ? 'Настройки' : 'Settings'}</span>
+                        </div>
+                    </div>
+                    <div style={styles.heroQuickRow}>
+                        <span style={styles.heroQuickChip}>{getThemeShortName(langIndex, theme)}</span>
+                        <span style={styles.heroQuickChip}>{langIndex === 0 ? 'Русский' : 'English'}</span>
+                        <span style={styles.heroQuickChip}>{sound === 0 ? (langIndex === 0 ? 'Звук вкл' : 'Sound on') : (langIndex === 0 ? 'Без звука' : 'Muted')}</span>
+                    </div>
+                </div>
+
+                <SettingsSection title={langIndex === 0 ? 'Приложение' : 'App'} theme={theme} fSize={fSize}>
+                    <SettingsItem theme={theme} fSize={fSize} icon={<FaLanguage />} label={langIndex === 0 ? 'Язык' : 'Language'} value={langIndex === 0 ? 'Русский' : 'English'} color="#66D9E8"
+                        onClick={() => { changeSettings(0); const n = langIndex === 0 ? 1 : 0; setLang(n === 0 ? 'ru' : 'en'); AppData.setPrefs(0, n); }} />
+                    <SettingsItem theme={theme} fSize={fSize} icon={<FaHighlighter />} label={langIndex === 0 ? 'Тема' : 'Theme'} value={getThemeShortName(langIndex, theme)} color="#8A7CD6"
+                        onClick={() => { changeSettings(1); playEffects(null); }} />
+                    <FontSizeControl
+                        theme={theme}
+                        fSize={fSize}
+                        langIndex={langIndex}
+                        onChange={setFontPreference}
+                    />
+                    <SettingsItem theme={theme} fSize={fSize} icon={sound === 0 ? <FaVolumeUp /> : <FaVolumeMute />} label={langIndex === 0 ? 'Звук' : 'Sound'} value={sound === 0 ? (langIndex === 0 ? 'Вкл' : 'On') : (langIndex === 0 ? 'Выкл' : 'Off')} color="#5FB6C6" isActive={sound === 0}
+                        onClick={() => { changeSettings(2); setSound(sound === 0 ? 1 : 0); }} />
+                    <SettingsItem theme={theme} fSize={fSize} icon={vibro === 0 ? <LuVibrate /> : <LuVibrateOff />} label={langIndex === 0 ? 'Вибрация' : 'Haptics'} value={vibro === 0 ? (langIndex === 0 ? 'Вкл' : 'On') : (langIndex === 0 ? 'Выкл' : 'Off')} color="#C9A24B" isActive={vibro === 0}
+                        onClick={() => { changeSettings(3); setVibro(vibro === 0 ? 1 : 0); playEffects(null); }} />
+                </SettingsSection>
+
+                <SettingsSection title={langIndex === 0 ? 'Помощь' : 'Support'} theme={theme} fSize={fSize}>
+                    <SettingsItem theme={theme} fSize={fSize} icon={<MdInfoOutline />} label={langIndex === 0 ? 'Как пользоваться' : 'How to use'} color="#6F8BD6"
+                        onClick={() => { setPage('InfoPanel'); playEffects(null); }} />
+                    <SettingsItem theme={theme} fSize={fSize} icon={<FaBug />} label={langIndex === 0 ? 'Сообщить об ошибке' : 'Bug report'} color="#D95C5C"
+                        onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(1); }} />
+                    <SettingsItem theme={theme} fSize={fSize} icon={<FaAddressCard />} label={langIndex === 0 ? 'Контакты' : 'Contacts'} color="#7AA988"
+                        onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(3); playEffects(null); }} />
+                </SettingsSection>
+
+                <SettingsSection title={langIndex === 0 ? 'Данные' : 'Data'} theme={theme} fSize={fSize}>
+                    <SettingsItem theme={theme} fSize={fSize} icon={<MdBackup />} label={langIndex === 0 ? 'Бекап' : 'Backup'} color="#D49A5C"
+                        onClick={() => { setAdditionalPanel(true); setAdditionalPanelNum(4); }} />
+                </SettingsSection>
+
+                <div style={styles.version}>{version}</div>
             </div>
 
-            <div style={{ fontSize: '10px', textAlign: 'right', marginRight: '55px', color: Colors.get('subText', theme), fontFamily: 'Segoe UI', marginBottom: '10px' }}>{version}</div>
-
             <AdditionalPanel theme={theme} langIndex={langIndex} isOpen={additionalPanel} setIsOpen={setAdditionalPanel} panelNum={additionalPanelNum} />
+            <SettingsDock
+                theme={theme}
+                langIndex={langIndex}
+                onBack={goBack}
+                onHome={() => { setPage('MainMenu'); playEffects(null); }}
+                onProfile={() => { setPage('UserPanel'); playEffects(null); }}
+            />
         </motion.div>
     );
 };
@@ -109,89 +138,220 @@ const UserPanelInner = ({ theme, fSize }) => {
         const sub = premium$.subscribe(setHasPremium);
         return () => sub.unsubscribe();
     }, []);
+    const styles = s(theme, fSize);
     return (
-        <div onClick={() => setPage('UserPanel')} style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '20px', border: `1px solid ${hasPremium ? '#FFD700' : Colors.get('border', theme)}`, padding: '6px', position: 'relative' }}>
+        <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => setPage('UserPanel')} style={styles.heroUserButton}>
+            <div style={{ ...styles.heroAvatar, borderColor: hasPremium ? '#C9A24B' : '#5fb6c6' }}>
                 {UserData.photo ? (
-                    <img src={UserData.photo} style={{ width: '100%', height: '100%', borderRadius: '12px', objectFit: 'cover' }} alt="user" />
+                    <img src={UserData.photo} style={styles.heroAvatarImg} alt="user" />
                 ) : (
-                    <div style={{ width: '100%', height: '100%', borderRadius: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '38px', fontWeight: '900' }}>
-                        {UserData.name?.charAt(0).toUpperCase()}
+                    <div style={styles.heroAvatarPlaceholder}>
+                        {UserData.name?.charAt(0).toUpperCase() || 'U'}
                     </div>
                 )}
                 {hasPremium && (
-                    <div style={{ position: 'absolute', bottom: '0px', right: '0px', backgroundColor: '#FFD700', color: '#000', width: '20px', height: '20px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.4)', border: '2px solid #000', zIndex: 1 }}>
+                    <div style={styles.heroPremiumBadge}>
                         <FaCrown size={10} />
                     </div>
                 )}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginLeft: '8px' }}>
-                {hasPremium && <div style={{ color: '#FFD700', fontSize: '10px', fontFamily: 'Segoe UI', fontWeight: 'bold' }}>PREMIUM</div>}
-                <div style={{ color: Colors.get('subText', theme), fontSize: fSize === 0 ? '16px' : '18px', fontFamily: 'Segoe UI' }}>{UserData.name}</div>
+            <div style={styles.heroUserText}>
+                <div style={styles.heroUserLabel}>{hasPremium ? 'PREMIUM' : (theme === 'dark' ? 'ULTYMYLIFE' : 'PROFILE')}</div>
+                <div style={styles.heroUserName}>{UserData.name || 'User'}</div>
             </div>
-        </div>
+        </motion.button>
+    );
+};
+
+const SettingsSection = ({ title, children, theme, fSize = 0 }) => (
+    <section style={s(theme).settingsSection}>
+        <div style={s(theme, fSize).sectionTitle}>{title}</div>
+        <div style={s(theme).sectionCard}>{children}</div>
+    </section>
+);
+
+const PremiumSettingsCard = ({ theme, langIndex, onClick }) => {
+    const styles = s(theme);
+    return (
+        <motion.button type="button" style={styles.premiumEl} whileTap={{ scale: 0.98 }} onClick={onClick}>
+            <div style={styles.premiumHalo} />
+            <div style={styles.premiumIcon}><FaCrown size={19} /></div>
+            <div style={styles.premiumTextBlock}>
+                <div style={styles.premiumText}>{langIndex === 0 ? 'Премиум версия' : 'Premium Version'}</div>
+                <div style={styles.premiumSub}>{langIndex === 0 ? 'Открой расширенные возможности' : 'Unlock advanced features'}</div>
+            </div>
+            <FaChevronRight color="#C9A24B" size={14} style={{ zIndex: 2, flexShrink: 0 }} />
+        </motion.button>
     );
 };
 
 const SettingsItem = ({ theme, fSize, icon, label, value, onClick, color, isActive = true }) => (
-    <motion.div style={s(theme).listEl} whileTap={{ scale: 0.97 }} onClick={onClick}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            <div style={{ ...s(theme).iconBox, color: isActive ? color : Colors.get('subText', theme), backgroundColor: isActive ? (color + '22') : Colors.get('background', theme), border: `1px solid ${isActive ? (color + '44') : 'transparent'}` }}>
+    <motion.button type="button" style={s(theme, fSize).listEl} whileTap={{ scale: 0.98 }} onClick={onClick}>
+        <div style={s(theme, fSize).itemLeft}>
+            <div style={{ ...s(theme).iconBox, color: isActive ? color : Colors.get('subText', theme), backgroundColor: isActive ? (color + '20') : s(theme).faint, border: `1px solid ${isActive ? (color + '44') : 'transparent'}` }}>
                 {React.cloneElement(icon, { size: 18 })}
             </div>
             <p style={s(theme, fSize).textNoMargin}>{label}</p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {value && <span style={{ fontSize: '13px', color: isActive ? Colors.get('mainText', theme) : Colors.get('subText', theme), fontWeight: 500, opacity: isActive ? 0.8 : 0.5 }}>{value}</span>}
-            <FaChevronRight size={12} color={Colors.get('subText', theme)} style={{ opacity: 0.4 }} />
+        <div style={s(theme, fSize).itemRight}>
+            {value && <span style={{ ...s(theme, fSize).itemValue, opacity: isActive ? 1 : 0.5 }}>{value}</span>}
+            <FaChevronRight size={12} color={Colors.get('subText', theme)} style={{ opacity: 0.48 }} />
         </div>
-    </motion.div>
+    </motion.button>
+);
+
+const FontSizeControl = ({ theme, fSize, langIndex, onChange }) => {
+    const styles = s(theme, fSize);
+    const value = fSize === 0
+        ? (langIndex === 0 ? 'Обычный' : 'Regular')
+        : (langIndex === 0 ? 'Крупнее' : 'Larger');
+
+    return (
+        <motion.button
+            type="button"
+            style={styles.listEl}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => onChange(fSize === 0 ? 1 : 0)}
+        >
+            <div style={styles.itemLeft}>
+                <div style={{ ...styles.iconBox, color: '#C65F9D', backgroundColor: 'rgba(198,95,157,0.13)', border: '1px solid rgba(198,95,157,0.28)' }}>
+                    <RiFontSize2 size={18} />
+                </div>
+                <p style={styles.textNoMargin}>{langIndex === 0 ? 'Размер текста' : 'Text size'}</p>
+            </div>
+            <div style={styles.itemRight}>
+                <span style={styles.itemValue}>{value}</span>
+                <FaChevronRight size={12} color={Colors.get('subText', theme)} style={{ opacity: 0.48 }} />
+            </div>
+        </motion.button>
+    );
+};
+
+const SettingsDock = ({ theme, langIndex, onBack, onHome, onProfile }) => (
+    <div style={s(theme).settingsDock}>
+        <SettingsDockButton icon={<IoIosArrowBack size={23} />} label={langIndex === 0 ? 'Назад' : 'Back'} onClick={onBack} theme={theme} />
+        <SettingsDockButton icon={<FaHome size={21} />} label={langIndex === 0 ? 'Домой' : 'Home'} onClick={onHome} theme={theme} />
+        <SettingsDockButton icon={<FaUser size={20} />} label={langIndex === 0 ? 'Профиль' : 'Profile'} onClick={onProfile} theme={theme} />
+    </div>
+);
+
+const SettingsDockButton = ({ icon, label, onClick, theme }) => (
+    <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={onClick} aria-label={label} style={s(theme).settingsDockButton}>
+        {icon}
+    </motion.button>
 );
 
 const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
     const [report, setReport] = useState('');
     const [showDanger, setShowDanger] = useState(false);
-    const sendReport = () => { sendBugreport(report); setReport(''); };
+    const styles = s(theme);
+    const isBugPanel = panelNum === 1;
+    const isContactsPanel = panelNum === 3;
+    const trimmedReport = report.trim();
+    const closePanel = () => {
+        setIsOpen(false);
+        playEffects(transitionSound);
+    };
+    const sendReport = () => {
+        if (!trimmedReport) return;
+        sendBugreport(trimmedReport);
+        setReport('');
+        closePanel();
+    };
     return (
         <AnimatePresence>
             {isOpen && (
                 <motion.div
                     initial={{ x: '100%' }} animate={{ x: '0%' }} exit={{ x: '100%' }}
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    style={{ ...s(theme).panel, width: '100vw', height: '100vh', borderRadius: '0', left: 0, zIndex: 9500, justifyContent: 'flex-start' }}
+                    style={styles.panelScreen}
                 >
-                    <div style={{ padding: '20px', display: 'flex', alignItems: 'center' }}>
-                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => { setIsOpen(false); playEffects(transitionSound); }}
-                            style={{ display: 'flex', marginTop: '85px', alignItems: 'center', gap: '5px', padding: '10px', borderRadius: '12px', background: Colors.get('bottomPanel', theme) }}>
-                            <FaChevronRight style={{ transform: 'rotate(180deg)' }} />
-                            <span style={{ fontFamily: 'Segoe UI', fontSize: '14px' }}>{langIndex === 0 ? 'Назад' : 'Back'}</span>
-                        </motion.div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', flexGrow: 1, overflow: 'auto' }}>
-                        {panelNum === 1 && (
-                            <div style={{ width: '80%', height: '80%', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                <p style={inputStyles(theme).text}>{langIndex === 0 ? 'Опишите проблему:' : 'Describe problem:'}</p>
-                                <textarea maxLength={860} onChange={(e) => setReport(e.target.value)} style={inputStyles(theme).input} rows={5} />
-                                {report.length > 0 && <motion.div whileTap={{ scale: 0.95 }} style={{ padding: '15px', borderRadius: '12px', background: '#FF4D4D', color: 'white', textAlign: 'center', fontWeight: 'bold' }} onClick={sendReport}>{langIndex === 0 ? 'Отправить' : 'Send'}</motion.div>}
-                            </div>
-                        )}
-                        {panelNum === 3 && (
-                            <div style={{ width: '80%', display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
-                                <div style={{ borderRadius: '36px', width: '65vw', height: '40vw', zIndex: 1, display: 'flex', overflow: 'hidden' }}>
-                                    <img src={'images/Our_Faces.png'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    <div style={styles.panelContent} className="no-scrollbar">
+                        <div style={styles.panelTopBar}>
+                            <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={closePanel} style={styles.panelBackButton} aria-label={langIndex === 0 ? 'Назад' : 'Back'}>
+                                <FaChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />
+                            </motion.button>
+                            <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={closePanel} style={styles.panelCloseButton} aria-label={langIndex === 0 ? 'Закрыть' : 'Close'}>
+                                <FaTimes size={13} />
+                            </motion.button>
+                        </div>
+
+                        {(isBugPanel || isContactsPanel) && (
+                            <div style={styles.panelHero}>
+                                <div style={{
+                                    ...styles.panelHeroIcon,
+                                    color: isBugPanel ? '#D95C5C' : '#7AA988',
+                                    background: isBugPanel ? 'rgba(217,92,92,0.14)' : 'rgba(122,169,136,0.14)',
+                                    border: isBugPanel ? '1px solid rgba(217,92,92,0.28)' : '1px solid rgba(122,169,136,0.28)'
+                                }}>
+                                    {isBugPanel ? <FaBug size={22} /> : <FaAddressCard size={22} />}
                                 </div>
-                                <a href={`https://t.me/Diiimaan777`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', width: '100%' }}>
-                                    <div style={{ padding: '15px', borderRadius: '12px', background: Colors.get('bottomPanel', theme), display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                        <TelegramIcon style={{ color: '#4DA6FF' }} /><span style={inputStyles(theme).text}>Diiimaan777</span>
+                                <div style={styles.panelTitleBlock}>
+                                    <div style={styles.panelKicker}>{langIndex === 0 ? 'Поддержка' : 'Support'}</div>
+                                    <div style={styles.panelTitle}>
+                                        {isBugPanel
+                                            ? (langIndex === 0 ? 'Сообщить об ошибке' : 'Bug report')
+                                            : (langIndex === 0 ? 'Контакты' : 'Contacts')}
                                     </div>
-                                </a>
-                                <a href={`https://t.me/DemianWorkSelf`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', width: '100%' }}>
-                                    <div style={{ padding: '15px', borderRadius: '12px', background: Colors.get('bottomPanel', theme), display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                        <TelegramIcon style={{ color: '#4DA6FF' }} /><span style={inputStyles(theme).text}>DemianWorkSelf</span>
+                                    <div style={styles.panelSubtitle}>
+                                        {isBugPanel
+                                            ? (langIndex === 0 ? 'Опиши, что сломалось или выглядит неправильно' : 'Describe what is broken or looks wrong')
+                                            : (langIndex === 0 ? 'Напиши нам в Telegram по вопросам приложения' : 'Reach us on Telegram about the app')}
                                     </div>
-                                </a>
+                                </div>
                             </div>
                         )}
+
+                        {panelNum === 1 && (
+                            <div style={styles.reportCard}>
+                                <textarea
+                                    maxLength={860}
+                                    value={report}
+                                    onChange={(e) => setReport(e.target.value)}
+                                    placeholder={langIndex === 0 ? 'Например: на странице профиля не открывается раздел...' : 'Example: the profile page section does not open...'}
+                                    style={styles.reportInput}
+                                    rows={8}
+                                />
+                                <div style={styles.reportFooter}>
+                                    <span style={styles.reportCounter}>{report.length} / 860</span>
+                                    <motion.button
+                                        type="button"
+                                        whileTap={trimmedReport ? { scale: 0.97 } : undefined}
+                                        style={{
+                                            ...styles.reportButton,
+                                            ...(trimmedReport ? {} : styles.reportButtonDisabled)
+                                        }}
+                                        onClick={sendReport}
+                                    >
+                                        <FaPaperPlane size={13} />
+                                        <span>{langIndex === 0 ? 'Отправить' : 'Send'}</span>
+                                    </motion.button>
+                                </div>
+                            </div>
+                        )}
+
+                        {panelNum === 3 && (
+                            <div style={styles.contactsStack}>
+                                <div style={styles.contactsImageCard}>
+                                    <img src={'images/Our_Faces.png'} style={styles.contactsImage} alt="UltyMyLife team" />
+                                </div>
+                                <ContactLink
+                                    theme={theme}
+                                    href="https://t.me/Diiimaan777"
+                                    name="Diiimaan777"
+                                    label={langIndex === 0 ? 'Основной контакт' : 'Main contact'}
+                                    accent="#5FB6C6"
+                                />
+                                <ContactLink
+                                    theme={theme}
+                                    href="https://t.me/DemianWorkSelf"
+                                    name="DemianWorkSelf"
+                                    label={langIndex === 0 ? 'Рабочий контакт' : 'Work contact'}
+                                    accent="#7AA988"
+                                />
+                            </div>
+                        )}
+
                         {panelNum === 4 && (
                             <div style={{ width: '85%', display: 'flex', flexDirection: 'column', gap: '15px', textAlign: 'center' }}>
                                 <MdBackup size={50} color={Colors.get('mainText', theme)} style={{ margin: '0 auto' }} />
@@ -218,26 +378,545 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
     );
 };
 
+const ContactLink = ({ theme, href, name, label, accent }) => {
+    const styles = s(theme);
+    return (
+        <motion.a href={href} target="_blank" rel="noopener noreferrer" whileTap={{ scale: 0.98 }} style={styles.contactCard}>
+            <div style={{ ...styles.contactIcon, color: accent, background: `${accent}18`, border: `1px solid ${accent}33` }}>
+                <FaTelegramPlane size={18} />
+            </div>
+            <div style={styles.contactText}>
+                <div style={styles.contactName}>{name}</div>
+                <div style={styles.contactLabel}>{label}</div>
+            </div>
+            <FaChevronRight size={12} color={Colors.get('subText', theme)} style={{ opacity: 0.48 }} />
+        </motion.a>
+    );
+};
+
 const ActionButton = ({ text, onClick, theme, color }) => (
     <motion.div whileTap={{ scale: 0.95 }} onClick={onClick} style={{ padding: '16px', borderRadius: '16px', background: Colors.get('bottomPanel', theme), border: `1px solid ${color}44`, color: Colors.get('mainText', theme), fontWeight: '600', fontFamily: 'Segoe UI', boxShadow: `0 4px 10px ${color}22` }}>{text}</motion.div>
 );
 
-const s = (theme, fSize) => ({
-    panel: {
-        position: 'fixed', left: 0, top: 0, bottom: 0,
-        zIndex: 9000, width: '85vw',
-        backgroundColor: Colors.get('background', theme),
-        display: 'flex', flexDirection: 'column', justifyContent: 'center',
-        boxShadow: '10px 0 30px rgba(0,0,0,0.3)',
-        borderTopRightRadius: '24px', borderBottomRightRadius: '24px',
-        borderRight: `1px solid ${Colors.get('border', theme)}`
-    },
-    listEl: { display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '80%', margin: '0 14px', padding: '12px', borderRadius: '18px', backgroundColor: Colors.get('bottomPanel', theme), border: `1px solid ${Colors.get('border', theme)}` },
-    iconBox: { width: '32px', height: '32px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-    premiumEl: { position: 'relative', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '80%', margin: '0 14px', padding: '16px', borderRadius: '20px', backgroundColor: Colors.get('simplePanel', theme), border: '1px solid #C5A059' },
-    textNoMargin: { fontSize: fSize === 0 ? '15px' : '16px', color: Colors.get('mainText', theme), margin: '0', fontFamily: 'Segoe UI', fontWeight: 500 },
-    premiumText: { fontSize: fSize === 0 ? '16px' : '17px', margin: '0', fontFamily: 'Segoe UI', fontWeight: 700, color: '#E0AA3E' },
-});
+const s = (theme, fSize = 0) => {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const text = Colors.get('mainText', theme);
+    const sub = Colors.get('subText', theme);
+    const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)';
+    const panel = isLight ? 'rgba(255,255,255,0.86)' : 'rgba(26,29,33,0.84)';
+    const panelStrong = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(20,23,25,0.92)';
+    const faint = isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.04)';
+    const heroAccent = '#5fb6c6';
+
+    return {
+        faint,
+        screen: {
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1001,
+            overflow: 'hidden',
+            color: text,
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            background: isLight
+                ? 'radial-gradient(900px 450px at 80% -10%, rgba(201,162,75,0.11), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7'
+                : 'radial-gradient(1000px 500px at 80% -10%, rgba(201,162,75,0.08), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013'
+        },
+        content: {
+            height: '100%',
+            overflowY: 'auto',
+            boxSizing: 'border-box',
+            padding: `${HEADER_TOP_PADDING} 20px calc(118px + env(safe-area-inset-bottom, 0px))`,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+        },
+        heroCard: {
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: '24px',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '13px',
+            minHeight: '124px',
+            background: isLight
+                ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(201,162,75,0.08) 100%)`
+                : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(201,162,75,0.09) 100%)`,
+            border: `1px solid ${heroAccent}22`,
+            boxShadow: isLight
+                ? `0 18px 44px -34px ${heroAccent}55, 0 1px 0 rgba(255,255,255,0.72) inset`
+                : `0 22px 48px -34px ${heroAccent}60, 0 1px 0 rgba(255,255,255,0.055) inset`
+        },
+        heroMainRow: {
+            position: 'relative',
+            zIndex: 1,
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px'
+        },
+        heroGlow: {
+            position: 'absolute',
+            right: '-58px',
+            top: '-72px',
+            width: '210px',
+            height: '210px',
+            borderRadius: '50%',
+            background: `radial-gradient(circle, ${heroAccent}22 0%, transparent 62%)`,
+            pointerEvents: 'none'
+        },
+        heroUserButton: {
+            position: 'relative',
+            zIndex: 1,
+            minWidth: 0,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            flex: 1,
+            padding: 0,
+            border: 'none',
+            background: 'transparent',
+            cursor: 'pointer',
+            textAlign: 'left',
+            fontFamily: 'inherit'
+        },
+        heroAvatar: {
+            width: '58px',
+            height: '58px',
+            borderRadius: '18px',
+            border: '1px solid',
+            padding: '5px',
+            position: 'relative',
+            flexShrink: 0,
+            background: faint,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset'
+        },
+        heroAvatarImg: { width: '100%', height: '100%', borderRadius: '13px', objectFit: 'cover', display: 'block' },
+        heroAvatarPlaceholder: {
+            width: '100%',
+            height: '100%',
+            borderRadius: '13px',
+            background: panelStrong,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            fontWeight: '900',
+            color: text
+        },
+        heroPremiumBadge: {
+            position: 'absolute',
+            bottom: '-3px',
+            right: '-3px',
+            backgroundColor: '#FFD700',
+            color: '#000',
+            width: '24px',
+            height: '24px',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: `2px solid ${isLight ? '#fff' : '#0E1013'}`
+        },
+        heroUserText: { minWidth: 0 },
+        heroUserLabel: {
+            fontSize: '10px',
+            color: sub,
+            fontWeight: 850,
+            letterSpacing: '0.08em',
+            marginBottom: '5px'
+        },
+        heroUserName: {
+            color: text,
+            fontSize: fSize === 0 ? '20px' : '24px',
+            fontWeight: 900,
+            lineHeight: 1.05,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+        },
+        heroSettingsBadge: {
+            minHeight: '34px',
+            padding: '0 11px',
+            borderRadius: '13px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '7px',
+            color: heroAccent,
+            background: `${heroAccent}16`,
+            border: `1px solid ${heroAccent}33`,
+            fontSize: fSize === 0 ? '11px' : '13px',
+            fontWeight: 850,
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+        },
+        heroQuickRow: {
+            position: 'relative',
+            zIndex: 1,
+            width: '100%',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: '8px'
+        },
+        heroQuickChip: {
+            minHeight: '30px',
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '0 8px',
+            color: sub,
+            background: faint,
+            border: `1px solid ${border}`,
+            fontSize: fSize === 0 ? '10px' : '12px',
+            fontWeight: 760,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+        },
+        settingsSection: { display: 'flex', flexDirection: 'column', gap: '9px' },
+        sectionTitle: {
+            color: sub,
+            fontSize: fSize === 0 ? '11px' : '13px',
+            fontWeight: 850,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            padding: '0 2px'
+        },
+        sectionCard: {
+            borderRadius: '22px',
+            background: panel,
+            border: `1px solid ${border}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset',
+            overflow: 'hidden'
+        },
+        listEl: {
+            width: '100%',
+            minHeight: fSize === 0 ? '58px' : '66px',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            padding: fSize === 0 ? '12px 14px' : '14px 15px',
+            background: 'transparent',
+            border: 'none',
+            borderBottom: `1px solid ${border}`,
+            color: text,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            textAlign: 'left'
+        },
+        itemLeft: { display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 },
+        iconBox: { width: '36px', height: '36px', borderRadius: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+        textNoMargin: { fontSize: fSize === 0 ? '14px' : '18px', color: text, margin: '0', fontFamily: 'inherit', fontWeight: 800, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transition: 'font-size 0.18s ease, color 0.18s ease' },
+        itemRight: { display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 },
+        itemValue: { fontSize: fSize === 0 ? '12px' : '15px', color: sub, fontWeight: 760 },
+        premiumEl: {
+            position: 'relative',
+            width: '100%',
+            minHeight: '76px',
+            borderRadius: '22px',
+            padding: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '13px',
+            background: isLight
+                ? 'linear-gradient(135deg, rgba(255,255,255,0.94), rgba(255,247,214,0.9))'
+                : 'linear-gradient(135deg, rgba(35,29,16,0.92), rgba(26,22,15,0.88))',
+            border: '1px solid rgba(201,162,75,0.3)',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset, 0 16px 34px -24px rgba(0,0,0,0.7)',
+            cursor: 'pointer',
+            overflow: 'hidden',
+            fontFamily: 'inherit',
+            textAlign: 'left',
+            color: text
+        },
+        premiumHalo: {
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(ellipse at 100% 50%, rgba(255, 200, 50, 0.14) 0%, transparent 60%)',
+            pointerEvents: 'none'
+        },
+        premiumIcon: {
+            width: '44px',
+            height: '44px',
+            borderRadius: '14px',
+            background: 'linear-gradient(135deg, #FFE55C 0%, #D49A5C 100%)',
+            color: '#111',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            zIndex: 1
+        },
+        premiumTextBlock: { flex: 1, minWidth: 0, zIndex: 1 },
+        premiumText: { fontSize: fSize === 0 ? '15px' : '16px', margin: '0', fontFamily: 'inherit', fontWeight: 900, color: text },
+        premiumSub: { marginTop: '4px', color: sub, fontSize: '12px', fontWeight: 650, lineHeight: 1.2 },
+        version: { fontSize: '10px', textAlign: 'right', color: sub, opacity: 0.72, fontWeight: 700, padding: '0 4px' },
+        settingsDock: {
+            position: 'fixed',
+            left: '50%',
+            bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
+            transform: 'translateX(-50%)',
+            zIndex: 40,
+            width: '230px',
+            height: '64px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-around',
+            padding: '10px 14px',
+            boxSizing: 'border-box',
+            borderRadius: '999px',
+            background: panelStrong,
+            border: `1px solid ${border}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)',
+            backdropFilter: 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(180%)'
+        },
+        settingsDockButton: {
+            width: '44px',
+            height: '44px',
+            borderRadius: '999px',
+            border: '1px solid transparent',
+            cursor: 'pointer',
+            background: 'transparent',
+            color: sub,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: 1,
+            padding: 0,
+            fontFamily: 'inherit'
+        },
+        panelScreen: {
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9500,
+            color: text,
+            overflow: 'hidden',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            background: isLight
+                ? 'radial-gradient(900px 450px at 82% -10%, rgba(95,182,198,0.12), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(201,162,75,0.1), transparent 58%), #F4F5F7'
+                : 'radial-gradient(900px 480px at 80% -10%, rgba(95,182,198,0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(201,162,75,0.08), transparent 58%), #0E1013'
+        },
+        panelContent: {
+            height: '100%',
+            overflowY: 'auto',
+            boxSizing: 'border-box',
+            padding: `${HEADER_TOP_PADDING} 20px calc(118px + env(safe-area-inset-bottom, 0px))`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            gap: '16px'
+        },
+        panelTopBar: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            minHeight: '44px'
+        },
+        panelBackButton: {
+            width: '42px',
+            height: '42px',
+            borderRadius: '14px',
+            border: `1px solid ${border}`,
+            background: panelStrong,
+            color: sub,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset'
+        },
+        panelCloseButton: {
+            width: '42px',
+            height: '42px',
+            borderRadius: '14px',
+            border: `1px solid ${border}`,
+            background: faint,
+            color: sub,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            cursor: 'pointer',
+            fontFamily: 'inherit'
+        },
+        panelHero: {
+            borderRadius: '24px',
+            padding: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            background: panel,
+            border: `1px solid ${border}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset'
+        },
+        panelHeroIcon: {
+            width: '52px',
+            height: '52px',
+            borderRadius: '17px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+        },
+        panelTitleBlock: { minWidth: 0 },
+        panelKicker: {
+            color: sub,
+            fontSize: '10px',
+            fontWeight: 850,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            marginBottom: '5px'
+        },
+        panelTitle: {
+            color: text,
+            fontSize: fSize === 0 ? '20px' : '23px',
+            fontWeight: 900,
+            lineHeight: 1.08
+        },
+        panelSubtitle: {
+            color: sub,
+            fontSize: fSize === 0 ? '12px' : '14px',
+            fontWeight: 650,
+            lineHeight: 1.35,
+            marginTop: '7px'
+        },
+        reportCard: {
+            borderRadius: '24px',
+            padding: '14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            background: panel,
+            border: `1px solid ${border}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset'
+        },
+        reportInput: {
+            width: '100%',
+            minHeight: '210px',
+            resize: 'none',
+            boxSizing: 'border-box',
+            border: `1px solid ${border}`,
+            borderRadius: '18px',
+            outline: 'none',
+            padding: '15px',
+            color: text,
+            background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
+            fontFamily: 'inherit',
+            fontSize: fSize === 0 ? '14px' : '16px',
+            fontWeight: 650,
+            lineHeight: 1.45
+        },
+        reportFooter: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px'
+        },
+        reportCounter: {
+            color: sub,
+            fontSize: '11px',
+            fontWeight: 760
+        },
+        reportButton: {
+            minHeight: '44px',
+            borderRadius: '15px',
+            border: '1px solid rgba(217,92,92,0.28)',
+            background: 'linear-gradient(135deg, rgba(217,92,92,0.96), rgba(190,72,72,0.96))',
+            color: '#fff',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '0 16px',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: '13px',
+            fontWeight: 900,
+            boxShadow: '0 18px 28px -24px rgba(217,92,92,0.75)'
+        },
+        reportButtonDisabled: {
+            cursor: 'default',
+            opacity: 0.42,
+            filter: 'grayscale(0.35)'
+        },
+        contactsStack: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+        },
+        contactsImageCard: {
+            width: '100%',
+            aspectRatio: '1.65',
+            borderRadius: '24px',
+            overflow: 'hidden',
+            background: panel,
+            border: `1px solid ${border}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset'
+        },
+        contactsImage: {
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+        },
+        contactCard: {
+            minHeight: '70px',
+            borderRadius: '22px',
+            padding: '13px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            background: panel,
+            border: `1px solid ${border}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset',
+            textDecoration: 'none',
+            color: text,
+            boxSizing: 'border-box'
+        },
+        contactIcon: {
+            width: '42px',
+            height: '42px',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+        },
+        contactText: { flex: 1, minWidth: 0 },
+        contactName: {
+            color: text,
+            fontSize: fSize === 0 ? '15px' : '17px',
+            fontWeight: 900,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+        },
+        contactLabel: {
+            color: sub,
+            fontSize: fSize === 0 ? '12px' : '13px',
+            fontWeight: 650,
+            marginTop: '3px'
+        },
+        panel: {
+            position: 'fixed', left: 0, top: 0, bottom: 0,
+            zIndex: 9000, width: '85vw',
+            backgroundColor: Colors.get('background', theme),
+            display: 'flex', flexDirection: 'column', justifyContent: 'center',
+            boxShadow: '10px 0 30px rgba(0,0,0,0.3)',
+            borderTopRightRadius: '24px', borderBottomRightRadius: '24px',
+            borderRight: `1px solid ${Colors.get('border', theme)}`
+        }
+    };
+};
 
 const inputStyles = (theme) => ({
     text: { color: Colors.get('mainText', theme), fontSize: '13px', fontFamily: 'Segoe UI' },
@@ -258,7 +937,12 @@ function changeSettings(prefIndex, size) {
         case 1: toggleTheme(); break;
         case 2: AppData.prefs[2] == 0 ? AppData.setPrefs(2, 1) : AppData.setPrefs(2, 0); break;
         case 3: AppData.prefs[3] == 0 ? AppData.setPrefs(3, 1) : AppData.setPrefs(3, 0); break;
-        case 4: AppData.prefs[4] == 0 ? AppData.setPrefs(4, 1) : AppData.setPrefs(4, 0); setFontSize(size === 0 ? 1 : 0); break;
+        case 4: {
+            const nextSize = size === 0 ? 1 : 0;
+            AppData.setPrefs(4, nextSize);
+            setFontSize(nextSize);
+            break;
+        }
     }
 }
 
