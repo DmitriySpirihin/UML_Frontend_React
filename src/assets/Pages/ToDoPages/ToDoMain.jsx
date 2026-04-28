@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import { logSectionVisit } from '../../StaticClasses/AppData.js';
+import { playEffects } from '../../StaticClasses/Effects.js';
 import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, setAddPanel, selectedTodo$, setPage } from '../../StaticClasses/HabitsBus';
 import { todoEvents$, togglePinned, togglePending, toggleHidden } from './ToDoHelper.js';
@@ -831,21 +832,6 @@ const styles = (theme, fSize) => {
         }
     };
 };
-
-// --- HELPERS (unchanged) ---
-function playEffects(sound) {
-    if (AppData.prefs[2] === 0 && sound) {
-        if (!sound.paused) {
-            sound.pause();
-            sound.currentTime = 0;
-        }
-        sound.volume = 0.5;
-        sound.play().catch(e => console.log("Audio play failed", e));
-    }
-    if (AppData.prefs[3] === 0 && window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
 
 function parseDate(dateStr) {
     if (!dateStr) return null;

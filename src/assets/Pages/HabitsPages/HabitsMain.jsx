@@ -4,6 +4,7 @@ import Icons from '../../StaticClasses/Icons';
 import { allHabits } from '../../Classes/Habit.js'
 import { AppData, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
 import { logSectionVisit } from '../../StaticClasses/AppData.js'
+import { playEffects } from '../../StaticClasses/Effects.js'
 
 // --- ИМПОРТЫ ---
 import { expandedCard$, setExpandedCard } from '../../StaticClasses/HabitsBus.js';
@@ -1093,8 +1094,6 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
 }
 
 function setInfoText(langIndex) { return langIndex === 0 ? 'Вы еще не добавили ни одной привычки\n\n Вы можете выбрать из списка или добавить свою привычку...' : 'You have not added any habits yet...'; }
-
-function playEffects(sound) { if (AppData.prefs[2] == 0 && sound !== null) { if (!sound.paused) { sound.pause(); sound.currentTime = 0; } sound.volume = 0.5; sound.play(); } if (AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback) Telegram.WebApp.HapticFeedback.impactOccurred('light'); }
 
 function parsedTime(time, maxTime,langIndex, isNegative) {
   const elapsedOrRemaining = isNegative ? time : maxTime - time;

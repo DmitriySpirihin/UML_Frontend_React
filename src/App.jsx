@@ -256,7 +256,7 @@ function App() {
         </motion.div>
     
       }
-      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && page !== 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <MainBtns/>
       </Suspense>}
       
@@ -378,7 +378,7 @@ function App() {
         <AddExercisePanel/>
       </Suspense>}
 
-      {page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && <>
+      {page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && page !== 'RobotMain' && <>
         {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
         {bottomBtnPanel === 'BtnsTraining' && !keyboardVisible && <BtnsTraining/>}
         {bottomBtnPanel === 'BtnsRecovery' && !keyboardVisible && <BtnsRecovery/>}

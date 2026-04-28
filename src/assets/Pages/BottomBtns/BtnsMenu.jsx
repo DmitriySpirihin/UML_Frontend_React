@@ -5,7 +5,7 @@ import {
     setNotifyPanel,
 } from '../../StaticClasses/HabitsBus';
 import Colors from '../../StaticClasses/Colors';
-import { AppData } from '../../StaticClasses/AppData';
+import { playEffects } from '../../StaticClasses/Effects';
 
 const switchSound = new Audio('Audio/Click.wav');
 
@@ -73,17 +73,6 @@ const NavButton = ({ id, current, icon, onClick, theme }) => {
     );
 };
 
-
-function playEffects(sound) {
-    if (AppData.prefs[2] == 0 && sound !== null) {
-        sound.currentTime = 0;
-        sound.volume = 0.5;
-        sound.play();
-    }
-    if (AppData.prefs[3] == 0 && window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
 
 ;
 

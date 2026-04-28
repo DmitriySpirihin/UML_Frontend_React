@@ -10,8 +10,8 @@ import {
     currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, notify$ 
 } from '../../StaticClasses/HabitsBus';
 import Colors from '../../StaticClasses/Colors';
-import { AppData } from '../../StaticClasses/AppData';
 import { saveData } from '../../StaticClasses/SaveHelper';
+import { playEffects } from '../../StaticClasses/Effects';
 
 const switchSound = new Audio('Audio/Click.wav');
 
@@ -108,17 +108,6 @@ async function onBack(page, addPanel) {
         else setPage('RecoveryMain');
     }
     playEffects(switchSound);
-}
-
-function playEffects(sound) {
-    if (AppData.prefs[2] === 0 && sound !== null) {
-        sound.currentTime = 0;
-        sound.volume = 0.5;
-        sound.play();
-    }
-    if (AppData.prefs[3] === 0 && window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
 }
 
 const containerStyle = (theme) => ({

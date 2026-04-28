@@ -3,15 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Icons
 import Home from '@mui/icons-material/HomeRounded';
 import Back from '@mui/icons-material/ArrowBackIosNewRounded';
-import Add from '@mui/icons-material/AddRounded';
+import Settings from '@mui/icons-material/SettingsRounded';
 
 import { 
     setPage, setAddPanel, setPage$, addPanel$, theme$, 
-    currentBottomBtn$, setCurrentBottomBtn 
+    currentBottomBtn$, setCurrentBottomBtn, lastPage$
 } from '../../StaticClasses/HabitsBus';
 import Colors from '../../StaticClasses/Colors';
-import { AppData } from '../../StaticClasses/AppData';
 import { saveData } from '../../StaticClasses/SaveHelper';
+import { playEffects } from '../../StaticClasses/Effects';
 
 const switchSound = new Audio('Audio/Click.wav');
 
@@ -37,11 +37,32 @@ const BtnsInfo = () => {
             
             <NavButton 
                 id={0}
+                current={-1}
+                icon={<Back />}
+                onClick={() => {
+                    const prev = lastPage$.value;
+                    setPage(prev && prev !== 'InfoPanel' ? prev : 'MainMenu');
+                    setCurrentBottomBtn(0);
+                }}
+                theme={theme}
+            />
+            <NavButton 
+                id={0}
                 current={currentBtn}
                 icon={<Home />}
                 onClick={() => {
                     setPage('MainMenu');
                     setCurrentBottomBtn(0);
+                }}
+                theme={theme}
+            />
+            <NavButton 
+                id={2}
+                current={-1}
+                icon={<Settings />}
+                onClick={() => {
+                    setPage('settings');
+                    setCurrentBottomBtn(2);
                 }}
                 theme={theme}
             />
@@ -82,20 +103,6 @@ const NavButton = ({ id, current, icon, onClick, theme, disabled = false }) => {
     );
 };
 
-const AddButton = ({ disabled, onClick, theme, active }) => (
-    <motion.div
-        whileTap={!disabled ? { scale: 0.9 } : {}}
-        onClick={onClick}
-        style={{
-            ...addBtnStyle(theme),
-            opacity: disabled ? 0.5 : 1,
-            background: active ? Colors.get('iconsHighlited', theme) : Colors.get('simplePanel', theme),
-        }}
-    >
-        <Add style={{ fontSize: '30px', color: active ? '#fff' : Colors.get('icons', theme) }} />
-    </motion.div>
-);
-
 const onBack = async (page, addPanel) => {
     if (page === 'RobotMain' && addPanel === '') {
         await saveData();
@@ -107,29 +114,22 @@ const onBack = async (page, addPanel) => {
     playEffects(switchSound);
 };
 
-function playEffects(sound) {
-    if (AppData.prefs[2] === 0 && sound !== null) {
-        sound.currentTime = 0;
-        sound.volume = 0.5;
-        sound.play();
-    }
-    if (AppData.prefs[3] === 0 && window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
-
 // Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '7vw',
-    left: '5vw',
-    width: '90vw',
-    height: '70px',
-    borderRadius: '25px',
+    left: '50%',
+    bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
+    transform: 'translateX(-50%)',
+    width: '230px',
+    height: '64px',
+    borderRadius: '999px',
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backdropFilter: 'blur(6px)',
+    padding: '10px 14px',
+    boxSizing: 'border-box',
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     zIndex: 1000,
 });
 
@@ -137,11 +137,10 @@ const glassOverlay = (theme) => ({
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: Colors.get('bottomPanel', theme),
-    opacity: 0.85,
-    backdropFilter: 'blur(15px)',
-    WebkitBackdropFilter: 'blur(15px)',
+    opacity: 0.92,
     border: `1px solid ${Colors.get('border', theme)}`,
-    borderRadius: '25px',
+    borderRadius: '999px',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)',
     zIndex: -1,
 });
 
@@ -152,7 +151,7 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '50px',
+    width: '44px',
     cursor: 'pointer'
 };
 

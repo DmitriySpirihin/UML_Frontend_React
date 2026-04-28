@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
 import { theme$, lang$, fontSize$, setPage, setCurrentTrainingMuscle } from '../../StaticClasses/HabitsBus.js'
+import { playEffects } from '../../StaticClasses/Effects.js'
 import { IoIosArrowDown, IoIosArrowUp, IoIosSearch } from 'react-icons/io'
 import { MuscleIcon, removeExercise, updateExercise } from '../../Classes/TrainingData.jsx'
 import { FaTrash, FaPencilAlt, FaPlus } from 'react-icons/fa';
@@ -518,13 +519,6 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     }
 })
 
-function playEffects(sound) {
-    if (AppData.prefs[2] == 0 && sound !== null) {
-        if (!sound.paused) { sound.pause(); sound.currentTime = 0; }
-        sound.volume = 0.5; sound.play();
-    }
-    if (AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback) Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
 const capitalizeName = (str) => {
     if (!str) return str;
     return str.charAt(0).toUpperCase() + str.slice(1);

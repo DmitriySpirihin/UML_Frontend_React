@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import { logSectionVisit } from '../../StaticClasses/AppData.js';
+import { playEffects } from '../../StaticClasses/Effects.js';
 import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, addNewTrainingDay$ } from '../../StaticClasses/HabitsBus';
 import { FaChevronLeft, FaChevronRight, FaMoon, FaBed, FaRegClock, FaStickyNote, FaStar, FaSyncAlt } from 'react-icons/fa';
@@ -67,19 +68,6 @@ const getFillPercentFromMs = (durationMs) => {
   return 15 + Math.round(progress * 85);
 };
 
-function playEffects(sound) {
-  if (AppData.prefs[2] === 0 && sound) {
-    if (!sound.paused) {
-      sound.pause();
-      sound.currentTime = 0;
-    }
-    sound.volume = 0.5;
-    sound.play();
-  }
-  if (AppData.prefs[3] === 0 && window.Telegram?.WebApp?.HapticFeedback) {
-    Telegram.WebApp.HapticFeedback.impactOccurred('light');
-  }
-}
 
 const SleepMain = () => {
   const [theme, setThemeState] = useState('dark');

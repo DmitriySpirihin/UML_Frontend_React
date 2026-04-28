@@ -13,6 +13,7 @@ import {
 import { FaMoon, FaBed, FaRegClock, FaPen } from 'react-icons/fa';
 
 import { AppData } from '../../StaticClasses/AppData.js';
+import { playEffects } from '../../StaticClasses/Effects.js';
 import Colors from '../../StaticClasses/Colors';
 import { saveData } from '../../StaticClasses/SaveHelper.js';
 import { theme$, lang$, fontSize$, setPage, lastPage$, selectedSleepDate$ } from '../../StaticClasses/HabitsBus';
@@ -54,20 +55,6 @@ const getMoodColor = (theme, index) => {
     ];
     return cols[index];
 };
-
-function playEffects(sound) {
-    if (AppData.prefs[2] === 0 && sound) {
-        if (!sound.paused) {
-            sound.pause();
-            sound.currentTime = 0;
-        }
-        sound.volume = 0.5;
-        sound.play();
-    }
-    if (AppData.prefs[3] === 0 && window.Telegram?.WebApp?.HapticFeedback) {
-        Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
 
 function isNotFutureDate(dateString) {
     const givenDate = new Date(dateString);

@@ -3,7 +3,7 @@ import { AppData, UserData } from '../StaticClasses/AppData'
 import { motion, AnimatePresence } from 'framer-motion'
 import Colors, { THEME } from "../StaticClasses/Colors";
 import { sendBugreport } from '../StaticClasses/NotificationsManager'
-import { FaAddressCard, FaLanguage, FaHighlighter, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight, FaHome, FaUser, FaCog, FaPaperPlane, FaTelegramPlane, FaTimes } from 'react-icons/fa'
+import { FaAddressCard, FaLanguage, FaHighlighter, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight, FaHome, FaUser, FaCog, FaPaperPlane, FaTelegramPlane, FaTimes, FaCloudUploadAlt, FaCloudDownloadAlt, FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa'
 import { LuVibrate, LuVibrateOff } from 'react-icons/lu'
 import { RiFontSize2 } from 'react-icons/ri'
 import { clearAllSaves } from '../StaticClasses/SaveHelper';
@@ -11,6 +11,7 @@ import { MdBackup, MdInfoOutline } from 'react-icons/md'
 import { IoIosArrowBack } from 'react-icons/io'
 import { setTheme as setGlobalTheme, theme$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, lastPage$ } from '../StaticClasses/HabitsBus';
 import { cloudBackup, cloudRestore, deleteCloudBackup } from '../StaticClasses/NotificationsManager';
+import { playEffects } from '../StaticClasses/Effects';
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const version = '2.c.88.1.s';
@@ -141,7 +142,7 @@ const UserPanelInner = ({ theme, fSize }) => {
     const styles = s(theme, fSize);
     return (
         <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={() => setPage('UserPanel')} style={styles.heroUserButton}>
-            <div style={{ ...styles.heroAvatar, borderColor: hasPremium ? '#C9A24B' : '#5fb6c6' }}>
+            <div style={{ ...styles.heroAvatar, borderColor: hasPremium ? '#9FB4C4' : '#5fb6c6' }}>
                 {UserData.photo ? (
                     <img src={UserData.photo} style={styles.heroAvatarImg} alt="user" />
                 ) : (
@@ -180,7 +181,7 @@ const PremiumSettingsCard = ({ theme, langIndex, onClick }) => {
                 <div style={styles.premiumText}>{langIndex === 0 ? 'Премиум версия' : 'Premium Version'}</div>
                 <div style={styles.premiumSub}>{langIndex === 0 ? 'Открой расширенные возможности' : 'Unlock advanced features'}</div>
             </div>
-            <FaChevronRight color="#C9A24B" size={14} style={{ zIndex: 2, flexShrink: 0 }} />
+            <FaChevronRight color="#9FB4C4" size={14} style={{ zIndex: 2, flexShrink: 0 }} />
         </motion.button>
     );
 };
@@ -247,6 +248,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
     const styles = s(theme);
     const isBugPanel = panelNum === 1;
     const isContactsPanel = panelNum === 3;
+    const isBackupPanel = panelNum === 4;
     const trimmedReport = report.trim();
     const closePanel = () => {
         setIsOpen(false);
@@ -276,27 +278,31 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                             </motion.button>
                         </div>
 
-                        {(isBugPanel || isContactsPanel) && (
+                        {(isBugPanel || isContactsPanel || isBackupPanel) && (
                             <div style={styles.panelHero}>
                                 <div style={{
                                     ...styles.panelHeroIcon,
-                                    color: isBugPanel ? '#D95C5C' : '#7AA988',
-                                    background: isBugPanel ? 'rgba(217,92,92,0.14)' : 'rgba(122,169,136,0.14)',
-                                    border: isBugPanel ? '1px solid rgba(217,92,92,0.28)' : '1px solid rgba(122,169,136,0.28)'
+                                    color: isBugPanel ? '#D95C5C' : isBackupPanel ? '#D49A5C' : '#7AA988',
+                                    background: isBugPanel ? 'rgba(217,92,92,0.14)' : isBackupPanel ? 'rgba(212,154,92,0.14)' : 'rgba(122,169,136,0.14)',
+                                    border: isBugPanel ? '1px solid rgba(217,92,92,0.28)' : isBackupPanel ? '1px solid rgba(212,154,92,0.28)' : '1px solid rgba(122,169,136,0.28)'
                                 }}>
-                                    {isBugPanel ? <FaBug size={22} /> : <FaAddressCard size={22} />}
+                                    {isBugPanel ? <FaBug size={22} /> : isBackupPanel ? <MdBackup size={24} /> : <FaAddressCard size={22} />}
                                 </div>
                                 <div style={styles.panelTitleBlock}>
-                                    <div style={styles.panelKicker}>{langIndex === 0 ? 'Поддержка' : 'Support'}</div>
+                                    <div style={styles.panelKicker}>{isBackupPanel ? (langIndex === 0 ? 'Данные' : 'Data') : (langIndex === 0 ? 'Поддержка' : 'Support')}</div>
                                     <div style={styles.panelTitle}>
                                         {isBugPanel
                                             ? (langIndex === 0 ? 'Сообщить об ошибке' : 'Bug report')
-                                            : (langIndex === 0 ? 'Контакты' : 'Contacts')}
+                                            : isBackupPanel
+                                                ? (langIndex === 0 ? 'Бекап' : 'Backup')
+                                                : (langIndex === 0 ? 'Контакты' : 'Contacts')}
                                     </div>
                                     <div style={styles.panelSubtitle}>
                                         {isBugPanel
                                             ? (langIndex === 0 ? 'Опиши, что сломалось или выглядит неправильно' : 'Describe what is broken or looks wrong')
-                                            : (langIndex === 0 ? 'Напиши нам в Telegram по вопросам приложения' : 'Reach us on Telegram about the app')}
+                                            : isBackupPanel
+                                                ? (langIndex === 0 ? 'Создай копию, восстанови данные или очисти старые сохранения' : 'Create a copy, restore data, or clear old saves')
+                                                : (langIndex === 0 ? 'Напиши нам в Telegram по вопросам приложения' : 'Reach us on Telegram about the app')}
                                     </div>
                                 </div>
                             </div>
@@ -337,37 +343,54 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                                 </div>
                                 <ContactLink
                                     theme={theme}
-                                    href="https://t.me/Diiimaan777"
-                                    name="Diiimaan777"
-                                    label={langIndex === 0 ? 'Основной контакт' : 'Main contact'}
+                                    href="https://t.me/DemianWorkSelf"
+                                    name={langIndex === 0 ? 'Демиан' : 'Demian'}
+                                    label="Founder"
                                     accent="#5FB6C6"
                                 />
                                 <ContactLink
                                     theme={theme}
-                                    href="https://t.me/DemianWorkSelf"
-                                    name="DemianWorkSelf"
-                                    label={langIndex === 0 ? 'Рабочий контакт' : 'Work contact'}
+                                    href="https://t.me/Diiimaan777"
+                                    name={langIndex === 0 ? 'Дмитрий' : 'Dmitry'}
+                                    label="Cofounder"
                                     accent="#7AA988"
                                 />
                             </div>
                         )}
 
                         {panelNum === 4 && (
-                            <div style={{ width: '85%', display: 'flex', flexDirection: 'column', gap: '15px', textAlign: 'center' }}>
-                                <MdBackup size={50} color={Colors.get('mainText', theme)} style={{ margin: '0 auto' }} />
-                                <p style={{ ...inputStyles(theme).text, fontSize: '12px', opacity: 0.7 }}>
-                                    {AppData.lastBackupDate === '' || AppData.lastBackupDate === null
-                                        ? (langIndex === 0 ? 'Нет копий' : 'No backups')
-                                        : AppData.lastBackupDate?.split('T')[0]}
-                                </p>
-                                <ActionButton text={langIndex === 0 ? 'Создать' : 'Backup'} onClick={cloudBackup} theme={theme} color="#FFA64D" />
-                                <ActionButton text={langIndex === 0 ? 'Восстановить' : 'Restore'} onClick={cloudRestore} theme={theme} color="#4DA6FF" />
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', border: '3px solid #b32323', borderRadius: '16px', padding: '15px', margin: '15px 0' }}>
-                                    <div onClick={() => setShowDanger(prev => !prev)} style={{ color: '#dd4b4b', fontWeight: 'bold', fontSize: '12px', opacity: 0.7 }}>
-                                        {langIndex === 0 ? 'Опасная зона!' : 'Danger zone!'}
+                                <div style={styles.backupStack}>
+                                <div style={styles.backupStatusCard}>
+                                    <div style={styles.backupStatusText}>
+                                        <div style={styles.backupStatusLabel}>{langIndex === 0 ? 'Последняя копия' : 'Latest copy'}</div>
+                                        <div style={styles.backupStatusValue}>
+                                            {AppData.lastBackupDate === '' || AppData.lastBackupDate === null
+                                                ? (langIndex === 0 ? 'Пока нет' : 'None yet')
+                                                : AppData.lastBackupDate?.split('T')[0]}
+                                        </div>
                                     </div>
-                                    {showDanger && <ActionButton text={langIndex === 0 ? 'Удалить сейв в облаке' : 'Delete from cloud'} onClick={deleteCloudBackup} theme={theme} color="#FF4D4D" />}
-                                    {showDanger && <ActionButton text={langIndex === 0 ? 'Удалить сейв с устройства' : 'Delete save from device'} onClick={clearAllSaves} theme={theme} color="#FF4D4D" />}
+                                </div>
+                                <div style={styles.backupActionsGrid}>
+                                    <ActionButton icon={<FaCloudUploadAlt />} text={langIndex === 0 ? 'Создать' : 'Backup'} onClick={cloudBackup} theme={theme} color="#D49A5C" />
+                                    <ActionButton icon={<FaCloudDownloadAlt />} text={langIndex === 0 ? 'Восстановить' : 'Restore'} onClick={cloudRestore} theme={theme} color="#6F8BD6" />
+                                </div>
+                                <div style={styles.dangerCard}>
+                                    <button type="button" onClick={() => setShowDanger(prev => !prev)} style={styles.dangerHeader}>
+                                        <span style={styles.dangerIcon}><FaExclamationTriangle size={15} /></span>
+                                        <span>{langIndex === 0 ? 'Опасная зона' : 'Danger zone'}</span>
+                                        <FaChevronRight size={12} style={{ marginLeft: 'auto', transform: showDanger ? 'rotate(90deg)' : 'none', transition: 'transform 0.18s ease' }} />
+                                    </button>
+                                    {showDanger && (
+                                        <>
+                                            <div style={styles.dangerText}>
+                                                {langIndex === 0 ? 'Эти действия удаляют сохранения. Используй только если точно понимаешь последствия.' : 'These actions delete saves. Use only when you understand the impact.'}
+                                            </div>
+                                            <div style={styles.dangerActions}>
+                                                <ActionButton icon={<FaTrashAlt />} text={langIndex === 0 ? 'Удалить облако' : 'Delete cloud'} onClick={deleteCloudBackup} theme={theme} color="#D95C5C" />
+                                                <ActionButton icon={<FaTrashAlt />} text={langIndex === 0 ? 'Удалить устройство' : 'Delete device'} onClick={clearAllSaves} theme={theme} color="#D95C5C" />
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -394,8 +417,11 @@ const ContactLink = ({ theme, href, name, label, accent }) => {
     );
 };
 
-const ActionButton = ({ text, onClick, theme, color }) => (
-    <motion.div whileTap={{ scale: 0.95 }} onClick={onClick} style={{ padding: '16px', borderRadius: '16px', background: Colors.get('bottomPanel', theme), border: `1px solid ${color}44`, color: Colors.get('mainText', theme), fontWeight: '600', fontFamily: 'Segoe UI', boxShadow: `0 4px 10px ${color}22` }}>{text}</motion.div>
+const ActionButton = ({ icon, text, onClick, theme, color }) => (
+    <motion.button type="button" whileTap={{ scale: 0.96 }} onClick={onClick} style={s(theme).actionButton(color)}>
+        {icon && <span style={s(theme).actionButtonIcon(color)}>{icon}</span>}
+        <span>{text}</span>
+    </motion.button>
 );
 
 const s = (theme, fSize = 0) => {
@@ -441,12 +467,12 @@ const s = (theme, fSize = 0) => {
             gap: '13px',
             minHeight: '124px',
             background: isLight
-                ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(201,162,75,0.08) 100%)`
-                : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(201,162,75,0.09) 100%)`,
+                ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(169,155,122,0.08) 100%)`
+                : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(169,155,122,0.08) 100%)`,
             border: `1px solid ${heroAccent}22`,
             boxShadow: isLight
-                ? `0 18px 44px -34px ${heroAccent}55, 0 1px 0 rgba(255,255,255,0.72) inset`
-                : `0 22px 48px -34px ${heroAccent}60, 0 1px 0 rgba(255,255,255,0.055) inset`
+                ? `0 16px 38px -34px ${heroAccent}45, 0 1px 0 rgba(255,255,255,0.72) inset`
+                : `0 18px 40px -34px ${heroAccent}50, 0 1px 0 rgba(255,255,255,0.055) inset`
         },
         heroMainRow: {
             position: 'relative',
@@ -459,10 +485,10 @@ const s = (theme, fSize = 0) => {
         },
         heroGlow: {
             position: 'absolute',
-            right: '-58px',
-            top: '-72px',
-            width: '210px',
-            height: '210px',
+            right: '-44px',
+            top: '-58px',
+            width: '170px',
+            height: '170px',
             borderRadius: '50%',
             background: `radial-gradient(circle, ${heroAccent}22 0%, transparent 62%)`,
             pointerEvents: 'none'
@@ -510,7 +536,7 @@ const s = (theme, fSize = 0) => {
             position: 'absolute',
             bottom: '-3px',
             right: '-3px',
-            backgroundColor: '#FFD700',
+            backgroundColor: '#CAD6DF',
             color: '#000',
             width: '24px',
             height: '24px',
@@ -625,9 +651,9 @@ const s = (theme, fSize = 0) => {
             alignItems: 'center',
             gap: '13px',
             background: isLight
-                ? 'linear-gradient(135deg, rgba(255,255,255,0.94), rgba(255,247,214,0.9))'
-                : 'linear-gradient(135deg, rgba(35,29,16,0.92), rgba(26,22,15,0.88))',
-            border: '1px solid rgba(201,162,75,0.3)',
+                ? 'linear-gradient(135deg, rgba(255,255,255,0.94), rgba(234,241,246,0.9))'
+                : 'linear-gradient(135deg, rgba(25,31,36,0.94), rgba(18,22,26,0.9))',
+            border: '1px solid rgba(159,180,196,0.3)',
             boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset, 0 16px 34px -24px rgba(0,0,0,0.7)',
             cursor: 'pointer',
             overflow: 'hidden',
@@ -638,15 +664,15 @@ const s = (theme, fSize = 0) => {
         premiumHalo: {
             position: 'absolute',
             inset: 0,
-            background: 'radial-gradient(ellipse at 100% 50%, rgba(255, 200, 50, 0.14) 0%, transparent 60%)',
+            background: 'radial-gradient(ellipse at 100% 50%, rgba(159,180,196,0.16) 0%, transparent 60%)',
             pointerEvents: 'none'
         },
         premiumIcon: {
             width: '44px',
             height: '44px',
             borderRadius: '14px',
-            background: 'linear-gradient(135deg, #FFE55C 0%, #D49A5C 100%)',
-            color: '#111',
+            background: 'linear-gradient(135deg, #CAD6DF 0%, #9FB4C4 100%)',
+            color: '#0E1013',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -906,6 +932,120 @@ const s = (theme, fSize = 0) => {
             fontWeight: 650,
             marginTop: '3px'
         },
+        backupStack: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+        },
+        backupStatusCard: {
+            minHeight: '74px',
+            borderRadius: '24px',
+            padding: '16px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            background: panel,
+            border: `1px solid ${border}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset',
+            boxSizing: 'border-box'
+        },
+        backupStatusText: {
+            flex: 1,
+            minWidth: 0
+        },
+        backupStatusLabel: {
+            color: sub,
+            fontSize: '11px',
+            fontWeight: 800,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            marginBottom: '5px'
+        },
+        backupStatusValue: {
+            color: text,
+            fontSize: fSize === 0 ? '18px' : '21px',
+            fontWeight: 900,
+            lineHeight: 1.1
+        },
+        backupActionsGrid: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: '10px'
+        },
+        dangerCard: {
+            borderRadius: '24px',
+            padding: '14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+            background: isLight ? 'rgba(255,255,255,0.76)' : 'rgba(30,22,22,0.72)',
+            border: '1px solid rgba(217,92,92,0.24)',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset'
+        },
+        dangerHeader: {
+            width: '100%',
+            minHeight: '42px',
+            border: 'none',
+            borderRadius: '15px',
+            padding: '0 12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '9px',
+            background: 'rgba(217,92,92,0.12)',
+            color: '#D95C5C',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: fSize === 0 ? '13px' : '15px',
+            fontWeight: 900,
+            textAlign: 'left'
+        },
+        dangerIcon: {
+            width: '28px',
+            height: '28px',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(217,92,92,0.14)',
+            flexShrink: 0
+        },
+        dangerText: {
+            color: sub,
+            fontSize: fSize === 0 ? '12px' : '13px',
+            fontWeight: 650,
+            lineHeight: 1.35,
+            padding: '0 3px'
+        },
+        dangerActions: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: '10px'
+        },
+        actionButton: (color) => ({
+            minHeight: '56px',
+            width: '100%',
+            borderRadius: '18px',
+            border: `1px solid ${color}44`,
+            background: isLight ? `${color}13` : `${color}16`,
+            color: text,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            fontFamily: 'inherit',
+            fontSize: fSize === 0 ? '13px' : '15px',
+            fontWeight: 900,
+            cursor: 'pointer',
+            boxShadow: `0 16px 28px -24px ${color}88`,
+            padding: '0 12px',
+            boxSizing: 'border-box'
+        }),
+        actionButtonIcon: (color) => ({
+            color,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+        }),
         panel: {
             position: 'fixed', left: 0, top: 0, bottom: 0,
             zIndex: 9000, width: '85vw',
@@ -917,11 +1057,6 @@ const s = (theme, fSize = 0) => {
         }
     };
 };
-
-const inputStyles = (theme) => ({
-    text: { color: Colors.get('mainText', theme), fontSize: '13px', fontFamily: 'Segoe UI' },
-    input: { width: '90%', height: '70%', fontSize: '16px', padding: '15px', border: `1px solid ${Colors.get('border', theme)}`, borderRadius: '16px', color: Colors.get('mainText', theme), backgroundColor: Colors.get('bottomPanel', theme) },
-});
 
 function getThemeShortName(langIndex, theme) {
     switch (theme) {
@@ -952,10 +1087,5 @@ const toggleTheme = () => {
     else { themeNum = 0; next = THEME.DARK; }
     AppData.setPrefs(1, themeNum); Colors.setTheme(next); setGlobalTheme(next);
 };
-
-function playEffects(sound) {
-    if (AppData.prefs[2] == 0 && sound !== null) { if (!sound.paused) { sound.pause(); sound.currentTime = 0; } sound.volume = 0.5; sound.play(); }
-    if (AppData.prefs[3] == 0 && window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
 
 export default Settings;

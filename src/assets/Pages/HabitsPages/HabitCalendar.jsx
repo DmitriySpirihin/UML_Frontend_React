@@ -2,6 +2,7 @@ import React, {useState,useEffect,useRef} from 'react'
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'framer-motion'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
+import { playEffects } from '../../StaticClasses/Effects.js'
 import Colors from '../../StaticClasses/Colors'
 import Icons from '../../StaticClasses/Icons'; 
 
@@ -644,11 +645,4 @@ function habitAmountString(date,langIndex) {
        return amount + ' ' + names[langIndex][amount === 1 ? 0 : amount > 1 && amount < 5 ? 1 : 2];
    }
    return '0 ' + names[langIndex][2];
-}
-function playEffects(sound){
-  if(AppData.prefs[2] == 0 && sound !== null){
-    if(!sound.paused){ sound.pause(); sound.currentTime = 0; }
-    sound.volume = 0.5; sound.play();
-  }
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
 }

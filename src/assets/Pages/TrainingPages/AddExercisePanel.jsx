@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
 import { theme$, lang$, fontSize$, lastPage$, setPage, currentTrainingMuscle$, setShowPopUpPanel } from '../../StaticClasses/HabitsBus.js'
+import { playEffects } from '../../StaticClasses/Effects.js'
 import { IoIosArrowBack } from 'react-icons/io'
 import { MuscleIcon, addExercise } from '../../Classes/TrainingData.jsx'
 import { MdDone } from 'react-icons/md'
@@ -183,14 +184,6 @@ const AddExercisePanel = () => {
 };
 
 export default AddExercisePanel;
-
-function playEffects(sound) {
-    if (AppData.prefs[2] == 0 && sound !== null) {
-        if (!sound.paused) { sound.pause(); sound.currentTime = 0; }
-        sound.volume = 0.5; sound.play();
-    }
-    if (AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback) Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
 
 const capitalizeName = (str) => {
     if (!str) return str;

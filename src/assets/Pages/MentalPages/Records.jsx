@@ -108,11 +108,11 @@ const Records = () => {
                         backdropFilter: 'blur(20px)', textAlign: 'center'
                     }}>
                     <div style={{
-                        width: '72px', height: '72px', background: 'rgba(0,122,255,0.12)',
+                        width: '72px', height: '72px', background: 'rgba(159,180,196,0.12)',
                         borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        marginBottom: '16px', border: '1px solid rgba(0,122,255,0.22)',
+                        marginBottom: '16px', border: '1px solid rgba(159,180,196,0.22)',
                     }}>
-                        <FaCrown size={30} color="#007AFF" />
+                        <FaCrown size={30} color="#9FB4C4" />
                     </div>
                     <div style={{
                         fontSize: '13px', lineHeight: '1.6',
@@ -122,9 +122,9 @@ const Records = () => {
                         {langIndex === 0 ? 'Откройте полный доступ ко всем рекордам' : 'Unlock full access to all records'}
                     </div>
                     <button onClick={() => setPage('premium')} style={{
-                        fontSize: '15px', fontWeight: '700', color: '#fff', background: '#007AFF',
+                        fontSize: '15px', fontWeight: '700', color: '#fff', background: '#9FB4C4',
                         border: 'none', borderRadius: '14px', padding: '13px 0', marginBottom: '10px',
-                        cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,122,255,0.35)', width: '220px',
+                        cursor: 'pointer', boxShadow: '0 4px 16px rgba(159,180,196,0.35)', width: '220px',
                     }}>
                         {langIndex === 0 ? 'Купить подписку' : 'Buy subscription'}
                     </button>

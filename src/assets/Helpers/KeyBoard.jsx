@@ -6,6 +6,7 @@ import { MdBackspace } from "react-icons/md";
 import { IoLanguage } from "react-icons/io5";
 import { FaArrowUp } from "react-icons/fa";
 import { useLongPress } from '../Helpers/LongPress';
+import { playEffects } from '../StaticClasses/Effects';
 
 // Move audio outside component to avoid recreating it on every render
 const tapAudio = new Audio('Audio/Tap.wav');
@@ -89,23 +90,6 @@ const KeyBoard = () => {
         }
     }, [currentLang]);
 
-    const playEffects = () => {
-        // Safe access to AppData
-        if (AppData.prefs && AppData.prefs[2] === 0) {
-            if (!tapAudio.paused) {
-                tapAudio.pause();
-                tapAudio.currentTime = 0;
-            }
-            tapAudio.volume = 0.5;
-            tapAudio.play().catch(e => console.log("Audio play failed", e));
-        }
-        
-        // Safe access to Telegram Haptics
-        if (AppData.prefs && AppData.prefs[3] === 0 && window.Telegram?.WebApp?.HapticFeedback) {
-            window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-        }
-    };
-
     const handleKeyClick = (key, e) => {
         if(e) {
             e.stopPropagation();
@@ -124,7 +108,7 @@ const KeyBoard = () => {
 
         setCurrentKeyboardString(outputKey);
         setCurrentKey(key);
-        playEffects();
+        playEffects(tapAudio);
     };
 
     const bindKey = useLongPress(() => handleKeyClick('bsall'));
@@ -162,7 +146,7 @@ const KeyBoard = () => {
                             e.stopPropagation(); 
                             setIsShift(!isShift); 
                             setCurrentKey('shift'); 
-                            playEffects(); 
+                            playEffects(tapAudio); 
                         }} 
                         style={{
                             ...getKeyStyle(keys[currentKeys][2].length + 2, 'shift'),
@@ -203,7 +187,7 @@ const KeyBoard = () => {
                             e.stopPropagation();
                             setCurrentKeys(prev => prev === 2 ? currentLang : 2); 
                             setCurrentKey('num'); 
-                            playEffects();
+                            playEffects(tapAudio);
                         }} 
                         style={{...getKeyStyle(1, 'num'), width: '10%', backgroundColor: Colors.get('currentDateBorder2', theme)}}
                     >
@@ -239,7 +223,7 @@ const KeyBoard = () => {
                             setCurrentKeys(prev => prev === 2 ? 2 : nextLang); // Don't switch layout if in number mode
                             setCurrentLang(nextLang);
                             setCurrentKey('lang');
-                            playEffects();
+                            playEffects(tapAudio);
                         }} 
                         style={{...getKeyStyle(1, 'lang'), width: '8%', backgroundColor: Colors.get('currentDateBorder2', theme)}}
                     >

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData';
 import Colors from "../../StaticClasses/Colors";
 import { theme$ } from '../../StaticClasses/HabitsBus';
+import { playEffects } from '../../StaticClasses/Effects';
 import { FaEraser, FaCheck, FaArrowLeft, FaArrowRight, FaArrowUp, FaArrowDown } from 'react-icons/fa';
 
 const tap = new Audio('Audio/Tap.wav');
@@ -219,17 +220,3 @@ const styles = (theme) => ({
         // Color handled in component based on props
     }
 })
-
-function playEffects(sound) {
-    if (AppData.prefs[2] == 0 && sound !== null) {
-        if (!sound.paused) {
-            sound.pause();
-            sound.currentTime = 0;
-        }
-        sound.volume = 0.5;
-        sound.play();
-    }
-    if (AppData.prefs[3] == 0 && window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}

@@ -2,6 +2,7 @@ import React, {useState, useEffect, useRef, useMemo} from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import { logSectionVisit } from '../../StaticClasses/AppData.js'
+import { playEffects } from '../../StaticClasses/Effects.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel,addNewTrainingDay$} from '../../StaticClasses/HabitsBus'
 import {addNewSession, addPreviousSession, deleteSession, addCardioSession} from '../../StaticClasses/TrainingLogHelper.js'
@@ -1011,14 +1012,6 @@ const ActionButton = ({icon, label, onClick, theme, isPrimary, isDestructive}) =
 export default TrainingMain
 
 // --- HELPER STYLES & FUNCTIONS ---
-function playEffects(sound){
-  if(AppData.prefs[2] == 0 && sound !== null){
-    if(!sound.paused){ sound.pause(); sound.currentTime = 0; }
-    sound.volume = 0.5; sound.play();
-  }
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
-
 const trainingAmountText = (trainingAmount,langIndex) => {
   if(trainingAmount == 0) return langIndex == 0 ? 'Нет тренировок' : 'No trainings';
   if(trainingAmount == 1) return langIndex == 0 ? '1 тренировка' : '1 training';
@@ -1151,4 +1144,3 @@ const styles = (theme,fSize) => ({
     fontSize: '20px', fontWeight: 'bold', color: Colors.get('mainText', theme), margin: 0
   }
 })
-

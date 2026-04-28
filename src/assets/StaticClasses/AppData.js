@@ -252,6 +252,8 @@ static habitCardWidgets = {
   } 
   static async setPrefs(ind,value){
     this.prefs[ind] = value;
+    if (ind === 2 || ind === 3) setSoundAndVibro(this.prefs[2], this.prefs[3]);
+    if (ind === 4) setFontSize(value);
     await saveData();
   }
   static getLastProgramId() {

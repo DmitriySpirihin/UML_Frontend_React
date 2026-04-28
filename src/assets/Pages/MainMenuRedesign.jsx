@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaThumbtack, FaTrashRestore } from 'react-icons/fa';
+import { FaCog, FaThumbtack, FaTrashRestore } from 'react-icons/fa';
 
 const EASE = [0.2, 0.8, 0.2, 1];
 
@@ -32,14 +32,14 @@ const tokens = {
     faint: 'rgba(15,23,42,0.04)'
   },
   accents: {
-    HabitsMain: { hue: '#C9A24B', soft: 'rgba(201,162,75,0.14)', ring: 'rgba(201,162,75,0.28)' },
-    TrainingMain: { hue: '#B87548', soft: 'rgba(184,117,72,0.14)', ring: 'rgba(184,117,72,0.28)' },
+    HabitsMain: { hue: '#A99B7A', soft: 'rgba(169,155,122,0.14)', ring: 'rgba(169,155,122,0.28)' },
+    TrainingMain: { hue: '#D8785E', soft: 'rgba(216,120,94,0.14)', ring: 'rgba(216,120,94,0.28)' },
     MentalMain: { hue: '#8A7CD6', soft: 'rgba(138,124,214,0.14)', ring: 'rgba(138,124,214,0.28)' },
     RecoveryMain: { hue: '#7AA988', soft: 'rgba(122,169,136,0.14)', ring: 'rgba(122,169,136,0.28)' },
     SleepMain: { hue: '#6F8BD6', soft: 'rgba(111,139,214,0.14)', ring: 'rgba(111,139,214,0.28)' },
-    ToDoMain: { hue: '#D49A5C', soft: 'rgba(212,154,92,0.14)', ring: 'rgba(212,154,92,0.28)' },
+    ToDoMain: { hue: '#8FA6C8', soft: 'rgba(143,166,200,0.14)', ring: 'rgba(143,166,200,0.28)' },
     RobotMain: { hue: '#66D9E8', soft: 'rgba(102,217,232,0.14)', ring: 'rgba(102,217,232,0.28)' },
-    premium: { hue: '#C9A24B', soft: 'rgba(201,162,75,0.14)', ring: 'rgba(201,162,75,0.28)' }
+    premium: { hue: '#9FB4C4', soft: 'rgba(159,180,196,0.14)', ring: 'rgba(159,180,196,0.28)' }
   }
 };
 
@@ -75,6 +75,18 @@ const StreakFlame = ({ size = 15 }) => (
     />
   </svg>
 );
+const BurntFlame = ({ size = 15 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: 'block', flexShrink: 0, opacity: 0.78 }}>
+    <path
+      d="M12.7 2.6c2.1 3.6 5.8 5.7 5.8 11a6.5 6.5 0 01-13 0c0-2.9 1.6-5 3.5-6.4-.2 1.5.1 2.7.9 3.7.7-3.1 1.6-5.8 2.8-8.3z"
+      fill="#68717B"
+    />
+    <path
+      d="M13 19.5a3.5 3.5 0 003.3-3.7c0-2-1.2-3.2-2.6-4.7-.4 1.9-1.1 3.4-2.2 4.5-.6-.8-.9-1.7-.8-2.8-1.1.9-1.8 2.1-1.8 3.5A3.5 3.5 0 0013 19.5z"
+      fill="#3F4650"
+    />
+  </svg>
+);
 const DockUserIcon = ({ color }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
     <path d="M12 12.2c2.7 0 4.9-2.2 4.9-4.9S14.7 2.4 12 2.4 7.1 4.6 7.1 7.3s2.2 4.9 4.9 4.9Z" />
@@ -90,6 +102,9 @@ const DockBackIcon = ({ color }) => (
   <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
     <path d="M15 6l-6 6 6 6" />
   </svg>
+);
+const ReactSettingsIcon = ({ color, size = 22 }) => (
+  <FaCog size={size} color={color} style={{ display: 'block', flexShrink: 0 }} />
 );
 
 const iconMap = {
@@ -107,11 +122,13 @@ function getAccent(id) {
 
 function getMetricParts(metric) {
   const text = `${metric}`.trim();
-  if (!text) return { value: '', isStreak: false };
+  if (!text) return { value: '', isStreak: false, isZero: false };
 
-  return text.endsWith('🔥')
-    ? { value: text.replace('🔥', '').trim(), isStreak: true }
-    : { value: text, isStreak: false };
+  if (text.endsWith('🔥')) {
+    return { value: text.replace('🔥', '').trim(), isStreak: true, isZero: false };
+  }
+
+  return { value: text, isStreak: false, isZero: text === '0' };
 }
 
 function Pill({ children, style }) {
@@ -225,7 +242,7 @@ function Topbar({ lang, isPremium, onOpenRobot, onOpenReferral, onOpenSettings, 
       </motion.button>
       <div style={{ display: 'flex', gap: 8 }}>
         <TopIconButton onClick={onOpenReferral} palette={palette} Icon={IconCrown} active={isPremium} />
-        <TopIconButton onClick={onOpenSettings} palette={palette} Icon={IconSettings} />
+        <TopIconButton onClick={onOpenSettings} palette={palette} Icon={ReactSettingsIcon} />
       </div>
     </div>
   );
@@ -304,21 +321,22 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         padding: 18,
         borderRadius: 24,
         background: palette.isLight
-          ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(201,162,75,0.08) 100%)`
-          : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(201,162,75,0.09) 100%)`,
+          ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(169,155,122,0.08) 100%)`
+          : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(169,155,122,0.08) 100%)`,
         border: `1px solid ${heroAccent}22`,
         boxShadow: palette.isLight
-          ? `0 18px 44px -34px ${heroAccent}55, 0 1px 0 rgba(255,255,255,0.72) inset`
-          : `0 22px 48px -34px ${heroAccent}60, 0 1px 0 rgba(255,255,255,0.055) inset`,
+          ? `0 16px 38px -34px ${heroAccent}45, 0 1px 0 rgba(255,255,255,0.72) inset`
+          : `0 18px 40px -34px ${heroAccent}50, 0 1px 0 rgba(255,255,255,0.055) inset`,
         position: 'relative',
         overflow: 'hidden'
       }}
     >
       <div style={{
         position: 'absolute',
-        inset: '-50% -24% auto auto',
-        width: 280,
-        height: 280,
+        right: '-44px',
+        top: '-58px',
+        width: 170,
+        height: 170,
         borderRadius: '50%',
         background: `radial-gradient(circle, ${heroAccent}22 0%, transparent 62%)`,
         pointerEvents: 'none'
@@ -418,8 +436,8 @@ function Focus({ data, palette, lang, onOpen }) {
         margin: '18px 20px 0',
         padding: 20,
         borderRadius: 24,
-        background: data.empty ? 'rgba(201,162,75,0.06)' : palette.panel,
-        border: data.empty ? '1px solid rgba(201,162,75,0.18)' : `1px solid ${palette.border}`,
+        background: data.empty ? 'rgba(169,155,122,0.06)' : palette.panel,
+        border: data.empty ? '1px solid rgba(169,155,122,0.18)' : `1px solid ${palette.border}`,
         boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 30px -22px rgba(0,0,0,0.68)',
         position: 'relative',
         overflow: 'hidden',
@@ -486,6 +504,15 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
   const IconComponent = iconMap[item.id] || (() => item.icon);
   const metric = showInfo && info ? info : '';
   const metricParts = getMetricParts(metric);
+  const iconTone = metricParts.isZero
+    ? {
+      hue: palette.muted,
+      soft: palette.isLight
+        ? 'linear-gradient(135deg, rgba(100,111,124,0.1), rgba(15,23,42,0.035))'
+        : 'linear-gradient(135deg, rgba(104,113,123,0.18), rgba(255,255,255,0.035))',
+      ring: palette.isLight ? 'rgba(100,111,124,0.2)' : 'rgba(104,113,123,0.32)'
+    }
+    : accent;
 
   return (
     <motion.div
@@ -522,9 +549,9 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
         height: 42,
         borderRadius: 13,
         flexShrink: 0,
-        background: accent.soft,
-        color: accent.hue,
-        border: `1px solid ${accent.ring}`,
+        background: iconTone.soft,
+        color: iconTone.hue,
+        border: `1px solid ${iconTone.ring}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center'
@@ -543,7 +570,7 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
         </div>
       </div>
       {metric ? (
-        <div style={{ textAlign: 'right', minWidth: metricParts.isStreak ? 58 : 44, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+        <div style={{ textAlign: 'right', minWidth: metricParts.isStreak || metricParts.isZero ? 58 : 44, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
           {metricParts.isStreak ? (
             <div style={{
               display: 'inline-flex',
@@ -564,13 +591,40 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
               </span>
               <StreakFlame />
             </div>
+          ) : metricParts.isZero ? (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 5,
+              minWidth: 50,
+              height: 27,
+              padding: '0 8px',
+              borderRadius: 999,
+              background: palette.isLight
+                ? 'linear-gradient(135deg, rgba(100,111,124,0.1), rgba(15,23,42,0.035))'
+                : 'linear-gradient(135deg, rgba(104,113,123,0.18), rgba(255,255,255,0.035))',
+              border: palette.isLight ? '1px solid rgba(100,111,124,0.2)' : '1px solid rgba(104,113,123,0.32)',
+              boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 10px 20px -18px rgba(104,113,123,0.7)',
+              boxSizing: 'border-box',
+              color: palette.muted
+            }}>
+              <span style={{ fontSize: 15, fontWeight: 900, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                0
+              </span>
+              <BurntFlame />
+            </div>
           ) : (
             <div style={{ fontSize: 14, fontWeight: 850, color: palette.text, fontVariantNumeric: 'tabular-nums' }}>
               {metricParts.value}
             </div>
           )}
           <div style={{ fontSize: 9, color: palette.muted, fontWeight: 750, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>
-            {lang === 0 ? 'сейчас' : 'now'}
+            {metricParts.isStreak
+              ? (lang === 0 ? 'серия' : 'streak')
+              : metricParts.isZero
+                ? (lang === 0 ? 'начать' : 'start')
+                : (lang === 0 ? 'итог' : 'total')}
           </div>
         </div>
       ) : (
@@ -605,6 +659,8 @@ function ActionStrip({ visible, lang, onOpenReferral, onOpenRobot, palette }) {
 }
 
 function ActionButton({ Icon, label, accent, onClick, palette }) {
+  const isPremium = accent === tokens.accents.premium;
+
   return (
     <motion.button
       type="button"
@@ -614,7 +670,9 @@ function ActionButton({ Icon, label, accent, onClick, palette }) {
         minHeight: 54,
         borderRadius: 18,
         border: `1px solid ${accent.ring}`,
-        background: accent.soft,
+        background: isPremium
+          ? `linear-gradient(135deg, rgba(159,180,196,0.18), rgba(159,180,196,0.08))`
+          : accent.soft,
         color: accent.hue,
         display: 'flex',
         alignItems: 'center',
@@ -624,7 +682,9 @@ function ActionButton({ Icon, label, accent, onClick, palette }) {
         fontFamily: 'inherit',
         fontSize: 13,
         fontWeight: 850,
-        boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
+        boxShadow: isPremium
+          ? '0 1px 0 rgba(255,255,255,0.06) inset, 0 10px 20px -18px rgba(159,180,196,0.44)'
+          : '0 1px 0 rgba(255,255,255,0.04) inset'
       }}
     >
       <Icon size={18} />
@@ -659,6 +719,8 @@ function HeaderIconAction({ Icon, accent, onClick, label }) {
 }
 
 function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
+  const isPremium = accent === tokens.accents.premium;
+
   return (
     <motion.button
       type="button"
@@ -670,7 +732,9 @@ function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
         minWidth: compact ? 46 : 92,
         borderRadius: 12,
         border: `1px solid ${accent.ring}`,
-        background: accent.soft,
+        background: isPremium
+          ? `linear-gradient(135deg, rgba(159,180,196,0.2), rgba(159,180,196,0.08))`
+          : accent.soft,
         color: accent.hue,
         display: 'inline-flex',
         alignItems: 'center',
@@ -681,7 +745,10 @@ function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
         fontFamily: 'inherit',
         fontSize: 12,
         fontWeight: 900,
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        boxShadow: isPremium
+          ? '0 1px 0 rgba(255,255,255,0.06) inset, 0 10px 20px -18px rgba(159,180,196,0.44)'
+          : 'none'
       }}
     >
       <Icon size={14} />
@@ -714,7 +781,7 @@ function Dock({ palette, onBack, onOpenUser, onOpenSettings }) {
     }}>
       <DockBtn Icon={DockBackIcon} onClick={onBack} palette={palette} />
       <DockBtn Icon={DockUserIcon} onClick={onOpenUser} palette={palette} />
-      <DockBtn Icon={DockSettingsIcon} onClick={onOpenSettings} palette={palette} />
+      <DockBtn Icon={ReactSettingsIcon} onClick={onOpenSettings} palette={palette} />
     </div>
   );
 }
@@ -741,7 +808,7 @@ function DockBtn({ Icon, onClick, primary, palette }) {
         lineHeight: 1
       }}
     >
-      <Icon color={iconColor} />
+      <Icon color={iconColor} size={22} />
     </motion.button>
   );
 }
@@ -777,8 +844,8 @@ export default function MainMenuRedesign({
   return (
     <div style={{
       background: isLight
-        ? 'radial-gradient(900px 450px at 80% -10%, rgba(201,162,75,0.11), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7'
-        : 'radial-gradient(1000px 500px at 80% -10%, rgba(201,162,75,0.08), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013',
+        ? 'radial-gradient(900px 450px at 80% -10%, rgba(169,155,122,0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7'
+        : 'radial-gradient(1000px 500px at 80% -10%, rgba(169,155,122,0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013',
       color: palette.text,
       width: '100vw',
       height: '100vh',

@@ -3,6 +3,7 @@ import { AppData,UserData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$,premium$, setPage} from '../../StaticClasses/HabitsBus';
 import { FaCrown } from 'react-icons/fa';
+import HomeRounded from '@mui/icons-material/HomeRounded';
 import Insight from '../SleepPages/Insight.jsx';
 
 
@@ -27,8 +28,11 @@ const RobotMain = () => {
 
   return (
     <div style={styles(theme, fSize).container}>
-      
-       {<Insight />}
+      <Insight />
+      <button type="button" onClick={() => setPage('MainMenu')} style={styles(theme, fSize).homeDock}>
+          <HomeRounded style={styles(theme, fSize).homeIcon} />
+          <span style={styles(theme, fSize).homeDot} />
+      </button>
       {!hasPremium && (
           <div onClick={(e) => e.stopPropagation()}
               style={{
@@ -39,11 +43,11 @@ const RobotMain = () => {
                   textAlign: 'center'
               }}>
               <div style={{
-                  width: '72px', height: '72px', background: 'rgba(0,122,255,0.12)',
+                  width: '72px', height: '72px', background: 'rgba(159,180,196,0.12)',
                   borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '16px', border: '1px solid rgba(0,122,255,0.22)',
+                  marginBottom: '16px', border: '1px solid rgba(159,180,196,0.22)',
               }}>
-                  <FaCrown size={30} color="#007AFF" />
+                  <FaCrown size={30} color="#9FB4C4" />
               </div>
               <div style={{
                   fontSize: '13px', lineHeight: '1.6',
@@ -53,9 +57,9 @@ const RobotMain = () => {
                   {langIndex === 0 ? 'Откройте полный доступ ко всем функциям' : 'Unlock full access to all features'}
               </div>
               <button onClick={() => setPage('premium')} style={{
-                  fontSize: '15px', fontWeight: '700', color: '#fff', background: '#007AFF',
+                  fontSize: '15px', fontWeight: '700', color: '#fff', background: '#9FB4C4',
                   border: 'none', borderRadius: '14px', padding: '13px 0', marginBottom: '10px',
-                  cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,122,255,0.35)', width: '220px',
+                  cursor: 'pointer', boxShadow: '0 4px 16px rgba(159,180,196,0.35)', width: '220px',
               }}>
                   {langIndex === 0 ? 'Купить подписку' : 'Buy subscription'}
               </button>
@@ -81,9 +85,47 @@ const styles = (theme, fSize) => ({
     flexDirection: 'column',
     justifyContent: 'start',
     alignItems: 'center',
-    height: '89vh',
-    marginTop:'120px',
+    minHeight: '100dvh',
+    padding: '18px 0 88px',
+    boxSizing: 'border-box',
     width: '100vw',
     fontFamily: 'Segoe UI',
+    fontSize: fSize === 0 ? '14px' : '16px',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  homeDock: {
+    position: 'fixed',
+    left: '50%',
+    bottom: '14px',
+    transform: 'translateX(-50%)',
+    width: 'min(360px, calc(100vw - 84px))',
+    height: '58px',
+    borderRadius: '20px',
+    border: `1px solid ${Colors.get('border', theme)}`,
+    background: Colors.get('bottomPanel', theme),
+    color: Colors.get('iconsHighlited', theme),
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
+    boxShadow: theme === 'dark' ? '0 18px 44px rgba(0,0,0,0.38)' : '0 16px 34px rgba(15,23,42,0.12)',
+    cursor: 'pointer',
+    zIndex: 100,
+    padding: 0,
+  },
+  homeIcon: {
+    fontSize: fSize === 0 ? '28px' : '31px',
+    color: 'inherit',
+  },
+  homeDot: {
+    width: '5px',
+    height: '5px',
+    borderRadius: '50%',
+    background: Colors.get('iconsHighlited', theme),
+    boxShadow: `0 0 10px ${Colors.get('iconsHighlited', theme)}`,
   }
 });

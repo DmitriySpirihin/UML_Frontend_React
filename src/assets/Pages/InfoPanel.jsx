@@ -47,12 +47,11 @@ const InfoPanel = () => {
     return () => { s1.unsubscribe(); s2.unsubscribe(); s3.unsubscribe(); };
   }, []);
 
-  const s = getStyles(theme, fSize);
-
   const accent = useMemo(() => {
     const found = menuItems.find((x) => x.id === activeTab);
     return found?.color || "#6E6E6E";
   }, [menuItems, activeTab]);
+  const s = getStyles(theme, fSize, accent);
 
   const guideByTab = useMemo(() => ({
     MainCard:     "images/bro.png",
@@ -101,7 +100,7 @@ const InfoPanel = () => {
           >
             <IoIosArrowBack size={22} />
           </motion.button>
-          <span style={s.headerTitle}>{lang === 0 ? "Инструкция" : "User Guide"}</span>
+          <span style={s.headerTitle}>{lang === 0 ? "Как пользоваться" : "How to use"}</span>
           <div style={{ width: 40 }} />
         </div>
 
@@ -189,12 +188,15 @@ export default InfoPanel;
 
 /* ─────────────────────── STYLES ─────────────────────── */
 
-function getStyles(theme, fontSize) {
-  const bg     = Colors.get("background",  theme);
+function getStyles(theme, fontSize, accent = "#5fb6c6") {
+  const isLight = theme === "light" || theme === "speciallight";
   const text   = Colors.get("mainText",    theme);
   const sub    = Colors.get("subText",     theme);
-  const panel  = Colors.get("simplePanel", theme);
-  const border = Colors.get("border",      theme);
+  const border = isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.07)";
+  const panel  = isLight ? "rgba(255,255,255,0.86)" : "rgba(26,29,33,0.84)";
+  const panelStrong = isLight ? "rgba(255,255,255,0.96)" : "rgba(20,23,25,0.92)";
+  const faint = isLight ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.04)";
+  const heroAccent = accent;
 
   return {
     page: {
@@ -203,15 +205,20 @@ function getStyles(theme, fontSize) {
       zIndex: 1000,
       overflowY: "auto",
       paddingBottom: "100px",
-      backgroundColor: bg,
-      fontFamily: "Segoe UI, system-ui, -apple-system, sans-serif",
+      color: text,
+      background: isLight
+        ? "radial-gradient(900px 450px at 80% -10%, rgba(201,162,75,0.11), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7"
+        : "radial-gradient(1000px 500px at 80% -10%, rgba(201,162,75,0.08), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013",
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
     },
 
     header: {
       position: "sticky",
       top: 0,
       zIndex: 10,
-      backgroundColor: bg,
+      background: isLight ? "rgba(244,245,247,0.82)" : "rgba(14,16,19,0.82)",
+      backdropFilter: "blur(22px) saturate(170%)",
+      WebkitBackdropFilter: "blur(22px) saturate(170%)",
       borderBottom: `1px solid ${border}`,
     },
 
@@ -224,24 +231,25 @@ function getStyles(theme, fontSize) {
     },
 
     backBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: "50%",
+      width: 42,
+      height: 42,
+      borderRadius: "14px",
       border: `1px solid ${border}`,
-      background: panel,
-      color: text,
+      background: panelStrong,
+      color: sub,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       cursor: "pointer",
       flexShrink: 0,
+      boxShadow: "0 1px 0 rgba(255,255,255,0.045) inset",
     },
 
     headerTitle: {
-      fontSize: "20px",
+      fontSize: fontSize === 0 ? "18px" : "21px",
       fontWeight: "900",
       color: text,
-      letterSpacing: "0.2px",
+      letterSpacing: 0,
     },
 
     tabsContainer: {
@@ -255,16 +263,16 @@ function getStyles(theme, fontSize) {
     tabItem: (isActive, color) => ({
       padding: isActive ? "8px 16px" : "8px 12px",
       borderRadius: "999px",
-      backgroundColor: isActive ? color : panel,
-      color: isActive ? "#FFF" : sub,
+      background: isActive ? `${color}20` : panel,
+      color: isActive ? color : sub,
       display: "flex",
       alignItems: "center",
       gap: "8px",
       cursor: "pointer",
       flexShrink: 0,
-      transition: "background-color 0.25s ease",
-      border: isActive ? "none" : `1px solid ${border}`,
-      boxShadow: isActive ? "0 10px 22px rgba(0,0,0,0.18)" : "none",
+      transition: "background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease",
+      border: `1px solid ${isActive ? `${color}55` : border}`,
+      boxShadow: isActive ? `0 14px 28px -24px ${color}` : "0 1px 0 rgba(255,255,255,0.035) inset",
     }),
 
     tabText: {
@@ -276,7 +284,7 @@ function getStyles(theme, fontSize) {
 
     contentWrap: {
       width: "100%",
-      padding: "18px 16px 0",
+      padding: "18px 20px 0",
       boxSizing: "border-box",
     },
 
@@ -292,11 +300,21 @@ function getStyles(theme, fontSize) {
       alignItems: "center",
       gap: "14px",
       marginBottom: "16px",
+      borderRadius: "24px",
+      padding: "14px",
+      boxSizing: "border-box",
+      background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(201,162,75,0.08) 100%)`
+        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(201,162,75,0.09) 100%)`,
+      border: `1px solid ${heroAccent}22`,
+      boxShadow: isLight
+        ? `0 18px 44px -34px ${heroAccent}55, 0 1px 0 rgba(255,255,255,0.72) inset`
+        : `0 22px 48px -34px ${heroAccent}60, 0 1px 0 rgba(255,255,255,0.055) inset`,
     },
 
     coachImg: {
-      width: "96px",
-      height: "96px",
+      width: "88px",
+      height: "88px",
       objectFit: "contain",
       flexShrink: 0,
       filter:
@@ -308,14 +326,11 @@ function getStyles(theme, fontSize) {
     speech: {
       position: "relative",
       flex: 1,
-      backgroundColor: panel,
-      border: `1px solid ${border}55`,
-      borderRadius: "18px",
-      padding: "12px 14px",
-      boxShadow:
-        theme === "dark"
-          ? "0 14px 34px rgba(0,0,0,0.42)"
-          : "0 10px 26px rgba(0,0,0,0.08)",
+      background: "transparent",
+      border: "none",
+      borderRadius: 0,
+      padding: "0 2px",
+      boxShadow: "none",
     },
 
     speechTitle: {
@@ -334,16 +349,7 @@ function getStyles(theme, fontSize) {
     },
 
     speechTail: {
-      position: "absolute",
-      left: "-8px",
-      bottom: "18px",
-      width: "14px",
-      height: "14px",
-      backgroundColor: panel,
-      borderLeft: `1px solid ${border}55`,
-      borderBottom: `1px solid ${border}55`,
-      transform: "rotate(45deg)",
-      borderBottomLeftRadius: "4px",
+      display: "none",
     },
 
     goToBtn: (accentColor) => ({
@@ -353,29 +359,27 @@ function getStyles(theme, fontSize) {
       gap: "8px",
       width: "100%",
       marginTop: "16px",
-      padding: "16px 24px",
+      minHeight: "56px",
+      padding: "0 18px",
       borderRadius: "18px",
-      backgroundColor: accentColor,
-      color: "#fff",
-      border: "none",
+      background: `${accentColor}20`,
+      color: text,
+      border: `1px solid ${accentColor}55`,
       cursor: "pointer",
-      fontSize: "16px",
+      fontSize: fontSize === 0 ? "15px" : "17px",
       fontWeight: "900",
-      letterSpacing: "0.3px",
-      boxShadow: `0 12px 32px ${accentColor}66`,
+      letterSpacing: 0,
+      boxShadow: `0 18px 34px -28px ${accentColor}`,
       flexShrink: 0,
     }),
 
     htmlContent: {
       width: "100%",
-      backgroundColor: theme === "dark" ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)",
-      border: `1px solid ${border}55`,
+      background: panel,
+      border: `1px solid ${border}`,
       borderRadius: "22px",
       padding: "18px",
-      boxShadow:
-        theme === "dark"
-          ? "0 22px 60px rgba(0,0,0,0.52)"
-          : "0 14px 34px rgba(0,0,0,0.10)",
+      boxShadow: "0 1px 0 rgba(255,255,255,0.045) inset",
       color: text,
       lineHeight: 1.55,
       fontSize: fontSize === 0 ? "15px" : "17px",
@@ -793,6 +797,11 @@ function getHtmlCss(theme) {
       backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
       padding:16px;
     }
+    .uxHero:after{
+      content:""; position:absolute; left:8%; right:8%; bottom:-120px; height:210px;
+      background:radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 66%);
+      pointer-events:none; filter:blur(1px); opacity:${isDark ? "0.62" : "0.48"};
+    }
 
     .uxHeroGlow{
       position:absolute; inset:-140px -120px auto -120px; height:280px;
@@ -811,7 +820,7 @@ function getHtmlCss(theme) {
     }
     .uxMeta{ font-size:12px; color:${sub}; font-weight:800; }
 
-    .uxSteps{ position:relative; display:flex; flex-direction:column; gap:12px; margin-top:4px; }
+    .uxSteps{ position:relative; z-index:1; display:flex; flex-direction:column; gap:12px; margin-top:4px; }
 
     .uxStep{
       display:flex; gap:16px; align-items:flex-start;
@@ -844,9 +853,10 @@ function getHtmlCss(theme) {
     .uxChipPlus{ background:color-mix(in srgb, var(--accent) 22%, transparent); }
     .uxChipOk{ background:${isDark ? "rgba(90,255,170,0.14)" : "rgba(90,255,170,0.10)"}; }
 
-    .uxDivider{ height:1px; background:${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}; margin:16px 0 14px 0; }
+    .uxDivider{ position:relative; z-index:1; height:1px; background:${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}; margin:16px 0 14px 0; }
 
     .uxTip{
+      position:relative; z-index:1;
       display:flex; gap:14px; align-items:flex-start;
       padding:14px 12px; border-radius:18px;
       border:1px dashed ${border};
@@ -864,10 +874,12 @@ function getHtmlCss(theme) {
     .uxTipIcon svg{ display:block; }
     .uxTipText{ color:${text}; font-weight:850; font-size:14px; line-height:1.45; }
 
-    .uxMini{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+    .uxMini{ position:relative; z-index:1; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
     .uxMiniCard{
-      border-radius:18px; border:1px solid ${border};
-      background:${isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.65)"};
+      border-radius:18px; border:1px solid color-mix(in srgb, var(--accent) 18%, ${border});
+      background:${isDark
+        ? "linear-gradient(145deg, rgba(255,255,255,0.04), color-mix(in srgb, var(--accent) 7%, rgba(255,255,255,0.025)))"
+        : "linear-gradient(145deg, rgba(255,255,255,0.72), color-mix(in srgb, var(--accent) 8%, rgba(255,255,255,0.62)))"};
       padding:14px 12px;
       box-shadow:${isDark ? "0 16px 40px rgba(0,0,0,0.40)" : "0 12px 30px rgba(0,0,0,0.08)"};
     }

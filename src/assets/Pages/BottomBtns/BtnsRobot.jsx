@@ -10,8 +10,8 @@ import {
     currentBottomBtn$, setCurrentBottomBtn 
 } from '../../StaticClasses/HabitsBus';
 import Colors from '../../StaticClasses/Colors';
-import { AppData } from '../../StaticClasses/AppData';
 import { saveData } from '../../StaticClasses/SaveHelper';
+import { playEffects } from '../../StaticClasses/Effects';
 
 const switchSound = new Audio('Audio/Click.wav');
 
@@ -115,41 +115,32 @@ const onBack = async (page, addPanel) => {
     playEffects(switchSound);
 };
 
-function playEffects(sound) {
-    if (AppData.prefs[2] === 0 && sound !== null) {
-        sound.currentTime = 0;
-        sound.volume = 0.5;
-        sound.play();
-    }
-    if (AppData.prefs[3] === 0 && window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
-
 // Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '7vw',
-    left: '5vw',
-    width: '90vw',
-    height: '70px',
-    borderRadius: '25px',
+    bottom: '14px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 'min(360px, calc(100vw - 84px))',
+    height: '58px',
+    borderRadius: '20px',
     display: 'flex',
-    justifyContent: 'space-around',
+    justifyContent: 'center',
     alignItems: 'center',
-    backdropFilter: 'blur(6px)',
+    backdropFilter: 'blur(16px)',
     zIndex: 5500,
+    boxShadow: theme === 'dark' ? '0 18px 44px rgba(0,0,0,0.38)' : '0 16px 34px rgba(15,23,42,0.12)',
 });
 
 const glassOverlay = (theme) => ({
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: Colors.get('bottomPanel', theme),
-    opacity: 0.85,
+    opacity: 0.92,
     backdropFilter: 'blur(15px)',
     WebkitBackdropFilter: 'blur(15px)',
     border: `1px solid ${Colors.get('border', theme)}`,
-    borderRadius: '25px',
+    borderRadius: '20px',
     zIndex: -1,
 });
 
@@ -160,7 +151,7 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '50px',
+    width: '58px',
     cursor: 'pointer'
 };
 

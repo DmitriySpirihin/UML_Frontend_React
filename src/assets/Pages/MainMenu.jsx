@@ -10,6 +10,7 @@ import { MdOutlineSelfImprovement } from "react-icons/md";
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 import { sendReferalLink } from '../StaticClasses/PaymentService'
 import MainMenuRedesign from './MainMenuRedesign'
+import { playEffects } from '../StaticClasses/Effects'
 
 const MainMenu = () => {
     const [theme, setThemeState] = useState(AppData.prefs[1] === 0 ? 'dark' : 'light');
@@ -56,10 +57,10 @@ const openGuide = () => {
 
     const initialMenuItems = [
         { id: 'MainCard', icon: null, title: lang === 0 ? '' : '', subtitle: lang === 0 ? '' : '', color: '#00ff6600' },
-        { id: 'ToDoMain', icon: <FaListUl />, title: lang === 0 ? 'Задачи' : 'Tasks', subtitle: lang === 0 ? 'Планы и дела' : 'Plans and tasks', color: '#FFA64D' },
-        { id: 'HabitsMain', icon: <FaMedal />, title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Ежедневные ритуалы' : 'Daily rituals', color: '#FFD700' },
+        { id: 'ToDoMain', icon: <FaListUl />, title: lang === 0 ? 'Задачи' : 'Tasks', subtitle: lang === 0 ? 'Планы и дела' : 'Plans and tasks', color: '#8FA6C8' },
+        { id: 'HabitsMain', icon: <FaMedal />, title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Ежедневные ритуалы' : 'Daily rituals', color: '#A99B7A' },
         { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Тренировка ума' : 'Mind Training', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: '#4DA6FF' },
-        { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Дневник тренировок' : 'Training Log', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: '#FF4D4D'},
+        { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Дневник тренировок' : 'Training Log', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: '#D8785E'},
         { id: 'RecoveryMain', icon: <MdOutlineSelfImprovement />, title: lang === 0 ? 'Антистресс' : 'Stress Reset', subtitle: lang === 0 ? 'Дыхание, медитации, холод' : 'Breathing, meditation, cold', color: '#4DFF88'},
         { id: 'SleepMain', icon: <FaBed />, title: lang === 0 ? 'Качество сна' : 'Sleep Quality', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: '#A64DFF'}
     ];
@@ -513,7 +514,7 @@ function buildMainMenuSummary(lang, visibleItems, heroWidgetIds = ['HabitsMain',
         MentalMain: {
             id: 'MentalMain',
             label: lang === 0 ? 'Ум' : 'Mind',
-            value: mentalTotal > 0 ? `${(mentalTotal / 1000).toFixed(1)}k` : '—',
+            value: mentalTotal > 0 ? `${(mentalTotal / 1000).toFixed(1)}k` : '0',
             progress: Math.min(1, mentalTotal / 5000)
         },
         RecoveryMain: {
@@ -594,7 +595,7 @@ function buildMainMenuSummary(lang, visibleItems, heroWidgetIds = ['HabitsMain',
             streak: bestStreak,
             habitsValue: totalHabits > 0 ? `${doneHabits}/${totalHabits}` : '0/0',
             trainingValue: tonnageT > 0 ? `${tonnageT.toFixed(1)} ${lang === 0 ? 'т' : 't'}` : '—',
-            mentalValue: mentalTotal > 0 ? `${(mentalTotal / 1000).toFixed(1)}k` : '—',
+            mentalValue: mentalTotal > 0 ? `${(mentalTotal / 1000).toFixed(1)}k` : '0',
             stats: selectedStats,
             progressLabel: lang === 0 ? 'Сводка выбранных метрик' : 'Selected metrics',
             progressValue: summaryProgress,
@@ -909,20 +910,6 @@ const styles = (theme, fontSize) => ({
     }
 })
 
-function playEffects(sound) {
-    if (AppData.prefs[2] == 0 && sound !== null) {
-        if (!sound.paused) {
-            sound.pause();
-            sound.currentTime = 0;
-        }
-        sound.volume = 0.5;
-        sound.play();
-    }
-    if (AppData.prefs[3] == 0 && window.Telegram?.WebApp?.HapticFeedback) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
-
 function getInfo(id) {
     const sectionMap = { HabitsMain: 'habits', ToDoMain: 'todo', MentalMain: 'mental', RecoveryMain: 'recovery', TrainingMain: 'training', SleepMain: 'sleep' };
     const sectionId = sectionMap[id];
@@ -965,6 +952,7 @@ function getTodaySessionCount() {
 function getMentalScoresSummary() {
   const mentalRecords = AppData.mentalRecords;
   const total = mentalRecords.flat().reduce((sum, v) => sum + v, 0);
+  if (total <= 0) return '0';
   const k = (total / 1000).toFixed(1); // переводим в «k» с одним знаком [cite:5]
   return `${k}k`;
 }
@@ -1342,7 +1330,7 @@ const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
                                 onClick={() => { onSend(); onClose(); }}
                                 style={{
                                     width: '100%', padding: '16px', borderRadius: '16px',
-                                    border: 'none', background: '#007AFF',
+                                    border: 'none', background: '#9FB4C4',
                                     color: '#FFF', fontSize: '16px', fontWeight: '700',
                                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                                 }}

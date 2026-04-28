@@ -11,6 +11,7 @@ import { IoIosArrowBack } from 'react-icons/io';
 import Icons from '../../StaticClasses/Icons';
 import Slider from '@mui/material/Slider';
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx'; // Imported Component
+import { playEffects } from '../../StaticClasses/Effects.js';
 
 const click = new Audio('Audio/Click.wav');
 const now = new Date();
@@ -1132,13 +1133,6 @@ const completionModeButton = (ui, active) => ({
 
 // --- ЛОГИКА (ОРИГИНАЛ) ---
 const months = [['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'], ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
-
-function playEffects(sound) {
-    if (AppData.prefs[2] === 0 && sound) { sound.currentTime = 0; sound.play(); }
-    if (AppData.prefs[3] === 0 && window.Telegram?.WebApp?.isVersionAtLeast?.('6.1')) {
-        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-    }
-}
 
 const getCategory = (value) => {
     const map = { 'Здоровье': ['Здоровье', 'Health'], 'Health': ['Здоровье', 'Health'], 'Развитие': ["Развитие", "Growth"], 'Growth': ["Развитие", "Growth"], 'Продуктивность': ["Продуктивность", "Productivity"], 'Productivity': ["Продуктивность", "Productivity"], 'Отношения и отдых': ["Отношения и отдых", "Relationships & recreation"], 'Relationships & recreation': ["Отношения и отдых", "Relationships & recreation"], 'Отказ от вредного': ["Отказ от вредного", "Bad habits to quit"], 'Bad habits to quit': ["Отказ от вредного", "Bad habits to quit"] };

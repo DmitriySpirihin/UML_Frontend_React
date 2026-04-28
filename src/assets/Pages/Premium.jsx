@@ -5,7 +5,7 @@ import { useTonConnectUI } from '@tonconnect/ui-react';
 import { beginCell } from 'ton-core';
 import Colors from '../StaticClasses/Colors';
 import { lastPage$, setPage, theme$, lang$, premium$, fontSize$, isValidation$, setValidation, setShowPopUpPanel } from '../StaticClasses/HabitsBus';
-import { FaBrain, FaChartPie, FaRobot, FaStar, FaCrown, FaTimes, FaInfinity,FaCheckCircle,FaCalendarAlt } from 'react-icons/fa';
+import { FaBrain, FaChartPie, FaRobot, FaStar, FaCrown, FaTimes, FaInfinity, FaCheckCircle, FaCalendarAlt, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { MdOutlineDiamond } from "react-icons/md";
 import { BiRuble } from "react-icons/bi";
 import { initiateSbpPayment, fetchTonInvoice, initiateTgStarsPayment, sendReferalLink } from '../StaticClasses/PaymentService';
@@ -29,6 +29,10 @@ const currencies = [
     <FaStar key="star" size={16} />,
     <MdOutlineDiamond key="ton" size={18} />
 ];
+
+const PRO_ACCENT = '#9FB4C4';
+const PRO_ACCENT_STRONG = '#CAD6DF';
+const PRO_ACCENT_TEXT = '#D8E2EA';
 
 const paymentInMonth = [
     ['', '133', '83'],
@@ -196,19 +200,21 @@ const Premium = () => {
             {!isValidation && !needAgreement && !hasPremium && (
                 <div style={styles(theme).contentWrapper}>
                     <header style={styles(theme).heroHeader}>
+                        <div style={styles(theme).heroAura} />
                         <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={styles(theme).heroImageWrap}>
                             <img style={styles(theme).heroImage} src={'images/Premium_Bro.png'} alt="logo" />
                         </motion.div>
-                        <div>
-                            <h1 style={styles(theme).title}>UltyMyLife <span style={{ color: '#4DA6FF' }}>Pro</span></h1>
-                            <p style={styles(theme).subtitle}>{langIndex === 0 ? 'Глубже аналитика. Умнее рекомендации.' : 'Deeper analytics. Smarter guidance.'}</p>
+                        <div style={styles(theme).heroTextBlock}>
+                            <div style={styles(theme).heroKicker}>{langIndex === 0 ? 'Pro-доступ' : 'Pro access'}</div>
+                            <h1 style={styles(theme).title}>UltyMyLife <span style={{ color: PRO_ACCENT_TEXT }}>Pro</span></h1>
+                            <p style={styles(theme).subtitle}>
+                                {langIndex === 0 ? 'Аналитика, рекомендации и Pro-режимы без лишнего шума.' : 'Analytics, guidance, and Pro modes without extra noise.'}
+                            </p>
                         </div>
                     </header>
 
                     <div style={styles(theme).sectionLabel}>{langIndex === 0 ? 'Что входит' : 'Included'}</div>
                     <BenefitsGrid theme={theme} langIndex={langIndex} />
-
-                    <ReferralCard theme={theme} langIndex={langIndex} onClick={sendReferalLink} />
 
                     <div style={styles(theme).sectionLabel}>{langIndex === 0 ? 'Тариф' : 'Plan'}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', width: '100%', marginBottom: '16px' }}>
@@ -247,10 +253,11 @@ const Premium = () => {
                         <SegmentOption id={3} current={currentPaymentMethod} set={setCurrentPaymentMethod} label="TON" icon={<MdOutlineDiamond size={14} />} isDark={isDark} />
                     </div>
 
-                    <button onClick={() => {if(currentPaymentMethod !== 1){setNeedAgreement(true)}}} style={{...styles(theme).mainButton,backgroundColor: currentPaymentMethod !== 1 ? '#4DA6FF' : '#d13636', boxShadow: currentPaymentMethod !== 1 ? '0 16px 36px rgba(77, 166, 255, 0.28)' : '0 4px 20px rgba(255, 0, 0, 0.4)'}}>
+                    <button onClick={() => {if(currentPaymentMethod !== 1){setNeedAgreement(true)}}} style={{...styles(theme).mainButton, background: currentPaymentMethod !== 1 ? styles(theme).mainButton.background : '#d13636', boxShadow: currentPaymentMethod !== 1 ? styles(theme).mainButton.boxShadow : '0 4px 20px rgba(255, 0, 0, 0.4)'}}>
                             {currentPaymentMethod !== 1 ? langIndex === 0 ? 'Продолжить' : 'Continue' : langIndex === 0 ? 'Скоро появится' : 'Coming soon'}
                         </button>
                     <p style={styles(theme).footerHint}>{getPaymentMethodHint(currentPaymentMethod, langIndex)}</p>
+                    <ReferralCard theme={theme} langIndex={langIndex} onClick={sendReferalLink} />
                 </div>
             )}
              {hasPremium && (
@@ -270,7 +277,7 @@ const Premium = () => {
                     {langIndex === 0 ? 'Статус' : 'Status'}
                 </span>
                 <span style={{ fontSize: '20px', fontWeight: '800', fontFamily: 'Segoe UI' }}>
-                    UltyMyLife <span style={{ color: '#007AFF' }}>Pro</span>
+                    UltyMyLife <span style={{ color: PRO_ACCENT_TEXT }}>Pro</span>
                 </span>
             </div>
         </div>
@@ -337,7 +344,7 @@ const Premium = () => {
                 style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'radial-gradient(circle, rgba(0,122,255,0.4) 0%, transparent 70%)',
+                    background: 'radial-gradient(circle, rgba(159,180,196,0.28) 0%, transparent 70%)',
                     borderRadius: '50%',
                     filter: 'blur(20px)',
                 }}
@@ -350,9 +357,9 @@ const Premium = () => {
                     width: '100%', height: '100%',
                     borderRadius: '50%',
                     border: `2px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
-                    borderTop: '2px solid #007AFF',
+                    borderTop: `2px solid ${PRO_ACCENT}`,
                     borderLeft: '2px solid transparent',
-                    boxShadow: '0 0 15px rgba(0, 122, 255, 0.2)'
+                    boxShadow: '0 0 15px rgba(159,180,196,0.18)'
                 }}
                 animate={{ rotate: 360 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -365,7 +372,7 @@ const Premium = () => {
                     width: '70%', height: '70%',
                     borderRadius: '50%',
                     border: `2px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
-                    borderBottom: '2px solid #4DA6FF',
+                    borderBottom: `2px solid ${PRO_ACCENT}`,
                     borderRight: '2px solid transparent',
                 }}
                 animate={{ rotate: -360 }}
@@ -385,7 +392,7 @@ const Premium = () => {
                     zIndex: 2
                 }}
             >
-                <MdOutlineDiamond size={24} color="#007AFF" />
+                <MdOutlineDiamond size={24} color={PRO_ACCENT} />
             </motion.div>
         </div>
 
@@ -426,7 +433,7 @@ const Premium = () => {
                         key={i}
                         animate={{ y: [0, -6, 0] }}
                         transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.1 }}
-                        style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#007AFF' }}
+                        style={{ width: '6px', height: '6px', borderRadius: '50%', background: PRO_ACCENT }}
                     />
                 ))}
             </motion.div>
@@ -500,8 +507,6 @@ export function PremiumButton({
     textToShow = ['Получить UltyMyLife Pro', 'Get UltyMyLife Pro']
 }) {
     const isDark = theme === 'dark';
-    const accentColor = '#4DA6FF';
-    const accentGradient = 'linear-gradient(135deg, #4DA6FF 0%, #66D9E8 100%)';
 
     return (
         <motion.button
@@ -515,7 +520,7 @@ export function PremiumButton({
                 width: w,
                 height: h,
                 borderRadius: '18px',
-                border: isDark ? `1px solid rgba(255, 215, 0, 0.3)` : '1px solid rgba(0,0,0,0.08)',
+                border: isDark ? `1px solid rgba(159,180,196,0.24)` : '1px solid rgba(0,0,0,0.08)',
                 cursor: 'pointer',
                 overflow: 'hidden',
                 display: 'flex',
@@ -531,7 +536,7 @@ export function PremiumButton({
                 
                 // Glow Shadow
                 boxShadow: isDark 
-                    ? '0  0 10px 1px rgba(77, 166, 255, 0.28)'
+                    ? '0  0 12px 1px rgba(159,180,196,0.18)'
                     : '0 8px 20px -6px rgba(0, 0, 0, 0.1)'
             }}
         >
@@ -550,17 +555,17 @@ export function PremiumButton({
                     width: '36px',
                     height: '36px',
                     borderRadius: '10px',
-                    background: isDark ? 'rgba(255, 215, 0, 0.1)' : '#FFF9E6',
-                    border: `1px solid ${isDark ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 215, 0, 0.1)'}`,
+                    background: isDark ? 'rgba(159,180,196,0.12)' : 'rgba(159,180,196,0.1)',
+                    border: `1px solid ${isDark ? 'rgba(159,180,196,0.26)' : 'rgba(159,180,196,0.2)'}`,
                 }}>
-                    <FaCrown size={16} color={ isDark ? '#8FD3FF' : '#2F6EA5'} style={{ filter: 'drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3))' }} />
+                    <FaCrown size={16} color={isDark ? PRO_ACCENT_TEXT : '#374151'} />
                 </div>
 
                 {/* Text */}
                 <span style={{ 
                     fontSize: '14px', 
                     fontWeight: '700', 
-                    color: isDark ? '#8FD3FF' : '#2F6EA5',
+                    color: isDark ? PRO_ACCENT_TEXT : '#374151',
                     fontFamily: 'Segoe UI, sans-serif',
                     letterSpacing: '0.4px'
                 }}>
@@ -582,11 +587,11 @@ export function PremiumButton({
 const SegmentOption = ({ id, current, set, label, icon, isDark }) => (
     <div onClick={() => set(id)} style={{
         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '36px', borderRadius: '13px',
-        background: current === id ? (isDark ? 'rgba(77,166,255,0.18)' : '#FFFFFF') : 'transparent',
-        border: current === id ? '1px solid rgba(77,166,255,0.38)' : '1px solid transparent',
+        background: current === id ? (isDark ? 'rgba(159,180,196,0.16)' : 'rgba(255,255,255,0.88)') : 'transparent',
+        border: current === id ? `1px solid ${isDark ? 'rgba(159,180,196,0.34)' : 'rgba(159,180,196,0.24)'}` : '1px solid transparent',
         color: current === id ? (isDark ? '#F2F3F5' : '#111827') : (isDark ? 'rgba(166,173,184,0.75)' : 'rgba(17,24,39,0.55)'),
         fontSize: '13px', transition: 'all 0.2s ease', fontWeight: current === id ? '800' : '650',
-        boxShadow: current === id ? '0 1px 0 rgba(255,255,255,0.05) inset' : 'none',
+        boxShadow: current === id ? '0 1px 0 rgba(255,255,255,0.05) inset, 0 14px 28px -24px rgba(159,180,196,0.72)' : 'none',
         cursor: 'pointer'
     }}>
         {icon} <span>{label}</span>
@@ -597,7 +602,7 @@ const FeatureItem = ({ icon, title, sub, variants, theme }) => {
     const isDark = theme === 'dark';
     return (
         <motion.div variants={variants} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-            <div style={{ width: '42px', height: '42px', borderRadius: '13px', background: 'rgba(77,166,255,0.14)', border: '1px solid rgba(77,166,255,0.26)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px', color: '#4DA6FF' }}>
+            <div style={{ width: '42px', height: '42px', borderRadius: '13px', background: isDark ? 'rgba(159,180,196,0.12)' : 'rgba(159,180,196,0.08)', border: `1px solid ${isDark ? 'rgba(159,180,196,0.26)' : 'rgba(159,180,196,0.18)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px', color: PRO_ACCENT }}>
                 {icon}
             </div>
             <div style={{ fontSize: '12px', fontWeight: '850', color: isDark ? '#F2F3F5' : '#111827' }}>{title}</div>
@@ -607,85 +612,383 @@ const FeatureItem = ({ icon, title, sub, variants, theme }) => {
 }
 
 const BenefitsGrid = ({ theme, langIndex }) => {
+    const [expanded, setExpanded] = useState(true);
+    const [selectedIndex, setSelectedIndex] = useState(null);
+    const accent = PRO_ACCENT;
+    const accentSoft = 'rgba(159,180,196,0.12)';
+    const accentRing = 'rgba(159,180,196,0.28)';
     const items = [
         {
             icon: <FaRobot />,
             title: langIndex === 0 ? 'ИИ-анализ' : 'AI analysis',
-            sub: langIndex === 0 ? 'инсайты по данным' : 'data insights',
-            color: '#66D9E8',
-            soft: 'rgba(102,217,232,0.13)',
-            ring: 'rgba(102,217,232,0.28)'
+            sub: langIndex === 0 ? 'Что влияет на прогресс' : 'What drives progress',
+            sections: langIndex === 0
+                ? [
+                    ['Что дает', 'Собирает привычки, сон, тренировки и ум в одну картину.'],
+                    ['Как помогает', 'Показывает, что двигает тебя вперед, а что мешает.'],
+                    ['Где видно', 'В Pro-аналитике и персональных подсказках.']
+                ]
+                : [
+                    ['What it gives', 'Connects habits, sleep, training, and mind into one picture.'],
+                    ['How it helps', 'Shows what moves you forward and what slows you down.'],
+                    ['Where to see it', 'In Pro analytics and personal guidance.']
+                ],
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
         },
         {
             icon: <FaChartPie />,
-            title: langIndex === 0 ? 'Аналитика' : 'Analytics',
-            sub: langIndex === 0 ? 'полная история' : 'full history',
-            color: '#4DA6FF',
-            soft: 'rgba(77,166,255,0.13)',
-            ring: 'rgba(77,166,255,0.28)'
+            title: langIndex === 0 ? 'Полная история' : 'Full history',
+            sub: langIndex === 0 ? 'Динамика за все периоды' : 'Trends across all periods',
+            sections: langIndex === 0
+                ? [
+                    ['Что дает', 'Открывает длинную историю по разделам и периодам.'],
+                    ['Как помогает', 'Легче увидеть тренд, а не случайный хороший или плохой день.'],
+                    ['Где видно', 'В графиках, сравнениях и истории прогресса.']
+                ]
+                : [
+                    ['What it gives', 'Unlocks long history across sections and periods.'],
+                    ['How it helps', 'Makes trends clearer than one good or bad day.'],
+                    ['Where to see it', 'In charts, comparisons, and progress history.']
+                ],
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
+        },
+        {
+            icon: <FaStar />,
+            title: langIndex === 0 ? 'Рекомендации' : 'Guidance',
+            sub: langIndex === 0 ? 'Следующий понятный шаг' : 'A clearer next step',
+            sections: langIndex === 0
+                ? [
+                    ['Что дает', 'Подсказки на основе твоей реальной статистики.'],
+                    ['Как помогает', 'Не нужно гадать, что улучшать первым.'],
+                    ['Где видно', 'В выводах после аналитики и Pro-советах.']
+                ]
+                : [
+                    ['What it gives', 'Guidance based on your actual stats.'],
+                    ['How it helps', 'Removes guesswork about what to improve first.'],
+                    ['Where to see it', 'In analytics takeaways and Pro tips.']
+                ],
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
         },
         {
             icon: <FaBrain />,
-            title: langIndex === 0 ? 'Развитие' : 'Growth',
-            sub: langIndex === 0 ? 'больше практик' : 'more practice',
-            color: '#8A7CD6',
-            soft: 'rgba(138,124,214,0.13)',
-            ring: 'rgba(138,124,214,0.28)'
+            title: langIndex === 0 ? 'Pro-режимы' : 'Pro modes',
+            sub: langIndex === 0 ? 'Больше уровней и практик' : 'More levels and practice',
+            sections: langIndex === 0
+                ? [
+                    ['Что дает', 'Дополнительные уровни там, где базового режима уже мало.'],
+                    ['Как помогает', 'Можно повышать сложность постепенно и без хаоса.'],
+                    ['Где видно', 'В тренировках ума, практиках и Pro-разделах.']
+                ]
+                : [
+                    ['What it gives', 'Extra levels when the basic mode is no longer enough.'],
+                    ['How it helps', 'Lets you raise difficulty gradually and cleanly.'],
+                    ['Where to see it', 'In mind training, practice, and Pro sections.']
+                ],
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
         },
         {
             icon: <FaInfinity />,
             title: langIndex === 0 ? 'Без лимитов' : 'No limits',
-            sub: langIndex === 0 ? 'доступ к Pro' : 'Pro access',
-            color: '#7AA988',
-            soft: 'rgba(122,169,136,0.13)',
-            ring: 'rgba(122,169,136,0.28)'
+            sub: langIndex === 0 ? 'Все Premium-разделы' : 'Every Premium section',
+            sections: langIndex === 0
+                ? [
+                    ['Что дает', 'Один доступ ко всем платным возможностям приложения.'],
+                    ['Как помогает', 'Меньше ограничений, больше нормального использования.'],
+                    ['Где видно', 'Во всех местах, где отмечен Pro-доступ.']
+                ]
+                : [
+                    ['What it gives', 'One access point for every paid app feature.'],
+                    ['How it helps', 'Fewer limits, more normal use.'],
+                    ['Where to see it', 'Everywhere Pro access is marked.']
+                ],
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
+        },
+        {
+            icon: <FaCrown />,
+            title: langIndex === 0 ? 'Приоритет' : 'Priority',
+            sub: langIndex === 0 ? 'Новые функции раньше' : 'New features earlier',
+            sections: langIndex === 0
+                ? [
+                    ['Что дает', 'Ранний доступ к полезным улучшениям.'],
+                    ['Как помогает', 'Можно быстрее пробовать то, что развивается в приложении.'],
+                    ['Где видно', 'В новых Pro-функциях и обновлениях разделов.']
+                ]
+                : [
+                    ['What it gives', 'Earlier access to useful improvements.'],
+                    ['How it helps', 'Lets you try what is evolving in the app sooner.'],
+                    ['Where to see it', 'In new Pro features and section upgrades.']
+                ],
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
         }
     ];
     const isDark = theme === 'dark';
+    const selected = selectedIndex === null ? null : items[selectedIndex];
+    const showPrev = () => setSelectedIndex((selectedIndex + items.length - 1) % items.length);
+    const showNext = () => setSelectedIndex((selectedIndex + 1) % items.length);
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 9, marginBottom: 14 }}>
-            {items.map((item) => (
-                <div
-                    key={item.title}
-                    style={{
-                        minHeight: 74,
-                        borderRadius: 17,
-                        border: `1px solid ${item.ring}`,
-                        background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.88)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '12px',
-                        boxSizing: 'border-box'
-                    }}
-                >
-                    <div style={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: 12,
-                        background: item.soft,
-                        color: item.color,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                    }}>
-                        {React.cloneElement(item.icon, { size: 15 })}
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                        <div style={{ color: isDark ? '#F2F3F5' : '#111827', fontSize: 12, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {item.title}
+        <div style={{ marginBottom: 16 }}>
+            <motion.div layout style={{
+                position: 'relative',
+                overflow: 'hidden',
+                borderRadius: 21,
+                border: `1px solid ${isDark ? 'rgba(159,180,196,0.18)' : 'rgba(15,23,42,0.08)'}`,
+                background: isDark
+                    ? 'linear-gradient(145deg, rgba(24,27,30,0.86), rgba(20,23,25,0.9) 62%, rgba(159,180,196,0.06))'
+                    : 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(255,255,255,0.86) 62%, rgba(159,180,196,0.08))',
+                padding: 12,
+                boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 18px 36px -28px rgba(0,0,0,0.72)'
+            }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: expanded ? 12 : 0 }}>
+                    <div>
+                        <div style={{ color: isDark ? '#F2F3F5' : '#111827', fontSize: 14, fontWeight: 950 }}>
+                            {langIndex === 0 ? 'Возможности Pro' : 'Pro benefits'}
                         </div>
-                        <div style={{ color: isDark ? '#A6ADB8' : '#596273', fontSize: 10, fontWeight: 650, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {item.sub}
+                        <div style={{ color: isDark ? '#A6ADB8' : '#596273', fontSize: 11, fontWeight: 700, marginTop: 2 }}>
+                            {langIndex === 0 ? 'Нажми на пункт, чтобы раскрыть детали' : 'Tap an item to open details'}
                         </div>
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => setExpanded(prev => !prev)}
+                        style={{
+                            minWidth: 92,
+                            minHeight: 36,
+                            borderRadius: 13,
+                            border: `1px solid ${isDark ? 'rgba(159,180,196,0.28)' : 'rgba(159,180,196,0.2)'}`,
+                            background: isDark ? 'rgba(159,180,196,0.1)' : 'rgba(159,180,196,0.08)',
+                            color: isDark ? PRO_ACCENT_TEXT : '#506B80',
+                            fontFamily: 'inherit',
+                            fontSize: 12,
+                            fontWeight: 900,
+                            cursor: 'pointer',
+                            flexShrink: 0
+                        }}
+                    >
+                        {expanded ? (langIndex === 0 ? 'Свернуть' : 'Collapse') : (langIndex === 0 ? 'Открыть' : 'Open')}
+                    </button>
                 </div>
-            ))}
+                <AnimatePresence initial={false}>
+                    {expanded && (
+                        <motion.div
+                            key="benefits-grid"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.22 }}
+                            style={{ overflow: 'hidden' }}
+                        >
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, position: 'relative' }}>
+                                {items.map((item, index) => (
+                        <motion.button
+                            type="button"
+                            layout
+                            key={item.title}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            onClick={() => setSelectedIndex(index)}
+                            style={{
+                                minHeight: 126,
+                                width: '100%',
+                                borderRadius: 18,
+                                border: `1px solid ${item.ring}`,
+                                background: isDark
+                                    ? 'linear-gradient(145deg, rgba(255,255,255,0.052), rgba(255,255,255,0.026))'
+                                    : 'linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,255,255,0.68))',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-start',
+                                justifyContent: 'space-between',
+                                gap: 10,
+                                padding: '13px',
+                                boxSizing: 'border-box',
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                textAlign: 'left',
+                                boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset'
+                            }}
+                        >
+                            <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                <div style={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 13,
+                                    background: item.soft,
+                                    color: item.color,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    {React.cloneElement(item.icon, { size: 16 })}
+                                </div>
+                                <FaChevronRight size={12} color={isDark ? 'rgba(159,180,196,0.65)' : 'rgba(80,107,128,0.55)'} />
+                            </div>
+                            <div style={{ minWidth: 0, width: '100%' }}>
+                                <div style={{ color: isDark ? '#F2F3F5' : '#111827', fontSize: 15, fontWeight: 950, lineHeight: 1.08 }}>
+                                    {item.title}
+                                </div>
+                                <div style={{ color: isDark ? '#A6ADB8' : '#596273', fontSize: 11, fontWeight: 700, marginTop: 6, lineHeight: 1.25 }}>
+                                    {item.sub}
+                                </div>
+                            </div>
+                        </motion.button>
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.div>
+            <AnimatePresence>
+                {selected && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            zIndex: 7600,
+                            background: 'rgba(0,0,0,0.62)',
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            padding: '20px',
+                            boxSizing: 'border-box'
+                        }}
+                        onClick={() => setSelectedIndex(null)}
+                    >
+                        <motion.div
+                            initial={{ y: 34, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 34, opacity: 0 }}
+                            transition={{ type: 'spring', damping: 24, stiffness: 280 }}
+                            onClick={(event) => event.stopPropagation()}
+                            style={{
+                                width: '100%',
+                                borderRadius: 26,
+                                padding: 18,
+                                background: isDark ? 'rgba(20,23,25,0.98)' : 'rgba(255,255,255,0.98)',
+                                border: `1px solid ${selected.ring}`,
+                                color: isDark ? '#F2F3F5' : '#111827',
+                                boxShadow: '0 28px 80px rgba(0,0,0,0.5)',
+                                boxSizing: 'border-box'
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                                    <div style={{
+                                        width: 46,
+                                        height: 46,
+                                        borderRadius: 15,
+                                        background: selected.soft,
+                                        color: selected.color,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        {React.cloneElement(selected.icon, { size: 20 })}
+                                    </div>
+                                    <div style={{ minWidth: 0 }}>
+                                        <div style={{ fontSize: 19, fontWeight: 950, lineHeight: 1.08 }}>{selected.title}</div>
+                                        <div style={{ color: isDark ? '#A6ADB8' : '#596273', fontSize: 12, fontWeight: 750, marginTop: 3 }}>{selected.sub}</div>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedIndex(null)}
+                                    style={{
+                                        width: 38,
+                                        height: 38,
+                                        borderRadius: 999,
+                                        border: 'none',
+                                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)',
+                                        color: isDark ? '#F2F3F5' : '#111827',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        flexShrink: 0
+                                    }}
+                                >
+                                    <FaTimes size={13} />
+                                </button>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                                {selected.sections.map(([label, text]) => (
+                                    <div
+                                        key={label}
+                                        style={{
+                                            borderRadius: 15,
+                                            background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(15,23,42,0.035)',
+                                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.06)'}`,
+                                            padding: '11px 12px'
+                                        }}
+                                    >
+                                        <div style={{ color: isDark ? PRO_ACCENT_TEXT : '#506B80', fontSize: 10, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 5 }}>
+                                            {label}
+                                        </div>
+                                        <div style={{ color: isDark ? '#D7DBE2' : '#354052', fontSize: 13, fontWeight: 700, lineHeight: 1.38 }}>
+                                            {text}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                                <BenefitNavButton onClick={showPrev} icon={<FaChevronLeft />} text={langIndex === 0 ? 'Назад' : 'Prev'} isDark={isDark} />
+                                <div style={{ color: isDark ? '#A6ADB8' : '#596273', fontSize: 12, fontWeight: 850 }}>
+                                    {selectedIndex + 1} / {items.length}
+                                </div>
+                                <BenefitNavButton onClick={showNext} icon={<FaChevronRight />} text={langIndex === 0 ? 'Дальше' : 'Next'} isDark={isDark} right />
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
+
+const BenefitNavButton = ({ onClick, icon, text, isDark, right = false }) => (
+    <button
+        type="button"
+        onClick={onClick}
+        style={{
+            minHeight: 42,
+            minWidth: 104,
+            borderRadius: 15,
+            border: `1px solid ${isDark ? 'rgba(159,180,196,0.28)' : 'rgba(159,180,196,0.2)'}`,
+            background: isDark ? 'rgba(159,180,196,0.1)' : 'rgba(159,180,196,0.08)',
+            color: isDark ? PRO_ACCENT_TEXT : '#506B80',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: right ? 'row-reverse' : 'row',
+            gap: 7,
+            fontFamily: 'inherit',
+            fontSize: 13,
+            fontWeight: 900,
+            cursor: 'pointer'
+        }}
+    >
+        {icon}
+        <span>{text}</span>
+    </button>
+);
 
 const ReferralCard = ({ theme, langIndex, onClick }) => {
     const isDark = theme === 'dark';
@@ -696,61 +999,59 @@ const ReferralCard = ({ theme, langIndex, onClick }) => {
             onClick={onClick}
             style={{
                 width: '100%',
-                minHeight: 76,
-                borderRadius: 22,
-                border: '1px solid rgba(77,166,255,0.28)',
-                background: isDark
-                    ? 'linear-gradient(145deg, rgba(26,29,33,0.88), rgba(20,23,25,0.92) 58%, rgba(77,166,255,0.09))'
-                    : 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(255,255,255,0.84) 58%, rgba(77,166,255,0.12))',
+                minHeight: 58,
+                borderRadius: 16,
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.075)' : 'rgba(15,23,42,0.08)'}`,
+                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.78)',
                 color: isDark ? '#F2F3F5' : '#111827',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 14,
-                padding: '14px 16px',
-                marginBottom: 16,
+                gap: 10,
+                padding: '10px 12px',
+                margin: '14px 0 0',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
                 textAlign: 'left',
-                boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 16px 34px -26px rgba(0,0,0,0.72)'
+                boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
             }}
         >
             <div style={{
-                width: 46,
-                height: 46,
-                borderRadius: 15,
-                background: 'rgba(77,166,255,0.16)',
-                border: '1px solid rgba(77,166,255,0.32)',
-                color: '#4DA6FF',
+                width: 34,
+                height: 34,
+                borderRadius: 12,
+                background: isDark ? 'rgba(159,180,196,0.12)' : 'rgba(159,180,196,0.08)',
+                border: `1px solid ${isDark ? 'rgba(159,180,196,0.26)' : 'rgba(159,180,196,0.18)'}`,
+                color: PRO_ACCENT,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0
             }}>
-                <FaCrown size={19} />
+                <FaStar size={14} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 900 }}>
+                <div style={{ fontSize: 13, fontWeight: 900 }}>
                     {langIndex === 0 ? 'Пригласи друга' : 'Invite a friend'}
                 </div>
                 <div style={{ fontSize: 11, fontWeight: 650, color: isDark ? '#A6ADB8' : '#596273', marginTop: 3, lineHeight: 1.35 }}>
-                    {langIndex === 0 ? 'Вы оба получите месяц Premium' : 'You both get one Premium month'}
+                    {langIndex === 0 ? 'Оба получите Premium бесплатно' : 'Both get Premium for free'}
                 </div>
             </div>
             <div style={{
-                minWidth: 72,
-                height: 34,
+                minWidth: 78,
+                height: 30,
                 borderRadius: 999,
-                background: 'rgba(77,166,255,0.16)',
-                border: '1px solid rgba(77,166,255,0.32)',
-                color: '#4DA6FF',
+                background: isDark ? 'rgba(159,180,196,0.1)' : 'rgba(159,180,196,0.08)',
+                border: `1px solid ${isDark ? 'rgba(159,180,196,0.24)' : 'rgba(159,180,196,0.18)'}`,
+                color: isDark ? PRO_ACCENT_TEXT : '#506B80',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 900,
                 flexShrink: 0
             }}>
-                {langIndex === 0 ? 'Подарить' : 'Share'}
+                {langIndex === 0 ? 'Отправить' : 'Send'}
             </div>
         </motion.button>
     );
@@ -758,17 +1059,22 @@ const ReferralCard = ({ theme, langIndex, onClick }) => {
 
 const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, theme }) => {
     const isDark = theme === 'dark';
+    const accent = isDark ? PRO_ACCENT_STRONG : '#506B80';
     return (
         <motion.button
             type="button"
             whileTap={{ scale: 0.985 }}
             onClick={onClick}
             style={{
-                minHeight: 62,
+                minHeight: badge ? 76 : 64,
                 width: '100%',
-                borderRadius: 18,
-                border: active ? '1px solid rgba(77,166,255,0.72)' : `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}`,
-                background: active ? 'rgba(77,166,255,0.14)' : (isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.88)'),
+                borderRadius: badge ? 22 : 18,
+                border: active ? `1px solid ${isDark ? 'rgba(159,180,196,0.5)' : 'rgba(80,107,128,0.24)'}` : `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}`,
+                background: active
+                    ? (isDark
+                        ? 'linear-gradient(145deg, rgba(159,180,196,0.2), rgba(255,255,255,0.055) 58%, rgba(159,180,196,0.12))'
+                        : 'linear-gradient(145deg, rgba(255,255,255,0.95), rgba(159,180,196,0.12))')
+                    : (isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.88)'),
                 color: isDark ? '#F2F3F5' : '#111827',
                 display: 'flex',
                 alignItems: 'center',
@@ -776,7 +1082,7 @@ const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, t
                 padding: '12px 14px',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
-                boxShadow: active ? '0 1px 0 rgba(255,255,255,0.05) inset, 0 16px 32px -26px rgba(77,166,255,0.75)' : '0 1px 0 rgba(255,255,255,0.04) inset',
+                boxShadow: active ? '0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 38px -26px rgba(159,180,196,0.62)' : '0 1px 0 rgba(255,255,255,0.04) inset',
                 textAlign: 'left',
                 boxSizing: 'border-box'
             }}
@@ -786,8 +1092,8 @@ const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, t
                 height: 24,
                 borderRadius: 999,
                 border: active ? 'none' : `1px solid ${isDark ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)'}`,
-                background: active ? '#4DA6FF' : 'transparent',
-                color: '#111',
+                background: active ? accent : 'transparent',
+                color: isDark ? '#0E1013' : '#F2F3F5',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -802,8 +1108,8 @@ const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, t
                         <span style={{
                             fontSize: 9,
                             fontWeight: 900,
-                            color: '#111',
-                            background: '#4DA6FF',
+                            color: isDark ? '#0E1013' : '#F2F3F5',
+                            background: accent,
                             borderRadius: 999,
                             padding: '3px 7px',
                             textTransform: 'uppercase',
@@ -815,7 +1121,7 @@ const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, t
                 </div>
                 {sub && <div style={{ fontSize: 11, color: isDark ? '#A6ADB8' : '#596273', marginTop: 3, fontWeight: 650 }}>{sub}</div>}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: active ? '#4DA6FF' : (isDark ? '#F2F3F5' : '#111827'), fontSize: 20, fontWeight: 900, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: active ? accent : (isDark ? '#F2F3F5' : '#111827'), fontSize: 20, fontWeight: 900, flexShrink: 0 }}>
                 {price}
                 <span style={{ fontSize: 14 }}>{currencyIcon}</span>
             </div>
@@ -829,21 +1135,21 @@ const BigPlanCard = ({ active, onClick, price, label, sub, currencyIcon, saveLab
         <motion.div whileTap={{ scale: 0.98 }} onClick={onClick} style={{
             padding: '20px', borderRadius: '22px', position: 'relative', overflow: 'hidden',
             background: active
-                ? 'linear-gradient(145deg, rgba(77,166,255,0.13), rgba(255,255,255,0.03))'
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))'
                 : (isDark ? 'rgba(255,255,255,0.045)' : '#FFFFFF'),
-            border: active ? '2px solid #4DA6FF' : `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : '#E5E7EB'}`,
+            border: active ? `2px solid ${PRO_ACCENT}` : `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : '#E5E7EB'}`,
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            boxShadow: active ? '0 18px 38px -28px rgba(77,166,255,0.75)' : ((!isDark && !active) ? '0 4px 10px rgba(0,0,0,0.03)' : 'none'),
+            boxShadow: active ? '0 18px 38px -28px rgba(0,0,0,0.72)' : ((!isDark && !active) ? '0 4px 10px rgba(0,0,0,0.03)' : 'none'),
             cursor: 'pointer'
         }}>
-            {saveLabel && <div style={{ position: 'absolute', top: 0, right: 0, background: '#4DA6FF', padding: '4px 10px', borderBottomLeftRadius: '14px', fontSize: '10px', fontWeight: '900', color: '#111' }}>{saveLabel}</div>}
+            {saveLabel && <div style={{ position: 'absolute', top: 0, right: 0, background: isDark ? PRO_ACCENT_STRONG : '#111827', padding: '4px 10px', borderBottomLeftRadius: '14px', fontSize: '10px', fontWeight: '900', color: isDark ? '#0E1013' : '#F2F3F5' }}>{saveLabel}</div>}
             <div>
                 <div style={{ fontSize: '14px', color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)', marginBottom: '4px' }}>{label}</div>
-                <div style={{ color: isDark ? '#F2F3F5' : '#111827', fontSize: '26px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '5px' }}>{price} <span style={{ color: '#4DA6FF', fontSize: '18px' }}>{currencyIcon}</span></div>
+                <div style={{ color: isDark ? '#F2F3F5' : '#111827', fontSize: '26px', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '5px' }}>{price} <span style={{ color: isDark ? PRO_ACCENT_TEXT : '#374151', fontSize: '18px' }}>{currencyIcon}</span></div>
             </div>
             <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '11px', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>{langIndex === 0 ? 'всего' : 'only'}</div>
-                <div style={{ fontSize: '14px', color: '#4DA6FF', fontWeight: '800' }}>{sub} {currencyIcon} <span style={{fontWeight:500, fontSize:'11px'}}>/ {langIndex === 0 ? 'мес' : 'mo'}</span></div>
+                <div style={{ fontSize: '14px', color: isDark ? PRO_ACCENT_TEXT : '#374151', fontWeight: '800' }}>{sub} {currencyIcon} <span style={{fontWeight:500, fontSize:'11px'}}>/ {langIndex === 0 ? 'мес' : 'mo'}</span></div>
             </div>
         </motion.div>
     );
@@ -855,15 +1161,15 @@ const SmallPlanCard = ({ active, onClick, price, label, currencyIcon, theme }) =
         <motion.div whileTap={{ scale: 0.98 }} onClick={onClick} style={{
             flex: 1, padding: '16px', borderRadius: '20px', 
             background: active
-                ? (isDark ? 'rgba(77,166,255,0.12)' : 'rgba(77,166,255,0.08)')
+                ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(17,24,39,0.045)')
                 : (isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF'),
-            border: active ? '2px solid #4DA6FF' : `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : '#E5E7EB'}`,
+            border: active ? `2px solid ${PRO_ACCENT}` : `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : '#E5E7EB'}`,
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
             boxShadow: (!isDark && !active) ? '0 4px 10px rgba(0,0,0,0.03)' : 'none',
             cursor: 'pointer'
         }}>
             <div style={{ fontSize: '12px', color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>{label}</div>
-            <div style={{ color: isDark ? '#F2F3F5' : '#111827', fontSize: '18px', fontWeight: '850', display: 'flex', alignItems: 'center', gap: '3px' }}>{price} <span style={{fontSize:'13px', color: active ? '#4DA6FF' : 'inherit'}}>{currencyIcon}</span></div>
+            <div style={{ color: isDark ? '#F2F3F5' : '#111827', fontSize: '18px', fontWeight: '850', display: 'flex', alignItems: 'center', gap: '3px' }}>{price} <span style={{fontSize:'13px', color: active ? (isDark ? PRO_ACCENT_TEXT : '#374151') : 'inherit'}}>{currencyIcon}</span></div>
         </motion.div>
     );
 }
@@ -878,34 +1184,67 @@ const styles = (theme) => {
             backgroundColor: isDark ? '#0E1013' : '#F4F5F7',
             zIndex: 5000, display: 'flex', flexDirection: 'column', 
             backgroundImage: isDark 
-                ? 'radial-gradient(1000px 500px at 80% -10%, rgba(77,166,255,0.08), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013'
-                : 'radial-gradient(900px 450px at 80% -10%, rgba(77,166,255,0.11), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7',
+                ? 'radial-gradient(900px 420px at 84% -8%, rgba(159,180,196,0.12), transparent 58%), radial-gradient(700px 360px at -10% 104%, rgba(102,217,232,0.04), transparent 58%), #0E1013'
+                : 'radial-gradient(900px 420px at 84% -8%, rgba(159,180,196,0.13), transparent 58%), radial-gradient(700px 360px at -10% 104%, rgba(102,217,232,0.08), transparent 58%), #F4F5F7',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
         },
-        contentWrapper: { padding: '22px 20px 28px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', boxSizing: 'border-box' },
+        contentWrapper: { padding: 'calc(env(safe-area-inset-top, 0px) + 66px) 20px 28px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', boxSizing: 'border-box' },
         heroHeader: {
-            margin: '10px 0 14px',
-            padding: '16px',
+            minHeight: '156px',
+            margin: '0 0 14px',
+            padding: '18px 15px 17px',
             borderRadius: '24px',
-            background: isDark ? 'linear-gradient(145deg, rgba(20,23,25,0.94), rgba(26,29,33,0.84) 58%, rgba(77,166,255,0.07))' : 'rgba(255,255,255,0.9)',
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}`,
-            boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 20px 44px -26px rgba(0,0,0,0.74)',
+            background: isDark
+                ? 'linear-gradient(145deg, rgba(18,21,24,0.98), rgba(25,28,32,0.92) 58%, rgba(159,180,196,0.12))'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.98), rgba(255,255,255,0.88) 58%, rgba(159,180,196,0.12))',
+            border: `1px solid ${isDark ? 'rgba(159,180,196,0.22)' : 'rgba(15,23,42,0.08)'}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -30px rgba(0,0,0,0.78)',
             display: 'flex',
             alignItems: 'center',
-            gap: '14px'
+            gap: '10px',
+            position: 'relative',
+            overflow: 'hidden'
+        },
+        heroAura: {
+            position: 'absolute',
+            right: '-70px',
+            top: '-86px',
+            width: '190px',
+            height: '190px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(159,180,196,0.24), transparent 64%)',
+            pointerEvents: 'none'
         },
         heroImageWrap: {
-            width: '74px',
-            height: '84px',
+            width: '78px',
+            height: '106px',
             borderRadius: '18px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            flexShrink: 0
+            flexShrink: 0,
+            position: 'relative',
+            zIndex: 1
         },
-        heroImage: { width: '88px', maxHeight: '104px', objectFit: 'contain', filter: 'drop-shadow(0 16px 22px rgba(0,0,0,0.34))' },
-        title: { fontSize: '24px', fontWeight: '850', color: isDark ? '#F2F3F5' : '#111827', margin: 0, lineHeight: 1.05 },
-        subtitle: { fontSize: '12px', color: isDark ? '#A6ADB8' : '#596273', margin: '7px 0 0', lineHeight: 1.35, fontWeight: 650 },
+        heroImage: { width: '94px', maxHeight: '116px', objectFit: 'contain', filter: 'drop-shadow(0 16px 22px rgba(0,0,0,0.34))' },
+        heroTextBlock: { minWidth: 0, flex: 1, position: 'relative', zIndex: 1 },
+        heroKicker: { fontSize: 9, color: isDark ? PRO_ACCENT_TEXT : '#506B80', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 5 },
+        title: { fontSize: '22px', fontWeight: '900', color: isDark ? '#F2F3F5' : '#111827', margin: 0, lineHeight: 1.03, whiteSpace: 'nowrap' },
+        subtitle: { fontSize: '12px', color: isDark ? '#A6ADB8' : '#596273', margin: '7px 0 0', lineHeight: 1.3, fontWeight: 700 },
+        heroChips: { display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, flexWrap: 'wrap' },
+        heroChip: {
+            minHeight: 22,
+            borderRadius: 999,
+            padding: '0 7px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            border: `1px solid ${isDark ? 'rgba(159,180,196,0.28)' : 'rgba(159,180,196,0.2)'}`,
+            background: isDark ? 'rgba(159,180,196,0.1)' : 'rgba(159,180,196,0.08)',
+            color: isDark ? PRO_ACCENT_TEXT : '#506B80',
+            fontSize: 9,
+            fontWeight: 850,
+            whiteSpace: 'nowrap'
+        },
         closeBtn: { position: 'absolute', top: 'calc(env(safe-area-inset-top, 0px) + 18px)', right: '20px', zIndex: 10 },
         iconCircle: { width: '36px', height: '36px', borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', color: isDark ? '#F2F3F5' : '#111827' },
         segmentedControl: { background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.045)', borderRadius: '16px', padding: '4px', display: 'flex', width: '100%', margin: '0 0 16px', boxSizing: 'border-box' },
@@ -916,11 +1255,11 @@ const styles = (theme) => {
         sheetHandle: { width: '36px', height: '5px', background: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)', borderRadius: '3px', margin: '0 auto 20px auto' },
         sheetTitle: { textAlign: 'center', color: isDark ? 'white' : 'black', fontSize: '20px', fontWeight: 700, margin: '0 0 20px 0' },
         miniPolicyBox: { background: isDark ? 'rgba(255,255,255,0.05)' : '#F3F4F6', borderRadius: '16px', padding: '16px', maxHeight: '160px', overflowY: 'auto', marginBottom: '20px' },
-        textLinkBtn: { background: 'none', border: 'none', color: '#4DA6FF', fontSize: '12px', fontWeight: '600', marginTop: '12px', padding: 0 },
+        textLinkBtn: { background: 'none', border: 'none', color: isDark ? PRO_ACCENT_TEXT : '#506B80', fontSize: '12px', fontWeight: '600', marginTop: '12px', padding: 0 },
         checkoutTotalBox: { background: isDark ? 'rgba(255,255,255,0.03)' : '#F9FAFB', borderRadius: '16px', padding: '16px', marginBottom: '20px' },
         checkoutRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', fontSize: '14px' },
-        totalPriceDisplay: { color: '#4DA6FF', fontWeight: '800', fontSize: '22px', display:'flex', alignItems:'center', gap:'5px' },
-        mainButton: { width: '100%', padding: '16px', borderRadius: '18px', background: '#4DA6FF', color: '#111', fontSize: '17px', fontWeight: '850', border: 'none', boxShadow: '0 16px 36px rgba(77, 166, 255, 0.28)' },
+        totalPriceDisplay: { color: isDark ? PRO_ACCENT_TEXT : '#506B80', fontWeight: '800', fontSize: '22px', display:'flex', alignItems:'center', gap:'5px' },
+        mainButton: { width: '100%', padding: '16px', borderRadius: '18px', background: isDark ? 'linear-gradient(135deg, #CAD6DF 0%, #D8E2EA 100%)' : 'linear-gradient(135deg, #111827 0%, #506B80 100%)', color: isDark ? '#0E1013' : '#F2F3F5', fontSize: '17px', fontWeight: '850', border: 'none', boxShadow: isDark ? '0 16px 34px rgba(159,180,196,0.24)' : '0 16px 34px rgba(80,107,128,0.22)' },
         cancelBtn: { background: 'transparent', border: 'none', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', width: '100%', padding: '15px', fontSize: '15px' },
         fullPolicyOverlay: { position: 'fixed', inset: 0, background: isDark ? '#000' : '#FFF', zIndex: 7000, padding: '20px', display: 'flex', flexDirection: 'column' },
         policyHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: isDark ? 'white' : 'black', marginBottom: '20px',marginTop:'75px', paddingBottom: '15px', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` },
@@ -945,7 +1284,7 @@ const styles = (theme) => {
         position: 'absolute',
         inset: 0,
         borderRadius: '50%',
-        background: 'conic-gradient(from 0deg, transparent 0deg, #007AFF 180deg, #00C6FF 360deg)',
+        background: `conic-gradient(from 0deg, transparent 0deg, ${PRO_ACCENT} 180deg, ${PRO_ACCENT_TEXT} 360deg)`,
         padding: '3px', // Width of border
         mask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
         WebkitMaskComposite: 'xor',
@@ -962,7 +1301,7 @@ const styles = (theme) => {
         position: 'absolute',
         bottom: '0',
         right: '0',
-        backgroundColor: '#4DA6FF',
+        backgroundColor: theme === 'dark' ? PRO_ACCENT_STRONG : '#506B80',
         width: '24px',
         height: '24px',
         borderRadius: '50%',
@@ -1043,11 +1382,11 @@ const styles = (theme) => {
         width: '55px',
         height: '55px',
         borderRadius: '14px',
-        backgroundColor: '#007AFF',
+        backgroundColor: theme === 'dark' ? PRO_ACCENT_STRONG : '#506B80',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: '0 0 20px rgba(0, 122, 255, 0.4)'
+        boxShadow: theme === 'dark' ? '0 0 20px rgba(159,180,196,0.22)' : '0 0 20px rgba(80,107,128,0.18)'
     },
     }
 };

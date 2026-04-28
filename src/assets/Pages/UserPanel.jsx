@@ -186,9 +186,9 @@ const UserPanel = () => {
     const selectedXpRuleBase = XP_RULES.find(rule => rule.key === selectedXpRule) || XP_RULES[0];
     const selectedXpRuleData = { ...selectedXpRuleBase, icon: XP_RULE_ICONS[selectedXpRuleBase.key] };
     const profileSections = useMemo(() => ([
-        { kind: 'habits', id: 'HabitsMain', icon: <IconHabits />, label: lang === 0 ? 'Привычки' : 'Habits', value: stats.counts.habits, unit: lang === 0 ? 'выбрано' : 'selected', color: '#C9A24B' },
+        { kind: 'habits', id: 'HabitsMain', icon: <IconHabits />, label: lang === 0 ? 'Привычки' : 'Habits', value: stats.counts.habits, unit: lang === 0 ? 'выбрано' : 'selected', color: '#A99B7A' },
         { kind: 'todo', id: 'ToDoMain', icon: <IconTodo />, label: lang === 0 ? 'Задачи' : 'Tasks', value: AppData.todoList?.length || 0, unit: lang === 0 ? 'активных' : 'active', color: '#D49A5C' },
-        { kind: 'training', id: 'TrainingMain', icon: <IconTraining />, label: lang === 0 ? 'Дневник' : 'Log', value: stats.counts.training, unit: lang === 0 ? 'дней' : 'days', color: '#B87548' },
+        { kind: 'training', id: 'TrainingMain', icon: <IconTraining />, label: lang === 0 ? 'Дневник' : 'Log', value: stats.counts.training, unit: lang === 0 ? 'дней' : 'days', color: '#D8785E' },
         { kind: 'mental', id: 'MentalMain', icon: <IconBrain />, label: lang === 0 ? 'Ум' : 'Mind', value: stats.counts.mental, unit: lang === 0 ? 'дней' : 'days', color: '#8A7CD6' },
         { kind: 'recovery', id: 'RecoveryMain', icon: <IconRecovery />, label: lang === 0 ? 'Антистресс' : 'Reset', value: stats.counts.recovery, unit: lang === 0 ? 'практик' : 'sessions', color: '#7AA988' },
         { kind: 'sleep', id: 'SleepMain', icon: <IconSleep />, label: lang === 0 ? 'Сон' : 'Sleep', value: stats.counts.sleep, unit: lang === 0 ? 'ночей' : 'nights', color: '#6F8BD6' }
@@ -220,8 +220,8 @@ const UserPanel = () => {
     };
 
     const s = styles(theme);
-    const accent = hasPremium ? '#FFD700' : Colors.get('accent', theme);
-    const heroAccent = hasPremium ? '#C9A24B' : '#5fb6c6';
+    const accent = hasPremium ? '#9FB4C4' : Colors.get('accent', theme);
+    const heroAccent = hasPremium ? '#9FB4C4' : '#5fb6c6';
 
     return (
         <MotionDiv
@@ -256,12 +256,12 @@ const UserPanel = () => {
                 <div style={{
                     ...s.heroSection,
                     background: s.isLight
-                        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(201,162,75,0.08) 100%)`
-                        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(201,162,75,0.09) 100%)`,
+                        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(169,155,122,0.08) 100%)`
+                        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(169,155,122,0.08) 100%)`,
                     borderColor: `${heroAccent}22`,
                     boxShadow: s.isLight
-                        ? `0 18px 44px -34px ${heroAccent}55, 0 1px 0 rgba(255,255,255,0.72) inset`
-                        : `0 22px 48px -34px ${heroAccent}60, 0 1px 0 rgba(255,255,255,0.055) inset`
+                        ? `0 16px 38px -34px ${heroAccent}45, 0 1px 0 rgba(255,255,255,0.72) inset`
+                        : `0 18px 40px -34px ${heroAccent}50, 0 1px 0 rgba(255,255,255,0.055) inset`
                 }}>
                     <div style={{ ...s.heroColorWash, background: `radial-gradient(circle, ${heroAccent}22 0%, transparent 62%)` }} />
                     <div style={s.heroTopRow}>
@@ -375,7 +375,7 @@ const UserPanel = () => {
                     onOpen={toggleFriendsPanel}
                 />
 
-                <div style={{ height: '100px' }} />
+                <div style={{ height: '18px' }} />
             </div>
 
             {/* --- XP GUIDE MODAL --- */}
@@ -1131,7 +1131,7 @@ const styles = (theme) => {
             cursor: 'pointer'
         },
         headerTitle: { fontSize: '15px', fontWeight: '850', color: text, letterSpacing: 0 },
-        scrollContent: { flex: 1, overflowY: 'auto', padding: '0 20px calc(118px + env(safe-area-inset-bottom, 0px))', boxSizing: 'border-box' },
+        scrollContent: { flex: 1, overflowY: 'auto', padding: '0 20px calc(92px + env(safe-area-inset-bottom, 0px))', boxSizing: 'border-box' },
         heroSection: {
             margin: '4px 0 16px',
             padding: '18px',
@@ -1142,10 +1142,10 @@ const styles = (theme) => {
         },
         heroColorWash: {
             position: 'absolute',
-            right: '-58px',
-            top: '-72px',
-            width: '210px',
-            height: '210px',
+            right: '-44px',
+            top: '-58px',
+            width: '170px',
+            height: '170px',
             borderRadius: '50%',
             pointerEvents: 'none'
         },
@@ -1207,7 +1207,7 @@ const styles = (theme) => {
         },
         premiumMiniBadge: {
             position: 'absolute', bottom: '-3px', right: '-3px',
-            backgroundColor: '#FFD700', color: '#000', width: '28px', height: '28px',
+            backgroundColor: '#CAD6DF', color: '#0E1013', width: '28px', height: '28px',
             borderRadius: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 4px 12px rgba(0,0,0,0.4)', border: `2px solid ${isLight ? '#fff' : '#0E1013'}`, zIndex: 1
         },
@@ -1654,22 +1654,22 @@ const styles = (theme) => {
             position: 'relative', borderRadius: '20px', padding: '16px', marginBottom: '16px',
             display: 'flex', alignItems: 'center', gap: '14px',
             background: isLight
-                ? 'linear-gradient(135deg, rgba(255,255,255,0.94), rgba(255,247,214,0.9))'
-                : 'linear-gradient(135deg, rgba(35,29,16,0.92), rgba(26,22,15,0.88))',
-            border: '1px solid rgba(201,162,75,0.3)',
+                ? 'linear-gradient(135deg, rgba(255,255,255,0.94), rgba(234,241,246,0.9))'
+                : 'linear-gradient(135deg, rgba(25,31,36,0.94), rgba(18,22,26,0.9))',
+            border: '1px solid rgba(159,180,196,0.3)',
             boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset, 0 16px 34px -24px rgba(0,0,0,0.7)',
             cursor: 'pointer', overflow: 'hidden', width: '100%', fontFamily: 'inherit', textAlign: 'left'
         },
         premiumHalo: {
             position: 'absolute', inset: 0,
-            background: 'radial-gradient(ellipse at 100% 50%, rgba(255, 200, 50, 0.14) 0%, transparent 60%)',
+            background: 'radial-gradient(ellipse at 100% 50%, rgba(159,180,196,0.16) 0%, transparent 60%)',
             pointerEvents: 'none'
         },
         premiumIcon: {
             width: '44px', height: '44px', borderRadius: '14px',
-            background: 'linear-gradient(135deg, #FFE55C 0%, #D49A5C 100%)',
+            background: 'linear-gradient(135deg, #CAD6DF 0%, #9FB4C4 100%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 6px 18px rgba(255, 170, 0, 0.28)',
+            boxShadow: '0 6px 18px rgba(159,180,196,0.28)',
             flexShrink: 0, zIndex: 1
         },
         premiumText: { display: 'flex', flexDirection: 'column', flex: 1, zIndex: 1, minWidth: 0, textAlign: 'left' },
@@ -1680,9 +1680,9 @@ const styles = (theme) => {
             flexShrink: 0,
             padding: '7px 9px',
             borderRadius: '999px',
-            border: '1px solid rgba(201,162,75,0.32)',
-            color: '#C9A24B',
-            background: 'rgba(201,162,75,0.12)',
+            border: '1px solid rgba(159,180,196,0.32)',
+            color: '#9FB4C4',
+            background: 'rgba(159,180,196,0.12)',
             fontSize: '11px',
             fontWeight: '850'
         },

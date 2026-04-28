@@ -3,6 +3,7 @@ import { allHabits } from "../../Classes/Habit";
 
 // FIXED: Removed trailing space in API URL (critical bug fix)
 const API_BASE = 'https://ultymylife.ru/api/insight';
+const INSIGHT_REASONING_EFFORT = 'high';
 
 const getLatestMeasurements = () => {
     const latestMeasurements = {};
@@ -45,84 +46,90 @@ export const INSIGHT_TYPES = {
 
 const INSIGHT_SYSTEM_PROMPTS = [
     // 0 — RU
-    `Ты — элитный спортивный физиолог и аналитик данных по имени UltyMyBro. Анализируй данные о сне 😴, тренировках 💪, ментальном состоянии 🧠 и задачах ✅. 
+    `Ты — UltyMyBro: строгий, дружелюбный аналитик здоровья, продуктивности и тренировочного прогресса. Твоя задача — превращать данные приложения в практичный вывод, а не мотивирующий текст.
 
 ОСНОВНЫЕ ПРАВИЛА:
-1. Инсайт должен быть КРАТКИМ — 2-4 предложения, максимум 120 слов
-2. Используй эмодзи как визуальные маркеры:
-   • 😴 — сон и восстановление
-   • ⚡ — энергия и выносливость
-   • 💡 — ключевой вывод
-   • 📈 — тренды и корреляции
-   • ✅ — рекомендация к действию
-3. Всегда обращайся к пользователю по имени
-4. Завершай сообщение подписью необычным прощанием и используй свое имя : UltyMyBro.
+1. Ответ должен быть полезным, конкретным и легко сканируемым — 110-180 слов.
+2. Не выдумывай факты. Используй только наборы данных, разрешённые выбранным разделом в пользовательском запросе.
+3. Если данных мало, не называй это провалом. Скажи: "данных пока мало", укажи какие именно данные нужны и зачем.
+4. Не используй драматичные формулировки, длинные прощания, подписи, общую мотивацию и медицинские обещания.
+5. План должен быть реалистичным на ближайшие 7 дней: маленькие действия, которые можно отметить в приложении.
+6. В каждом блоке должна быть одна главная мысль. Без длинных абзацев.
+7. Перед ответом проведи внутренний анализ: отдели факты от отсутствующих данных, найди причинно-следственные гипотезы, выбери только рекомендации с максимальной практической ценностью. Не показывай ход рассуждений.
 
-Формат ответа:
-💡 [Краткий вывод о главной взаимосвязи]
-📈 [Конкретная корреляция из данных]
-✅ [Одна конкретная рекомендация]
+Формат ответа строго такой:
+Привет, [имя].
+📊 Анализ: [что видно по данным + чего не хватает, если данных мало]
+💪 Сильная сторона: [лучший сигнал или самый перспективный паттерн]
+⚠️ Ограничение: [что мешает сделать точный вывод или прогресс]
+🎯 План:
+1. [конкретный микро-шаг на 1-2 минуты или 1 запись]
+2. [конкретный микро-шаг]
+3. [конкретный микро-шаг]
 
-НЕ пиши длинные абзацы, избегай общих фраз.`,
+Стиль: уверенный, спокойный, без канцелярита. Пиши как персональный аналитик, который уважает данные.`,
 
     // 1 — EN
-    `You are an elite sports physiologist and data scientist named UltyMyBro. Analyze sleep 😴, workouts 💪, mental state 🧠, and tasks ✅ data.
+    `You are UltyMyBro: a strict, friendly analyst for health, productivity, and training progress. Your job is to turn app data into practical insight, not motivational copy.
 
 CORE RULES:
-1. Insight MUST be CONCISE — 2-4 sentences, max 120 words
-2. Use emojis as visual markers:
-   • 😴 — sleep & recovery
-   • ⚡ — energy & endurance
-   • 💡 — key insight
-   • 📈 — trends & correlations
-   • ✅ — actionable recommendation
-3. Always address the user by name
-4. End with original farewell and your name : UltyMyBro.
+1. The answer must be useful, concrete, and easy to scan — 110-180 words.
+2. Do not invent facts. Use only the datasets allowed by the selected section in the user prompt.
+3. If data is sparse, do not frame it as failure. Say "data is still limited", list exactly what is missing and why it matters.
+4. Avoid dramatic wording, long sign-offs, generic motivation, and medical promises.
+5. The plan must fit the next 7 days: small actions the user can log in the app.
+6. Each block should contain one main idea. No long paragraphs.
+7. Before answering, do internal analysis: separate facts from missing data, identify causal hypotheses, and keep only recommendations with the highest practical value. Do not reveal chain-of-thought.
 
-Response format:
-💡 [Brief core insight]
-📈 [Specific data correlation]
-✅ [One concrete action step]
+Use this exact response format:
+Hi, [name].
+📊 Analysis: [what the data shows + what is missing if data is sparse]
+💪 Strength: [best signal or most promising pattern]
+⚠️ Limitation: [what prevents a precise conclusion or progress]
+🎯 Plan:
+1. [specific 1-2 minute or one-log micro-step]
+2. [specific micro-step]
+3. [specific micro-step]
 
-NO long paragraphs, NO generic advice.`
+Style: calm, confident, and data-respecting. Write like a personal analyst.`
 ];
 
 const INSIGHT_USER_PROMPT_TEMPLATES = {
     [INSIGHT_TYPES.GENERAL]: [
-        `Отчёт по общей продуктивности (Синтез всех сфер):\n1) 📊 Анализ: Как сон, дыхательные практики, медитация и закалка повлияли на закрытие задач?\n2) 💪 Главная победа: Лучший результат в спорте или дисциплине.\n3) ⚠️ Узкое горлышко: Что мешает успевать всё?\n4) 🎯 План: 3 микро-шага на неделю.\nПоприветствуй пользователя в начале по имени.`,
-        `Overall Productivity Report (Cross-domain synthesis):\n1) 📊 Analysis: How did sleep, breathing practices, meditation, and cold exposure impact task completion?\n2) 💪 Highlight: Best result in fitness or discipline this period.\n3) ⚠️ Bottleneck: What's preventing you from accomplishing everything?\n4) 🎯 Plan: 3 micro-steps for the upcoming week.\nGreet the user by name at the start.`
+        `Сделай общий отчёт по продуктивности. Сопоставь сон, восстановление, дыхание/медитацию/закалку, привычки, задачи, тренировки и тренировки мозга. Найди 1 главный паттерн, 1 сильную сторону и 1 ограничение данных. Если данных мало, объясни, какой минимум записей нужен за 7 дней для точного анализа. Ответ строго в формате system prompt.`,
+        `Create an overall productivity report. Compare sleep, recovery, breathing/meditation/cold exposure, habits, tasks, workouts, and brain training. Find 1 main pattern, 1 strength, and 1 data limitation. If data is sparse, explain the minimum logs needed over 7 days for a reliable analysis. Answer strictly in the system prompt format.`
     ],
     [INSIGHT_TYPES.PROGRESS_ANALYSE]: [
-        `Анализ прогресса (Кратко, проанализируй внимательно TRAINING_LOG, если мало данных порекомендуй тренировку на основе данных из USER CONTEXT):\n1) 📈 Тренд: Веса и объём — рост или плато?\n2)`,
-        `Progress Analysis (Concise, analyze TRAINING_LOG carefully. If data is insufficient, recommend a workout based on USER CONTEXT):\n1) 📈 Trend: Weights and volume — growth or plateau?\n2)`
+        `РАЗДЕЛ: ПРОГРЕСС. Используй только USER CONTEXT, TRAINING_LOG и MEASUREMENTS. Не давай рекомендации по сну, привычкам, задачам или медитации, если они не нужны для объяснения тренировочного прогресса. Проверь частоту, объём, веса, повторы, кардио, последовательность и признаки плато. Если данных мало, предложи минимальный способ начать отслеживание прогресса без перегруза. Ответ строго в формате system prompt.`,
+        `SECTION: PROGRESS. Use only USER CONTEXT, TRAINING_LOG, and MEASUREMENTS. Do not give sleep, habit, task, or meditation advice unless it directly explains training progress. Inspect frequency, volume, weights, reps, cardio, consistency, and plateau signs. If data is sparse, suggest a minimal way to start tracking progress without overload. Answer strictly in the system prompt format.`
     ],
     [INSIGHT_TYPES.RECOVERY_RATE]: [
-        `Восстановление (Вердикт используй SLEEP_AND_RECOVERY, BREATHING_EXERCISES, MEDITATION  and HARDENING):\n1) `,
-        `Recovery Assessment (Verdict based on SLEEP_AND_RECOVERY, BREATHING_EXERCISES, MEDITATION , and HARDENING):\n1) `
+        `РАЗДЕЛ: ВОССТАНОВЛЕНИЕ. Используй только SLEEP_AND_RECOVERY, BREATHING_EXERCISES, MEDITATION, HARDENING и при необходимости кратко TRAINING_LOG как источник нагрузки. Не давай советы по привычкам, задачам, питанию или ментальным играм. Смотри на регулярность, длительность, пробелы и связь с нагрузкой. Не давай медицинских диагнозов. Ответ строго в формате system prompt.`,
+        `SECTION: RECOVERY. Use only SLEEP_AND_RECOVERY, BREATHING_EXERCISES, MEDITATION, HARDENING, and briefly TRAINING_LOG only as load context if needed. Do not give habit, task, nutrition, or brain-game advice. Look at consistency, duration, gaps, and relation to training load. Do not give medical diagnoses. Answer strictly in the system prompt format.`
     ],
     [INSIGHT_TYPES.HABITS]: [
-        `Дисциплина (Паттерны используй HABITS, если данных нет порекомендуй создать пару конкретных привычек или бросить негативные, в этом приложении откуда идет запрос к тебе очень удобный менеджер привычек):\n1) `,
-        `Habit Discipline (Use patterns from HABITS. If no data, recommend creating 2-3 specific positive habits or eliminating negative ones — this app has a powerful habit manager):\n1) `
+        `РАЗДЕЛ: ПРИВЫЧКИ. Используй только HABITS. Запрещено давать общие рекомендации по сну, физическим тренировкам, дыханию, медитации, задачам или логическим играм, если они не оформлены именно как привычки. Анализируй только регулярность привычек, пропуски, категории, автозавершение, streak и процент выполнения. Если данных по привычкам мало или нет, предложи 3 конкретные привычки с формулировками для добавления в менеджер привычек. Каждая рекомендация должна быть действием-привычкой: что делать, когда делать, как часто отмечать. Ответ строго в формате system prompt.`,
+        `SECTION: HABITS. Use only HABITS. Do not give general sleep, physical training, breathing, meditation, task, or brain-game advice unless it is phrased strictly as a habit. Analyze only habit consistency, missed days, categories, auto-completion, streak, and completion rate. If habit data is sparse or absent, suggest 3 concrete habits ready to add to the habit manager. Each recommendation must be a habit action: what to do, when to do it, and how often to mark it. Answer strictly in the system prompt format.`
     ],
     [INSIGHT_TYPES.FOCUS_MINDSET]: [
-        `Ментальное состояние (проанализируй BRAIN_TRAINING, если не достаточно данных порекомендуй пройти несколько сессий, там есть тренировка быстрого счета в уме, памяти, реакции и логики, сравни результаты если есть и количество ошибок)`,
-        `Mental State (Analyze BRAIN_TRAINING. If insufficient data, recommend completing several sessions — the app includes mental exercises: quick math, memory, reaction, and logic. Compare results and error counts if available)`
+        `РАЗДЕЛ: МЕНТАЛЬНОЕ. Используй только BRAIN_TRAINING. Не давай рекомендации по привычкам, сну, тренировкам, питанию или задачам. Анализируй типы задач, попытки, успешность, ошибки, сложность и динамику. Если попытки были без успеха, формулируй это спокойно как стартовую точку. Ответ строго в формате system prompt.`,
+        `SECTION: MENTAL. Use only BRAIN_TRAINING. Do not give habit, sleep, workout, nutrition, or task advice. Analyze task types, attempts, success rate, errors, difficulty, and trend. If attempts had no success yet, frame it calmly as a baseline. Answer strictly in the system prompt format.`
     ],
     [INSIGHT_TYPES.TIME_MANAGEMENT]: [
-        `Управление временем (используй TO-DO LIST & PRODUCTIVITY, дай небольшую подсказку по задачам если есть, порекомендуй создать если нет записей в логах):\n1) `,
-        `Time Management (Use TO-DO LIST & PRODUCTIVITY. Give a small task tip if data exists, recommend creating tasks if logs are empty):\n1) `
+        `РАЗДЕЛ: ГРАФИК. Используй только TO-DO LIST & PRODUCTIVITY. Не давай советы по привычкам, сну, тренировкам, питанию или ментальным играм. Анализируй созданные задачи, закрытия, переносы, просрочки и категории. Если задач нет, предложи минимальный дневной шаблон из 3 задач. Ответ строго в формате system prompt.`,
+        `SECTION: SCHEDULE. Use only TO-DO LIST & PRODUCTIVITY. Do not give habit, sleep, workout, nutrition, or brain-game advice. Analyze created tasks, completed tasks, carry-overs, overdue items, and categories. If there are no tasks, suggest a minimal daily 3-task template. Answer strictly in the system prompt format.`
     ],
     [INSIGHT_TYPES.RUNNING]: [
-        `Анализ беговых тренировок (последние 7 дней, если в USER CONTEXT цель endurance проанализируй данные из TRAINING_LOG особенно тип RUNNING, дай беговые советы, если данных нет порекомендуй с чего начать):\n1) `,
-        `Running Training Analysis (Last 7 days. If USER CONTEXT goal is endurance, analyze TRAINING_LOG — especially RUNNING type. Give running-specific advice. If no data, recommend how to start):\n1) `
+        `РАЗДЕЛ: БЕГ. Используй только USER CONTEXT и TRAINING_LOG с типом RUNNING. Не давай советы по привычкам, сну, силовым тренировкам, питанию или задачам. Проверь дистанцию, длительность, темп, частоту, пульс если есть, и цель endurance. Если бега нет, предложи безопасный беговой старт без медицинских обещаний. Ответ строго в формате system prompt.`,
+        `SECTION: RUNNING. Use only USER CONTEXT and TRAINING_LOG entries with RUNNING type. Do not give habit, sleep, strength training, nutrition, or task advice. Inspect distance, duration, pace, frequency, heart rate if available, and endurance goal. If there is no running data, suggest a safe running start without medical promises. Answer strictly in the system prompt format.`
     ],
     [INSIGHT_TYPES.CYCLING]: [
-        `Анализ велотренировок (последние 7 дней, если в USER CONTEXT цель endurance проанализируй данные из TRAINING_LOG особенно тип CYCLING, дай вело-советы, если данных нет порекомендуй с чего начать):\n1)  `,
-        `Cycling Training Analysis (Last 7 days. If USER CONTEXT goal is endurance, analyze TRAINING_LOG — especially CYCLING type. Give cycling-specific advice. If no data, recommend how to start):\n1)  `
+        `РАЗДЕЛ: ВЕЛО. Используй только USER CONTEXT и TRAINING_LOG с типом CYCLING. Не давай советы по привычкам, сну, силовым тренировкам, питанию или задачам. Проверь дистанцию, длительность, скорость, частоту, пульс если есть, и цель endurance. Если данных нет, предложи стартовый вело-протокол. Ответ строго в формате system prompt.`,
+        `SECTION: CYCLING. Use only USER CONTEXT and TRAINING_LOG entries with CYCLING type. Do not give habit, sleep, strength training, nutrition, or task advice. Inspect distance, duration, speed, frequency, heart rate if available, and endurance goal. If there is no data, suggest a starter cycling protocol. Answer strictly in the system prompt format.`
     ],
     [INSIGHT_TYPES.FOOD]: [
-        `На основании данных из USER CONTEXT и MEASUREMENTS дай персональные рекомендации по питанию, режим, калораж, примерный рацион. Особенно обрати внимание на телосложение, гендер и цель тренировок.`,
-        `Based on USER CONTEXT and MEASUREMENTS data, provide personalized nutrition recommendations: meal timing, calorie target, and sample meal plan. Pay special attention to body type, gender, and training goal.`
+        `РАЗДЕЛ: ПИТАНИЕ. Используй только USER CONTEXT, MEASUREMENTS и кратко TRAINING_LOG как контекст активности. Не давай советы по привычкам, задачам, сну, медитации или ментальным играм. Учитывай цель, пол, телосложение, вес, измерения и активность. Не ставь диагнозов. Дай практичный план питания на 7 дней в микро-шагах, без точных медицинских обещаний. Ответ строго в формате system prompt.`,
+        `SECTION: FOOD. Use only USER CONTEXT, MEASUREMENTS, and briefly TRAINING_LOG as activity context. Do not give habit, task, sleep, meditation, or brain-game advice. Consider goal, gender, body type, weight, measurements, and activity. Do not diagnose. Give a practical 7-day nutrition plan through micro-steps, without precise medical promises. Answer strictly in the system prompt format.`
     ]
 };
 
@@ -180,6 +187,11 @@ ${Object.entries(latestMeasurements).length > 0
       ).join('\n')
     : `- No recent measurements recorded. Consider tracking for better progress insights.`
 }
+`.trim();
+
+const identityBlock = `
+USER:
+- Name: ${userName || 'User'}
 `.trim();
 
     // 2. TODO LIST (UNCHANGED)
@@ -385,18 +397,30 @@ const mentalBlock = formatSection('BRAIN_TRAINING', mentalLines);
 
 
 
-    const userPrompt = `
-${instructionBlock}
-${userBlock}
-${todoBlock}
-${sleepBlock}
-${breathingBlock}
-${meditationBlock}
-${hardeningBlock}
-${habitsBlock}
-${trainingsBlock}
-${mentalBlock}
-`.trim();
+    const blocksByType = {
+        [INSIGHT_TYPES.GENERAL]: [
+            userBlock,
+            todoBlock,
+            sleepBlock,
+            breathingBlock,
+            meditationBlock,
+            hardeningBlock,
+            habitsBlock,
+            trainingsBlock,
+            mentalBlock
+        ],
+        [INSIGHT_TYPES.PROGRESS_ANALYSE]: [userBlock, trainingsBlock],
+        [INSIGHT_TYPES.RECOVERY_RATE]: [identityBlock, sleepBlock, breathingBlock, meditationBlock, hardeningBlock, trainingsBlock],
+        [INSIGHT_TYPES.HABITS]: [identityBlock, habitsBlock],
+        [INSIGHT_TYPES.FOCUS_MINDSET]: [identityBlock, mentalBlock],
+        [INSIGHT_TYPES.TIME_MANAGEMENT]: [identityBlock, todoBlock],
+        [INSIGHT_TYPES.RUNNING]: [userBlock, trainingsBlock],
+        [INSIGHT_TYPES.CYCLING]: [userBlock, trainingsBlock],
+        [INSIGHT_TYPES.FOOD]: [userBlock, trainingsBlock]
+    };
+
+    const selectedBlocks = blocksByType[type] || blocksByType[INSIGHT_TYPES.GENERAL];
+    const userPrompt = [instructionBlock, ...selectedBlocks].join('\n\n').trim();
 
    //console.log(userPrompt);
 
@@ -411,6 +435,12 @@ export async function getInsight(langIndex, type = INSIGHT_TYPES.GENERAL) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                reasoningEffort: INSIGHT_REASONING_EFFORT,
+                reasoning: { effort: INSIGHT_REASONING_EFFORT },
+                metadata: {
+                    insightType: type,
+                    reasoningEffort: INSIGHT_REASONING_EFFORT
+                },
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt }

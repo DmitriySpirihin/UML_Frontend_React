@@ -235,20 +235,20 @@ function FocusCard({ protocol, difficulty, onClick, theme, lang, fSize, variants
                     }}>
                     <div style={{
                         width: '44px', height: '44px',
-                        background: 'rgba(0,122,255,0.12)',
+                        background: 'rgba(159,180,196,0.12)',
                         borderRadius: '14px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         marginBottom: '8px',
-                        border: '1px solid rgba(0,122,255,0.22)',
+                        border: '1px solid rgba(159,180,196,0.22)',
                     }}>
-                        <FaCrown size={20} color="#007AFF" />
+                        <FaCrown size={20} color="#9FB4C4" />
                     </div>
                     <button onClick={() => setPage('premium')} style={{
                         fontSize: '11px', fontWeight: '700', color: '#fff',
-                        background: '#007AFF',
+                        background: '#9FB4C4',
                         border: 'none', borderRadius: '11px',
                         padding: '8px 0', marginBottom: '7px', cursor: 'pointer',
-                        boxShadow: '0 3px 12px rgba(0,122,255,0.35)',
+                        boxShadow: '0 3px 12px rgba(159,180,196,0.35)',
                         width: '130px',
                     }}>
                         {lang === 0 ? 'Купить подписку' : 'Buy subscription'}

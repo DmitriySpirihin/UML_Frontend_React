@@ -1,5 +1,6 @@
 import React, {useState,useEffect,useRef, useMemo} from 'react'
 import { AppData,UserData } from '../../StaticClasses/AppData.js'
+import { playEffects } from '../../StaticClasses/Effects.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,trainInfo$,setPage} from '../../StaticClasses/HabitsBus'
 import {addExerciseToSchedule} from '../../Classes/TrainingData.jsx'
@@ -996,11 +997,11 @@ return (
                 backdropFilter: 'blur(20px)', textAlign: 'center'
             }}>
             <div style={{
-                width: '72px', height: '72px', background: 'rgba(0,122,255,0.12)',
+                width: '72px', height: '72px', background: 'rgba(159,180,196,0.12)',
                 borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: '16px', border: '1px solid rgba(0,122,255,0.22)',
+                marginBottom: '16px', border: '1px solid rgba(159,180,196,0.22)',
             }}>
-                <FaCrown size={30} color="#007AFF" />
+                <FaCrown size={30} color="#9FB4C4" />
             </div>
             <div style={{
                 fontSize: '13px', lineHeight: '1.6',
@@ -1010,9 +1011,9 @@ return (
                 {langIndex === 0 ? 'Откройте полный доступ ко всем функциям' : 'Unlock full access to all features'}
             </div>
             <button onClick={() => setPage('premium')} style={{
-                fontSize: '15px', fontWeight: '700', color: '#fff', background: '#007AFF',
+                fontSize: '15px', fontWeight: '700', color: '#fff', background: '#9FB4C4',
                 border: 'none', borderRadius: '14px', padding: '13px 0', marginBottom: '10px',
-                cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,122,255,0.35)', width: '220px',
+                cursor: 'pointer', boxShadow: '0 4px 16px rgba(159,180,196,0.35)', width: '220px',
             }}>
                 {langIndex === 0 ? 'Купить подписку' : 'Buy subscription'}
             </button>
@@ -1483,18 +1484,6 @@ const styles = (theme,fSize) =>
           fontFamily: 'sans-serif', // Ensure clean font
       }
 })
-
-function playEffects(sound){
-  if(AppData.prefs[2] == 0 && sound !== null){
-    if(!sound.paused){
-        sound.pause();
-        sound.currentTime = 0;
-    }
-    sound.volume = 0.5;
-    sound.play();
-  }
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
 
 function Difference({ exId, setIndex, beforeDate, value, isReps, theme, isTime = false }) {
   const exIdStr = String(exId); // ✅ Critical: ensure string key

@@ -6,6 +6,7 @@ import { theme$, setPage$, showPopUpPanel$, lang$, fontSize$ } from '../StaticCl
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import KeyBoard from '../Helpers/KeyBoard';
+import { playEffects } from '../StaticClasses/Effects';
 
 const popUpSoundPositive = new Audio('Audio/Info.wav');
 const popUpSoundNegative = new Audio('Audio/Warn.wav');
@@ -107,11 +108,6 @@ const styles = (theme, fSize) => ({
         padding: "0 15px 8px 15px", boxSizing: "border-box", zIndex: 1000,
     },
 });
-
-function playEffects(sound) {
-    if (AppData.prefs[2] == 0 && sound !== null) { if (!sound.paused) { sound.pause(); sound.currentTime = 0; } sound.volume = 0.5; sound.play(); }
-    if (AppData.prefs[3] == 0 && window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
-}
 
 export default MainBtns
 
