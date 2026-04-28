@@ -256,7 +256,7 @@ function App() {
         </motion.div>
     
       }
-      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && page !== 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'HabitsMain' && page !== 'HabitCalendar' && page !== 'HabitMetrics' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && page !== 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <MainBtns/>
       </Suspense>}
       

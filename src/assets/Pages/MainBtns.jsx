@@ -17,8 +17,8 @@ const slogans = {
     'Your entire life in one place'
   ],
   'HabitsMain': [
-    'Маленькие привычки — большая сила',
-    'Small habits, extraordinary results'
+    'Вся твоя жизнь в одном месте',
+    'Your life in one place'
   ],
   'TrainingMain': [
     'Сила рождается в дисциплине',
@@ -113,12 +113,6 @@ export default MainBtns
 
 
 const UltyLogo = ({ theme = 'dark', page, langIndex }) => {
-  const isDark = theme === 'dark';
-
-  const gradientColors = isDark
-    ? { center: "#e1e1e1", edge: "#313a4b" }
-    : { center: "#70757b", edge: "#0d0d0e" };
-
   const getPageSloganKey = (pageName) => {
     if (!pageName) return 'MainMenu';
     if (pageName.startsWith('Habit')) return 'HabitsMain';
@@ -141,45 +135,33 @@ const UltyLogo = ({ theme = 'dark', page, langIndex }) => {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '40px',
-      background: 'transparent'
+      width: '100%',
+      padding: '10px 20px 16px',
+      boxSizing: 'border-box',
+      background: 'transparent',
+      textAlign: 'center'
     }}>
-      <svg
-        width="400"
-        height="80"
-        viewBox="0 0 400 80"
-        style={{ filter: isDark ? 'drop-shadow(0 0 8px rgba(17, 73, 146, 0.46))' : 'none' }}
-      >
-        <defs>
-          <radialGradient id="logoGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-            <stop offset="0%" stopColor={gradientColors.center} />
-            <stop offset="100%" stopColor={gradientColors.edge} />
-          </radialGradient>
-        </defs>
-        <text
-          x="50%"
-          y="60"
-          textAnchor="middle"
-          fontFamily="serif"
-          fontSize="28px"
-          fontWeight="700"
-          fill="url(#logoGradient)"
-          style={{ transition: 'fill 0.5s ease' }}
-        >
-          UltyMyLife
-        </text>
-      </svg>
-
+      <div style={{
+        color: Colors.get('mainText', theme),
+        fontFamily: 'Georgia, "Times New Roman", serif',
+        fontSize: 24,
+        fontWeight: 700,
+        letterSpacing: 0,
+        lineHeight: 1.05,
+        opacity: 0.86,
+      }}>
+        UltyMyLife
+      </div>
       <p style={{
-        marginTop: '-10px',
-        fontSize: '10px',
-        fontWeight: '500',
-        letterSpacing: '0.1em',
-        fontFamily: 'serif',
-        fontStyle: 'revert-layer',
-        color: isDark ? 'rgba(150, 150, 150, 0.8)' : 'rgba(19, 21, 26, 0.7)',
+        margin: '5px 0 0',
+        fontSize: 9,
+        fontWeight: 600,
+        letterSpacing: '0.16em',
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        color: Colors.get('subText', theme),
         transition: 'color 0.5s ease',
-        opacity: 0.9
+        opacity: 1,
+        textTransform: 'none',
       }}>
         {currentSlogan}
       </p>

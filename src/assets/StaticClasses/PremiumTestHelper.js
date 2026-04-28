@@ -25,9 +25,10 @@ export function getLocalTestPremiumOverride() {
   }
 
   const savedLocalFlag = window.localStorage.getItem(TEST_PREMIUM_STORAGE_KEY);
+  if (isLocalRuntime() && savedLocalFlag === '1') return true;
   if (isLocalRuntime() && savedLocalFlag === '0') return false;
 
-  if (isLocalRuntime()) return false;
+  if (isLocalRuntime()) return true;
 
   return null;
 }

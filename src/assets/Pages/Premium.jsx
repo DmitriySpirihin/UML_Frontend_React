@@ -888,45 +888,24 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                                 boxSizing: 'border-box'
                             }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                                    <div style={{
-                                        width: 46,
-                                        height: 46,
-                                        borderRadius: 15,
-                                        background: selected.soft,
-                                        color: selected.color,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0
-                                    }}>
-                                        {React.cloneElement(selected.icon, { size: 20 })}
-                                    </div>
-                                    <div style={{ minWidth: 0 }}>
-                                        <div style={{ fontSize: 19, fontWeight: 950, lineHeight: 1.08 }}>{selected.title}</div>
-                                        <div style={{ color: isDark ? '#A6ADB8' : '#596273', fontSize: 12, fontWeight: 750, marginTop: 3 }}>{selected.sub}</div>
-                                    </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14, minWidth: 0 }}>
+                                <div style={{
+                                    width: 46,
+                                    height: 46,
+                                    borderRadius: 15,
+                                    background: selected.soft,
+                                    color: selected.color,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0
+                                }}>
+                                    {React.cloneElement(selected.icon, { size: 20 })}
                                 </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedIndex(null)}
-                                    style={{
-                                        width: 38,
-                                        height: 38,
-                                        borderRadius: 999,
-                                        border: 'none',
-                                        background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.06)',
-                                        color: isDark ? '#F2F3F5' : '#111827',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        flexShrink: 0
-                                    }}
-                                >
-                                    <FaTimes size={13} />
-                                </button>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{ fontSize: 19, fontWeight: 950, lineHeight: 1.08 }}>{selected.title}</div>
+                                    <div style={{ color: isDark ? '#A6ADB8' : '#596273', fontSize: 12, fontWeight: 750, marginTop: 3 }}>{selected.sub}</div>
+                                </div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                                 {selected.sections.map(([label, text]) => (
@@ -1084,7 +1063,11 @@ const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, t
                 fontFamily: 'inherit',
                 boxShadow: active ? '0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 38px -26px rgba(159,180,196,0.62)' : '0 1px 0 rgba(255,255,255,0.04) inset',
                 textAlign: 'left',
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                outline: 'none',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                WebkitTapHighlightColor: 'transparent'
             }}
         >
             <div style={{

@@ -8,9 +8,10 @@ import { playEffects } from '../../StaticClasses/Effects.js'
 
 // --- ИМПОРТЫ ---
 import { expandedCard$, setExpandedCard } from '../../StaticClasses/HabitsBus.js';
-import { theme$, lang$, fontSize$, premium$, confirmationPanel$, setShowPopUpPanel, setPage,setActiveTab } from '../../StaticClasses/HabitsBus'
+import { theme$, lang$, fontSize$, premium$, confirmationPanel$, setShowPopUpPanel, setPage,setActiveTab, habitAccent$ } from '../../StaticClasses/HabitsBus'
 import Colors from '../../StaticClasses/Colors'
 import { saveData } from '../../StaticClasses/SaveHelper.js';
+import { HABITS_ACCENT as SHARED_HABITS_ACCENT, HABIT_ACCENT_PRESETS } from './HabitVisuals.jsx';
 
 import { MdDone, MdClose } from 'react-icons/md'
 import { FaPlus, FaTrash, FaPencilAlt, FaArrowUp, FaFire, FaChevronDown , FaClock, FaSlidersH } from 'react-icons/fa'
@@ -33,6 +34,7 @@ const skipSound = new Audio('Audio/Skip.wav');
 const isDoneSound = new Audio('Audio/IsDone.wav');
 const NEGATIVE_CATEGORY = 'Отказ от вредного';
 const HABITS_CATEGORY_COLLAPSE_KEY = 'uml_habits_category_collapsed_v1';
+const HABITS_HERO_DETAILS_COLLAPSE_KEY = 'uml_habits_hero_details_collapsed_v1';
 const DEFAULT_HABIT_CARD_WIDGETS = {
     days: true,
     skips: true,
@@ -97,6 +99,16 @@ function setCategoryCollapsed(categoryKey, isCollapsed) {
     window.localStorage.setItem(HABITS_CATEGORY_COLLAPSE_KEY, JSON.stringify(nextState));
 }
 
+function getHeroDetailsCollapsed() {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(HABITS_HERO_DETAILS_COLLAPSE_KEY) === 'true';
+}
+
+function setHeroDetailsCollapsed(isCollapsed) {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(HABITS_HERO_DETAILS_COLLAPSE_KEY, isCollapsed ? 'true' : 'false');
+}
+
 function sortCategoriesWithNegativeLast(categories) {
     const normal = [];
     const negative = [];
@@ -109,12 +121,313 @@ function sortCategoriesWithNegativeLast(categories) {
     return [...normal, ...negative];
 }
 
+const HABITS_ACCENT = SHARED_HABITS_ACCENT;
+const HABITS_SUCCESS = {
+    hue: '#78B879',
+    soft: 'rgba(120,184,121,0.18)',
+    ring: 'rgba(120,184,121,0.30)',
+    glow: 'rgba(120,184,121,0.20)'
+};
+
+const HABITS_CATEGORY_TONES = {
+    'Здоровье': { hue: '#7FC8B8', soft: 'rgba(127,200,184,0.14)', ring: 'rgba(127,200,184,0.28)', icon: 'health' },
+    'Развитие': { hue: '#8A7CD6', soft: 'rgba(138,124,214,0.14)', ring: 'rgba(138,124,214,0.28)', icon: 'growth' },
+    'Продуктивность': { hue: '#8FA6C8', soft: 'rgba(143,166,200,0.14)', ring: 'rgba(143,166,200,0.28)', icon: 'productivity' },
+    'Отношения и отдых': { hue: '#D49A5C', soft: 'rgba(212,154,92,0.12)', ring: 'rgba(212,154,92,0.24)', icon: 'relationships' },
+    'Отказ от вредного': { hue: '#D8785E', soft: 'rgba(216,120,94,0.14)', ring: 'rgba(216,120,94,0.28)', icon: 'negative' }
+};
+
+const HabitIconBase = ({ children, size = 22, stroke = 1.65 }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">
+        {children}
+    </svg>
+);
+
+const HABIT_OUTLINE_ICONS = {
+    water: ({ size }) => <HabitIconBase size={size}><path d="M12 3c-3.5 4-6 7-6 10.5a6 6 0 0 0 12 0c0-3.5-2.5-6.5-6-10.5Z" /><path d="M9 14a3 3 0 0 0 3 3" /></HabitIconBase>,
+    sleep: ({ size }) => <HabitIconBase size={size}><path d="M21 13.5A9 9 0 0 1 10.5 3a7.5 7.5 0 1 0 10.5 10.5Z" /></HabitIconBase>,
+    walk: ({ size }) => <HabitIconBase size={size}><circle cx="13" cy="4" r="1.6" /><path d="M9 21l2-5-2-3V8l3-2 3 3 2 2M9 13l-3 1M14 21l1-4" /></HabitIconBase>,
+    run: ({ size }) => <HabitIconBase size={size}><circle cx="14" cy="4" r="1.6" /><path d="M5 12l4-2 2 3-2 3 4 5M11 13l3 2 4-1M16 8l3 1" /></HabitIconBase>,
+    food: ({ size }) => <HabitIconBase size={size}><path d="M4 10h16M5 10v3a7 7 0 0 0 14 0v-3M9 4v4M12 3v5M15 4v4" /></HabitIconBase>,
+    yoga: ({ size }) => <HabitIconBase size={size}><circle cx="12" cy="4.5" r="1.8" /><path d="M12 7v4M6 11l6-2 6 2M8 20l4-5 4 5M10 11l-1 4M14 11l1 4" /></HabitIconBase>,
+    body: ({ size }) => <HabitIconBase size={size}><path d="M6 4h12l-2 6H8L6 4ZM8 10v10M16 10v10M10 14h4" /></HabitIconBase>,
+    strength: ({ size }) => <HabitIconBase size={size}><path d="M4 10v4M20 10v4M7 8v8M17 8v8M7 12h10" /></HabitIconBase>,
+    meditate: ({ size }) => <HabitIconBase size={size}><circle cx="12" cy="6" r="2" /><path d="M5 20c2-4 4.5-5 7-5s5 1 7 5M9 13l3 2 3-2" /></HabitIconBase>,
+    book: ({ size }) => <HabitIconBase size={size}><path d="M4 5a2 2 0 0 1 2-2h5v17H6a2 2 0 0 0-2 2V5ZM20 5a2 2 0 0 0-2-2h-5v17h5a2 2 0 0 1 2 2V5Z" /></HabitIconBase>,
+    lang: ({ size }) => <HabitIconBase size={size}><path d="M5 8h8M9 6v2M7 8c0 3 2 6 5 6M13 10c-1 2-4 4-8 4M13 20l3-8 3 8M14 18h4" /></HabitIconBase>,
+    journal: ({ size }) => <HabitIconBase size={size}><path d="M6 3h10l3 3v15H6zM9 8h7M9 12h7M9 16h5" /></HabitIconBase>,
+    skill: ({ size }) => <HabitIconBase size={size}><path d="M12 3l2.5 5 5.5.5-4 4 1 5.5L12 15l-5 3 1-5.5-4-4 5.5-.5Z" /></HabitIconBase>,
+    plan: ({ size }) => <HabitIconBase size={size}><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M8 3v4M16 3v4M4 10h16M9 14h6M9 17h4" /></HabitIconBase>,
+    target: ({ size }) => <HabitIconBase size={size}><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="1" /></HabitIconBase>,
+    timer: ({ size }) => <HabitIconBase size={size}><circle cx="12" cy="13" r="7" /><path d="M12 9v4l2.5 1.5M9 3h6M19 5l1 1" /></HabitIconBase>,
+    inbox: ({ size }) => <HabitIconBase size={size}><path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5l-3-8H7Z" /><path d="M4 13h4l1 2h6l1-2h4" /></HabitIconBase>,
+    people: ({ size }) => <HabitIconBase size={size}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.3" /><path d="M3 20c1-3 3-4.5 6-4.5s5 1.5 6 4.5M15 20c.5-2 1.8-3 3.5-3s2.5.6 3.5 3" /></HabitIconBase>,
+    heart: ({ size }) => <HabitIconBase size={size}><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 10c0 5.5-7 10-7 10Z" /></HabitIconBase>,
+    chat: ({ size }) => <HabitIconBase size={size}><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l.8-5.5A8 8 0 1 1 21 12Z" /></HabitIconBase>,
+    hobby: ({ size }) => <HabitIconBase size={size}><path d="M7 3h10v4a5 5 0 0 1-10 0V3ZM9 12v3l-2 5h10l-2-5v-3" /></HabitIconBase>,
+    creative: ({ size }) => <HabitIconBase size={size}><path d="M4 20l3-1 11-11-2-2L5 17l-1 3ZM15 7l2 2M11 20h9" /></HabitIconBase>,
+    detox: ({ size }) => <HabitIconBase size={size}><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M8 7h8M8 11h4M4 4l16 16" /></HabitIconBase>,
+    sugar: ({ size }) => <HabitIconBase size={size}><circle cx="12" cy="13" r="6" /><path d="M12 7V3M8 3h8M9 13l3-3 3 3-3 3-3-3Z" /></HabitIconBase>,
+    late: ({ size }) => <HabitIconBase size={size}><circle cx="12" cy="12" r="8" /><path d="M12 7v5l3 2M4 4l16 16" /></HabitIconBase>,
+    screen: ({ size }) => <HabitIconBase size={size}><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M10 16v4M14 16v4M4 4l16 12" /></HabitIconBase>,
+    smoke: ({ size }) => <HabitIconBase size={size}><rect x="3" y="14" width="18" height="4" rx="1" /><path d="M14 14v-3a3 3 0 0 0-3-3M18 11V9a2 2 0 0 0-2-2M4 4l16 16" /></HabitIconBase>,
+    alcohol: ({ size }) => <HabitIconBase size={size}><path d="M7 3h10l-1 6a4 4 0 0 1-8 0L7 3ZM12 13v8M8 21h8" /></HabitIconBase>,
+    game: ({ size }) => <HabitIconBase size={size}><rect x="2" y="8" width="20" height="10" rx="4" /><path d="M7 13h3M8.5 11.5v3M15 12h.01M17 14h.01" /></HabitIconBase>,
+    flame: ({ size }) => <HabitIconBase size={size}><path d="M12 3c0 4-5 5-5 10a5 5 0 0 0 10 0c0-2-2-3-2-6-1 1-3 0-3-4Z" /></HabitIconBase>,
+    check: ({ size }) => <HabitIconBase size={size}><path d="M5 12l5 5 9-10" /></HabitIconBase>,
+};
+
+const HABIT_ICON_ALIASES = {
+    default: 'target',
+    health: 'heart',
+    growth: 'book',
+    productivity: 'target',
+    relationships: 'people',
+    negative: 'detox',
+    hydrationBottle: 'water',
+    water: 'water',
+    sleepBed: 'sleep',
+    sleep: 'sleep',
+    mobility: 'walk',
+    exercise: 'walk',
+    nutritionPlate: 'food',
+    food: 'food',
+    selfCare: 'body',
+    dumbbell: 'strength',
+    workout: 'strength',
+    running: 'run',
+    runningShoes: 'walk',
+    stretch: 'yoga',
+    breathPractice: 'meditate',
+    meditation: 'meditate',
+    reading: 'book',
+    learning: 'skill',
+    languagePractice: 'lang',
+    english: 'lang',
+    spanish: 'lang',
+    german: 'lang',
+    journaling: 'journal',
+    reflectionMirror: 'timer',
+    checklist: 'plan',
+    priorityOne: 'target',
+    focusTimer: 'timer',
+    inboxTray: 'inbox',
+    sunsetReview: 'plan',
+    callMessage: 'chat',
+    handHeart: 'heart',
+    handshake: 'people',
+    activeListen: 'chat',
+    gratitude: 'heart',
+    hobby: 'hobby',
+    parkWalk: 'walk',
+    mindfulness: 'meditate',
+    creativeBrush: 'creative',
+    unplug: 'screen',
+    fastFood: 'sugar',
+    lateNight: 'late',
+    procrastinationClock: 'timer',
+    mindlessScroll: 'screen',
+    snackBowl: 'sugar',
+    games: 'game',
+    adultBlock: 'detox',
+    cigarette: 'smoke',
+    noSmoking: 'smoke',
+    cocktail: 'alcohol',
+    noAlcohol: 'alcohol',
+    morningSun: 'walk',
+    stepPrints: 'walk',
+    posture: 'body',
+    pill: 'body',
+    medicinePatch: 'body',
+    skinCare: 'body',
+    darkRoom: 'sleep',
+    sunriseAlarm: 'sleep',
+    protein: 'food',
+    broccoli: 'food',
+    fruitBowl: 'food',
+    stewPan: 'food',
+    caffeineStop: 'detox',
+    coreTraining: 'strength',
+    cardioHeart: 'run',
+    swimming: 'water',
+    cycling: 'run',
+    breathing: 'meditate',
+    recoveryBattery: 'body',
+    courseLesson: 'book',
+    studyNotes: 'journal',
+    repeatStudy: 'timer',
+    writing: 'journal',
+    speechPractice: 'chat',
+    newWord: 'lang',
+    code: 'skill',
+    research: 'book',
+    financeStudy: 'target',
+    paint: 'creative',
+    art: 'creative',
+    music: 'hobby',
+    photography: 'creative',
+    target: 'target',
+    weeklyReview: 'plan',
+    gratitudeJournal: 'journal',
+    portfolioCase: 'inbox',
+    muteBell: 'detox',
+    cleanDesk: 'plan',
+    twoMinute: 'timer',
+    singleWindow: 'screen',
+    deepWork: 'target',
+    weeklyPlan: 'plan',
+    clipboard: 'plan',
+    fileBox: 'inbox',
+    dailyBudget: 'target',
+    expenseTrack: 'journal',
+    noShopping: 'detox',
+    shirtReady: 'plan',
+    packedBag: 'inbox',
+    noteStack: 'journal',
+    calendar2: 'plan',
+    shutdown: 'sleep',
+    backupCloud: 'inbox',
+    zeroInbox: 'inbox',
+    singleTab: 'screen',
+    mealPrep: 'food',
+    familyTime: 'people',
+    friendMessage: 'chat',
+    compliment: 'heart',
+    homeHelp: 'people',
+    cleaning: 'plan',
+    laundry: 'plan',
+    groceryList: 'plan',
+    noMobile: 'screen',
+    natureTime: 'walk',
+    miniTrip: 'walk',
+    boardGame: 'game',
+    relaxMusic: 'hobby',
+    sugarControl: 'sugar',
+    sodaCut: 'sugar',
+    energyDrink: 'detox',
+    newsScroll: 'screen',
+    socialLimit: 'screen',
+    bedtimeDelay: 'late',
+    selfTalk: 'detox',
+    complainLess: 'detox',
+    onTime: 'late',
+};
+
+function normalizeHabitIconKey(iconName, habitName = [], categoryKey = '') {
+    const direct = HABIT_ICON_ALIASES[iconName] || HABIT_ICON_ALIASES[String(iconName || '').trim()];
+    if (direct) return direct;
+
+    const text = [iconName, ...(Array.isArray(habitName) ? habitName : [habitName])].join(' ').toLowerCase();
+    if (/вод|water|swim|плав/.test(text)) return 'water';
+    if (/сон|sleep|bed|night|ноч|подъем|wake/.test(text)) return 'sleep';
+    if (/ход|walk|шаг|прогул/.test(text)) return 'walk';
+    if (/бег|run|cardio|кардио/.test(text)) return 'run';
+    if (/еда|пит|food|meal|овощ|фрукт|fast|sweet|слад|перекус|sugar/.test(text)) return /слад|sweet|sugar|fast|перекус/.test(text) ? 'sugar' : 'food';
+    if (/йог|stretch|растяж|медит|дых|breath|mind/.test(text)) return /йог|stretch|растяж/.test(text) ? 'yoga' : 'meditate';
+    if (/книг|read|book|курс|course|study|учеб|исслед/.test(text)) return 'book';
+    if (/язык|lang|english|spanish|german|word/.test(text)) return 'lang';
+    if (/днев|journal|note|замет|пис/.test(text)) return 'journal';
+    if (/план|plan|calendar|checklist|обзор/.test(text)) return 'plan';
+    if (/timer|таймер|focus|фокус|задач|goal|target/.test(text)) return 'target';
+    if (/сем|friend|друг|общ|сообщ|call|chat|компли/.test(text)) return 'chat';
+    if (/кур|smok|cigar/.test(text)) return 'smoke';
+    if (/алко|alcohol|cocktail/.test(text)) return 'alcohol';
+    if (/игр|game/.test(text)) return 'game';
+    if (/экран|screen|scroll|social|mobile|phone/.test(text)) return 'screen';
+
+    const categoryTone = getCategoryTone(categoryKey);
+    return HABIT_ICON_ALIASES[categoryTone.icon] || 'target';
+}
+
+function HabitOutlineIcon({ iconName, habitName, categoryKey, size = 22 }) {
+    const key = normalizeHabitIconKey(iconName, habitName, categoryKey);
+    const Icon = HABIT_OUTLINE_ICONS[key] || HABIT_OUTLINE_ICONS.target;
+    return <Icon size={size} />;
+}
+
+function getCategoryTone(categoryKey) {
+    const canonical = getCategory(categoryKey)[0];
+    return HABITS_CATEGORY_TONES[canonical] || HABITS_ACCENT;
+}
+
+function getCategoryIcon(categoryKey, theme) {
+    const tone = getCategoryTone(categoryKey);
+    const isNegativeCategory = getCategory(categoryKey)[0] === NEGATIVE_CATEGORY || tone.icon === 'negative';
+    return <span style={{ color: isNegativeCategory ? tone.hue : HABITS_ACCENT.hue, display: 'flex' }}><HabitOutlineIcon iconName={tone.icon} categoryKey={categoryKey} size={16} /></span>;
+}
+
+function getDateKeyWithOffset(offset) {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    return date.toISOString().split('T')[0];
+}
+
+function getWeekdayLabel(offset, langIndex) {
+    if (offset === 0) return langIndex === 0 ? 'СЕГ' : 'TODAY';
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    const ru = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+    const en = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+    return (langIndex === 0 ? ru : en)[date.getDay()];
+}
+
+function getHabitStatus(id, targetDateKey = dateKey) {
+    return AppData.habitsByDate?.[targetDateKey]?.[id] ?? 0;
+}
+
+function getTodayStatus(id) {
+    return getHabitStatus(id, dateKey);
+}
+
+function buildHabitSummary(habitsCards) {
+    const total = habitsCards.length;
+    const done = habitsCards.filter(id => getTodayStatus(id) === 1 || AppData.isHabitAutoComplete(id)).length;
+    const skipped = habitsCards.filter(id => getTodayStatus(id) < 0).length;
+    const bestStreak = habitsCards.reduce((max, id) => Math.max(max, getDoneAmount(id)), 0);
+    const avgFormation = total
+        ? Math.round(habitsCards.reduce((sum, id) => sum + getHabitPerformPercent(id), 0) / total)
+        : 0;
+
+    return { total, done, skipped, pending: Math.max(total - done - skipped, 0), bestStreak, avgFormation };
+}
+
+function buildWeekSummary(habitsCards, langIndex) {
+    return [-6, -5, -4, -3, -2, -1, 0].map(offset => {
+        const key = getDateKeyWithOffset(offset);
+        const dayData = AppData.habitsByDate?.[key] || {};
+        const idsForDay = habitsCards.filter(id => Object.prototype.hasOwnProperty.call(dayData, id) || offset === 0);
+        const total = idsForDay.length;
+        const done = idsForDay.filter(id => dayData[id] === 1 || (offset === 0 && AppData.isHabitAutoComplete(id))).length;
+
+        return {
+            key,
+            label: getWeekdayLabel(offset, langIndex),
+            isToday: offset === 0,
+            done,
+            total,
+            progress: total ? done / total : 0
+        };
+    });
+}
+
+function getSelectedDateLabel(selectedDateKey, langIndex) {
+    if (selectedDateKey === dateKey) return langIndex === 0 ? 'сегодня' : 'today';
+    const [year, month, day] = selectedDateKey.split('-').map(Number);
+    const monthNames = [
+        ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'],
+        ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    ];
+    return `${day} ${monthNames[langIndex][month - 1]} ${year !== new Date().getFullYear() ? year : ''}`.trim();
+}
+
 // --- СТИЛИ (ОРИГИНАЛЬНЫЕ + УЛУЧШЕННЫЕ ТЕНИ) ---
 const styles = (theme, fSize = 0) => {
     const isLight = theme === 'light' || theme === 'speciallight';
-    const bg = isLight ? '#F2F4F6' : Colors.get('background', theme);
-    const modalBg = isLight ? '#FFFFFF' : Colors.get('simplePanel', theme);
-    const borderColor = isLight ? 'rgba(0,0,0,0.0)' : `1px solid ${Colors.get('border', theme)}`;
+    const bg = isLight
+        ? `radial-gradient(900px 450px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7`
+        : `radial-gradient(1000px 500px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013`;
+    const modalBg = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(20,23,25,0.96)';
+    const borderColor = isLight ? '1px solid rgba(15,23,42,0.08)' : `1px solid rgba(255,255,255,0.08)`;
     
     // --- УЛУЧШЕННЫЕ ТЕНИ ДЛЯ МОДАЛОК (Многослойные, мягкие) ---
     const shadow = isLight 
@@ -124,21 +437,26 @@ const styles = (theme, fSize = 0) => {
     return {
         container: {
             width: '100vw',
-            height: '98vh',
-            marginTop:'26px',
+            height: '100vh',
+            marginTop: 0,
             display: "flex",
             flexDirection: "column",
             justifyContent: "start",
             alignItems: "center",
-            fontFamily: "Segoe UI",
-            backgroundColor: bg,
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            background: bg,
             transition: 'background-color 0.3s ease'
         },
         scrollView: {
             width: "100%",
-            paddingBottom: '50px',
+            height: '100%',
+            padding: 'calc(env(safe-area-inset-top, 0px) + 10px) 0 calc(132px + env(safe-area-inset-bottom, 0px))',
+            boxSizing: 'border-box',
             overflowY: "auto",
-            marginTop: "12vh",
+            overflowAnchor: 'none',
+            overscrollBehavior: 'contain',
+            scrollPaddingTop: '16px',
+            marginTop: 0,
             display: 'flex',
             flexDirection: 'column',
         },
@@ -146,7 +464,7 @@ const styles = (theme, fSize = 0) => {
             display: 'flex', flexDirection: 'column', alignItems: "center", justifyContent: "center",
             borderRadius: "28px",
             border: borderColor,
-            backgroundColor: modalBg,
+            background: modalBg,
             boxShadow: shadow,
             width: "90%",
             maxWidth: '380px',
@@ -187,9 +505,11 @@ const styles = (theme, fSize = 0) => {
             width: '95%',
             minHeight: '44px',
             margin: '0 auto 10px auto',
-            borderRadius: '18px',
-            border: isLight ? '1px solid rgba(0,0,0,0.05)' : `1px solid ${Colors.get('border', theme)}80`,
-            backgroundColor: modalBg,
+            borderRadius: '14px',
+            border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(159,180,196,0.2)',
+            background: isLight
+                ? `linear-gradient(135deg, rgba(255,255,255,0.94), rgba(${HABITS_ACCENT.rgb},0.08))`
+                : 'linear-gradient(135deg, rgba(175,196,212,0.12), rgba(92,108,122,0.075))',
             color: Colors.get('mainText', theme),
             display: 'flex',
             alignItems: 'center',
@@ -198,7 +518,48 @@ const styles = (theme, fSize = 0) => {
             fontWeight: '800',
             fontSize: fSize === 0 ? '13px' : '15px',
             cursor: 'pointer',
-            boxShadow: isLight ? '0 6px 14px rgba(0,0,0,0.06)' : '0 10px 24px rgba(0,0,0,0.22)'
+            boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.045) inset'
+        },
+        pageHeader: {
+            width: 'calc(100% - 56px)',
+            maxWidth: 660,
+            margin: '0 auto 8px',
+            padding: '4px 20px 8px',
+            boxSizing: 'border-box',
+            textAlign: 'center'
+        },
+        eyebrow: {
+            fontSize: 11,
+            color: Colors.get('subText', theme),
+            fontWeight: 850,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase'
+        },
+        pageTitle: {
+            color: Colors.get('mainText', theme),
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: fSize === 0 ? 21 : 24,
+            fontWeight: 700,
+            letterSpacing: 0,
+            lineHeight: 1.05,
+            opacity: 0.86
+        },
+        pageSubtitle: {
+            marginTop: 5,
+            color: Colors.get('subText', theme),
+            fontSize: fSize === 0 ? 8 : 9,
+            fontWeight: 600,
+            letterSpacing: '0.14em',
+            opacity: 0.82
+        },
+        categoriesWrap: {
+            width: 'calc(100% - 56px)',
+            maxWidth: 660,
+            margin: '20px auto 0',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 18,
+            boxSizing: 'border-box'
         },
         icon: { color: Colors.get('icons', theme), fontSize: '24px' }
     }
@@ -231,6 +592,8 @@ const HabitsMain = () => {
     const [dataVersion, setDataVersion] = useState(0);
     const [showWidgetSettings, setShowWidgetSettings] = useState(false);
     const [habitCardWidgets, setHabitCardWidgets] = useState(normalizeHabitCardWidgets(AppData.habitCardWidgets));
+    const [selectedDateKey, setSelectedDateKey] = useState(dateKey);
+    const scrollViewRef = React.useRef(null);
 
     const [cP, setCP] = useState({ show: false, type: -1, hId: 0, gId: 0, setGoals: null, hInfo: null })
     const [newGoal, setNewGoal] = useState('');
@@ -282,6 +645,11 @@ const HabitsMain = () => {
 
     useEffect(() => {
         const subscription = lang$.subscribe((lang) => { setLangIndex(lang === 'ru' ? 0 : 1); });
+        return () => subscription.unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        const subscription = habitAccent$.subscribe(() => setDataVersion(v => v + 1));
         return () => subscription.unsubscribe();
     }, []);
 
@@ -417,17 +785,37 @@ const HabitsMain = () => {
         await saveData();
     };
 
+    const changeHabitAccentColor = async (color) => {
+        await AppData.setHabitAccentColor(color);
+        setDataVersion(v => v + 1);
+    };
+
+    const settleTopAfterCategoryToggle = React.useCallback(() => {
+        const settle = (smooth = true) => {
+            const scrollView = scrollViewRef.current;
+            if (!scrollView) return;
+
+            if (scrollView.scrollTop > 0 && scrollView.scrollTop < 340) {
+                scrollView.scrollTo({ top: 0, behavior: smooth ? 'smooth' : 'auto' });
+            }
+        };
+
+        requestAnimationFrame(() => settle(false));
+        window.setTimeout(() => settle(true), 260);
+    }, []);
+
     const isLight = theme === 'light' || theme === 'speciallight';
-    const pageBg = isLight ? '#F2F4F6' : Colors.get('background', theme);
 
     return (
-        <div style={{ ...styles(theme).container, backgroundColor: pageBg }}>
+        <div style={styles(theme).container}>
             {<HoverInfoButton tab='HabitsMain'/>}
             <HabitWidgetSettingsModal
                 isOpen={showWidgetSettings}
                 onClose={() => setShowWidgetSettings(false)}
                 values={habitCardWidgets}
                 onToggle={toggleHabitWidget}
+                accentColor={AppData.habitAccentColor}
+                onAccentChange={changeHabitAccentColor}
                 theme={theme}
                 langIndex={langIndex}
             />
@@ -444,20 +832,49 @@ const HabitsMain = () => {
                     </div>
                 </div>
             </div>}
-            {!hasHabits && <div style={{ ...styles(theme).panel, justifyContent: 'center', alignItems: 'center', marginTop: '40%' }}>
-                <p style={{ ...styles(theme).subText, fontSize: fSize === 0 ? '11px' : '13px', margin: '10%', marginTop: '20%', whiteSpace: 'pre-line', color: Colors.get('subText', theme) }}>{setInfoText(langIndex)}</p>
-            </div>}
+            {!hasHabits && (
+                <div ref={scrollViewRef} style={styles(theme).scrollView}>
+                    <HabitsPageHeader
+                        theme={theme}
+                        fSize={fSize}
+                        langIndex={langIndex}
+                    />
+                    <HabitsEmptyState theme={theme} langIndex={langIndex} fSize={fSize} />
+                </div>
+            )}
             
-            {hasHabits && <div style={styles(theme).scrollView} key={dataVersion}>
-                <motion.button
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => setShowWidgetSettings(true)}
-                    style={styles(theme, fSize).widgetSettingsBtn}
-                >
-                    <FaSlidersH />
-                    <span>{langIndex === 0 ? 'Виджеты карточек' : 'Card widgets'}</span>
-                </motion.button>
-                {buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete, habitCardWidgets })}
+            {hasHabits && <div ref={scrollViewRef} style={styles(theme).scrollView} key={dataVersion}>
+                <HabitsPageHeader
+                    theme={theme}
+                    fSize={fSize}
+                    langIndex={langIndex}
+                />
+                <HabitsHero theme={theme} langIndex={langIndex} habitsCards={habitsCards} fSize={fSize} onOpenWidgets={() => setShowWidgetSettings(true)} />
+                <HabitsWeekStrip
+                    theme={theme}
+                    langIndex={langIndex}
+                    habitsCards={habitsCards}
+                    selectedDateKey={selectedDateKey}
+                    onSelectDate={setSelectedDateKey}
+                />
+                <div style={styles(theme).categoriesWrap}>
+                    {buildMenu({
+                        theme,
+                        habitsCards,
+                        categories,
+                        selectedDateKey,
+                        setCP,
+                        setCurrentId,
+                        fSize,
+                        setNeedConfirmation,
+                        setConfirmMessage,
+                        setHabitToDelete,
+                        habitCardWidgets,
+                        langIndex,
+                        onStatusChange: () => setDataVersion(v => v + 1),
+                        onCategoryToggle: settleTopAfterCategoryToggle
+                    })}
+                </div>
                 <div style={{ marginBottom: '150px' }} />
             </div>}
 
@@ -510,7 +927,9 @@ const HabitsMain = () => {
                         fontSize: '12px', fontWeight: '700', transition: '0.2s all',
                     }}
                 >
-                    {Icons.getIcon(cat.icon, { size: 12, style: { marginRight: 4 } })}
+                    <span style={{ display: 'inline-flex', marginRight: 4, verticalAlign: 'middle' }}>
+                        <HabitOutlineIcon iconName={cat.key || cat.icon} categoryKey={cat.label[0]} size={12} />
+                    </span>
                     {cat.label[langIndex]}
                 </div>
             ))}
@@ -533,7 +952,7 @@ const HabitsMain = () => {
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', backgroundColor: isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)', borderRadius: '14px', cursor: 'pointer' }} onClick={() => setSelectIconPanel(!selectIconPanel)}>
             <span style={{fontSize: '14px', color: Colors.get('subText', theme)}}>{langIndex===0?'Иконка':'Icon'}</span>
-            <div style={{color: Colors.get('habitIcon', theme)}}>{Icons.getIcon(newIcon, {size: 28})}</div>
+            <div style={{color: Colors.get('habitIcon', theme), display: 'flex'}}><HabitOutlineIcon iconName={newIcon} categoryKey={newCategory} size={28} /></div>
         </div>
     </div>
 )}
@@ -559,7 +978,9 @@ const HabitsMain = () => {
                         {Object.entries(Icons.ic).map(([key]) => (
                             <div key={key} style={{ padding: '12px', borderRadius: '12px', backgroundColor: isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)', cursor:'pointer' }}
                                 onClick={() => { setNewIcon(key); setSelectIconPanel(false); }}>
-                                {Icons.getIcon(key, { size: 30, style: { color: Colors.get('habitIcon', theme) } })}
+                                <div style={{ color: Colors.get('habitIcon', theme), display: 'flex' }}>
+                                    <HabitOutlineIcon iconName={key} categoryKey={newCategory} size={30} />
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -579,13 +1000,380 @@ function getAllHabits() {
     );
 }
 
-function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete, habitCardWidgets }) {
+function HabitsPageHeader({ theme, fSize, langIndex }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.32 }}
+            style={styles(theme, fSize).pageHeader}
+        >
+            <div style={styles(theme, fSize).pageTitle}>UltyMyLife</div>
+            <div style={styles(theme, fSize).pageSubtitle}>
+                {langIndex === 0 ? 'Вся твоя жизнь в одном месте' : 'Your whole life in one place'}
+            </div>
+        </motion.div>
+    );
+}
+
+function HabitsHero({ theme, langIndex, habitsCards, fSize, onOpenWidgets }) {
+    const [detailsCollapsed, setDetailsCollapsed] = useState(getHeroDetailsCollapsed);
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const summary = buildHabitSummary(habitsCards);
+    const text = Colors.get('mainText', theme);
+    const sub = Colors.get('subText', theme);
+    const progress = summary.total ? summary.done / summary.total : 0;
+    const toggleDetails = () => {
+        const nextValue = !detailsCollapsed;
+        setDetailsCollapsed(nextValue);
+        setHeroDetailsCollapsed(nextValue);
+        playEffects(clickSound);
+    };
+    const heroBackground = isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(${HABITS_ACCENT.rgb},0.12) 58%, rgba(${HABITS_ACCENT.rgb},0.08) 100%)`
+        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, rgba(${HABITS_ACCENT.rgb},0.14) 54%, rgba(${HABITS_ACCENT.rgb},0.08) 100%)`;
+    const heroBorder = `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : HABITS_ACCENT.ring}`;
+    const heroShadow = isLight
+        ? `0 16px 38px -34px rgba(${HABITS_ACCENT.rgb},0.45), 0 1px 0 rgba(255,255,255,0.72) inset`
+        : `0 18px 40px -34px rgba(${HABITS_ACCENT.rgb},0.50), 0 1px 0 rgba(255,255,255,0.055) inset`;
+
+    const stat = (label, value, tone = HABITS_ACCENT, wide = false) => (
+        <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            width: '100%',
+            minWidth: 0,
+            minHeight: wide ? 34 : 32,
+            borderRadius: 12,
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
+            background: isLight ? 'rgba(255,255,255,0.56)' : 'rgba(255,255,255,0.035)',
+            padding: '0 10px',
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+            gridColumn: wide ? '1 / -1' : 'auto'
+        }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: sub, fontSize: 10.5, fontWeight: 850, minWidth: 0, flex: 1 }}>
+                <span style={{ width: 5, height: 5, borderRadius: 99, background: tone.hue, flexShrink: 0 }} />
+                <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+            </span>
+            <span style={{ color: text, fontSize: 12, fontWeight: 950, fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>{value}</span>
+        </div>
+    );
+
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.36 }}
+            style={{
+                width: 'calc(100% - 56px)',
+                maxWidth: 660,
+                margin: '0 auto',
+                borderRadius: 24,
+                boxSizing: 'border-box',
+                position: 'relative',
+                overflow: 'visible',
+                isolation: 'isolate'
+            }}
+        >
+            <div style={{
+                position: 'absolute',
+                inset: 0,
+                borderRadius: 24,
+                overflow: 'hidden',
+                pointerEvents: 'none',
+                zIndex: 0,
+                background: heroBackground,
+                border: heroBorder,
+                boxShadow: heroShadow,
+                boxSizing: 'border-box'
+            }}>
+                <div style={{
+                    position: 'absolute',
+                    right: -44,
+                    top: -58,
+                    width: 170,
+                    height: 170,
+                    borderRadius: '50%',
+                    background: `radial-gradient(circle, rgba(${HABITS_ACCENT.rgb},0.22) 0%, transparent 62%)`
+                }} />
+            </div>
+            <div style={{
+                position: 'relative',
+                zIndex: 1,
+                minHeight: detailsCollapsed ? (fSize === 0 ? 82 : 88) : (fSize === 0 ? 218 : 230),
+                padding: detailsCollapsed ? '14px 16px' : '14px 16px 28px',
+                boxSizing: 'border-box',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'min-height 0.24s ease, padding 0.24s ease'
+            }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: detailsCollapsed ? 0 : 12, minWidth: 0 }}>
+                <div style={{ minWidth: 0 }}>
+                    <div style={{ color: sub, fontSize: 10, fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
+                        {langIndex === 0 ? 'Сегодня' : 'Today'}
+                    </div>
+                    <div style={{ color: text, fontSize: fSize === 0 ? 20 : 22, fontWeight: 950, lineHeight: 1.08, marginTop: 4 }}>
+                        {langIndex === 0 ? 'Привычки' : 'Habits'}
+                    </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <motion.button
+                        whileTap={{ scale: 0.96 }}
+                        onClick={onOpenWidgets}
+                        style={{
+                            minHeight: 38,
+                            borderRadius: 15,
+                            border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(159,180,196,0.18)',
+                            background: isLight ? 'rgba(255,255,255,0.64)' : 'rgba(175,196,212,0.095)',
+                            color: Colors.get('subText', theme),
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 7,
+                            padding: '0 11px',
+                            fontFamily: 'inherit',
+                            fontSize: 11,
+                            fontWeight: 900,
+                            flexShrink: 0,
+                            cursor: 'pointer',
+                            outline: 'none',
+                            boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.045) inset'
+                        }}
+                    >
+                        <FaSlidersH size={12} />
+                        <span>{langIndex === 0 ? 'Виджеты' : 'Widgets'}</span>
+                    </motion.button>
+                    <motion.button
+                        whileTap={{ scale: 0.94 }}
+                        onClick={toggleDetails}
+                        aria-label={detailsCollapsed ? (langIndex === 0 ? 'Раскрыть блок' : 'Expand block') : (langIndex === 0 ? 'Свернуть блок' : 'Collapse block')}
+                        style={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 15,
+                            border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(159,180,196,0.18)',
+                            background: isLight ? 'rgba(255,255,255,0.58)' : 'rgba(175,196,212,0.075)',
+                            color: Colors.get('subText', theme),
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                            cursor: 'pointer',
+                            outline: 'none',
+                            boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.04) inset'
+                        }}
+                    >
+                        <motion.span
+                            animate={{ rotate: detailsCollapsed ? -90 : 0 }}
+                            transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+                            style={{ display: 'flex' }}
+                        >
+                            <FaChevronDown size={13} />
+                        </motion.span>
+                    </motion.button>
+                </div>
+            </div>
+            <AnimatePresence initial={false}>
+                {!detailsCollapsed && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0, y: -6 }}
+                        animate={{ height: 'auto', opacity: 1, y: 0 }}
+                        exit={{ height: 0, opacity: 0, y: -6 }}
+                        transition={{ type: 'spring', stiffness: 230, damping: 28 }}
+                        style={{ position: 'relative', zIndex: 1, minWidth: 0, paddingBottom: 0, overflow: 'hidden' }}
+                    >
+                <div style={{
+                    borderRadius: 14,
+                    border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
+                    background: isLight ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.032)',
+                    padding: '10px 11px',
+                    boxSizing: 'border-box',
+                    boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+                        <span style={{ color: sub, fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                            {langIndex === 0 ? 'Выполнено' : 'Done'}
+                        </span>
+                        <span style={{ color: text, fontSize: 13, fontWeight: 950, fontVariantNumeric: 'tabular-nums' }}>
+                            {summary.done}<span style={{ color: sub, fontSize: 10, fontWeight: 850 }}> / {summary.total}</span>
+                        </span>
+                    </div>
+                    <div style={{ height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.round(progress * 100)}%` }}
+                            transition={{ duration: 0.72 }}
+                            style={{ height: '100%', borderRadius: 999, background: HABITS_ACCENT.hue }}
+                        />
+                    </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginTop: 10 }}>
+                    {stat(langIndex === 0 ? 'Ждут' : 'Pending', summary.pending)}
+                    {stat(langIndex === 0 ? 'Серия' : 'Streak', summary.bestStreak, HABITS_SUCCESS)}
+                    {stat(langIndex === 0 ? 'Формирование' : 'Formation', `${summary.avgFormation}%`, HABITS_ACCENT, true)}
+                </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            </div>
+        </motion.div>
+    );
+}
+
+function HabitsWeekStrip({ theme, langIndex, habitsCards, selectedDateKey, onSelectDate }) {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const week = buildWeekSummary(habitsCards, langIndex);
+    const sub = Colors.get('subText', theme);
+
+    return (
+        <div style={{
+            width: 'calc(100% - 56px)',
+            maxWidth: 660,
+            margin: '14px auto 0',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+            gap: 6
+        }}>
+            {week.map(day => {
+                const active = day.key === selectedDateKey;
+                const full = day.total > 0 && day.done === day.total;
+                const strokeColor = active ? HABITS_ACCENT.hue : full ? HABITS_SUCCESS.hue : (isLight ? 'rgba(15,23,42,0.32)' : 'rgba(255,255,255,0.24)');
+                const ring = 2 * Math.PI * 9;
+
+                return (
+                    <motion.div
+                        key={day.key}
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => {
+                            onSelectDate(day.key);
+                            playEffects(clickSound);
+                        }}
+                        style={{
+                            minHeight: 70,
+                            borderRadius: 16,
+                            border: active ? `1px solid ${HABITS_ACCENT.ring}` : '1px solid transparent',
+                            background: active ? HABITS_ACCENT.soft : 'transparent',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <div style={{ color: active ? HABITS_ACCENT.hue : sub, fontSize: 9, fontWeight: 900, letterSpacing: '0.06em' }}>{day.label}</div>
+                        <svg width="24" height="24" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="9" stroke={isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'} strokeWidth="2.4" fill="none" />
+                            <circle
+                                cx="12"
+                                cy="12"
+                                r="9"
+                                stroke={strokeColor}
+                                strokeWidth="2.4"
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeDasharray={ring}
+                                strokeDashoffset={ring - ring * day.progress}
+                                transform="rotate(-90 12 12)"
+                            />
+                        </svg>
+                        <div style={{ color: sub, fontSize: 10, fontWeight: 850, fontVariantNumeric: 'tabular-nums' }}>{day.done}/{day.total}</div>
+                    </motion.div>
+                );
+            })}
+        </div>
+    );
+}
+
+function HabitsEmptyState({ theme, langIndex, fSize }) {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const text = Colors.get('mainText', theme);
+    const sub = Colors.get('subText', theme);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+                width: 'calc(100% - 56px)',
+                maxWidth: 520,
+                margin: '52px auto 0',
+                padding: '38px 24px',
+                borderRadius: 28,
+                background: isLight
+                    ? `linear-gradient(145deg, rgba(255,255,255,0.96), rgba(${HABITS_ACCENT.rgb},0.1))`
+                    : `linear-gradient(145deg, rgba(23,27,31,0.96), rgba(${HABITS_ACCENT.rgb},0.1))`,
+                border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : HABITS_ACCENT.ring}`,
+                boxShadow: '0 1px 0 rgba(255,255,255,0.055) inset',
+                boxSizing: 'border-box',
+                textAlign: 'center',
+                position: 'relative',
+                overflow: 'hidden'
+            }}
+        >
+            <div style={{ position: 'absolute', top: -80, left: '50%', transform: 'translateX(-50%)', width: 220, height: 220, borderRadius: 999, background: `radial-gradient(circle, rgba(${HABITS_ACCENT.rgb},0.18), transparent 68%)` }} />
+            <div style={{
+                position: 'relative',
+                width: 72,
+                height: 72,
+                borderRadius: 22,
+                margin: '0 auto 18px',
+                background: HABITS_ACCENT.soft,
+                border: `1px solid ${HABITS_ACCENT.ring}`,
+                color: HABITS_ACCENT.hue,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}>
+                <HabitOutlineIcon iconName="target" size={30} />
+            </div>
+            <div style={{ position: 'relative', color: text, fontSize: fSize === 0 ? 22 : 25, fontWeight: 950 }}>
+                {langIndex === 0 ? 'Путь в 66 дней' : 'The 66-day path'}
+            </div>
+            <div style={{ position: 'relative', color: sub, fontSize: fSize === 0 ? 14 : 16, fontWeight: 750, lineHeight: 1.45, marginTop: 8 }}>
+                {setInfoText(langIndex)}
+            </div>
+            <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={() => setPage('AddHabitPanel')}
+                style={{
+                    position: 'relative',
+                    minHeight: 48,
+                    borderRadius: 16,
+                    border: `1px solid ${HABITS_ACCENT.ring}`,
+                    background: `linear-gradient(135deg, ${HABITS_ACCENT.soft}, rgba(255,255,255,0.035))`,
+                    color: text,
+                    fontFamily: 'inherit',
+                    fontSize: 14,
+                    fontWeight: 900,
+                    padding: '0 18px',
+                    marginTop: 20,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    cursor: 'pointer'
+                }}
+            >
+                <FaPlus size={13} />
+                {langIndex === 0 ? 'Добавить привычку' : 'Add habit'}
+            </motion.button>
+        </motion.div>
+    );
+}
+
+function buildMenu({ theme, habitsCards, categories, selectedDateKey, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete, habitCardWidgets, langIndex, onStatusChange, onCategoryToggle }) {
     return categories.map(category => {
         const habitsInCategory = habitsCards
             .map(id => getAllHabits().find(h => h.id === id))
             .filter(h => h && h.category[0] === category);
 
         if (habitsInCategory.length === 0) return null;
+        const doneCount = habitsInCategory.filter(h => getHabitStatus(h.id, selectedDateKey) === 1 || (selectedDateKey === dateKey && AppData.isHabitAutoComplete(h.id))).length;
 
         return (
             <CategoryPanel 
@@ -594,12 +1382,18 @@ function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize,
                 text={habitsInCategory[0].category} 
                 theme={theme} 
                 isNegative={category === NEGATIVE_CATEGORY}
+                doneCount={doneCount}
+                totalCount={habitsInCategory.length}
+                langIndex={langIndex}
+                summaryLabel={getSelectedDateLabel(selectedDateKey, langIndex)}
+                onToggle={onCategoryToggle}
             >
                 {habitsInCategory.map(habit => (
                     <HabitCard
                         key={habit.id}
                         id={habit.id}
                         theme={theme}
+                        activeDateKey={selectedDateKey}
                         setCP={setCP}
                         setCurrentId={setCurrentId}
                         fSize={fSize}
@@ -607,6 +1401,7 @@ function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize,
                         setNeedConfirmation={setNeedConfirmation}
                         setHabitToDelete={setHabitToDelete}
                         habitCardWidgets={habitCardWidgets}
+                        onStatusChange={onStatusChange}
                     />
                 ))}
             </CategoryPanel>
@@ -614,8 +1409,8 @@ function buildMenu({ theme, habitsCards, categories, setCP, setCurrentId, fSize,
     });
 }
 
-function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete, habitCardWidgets }) {
-    const [status, setStatus] = useState(AppData.habitsByDate[dateKey]?.[id]);
+function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete, habitCardWidgets, onStatusChange }) {
+    const [status, setStatus] = useState(AppData.habitsByDate[activeDateKey]?.[id]);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
     const habit = getAllHabits().find(h => h.id === id);
@@ -628,7 +1423,8 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     });
 
     const isNegative = habit.category[0] === NEGATIVE_CATEGORY;
-    const isAutoComplete = !isNegative && AppData.isHabitAutoComplete(id);
+    const isSelectedToday = activeDateKey === dateKey;
+    const isAutoComplete = isSelectedToday && !isNegative && AppData.isHabitAutoComplete(id);
     const percent = getHabitPerformPercent(id);
     const maxX = 120;
     const minX = -maxX;
@@ -643,48 +1439,75 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     const [maxTimer, setMaxTimer] = useState(isNegative ? 86400000 : 60000);
     const [time, setTime] = useState(isNegative ? Math.round(Date.now() - new Date(AppData.choosenHabitsLastSkip[id])) : 60000);
     const [progress, setProgress] = useState(0);
+    const previousDateKeyRef = React.useRef(activeDateKey);
 
-    const habitColor = isNegative ? '#FF3B30' : (habit.color || '#32D74B');
+    const categoryBaseTone = getCategoryTone(habit.category?.[0]);
+    const categoryTone = { ...HABITS_ACCENT, icon: categoryBaseTone.icon };
+    const negativeTone = getCategoryTone(NEGATIVE_CATEGORY);
+    const statusValue = status ?? 0;
+    const habitColor = isNegative ? negativeTone.hue : HABITS_ACCENT.hue;
     const isLight = theme === 'light' || theme === 'speciallight';
     const widgets = normalizeHabitCardWidgets(habitCardWidgets);
     const showStatsRow = widgets.days || widgets.skips || widgets.streak || widgets.timer;
+    const safePercent = Math.max(0, Math.min(100, percent));
 
-    // --- УЛУЧШЕННЫЕ ТЕНИ ДЛЯ КАРТОЧЕК (Многослойные, мягкие) ---
-    let cardBg = isLight ? '#FFFFFF' : (Colors.get('simplePanel', theme) + '99');
+    let cardBg = isLight
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(255,255,255,0.78))'
+        : `radial-gradient(240px 120px at 4% 10%, ${categoryTone.soft}, transparent 72%), linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.92))`;
     let textColor = isLight ? '#1D1D1F' : Colors.get('mainText', theme);
     let subTextColor = isLight ? '#8E8E93' : Colors.get('subText', theme);
-    let iconBg = isLight ? '#FFFFFF' : 'rgba(70, 70, 70, 0.2)';
+    let iconBg = categoryTone.soft;
     let iconColor = habitColor;
-    let borderColor = isLight ? 'transparent' : `1px solid ${Colors.get('border', theme)}80`;
-    
-    // Тени для карточек:
+    let borderColor = `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)'}`;
+    let progressColor = categoryTone.hue;
+
     let shadow = isLight 
-        ? '0 12px 24px -6px rgba(0, 0, 0, 0.27), 0 4px 8px -3px rgba(0, 0, 0, 0.06)' // Светлая: очень мягкая, парящая
-        : `0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 0 0 rgba(255,255,255,0.1)`; // Темная: глубокая с подсветкой сверху
+        ? '0 12px 28px -24px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.72) inset'
+        : `0 1px 0 rgba(255,255,255,0.04) inset, 0 14px 34px -28px rgba(0,0,0,0.72)`;
 
     if (isNegative) {
-        cardBg = isLight ? '#9a4a4a' : 'rgba(255, 59, 48, 0.08)';
-        borderColor = isLight ? 'rgba(255, 59, 48, 0.1)' : '1px solid rgba(255, 59, 48, 0.2)';
-        iconBg = 'rgba(255, 59, 48, 0.15)';
+        cardBg = isLight
+            ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(216,120,94,0.09))'
+            : 'radial-gradient(240px 120px at 4% 10%, rgba(216,120,94,0.14), transparent 72%), linear-gradient(145deg, rgba(28,24,22,0.9), rgba(20,23,25,0.92))';
+        borderColor = isLight ? '1px solid rgba(216,120,94,0.16)' : '1px solid rgba(216,120,94,0.2)';
+        iconBg = negativeTone.soft;
+        iconColor = negativeTone.hue;
+        progressColor = '#D8785E';
     }
 
-    if (status === 1) {
-        cardBg = isLight ? '#32873961' : 'rgba(20, 60, 30, 0.85)';
-        textColor = isLight ? '#1E5E25' : '#ffffff';
-        subTextColor = isLight ? '#2E7D32' : 'rgba(255,255,255,0.7)';
-        iconBg = isLight ? '#ffffff5c' : 'rgba(255,255,255,0.2)';
-        iconColor = isLight ? '#2E7D32' : '#ffffff';
-        borderColor = 'transparent';
-    } else if (status === -1) {
-        cardBg = isLight ? '#bc334868' : 'rgba(60, 20, 20, 0.85)';
-        textColor = isLight ? '#B71C1C' : '#ffffff';
-        subTextColor = isLight ? '#C62828' : 'rgba(255,255,255,0.7)';
-        iconBg = isLight ? '#ffffff6e' : 'rgba(255,255,255,0.2)';
-        iconColor = isLight ? '#C62828' : '#ffffff';
-        borderColor = 'transparent';
+    if (statusValue === 1) {
+        if (isNegative) {
+            cardBg = isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(216,120,94,0.11))'
+                : 'radial-gradient(240px 120px at 4% 10%, rgba(216,120,94,0.16), transparent 72%), linear-gradient(145deg, rgba(28,24,22,0.92), rgba(20,23,25,0.92))';
+            iconBg = negativeTone.soft;
+            iconColor = negativeTone.hue;
+            borderColor = isLight ? '1px solid rgba(216,120,94,0.18)' : '1px solid rgba(216,120,94,0.22)';
+            progressColor = negativeTone.hue;
+        } else {
+            cardBg = isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(120,184,121,0.14))'
+                : 'radial-gradient(240px 120px at 4% 10%, rgba(120,184,121,0.20), transparent 72%), linear-gradient(145deg, rgba(22,30,26,0.94), rgba(20,23,25,0.92))';
+            iconBg = HABITS_SUCCESS.soft;
+            iconColor = HABITS_SUCCESS.hue;
+            borderColor = isLight ? '1px solid rgba(120,184,121,0.22)' : '1px solid rgba(120,184,121,0.30)';
+            progressColor = HABITS_SUCCESS.hue;
+        }
+    } else if (statusValue === -1) {
+        cardBg = isLight
+            ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(216,92,92,0.1))'
+            : 'radial-gradient(240px 120px at 4% 10%, rgba(216,92,92,0.13), transparent 72%), linear-gradient(145deg, rgba(30,22,22,0.92), rgba(20,23,25,0.92))';
+        iconBg = 'rgba(216,92,92,0.15)';
+        iconColor = '#D95C5C';
+        borderColor = isLight ? '1px solid rgba(216,92,92,0.18)' : '1px solid rgba(216,92,92,0.2)';
+        progressColor = '#D95C5C';
     }
    
     useEffect(() => { const sub = premium$.subscribe(setHasPremium); return () => sub.unsubscribe(); }, []);
+    useEffect(() => {
+        const nextStatus = AppData.habitsByDate?.[activeDateKey]?.[id];
+        setStatus(isAutoComplete ? 1 : nextStatus);
+    }, [activeDateKey, id, isAutoComplete]);
     useEffect(() => {
         if (isAutoComplete && status !== 1) setStatus(1);
     }, [isAutoComplete, status]);
@@ -700,21 +1523,33 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                         const newTime = prevTime + 1000;
                         temp = 0;
                         if (!isNegative && newTime >= maxTimer) { isDoneSound.play(); clearInterval(interval); setStatus(1); setTime(0); setTimer(false); setProgress(0); }
-                        else { if (newTime >= maxTimer && status < 1) setStatus(1); }
+                        else { if (newTime >= maxTimer && statusValue < 1) setStatus(1); }
                         return newTime;
                     });
                 }
             }, 50);
             return () => clearInterval(interval);
         }
-    }, [time, timer, maxTimer]);
+    }, [time, timer, maxTimer, statusValue]);
 
     useEffect(() => { const sub = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1)); return () => sub.unsubscribe(); }, []);
-    useEffect(() => { AppData.changeStatus(dateKey, id, status); }, [status]);
+    useEffect(() => {
+        if (previousDateKeyRef.current !== activeDateKey) {
+            previousDateKeyRef.current = activeDateKey;
+            return;
+        }
+        if (status !== undefined) AppData.changeStatus(activeDateKey, id, status);
+    }, [status, id, activeDateKey]);
 
     const getHabitIcon = () => {
-        if (habit.iconName) return Icons.getIcon(habit.iconName, { size: 22 });
-        return Icons.getHabitIcon(habit.name ? habit.name[0] : 'default', { size: 22 });
+        return (
+            <HabitOutlineIcon
+                iconName={habit.iconName || habitInfo.icon || 'default'}
+                habitName={habit.name}
+                categoryKey={habit.category?.[0]}
+                size={22}
+            />
+        );
     };
 
     const x = useMotionValue(0);
@@ -726,7 +1561,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
             if (info.offset.x < minX && canDrag) { setNewStatus(false); animate(constrainedX, 0, { type: 'tween', duration: 0.2 }); setCanDrag(false); }
         } else {
             if (Math.abs(info.offset.x) > maxX && canDrag) {
-                if ((status < 1 && info.offset.x > 0) || (status > -1 && info.offset.x < 0)) setNewStatus(info.offset.x > 0);
+                if ((statusValue < 1 && info.offset.x > 0) || (statusValue > -1 && info.offset.x < 0)) setNewStatus(info.offset.x > 0);
                 animate(constrainedX, 0, { type: 'tween', duration: 0.2 });
                 setCanDrag(false);
             }
@@ -737,22 +1572,24 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
         let newStatus = 0;
         if (isOverZero) { newStatus = (status === 0 || status === -1) ? 1 : 1; }
         else {
-            if (status === 0) {
+            if (statusValue === 0) {
                newStatus = -1;
             }
-            else if (status === 1) { newStatus = isNegative ? -1 : 0; if(isNegative) { setTime(0); AppData.choosenHabitsLastSkip[id] = Date.now(); } }
-            else if (status === -1) { newStatus = -1; if(isNegative) { setTime(0); AppData.choosenHabitsLastSkip[id] = Date.now(); } }
+            else if (statusValue === 1) { newStatus = isNegative ? -1 : 0; if(isNegative) { setTime(0); AppData.choosenHabitsLastSkip[id] = Date.now(); } }
+            else if (statusValue === -1) { newStatus = -1; if(isNegative) { setTime(0); AppData.choosenHabitsLastSkip[id] = Date.now(); } }
         }
-        AppData.habitsByDate[dateKey][id] = newStatus;
+        if (!AppData.habitsByDate[activeDateKey]) AppData.habitsByDate[activeDateKey] = {};
+        AppData.habitsByDate[activeDateKey][id] = newStatus;
         if (newStatus === 1) playEffects(isDoneSound); else if (newStatus === -1) playEffects(skipSound);
         setStatus(newStatus);
+        onStatusChange?.();
     }
     const toggleIsActive = () => { setCurrentId(id); playEffects(clickSound); const newExpanded = !expanded; setExpanded(newExpanded); setExpandedCard(newExpanded ? id : null); }
 
     useEffect(() => { const sub = expandedCard$.subscribe(cId => setExpanded(cId === id)); return () => sub.unsubscribe(); }, [id]);
     useEffect(() => { setCanDrag(!showTimerSlider); }, [showTimerSlider]);
 
-    const startTimer = () => { if (status < 1 && !isNegative && !isAutoComplete) { setTimer(true); setTime(0); } }
+    const startTimer = () => { if (statusValue < 1 && !isNegative && !isAutoComplete) { setTimer(true); setTime(0); } }
     const stopTimer = () => { if (!isNegative) { setTimer(false); setProgress(0); setTime(0); } }
     const onDeleteHabit = (id) => { setHabitToDelete(id); setNeedConfirmation(true); setConfirmMessage(AppData.prefs[0] === 0 ? `⚠️ Вы уверены?` : `⚠️ Are you sure?`); }
 
@@ -760,24 +1597,51 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
         <motion.div
             id={id}
             style={{
-                display: 'flex', flexDirection: 'column', width: '95%', margin: '5px', overflow: 'hidden', position: 'relative',
-                borderRadius: '16px', backgroundColor: cardBg, backdropFilter: isLight ? 'none' : 'blur(40px)',
-                border: isLight ? 'none' : borderColor, boxShadow: shadow, x: constrainedX
+                display: 'flex',
+                flexDirection: 'column',
+                width: '100%',
+                boxSizing: 'border-box',
+                overflow: 'hidden',
+                position: 'relative',
+                borderRadius: 20,
+                background: cardBg,
+                backdropFilter: isLight ? 'none' : 'blur(24px) saturate(160%)',
+                WebkitBackdropFilter: isLight ? 'none' : 'blur(24px) saturate(160%)',
+                border: borderColor,
+                boxShadow: shadow,
+                x: constrainedX
             }}
             onClick={(event) => {
                 const el = document.getElementById(id);
-                if (el.clientHeight < 80 || (event.nativeEvent.pageY - (el.getBoundingClientRect().top + window.scrollY)) < 80) toggleIsActive();
+                if (el.clientHeight < 88 || (event.nativeEvent.pageY - (el.getBoundingClientRect().top + window.scrollY)) < 88) toggleIsActive();
             }}
-            drag={canDrag && !isAutoComplete ? 'x' : false} dragConstraints={{ left: minX, right: status > 0 || isNegative ? 0 : maxX }}
+            drag={canDrag && !isAutoComplete ? 'x' : false} dragConstraints={{ left: minX, right: statusValue > 0 || isNegative ? 0 : maxX }}
             onDrag={handledDrag} onDragEnd={onDragEnd} whileTap={{ scale: 0.99 }}
-            animate={{ height: expanded ? 'auto' : '80px' }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+            animate={{ height: expanded ? 'auto' : '88px' }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}
         >
            
-            <div style={{ display: "flex", alignItems: "center", minHeight: '80px', width: '100%', padding: '16px', boxSizing: 'border-box' }}>
-                <div style={{ width: '44px', height: '44px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: iconBg, color: status===1 ? (isLight ? '#fff' : '#fff') : iconColor, marginRight: '16px', flexShrink: 0, alignSelf: 'flex-start', marginTop: expanded ? '5px' : '0' }}>{getHabitIcon()}</div>
-                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
+            <div style={{ display: "flex", alignItems: "center", minHeight: 88, width: '100%', padding: '14px 16px', boxSizing: 'border-box', gap: 14 }}>
+                <div style={{
+                    width: 46,
+                    height: 46,
+                    borderRadius: 15,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: iconBg,
+                    color: iconColor,
+                    border: `1px solid ${statusValue === 1 ? (isNegative ? negativeTone.ring : HABITS_SUCCESS.ring) : statusValue === -1 ? 'rgba(216,92,92,0.28)' : (isNegative ? negativeTone.ring : categoryTone.ring)}`,
+                    flexShrink: 0
+                }}>{getHabitIcon()}</div>
+                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden', minWidth: 0 }}>
                     
-                    <span style={{ fontFamily: 'Segoe UI', fontWeight: '700', fontSize: '18px', color: textColor, whiteSpace: expanded ? 'normal' : 'nowrap', overflow: expanded ? 'visible' : 'hidden', textOverflow: 'ellipsis', lineHeight: '1.2' }}>{habitInfo.name[langIndex]}</span>
+                    <span style={{ fontWeight: '900', fontSize: fSize === 0 ? 16 : 18, color: textColor, whiteSpace: expanded ? 'normal' : 'nowrap', overflow: expanded ? 'visible' : 'hidden', textOverflow: 'ellipsis', lineHeight: '1.16' }}>{habitInfo.name[langIndex]}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 9 }}>
+                        <div style={{ flex: 1, height: 4, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.065)', overflow: 'hidden' }}>
+                            <div style={{ width: `${safePercent}%`, height: '100%', borderRadius: 999, background: progressColor, transition: 'width 0.45s ease' }} />
+                        </div>
+                        <span style={{ color: subTextColor, fontSize: 10, fontWeight: 900, fontVariantNumeric: 'tabular-nums', minWidth: 30, textAlign: 'right' }}>{safePercent}%</span>
+                    </div>
 
                    {/*
 
@@ -786,13 +1650,13 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
 
                     */}
 
-	                    {showStatsRow && <div style={{display:'flex',gap :'5px',marginTop:'16px',justifyContent:'center'}}>
+	                    {showStatsRow && <div style={{display:'flex',gap: 6, marginTop: 8, justifyContent:'flex-start', overflow: 'hidden'}}>
 
-	                    {widgets.days && <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getDaysAmount(id)} color={theme === 'dark' ? '#a5a5a5' : '#1e1e1e8f'} />}
-	                    {widgets.skips && <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={theme === 'dark' ? '#e33131' : '#9800008f'} />}
-                    {widgets.streak && !isNegative && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDoneAmount(id)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
-                    {widgets.timer && !isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={theme === 'dark' ? '#31c8e3' : '#0086988f'} />}
-	                    {widgets.timer && isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={theme === 'dark' ? '#31e355' : '#1e98008f'} />}
+	                    {widgets.days && <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getDaysAmount(id)} color={subTextColor} />}
+	                    {widgets.skips && <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={statusValue === -1 ? '#D95C5C' : subTextColor} />}
+                    {widgets.streak && !isNegative && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDoneAmount(id)} color={statusValue === 1 ? HABITS_SUCCESS.hue : '#D8785E'} />}
+                    {widgets.timer && !isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={categoryTone.hue} />}
+	                    {widgets.timer && isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={'#D8785E'} />}
 
 	                    </div>}
 
@@ -800,19 +1664,19 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
 
 
                 </div>
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingLeft: '10px', alignSelf: 'center' }}>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingLeft: '2px', alignSelf: 'center', gap: 8, flexShrink: 0 }}>
                     {!isNegative && !isAutoComplete && <>
                     
-                        {!timer && status === 0 && <TimerOffIcon onClick={(e) => { e.stopPropagation(); setShowTimerSlider(true); }} style={{ color: Colors.get('icons', theme), opacity: 0.4, fontSize: '24px', marginRight: '15px' }} />}
-                        {timer && <TimerIcon onClick={(e) => { e.stopPropagation(); stopTimer() }} style={{ color: habitColor, fontSize: '24px', marginRight: '15px' }} />}
-                        <div onClick={(e) => {e.stopPropagation(); setNewStatus(true)}} style={{ width: '30px', height: '30px', borderRadius: '50%', border: status !== 0 ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: status === 1 ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{status === 1 && <FaCheck size={16} color="#FFF" />}</div>
+                        {!timer && statusValue === 0 && <TimerOffIcon onClick={(e) => { e.stopPropagation(); setShowTimerSlider(true); }} style={{ color: subTextColor, opacity: 0.52, fontSize: '23px' }} />}
+                        {timer && <TimerIcon onClick={(e) => { e.stopPropagation(); stopTimer() }} style={{ color: categoryTone.hue, fontSize: '23px' }} />}
+                        <div onClick={(e) => {e.stopPropagation(); setNewStatus(true)}} style={{ width: 40, height: 30, borderRadius: 10, border: statusValue === 1 ? `1px solid ${HABITS_SUCCESS.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.1)' : 'rgba(255,255,255,0.095)'}`, background: statusValue === 1 ? HABITS_SUCCESS.soft : 'transparent', color: statusValue === 1 ? HABITS_SUCCESS.hue : subTextColor, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease', boxSizing: 'border-box' }}>{statusValue === 1 && <FaCheck size={14} />}</div>
                     </>}
 
 
 
 
-                    {isAutoComplete && <div style={{ padding: '7px 10px', borderRadius: '999px', backgroundColor: 'rgba(50, 215, 80, 0.16)', color: '#32D74B', fontSize: '11px', fontWeight: 900 }}>{langIndex === 0 ? 'АВТО' : 'AUTO'}</div>}
-                    {isNegative && <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'rgba(255, 69, 58, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FaFire size={16} color="#FF453A" /></div>}
+                    {isAutoComplete && <div style={{ padding: '7px 10px', borderRadius: '999px', backgroundColor: HABITS_SUCCESS.soft, border: `1px solid ${HABITS_SUCCESS.ring}`, color: HABITS_SUCCESS.hue, fontSize: '11px', fontWeight: 900 }}>{langIndex === 0 ? 'АВТО' : 'AUTO'}</div>}
+                    {isNegative && <div style={{ width: 40, height: 30, borderRadius: 10, backgroundColor: 'rgba(216,120,94,0.07)', border: '1px solid rgba(216,120,94,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}><FaFire size={14} color="#D8785E" /></div>}
                     
                 </div>
             </div>
@@ -821,13 +1685,13 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         transition={{ duration: 0.2, delay: 0.1 }} 
-        style={{ padding: '0 20px 20px 20px' }}
+        style={{ padding: '0 16px 18px 16px' }}
     >
         {/* Separator Line */}
-        <div style={{ height: '1px', width: '100%', backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)', marginBottom: '15px' }} />
+        <div style={{ height: '1px', width: '100%', backgroundColor: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)', marginBottom: '14px' }} />
         {/* Description */}
 	                {widgets.description && habitInfo.descr[langIndex] && (
-	                    <div style={{ color: subTextColor, fontSize: '14px', marginBottom: '20px', lineHeight: '1.4' }}>
+	                    <div style={{ color: subTextColor, fontSize: '14px', marginBottom: '16px', lineHeight: '1.45', fontWeight: 700 }}>
 	                        {habitInfo.descr[langIndex]}
 	                    </div>
                 )}
@@ -839,7 +1703,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                 {/* Goals List */}
 	                {widgets.goals && <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
 	                    {habitsGoals?.map((goal, index) => (
-	                        <motion.div key={index} whileTap={{ scale: 0.98 }} style={{ display: 'flex', alignItems: 'center', width: '90%', padding: '14px 16px', borderRadius: '16px', backgroundColor: isLight ? '#FFFFFF' : 'rgba(255,255,255,0.05)', border: isLight ? '1px solid rgba(0,0,0,0.05)' : 'none', boxShadow: isLight ? '0 2px 8px rgba(0,0,0,0.03)' : 'none' }}>
+	                        <motion.div key={index} whileTap={{ scale: 0.98 }} style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '12px 13px', borderRadius: 15, background: goal.isDone ? HABITS_SUCCESS.soft : (isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.035)'), border: goal.isDone ? `1px solid ${HABITS_SUCCESS.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.06)'}`, boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset', boxSizing: 'border-box' }}>
                             <div style={{ fontSize: '14px', flexGrow: 1, fontWeight: '500', color: goal.isDone ? (isLight ? '#AEAEB2' : '#636366') : textColor, textDecoration: goal.isDone ? 'line-through' : 'none' }}>{goal.text}</div>
                             
                             {/* Edit/Delete Goal Options */}
@@ -856,15 +1720,15 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
                             </div>
 
                             {/* Checkbox */}
-                            <div onClick={() => setHabitGoals(prev => { const updated = prev.map((h, i) => i === index ? { ...h, isDone: !h.isDone } : h); AppData.choosenHabitsGoals[id] = updated; return updated; })} style={{ width: '24px', height: '24px', borderRadius: '8px', border: goal.isDone ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: goal.isDone ? habitColor : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                                {goal.isDone && <FaCheck size={12} color="#FFF" />}
+                            <div onClick={() => setHabitGoals(prev => { const updated = prev.map((h, i) => i === index ? { ...h, isDone: !h.isDone } : h); AppData.choosenHabitsGoals[id] = updated; return updated; })} style={{ width: 25, height: 25, borderRadius: 9, border: goal.isDone ? 'none' : `1px solid ${isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)'}`, background: goal.isDone ? HABITS_SUCCESS.soft : 'transparent', color: HABITS_SUCCESS.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                {goal.isDone && <FaCheck size={12} />}
                             </div>
 	                        </motion.div>
 	                    ))}
 	                </div>}
 
 	                {/* Add Goal Button */}
-	                {widgets.goals && <div onClick={() => setCP({ show: true, type: 1, hId: id, gId: 0, setGoals: setHabitGoals })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '15px', cursor: 'pointer', padding: '12px', borderRadius: '16px', border: `2px dashed ${habitColor}66`, backgroundColor: `${habitColor}10` }}>
+	                {widgets.goals && <div onClick={() => setCP({ show: true, type: 1, hId: id, gId: 0, setGoals: setHabitGoals })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '12px', cursor: 'pointer', padding: '12px', borderRadius: 15, border: `1px solid ${categoryTone.ring}`, background: categoryTone.soft }}>
 	                    <FaPlus style={{ fontSize: '12px', color: habitColor }} />
 	                    <span style={{ fontSize: '13px', marginLeft: '8px', color: habitColor, fontWeight: '600' }}>
 	                        {langIndex === 0 ? 'Добавить цель' : 'Add goal'}
@@ -872,7 +1736,7 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
 	                </div>}
 
 	                {/* Achievements Section */}
-	                {widgets.achievements && <div style={{ marginTop: '25px', marginBottom: '10px', fontSize: '12px', fontWeight: 'bold', color: Colors.get('subText', theme), textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+	                {widgets.achievements && <div style={{ marginTop: '22px', marginBottom: '10px', fontSize: '11px', fontWeight: 900, color: Colors.get('subText', theme), textTransform: 'uppercase', letterSpacing: '0.08em' }}>
 	                    {langIndex === 0 ? 'Достижения' : 'Achievements'}
 	                </div>}
 	                {widgets.achievements && AppData.choosenHabitsAchievements[id]?.map((milestone, index) => (
@@ -881,23 +1745,23 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
             </>
         ) : (
             /* --- NO PREMIUM VIEW --- */
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '15px', marginBottom: '15px', fontSize: '12px', fontWeight: '600', color: Colors.get('subText', theme) , border: `2px dashed ${Colors.get('subText', theme)}66`, padding: '12px', borderRadius: '16px'}}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '14px', marginBottom: '14px', fontSize: '12px', fontWeight: 800, color: Colors.get('subText', theme) , border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`, background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.035)', padding: '12px', borderRadius: 15 }}>
                 {langIndex === 0 ? 'Микро цели и достижения с премиум' : 'Micro goals and achievements with premium'}
             </div>
         )}
 
         {/* --- BOTTOM ACTIONS (Visible to All) --- */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', gap: '35px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '18px', gap: 10 }}>
             {habit.isCustom && <FaPencilAlt onClick={() => setCP(prev => ({ ...prev, show: true, type: 0, hId: id, gId: 0, hInfo: setHabitInfo }))} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />}
             <FaTrash onClick={() => onDeleteHabit(id)} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
             <FaArrowUp style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} onClick={() => { toggleIsActive(); }} />
-           {!isNegative && !isAutoComplete && <div onClick={() => setNewStatus(true)} style={{ width: '18px', height: '18px', borderRadius: '50%', border: status !== 0 ? 'none' : `2px solid ${isLight ? '#E5E5EA' : '#3A3A3C'}`, backgroundColor: status === 1 ? '#32D74B' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{status === 1 && <FaCheck size={16} color="#FFF" />}</div>}
+           {!isNegative && !isAutoComplete && <div onClick={() => setNewStatus(true)} style={{ width: 22, height: 22, borderRadius: 8, border: statusValue !== 0 ? 'none' : `1px solid ${isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)'}`, background: statusValue === 1 ? HABITS_SUCCESS.soft : 'transparent', color: HABITS_SUCCESS.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease' }}>{statusValue === 1 && <FaCheck size={13} />}</div>}
         </div>
 
     </motion.div>
 )}
             {showTimerSlider && (
-                <div style={{ display: 'flex', alignItems: 'center', position: 'absolute', borderRadius: '24px', width: '100%', height: '80px', top: 0, zIndex: 1001, backgroundColor: isLight ? '#FFF' : Colors.get('background', theme) }} onClick={(e) => e.stopPropagation()}>
+                <div style={{ display: 'flex', alignItems: 'center', position: 'absolute', borderRadius: 20, width: '100%', height: 88, top: 0, zIndex: 1001, background: isLight ? 'rgba(255,255,255,0.98)' : 'rgba(20,23,25,0.98)', border: borderColor }} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '90%', margin: '0 auto' }}>
                         <div style={{color: Colors.get('mainText', theme), fontWeight: 'bold'}}>{parsedTimeSimple(maxTimer)}</div>
                         <Slider style={{ width: '50%', color: theme === 'dark' ? '#3abfe4' : '#14868878' }} min={1} max={59} value={maxTimer / 60000} valueLabelDisplay="off" onChange={(e) => { setMaxTimer(e.target.value * 60000); e.stopPropagation(); }} />
@@ -910,9 +1774,9 @@ function HabitCard({ id = 0, theme, setCP, setCurrentId, fSize, setNeedConfirmat
     )
 }
 
-function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, langIndex }) {
+function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, accentColor, onAccentChange, theme, langIndex }) {
     const isLight = theme === 'light' || theme === 'speciallight';
-    const bg = isLight ? '#FFFFFF' : Colors.get('simplePanel', theme);
+    const bg = isLight ? 'rgba(255,255,255,0.97)' : 'rgba(20,23,25,0.97)';
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
 
@@ -947,9 +1811,11 @@ function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, la
                             margin: '0 auto',
                             borderRadius: '26px',
                             padding: '18px',
-                            backgroundColor: bg,
-                            border: isLight ? '1px solid rgba(0,0,0,0.06)' : `1px solid ${Colors.get('border', theme)}80`,
-                            boxShadow: isLight ? '0 24px 70px rgba(0,0,0,0.18)' : '0 28px 80px rgba(0,0,0,0.72)',
+	                            background: isLight
+	                                ? `radial-gradient(260px 180px at 92% 6%, ${HABITS_ACCENT.soft} 0%, transparent 66%), ${bg}`
+	                                : `radial-gradient(260px 180px at 92% 6%, ${HABITS_ACCENT.soft} 0%, transparent 66%), ${bg}`,
+	                            border: isLight ? '1px solid rgba(15,23,42,0.08)' : `1px solid ${HABITS_ACCENT.ring}`,
+                            boxShadow: isLight ? '0 24px 70px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.7) inset' : '0 28px 80px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.055) inset',
                             zIndex: 5001
                         }}
                     >
@@ -961,23 +1827,83 @@ function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, la
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                backgroundColor: isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.06)',
-                                color: '#FFD700',
+                                background: HABITS_ACCENT.soft,
+                                border: `1px solid ${HABITS_ACCENT.ring}`,
+                                color: HABITS_ACCENT.hue,
                                 flexShrink: 0
                             }}>
                                 <FaSlidersH />
                             </div>
                             <div>
                                 <div style={{ color: text, fontSize: '18px', fontWeight: 900 }}>
-                                    {langIndex === 0 ? 'Карточки привычек' : 'Habit cards'}
-                                </div>
-                                <div style={{ color: sub, fontSize: '12px', fontWeight: 700, marginTop: '3px' }}>
-                                    {langIndex === 0 ? 'Выберите, какие блоки показывать' : 'Choose which blocks are visible'}
-                                </div>
-                            </div>
-                        </div>
+	                                    {langIndex === 0 ? 'Вид раздела' : 'Section view'}
+	                                </div>
+	                                <div style={{ color: sub, fontSize: '12px', fontWeight: 700, marginTop: '3px' }}>
+	                                    {langIndex === 0 ? 'Цвет и блоки карточек привычек' : 'Accent color and habit card blocks'}
+	                                </div>
+	                            </div>
+	                        </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+	                        <div style={{
+	                            borderRadius: '18px',
+	                            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
+	                            background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.035)',
+	                            padding: '12px',
+	                            marginBottom: '12px',
+	                            boxSizing: 'border-box'
+	                        }}>
+	                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+	                                <div style={{ minWidth: 0 }}>
+	                                    <div style={{ color: text, fontSize: '14px', fontWeight: 850 }}>
+	                                        {langIndex === 0 ? 'Основной цвет' : 'Main color'}
+	                                    </div>
+	                                    <div style={{ color: sub, fontSize: '11px', fontWeight: 650, marginTop: 2 }}>
+	                                        {langIndex === 0 ? 'Акцент раздела привычек' : 'Habit section accent'}
+	                                    </div>
+	                                </div>
+	                                <input
+	                                    type="color"
+	                                    value={accentColor || HABITS_ACCENT.hue}
+	                                    onChange={(event) => onAccentChange(event.target.value)}
+	                                    style={{
+	                                        width: 42,
+	                                        height: 42,
+	                                        padding: 0,
+	                                        border: `1px solid ${HABITS_ACCENT.ring}`,
+	                                        borderRadius: 14,
+	                                        background: 'transparent',
+	                                        cursor: 'pointer',
+	                                        flexShrink: 0
+	                                    }}
+	                                />
+	                            </div>
+	                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 1fr))', gap: 7 }}>
+	                                {HABIT_ACCENT_PRESETS.map((color) => {
+	                                    const active = (accentColor || HABITS_ACCENT.hue).toUpperCase() === color.toUpperCase();
+	                                    return (
+	                                        <motion.button
+	                                            key={color}
+	                                            type="button"
+	                                            whileTap={{ scale: 0.92 }}
+	                                            onClick={() => onAccentChange(color)}
+	                                            aria-label={color}
+	                                            style={{
+	                                                width: '100%',
+	                                                aspectRatio: '1 / 1',
+	                                                minHeight: 28,
+	                                                borderRadius: 11,
+	                                                border: active ? `2px solid ${Colors.get('mainText', theme)}` : `1px solid ${isLight ? 'rgba(15,23,42,0.1)' : 'rgba(255,255,255,0.09)'}`,
+	                                                background: color,
+	                                                boxShadow: active ? `0 0 18px ${color}55` : 'none',
+	                                                cursor: 'pointer'
+	                                            }}
+	                                        />
+	                                    );
+	                                })}
+	                            </div>
+	                        </div>
+
+	                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {HABIT_CARD_WIDGET_OPTIONS.map(option => {
                                 const enabled = values[option.key] !== false;
                                 return (
@@ -989,14 +1915,18 @@ function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, la
                                         style={{
                                             minHeight: '56px',
                                             borderRadius: '18px',
-                                            border: `1px solid ${enabled ? '#FFD700' : Colors.get('border', theme)}66`,
-                                            backgroundColor: enabled ? 'rgba(255, 215, 0, 0.12)' : (isLight ? '#F7F7F8' : 'rgba(255,255,255,0.04)'),
+                                            border: `1px solid ${enabled ? HABITS_ACCENT.ring : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)')}`,
+                                            background: enabled ? HABITS_ACCENT.soft : (isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.035)'),
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '12px',
                                             padding: '10px 12px',
                                             cursor: 'pointer',
-                                            textAlign: 'left'
+                                            textAlign: 'left',
+                                            outline: 'none',
+                                            appearance: 'none',
+                                            WebkitAppearance: 'none',
+                                            WebkitTapHighlightColor: 'transparent'
                                         }}
                                     >
                                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -1010,9 +1940,9 @@ function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, la
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            backgroundColor: enabled ? '#FFD700' : 'transparent',
-                                            color: enabled ? '#1D1D1F' : sub,
-                                            border: enabled ? 'none' : `1px solid ${Colors.get('border', theme)}88`,
+	                                            background: enabled ? HABITS_ACCENT.soft : 'transparent',
+                                            color: enabled ? HABITS_ACCENT.hue : sub,
+                                            border: `1px solid ${enabled ? HABITS_ACCENT.ring : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)')}`,
                                             flexShrink: 0
                                         }}>
                                             {enabled && <FaCheck size={13} />}
@@ -1028,10 +1958,14 @@ function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, la
     );
 }
 
-function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme }) {
+function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme, doneCount = 0, totalCount = 0, langIndex = AppData.prefs[0], summaryLabel, onToggle }) {
     const [isOpen, setIsOpen] = useState(() => !isCategoryCollapsed(categoryKey));
     const isLight = theme === 'light' || theme === 'speciallight';
-    const langIndex = AppData.prefs[0];
+    const categoryBaseTone = getCategoryTone(categoryKey);
+    const isNegativeCategory = getCategory(categoryKey)[0] === NEGATIVE_CATEGORY || categoryBaseTone.icon === 'negative';
+    const tone = isNegativeCategory ? categoryBaseTone : { ...HABITS_ACCENT, icon: categoryBaseTone.icon };
+    const textColor = Colors.get('mainText', theme);
+    const sub = Colors.get('subText', theme);
 
     useEffect(() => {
         setIsOpen(!isCategoryCollapsed(categoryKey));
@@ -1041,37 +1975,79 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
         const nextIsOpen = !isOpen;
         setIsOpen(nextIsOpen);
         setCategoryCollapsed(categoryKey, !nextIsOpen);
+        onToggle?.(nextIsOpen);
         playEffects(clickSound);
     };
 
     return (
-        <div style={{ width: '100%', marginBottom: '20px' }}>
+        <div style={{ width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
             <div 
                 onClick={toggleOpen}
                 style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'space-between',
-                    padding: '0 25px', 
-                    marginBottom: '10px', 
+                    padding: '4px 4px 10px', 
                     cursor: 'pointer',
                     userSelect: 'none'
                 }}
             >
-                <div style={{ 
-                    fontSize: '18px', 
-                    fontWeight: '800', 
-                    fontFamily: 'Segoe UI', 
-                    color: isLight ? '#1D1D1F' : Colors.get('mainText', theme) 
-                }}>
-                    {text[langIndex]}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+                    <div style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 11,
+                        background: tone.soft,
+                        border: `1px solid ${tone.ring}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                    }}>
+                        {getCategoryIcon(categoryKey, theme)}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ 
+                            fontSize: '15px', 
+                            fontWeight: '900', 
+                            color: textColor,
+                            lineHeight: 1.15,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                        }}>
+                            {text[langIndex]}
+                        </div>
+                        <div style={{ color: sub, fontSize: 11, fontWeight: 800, marginTop: 3 }}>
+                            <span style={{ color: tone.hue }}>{doneCount}</span> / {totalCount} {summaryLabel || (langIndex === 0 ? 'сегодня' : 'today')}
+                        </div>
+                    </div>
                 </div>
-                <motion.div
-                    animate={{ rotate: isOpen ? 0 : -90 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                >
-                    <FaChevronDown size={14} color={isLight ? '#1D1D1F' : '#FFF'} style={{ opacity: 0.4 }} />
-                </motion.div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    <div style={{
+                        minWidth: 44,
+                        height: 28,
+                        borderRadius: 999,
+                        background: doneCount === totalCount && totalCount > 0 ? (isNegativeCategory ? tone.soft : HABITS_SUCCESS.soft) : (isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)'),
+                        border: `1px solid ${doneCount === totalCount && totalCount > 0 ? (isNegativeCategory ? tone.ring : HABITS_SUCCESS.ring) : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)')}`,
+                        color: doneCount === totalCount && totalCount > 0 ? (isNegativeCategory ? tone.hue : HABITS_SUCCESS.hue) : sub,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 12,
+                        fontWeight: 900,
+                        fontVariantNumeric: 'tabular-nums'
+                    }}>
+                        {doneCount}/{totalCount}
+                    </div>
+                    <motion.div
+                        animate={{ rotate: isOpen ? 0 : -90 }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                        style={{ color: sub, display: 'flex' }}
+                    >
+                        <FaChevronDown size={14} />
+                    </motion.div>
+                </div>
             </div>
             
             <AnimatePresence initial={false}>
@@ -1081,9 +2057,9 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                        style={{ overflow: 'hidden' }}
+                        style={{ overflowY: 'hidden', overflowX: 'visible', padding: '0 1px', boxSizing: 'border-box' }}
                     >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
                             {children}
                         </div>
                     </motion.div>
@@ -1239,9 +2215,10 @@ const getDayName = (langIndex,days) => {
 const MiniBadge = ({ icon, text, color , theme}) => (
     <div style={{ 
         display: 'flex', alignItems: 'center', gap: '3px', 
-        padding: '2px 5px', borderRadius: '5px', 
-        backgroundColor: Colors.get('background', theme) + '75',
-        color: color, fontSize: '10px', fontWeight: '700',
+        padding: '4px 7px', borderRadius: 999, 
+        background: theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.035)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.06)'}`,
+        color: color, fontSize: '10px', fontWeight: '850',
         whiteSpace: 'nowrap'
     }}>
         {icon}

@@ -10,11 +10,12 @@ import FaBell from '@mui/icons-material/NotificationsRounded';
 
 import { 
     setPage, setAddPanel, setPage$, addPanel$, theme$, 
-    currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, notify$ 
+    currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, notify$, habitAccent$
 } from '../../StaticClasses/HabitsBus';
 import Colors from '../../StaticClasses/Colors';
 import { saveData } from '../../StaticClasses/SaveHelper';
 import { playEffects } from '../../StaticClasses/Effects';
+import { HABITS_ACCENT } from '../HabitsPages/HabitVisuals.jsx';
 
 const switchSound = new Audio('Audio/Click.wav');
 
@@ -23,13 +24,15 @@ const BtnsHabits = () => {
     const [page, setPageState] = useState('');
     const [addPanel, setAddPanelState] = useState('');
     const [currentBtn, setBtnState] = useState(0);
+    const [, setAccentVersion] = useState(0);
 
     useEffect(() => {
         const subs = [
             theme$.subscribe(setThemeState),
             setPage$.subscribe(setPageState),
             addPanel$.subscribe(setAddPanelState),
-            currentBottomBtn$.subscribe(setBtnState)
+            currentBottomBtn$.subscribe(setBtnState),
+            habitAccent$.subscribe(() => setAccentVersion(v => v + 1))
         ];
         return () => subs.forEach(s => s.unsubscribe());
     }, []);
@@ -129,7 +132,7 @@ const NavButton = ({ id, current, icon, onClick, theme }) => {
             style={navBtnWrapper}
         >
             <div style={{
-                color: isActive ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
+                color: isActive ? HABITS_ACCENT.hue : Colors.get('icons', theme),
                 fontSize: '28px',
                 transition: 'color 0.3s ease'
             }}>
@@ -158,10 +161,11 @@ const AddButton = ({ disabled, onClick, theme, active }) => (
         style={{
             ...addBtnStyle(theme),
             opacity: disabled ? 0.5 : 1,
-            background: active ? Colors.get('iconsHighlited', theme) : Colors.get('simplePanel', theme),
+            background: active ? HABITS_ACCENT.soft : Colors.get('simplePanel', theme),
+            border: active ? `1px solid ${HABITS_ACCENT.ring}` : `1px solid ${Colors.get('border', theme)}`,
         }}
     >
-        <Add style={{ fontSize: '32px', color: active ? '#fff' : Colors.get('icons', theme) }} />
+        <Add style={{ fontSize: '32px', color: active ? HABITS_ACCENT.hue : Colors.get('icons', theme) }} />
     </motion.div>
 );
 
@@ -180,30 +184,34 @@ const onBack = async (page, addPanel) => {
 // Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '7vw', // Floating dock
-    left: '5vw',
-    width: '90vw',
-    height: '70px',
-    borderRadius: '25px',
+    bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 'calc(100vw - 40px)',
+    maxWidth: '360px',
+    height: '66px',
+    borderRadius: '999px',
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
     zIndex: 1000,
     boxSizing: 'border-box',
-    padding: '0 10px',
-    backdropFilter: 'blur(6px)',
-    overflow: 'hidden'
+    padding: '10px 14px',
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+    overflow: 'hidden',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)'
 });
 
 const glassOverlay = (theme) => ({
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: Colors.get('bottomPanel', theme),
-    opacity: 0.85,
-    backdropFilter: 'blur(15px)',
-    WebkitBackdropFilter: 'blur(15px)',
+    opacity: 0.9,
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     border: `1px solid ${Colors.get('border', theme)}`,
-    borderRadius: '25px',
+    borderRadius: '999px',
     zIndex: -1,
 });
 
@@ -214,28 +222,30 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '50px',
+    width: '46px',
+    borderRadius: '999px',
     cursor: 'pointer'
 };
 
 const activeIndicator = (theme) => ({
     position: 'absolute',
-    bottom: '8px',
+    bottom: '4px',
     width: '5px',
     height: '5px',
     borderRadius: '50%',
-    backgroundColor: Colors.get('iconsHighlited', theme),
-    boxShadow: `0 0 10px ${Colors.get('iconsHighlited', theme)}`
+    backgroundColor: HABITS_ACCENT.hue,
+    boxShadow: `0 0 10px ${HABITS_ACCENT.glow}`
 });
 
 const addBtnStyle = (theme) => ({
     width: '50px',
     height: '50px',
-    borderRadius: '18px',
+    borderRadius: '999px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: `0 8px 20px ${Colors.get('shadow', theme)}`,
+    border: `1px solid ${Colors.get('border', theme)}`,
+    boxShadow: `0 16px 30px -18px ${Colors.get('shadow', theme)}`,
     transition: 'background 0.3s ease',
 });
 

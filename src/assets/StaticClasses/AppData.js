@@ -1,7 +1,7 @@
 import {Habit} from "../Classes/Habit";
 import { THEME } from './Colors';
 import { habitReminder } from '../Pages/NotifyPanel';
-import {setTheme,setLang ,setSoundAndVibro,setNotify,setShowPopUpPanel,setFontSize} from '../StaticClasses/HabitsBus'
+import {setTheme,setLang ,setSoundAndVibro,setNotify,setShowPopUpPanel,setFontSize,setHabitAccent} from '../StaticClasses/HabitsBus'
 import { NotificationsManager } from "./NotificationsManager";
 import { getAchievements } from "../Helpers/Achievements";
 import { saveData } from "../StaticClasses/SaveHelper";
@@ -25,10 +25,11 @@ export class AppData{
    static prefs = [...DEFAULT_PREFS]; // language, theme, sound, vibro, font size
    static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
    //  habits
-   static habitCustomCategories = []; // [{icon, label:[ru,en]}]
-   static habitCategoryOverrides = {};
-   static deletedDefaultHabitCategories = [];
-   static CustomHabits = [];
+  static habitCustomCategories = []; // [{icon, label:[ru,en]}]
+  static habitCategoryOverrides = {};
+  static deletedDefaultHabitCategories = [];
+  static habitAccentColor = '#7FC8B8';
+  static CustomHabits = [];
    static choosenHabitsGoals = {};//{id:[{text:'',isDone:false}]}
    static choosenHabitsStartDates = [];
    static choosenHabitsLastSkip = {};
@@ -190,6 +191,7 @@ static habitCardWidgets = {
     this.habitCustomCategories = Array.isArray(data.habitCustomCategories) ? data.habitCustomCategories : [];
     this.habitCategoryOverrides = data.habitCategoryOverrides && typeof data.habitCategoryOverrides === 'object' ? data.habitCategoryOverrides : {};
     this.deletedDefaultHabitCategories = Array.isArray(data.deletedDefaultHabitCategories) ? data.deletedDefaultHabitCategories : [];
+    this.habitAccentColor = setHabitAccent(typeof data.habitAccentColor === 'string' ? data.habitAccentColor : '#7FC8B8').hue;
     this.sectionVisits = data.sectionVisits || { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
     this.profileFriendsExpanded = data.profileFriendsExpanded ?? true;
     this.todoFieldsVisibility = data.todoFieldsVisibility || { priority: true, difficulty: true, urgency: true };
@@ -254,6 +256,10 @@ static habitCardWidgets = {
     this.prefs[ind] = value;
     if (ind === 2 || ind === 3) setSoundAndVibro(this.prefs[2], this.prefs[3]);
     if (ind === 4) setFontSize(value);
+    await saveData();
+  }
+  static async setHabitAccentColor(color) {
+    this.habitAccentColor = setHabitAccent(color).hue;
     await saveData();
   }
   static getLastProgramId() {
@@ -717,6 +723,7 @@ export class Data{
     this.habitCustomCategories = AppData.habitCustomCategories;
     this.habitCategoryOverrides = AppData.habitCategoryOverrides;
     this.deletedDefaultHabitCategories = AppData.deletedDefaultHabitCategories;
+    this.habitAccentColor = AppData.habitAccentColor;
     this.choosenHabitsDaysToForm = AppData.choosenHabitsDaysToForm;
     this.notify = AppData.notify;
     this.exercises = AppData.exercises;

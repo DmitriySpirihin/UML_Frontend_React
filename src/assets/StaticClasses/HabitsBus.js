@@ -1,6 +1,7 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 import Colors, { THEME } from './Colors';
 import { AppData } from './AppData';
+import { HABITS_ACCENT, setHabitsAccentColor } from '../Pages/HabitsPages/HabitVisuals.jsx';
 export const expandedCard$ = new BehaviorSubject(null);
 export const setExpandedCard = (idOrNull) => expandedCard$.next(idOrNull);
 
@@ -30,6 +31,7 @@ export const currentString$ = new BehaviorSubject('');
 export const keyboardNeeded$ = new BehaviorSubject({type:0,value:false});
 export const lastPage$ = new BehaviorSubject('MainMenu');
 export const premium$ = new BehaviorSubject(false);
+export const habitAccent$ = new BehaviorSubject({ ...HABITS_ACCENT });
 export const addNewTrainingDay$ =  new Subject();
 export const recoveryType$ = new BehaviorSubject(0);
 export const isValidation$ = new BehaviorSubject(false);
@@ -102,6 +104,11 @@ export const setCurrentKeyboardString = (str) => {
    currentString$.next(str);
 }
 export const setPremium = (state) => premium$.next(state);
+export const setHabitAccent = (color) => {
+  const accent = setHabitsAccentColor(color);
+  habitAccent$.next({ ...HABITS_ACCENT });
+  return accent;
+};
 export const setAddNewTrainingDay = () => addNewTrainingDay$.next();
 export const setRecoveryType = (state) => recoveryType$.next(state);
 export const setCurrentTrainingMuscle = (id) => currentTrainingMuscle$.next(id);

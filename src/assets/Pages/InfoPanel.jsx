@@ -29,13 +29,13 @@ const InfoPanel = () => {
 
   const menuItems = useMemo(
     () => [
-      { id: "MainCard",     icon: <FaInfoCircle />,             title: lang === 0 ? "Общее"          : "General",  color: "#404040" },
-      { id: "ToDoMain",     icon: <FaListUl />,                 title: lang === 0 ? "Задачи"         : "Tasks",    color: "#FFA64D" },
-      { id: "HabitsMain",   icon: <FaMedal />,                  title: lang === 0 ? "Привычки"       : "Habits",   color: "#FFD700" },
-      { id: "MentalMain",   icon: <FaBrain />,                  title: lang === 0 ? "Тренировка ума" : "Mind Training", color: "#4DA6FF" },
-      { id: "TrainingMain", icon: <FaRunning />,                title: lang === 0 ? "Дневник тренировок" : "Training Log", color: "#FF4D4D" },
-      { id: "RecoveryMain", icon: <MdOutlineSelfImprovement />, title: lang === 0 ? "Антистресс" : "Stress Reset", color: "#4DFF88" },
-      { id: "SleepMain",    icon: <FaBed />,                    title: lang === 0 ? "Качество сна"   : "Sleep Quality", color: "#A64DFF" },
+      { id: "MainCard",     icon: <FaInfoCircle />,             title: lang === 0 ? "Общее"          : "General",  color: "#9FB4C4" },
+      { id: "ToDoMain",     icon: <FaListUl />,                 title: lang === 0 ? "Задачи"         : "Tasks",    color: "#8FA6C8" },
+      { id: "HabitsMain",   icon: <FaMedal />,                  title: lang === 0 ? "Привычки"       : "Habits",   color: "#7FC8B8" },
+      { id: "MentalMain",   icon: <FaBrain />,                  title: lang === 0 ? "Тренировка ума" : "Mind Training", color: "#8A7CD6" },
+      { id: "TrainingMain", icon: <FaRunning />,                title: lang === 0 ? "Дневник тренировок" : "Training Log", color: "#D8785E" },
+      { id: "RecoveryMain", icon: <MdOutlineSelfImprovement />, title: lang === 0 ? "Антистресс" : "Stress Reset", color: "#78B879" },
+      { id: "SleepMain",    icon: <FaBed />,                    title: lang === 0 ? "Качество сна"   : "Sleep Quality", color: "#6F8BD6" },
     ],
     [lang]
   );
@@ -192,10 +192,9 @@ function getStyles(theme, fontSize, accent = "#5fb6c6") {
   const isLight = theme === "light" || theme === "speciallight";
   const text   = Colors.get("mainText",    theme);
   const sub    = Colors.get("subText",     theme);
-  const border = isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.07)";
-  const panel  = isLight ? "rgba(255,255,255,0.86)" : "rgba(26,29,33,0.84)";
-  const panelStrong = isLight ? "rgba(255,255,255,0.96)" : "rgba(20,23,25,0.92)";
-  const faint = isLight ? "rgba(15,23,42,0.04)" : "rgba(255,255,255,0.04)";
+  const border = isLight ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.08)";
+  const panel  = isLight ? "rgba(255,255,255,0.84)" : "rgba(24,28,31,0.82)";
+  const panelStrong = isLight ? "rgba(255,255,255,0.96)" : "rgba(20,23,25,0.94)";
   const heroAccent = accent;
 
   return {
@@ -207,8 +206,8 @@ function getStyles(theme, fontSize, accent = "#5fb6c6") {
       paddingBottom: "100px",
       color: text,
       background: isLight
-        ? "radial-gradient(900px 450px at 80% -10%, rgba(201,162,75,0.11), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7"
-        : "radial-gradient(1000px 500px at 80% -10%, rgba(201,162,75,0.08), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013",
+        ? "radial-gradient(900px 450px at 80% -10%, rgba(127,200,184,0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7"
+        : "radial-gradient(1000px 500px at 80% -10%, rgba(127,200,184,0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013",
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
     },
 
@@ -254,16 +253,19 @@ function getStyles(theme, fontSize, accent = "#5fb6c6") {
 
     tabsContainer: {
       display: "flex",
-      gap: "10px",
+      gap: "8px",
       padding: "0 16px 14px 16px",
       overflowX: "auto",
       boxSizing: "border-box",
     },
 
     tabItem: (isActive, color) => ({
-      padding: isActive ? "8px 16px" : "8px 12px",
-      borderRadius: "999px",
-      background: isActive ? `${color}20` : panel,
+      minHeight: 38,
+      padding: isActive ? "0 14px" : "0 12px",
+      borderRadius: "13px",
+      background: isActive
+        ? `linear-gradient(135deg, ${color}24, rgba(255,255,255,0.035))`
+        : panel,
       color: isActive ? color : sub,
       display: "flex",
       alignItems: "center",
@@ -271,8 +273,10 @@ function getStyles(theme, fontSize, accent = "#5fb6c6") {
       cursor: "pointer",
       flexShrink: 0,
       transition: "background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease",
-      border: `1px solid ${isActive ? `${color}55` : border}`,
-      boxShadow: isActive ? `0 14px 28px -24px ${color}` : "0 1px 0 rgba(255,255,255,0.035) inset",
+      border: `1px solid ${isActive ? `${color}4d` : border}`,
+      boxShadow: isActive
+        ? `0 1px 0 rgba(255,255,255,0.06) inset, 0 14px 28px -24px ${color}`
+        : "0 1px 0 rgba(255,255,255,0.035) inset",
     }),
 
     tabText: {
@@ -304,8 +308,8 @@ function getStyles(theme, fontSize, accent = "#5fb6c6") {
       padding: "14px",
       boxSizing: "border-box",
       background: isLight
-        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(201,162,75,0.08) 100%)`
-        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(201,162,75,0.09) 100%)`,
+        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(127,200,184,0.08) 100%)`
+        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(127,200,184,0.08) 100%)`,
       border: `1px solid ${heroAccent}22`,
       boxShadow: isLight
         ? `0 18px 44px -34px ${heroAccent}55, 0 1px 0 rgba(255,255,255,0.72) inset`
@@ -362,9 +366,9 @@ function getStyles(theme, fontSize, accent = "#5fb6c6") {
       minHeight: "56px",
       padding: "0 18px",
       borderRadius: "18px",
-      background: `${accentColor}20`,
+      background: `linear-gradient(135deg, ${accentColor}24, rgba(255,255,255,0.035))`,
       color: text,
-      border: `1px solid ${accentColor}55`,
+      border: `1px solid ${accentColor}4d`,
       cursor: "pointer",
       fontSize: fontSize === 0 ? "15px" : "17px",
       fontWeight: "900",
@@ -375,11 +379,11 @@ function getStyles(theme, fontSize, accent = "#5fb6c6") {
 
     htmlContent: {
       width: "100%",
-      background: panel,
-      border: `1px solid ${border}`,
-      borderRadius: "22px",
-      padding: "18px",
-      boxShadow: "0 1px 0 rgba(255,255,255,0.045) inset",
+      background: "transparent",
+      border: "none",
+      borderRadius: 0,
+      padding: 0,
+      boxShadow: "none",
       color: text,
       lineHeight: 1.55,
       fontSize: fontSize === 0 ? "15px" : "17px",
@@ -771,52 +775,52 @@ function getInstructions(langIndex, sectionId, accent) {
 
 function getHtmlCss(theme) {
   const isDark = theme === "dark";
-  const text   = isDark ? "rgba(255,255,255,0.92)" : "rgba(10,10,10,0.92)";
-  const sub    = isDark ? "rgba(255,255,255,0.58)" : "rgba(10,10,10,0.55)";
-  const border = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)";
-  const bg1    = isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.75)";
-  const bg2    = isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.55)";
-
-  /* Icon circle: subtle neutral bg — unified dark-luxury look */
-  const numBg  = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
-  const tipBg  = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.035)";
-  const iconCol = isDark ? "rgba(255,255,255,0.78)" : "rgba(10,10,10,0.72)";
+  const text   = isDark ? "#F2F3F5" : "#111827";
+  const sub    = isDark ? "#A6ADB8" : "#596273";
+  const border = isDark ? "rgba(255,255,255,0.08)" : "rgba(15,23,42,0.08)";
+  const panel  = isDark ? "rgba(24,28,31,0.82)" : "rgba(255,255,255,0.84)";
+  const panelStrong = isDark ? "rgba(20,23,25,0.94)" : "rgba(255,255,255,0.96)";
+  const stepBg = isDark ? "rgba(255,255,255,0.036)" : "rgba(15,23,42,0.025)";
+  const iconCol = isDark ? "rgba(242,243,245,0.82)" : "rgba(17,24,39,0.72)";
 
   return `
     .ux{ width:100%; }
 
-    .uxHeader{ text-align:center; margin-bottom:14px; }
-    .uxTitle{ font-size:26px; font-weight:950; letter-spacing:.2px; color:${text}; margin-bottom:6px; }
-    .uxSubtitle{ font-size:14px; color:${sub}; line-height:1.45; font-style:italic; max-width:520px; margin:0 auto; }
+    .uxHeader{ margin-bottom:12px; padding:0 2px; }
+    .uxTitle{ font-size:22px; font-weight:950; letter-spacing:0; color:${text}; margin-bottom:5px; }
+    .uxSubtitle{ font-size:13px; color:${sub}; line-height:1.42; font-weight:750; max-width:520px; margin:0; }
 
     .uxHero{
       position:relative; overflow:hidden; border-radius:24px;
-      border:1px solid ${border};
-      background:linear-gradient(180deg,${bg1},${bg2});
-      box-shadow:${isDark ? "0 28px 70px rgba(0,0,0,0.60)" : "0 20px 50px rgba(0,0,0,0.12)"};
-      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      border:1px solid color-mix(in srgb, var(--accent) 22%, ${border});
+      background:
+        radial-gradient(260px 130px at 8% 4%, color-mix(in srgb, var(--accent) 15%, transparent), transparent 72%),
+        ${panel};
+      box-shadow:${isDark ? "0 1px 0 rgba(255,255,255,0.045) inset, 0 18px 40px -30px rgba(0,0,0,0.72)" : "0 1px 0 rgba(255,255,255,0.7) inset, 0 16px 34px -30px rgba(0,0,0,0.22)"};
+      backdrop-filter:blur(18px) saturate(160%); -webkit-backdrop-filter:blur(18px) saturate(160%);
       padding:16px;
     }
     .uxHero:after{
-      content:""; position:absolute; left:8%; right:8%; bottom:-120px; height:210px;
-      background:radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 66%);
+      content:""; position:absolute; left:18%; right:18%; bottom:-150px; height:230px;
+      background:radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 68%);
       pointer-events:none; filter:blur(1px); opacity:${isDark ? "0.62" : "0.48"};
     }
 
     .uxHeroGlow{
-      position:absolute; inset:-140px -120px auto -120px; height:280px;
-      background:radial-gradient(circle at 45% 45%, color-mix(in srgb, var(--accent) 40%, transparent), transparent 60%);
+      position:absolute; inset:-160px -120px auto -120px; height:270px;
+      background:radial-gradient(circle at 44% 45%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 62%);
       pointer-events:none; filter:blur(2px);
-      opacity:${isDark ? "0.75" : "0.55"};
+      opacity:${isDark ? "0.62" : "0.48"};
     }
 
     .uxHeroTop{ position:relative; display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
 
     .uxBadge{
-      font-size:12px; font-weight:900; padding:6px 10px; border-radius:999px;
-      border:1px solid ${border};
-      background:${isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.60)"};
-      color:${text}; letter-spacing:.3px; text-transform:uppercase;
+      font-size:11px; font-weight:900; padding:6px 10px; border-radius:999px;
+      border:1px solid color-mix(in srgb, var(--accent) 28%, ${border});
+      background:color-mix(in srgb, var(--accent) 13%, transparent);
+      color:color-mix(in srgb, var(--accent) 82%, ${text});
+      letter-spacing:.08em; text-transform:uppercase;
     }
     .uxMeta{ font-size:12px; color:${sub}; font-weight:800; }
 
@@ -825,18 +829,19 @@ function getHtmlCss(theme) {
     .uxStep{
       display:flex; gap:16px; align-items:flex-start;
       padding:14px 12px; border-radius:18px;
-      border:1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"};
-      background:${isDark ? "rgba(0,0,0,0.18)" : "rgba(255,255,255,0.55)"};
+      border:1px solid ${border};
+      background:${stepBg};
+      box-shadow:0 1px 0 rgba(255,255,255,0.035) inset;
     }
 
     .uxNum{
-      width:38px; height:38px; border-radius:50%;
+      width:40px; height:40px; border-radius:13px;
       display:flex; align-items:center; justify-content:center;
       font-size:19px; line-height:1; flex-shrink:0;
-      border:1px solid ${border};
-      background:${numBg};
-      color:${iconCol};
-      box-shadow:none;
+      border:1px solid color-mix(in srgb, var(--accent) 28%, ${border});
+      background:color-mix(in srgb, var(--accent) 13%, transparent);
+      color:color-mix(in srgb, var(--accent) 84%, ${iconCol});
+      box-shadow:0 1px 0 rgba(255,255,255,0.04) inset;
     }
     .uxNum svg{ display:block; }
 
@@ -853,23 +858,23 @@ function getHtmlCss(theme) {
     .uxChipPlus{ background:color-mix(in srgb, var(--accent) 22%, transparent); }
     .uxChipOk{ background:${isDark ? "rgba(90,255,170,0.14)" : "rgba(90,255,170,0.10)"}; }
 
-    .uxDivider{ position:relative; z-index:1; height:1px; background:${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}; margin:16px 0 14px 0; }
+    .uxDivider{ position:relative; z-index:1; height:1px; background:${border}; margin:16px 0 14px 0; }
 
     .uxTip{
       position:relative; z-index:1;
       display:flex; gap:14px; align-items:flex-start;
       padding:14px 12px; border-radius:18px;
-      border:1px dashed ${border};
-      background:${isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.60)"};
+      border:1px solid color-mix(in srgb, var(--accent) 26%, ${border});
+      background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 11%, transparent), rgba(255,255,255,0.025));
     }
     .uxTipIcon{
-      width:32px; height:32px; border-radius:50%;
+      width:34px; height:34px; border-radius:12px;
       display:flex; align-items:center; justify-content:center;
       font-size:17px; line-height:1; flex-shrink:0;
-      border:1px solid ${border};
-      background:${tipBg};
-      color:${iconCol};
-      box-shadow:none;
+      border:1px solid color-mix(in srgb, var(--accent) 28%, ${border});
+      background:color-mix(in srgb, var(--accent) 13%, transparent);
+      color:color-mix(in srgb, var(--accent) 84%, ${iconCol});
+      box-shadow:0 1px 0 rgba(255,255,255,0.04) inset;
     }
     .uxTipIcon svg{ display:block; }
     .uxTipText{ color:${text}; font-weight:850; font-size:14px; line-height:1.45; }
@@ -877,16 +882,20 @@ function getHtmlCss(theme) {
     .uxMini{ position:relative; z-index:1; display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
     .uxMiniCard{
       border-radius:18px; border:1px solid color-mix(in srgb, var(--accent) 18%, ${border});
-      background:${isDark
-        ? "linear-gradient(145deg, rgba(255,255,255,0.04), color-mix(in srgb, var(--accent) 7%, rgba(255,255,255,0.025)))"
-        : "linear-gradient(145deg, rgba(255,255,255,0.72), color-mix(in srgb, var(--accent) 8%, rgba(255,255,255,0.62)))"};
+      background:${isDark ? "rgba(255,255,255,0.032)" : "rgba(255,255,255,0.72)"};
       padding:14px 12px;
-      box-shadow:${isDark ? "0 16px 40px rgba(0,0,0,0.40)" : "0 12px 30px rgba(0,0,0,0.08)"};
+      box-shadow:0 1px 0 rgba(255,255,255,0.035) inset;
     }
     .uxMiniTitle{
       color:${text}; font-weight:950; font-size:13px;
       margin-bottom:6px; letter-spacing:.2px; text-transform:uppercase; opacity:.9;
     }
     .uxMiniText{ color:${sub}; font-weight:800; font-size:13px; line-height:1.45; }
+
+    @media (max-width: 380px){
+      .uxMini{ grid-template-columns:1fr; }
+      .uxTitle{ font-size:20px; }
+      .uxStep{ gap:12px; }
+    }
   `;
 }

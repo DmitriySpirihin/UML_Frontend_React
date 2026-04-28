@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaCog, FaThumbtack, FaTrashRestore } from 'react-icons/fa';
+import { buildHabitsAccent } from './HabitsPages/HabitVisuals.jsx';
 
 const EASE = [0.2, 0.8, 0.2, 1];
 
@@ -32,14 +33,14 @@ const tokens = {
     faint: 'rgba(15,23,42,0.04)'
   },
   accents: {
-    HabitsMain: { hue: '#A99B7A', soft: 'rgba(169,155,122,0.14)', ring: 'rgba(169,155,122,0.28)' },
+    HabitsMain: { hue: '#7FC8B8', soft: 'rgba(127,200,184,0.14)', ring: 'rgba(127,200,184,0.28)' },
     TrainingMain: { hue: '#D8785E', soft: 'rgba(216,120,94,0.14)', ring: 'rgba(216,120,94,0.28)' },
     MentalMain: { hue: '#8A7CD6', soft: 'rgba(138,124,214,0.14)', ring: 'rgba(138,124,214,0.28)' },
-    RecoveryMain: { hue: '#7AA988', soft: 'rgba(122,169,136,0.14)', ring: 'rgba(122,169,136,0.28)' },
+    RecoveryMain: { hue: '#78B879', soft: 'rgba(120,184,121,0.13)', ring: 'rgba(120,184,121,0.26)' },
     SleepMain: { hue: '#6F8BD6', soft: 'rgba(111,139,214,0.14)', ring: 'rgba(111,139,214,0.28)' },
     ToDoMain: { hue: '#8FA6C8', soft: 'rgba(143,166,200,0.14)', ring: 'rgba(143,166,200,0.28)' },
     RobotMain: { hue: '#66D9E8', soft: 'rgba(102,217,232,0.14)', ring: 'rgba(102,217,232,0.28)' },
-    premium: { hue: '#9FB4C4', soft: 'rgba(159,180,196,0.14)', ring: 'rgba(159,180,196,0.28)' }
+    premium: { hue: '#C4D3DE', soft: 'rgba(196,211,222,0.16)', ring: 'rgba(196,211,222,0.34)' }
   }
 };
 
@@ -117,7 +118,8 @@ const iconMap = {
 };
 
 function getAccent(id) {
-  return tokens.accents[id] || tokens.accents.HabitsMain;
+  const accent = tokens.accents[id] || tokens.accents.HabitsMain;
+  return accent.rgb ? accent : { ...accent, rgb: buildHabitsAccent(accent.hue).rgb };
 }
 
 function getMetricParts(metric) {
@@ -302,7 +304,7 @@ function BrandHeader({ lang, palette }) {
 }
 
 function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection }) {
-  const heroAccent = '#5fb6c6';
+  const heroAccent = getAccent('HabitsMain');
   const selectedStats = Array.isArray(data.stats) && data.stats.length > 0
     ? data.stats
     : [
@@ -321,12 +323,12 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         padding: 18,
         borderRadius: 24,
         background: palette.isLight
-          ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(169,155,122,0.08) 100%)`
-          : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(169,155,122,0.08) 100%)`,
-        border: `1px solid ${heroAccent}22`,
+          ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(${heroAccent.rgb},0.08) 58%, rgba(${heroAccent.rgb},0.08) 100%)`
+          : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, rgba(${heroAccent.rgb},0.10) 54%, rgba(${heroAccent.rgb},0.08) 100%)`,
+        border: `1px solid ${heroAccent.ring}`,
         boxShadow: palette.isLight
-          ? `0 16px 38px -34px ${heroAccent}45, 0 1px 0 rgba(255,255,255,0.72) inset`
-          : `0 18px 40px -34px ${heroAccent}50, 0 1px 0 rgba(255,255,255,0.055) inset`,
+          ? `0 16px 38px -34px rgba(${heroAccent.rgb},0.45), 0 1px 0 rgba(255,255,255,0.72) inset`
+          : `0 18px 40px -34px rgba(${heroAccent.rgb},0.50), 0 1px 0 rgba(255,255,255,0.055) inset`,
         position: 'relative',
         overflow: 'hidden'
       }}
@@ -338,7 +340,7 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         width: 170,
         height: 170,
         borderRadius: '50%',
-        background: `radial-gradient(circle, ${heroAccent}22 0%, transparent 62%)`,
+        background: `radial-gradient(circle, rgba(${heroAccent.rgb},0.22) 0%, transparent 62%)`,
         pointerEvents: 'none'
       }} />
 
@@ -436,8 +438,8 @@ function Focus({ data, palette, lang, onOpen }) {
         margin: '18px 20px 0',
         padding: 20,
         borderRadius: 24,
-        background: data.empty ? 'rgba(169,155,122,0.06)' : palette.panel,
-        border: data.empty ? '1px solid rgba(169,155,122,0.18)' : `1px solid ${palette.border}`,
+        background: data.empty ? `rgba(${accent.rgb},0.06)` : palette.panel,
+        border: data.empty ? `1px solid ${accent.ring}` : `1px solid ${palette.border}`,
         boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 30px -22px rgba(0,0,0,0.68)',
         position: 'relative',
         overflow: 'hidden',
@@ -534,9 +536,11 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
         padding: '13px 16px',
         borderRadius: 18,
         marginBottom: 10,
-        background: palette.panel,
+        background: metricParts.isZero
+          ? palette.panel
+          : `radial-gradient(260px 130px at 6% 50%, ${accent.soft} 0%, transparent 72%), ${palette.panel}`,
         border: `1px solid ${isPinned ? accent.ring : palette.border}`,
-        boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px -18px rgba(0,0,0,0.65)',
+        boxShadow: `0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px -18px rgba(0,0,0,0.65), 0 18px 34px -34px ${accent.ring}`,
         display: 'flex',
         alignItems: 'center',
         gap: 13,
@@ -720,6 +724,8 @@ function HeaderIconAction({ Icon, accent, onClick, label }) {
 
 function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
   const isPremium = accent === tokens.accents.premium;
+  const isNeutral = accent?.tone === 'menu';
+  const minWidth = isNeutral ? 82 : (compact ? 46 : 92);
 
   return (
     <motion.button
@@ -729,11 +735,13 @@ function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
       aria-label={label}
       style={{
         height: 34,
-        minWidth: compact ? 46 : 92,
+        minWidth,
         borderRadius: 12,
         border: `1px solid ${accent.ring}`,
         background: isPremium
-          ? `linear-gradient(135deg, rgba(159,180,196,0.2), rgba(159,180,196,0.08))`
+          ? `linear-gradient(135deg, rgba(196,211,222,0.24), rgba(116,132,146,0.12))`
+          : isNeutral
+            ? 'linear-gradient(135deg, rgba(175,196,212,0.12), rgba(92,108,122,0.075))'
           : accent.soft,
         color: accent.hue,
         display: 'inline-flex',
@@ -746,13 +754,19 @@ function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
         fontSize: 12,
         fontWeight: 900,
         whiteSpace: 'nowrap',
+        position: 'relative',
+        overflow: 'hidden',
         boxShadow: isPremium
-          ? '0 1px 0 rgba(255,255,255,0.06) inset, 0 10px 20px -18px rgba(159,180,196,0.44)'
+          ? '0 1px 0 rgba(255,255,255,0.085) inset, 0 14px 26px -20px rgba(196,211,222,0.62)'
+          : isNeutral
+            ? '0 1px 0 rgba(255,255,255,0.045) inset'
           : 'none'
       }}
     >
-      <Icon size={14} />
-      <span>{label}</span>
+      <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+        <Icon size={14} />
+        <span>{label}</span>
+      </span>
     </motion.button>
   );
 }
@@ -840,12 +854,14 @@ export default function MainMenuRedesign({
   const palette = isLight ? tokens.light : tokens.dark;
   const actionItemVisible = visibleItems.some((item) => item.id === 'MainCard');
   const sectionItems = visibleItems.filter((item) => item.icon);
+  tokens.accents.HabitsMain = buildHabitsAccent(visibleItems.find((item) => item.id === 'HabitsMain')?.color);
+  const habitsAccent = tokens.accents.HabitsMain;
 
   return (
     <div style={{
       background: isLight
-        ? 'radial-gradient(900px 450px at 80% -10%, rgba(169,155,122,0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7'
-        : 'radial-gradient(1000px 500px at 80% -10%, rgba(169,155,122,0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013',
+        ? `radial-gradient(900px 450px at 80% -10%, rgba(${habitsAccent.rgb},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7`
+        : `radial-gradient(1000px 500px at 80% -10%, rgba(${habitsAccent.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013`,
       color: palette.text,
       width: '100vw',
       height: '100vh',
@@ -899,7 +915,12 @@ export default function MainMenuRedesign({
             )}
             <HeaderTextAction
               Icon={IconSliders}
-              accent={{ hue: palette.sub, soft: palette.faint, ring: palette.border }}
+              accent={{
+                hue: palette.isLight ? '#536676' : '#AEBCC8',
+                soft: 'rgba(175,196,212,0.1)',
+                ring: palette.isLight ? 'rgba(82,108,127,0.18)' : 'rgba(175,196,212,0.2)',
+                tone: 'menu'
+              }}
               onClick={onOpenWidgets}
               label={lang === 0 ? 'Меню' : 'Menu'}
               compact

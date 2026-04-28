@@ -467,8 +467,8 @@ const s = (theme, fSize = 0) => {
             gap: '13px',
             minHeight: '124px',
             background: isLight
-                ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(169,155,122,0.08) 100%)`
-                : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(169,155,122,0.08) 100%)`,
+                ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(127,200,184,0.08) 100%)`
+                : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(127,200,184,0.08) 100%)`,
             border: `1px solid ${heroAccent}22`,
             boxShadow: isLight
                 ? `0 16px 38px -34px ${heroAccent}45, 0 1px 0 rgba(255,255,255,0.72) inset`

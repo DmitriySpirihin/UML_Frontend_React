@@ -1,12 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { allHabits } from '../../Classes/Habit.js'
 import { AppData, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { FaChevronLeft, FaChevronRight, FaListUl, FaPencilAlt, FaInfoCircle, FaTrophy, FaFire, FaCrown } from 'react-icons/fa'
-import { theme$, lang$, fontSize$, premium$, setPage } from '../../StaticClasses/HabitsBus'
+import { theme$, lang$, fontSize$, premium$, setPage, habitAccent$ } from '../../StaticClasses/HabitsBus'
 import { MdAutoGraph, MdClose } from 'react-icons/md'
 import Slider from '@mui/material/Slider';
+import { HABITS_ACCENT, HabitOutlineIcon, getHabitCategoryTone } from './HabitVisuals.jsx';
+
+const NEGATIVE_CATEGORY = 'Отказ от вредного';
+const NEGATIVE_CATEGORY_EN = 'Bad habits to quit';
+const NEGATIVE_TONE = {
+    hue: '#D8785E',
+    soft: 'rgba(216,120,94,0.18)',
+    ring: 'rgba(216,120,94,0.32)',
+    glow: 'rgba(216,120,94,0.20)',
+    rgb: '216,120,94',
+    icon: 'negative'
+};
+
+const isNegativeHabit = (id, habit) => {
+    const habitIndex = AppData.choosenHabits.indexOf(Number(id));
+    const categoryKey = Array.isArray(habit?.category) ? habit.category[0] : habit?.category;
+    return AppData.choosenHabitsTypes[habitIndex] === true || categoryKey === NEGATIVE_CATEGORY || categoryKey === NEGATIVE_CATEGORY_EN;
+};
 
 // Исправлено: функция получения всех привычек вынесена за пределы компонента
 function getAllHabits() {
@@ -28,12 +46,12 @@ const HabitMetrics = () => {
     const [daysCount, setDaysCount] = useState(0);
     const [daysToForm, setDaysToForm] = useState(66);
     const [tempDaysToForm, setTempDaysToForm] = useState(0);
+    const [, setAccentVersion] = useState(0);
     const [habitId, setHabitId] = useState(() => (
         AppData.choosenHabits.length > 0 ? AppData.choosenHabits[0] : -1
     ));
 
     const isLight = theme === 'light' || theme === 'speciallight';
-    const drumRef = useRef(null);
     useEffect(() => {
             const subscription = premium$.subscribe(setHasPremium);
             return () => {
@@ -42,16 +60,33 @@ const HabitMetrics = () => {
         }, []);
     // Данные привычек по датам (теперь доступны везде)
     const habitsData = Array.from(Object.values(AppData.habitsByDate));
+    const selectedHabit = getAllHabits().find(h => h.id === habitId);
+    const categoryKey = selectedHabit?.category?.[0] || 'Здоровье';
+    const selectedCategory = selectedHabit?.category?.[langIndex] || '';
+    const selectedCategoryTone = getHabitCategoryTone(categoryKey);
+    const isSelectedNegative = isNegativeHabit(habitId, selectedHabit);
+    const selectedTone = isSelectedNegative ? NEGATIVE_TONE : { ...HABITS_ACCENT, icon: selectedCategoryTone.icon };
 
     const ui = {
-        bg: isLight ? '#F2F4F7' : Colors.get('background', theme),
-        panel: isLight ? 'rgba(255,255,255,0.7)' : 'rgba(28,28,30,0.6)',
-        text: isLight ? '#000000' : '#FFFFFF',
-        sub: isLight ? '#8E8E93' : '#98989E',
-        accent: '#007AFF',
-        orange: '#FF9500',
+        bg: isLight
+            ? `radial-gradient(900px 450px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7`
+            : `radial-gradient(1000px 500px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013`,
+        panel: isLight ? 'rgba(255,255,255,0.84)' : 'rgba(24,28,31,0.82)',
+        text: isLight ? '#1D1D1F' : '#F4F5F7',
+        sub: isLight ? 'rgba(31,41,55,0.54)' : 'rgba(166,173,184,0.72)',
+        accent: selectedTone.hue,
+        accentSoft: selectedTone.soft,
+        accentRing: selectedTone.ring,
+        accentGlow: selectedTone.glow,
+        orange: '#D8785E',
+        success: '#78B879',
+        successSoft: 'rgba(120,184,121,0.18)',
+        successRing: 'rgba(120,184,121,0.30)',
+        negative: NEGATIVE_TONE.hue,
+        negativeSoft: NEGATIVE_TONE.soft,
+        negativeRing: NEGATIVE_TONE.ring,
         blur: 'blur(25px)',
-        border: isLight ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'
+        border: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)'
     };
 
     useEffect(() => { setTempDaysToForm(daysToForm); }, [daysToForm]);
@@ -59,7 +94,8 @@ const HabitMetrics = () => {
     useEffect(() => {
         const sub1 = theme$.subscribe(setThemeState);
         const sub4 = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
-        return () => { sub1.unsubscribe(); sub4.unsubscribe(); };
+        const sub5 = habitAccent$.subscribe(() => setAccentVersion(v => v + 1));
+        return () => { sub1.unsubscribe(); sub4.unsubscribe(); sub5.unsubscribe(); };
     }, []);
 
     // Логика расчета статистики
@@ -92,21 +128,48 @@ const HabitMetrics = () => {
         setFillAmount(Math.min(currentStreak / (daysToForm || 66), 1));
     }, [currentStreak, daysToForm]);
 
-    const handleDrumScroll = (e) => {
-        const itemHeight = 40;
-        const index = Math.round(e.target.scrollTop / itemHeight);
-        const selectedId = AppData.choosenHabits[index];
-        if (selectedId !== undefined && selectedId !== habitId) setHabitId(selectedId);
+    const progressPercent = Math.round(fillAmount * 100);
+    const daysLeft = Math.max((daysToForm || 66) - currentStreak, 0);
+    const stageLabel = fillAmount >= 1
+        ? (langIndex === 0 ? 'Готово' : 'Done')
+        : fillAmount >= 0.75
+            ? (langIndex === 0 ? 'Почти готово' : 'Almost done')
+            : fillAmount >= 0.5
+                ? (langIndex === 0 ? 'Половина' : 'Halfway')
+                : fillAmount >= 0.25
+                    ? (langIndex === 0 ? 'Есть прогресс' : 'Progress')
+                    : (langIndex === 0 ? 'Начало' : 'Start');
+    const pathLabel = isSelectedNegative
+        ? (langIndex === 0 ? 'ЧИСТО' : 'CLEAN')
+        : (langIndex === 0 ? 'ПУТЬ' : 'PATH');
+    const switchHabitByOffset = (offset) => {
+        const habits = AppData.choosenHabits || [];
+        if (habits.length < 2) return;
+        const currentIndex = Math.max(habits.indexOf(habitId), 0);
+        const nextIndex = (currentIndex + offset + habits.length) % habits.length;
+        setHabitId(habits[nextIndex]);
     };
-
-    const radius = 60;
-    const circumference = 2 * Math.PI * radius;
+    const handleHabitSelectorDragEnd = (_, info) => {
+        if (Math.abs(info.offset.x) < 36) return;
+        switchHabitByOffset(info.offset.x < 0 ? 1 : -1);
+    };
+    const selectedHabitIndex = Math.max((AppData.choosenHabits || []).indexOf(habitId), 0);
+    const habitsTotal = (AppData.choosenHabits || []).length;
+    const habitPositionLabel = habitsTotal > 1 ? `${selectedHabitIndex + 1}/${habitsTotal}` : '';
 
     return (
         <div style={{
-            width: '100vw', height: '98vh',marginTop:'25px', display: "flex", flexDirection: "column",
-            alignItems: "center", backgroundColor: ui.bg, transition: 'all 0.3s ease',
-            overflow: 'hidden', position: 'relative'
+            width: '100vw',
+            height: '100vh',
+            marginTop: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            background: ui.bg,
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            transition: 'all 0.3s ease',
+            overflow: 'hidden',
+            position: 'relative'
         }}>
             {!hasPremium && (
                 <div
@@ -165,97 +228,319 @@ const HabitMetrics = () => {
                         <p style={{ color: ui.sub }}>{langIndex === 0 ? 'Добавьте привычку для анализа' : 'Add a habit to analyze'}</p>
                     </motion.div>
                 ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '8vh' }}>
-                        
-                        {/* --- DRUM PICKER --- */}
-                        <div style={{ 
-                            width: '100%', height: '100px', position: 'relative', display: 'flex', justifyContent: 'center',
-                            maskImage: 'linear-gradient(to bottom, transparent, black 40%, black 60%, transparent)',
-                            WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 40%, black 60%, transparent)',
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        overflowY: 'auto',
+                        boxSizing: 'border-box',
+                        padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 0 calc(132px + env(safe-area-inset-bottom, 0px))',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        overscrollBehavior: 'contain'
+                    }}>
+                        <div style={{
+                            width: 'calc(100% - 56px)',
+                            maxWidth: 660,
+                            margin: '0 auto 14px',
+                            padding: '4px 20px 10px',
+                            boxSizing: 'border-box',
+                            textAlign: 'center'
                         }}>
-                            <div onScroll={handleDrumScroll} style={{ width: '80%', overflowY: 'scroll', scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                                <div style={{ height: '30px' }} />
-                                {AppData.choosenHabits.map((id) => (
-                                    <div key={id} style={{ height: '40px', scrollSnapAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <span style={{ fontSize: habitId === id ? '22px' : '17px', fontWeight: habitId === id ? '800' : '500', color: habitId === id ? ui.text : ui.sub, transition: '0.2s all' }}>
-                                            {getAllHabits().find(h => h.id === id)?.name[langIndex]}
-                                        </span>
-                                    </div>
-                                ))}
-                                <div style={{ height: '30px' }} />
+                            <div style={{
+                                color: ui.text,
+                                fontFamily: 'Georgia, "Times New Roman", serif',
+                                fontSize: 22,
+                                fontWeight: 700,
+                                lineHeight: 1.05,
+                                opacity: 0.88
+                            }}>UltyMyLife</div>
+                            <div style={{
+                                marginTop: 5,
+                                color: ui.sub,
+                                fontSize: 8.5,
+                                fontWeight: 600,
+                                letterSpacing: '0.14em'
+                            }}>
+                                {langIndex === 0 ? 'Вся твоя жизнь в одном месте' : 'Your whole life in one place'}
                             </div>
                         </div>
 
-                        {/* --- ПЛАВНЫЙ КОНТЕНТ --- */}
-                        <motion.div 
+                        <motion.div
                             key={habitId}
-                            initial={{ opacity: 0, y: 30 }}
+                            initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                            transition={{ duration: 0.42, ease: [0.4, 0, 0.2, 1] }}
                             style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                         >
-                            {/* ВИДЖЕТЫ */}
-                            <div style={{ width: '90%', display: 'flex', gap: '12px', margin: '20px 0' }}>
-                                <div style={{ ...statCard(ui), border: `1px solid ${ui.accent}30`, boxShadow: isLight ? 'none' : `0 0 15px ${ui.accent}15` }}>
-                                    <FaTrophy style={{ position: 'absolute', right: '-5px', bottom: '-5px', fontSize: '45px', color: ui.accent, opacity: 0.1 }} />
-                                    <span style={{ fontSize: '10px', fontWeight: '800', color: ui.accent }}>{langIndex === 0 ? 'РЕКОРД' : 'RECORD'}</span>
-                                    <span style={{ fontSize: '28px', fontWeight: '900', color: ui.text }}>{maxStreak}</span>
+                            <div style={selectorShell(ui, isLight)}>
+                                <motion.div
+                                    drag="x"
+                                    dragConstraints={{ left: 0, right: 0 }}
+                                    dragElastic={0.18}
+                                    onDragEnd={handleHabitSelectorDragEnd}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%', minWidth: 0, touchAction: 'pan-y' }}
+                                >
+                                    <div style={{
+                                        width: 54,
+                                        height: 54,
+                                        borderRadius: 18,
+                                        background: ui.accentSoft,
+                                        border: `1px solid ${ui.accentRing}`,
+                                        color: ui.accent,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                        boxShadow: `0 0 26px ${ui.accent}20`
+                                    }}>
+                                        <HabitOutlineIcon iconName={selectedHabit?.iconName} habitName={selectedHabit?.name} categoryKey={isSelectedNegative ? NEGATIVE_CATEGORY : categoryKey} size={26} />
+                                    </div>
+                                    <div style={{
+                                        flex: 1,
+                                        minWidth: 0,
+                                        minHeight: 66,
+                                        position: 'relative',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'center',
+                                        overflow: 'hidden',
+                                        cursor: habitsTotal > 1 ? 'grab' : 'default',
+                                        WebkitTapHighlightColor: 'transparent'
+                                    }}>
+                                        <div style={{
+                                            color: isSelectedNegative ? NEGATIVE_TONE.hue : ui.accent,
+                                            fontSize: 11,
+                                            fontWeight: 900,
+                                            lineHeight: 1.15,
+                                            marginBottom: 7,
+                                            overflow: 'hidden',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 2,
+                                            WebkitBoxOrient: 'vertical',
+                                            textAlign: 'left'
+                                        }}>
+                                            {isSelectedNegative ? (langIndex === 0 ? NEGATIVE_CATEGORY : NEGATIVE_CATEGORY_EN) : selectedCategory}
+                                        </div>
+                                        <div style={{
+                                            color: ui.text,
+                                            fontSize: 19,
+                                            fontWeight: 950,
+                                            lineHeight: 1.12,
+                                            overflow: 'hidden',
+                                            display: '-webkit-box',
+                                            WebkitLineClamp: 3,
+                                            WebkitBoxOrient: 'vertical',
+                                            textAlign: 'left'
+                                        }}>
+                                            {selectedHabit?.name?.[langIndex]}
+                                        </div>
+                                    </div>
+                                </motion.div>
+
+                                <div style={selectorControlBar(ui, isLight)}>
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.92 }}
+                                        onClick={() => switchHabitByOffset(-1)}
+                                        disabled={habitsTotal < 2}
+                                        style={selectorArrowButton(ui, isLight)}
+                                    >
+                                        <FaChevronLeft size={12} />
+                                    </motion.button>
+                                    <div style={{
+                                        minWidth: 0,
+                                        flex: 1,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: 8,
+                                        minHeight: 32,
+                                        padding: '0 4px',
+                                        boxSizing: 'border-box'
+                                    }}>
+                                        {habitPositionLabel && (
+                                            <span style={{
+                                                color: ui.sub,
+                                                fontSize: 11,
+                                                fontWeight: 850,
+                                                lineHeight: 1,
+                                                whiteSpace: 'nowrap',
+                                                fontVariantNumeric: 'tabular-nums'
+                                            }}>
+                                                <span style={{ color: ui.accent, fontWeight: 950 }}>{selectedHabitIndex + 1}</span>
+                                                <span style={{ color: ui.sub, opacity: 0.72 }}> {langIndex === 0 ? 'из' : 'of'} </span>
+                                                <span>{habitsTotal}</span>
+                                            </span>
+                                        )}
+                                        <span style={{
+                                            minWidth: 68,
+                                            height: 28,
+                                            borderRadius: 999,
+                                            background: ui.accentSoft,
+                                            border: `1px solid ${ui.accentRing}`,
+                                            color: ui.text,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 5,
+                                            padding: '0 9px',
+                                            boxSizing: 'border-box',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            <span style={{ fontSize: 15, fontWeight: 950, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{progressPercent}%</span>
+                                            <span style={{ color: ui.sub, fontSize: 8.5, fontWeight: 900, lineHeight: 1, letterSpacing: '0.04em' }}>{pathLabel}</span>
+                                        </span>
+                                    </div>
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.92 }}
+                                        onClick={() => switchHabitByOffset(1)}
+                                        disabled={habitsTotal < 2}
+                                        style={selectorArrowButton(ui, isLight)}
+                                    >
+                                        <FaChevronRight size={12} />
+                                    </motion.button>
                                 </div>
-                                <div style={{ ...statCard(ui), border: `1px solid ${ui.orange}30`, boxShadow: isLight ? 'none' : `0 0 15px ${ui.orange}15` }}>
-                                    <FaFire style={{ position: 'absolute', right: '-5px', bottom: '-5px', fontSize: '50px', color: ui.orange, opacity: 0.1 }} />
-                                    <span style={{ fontSize: '10px', fontWeight: '800', color: ui.orange }}>{langIndex === 0 ? 'ТЕКУЩАЯ' : 'CURRENT'}</span>
-                                    <span style={{ fontSize: '28px', fontWeight: '900', color: ui.text }}>{currentStreak}</span>
+
+                                <div style={{ width: '100%' }}>
+                                    <div style={{
+                                        height: 6,
+                                        borderRadius: 999,
+                                        background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.07)',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <motion.div
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${progressPercent}%` }}
+                                            transition={{ duration: 0.8, ease: 'easeOut' }}
+                                            style={{ height: '100%', borderRadius: 999, background: ui.accent }}
+                                        />
+                                    </div>
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                                        gap: 7,
+                                        marginTop: 9
+                                    }}>
+                                        <div style={heroMiniChip(ui, isLight)}>
+                                            <span style={heroMiniLabel(ui)}>{langIndex === 0 ? 'Цель' : 'Goal'}</span>
+                                            <span style={heroMiniValue(ui)}>{daysToForm}</span>
+                                        </div>
+                                        <div style={heroMiniChip(ui, isLight)}>
+                                            <span style={heroMiniLabel(ui)}>{langIndex === 0 ? 'Осталось' : 'Left'}</span>
+                                            <span style={heroMiniValue(ui)}>{daysLeft}</span>
+                                        </div>
+                                        <div style={heroMiniChip(ui, isLight)}>
+                                            <span style={heroMiniLabel(ui)}>{langIndex === 0 ? 'Этап' : 'Stage'}</span>
+                                            <span style={{ ...heroMiniValue(ui), fontSize: 11 }}>{stageLabel}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* КРУГ ПРОГРЕССА */}
-                            <div style={{ width: '90%', padding: '30px 20px', borderRadius: '32px', backgroundColor: ui.panel, backdropFilter: ui.blur, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', boxShadow: '0 8px 30px rgba(0,0,0,0.04)', border: `1px solid ${ui.border}` }}>
-                                <div style={{ position: 'relative', width: '180px', height: '180px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <div style={{ position: 'absolute', width: '100px', height: '100px', backgroundColor: interpolateColor('#FF3B30', '#34C759', fillAmount), filter: 'blur(50px)', opacity: 0.1 }} />
-                                    <svg width="190" height="170" viewBox="0 0 150 150" style={{ transform: 'rotate(-90deg)' }}>
-                                        <circle stroke={ui.border} fill="none" strokeWidth="12" r="60" cx="75" cy="75" />
+                            <div style={sectionWidth}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12, marginTop: 14 }}>
+                                    <div style={statCard(ui, isLight)}>
+                                        <FaTrophy style={{ position: 'absolute', right: -7, bottom: -7, fontSize: 48, color: ui.accent, opacity: 0.09 }} />
+                                        <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.08em', color: ui.accent }}>{langIndex === 0 ? 'РЕКОРД' : 'RECORD'}</span>
+                                        <span style={{ fontSize: 28, fontWeight: 950, color: ui.text, lineHeight: 1 }}>{maxStreak}</span>
+                                        <span style={{ fontSize: 10.5, fontWeight: 750, color: ui.sub }}>{langIndex === 0 ? 'лучшая серия' : 'best streak'}</span>
+                                    </div>
+                                    <div style={statCard(ui, isLight)}>
+                                        <FaFire style={{ position: 'absolute', right: -5, bottom: -9, fontSize: 50, color: ui.accent, opacity: 0.08 }} />
+                                        <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.08em', color: ui.accent }}>{langIndex === 0 ? 'ТЕКУЩАЯ' : 'CURRENT'}</span>
+                                        <span style={{ fontSize: 28, fontWeight: 950, color: ui.text, lineHeight: 1 }}>{currentStreak}</span>
+                                        <span style={{ fontSize: 10.5, fontWeight: 750, color: ui.sub }}>{langIndex === 0 ? 'сейчас' : 'now'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={progressPanel(ui, isLight)}>
+                                <div style={{
+                                    position: 'absolute',
+                                    right: -60,
+                                    top: -70,
+                                    width: 190,
+                                    height: 190,
+                                    borderRadius: '50%',
+                                    background: `radial-gradient(circle, ${ui.accent}22 0%, transparent 66%)`,
+                                    pointerEvents: 'none'
+                                }} />
+                                <div style={{ position: 'relative', width: 164, height: 164, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                                    <div style={{ position: 'absolute', width: 100, height: 100, background: ui.accent, filter: 'blur(48px)', opacity: isLight ? 0.11 : 0.14 }} />
+                                    <svg width="176" height="176" viewBox="0 0 150 150" style={{ transform: 'rotate(-90deg)' }}>
+                                        <circle stroke={isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)'} fill="none" strokeWidth="11" r="60" cx="75" cy="75" />
                                         <motion.circle 
-                                            initial={{ strokeDashoffset: 377 }} animate={{ strokeDashoffset: 377 - (fillAmount * 377) }}
-                                            transition={{ duration: 1.5, ease: "easeOut" }}
-                                            stroke={interpolateColor('#FF3B30', '#34C759', fillAmount)}
-                                            fill="none" strokeWidth="12" r="60" cx="75" cy="75" strokeDasharray="377" strokeLinecap="round"
+                                            initial={{ strokeDashoffset: 377 }}
+                                            animate={{ strokeDashoffset: 377 - (fillAmount * 377) }}
+                                            transition={{ duration: 1.2, ease: "easeOut" }}
+                                            stroke={ui.accent}
+                                            fill="none" strokeWidth="11" r="60" cx="75" cy="75" strokeDasharray="377" strokeLinecap="round"
                                         />
                                     </svg>
                                     <div style={{ position: 'absolute', textAlign: 'center' }}>
-                                        <span style={{ fontSize: '38px', fontWeight: '900', color: ui.text }}>{Math.round(fillAmount * 100)}%</span>
-                                        <div style={{ fontSize: '10px', color: ui.sub, fontWeight: '800' }}>{langIndex === 0 ? 'ГОТОВО' : 'DONE'}</div>
+                                        <span style={{ fontSize: 34, fontWeight: 950, color: ui.text, lineHeight: 1 }}>{Math.round(fillAmount * 100)}%</span>
+                                        <div style={{ marginTop: 6, fontSize: 10, color: ui.sub, fontWeight: 900, letterSpacing: '0.06em' }}>{langIndex === 0 ? 'ГОТОВО' : 'DONE'}</div>
                                     </div>
                                 </div>
-                                <div style={{ width: '100%' }}>
-                                    <div style={{ display: 'flex', width: '100%', height: '12px', gap: '4px', marginBottom: '12px' }}>
-                                        {getHabitStatusElements(daysCount, AppData.habitsByDate, habitId, isLight)}
+                                <div style={{ position: 'relative', width: '100%', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+                                    {[
+                                        { value: 0, label: langIndex === 0 ? 'Начало' : 'Start' },
+                                        { value: 0.5, label: langIndex === 0 ? 'Половина' : 'Half' },
+                                        { value: 1, label: langIndex === 0 ? 'Готово' : 'Done' }
+                                    ].map((item) => {
+                                        const active = fillAmount >= item.value;
+                                        return (
+                                            <div key={item.label} style={{
+                                                minHeight: 38,
+                                                borderRadius: 14,
+                                                border: `1px solid ${active ? ui.accentRing : ui.border}`,
+                                                background: active ? ui.accentSoft : (isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.03)'),
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: 6,
+                                                color: active ? ui.accent : ui.sub,
+                                                fontSize: 10.5,
+                                                fontWeight: 900,
+                                                boxSizing: 'border-box'
+                                            }}>
+                                                <span style={{ width: 5, height: 5, borderRadius: 99, background: active ? ui.accent : ui.sub, opacity: active ? 1 : 0.45 }} />
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div style={{ position: 'relative', width: '100%' }}>
+                                    <div style={timelineWrap(ui, isLight)}>
+                                        {getHabitStatusElements(daysCount, AppData.habitsByDate, habitId, isLight, ui, isSelectedNegative)}
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', backgroundColor: ui.border, padding: '6px 12px', borderRadius: '15px' }}>
+                                        <div style={periodPill(ui, isLight)}>
                                             <FaChevronLeft size={10} color={ui.text} onClick={() => setDaysCount(prev => prev > 0 ? prev - 1 : 2)} />
-                                            <span style={{ fontSize: '12px', fontWeight: '800', color: ui.text }}>{daysCountText(langIndex, daysCount)}</span>
+                                            <span style={{ fontSize: 12, fontWeight: 900, color: ui.text }}>{daysCountText(langIndex, daysCount)}</span>
                                             <FaChevronRight size={10} color={ui.text} onClick={() => setDaysCount(prev => prev < 2 ? prev + 1 : 0)} />
                                         </div>
-                                        <span style={{ fontSize: '11px', color: ui.sub, fontWeight: '700' }}>{langIndex === 0 ? 'Сегодня' : 'Today'}</span>
+                                        <span style={{ fontSize: 11, color: ui.sub, fontWeight: 800 }}>{langIndex === 0 ? 'Сегодня' : 'Today'}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* --- НИЖНИЕ КНОПКИ В РЯД --- */}
-                            <div style={{ width: '90%', marginTop: '20px', display: 'flex', gap: '10px' }}>
-                                <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowInfo(true)} style={actionCard(ui)}>
-                                    <FaInfoCircle size={18} color={ui.accent} />
-                                    <span style={{ fontSize: '12px', fontWeight: '800', color: ui.text }}>{langIndex === 0 ? 'Инфо' : 'Info'}</span>
+                            <div style={{ ...sectionWidth, marginTop: 14, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
+                                <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowInfo(true)} style={actionCard(ui, isLight)}>
+                                    <FaInfoCircle size={17} color={ui.accent} />
+                                    <span style={{ fontSize: 12, fontWeight: 850, color: ui.text }}>{langIndex === 0 ? 'Инфо' : 'Info'}</span>
                                 </motion.div>
-                                <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowListOfHabitsPanel(true)} style={actionCard(ui)}>
-                                    <FaListUl size={18} color={ui.text} />
-                                    <span style={{ fontSize: '12px', fontWeight: '800', color: ui.text }}>{langIndex === 0 ? 'Список' : 'List'}</span>
+                                <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowListOfHabitsPanel(true)} style={actionCard(ui, isLight)}>
+                                    <FaListUl size={17} color={ui.sub} />
+                                    <span style={{ fontSize: 12, fontWeight: 850, color: ui.text }}>{langIndex === 0 ? 'Список' : 'List'}</span>
                                 </motion.div>
-                                <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowChangeDaysPanel(true)} style={actionCard(ui)}>
-                                    <FaPencilAlt size={16} color={ui.accent} />
-                                    <div style={{ textAlign: 'left', lineHeight: '1' }}>
-                                        <div style={{ fontSize: '14px', fontWeight: '800', color: ui.text }}>{daysToForm}</div>
-                                        <div style={{ fontSize: '9px', color: ui.sub }}>{langIndex === 0 ? 'ДНЕЙ' : 'DAYS'}</div>
+                                <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowChangeDaysPanel(true)} style={actionCard(ui, isLight)}>
+                                    <FaPencilAlt size={15} color={ui.accent} />
+                                    <div style={{ textAlign: 'left', lineHeight: 1 }}>
+                                        <div style={{ fontSize: 14, fontWeight: 900, color: ui.text }}>{daysToForm}</div>
+                                        <div style={{ fontSize: 8.5, color: ui.sub, fontWeight: 800 }}>{langIndex === 0 ? 'ДНЕЙ' : 'DAYS'}</div>
                                     </div>
                                 </motion.div>
                             </div>
@@ -269,20 +554,72 @@ const HabitMetrics = () => {
                 {showListOfHabitsPanel && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={() => setShowListOfHabitsPanel(false)}>
                         <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: '75%', backgroundColor: isLight ? 'rgba(255,255,255,0.85)' : 'rgba(28,28,30,0.85)', backdropFilter: 'blur(30px)', padding: '60px 20px', overflowY: 'auto', borderLeft: `1px solid ${ui.border}` }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                right: 0,
+                                bottom: 0,
+                                width: '84%',
+                                maxWidth: 430,
+                                background: isLight
+                                    ? `radial-gradient(260px 180px at 92% 6%, ${ui.accent}14 0%, transparent 66%), rgba(255,255,255,0.94)`
+                                    : `radial-gradient(260px 180px at 92% 6%, ${ui.accent}18 0%, transparent 66%), rgba(20,23,25,0.94)`,
+                                backdropFilter: 'blur(30px)',
+                                padding: 'calc(env(safe-area-inset-top, 0px) + 28px) 18px 28px',
+                                overflowY: 'auto',
+                                borderLeft: `1px solid ${ui.accentRing}`,
+                                boxShadow: '-24px 0 80px rgba(0,0,0,0.36)',
+                                boxSizing: 'border-box'
+                            }}
                             onClick={e => e.stopPropagation()}
                         >
-                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'40px' }}>
-                                <span style={{ fontSize: '24px', fontWeight: '800', color: ui.text }}>{langIndex === 0 ? 'Привычки' : 'Habits'}</span>
+                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 22 }}>
+                                <span style={{ fontSize: 22, fontWeight: 950, color: ui.text }}>{langIndex === 0 ? 'Привычки' : 'Habits'}</span>
                                 <MdClose size={28} color={ui.sub} onClick={() => setShowListOfHabitsPanel(false)} style={{cursor:'pointer'}} />
                             </div>
-                            {AppData.choosenHabits.map((id) => (
-                                <motion.div key={id} whileTap={{ scale: 0.98 }} onClick={() => { setHabitId(id); setShowListOfHabitsPanel(false); }}
-                                    style={{ padding: '18px', borderRadius: '20px', marginBottom: '10px', backgroundColor: habitId === id ? ui.accent + '20' : 'transparent', color: ui.text, fontWeight: '600', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                                    <span>{getAllHabits().find(h => h.id === id)?.name[langIndex]}</span>
-                                    <span style={{ color: ui.accent, fontWeight: '800' }}>{getHabitPerformPercent(id)}%</span>
-                                </motion.div>
-                            ))}
+                            {AppData.choosenHabits.map((id) => {
+                                const habit = getAllHabits().find(h => h.id === id);
+                                const categoryTone = getHabitCategoryTone(habit?.category?.[0]);
+                                const isHabitNegative = isNegativeHabit(id, habit);
+                                const tone = isHabitNegative ? NEGATIVE_TONE : { ...HABITS_ACCENT, icon: categoryTone.icon };
+                                const active = habitId === id;
+
+                                return (
+                                    <motion.div key={id} whileTap={{ scale: 0.98 }} onClick={() => { setHabitId(id); setShowListOfHabitsPanel(false); }}
+                                        style={{
+                                            minHeight: 58,
+                                            padding: '10px 12px',
+                                            borderRadius: 18,
+                                            marginBottom: 10,
+                                            background: active ? tone.soft : (isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.035)'),
+                                            border: `1px solid ${active ? tone.ring : ui.border}`,
+                                            color: ui.text,
+                                            fontWeight: 800,
+                                            display: 'flex',
+                                            gap: 10,
+                                            alignItems: 'center',
+                                            cursor: 'pointer',
+                                            boxSizing: 'border-box'
+                                        }}>
+                                        <div style={{
+                                            width: 36,
+                                            height: 36,
+                                            borderRadius: 12,
+                                            background: tone.soft,
+                                            border: `1px solid ${tone.ring}`,
+                                            color: tone.hue,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            flexShrink: 0
+                                        }}>
+                                            <HabitOutlineIcon iconName={habit?.iconName} habitName={habit?.name} categoryKey={isHabitNegative ? NEGATIVE_CATEGORY : habit?.category?.[0]} size={18} />
+                                        </div>
+                                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{habit?.name[langIndex]}</span>
+                                        <span style={{ color: tone.hue, fontWeight: 950, fontVariantNumeric: 'tabular-nums' }}>{getHabitPerformPercent(id)}%</span>
+                                    </motion.div>
+                                );
+                            })}
                         </motion.div>
                     </motion.div>
                 )}
@@ -290,7 +627,13 @@ const HabitMetrics = () => {
                 {showInfo && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ ...overlayStyle, justifyContent: 'center', alignItems: 'flex-end' }} onClick={() => setShowInfo(false)}>
                         <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            style={{ ...bottomSheetStyle, backgroundColor: ui.panel, backdropFilter: ui.blur }} onClick={e => e.stopPropagation()}>
+                            style={{
+                                ...bottomSheetStyle,
+                                background: isLight
+                                    ? `radial-gradient(260px 180px at 92% 6%, ${ui.accent}12 0%, transparent 66%), rgba(255,255,255,0.95)`
+                                    : `radial-gradient(260px 180px at 92% 6%, ${ui.accent}18 0%, transparent 66%), rgba(20,23,25,0.96)`,
+                                backdropFilter: ui.blur
+                            }} onClick={e => e.stopPropagation()}>
                             <div style={dragHandle} />
                             <div style={{ padding: '20px 25px 60px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
@@ -306,19 +649,26 @@ const HabitMetrics = () => {
                 {showChangeDaysPanel && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ ...overlayStyle, justifyContent: 'center', alignItems: 'flex-end' }} onClick={() => setShowChangeDaysPanel(false)}>
                         <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            style={{ ...bottomSheetStyle, backgroundColor: ui.panel, backdropFilter: ui.blur, textAlign: 'center' }} onClick={e => e.stopPropagation()}
+                            style={{
+                                ...bottomSheetStyle,
+                                background: isLight
+                                    ? `radial-gradient(260px 180px at 92% 6%, ${ui.accent}12 0%, transparent 66%), rgba(255,255,255,0.95)`
+                                    : `radial-gradient(260px 180px at 92% 6%, ${ui.accent}18 0%, transparent 66%), rgba(20,23,25,0.96)`,
+                                backdropFilter: ui.blur,
+                                textAlign: 'center'
+                            }} onClick={e => e.stopPropagation()}
                         >
                             <div style={dragHandle} />
                             <h3 style={{ color: ui.text, marginBottom: '20px' }}>{langIndex === 0 ? 'Срок формирования' : 'Formation Period'}</h3>
                             <Slider min={21} max={180} value={tempDaysToForm} onChange={(e, v) => setTempDaysToForm(v)} sx={{ color: ui.accent, marginBottom: '20px' }} />
                             <div style={{ fontSize: '28px', fontWeight: '900', color: ui.text, marginBottom: '30px' }}>{tempDaysToForm} {langIndex === 0 ? 'дней' : 'days'}</div>
                             <div style={{ display: 'flex', gap: '15px', padding: '0 20px' }}>
-                                <button style={modalBtnStyle} onClick={() => setShowChangeDaysPanel(false)}>Cancel</button>
+                                <button style={modalBtnStyle} onClick={() => setShowChangeDaysPanel(false)}>{langIndex === 0 ? 'Отмена' : 'Cancel'}</button>
                                 <button style={{ ...modalBtnStyle, backgroundColor: ui.accent, color: '#FFF' }} onClick={() => {
                                     const idx = AppData.choosenHabits.indexOf(habitId);
                                     if (idx !== -1) AppData.choosenHabitsDaysToForm[idx] = tempDaysToForm;
                                     setDaysToForm(tempDaysToForm); setShowChangeDaysPanel(false);
-                                }}>Save</button>
+                                }}>{langIndex === 0 ? 'Сохранить' : 'Save'}</button>
                             </div>
                         </motion.div>
                     </motion.div>
@@ -329,30 +679,235 @@ const HabitMetrics = () => {
 }
 
 // Стили
-const statCard = (ui) => ({
-    backgroundColor: ui.panel, backdropFilter: ui.blur, padding: '18px', borderRadius: '26px', textAlign: 'center',
-    display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative', overflow: 'hidden', flex: 1
+const sectionWidth = {
+    width: 'calc(100% - 56px)',
+    maxWidth: 660,
+    margin: '0 auto',
+    boxSizing: 'border-box'
+};
+
+const selectorShell = (ui, isLight) => ({
+    ...sectionWidth,
+    minHeight: 190,
+    borderRadius: 24,
+    padding: '16px',
+    background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${ui.accent}14)`
+        : `radial-gradient(260px 170px at 88% 8%, ${ui.accent}1f 0%, transparent 66%), linear-gradient(145deg, rgba(23,27,31,0.96), rgba(23,27,31,0.82))`,
+    border: `1px solid ${ui.accentRing}`,
+    boxShadow: isLight
+        ? `0 16px 38px -34px ${ui.accent}66, 0 1px 0 rgba(255,255,255,0.72) inset`
+        : `0 18px 40px -34px ${ui.accent}80, 0 1px 0 rgba(255,255,255,0.055) inset`,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    gap: 12,
+    boxSizing: 'border-box'
 });
-const actionCard = (ui) => ({
-    backgroundColor: ui.panel, backdropFilter: ui.blur, padding: '15px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', border: `1px solid ${ui.border}`, flex: 1
+
+const selectorControlBar = (ui, isLight) => ({
+    minHeight: 42,
+    borderRadius: 16,
+    padding: '5px 6px',
+    background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.035)',
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)'}`,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    boxSizing: 'border-box'
 });
-const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 7000, display: 'flex' };
-const bottomSheetStyle = { width: '100%', borderRadius: '40px 40px 0 0', maxHeight: '80vh', overflowY: 'auto' };
+
+const selectorArrowButton = (ui, isLight) => ({
+    width: 34,
+    height: 32,
+    borderRadius: 12,
+    border: `1px solid ${ui.accentRing}`,
+    background: isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.055)',
+    color: ui.accent,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+    cursor: 'pointer',
+    outline: 'none',
+    WebkitTapHighlightColor: 'transparent',
+    flexShrink: 0
+});
+
+const heroMiniChip = (ui, isLight) => ({
+    minWidth: 0,
+    minHeight: 42,
+    borderRadius: 14,
+    padding: '7px 8px',
+    background: isLight ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.035)',
+    border: `1px solid ${ui.border}`,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+    overflow: 'hidden'
+});
+
+const heroMiniLabel = (ui) => ({
+    color: ui.sub,
+    fontSize: 8.5,
+    fontWeight: 900,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+});
+
+const heroMiniValue = (ui) => ({
+    color: ui.text,
+    fontSize: 13,
+    fontWeight: 950,
+    lineHeight: 1.1,
+    marginTop: 4,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+});
+
+const statCard = (ui, isLight) => ({
+    minHeight: 94,
+    background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.92), ${ui.accent}10)`
+        : `radial-gradient(180px 100px at 8% 0%, ${ui.accent}18 0%, transparent 72%), rgba(24,28,31,0.82)`,
+    backdropFilter: ui.blur,
+    padding: '16px 14px',
+    borderRadius: 22,
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    position: 'relative',
+    overflow: 'hidden',
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : ui.accentRing}`,
+    boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.04) inset'
+});
+
+const progressPanel = (ui, isLight) => ({
+    ...sectionWidth,
+    marginTop: 14,
+    padding: '22px 18px 18px',
+    borderRadius: 28,
+    background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.94), ${ui.accent}0f)`
+        : `radial-gradient(260px 190px at 50% 10%, ${ui.accent}14 0%, transparent 72%), linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.92))`,
+    backdropFilter: ui.blur,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 18,
+    boxShadow: isLight ? '0 16px 38px -34px rgba(15,23,42,0.28)' : '0 18px 42px -34px rgba(0,0,0,0.75)',
+    border: `1px solid ${ui.border}`,
+    boxSizing: 'border-box',
+    position: 'relative',
+    overflow: 'hidden'
+});
+
+const periodPill = (ui, isLight) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 31,
+    background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.055)',
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)'}`,
+    padding: '0 12px',
+    borderRadius: 999
+});
+
+const timelineWrap = (ui, isLight) => ({
+    display: 'flex',
+    width: '100%',
+    minHeight: 20,
+    gap: 5,
+    marginBottom: 13,
+    padding: 3,
+    borderRadius: 999,
+    background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
+    border: `1px solid ${ui.border}`,
+    boxSizing: 'border-box'
+});
+
+const actionCard = (ui, isLight) => ({
+    minHeight: 52,
+    background: isLight ? 'rgba(255,255,255,0.76)' : 'rgba(24,28,31,0.78)',
+    backdropFilter: ui.blur,
+    padding: '0 10px',
+    borderRadius: 18,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    cursor: 'pointer',
+    border: `1px solid ${ui.border}`,
+    boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.04) inset',
+    minWidth: 0
+});
+
+const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.58)', backdropFilter: 'blur(8px)', zIndex: 7000, display: 'flex' };
+const bottomSheetStyle = { width: '100%', borderRadius: '32px 32px 0 0', maxHeight: '80vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.08)' };
 const dragHandle = { width: '40px', height: '5px', backgroundColor: '#8E8E93', borderRadius: '3px', margin: '15px auto', opacity: 0.3 };
 const modalBtnStyle = { flex: 1, padding: '16px', borderRadius: '18px', border: 'none', fontWeight: '800', fontSize: '16px', backgroundColor: 'rgba(120,120,128,0.1)', cursor: 'pointer' };
 
-function getHabitStatusElements(daysCount, habitsByDate, habitId, isLight) {
+function getHabitStatusElements(daysCount, habitsByDate, habitId, isLight, ui, isNegative = false) {
     const daysMapping = [7, 30, 90];
     const numberOfDays = daysMapping[daysCount] ?? 7;
     const items = [];
     const today = new Date();
+    const todayKey = today.toISOString().split('T')[0];
     for (let i = numberOfDays - 1; i >= 0; i--) {
         const d = new Date(today); d.setDate(today.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
         const val = habitsByDate[dateStr]?.[habitId];
-        let bg = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
-        if (val > 0) bg = '#34C759'; else if (val <= 0 && val !== undefined) bg = '#FF3B30';
-        items.push(<div key={dateStr} style={{ flex: 1, height: '100%', backgroundColor: bg, borderRadius: '4px' }} />);
+        const isToday = dateStr === todayKey;
+        const isDone = val > 0;
+        const isMissed = val <= 0 && val !== undefined;
+        const doneColor = isNegative ? (ui?.negative || '#D8785E') : (ui?.success || '#78B879');
+        const doneSoft = isNegative ? (ui?.negativeSoft || 'rgba(216,120,94,0.18)') : (ui?.successSoft || 'rgba(120,184,121,0.18)');
+        const doneRing = isNegative ? (ui?.negativeRing || 'rgba(216,120,94,0.32)') : (ui?.successRing || 'rgba(120,184,121,0.30)');
+        const statusColor = isDone ? doneColor : isMissed ? '#D8785E' : (isLight ? 'rgba(15,23,42,0.2)' : 'rgba(255,255,255,0.18)');
+        const fill = isDone
+            ? `linear-gradient(135deg, ${doneColor}, rgba(255,255,255,0.18))`
+            : isMissed
+                ? 'linear-gradient(135deg, #D8785E, rgba(255,255,255,0.12))'
+                : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)');
+
+        items.push(
+            <motion.div
+                key={dateStr}
+                initial={{ opacity: 0, scaleX: 0.75 }}
+                animate={{ opacity: 1, scaleX: 1 }}
+                transition={{ duration: 0.22, delay: Math.min(i, 12) * 0.012 }}
+                style={{
+                    flex: 1,
+                    minWidth: 0,
+                    minHeight: 14,
+                    borderRadius: 999,
+                    padding: 2,
+                    background: isToday ? (isDone ? doneSoft : (ui?.accentSoft || HABITS_ACCENT.soft)) : (isLight ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.025)'),
+                    border: `1px solid ${isToday ? (isDone ? doneRing : (ui?.accentRing || HABITS_ACCENT.ring)) : 'transparent'}`,
+                    boxSizing: 'border-box',
+                    overflow: 'hidden',
+                    transformOrigin: 'center'
+                }}
+            >
+                <div style={{
+                    width: '100%',
+                    height: '100%',
+                    minHeight: 8,
+                    borderRadius: 999,
+                    background: fill,
+                    boxShadow: isDone || isMissed ? `0 0 12px ${statusColor}44` : 'none',
+                    opacity: val === undefined ? 0.72 : 1
+                }} />
+            </motion.div>
+        );
     }
     return items;
 }
@@ -366,8 +921,8 @@ function interpolateColor(color1, color2, factor) {
 }
 
 const infoTextLong = (lang, habitId) => {
-    // Determine if the habit is negative (breaking bad) or positive (building good)
-    const isNegative = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habitId)];
+    const habit = getAllHabits().find(h => h.id === habitId);
+    const isNegative = isNegativeHabit(habitId, habit);
 
     if (isNegative) {
         // --- TEXT FOR BREAKING BAD HABITS ---

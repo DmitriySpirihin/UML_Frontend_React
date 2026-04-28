@@ -5,13 +5,13 @@ import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
 import { setShowPopUpPanel, setPage, lastPage$, theme$, lang$, fontSize$, setCurrentBottomBtn, keyboardVisible$, updateConfirmationPanel } from '../../StaticClasses/HabitsBus';
-import { FaSearch, FaTrashAlt, FaChevronRight, FaPlus, FaListUl, FaUndo } from 'react-icons/fa';
+import { FaSearch, FaTrashAlt, FaChevronRight, FaPlus, FaListUl, FaUndo, FaPencilAlt } from 'react-icons/fa';
 import { MdFiberNew, MdDone, MdClose , MdListAlt } from 'react-icons/md';
 import { IoIosArrowBack } from 'react-icons/io';
-import Icons from '../../StaticClasses/Icons';
 import Slider from '@mui/material/Slider';
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx'; // Imported Component
 import { playEffects } from '../../StaticClasses/Effects.js';
+import { HABITS_ACCENT, HABIT_ICON_GROUPS, HABIT_ICON_OPTIONS, HabitOutlineIcon, getHabitCategoryTone } from './HabitVisuals.jsx';
 
 const click = new Audio('Audio/Click.wav');
 const now = new Date();
@@ -86,6 +86,69 @@ const iconSearchAliases = {
     noMobile: ['nomobile', 'phone', 'телефон', 'гаджет'],
     warning: ['warning', 'опасность', 'внимание'],
     fail: ['fail', 'cross', 'крест', 'ошибка'],
+    target: ['цель', 'фокус', 'мишень'],
+    people: ['люди', 'семья', 'друзья'],
+    chat: ['чат', 'сообщение', 'общение'],
+    speech: ['речь', 'выступление'],
+    creative: ['творчество', 'рисование'],
+    musicNote: ['музыка', 'нота'],
+    cameraIcon: ['фото', 'камера'],
+    homeIcon: ['дом', 'семья'],
+    cart: ['покупки', 'магазин'],
+    tree: ['природа', 'парк'],
+    screen: ['экран', 'телефон'],
+    detox: ['детокс', 'запрет'],
+    sugar: ['сладкое', 'сахар'],
+    soda: ['газировка', 'напиток'],
+    late: ['поздно', 'сон'],
+    smoke: ['курение', 'сигарета'],
+    alcohol: ['алкоголь'],
+    game: ['игры'],
+    pillIcon: ['таблетка', 'лекарства', 'витамины'],
+    leaf: ['овощи', 'лист'],
+    apple: ['фрукты', 'яблоко'],
+    cup: ['кофе', 'чай', 'кофеин'],
+    codeIcon: ['код', 'программирование'],
+    bellOff: ['уведомления', 'колокол'],
+    folder: ['файлы', 'папка'],
+    tooth: ['зубы', 'гигиена'],
+    shower: ['душ', 'уход'],
+    lungs: ['дыхание', 'легкие'],
+    scale: ['вес', 'измерение'],
+    forkKnife: ['еда', 'столовые приборы'],
+    bowl: ['миска', 'еда'],
+    seedling: ['растение', 'рост'],
+    graduation: ['учеба', 'образование'],
+    pencil: ['карандаш', 'писать'],
+    bulb: ['идея', 'лампа'],
+    calculatorIcon: ['калькулятор', 'счет'],
+    chartLine: ['график', 'аналитика'],
+    briefcase: ['работа', 'портфель'],
+    mailIcon: ['почта', 'письмо'],
+    rocket: ['запуск', 'рост'],
+    mapPin: ['место', 'карта'],
+    car: ['машина', 'поездка'],
+    plane: ['самолет', 'путешествие'],
+    calendarCheck: ['календарь', 'дата'],
+    trophy: ['награда', 'достижение'],
+    shield: ['защита', 'безопасность'],
+    lockIcon: ['замок', 'закрыть'],
+    paletteIcon: ['палитра', 'творчество'],
+    headphones: ['наушники', 'музыка'],
+    phoneIcon: ['телефон', 'смартфон'],
+    cloudIcon: ['облако', 'бэкап'],
+    wrench: ['инструмент', 'настройка'],
+    spark: ['искра', 'новое'],
+    batteryIcon: ['энергия', 'батарея'],
+    bookmark: ['закладка', 'сохранить'],
+    flagIcon: ['флаг', 'цель'],
+    compass: ['компас', 'направление'],
+    puzzle: ['пазл', 'логика'],
+    recycle: ['повтор', 'переработка'],
+    wallet: ['кошелек', 'финансы'],
+    receipt: ['чек', 'расходы'],
+    bank: ['банк', 'финансы'],
+    microscope: ['исследование', 'наука'],
 };
 
 const AddHabitPanel = () => {
@@ -129,7 +192,7 @@ const AddHabitPanel = () => {
     const [filterCategory, setFilterCategory] = useState(allCategories[0]?.label[langIndex] || 'Здоровье');
 
     const filteredIconKeys = useMemo(() => {
-        const allIcons = Object.keys(Icons.ic);
+        const allIcons = HABIT_ICON_OPTIONS;
         if (!iconSearchQuery.trim()) return allIcons;
         const query = iconSearchQuery.toLowerCase();
         return allIcons.filter((key) => {
@@ -140,13 +203,19 @@ const AddHabitPanel = () => {
 
     const isLight = theme === 'light' || theme === 'speciallight';
     const ui = {
-        bg: Colors.get('background', theme),
-        card: Colors.get('mathInput', theme),
+        bg: isLight
+            ? `radial-gradient(900px 450px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7`
+            : `radial-gradient(1000px 500px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013`,
+        card: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(24,28,31,0.88)',
+        cardSoft: isLight ? 'rgba(255,255,255,0.68)' : 'rgba(255,255,255,0.045)',
+        field: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.055)',
         text: Colors.get('mainText', theme),
         sub: Colors.get('subText', theme),
-        accent: Colors.get('scrollFont', theme),
+        accent: HABITS_ACCENT.hue,
         blur: 'blur(30px)',
-        border: Colors.get('border', theme)
+        border: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)',
+        borderStrong: isLight ? 'rgba(15,23,42,0.12)' : 'rgba(159,180,196,0.2)',
+        shadow: isLight ? '0 18px 42px rgba(15,23,42,0.08)' : '0 26px 60px rgba(0,0,0,0.34)'
     };
 
     useEffect(() => {
@@ -187,9 +256,8 @@ const AddHabitPanel = () => {
     }, [filteredHabits, habitId]);
 
     const getLibraryHabitIcon = (habit, size = 26) => {
-        if (!habit) return Icons.getIcon('default', { size, style: { color: ui.accent } });
-        if (habit.iconName) return Icons.getIcon(habit.iconName, { size, style: { color: ui.accent } });
-        return Icons.getHabitIcon(habit.name ? habit.name[0] : 'default', { size, style: { color: ui.accent } });
+        if (!habit) return <HabitOutlineIcon iconName="default" size={size} />;
+        return <HabitOutlineIcon iconName={habit.iconName || 'default'} habitName={habit.name} categoryKey={habit.category?.[0]} size={size} />;
     };
 
 
@@ -242,6 +310,7 @@ const AddHabitPanel = () => {
         setFilterCategory(cat.label[langIndex]);
         setHabitCategory(cat.label[0]);
         setIsNegative(cat.isNegative || false);
+        if (habitSearchQuery.trim()) setHabitSearchQuery('');
         if (cat.isNegative) setHabitAutoComplete(false);
     };
 
@@ -378,86 +447,152 @@ const AddHabitPanel = () => {
 
     const removeGoal = (i) => setGoals(prev => prev.filter((_, idx) => idx !== i));
 
+    const renderCategoryStrip = () => (
+        <div style={categoryStrip()}>
+            {activeCategories.map((cat) => {
+                const active = filterCategory === cat.label[langIndex];
+                const tone = getHabitCategoryTone(cat.label[0]);
+
+                return (
+                    <motion.div
+                        key={cat._idx}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => selectCategory(cat)}
+                        style={categoryChip(active, tone, ui)}
+                    >
+                        <span style={categoryChipIcon(active, tone)}>
+                            <HabitOutlineIcon iconName={cat.icon || tone.icon} categoryKey={cat.label[0]} size={15} />
+                        </span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.label[langIndex]}</span>
+                        <span style={categoryChipActions(active, ui)}>
+                            <span onClick={(e) => { e.stopPropagation(); openEditCategory(cat._idx); }} style={categoryActionBtn(ui)}>
+                                <FaPencilAlt size={10} />
+                            </span>
+                            <span onClick={(e) => { e.stopPropagation(); requestDeleteCategory(cat._idx); }} style={categoryActionBtn(ui, true)}>
+                                <FaTrashAlt size={10} />
+                            </span>
+                        </span>
+                    </motion.div>
+                );
+            })}
+            {langIndex === 0 && (
+                <motion.div whileTap={{ scale: 0.97 }} onClick={() => setSelectCategoryPanel(true)} style={addCategoryChip(ui)}>
+                    <FaPlus size={11} />
+                    Добавить
+                </motion.div>
+            )}
+        </div>
+    );
+
+    const renderDeletedCategories = (compact = false) => (
+        deletedCategories.length > 0 && (
+            <div style={{ marginBottom: compact ? 0 : 12 }}>
+                <motion.div whileTap={{ scale: 0.97 }} onClick={() => setShowDeletedCategories(v => !v)} style={restoreToggle(ui)}>
+                    <FaUndo size={10} color={ui.sub} />
+                    <span>{langIndex === 0 ? 'Восстановить удалённые' : 'Restore deleted'}</span>
+                </motion.div>
+                {showDeletedCategories && (
+                    <div style={restoreGrid()}>
+                        {deletedCategories.map((cat) => {
+                            const tone = getHabitCategoryTone(cat.label[0]);
+                            return (
+                                <motion.div key={cat._idx} whileTap={{ scale: 0.96 }} onClick={() => handleRestoreCategory(cat)} style={restoreChip(tone, ui)}>
+                                    <span style={{ color: tone.hue, display: 'flex' }}>
+                                        <HabitOutlineIcon iconName={cat.icon || tone.icon} categoryKey={cat.label[0]} size={14} />
+                                    </span>
+                                    <span>{cat.label[langIndex]}</span>
+                                    <FaUndo size={10} />
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        )
+    );
+
+    const renderIconGroups = (selectedIcon, onSelectIcon, compact = false) => {
+        const hasSearch = iconSearchQuery.trim().length > 0;
+        const groups = hasSearch
+            ? [{ key: 'search', label: [filteredIconKeys.length ? 'Результаты' : 'Ничего не найдено', filteredIconKeys.length ? 'Results' : 'Nothing found'], icons: filteredIconKeys }]
+            : HABIT_ICON_GROUPS;
+
+        return (
+            <div className="no-scrollbar" style={iconGroupsScroll(compact)}>
+                {groups.map((group) => {
+                    const icons = hasSearch ? group.icons : group.icons.filter(icon => filteredIconKeys.includes(icon));
+                    if (icons.length === 0 && hasSearch) {
+                        return (
+                            <div key={group.key} style={iconEmptyState(ui)}>
+                                {langIndex === 0 ? 'Попробуй другое слово' : 'Try another word'}
+                            </div>
+                        );
+                    }
+                    if (icons.length === 0) return null;
+
+                    return (
+                        <div key={group.key} style={iconGroupBlock()}>
+                            <div style={iconGroupTitle(ui)}>{group.label[langIndex]}</div>
+                            <div style={iconGroupGrid(compact)}>
+                                {icons.map((iconKey) => (
+                                    <motion.div
+                                        key={iconKey}
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => onSelectIcon(iconKey)}
+                                        style={{ ...iconItem(selectedIcon === iconKey, ui), padding: compact ? '10px' : '15px', cursor: 'pointer' }}
+                                    >
+                                        <span style={{ color: selectedIcon === iconKey ? ui.accent : ui.sub, display: 'flex' }}>
+                                            <HabitOutlineIcon iconName={iconKey} habitName={habitName} categoryKey={habitCategory} size={compact ? 24 : 28} />
+                                        </span>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            style={{ ...pageStyle, backgroundColor: ui.bg }}
+            style={{ ...pageStyle, background: ui.bg }}
         >
                         <div style={pageHeader}>
                             <motion.div whileTap={{ scale: 0.9 }} onClick={confirmationPanel ? () => setConfirmationPanel(false) : closePanel} style={backBtn(ui)}>
                                 <IoIosArrowBack size={24} color={ui.text} />
                             </motion.div>
+                            <div style={brandBlock(ui)}>
+                                <div style={brandTitle(ui)}>UltyMyLife</div>
+                                <div style={brandSubtitle(ui)}>{langIndex === 0 ? 'Вся твоя жизнь в одном месте' : 'Your whole life in one place'}</div>
+                            </div>
+                            <div style={{ width: 42, height: 42 }} />
                         </div>
 
-                        <div style={{ padding: '0 20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <div style={contentWrap()}>
                             <AnimatePresence mode="wait">
                                 {!confirmationPanel ? (
                                     <motion.div key="step1" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                        <h2 style={{ color: ui.text, textAlign: 'center', fontWeight: '800', margin: '10px 0 20px' }}>
-                                            {showCreatePanel ? (langIndex === 0 ? 'Своя привычка' : 'Custom Habit') : (langIndex === 0 ? 'Добавить привычку' : 'Add Habit')}
-                                        </h2>
+                                        <div style={addHero(ui)}>
+                                            <div style={addHeroIcon(ui)}>
+                                                <HabitOutlineIcon iconName={showCreatePanel ? 'creative' : 'target'} size={24} />
+                                            </div>
+                                            <div style={{ minWidth: 0 }}>
+                                                <div style={heroEyebrow(ui)}>{showCreatePanel ? (langIndex === 0 ? 'НОВАЯ ЗАПИСЬ' : 'NEW ITEM') : (langIndex === 0 ? 'БАЗА ПРИВЫЧЕК' : 'HABIT LIBRARY')}</div>
+                                                <h2 style={heroTitle(ui)}>
+                                                    {showCreatePanel ? (langIndex === 0 ? 'Своя привычка' : 'Custom Habit') : (langIndex === 0 ? 'Добавить привычку' : 'Add Habit')}
+                                                </h2>
+                                            </div>
+                                        </div>
 
                                         {!showCreatePanel ? (
                                             <>
-                                                {/* Фильтр категорий */}
-                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '8px', paddingBottom: '5px', scrollbarWidth: 'none', flexWrap: 'nowrap' }}>
-                                                    {activeCategories.map((cat) => (
-                                                        <motion.div
-                                                            key={cat._idx} whileTap={{ scale: 0.95 }}
-                                                            onClick={() => selectCategory(cat)}
-                                                            style={{
-                                                                padding: '10px 12px', borderRadius: '14px', whiteSpace: 'nowrap',
-                                                                backgroundColor: filterCategory === cat.label[langIndex] ? ui.accent : ui.card,
-                                                                color: filterCategory === cat.label[langIndex] ? '#FFF' : ui.text,
-                                                                fontSize: '13px', fontWeight: '700', transition: '0.2s all',
-                                                                boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none',
-                                                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-                                                            }}
-                                                        >
-                                                            <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                                                {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
-                                                                {cat.label[langIndex]}
-                                                            </span>
-                                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                                                <span onClick={(e) => { e.stopPropagation(); openEditCategory(cat._idx); }} style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)', cursor: 'pointer' }}>✏️</span>
-                                                                <span onClick={(e) => { e.stopPropagation(); requestDeleteCategory(cat._idx); }} style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)', cursor: 'pointer' }}>
-                                                                    <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
-                                                                </span>
-                                                            </span>
-                                                        </motion.div>
-                                                    ))}
-                                                    {langIndex === 0 && (
-                                                        <motion.div whileTap={{ scale: 0.95 }} onClick={() => setSelectCategoryPanel(true)}
-                                                            style={{ padding: '10px 14px', borderRadius: '14px', whiteSpace: 'nowrap', backgroundColor: ui.card, color: ui.accent, fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                            <FaPlus size={12} /> Добавить
-                                                        </motion.div>
-                                                    )}
-                                                </div>
-
-                                                {deletedCategories.length > 0 && (
-                                                    <div style={{ marginBottom: '10px' }}>
-                                                        <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowDeletedCategories(v => !v)}
-                                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '10px', backgroundColor: ui.card, cursor: 'pointer', marginBottom: showDeletedCategories ? '8px' : 0 }}>
-                                                            <FaUndo size={10} color={ui.sub} />
-                                                            <span style={{ color: ui.sub, fontSize: '12px', fontWeight: '700' }}>{langIndex === 0 ? 'Восстановить удалённые' : 'Restore deleted'}</span>
-                                                        </motion.div>
-                                                        {showDeletedCategories && (
-                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                                                {deletedCategories.map((cat) => (
-                                                                    <motion.div key={cat._idx} whileTap={{ scale: 0.95 }} onClick={() => handleRestoreCategory(cat)}
-                                                                        style={{ padding: '8px 12px', borderRadius: '12px', backgroundColor: 'rgba(52,199,89,0.1)', border: '1px solid rgba(52,199,89,0.3)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                                                                        {Icons.getIcon(cat.icon, { size: 12 })}
-                                                                        <span style={{ color: ui.text, fontSize: '13px', fontWeight: '600' }}>{cat.label[langIndex]}</span>
-                                                                        <FaUndo size={10} color='#34C759' />
-                                                                    </motion.div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                {renderCategoryStrip()}
+                                                {renderDeletedCategories()}
 
                                                 <div style={libraryPanel(ui)}>
                                                     <div style={librarySearchRow(ui)}>
@@ -474,13 +609,12 @@ const AddHabitPanel = () => {
 
                                                     <div style={pickerArea()}>
                                                         {filteredHabits.length > 0 ? (
-                                                            <HabitLibraryPicker
+                                                            <HabitLibraryList
                                                                 habits={filteredHabits}
                                                                 selectedHabit={selectedHabit}
                                                                 onSelect={handleHabitSelect}
                                                                 langIndex={langIndex}
                                                                 ui={ui}
-                                                                getIcon={getLibraryHabitIcon}
                                                             />
                                                         ) : (
                                                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '18px', textAlign: 'center' }}>
@@ -491,7 +625,7 @@ const AddHabitPanel = () => {
                                                                     <motion.div
                                                                         whileTap={{ scale: 0.96 }}
                                                                         onClick={openCreatePanelFromSearch}
-                                                                        style={{ padding: '11px 15px', borderRadius: '14px', backgroundColor: ui.accent, color: '#FFF', fontWeight: '700', cursor: 'pointer' }}
+                                                                        style={{ padding: '11px 15px', borderRadius: '14px', background: HABITS_ACCENT.soft, border: `1px solid ${HABITS_ACCENT.ring}`, color: ui.accent, fontWeight: '800', cursor: 'pointer' }}
                                                                     >
                                                                         {langIndex === 0 ? `Создать "${habitSearchQuery.trim()}"` : `Create "${habitSearchQuery.trim()}"`}
                                                                     </motion.div>
@@ -503,80 +637,26 @@ const AddHabitPanel = () => {
                                             </>
                                         ) : (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                                {/* Фильтр категорий */}
-                                                <div style={{ overflowX: 'auto', display: 'flex', gap: '8px', marginBottom: '0', paddingBottom: '5px', scrollbarWidth: 'none', flexWrap: 'nowrap' }}>
-                                                    {activeCategories.map((cat) => (
-                                                        <motion.div
-                                                            key={cat._idx} whileTap={{ scale: 0.95 }}
-                                                            onClick={() => selectCategory(cat)}
-                                                            style={{
-                                                                padding: '10px 12px', borderRadius: '14px', whiteSpace: 'nowrap',
-                                                                backgroundColor: filterCategory === cat.label[langIndex] ? ui.accent : ui.card,
-                                                                color: filterCategory === cat.label[langIndex] ? '#FFF' : ui.text,
-                                                                fontSize: '13px', fontWeight: '700', transition: '0.2s all',
-                                                                boxShadow: filterCategory === cat.label[langIndex] ? `0 4px 12px ${ui.accent}40` : 'none',
-                                                                display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                                                            }}
-                                                        >
-                                                            <span style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                                                {Icons.getIcon(cat.icon, { size: 14, style: { marginRight: 6 } })}
-                                                                {cat.label[langIndex]}
-                                                            </span>
-                                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                                                <span onClick={(e) => { e.stopPropagation(); openEditCategory(cat._idx); }} style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)', cursor: 'pointer' }}>✏️</span>
-                                                                <span onClick={(e) => { e.stopPropagation(); requestDeleteCategory(cat._idx); }} style={{ width: 24, height: 24, borderRadius: '8px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,59,48,0.18)', cursor: 'pointer' }}>
-                                                                    <FaTrashAlt size={11} color={filterCategory === cat.label[langIndex] ? '#FFF' : '#FF6B6B'} />
-                                                                </span>
-                                                            </span>
-                                                        </motion.div>
-                                                    ))}
-                                                    {langIndex === 0 && (
-                                                        <motion.div whileTap={{ scale: 0.95 }} onClick={() => setSelectCategoryPanel(true)}
-                                                            style={{ padding: '10px 14px', borderRadius: '14px', whiteSpace: 'nowrap', backgroundColor: ui.card, color: ui.accent, fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                            <FaPlus size={12} /> Добавить
-                                                        </motion.div>
-                                                    )}
-                                                </div>
-
-                                                {deletedCategories.length > 0 && (
-                                                    <div>
-                                                        <motion.div whileTap={{ scale: 0.95 }} onClick={() => setShowDeletedCategories(v => !v)}
-                                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '10px', backgroundColor: ui.card, cursor: 'pointer', marginBottom: showDeletedCategories ? '8px' : 0 }}>
-                                                            <FaUndo size={10} color={ui.sub} />
-                                                            <span style={{ color: ui.sub, fontSize: '12px', fontWeight: '700' }}>{langIndex === 0 ? 'Восстановить удалённые' : 'Restore deleted'}</span>
-                                                        </motion.div>
-                                                        {showDeletedCategories && (
-                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                                                {deletedCategories.map((cat) => (
-                                                                    <motion.div key={cat._idx} whileTap={{ scale: 0.95 }} onClick={() => handleRestoreCategory(cat)}
-                                                                        style={{ padding: '8px 12px', borderRadius: '12px', backgroundColor: 'rgba(52,199,89,0.1)', border: '1px solid rgba(52,199,89,0.3)', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                                                                        {Icons.getIcon(cat.icon, { size: 12 })}
-                                                                        <span style={{ color: ui.text, fontSize: '13px', fontWeight: '600' }}>{cat.label[langIndex]}</span>
-                                                                        <FaUndo size={10} color='#34C759' />
-                                                                    </motion.div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                {renderCategoryStrip()}
+                                                {renderDeletedCategories(true)}
 
                                                 <input
                                                     type="text" 
                                                                                         placeholder={langIndex === 0 ? 'название' : 'name'}
                                                                                         value={habitName}
                                                                                          onChange={(e) => setHabitName(e.target.value)}
-                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                                                                        style={textInput(ui)}
                                                                                         />
                                                 <motion.div whileTap={{ scale: 0.98 }} style={iconPickerTrigger(ui)} onClick={() => setSelectIconPanel(true)}>
                                                     <span style={{ color: ui.text, fontWeight: '700' }}>{langIndex === 0 ? 'Иконка' : 'Icon'}</span>
-                                                    {Icons.getIcon(habitIcon, { size: 32, style: { color: ui.accent } })}
+                                                    <span style={{ color: ui.accent, display: 'flex' }}><HabitOutlineIcon iconName={habitIcon} habitName={habitName} categoryKey={habitCategory} size={28} /></span>
                                                 </motion.div>
                                                  <input 
                                                                                         type="text" 
                                                                                         placeholder={langIndex === 0 ? 'описание' : 'description'}
                                                                                         value={habitDescription}
                                                                                          onChange={(e) => setHabitDescription(e.target.value)}
-                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                                                                        style={textInput(ui)}
                                                                                         />
                                                
                                             </div>
@@ -646,9 +726,9 @@ const AddHabitPanel = () => {
                                                                                         placeholder={langIndex === 0 ? 'Добавить цель...' : 'Add goal...'}
                                                                                         value={goalName}
                                                                                          onChange={(e) => setGoalName(e.target.value)}
-                                                                                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), marginLeft: '8px', outline: 'none'}}
+                                                                                        style={{flex: 1, border: 'none', background: ui.field, borderRadius: 14, fontSize: '16px', color: ui.text, padding: '12px 14px', outline: 'none'}}
                                                                                         />
-                                                <motion.div whileTap={{ scale: 0.9 }} onClick={setNewGoal} style={addBtn(ui)}><FaPlus color="#FFF" size={18} /></motion.div>
+                                                <motion.div whileTap={{ scale: 0.9 }} onClick={setNewGoal} style={addBtn(ui)}><FaPlus color={ui.accent} size={18} /></motion.div>
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                                 {goals.map((g, i) => (
@@ -657,7 +737,7 @@ const AddHabitPanel = () => {
                                                             <FaListUl color={ui.accent} size={14} />
                                                             <span style={{ color: ui.text, fontSize: '15px', fontWeight: '500' }}>{g}</span>
                                                         </div>
-                                                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => removeGoal(i)} style={{ padding: '8px', backgroundColor: '#FF3B3020', borderRadius: '10px' }}>
+                                                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => removeGoal(i)} style={{ padding: '8px', background: 'rgba(216,120,94,0.12)', border: '1px solid rgba(216,120,94,0.22)', borderRadius: '10px' }}>
                                                             <FaTrashAlt color="#FF3B30" size={14} />
                                                         </motion.div>
                                                     </motion.div>
@@ -673,7 +753,7 @@ const AddHabitPanel = () => {
                             <div style={footerButtons}>
                                 {!confirmationPanel && (
                                     <motion.div whileTap={{ scale: 0.9 }} style={btnNew(ui)} onClick={() => {setshowCreatePanel(!showCreatePanel);if(!showCreatePanel){setGoals([])}}}>
-                                           {showCreatePanel ? <MdListAlt size={24} color="#FFF" /> :  <MdFiberNew size={24} color="#FFF" />}
+                                           {showCreatePanel ? <MdListAlt size={24} color={ui.accent} /> :  <MdFiberNew size={24} color={ui.accent} />}
                                     </motion.div>
                                 )}
 
@@ -682,7 +762,7 @@ const AddHabitPanel = () => {
                                     style={btnNext(ui)}
                                     onClick={confirmationPanel ? handleSave : () => { if(habitId !== -1 || habitName.length > 3) setConfirmationPanel(true); }}
                                 >
-                                    {confirmationPanel ? <MdDone size={28} color="#FFF" /> : <FaChevronRight size={20} color="#FFF" />}
+                                    {confirmationPanel ? <MdDone size={28} color={ui.accent} /> : <FaChevronRight size={20} color={ui.accent} />}
                                 </motion.div>
                             </div>
                         </div>
@@ -694,7 +774,7 @@ const AddHabitPanel = () => {
                                 <motion.div
                                     initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                    style={{ ...iconSheet(ui), backgroundColor: ui.bg, backdropFilter: ui.blur }}
+                                    style={{ ...iconSheet(ui), backdropFilter: ui.blur }}
                                     onClick={e => e.stopPropagation()}
                                 >
                                     <div style={dragHandle} />
@@ -716,17 +796,7 @@ const AddHabitPanel = () => {
                                             />
                                         </div>
                                     </div>
-                                    <div style={iconGrid}>
-                                        {filteredIconKeys.map(key => (
-                                            <motion.div
-                                                key={key} whileTap={{ scale: 0.9 }}
-                                                onClick={() => { setHabitIcon(key); setSelectIconPanel(false); }}
-                                                style={{ ...iconItem(habitIcon === key, ui) }}
-                                            >
-                                                {Icons.getIcon(key, { size: 30, style: { color: habitIcon === key ? ui.accent : ui.text } })}
-                                            </motion.div>
-                                        ))}
-                                    </div>
+                                    {renderIconGroups(habitIcon, (key) => { setHabitIcon(key); setSelectIconPanel(false); })}
                                 </motion.div>
                             </motion.div>
                         )}
@@ -739,7 +809,7 @@ const AddHabitPanel = () => {
                                 <motion.div
                                     initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
                                     transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                    style={{ ...iconSheet(ui), backgroundColor: ui.bg, backdropFilter: ui.blur }}
+                                    style={{ ...iconSheet(ui), backdropFilter: ui.blur }}
                                     onClick={e => e.stopPropagation()}
                                 >
                                     <div style={dragHandle} />
@@ -770,20 +840,20 @@ const AddHabitPanel = () => {
                                             />
                                         </div>
 
-                                        {/* Toggle для типа */}
                                         <div style={{ display: 'flex', gap: '10px' }}>
                                             <motion.div
                                                 whileTap={{ scale: 0.95 }}
                                                 onClick={() => setNewCategoryIsNegative(false)}
                                                 style={{
                                                     flex: 1, padding: '12px', borderRadius: '14px', cursor: 'pointer',
-                                                    backgroundColor: !newCategoryIsNegative ? '#34C75920' : ui.card,
-                                                    border: `1px solid ${!newCategoryIsNegative ? '#34C759' : ui.border}`,
+                                                    background: !newCategoryIsNegative ? 'rgba(120,184,121,0.12)' : ui.field,
+                                                    border: `1px solid ${!newCategoryIsNegative ? 'rgba(120,184,121,0.28)' : ui.border}`,
                                                     textAlign: 'center'
                                                 }}
                                             >
-                                                <span style={{ color: !newCategoryIsNegative ? '#34C759' : ui.text, fontWeight: '700', fontSize: '13px' }}>
-                                                    {langIndex === 0 ? '✅ Хорошая' : '✅ Good'}
+                                                <span style={{ color: !newCategoryIsNegative ? '#78B879' : ui.text, fontWeight: '800', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                                                    <HabitOutlineIcon iconName="check" size={14} />
+                                                    {langIndex === 0 ? 'Хорошая' : 'Good'}
                                                 </span>
                                             </motion.div>
                                             <motion.div
@@ -791,21 +861,22 @@ const AddHabitPanel = () => {
                                                 onClick={() => setNewCategoryIsNegative(true)}
                                                 style={{
                                                     flex: 1, padding: '12px', borderRadius: '14px', cursor: 'pointer',
-                                                    backgroundColor: newCategoryIsNegative ? '#FF3B3020' : ui.card,
-                                                    border: `1px solid ${newCategoryIsNegative ? '#FF3B30' : ui.border}`,
+                                                    background: newCategoryIsNegative ? 'rgba(216,120,94,0.12)' : ui.field,
+                                                    border: `1px solid ${newCategoryIsNegative ? 'rgba(216,120,94,0.28)' : ui.border}`,
                                                     textAlign: 'center'
                                                 }}
                                             >
-                                                <span style={{ color: newCategoryIsNegative ? '#FF3B30' : ui.text, fontWeight: '700', fontSize: '13px' }}>
-                                                    {langIndex === 0 ? '❌ Плохая' : '❌ Bad'}
+                                                <span style={{ color: newCategoryIsNegative ? '#D8785E' : ui.text, fontWeight: '800', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                                                    <HabitOutlineIcon iconName="flame" size={14} />
+                                                    {langIndex === 0 ? 'Вредная' : 'Bad'}
                                                 </span>
                                             </motion.div>
                                         </div>
 
                                         {/* Выбор иконки */}
-                                        <div style={{ padding: '12px', backgroundColor: ui.card, borderRadius: '14px' }}>
+                                        <div style={{ padding: '14px', background: ui.field, border: `1px solid ${ui.border}`, borderRadius: '18px' }}>
                                             <p style={{ color: ui.sub, fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '8px' }}>{langIndex === 0 ? 'Иконка' : 'Icon'}</p>
-                                            <div style={{ display: 'flex', alignItems: 'center', borderRadius: '10px', padding: '0 10px', marginBottom: '10px', backgroundColor: ui.bg }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', borderRadius: '12px', padding: '0 10px', marginBottom: '10px', background: ui.cardSoft, border: `1px solid ${ui.border}` }}>
                                                 <FaSearch color={ui.sub} style={{ marginRight: '8px' }} />
                                                 <input
                                                     type="text"
@@ -815,29 +886,22 @@ const AddHabitPanel = () => {
                                                     style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '14px', color: ui.text, padding: '10px 0', outline: 'none' }}
                                                 />
                                             </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
-                                                {filteredIconKeys.map(iconKey => (
-                                                    <motion.div key={iconKey} whileTap={{ scale: 0.9 }} onClick={() => setNewCategoryIcon(iconKey)}
-                                                        style={{ ...iconItem(newCategoryIcon === iconKey, ui), padding: '10px', cursor: 'pointer' }}>
-                                                        {Icons.getIcon(iconKey, { size: 24, style: { color: newCategoryIcon === iconKey ? ui.accent : ui.text } })}
-                                                    </motion.div>
-                                                ))}
-                                            </div>
+                                            {renderIconGroups(newCategoryIcon, setNewCategoryIcon, true)}
                                         </div>
 
                                         {/* Кнопки */}
                                         <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
                                             {editingCategoryIndex !== null && (
                                                 <motion.div whileTap={{ scale: 0.95 }} onClick={handleDeleteCategory}
-                                                    style={{ flex: 1, padding: '14px', backgroundColor: '#FF3B30', borderRadius: '14px', cursor: 'pointer', textAlign: 'center' }}>
-                                                    <span style={{ color: '#FFF', fontWeight: '700', fontSize: '14px' }}>
+                                                    style={{ flex: 1, padding: '14px', background: 'rgba(216,120,94,0.13)', border: '1px solid rgba(216,120,94,0.3)', borderRadius: '14px', cursor: 'pointer', textAlign: 'center' }}>
+                                                    <span style={{ color: '#D8785E', fontWeight: '800', fontSize: '14px' }}>
                                                         {langIndex === 0 ? 'Удалить' : 'Delete'}
                                                     </span>
                                                 </motion.div>
                                             )}
                                             <motion.div whileTap={{ scale: 0.95 }} onClick={handleSaveCategory}
-                                                style={{ flex: editingCategoryIndex !== null ? 1 : 2, padding: '14px', backgroundColor: ui.accent, borderRadius: '14px', cursor: 'pointer', textAlign: 'center' }}>
-                                                <span style={{ color: '#FFF', fontWeight: '700', fontSize: '14px' }}>
+                                                style={{ flex: editingCategoryIndex !== null ? 1 : 2, padding: '14px', background: HABITS_ACCENT.soft, border: `1px solid ${HABITS_ACCENT.ring}`, borderRadius: '14px', cursor: 'pointer', textAlign: 'center' }}>
+                                                <span style={{ color: ui.accent, fontWeight: '800', fontSize: '14px' }}>
                                                     {langIndex === 0 ? (editingCategoryIndex !== null ? 'Сохранить' : 'Создать') : (editingCategoryIndex !== null ? 'Save' : 'Create')}
                                                 </span>
                                             </motion.div>
@@ -853,6 +917,38 @@ const AddHabitPanel = () => {
 
 const HABIT_PICKER_ITEM_HEIGHT = 96;
 const HABIT_PICKER_VISIBLE_ITEMS = 5;
+
+function HabitLibraryList({ habits, selectedHabit, onSelect, langIndex, ui }) {
+    return (
+        <div className="no-scrollbar" style={habitListScroll()}>
+            {habits.map((habit, index) => {
+                const active = selectedHabit?.id === habit.id;
+                const tone = getHabitCategoryTone(habit.category?.[0]);
+
+                return (
+                    <motion.div
+                        key={habit.id}
+                        whileTap={{ scale: 0.985 }}
+                        onClick={() => onSelect(habit)}
+                        style={habitListCard(active, tone, ui)}
+                    >
+                        <div style={habitListIcon(tone, active)}>
+                            <HabitOutlineIcon iconName={habit.iconName || 'default'} habitName={habit.name} categoryKey={habit.category?.[0]} size={24} />
+                        </div>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={habitListTitle(ui)}>{habit.name[langIndex]}</div>
+                            <div style={habitListDescription(ui)}>{habit.description[langIndex]}</div>
+                            <div style={habitListMeta(tone)}>{habit.category[langIndex]}</div>
+                        </div>
+                        <div style={habitListAction(active, tone, ui)}>
+                            <FaChevronRight size={13} />
+                        </div>
+                    </motion.div>
+                );
+            })}
+        </div>
+    );
+}
 
 function HabitLibraryPicker({ habits, selectedHabit, onSelect, langIndex, ui, getIcon }) {
     const scrollRef = useRef(null);
@@ -932,15 +1028,16 @@ function HabitLibraryPicker({ habits, selectedHabit, onSelect, langIndex, ui, ge
                     const nearby = Math.max(0, 1 - Math.min(distance / 2, 1));
                     const isCentered = index === centerIndex;
                     const iconSize = Math.round(18 + (28 * focus));
+                    const tone = getHabitCategoryTone(habit.category?.[0]);
                     return (
                         <div
                             key={habit.id}
                             onClick={() => onSelect(habit)}
-                            style={habitPickerItem(focus, nearby, ui)}
+                            style={habitPickerItem(focus, nearby, ui, tone)}
                         >
                             <div style={habitPickerContent()}>
                                 <div style={habitPickerIconSlot()}>
-                                    <div style={habitPickerIcon(focus, ui)}>{getIcon(habit, iconSize)}</div>
+                                    <div style={habitPickerIcon(focus, ui, tone)}>{getIcon(habit, iconSize)}</div>
                                 </div>
                                 <div style={habitPickerText()}>
                                     <div style={habitPickerTitle(focus, nearby, ui)}>
@@ -962,32 +1059,104 @@ function HabitLibraryPicker({ habits, selectedHabit, onSelect, langIndex, ui, ge
 }
 
 // --- СТИЛИ ---
-const pageStyle = { position: 'fixed', inset: 0, width: '100vw', height: '100vh', overflowY: 'auto', zIndex: 1000, paddingBottom: '100px', display: 'flex', flexDirection: 'column' };
-const pageHeader = { display: 'flex', alignItems: 'center', padding: '15px 20px 0' };
-const backBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: ui.card, cursor: 'pointer' });
+const pageStyle = { position: 'fixed', inset: 0, width: '100vw', height: '100vh', overflowY: 'auto', overflowX: 'hidden', zIndex: 1000, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" };
+const pageHeader = { width: 'calc(100% - 56px)', maxWidth: 660, margin: '0 auto', padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 0 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxSizing: 'border-box' };
+const contentWrap = () => ({ width: 'calc(100% - 56px)', maxWidth: 660, margin: '0 auto', minHeight: 'calc(100vh - 92px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' });
+const backBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: ui.field, border: `1px solid ${ui.border}`, boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset', cursor: 'pointer', flexShrink: 0 });
+const brandBlock = () => ({ minWidth: 0, flex: 1, textAlign: 'center', padding: '0 12px' });
+const brandTitle = (ui) => ({ color: ui.text, fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 24, fontWeight: 700, lineHeight: 1.05, opacity: 0.86 });
+const brandSubtitle = (ui) => ({ marginTop: 6, color: ui.sub, fontSize: 9, fontWeight: 650, letterSpacing: '0.16em' });
+const addHero = (ui) => ({
+    position: 'relative',
+    overflow: 'hidden',
+    minHeight: 98,
+    borderRadius: 26,
+    padding: '18px 18px',
+    margin: '8px 0 16px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    background: `radial-gradient(300px 140px at 84% -22%, rgba(${HABITS_ACCENT.rgb},0.16), transparent 70%), linear-gradient(145deg, rgba(25,31,34,0.9), rgba(20,23,25,0.92))`,
+    border: `1px solid ${ui.borderStrong}`,
+    boxShadow: ui.shadow,
+    boxSizing: 'border-box'
+});
+const addHeroIcon = (ui) => ({ width: 54, height: 54, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ui.accent, background: HABITS_ACCENT.soft, border: `1px solid ${HABITS_ACCENT.ring}`, boxShadow: `0 0 34px ${HABITS_ACCENT.glow}`, flexShrink: 0 });
+const heroEyebrow = (ui) => ({ color: ui.sub, fontSize: 11, fontWeight: 900, letterSpacing: '0.16em' });
+const heroTitle = (ui) => ({ color: ui.text, fontSize: 25, lineHeight: 1.05, fontWeight: 950, margin: '6px 0 0' });
+
+const categoryStrip = () => ({
+    width: '100%',
+    maxWidth: '100%',
+    overflowX: 'scroll',
+    overflowY: 'hidden',
+    display: 'flex',
+    gap: 10,
+    marginBottom: 12,
+    padding: '0 36px 8px 2px',
+    scrollbarWidth: 'none',
+    flexWrap: 'nowrap',
+    boxSizing: 'border-box',
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-x',
+    overscrollBehaviorX: 'contain'
+});
+const categoryChip = (active, tone, ui) => ({
+    minHeight: 42,
+    padding: active ? '8px 8px 8px 10px' : '8px 10px',
+    borderRadius: 16,
+    whiteSpace: 'nowrap',
+    background: active
+        ? `linear-gradient(135deg, ${tone.soft}, rgba(255,255,255,0.055))`
+        : ui.cardSoft,
+    border: `1px solid ${active ? tone.ring : ui.border}`,
+    color: active ? tone.hue : ui.text,
+    fontSize: 13,
+    fontWeight: 850,
+    transition: '0.2s all',
+    boxShadow: active ? `0 0 22px ${tone.soft}` : '0 1px 0 rgba(255,255,255,0.03) inset',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+    boxSizing: 'border-box'
+});
+const categoryChipIcon = (active, tone) => ({ width: 25, height: 25, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: tone.hue, background: active ? tone.soft : 'rgba(255,255,255,0.045)', border: `1px solid ${active ? tone.ring : 'rgba(255,255,255,0.06)'}`, flexShrink: 0 });
+const categoryChipActions = (active, ui) => ({ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: active ? 2 : 0, color: ui.sub });
+const categoryActionBtn = (ui, danger = false) => ({ width: 23, height: 23, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: danger ? 'rgba(216,120,94,0.1)' : 'rgba(255,255,255,0.055)', border: `1px solid ${danger ? 'rgba(216,120,94,0.18)' : ui.border}`, color: danger ? '#D8785E' : ui.sub, cursor: 'pointer', flexShrink: 0 });
+const addCategoryChip = (ui) => ({ minHeight: 42, padding: '8px 14px', borderRadius: 16, whiteSpace: 'nowrap', background: ui.cardSoft, color: ui.accent, border: `1px solid ${HABITS_ACCENT.ring}`, fontSize: 13, fontWeight: 850, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flexShrink: 0, boxSizing: 'border-box' });
+const restoreToggle = (ui) => ({ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 11px', borderRadius: 13, background: ui.cardSoft, border: `1px solid ${ui.border}`, color: ui.sub, cursor: 'pointer', marginBottom: 8, fontSize: 12, fontWeight: 800 });
+const restoreGrid = () => ({ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 });
+const restoreChip = (tone, ui) => ({ padding: '8px 11px', borderRadius: 13, background: tone.soft, border: `1px solid ${tone.ring}`, color: ui.text, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 12, fontWeight: 800 });
+const textInput = (ui) => ({ width: '100%', border: `1px solid ${ui.border}`, background: ui.field, boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset', fontSize: '16px', color: ui.text, outline: 'none', borderRadius: '18px', padding: '15px 16px', boxSizing: 'border-box' });
 
 const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
 const dragHandle = { width: '45px', height: '5px', backgroundColor: '#8E8E93', borderRadius: '3px', margin: '15px auto', opacity: 0.4 };
 
 const libraryPanel = (ui) => ({
-    backgroundColor: ui.card,
-    borderRadius: '22px',
-    border: `1px solid ${ui.border}`,
-    overflow: 'hidden'
+    position: 'relative',
+    background: 'linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.94))',
+    borderRadius: '26px',
+    border: `1px solid ${ui.borderStrong}`,
+    overflow: 'hidden',
+    boxShadow: ui.shadow
 });
 const librarySearchRow = (ui) => ({
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    padding: '0 14px',
-    height: '50px',
+    padding: '0 16px',
+    height: '54px',
+    background: 'rgba(255,255,255,0.028)',
     borderBottom: `1px solid ${ui.border}`
 });
 const libraryCount = (ui) => ({
     minWidth: '30px',
     padding: '5px 8px',
     borderRadius: '999px',
-    backgroundColor: `${ui.accent}18`,
+    background: HABITS_ACCENT.soft,
+    border: `1px solid ${HABITS_ACCENT.ring}`,
     color: ui.accent,
     fontSize: '12px',
     fontWeight: '800',
@@ -996,15 +1165,108 @@ const libraryCount = (ui) => ({
 const pickerArea = () => ({
     display: 'flex',
     justifyContent: 'center',
+    alignItems: 'stretch',
+    minHeight: 0,
+    maxHeight: 'min(430px, calc(100vh - 370px))'
+});
+const habitListScroll = () => ({
+    width: '100%',
+    maxHeight: 'min(430px, calc(100vh - 370px))',
+    minHeight: 250,
+    overflowY: 'auto',
+    padding: '12px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 10,
+    boxSizing: 'border-box',
+    scrollbarWidth: 'none',
+    msOverflowStyle: 'none',
+    WebkitOverflowScrolling: 'touch'
+});
+const habitListCard = (active, tone, ui) => ({
+    width: '100%',
+    minHeight: 96,
+    padding: '12px',
+    borderRadius: 20,
+    display: 'flex',
     alignItems: 'center',
-    height: `${HABIT_PICKER_ITEM_HEIGHT * HABIT_PICKER_VISIBLE_ITEMS}px`
+    gap: 12,
+    cursor: 'pointer',
+    boxSizing: 'border-box',
+    background: active
+        ? `radial-gradient(220px 120px at 0% 20%, ${tone.soft}, transparent 72%), linear-gradient(145deg, rgba(28,34,36,0.96), rgba(22,25,27,0.96))`
+        : 'rgba(255,255,255,0.025)',
+    border: `1px solid ${active ? tone.ring : ui.border}`,
+    boxShadow: active ? `0 0 26px ${tone.soft}, 0 1px 0 rgba(255,255,255,0.04) inset` : '0 1px 0 rgba(255,255,255,0.03) inset'
+});
+const habitListIcon = (tone, active) => ({
+    position: 'relative',
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    color: tone.hue,
+    background: active ? tone.soft : 'rgba(255,255,255,0.04)',
+    border: `1px solid ${active ? tone.ring : 'rgba(255,255,255,0.07)'}`,
+    boxShadow: active ? `0 0 20px ${tone.soft}` : 'none'
+});
+const habitListTitle = (ui) => ({
+    color: ui.text,
+    fontSize: 16,
+    fontWeight: 950,
+    lineHeight: 1.15,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'normal',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical'
+});
+const habitListDescription = (ui) => ({
+    marginTop: 5,
+    color: ui.sub,
+    fontSize: 12,
+    fontWeight: 700,
+    lineHeight: 1.3,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'normal',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical'
+});
+const habitListMeta = (tone) => ({
+    marginTop: 8,
+    color: tone.hue,
+    fontSize: 10,
+    fontWeight: 900,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+});
+const habitListAction = (active, tone, ui) => ({
+    width: 32,
+    height: 32,
+    borderRadius: 12,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: active ? tone.hue : ui.sub,
+    background: active ? tone.soft : 'rgba(255,255,255,0.035)',
+    border: `1px solid ${active ? tone.ring : ui.border}`,
+    flexShrink: 0
 });
 const habitPickerFrame = (ui) => ({
     position: 'relative',
     width: '100%',
     height: '100%',
     overflow: 'hidden',
-    backgroundColor: ui.card
+    background: 'transparent'
 });
 const habitPickerLens = (ui) => ({
     position: 'absolute',
@@ -1015,6 +1277,7 @@ const habitPickerLens = (ui) => ({
     transform: 'translateY(-50%)',
     borderTop: `1px solid ${ui.border}`,
     borderBottom: `1px solid ${ui.border}`,
+    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.026), transparent)',
     pointerEvents: 'none',
     zIndex: 2
 });
@@ -1027,7 +1290,7 @@ const habitPickerScroll = {
     msOverflowStyle: 'none',
     WebkitOverflowScrolling: 'touch'
 };
-const habitPickerItem = (focus, nearby, ui) => ({
+const habitPickerItem = (focus, nearby, ui, tone) => ({
     height: `${HABIT_PICKER_ITEM_HEIGHT}px`,
     display: 'flex',
     alignItems: 'center',
@@ -1040,7 +1303,7 @@ const habitPickerItem = (focus, nearby, ui) => ({
     transition: 'opacity 0.08s linear, filter 0.12s ease',
     cursor: 'pointer',
     color: focus > 0.5 ? ui.text : ui.sub,
-    filter: focus > 0.72 ? 'drop-shadow(0 8px 18px rgba(0,0,0,0.24))' : 'none',
+    filter: focus > 0.72 ? `drop-shadow(0 12px 20px ${tone.soft})` : 'none',
     willChange: 'transform, opacity'
 });
 const habitPickerContent = () => ({
@@ -1059,7 +1322,7 @@ const habitPickerBalanceSlot = () => ({
     width: '100%',
     height: 1
 });
-const habitPickerIcon = (focus, ui) => {
+const habitPickerIcon = (focus, ui, tone) => {
     const boxSize = 28 + (54 * focus);
     return ({
     width: `${boxSize}px`,
@@ -1069,8 +1332,10 @@ const habitPickerIcon = (focus, ui) => {
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    backgroundColor: `rgba(88, 134, 255, ${0.02 + (0.12 * focus)})`,
-    boxShadow: focus > 0.7 ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px ${ui.accent}18` : 'none',
+    color: tone.hue,
+    backgroundColor: focus > 0.55 ? tone.soft : 'rgba(255,255,255,0.035)',
+    border: `1px solid ${focus > 0.55 ? tone.ring : 'rgba(255,255,255,0.045)'}`,
+    boxShadow: focus > 0.7 ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 24px ${tone.soft}` : 'none',
     opacity: 0.72 + (0.28 * focus),
     willChange: 'width, height, border-radius'
 })};
@@ -1104,25 +1369,73 @@ const drumScroll = { width: '100%', height: '100%', overflowY: 'scroll', scrollS
 const drumItem = (active, ui) => ({ height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center', color: active ? ui.accent : ui.text, fontSize: active ? '20px' : '17px', fontWeight: active ? '900' : '400', opacity: active ? 1 : 0.4, transition: '0.3s all' });
 const drumLens = (ui) => ({ position: 'absolute', top: '88px', left: 0, right: 0, height: '44px', borderTop: `1px solid ${ui.border}`, borderBottom: `1px solid ${ui.border}`, pointerEvents: 'none' });
 
-const configCard = (ui) => ({ backgroundColor: ui.card, borderRadius: '25px', padding: '25px', marginBottom: '15px', boxShadow: `0 4px 20px ${ui.accent}10` });
+const configCard = (ui) => ({ background: 'linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.94))', borderRadius: '24px', padding: '22px', marginBottom: '15px', border: `1px solid ${ui.border}`, boxShadow: ui.shadow });
 const cardLabel = (ui) => ({ color: ui.sub, fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '15px', letterSpacing: '1px' });
 
-const footerButtons = { display: 'flex', gap: '12px', padding: '20px 0 40px', alignItems: 'center' ,marginBottom:'20px'};
+const footerButtons = { display: 'flex', gap: '12px', padding: '18px 0 calc(18px + env(safe-area-inset-bottom, 0px))', alignItems: 'center', position: 'sticky', bottom: 0, background: 'linear-gradient(180deg, transparent, rgba(14,16,19,0.72) 22%, rgba(14,16,19,0.95))', zIndex: 5 };
 const btnBase = { height: '60px', borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' };
 const btnCancel = (ui) => ({ ...btnBase, flex: 1, backgroundColor: '#FF3B30', border: `1px solid ${ui.border}` });
-const btnNew = (ui) => ({ ...btnBase, width: '60px', backgroundColor: ui.accent, boxShadow: `0 4px 15px ${ui.accent}40` });
-const btnNext = (ui) => ({ ...btnBase, flex: 2, backgroundColor: ui.accent, boxShadow: `0 4px 15px ${ui.accent}40` });
+const btnNew = (ui) => ({ ...btnBase, width: '60px', background: HABITS_ACCENT.soft, color: ui.accent, border: `1px solid ${HABITS_ACCENT.ring}`, boxShadow: `0 0 24px ${HABITS_ACCENT.glow}` });
+const btnNext = (ui) => ({ ...btnBase, flex: 2, background: `linear-gradient(135deg, rgba(${HABITS_ACCENT.rgb},0.24), rgba(143,166,200,0.13))`, color: ui.text, border: `1px solid ${HABITS_ACCENT.ring}`, boxShadow: `0 0 28px ${HABITS_ACCENT.glow}` });
 
-const iconSheet = (ui) => ({ width: '100%', maxHeight: '70vh', borderRadius: '40px 40px 0 0', overflow: 'hidden', borderTop: `1px solid ${ui.border}` });
-const iconGrid = { maxHeight: '50vh', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '15px', padding: '0 25px 40px' };
-const iconItem = (active, ui) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px', borderRadius: '18px', backgroundColor: active ? ui.accent + '20' : ui.card, border: active ? `2px solid ${ui.accent}` : `1px solid ${ui.border}` });
-const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: ui.card, borderRadius: '20px' });
-const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '12px', backgroundColor: ui.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '15px', marginTop: '10px' });
-const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', backgroundColor: ui.bg, borderRadius: '16px' });
+const iconSheet = (ui) => ({ width: '100%', maxHeight: '76vh', borderRadius: '34px 34px 0 0', overflow: 'hidden', borderTop: `1px solid ${ui.borderStrong}`, background: 'linear-gradient(180deg, rgba(24,28,31,0.98), rgba(15,17,19,0.98))' });
+const iconGrid = { maxHeight: '50vh', overflowY: 'scroll', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '15px', padding: '0 25px 40px', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehavior: 'contain' };
+const iconGroupsScroll = (compact = false) => ({
+    maxHeight: compact ? 'min(330px, 38vh)' : '50vh',
+    overflowY: 'scroll',
+    padding: compact ? '0 2px 4px' : '0 25px 40px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: compact ? 14 : 18,
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',
+    overscrollBehavior: 'contain'
+});
+const iconGroupBlock = () => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 9
+});
+const iconGroupTitle = (ui) => ({
+    color: ui.sub,
+    fontSize: 10,
+    fontWeight: 950,
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase',
+    paddingLeft: 2
+});
+const iconGroupGrid = (compact = false) => ({
+    display: 'grid',
+    gridTemplateColumns: compact ? 'repeat(5, minmax(0, 1fr))' : 'repeat(auto-fill, minmax(58px, 1fr))',
+    gap: compact ? 8 : 12
+});
+const iconEmptyState = (ui) => ({
+    color: ui.sub,
+    fontSize: 13,
+    fontWeight: 800,
+    textAlign: 'center',
+    padding: '18px 8px'
+});
+const categoryIconGrid = () => ({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+    gap: 8,
+    maxHeight: 'min(320px, 36vh)',
+    minHeight: 224,
+    overflowY: 'scroll',
+    paddingRight: 3,
+    WebkitOverflowScrolling: 'touch',
+    touchAction: 'pan-y',
+    overscrollBehavior: 'contain'
+});
+const iconItem = (active, ui) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px', borderRadius: '18px', background: active ? HABITS_ACCENT.soft : ui.field, border: active ? `1px solid ${HABITS_ACCENT.ring}` : `1px solid ${ui.border}`, boxShadow: active ? `0 0 22px ${HABITS_ACCENT.glow}` : 'none' });
+const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 16px', background: ui.field, border: `1px solid ${ui.border}`, borderRadius: '18px', boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset' });
+const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', background: HABITS_ACCENT.soft, border: `1px solid ${HABITS_ACCENT.ring}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '15px', marginTop: '10px' });
+const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: ui.field, border: `1px solid ${ui.border}`, borderRadius: '16px' });
 const inputStyle = (ui) => ({ width: '100%', border: 'none', background: 'transparent', fontSize: '16px', color: ui.text, outline: 'none' });
 const completionModeButton = (ui, active) => ({
-    border: `1px solid ${active ? ui.accent : ui.border}`,
-    background: active ? `${ui.accent}22` : 'transparent',
+    border: `1px solid ${active ? HABITS_ACCENT.ring : ui.border}`,
+    background: active ? HABITS_ACCENT.soft : 'transparent',
     color: active ? ui.accent : ui.text,
     borderRadius: '14px',
     padding: '12px',

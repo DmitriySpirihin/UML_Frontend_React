@@ -186,11 +186,11 @@ const UserPanel = () => {
     const selectedXpRuleBase = XP_RULES.find(rule => rule.key === selectedXpRule) || XP_RULES[0];
     const selectedXpRuleData = { ...selectedXpRuleBase, icon: XP_RULE_ICONS[selectedXpRuleBase.key] };
     const profileSections = useMemo(() => ([
-        { kind: 'habits', id: 'HabitsMain', icon: <IconHabits />, label: lang === 0 ? 'Привычки' : 'Habits', value: stats.counts.habits, unit: lang === 0 ? 'выбрано' : 'selected', color: '#A99B7A' },
+        { kind: 'habits', id: 'HabitsMain', icon: <IconHabits />, label: lang === 0 ? 'Привычки' : 'Habits', value: stats.counts.habits, unit: lang === 0 ? 'выбрано' : 'selected', color: '#7FC8B8' },
         { kind: 'todo', id: 'ToDoMain', icon: <IconTodo />, label: lang === 0 ? 'Задачи' : 'Tasks', value: AppData.todoList?.length || 0, unit: lang === 0 ? 'активных' : 'active', color: '#D49A5C' },
         { kind: 'training', id: 'TrainingMain', icon: <IconTraining />, label: lang === 0 ? 'Дневник' : 'Log', value: stats.counts.training, unit: lang === 0 ? 'дней' : 'days', color: '#D8785E' },
         { kind: 'mental', id: 'MentalMain', icon: <IconBrain />, label: lang === 0 ? 'Ум' : 'Mind', value: stats.counts.mental, unit: lang === 0 ? 'дней' : 'days', color: '#8A7CD6' },
-        { kind: 'recovery', id: 'RecoveryMain', icon: <IconRecovery />, label: lang === 0 ? 'Антистресс' : 'Reset', value: stats.counts.recovery, unit: lang === 0 ? 'практик' : 'sessions', color: '#7AA988' },
+        { kind: 'recovery', id: 'RecoveryMain', icon: <IconRecovery />, label: lang === 0 ? 'Антистресс' : 'Reset', value: stats.counts.recovery, unit: lang === 0 ? 'практик' : 'sessions', color: '#78B879' },
         { kind: 'sleep', id: 'SleepMain', icon: <IconSleep />, label: lang === 0 ? 'Сон' : 'Sleep', value: stats.counts.sleep, unit: lang === 0 ? 'ночей' : 'nights', color: '#6F8BD6' }
     ]), [lang, stats.counts]);
 
@@ -256,8 +256,8 @@ const UserPanel = () => {
                 <div style={{
                     ...s.heroSection,
                     background: s.isLight
-                        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(169,155,122,0.08) 100%)`
-                        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(169,155,122,0.08) 100%)`,
+                        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(127,200,184,0.08) 100%)`
+                        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(127,200,184,0.08) 100%)`,
                     borderColor: `${heroAccent}22`,
                     boxShadow: s.isLight
                         ? `0 16px 38px -34px ${heroAccent}45, 0 1px 0 rgba(255,255,255,0.72) inset`

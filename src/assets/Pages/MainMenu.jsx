@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import Colors from '../StaticClasses/Colors'
-import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, isValidation$, setPage, lastPage$ } from '../StaticClasses/HabitsBus'
+import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, isValidation$, setPage, lastPage$, habitAccent$ } from '../StaticClasses/HabitsBus'
 import { AppData, UserData, getSectionStreak } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
@@ -31,6 +31,11 @@ const MainMenu = () => {
     const [showGuideBanner, setShowGuideBanner] = useState(false);
     const [showWidgetSettings, setShowWidgetSettings] = useState(false);
     const [mainHeroWidgets, setMainHeroWidgets] = useState(AppData.mainHeroWidgets || ['HabitsMain', 'TrainingMain', 'MentalMain']);
+    const [habitAccent, setHabitAccentState] = useState(habitAccent$.value);
+    useEffect(() => {
+      const subscription = habitAccent$.subscribe(setHabitAccentState);
+      return () => subscription.unsubscribe();
+    }, []);
     useEffect(() => {
       // показываем только один раз
       const key = "uml_guide_banner_seen_v1";
@@ -58,11 +63,11 @@ const openGuide = () => {
     const initialMenuItems = [
         { id: 'MainCard', icon: null, title: lang === 0 ? '' : '', subtitle: lang === 0 ? '' : '', color: '#00ff6600' },
         { id: 'ToDoMain', icon: <FaListUl />, title: lang === 0 ? 'Задачи' : 'Tasks', subtitle: lang === 0 ? 'Планы и дела' : 'Plans and tasks', color: '#8FA6C8' },
-        { id: 'HabitsMain', icon: <FaMedal />, title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Ежедневные ритуалы' : 'Daily rituals', color: '#A99B7A' },
-        { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Тренировка ума' : 'Mind Training', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: '#4DA6FF' },
+        { id: 'HabitsMain', icon: <FaMedal />, title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Ежедневные ритуалы' : 'Daily rituals', color: habitAccent.hue },
+        { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Тренировка ума' : 'Mind Training', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: '#8A7CD6' },
         { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Дневник тренировок' : 'Training Log', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: '#D8785E'},
-        { id: 'RecoveryMain', icon: <MdOutlineSelfImprovement />, title: lang === 0 ? 'Антистресс' : 'Stress Reset', subtitle: lang === 0 ? 'Дыхание, медитации, холод' : 'Breathing, meditation, cold', color: '#4DFF88'},
-        { id: 'SleepMain', icon: <FaBed />, title: lang === 0 ? 'Качество сна' : 'Sleep Quality', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: '#A64DFF'}
+        { id: 'RecoveryMain', icon: <MdOutlineSelfImprovement />, title: lang === 0 ? 'Антистресс' : 'Stress Reset', subtitle: lang === 0 ? 'Дыхание, медитации, холод' : 'Breathing, meditation, cold', color: '#78B879'},
+        { id: 'SleepMain', icon: <FaBed />, title: lang === 0 ? 'Качество сна' : 'Sleep Quality', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: '#6F8BD6'}
     ];
 
     useEffect(() => {
@@ -966,6 +971,8 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
     const selectedHeroIds = Array.isArray(heroValues) && heroValues.length > 0 ? heroValues : ['HabitsMain', 'TrainingMain', 'MentalMain'];
     const [activePanel, setActivePanel] = useState('hero');
     const visibleSectionsCount = items.filter(item => !sectionStates[item.id]?.hidden).length;
+    const modalAccent = '#8FA6C8';
+    const alpha = (color, opacity) => `${color}${opacity}`;
 
     return (
         <AnimatePresence>
@@ -998,9 +1005,13 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                             margin: '0 auto',
                             borderRadius: '28px',
                             padding: '20px',
-                            background: isDark ? 'rgba(19,20,22,0.96)' : 'rgba(255,255,255,0.97)',
-                            border: `1px solid ${Colors.get('border', theme)}66`,
-                            boxShadow: isDark ? '0 28px 80px rgba(0,0,0,0.72)' : '0 24px 70px rgba(0,0,0,0.2)',
+                            background: isDark
+                                ? `radial-gradient(260px 180px at 92% 6%, ${alpha(modalAccent, '14')} 0%, transparent 66%), radial-gradient(240px 180px at 10% 96%, rgba(127,200,184,0.08) 0%, transparent 68%), rgba(19,20,22,0.96)`
+                                : `radial-gradient(260px 180px at 92% 6%, ${alpha(modalAccent, '14')} 0%, transparent 66%), radial-gradient(240px 180px at 10% 96%, rgba(127,200,184,0.08) 0%, transparent 68%), rgba(255,255,255,0.97)`,
+                            border: `1px solid ${isDark ? 'rgba(143,166,200,0.16)' : Colors.get('border', theme)}`,
+                            boxShadow: isDark
+                                ? '0 1px 0 rgba(255,255,255,0.055) inset, 0 28px 80px rgba(0,0,0,0.72)'
+                                : '0 1px 0 rgba(255,255,255,0.7) inset, 0 24px 70px rgba(0,0,0,0.2)',
                             zIndex: 1801,
                             maxHeight: '82vh',
                             overflowY: 'auto',
@@ -1015,8 +1026,9 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-                                color: '#4DA6FF',
+                                background: isDark ? alpha(modalAccent, '12') : alpha(modalAccent, '10'),
+                                border: `1px solid ${alpha(modalAccent, '22')}`,
+                                color: '#8FA6C8',
                                 flexShrink: 0
                             }}>
                                 <FaSlidersH />
@@ -1051,8 +1063,8 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                         style={{
                                             minHeight: 38,
                                             borderRadius: 12,
-                                            border: 'none',
-                                            background: active ? (isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.95)') : 'transparent',
+                                            border: active ? `1px solid ${alpha(modalAccent, '55')}` : '1px solid transparent',
+                                            background: active ? (isDark ? alpha(modalAccent, '1f') : alpha(modalAccent, '18')) : 'transparent',
                                             color: active ? text : sub,
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1061,14 +1073,18 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                             fontSize: 13,
                                             fontWeight: 900,
                                             fontFamily: 'inherit',
-                                            cursor: 'pointer'
+                                            cursor: 'pointer',
+                                            outline: 'none',
+                                            appearance: 'none',
+                                            WebkitAppearance: 'none',
+                                            WebkitTapHighlightColor: 'transparent'
                                         }}
                                     >
                                         <span>{tab.label}</span>
                                         <span style={{
-                                            color: active ? '#111' : sub,
-                                            background: active ? '#FFD700' : 'transparent',
-                                            border: `1px solid ${active ? '#FFD700' : Colors.get('border', theme)}88`,
+                                            color: active ? modalAccent : sub,
+                                            background: active ? alpha(modalAccent, '22') : 'transparent',
+                                            border: `1px solid ${active ? alpha(modalAccent, '44') : Colors.get('border', theme)}`,
                                             borderRadius: 999,
                                             padding: '2px 7px',
                                             fontSize: 10,
@@ -1107,8 +1123,8 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                                 style={{
                                                     minHeight: 34,
                                                     borderRadius: 13,
-                                                    border: `1px solid ${selectedItem ? selectedItem.color : Colors.get('border', theme)}44`,
-                                                    background: selectedItem ? `${selectedItem.color}12` : bg,
+                                                    border: `1px solid ${selectedItem ? alpha(modalAccent, '38') : Colors.get('border', theme)}`,
+                                                    background: selectedItem ? alpha(modalAccent, '0f') : bg,
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
@@ -1142,15 +1158,20 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                             style={{
                                                 minHeight: 56,
                                                 borderRadius: 18,
-                                                border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}44`,
-                                                background: enabled ? `${item.color}12` : (isDark ? 'rgba(255,255,255,0.026)' : 'rgba(15,23,42,0.022)'),
+                                                border: `1px solid ${enabled ? alpha(modalAccent, '42') : Colors.get('border', theme)}`,
+                                                background: enabled ? alpha(modalAccent, '0f') : (isDark ? 'rgba(255,255,255,0.026)' : 'rgba(15,23,42,0.022)'),
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: 13,
                                                 padding: '11px 14px',
-                                                cursor: disabledByLimit ? 'not-allowed' : 'pointer',
-                                                textAlign: 'left',
-                                                opacity: disabledByLimit ? 0.38 : 1
+                                            cursor: disabledByLimit ? 'not-allowed' : 'pointer',
+                                            textAlign: 'left',
+                                            opacity: disabledByLimit ? 0.38 : 1,
+                                            outline: 'none',
+                                            appearance: 'none',
+                                            WebkitAppearance: 'none',
+                                            WebkitTapHighlightColor: 'transparent',
+                                            boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset'
                                             }}
                                         >
                                             <div style={{ color: item.color, width: 25, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
@@ -1167,9 +1188,9 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                background: enabled ? item.color : 'transparent',
-                                                color: enabled ? '#111' : sub,
-                                                border: enabled ? 'none' : `1px solid ${Colors.get('border', theme)}77`,
+                                                background: enabled ? alpha(modalAccent, '22') : 'transparent',
+                                                color: enabled ? modalAccent : sub,
+                                                border: `1px solid ${enabled ? alpha(modalAccent, '44') : Colors.get('border', theme)}`,
                                                 flexShrink: 0,
                                                 fontSize: 13,
                                                 fontWeight: 900
@@ -1194,15 +1215,20 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                             style={{
                                                 minHeight: 56,
                                                 borderRadius: 18,
-                                                border: `1px solid ${enabled ? item.color : Colors.get('border', theme)}44`,
-                                                background: enabled ? `${item.color}12` : (isDark ? 'rgba(255,255,255,0.026)' : 'rgba(15,23,42,0.022)'),
+                                                border: `1px solid ${enabled ? alpha(modalAccent, '42') : Colors.get('border', theme)}`,
+                                                background: enabled ? alpha(modalAccent, '0f') : (isDark ? 'rgba(255,255,255,0.026)' : 'rgba(15,23,42,0.022)'),
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: 13,
                                                 padding: '11px 14px',
                                                 cursor: 'pointer',
                                                 textAlign: 'left',
-                                                opacity: enabled ? 1 : 0.58
+                                                opacity: enabled ? 1 : 0.58,
+                                                outline: 'none',
+                                                appearance: 'none',
+                                                WebkitAppearance: 'none',
+                                                WebkitTapHighlightColor: 'transparent',
+                                                boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset'
                                             }}
                                         >
                                             <div style={{ color: item.color, width: 25, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
@@ -1216,8 +1242,8 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                                 height: 26,
                                                 borderRadius: 999,
                                                 padding: 3,
-                                                background: enabled ? item.color : 'transparent',
-                                                border: enabled ? 'none' : `1px solid ${Colors.get('border', theme)}88`,
+                                                background: enabled ? alpha(modalAccent, '24') : 'transparent',
+                                                border: `1px solid ${enabled ? alpha(modalAccent, '48') : Colors.get('border', theme)}`,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: enabled ? 'flex-end' : 'flex-start',
@@ -1228,7 +1254,7 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                                     width: 20,
                                                     height: 20,
                                                     borderRadius: 999,
-                                                    background: enabled ? '#111' : sub,
+                                                    background: enabled ? modalAccent : sub,
                                                     opacity: enabled ? 1 : 0.72
                                                 }} />
                                             </div>
