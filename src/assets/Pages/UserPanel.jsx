@@ -16,6 +16,7 @@ import { IoMdMale, IoMdFemale } from 'react-icons/io';
 import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 import { MdEdit } from 'react-icons/md';
 import ScrollPicker from '../Helpers/ScrollPicker.jsx';
+import { buildSleepAccent } from './SleepPages/SleepVisuals.js';
 
 // --- CONSTANTS ---
 const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health'], ['Выносливосить', 'Endurance']];
@@ -185,14 +186,15 @@ const UserPanel = () => {
 
     const selectedXpRuleBase = XP_RULES.find(rule => rule.key === selectedXpRule) || XP_RULES[0];
     const selectedXpRuleData = { ...selectedXpRuleBase, icon: XP_RULE_ICONS[selectedXpRuleBase.key] };
+    const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#6F8BD6');
     const profileSections = useMemo(() => ([
         { kind: 'habits', id: 'HabitsMain', icon: <IconHabits />, label: lang === 0 ? 'Привычки' : 'Habits', value: stats.counts.habits, unit: lang === 0 ? 'выбрано' : 'selected', color: '#7FC8B8' },
         { kind: 'todo', id: 'ToDoMain', icon: <IconTodo />, label: lang === 0 ? 'Задачи' : 'Tasks', value: AppData.todoList?.length || 0, unit: lang === 0 ? 'активных' : 'active', color: '#D49A5C' },
         { kind: 'training', id: 'TrainingMain', icon: <IconTraining />, label: lang === 0 ? 'Дневник' : 'Log', value: stats.counts.training, unit: lang === 0 ? 'дней' : 'days', color: '#D8785E' },
         { kind: 'mental', id: 'MentalMain', icon: <IconBrain />, label: lang === 0 ? 'Ум' : 'Mind', value: stats.counts.mental, unit: lang === 0 ? 'дней' : 'days', color: '#8A7CD6' },
         { kind: 'recovery', id: 'RecoveryMain', icon: <IconRecovery />, label: lang === 0 ? 'Антистресс' : 'Reset', value: stats.counts.recovery, unit: lang === 0 ? 'практик' : 'sessions', color: '#78B879' },
-        { kind: 'sleep', id: 'SleepMain', icon: <IconSleep />, label: lang === 0 ? 'Сон' : 'Sleep', value: stats.counts.sleep, unit: lang === 0 ? 'ночей' : 'nights', color: '#6F8BD6' }
-    ]), [lang, stats.counts]);
+        { kind: 'sleep', id: 'SleepMain', icon: <IconSleep />, label: lang === 0 ? 'Сон' : 'Sleep', value: stats.counts.sleep, unit: lang === 0 ? 'ночей' : 'nights', color: sleepAccent.hue }
+    ]), [lang, stats.counts, sleepAccent.hue]);
 
     const goBack = () => {
         const prev = lastPage$.value;

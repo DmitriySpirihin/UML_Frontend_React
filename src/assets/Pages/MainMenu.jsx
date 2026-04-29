@@ -11,6 +11,7 @@ import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnali
 import { sendReferalLink } from '../StaticClasses/PaymentService'
 import MainMenuRedesign from './MainMenuRedesign'
 import { playEffects } from '../StaticClasses/Effects'
+import { buildSleepAccent } from './SleepPages/SleepVisuals'
 
 const MainMenu = () => {
     const [theme, setThemeState] = useState(AppData.prefs[1] === 0 ? 'dark' : 'light');
@@ -59,6 +60,7 @@ const openGuide = () => {
 
     // --- STATE ДЛЯ УПРАВЛЕНИЯ СПИСКОМ ---
     const [itemsState, setItemsState] = useState(AppData.menuCardsStates || {});
+    const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#6F8BD6');
 
     const initialMenuItems = [
         { id: 'MainCard', icon: null, title: lang === 0 ? '' : '', subtitle: lang === 0 ? '' : '', color: '#00ff6600' },
@@ -67,7 +69,7 @@ const openGuide = () => {
         { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Тренировка ума' : 'Mind Training', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: '#8A7CD6' },
         { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Дневник тренировок' : 'Training Log', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: '#D8785E'},
         { id: 'RecoveryMain', icon: <MdOutlineSelfImprovement />, title: lang === 0 ? 'Антистресс' : 'Stress Reset', subtitle: lang === 0 ? 'Дыхание, медитации, холод' : 'Breathing, meditation, cold', color: '#78B879'},
-        { id: 'SleepMain', icon: <FaBed />, title: lang === 0 ? 'Качество сна' : 'Sleep Quality', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: '#6F8BD6'}
+        { id: 'SleepMain', icon: <FaBed />, title: lang === 0 ? 'Качество сна' : 'Sleep Quality', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: sleepAccent.hue}
     ];
 
     useEffect(() => {

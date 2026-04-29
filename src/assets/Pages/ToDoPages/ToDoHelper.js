@@ -174,7 +174,7 @@ export async function addCustomCategory(icon, labelRu, labelEn) {
   const ru = (labelRu || '').trim();
   const en = (labelEn || ru || '').trim();
   if (!ru && !en) return null;
-  const entry = { icon: icon || '🏷️', label: [ru || en, en || ru] };
+  const entry = { icon: icon || 'tag', label: [ru || en, en || ru] };
   AppData.todoCustomCategories.push(entry);
   await saveData();
   if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });

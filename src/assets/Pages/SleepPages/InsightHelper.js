@@ -34,6 +34,7 @@ const getLatestMeasurements = () => {
 
 export const INSIGHT_TYPES = {
     GENERAL: 'general',
+    SLEEP: 'sleep',
     PROGRESS_ANALYSE: 'progress',
     RECOVERY_RATE: 'recovery_rate',
     HABITS: 'habits',
@@ -98,6 +99,10 @@ const INSIGHT_USER_PROMPT_TEMPLATES = {
     [INSIGHT_TYPES.GENERAL]: [
         `Сделай общий отчёт по продуктивности. Сопоставь сон, восстановление, дыхание/медитацию/закалку, привычки, задачи, тренировки и тренировки мозга. Найди 1 главный паттерн, 1 сильную сторону и 1 ограничение данных. Если данных мало, объясни, какой минимум записей нужен за 7 дней для точного анализа. Ответ строго в формате system prompt.`,
         `Create an overall productivity report. Compare sleep, recovery, breathing/meditation/cold exposure, habits, tasks, workouts, and brain training. Find 1 main pattern, 1 strength, and 1 data limitation. If data is sparse, explain the minimum logs needed over 7 days for a reliable analysis. Answer strictly in the system prompt format.`
+    ],
+    [INSIGHT_TYPES.SLEEP]: [
+        `РАЗДЕЛ: СОН. Используй только SLEEP_AND_RECOVERY. Не давай советы по привычкам, задачам, тренировкам, питанию, дыханию, медитации или ментальным играм. Анализируй только записи сна: регулярность, длительность, самочувствие, заметки, пропуски и тренд за последние 7 дней. Если данных мало, предложи минимальный способ вести лог сна 7 дней. Ответ строго в формате system prompt.`,
+        `SECTION: SLEEP. Use only SLEEP_AND_RECOVERY. Do not give habit, task, workout, nutrition, breathing, meditation, or brain-game advice. Analyze only sleep records: consistency, duration, mood, notes, gaps, and the last-7-day trend. If data is sparse, suggest a minimal 7-day sleep logging routine. Answer strictly in the system prompt format.`
     ],
     [INSIGHT_TYPES.PROGRESS_ANALYSE]: [
         `РАЗДЕЛ: ПРОГРЕСС. Используй только USER CONTEXT, TRAINING_LOG и MEASUREMENTS. Не давай рекомендации по сну, привычкам, задачам или медитации, если они не нужны для объяснения тренировочного прогресса. Проверь частоту, объём, веса, повторы, кардио, последовательность и признаки плато. Если данных мало, предложи минимальный способ начать отслеживание прогресса без перегруза. Ответ строго в формате system prompt.`,
@@ -409,6 +414,7 @@ const mentalBlock = formatSection('BRAIN_TRAINING', mentalLines);
             trainingsBlock,
             mentalBlock
         ],
+        [INSIGHT_TYPES.SLEEP]: [identityBlock, sleepBlock],
         [INSIGHT_TYPES.PROGRESS_ANALYSE]: [userBlock, trainingsBlock],
         [INSIGHT_TYPES.RECOVERY_RATE]: [identityBlock, sleepBlock, breathingBlock, meditationBlock, hardeningBlock, trainingsBlock],
         [INSIGHT_TYPES.HABITS]: [identityBlock, habitsBlock],

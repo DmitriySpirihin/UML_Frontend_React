@@ -18,6 +18,7 @@ import {
     addOrRedactResult
 } from "./ToDoHelper";
 import { selectedTodo$, theme$, lang$, fontSize$, setPage, lastPage$ } from '../../StaticClasses/HabitsBus';
+import { buildTodoAccent } from './ToDoVisuals.js';
 
 // --- CONSTANTS ---
 const PRIORITY_LABELS = [['Низкий', 'Low'], ['Обычный', 'Normal'], ['Важный', 'Important'], ['Высокий', 'High'], ['Критический', 'Critical']];
@@ -275,7 +276,7 @@ const ToDoPage = () => {
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            style={{ position: 'fixed', inset: 0, zIndex: 1001, paddingBottom: '100px', overflowY: 'auto', backgroundColor: Colors.get('background', theme) }}
+            style={s.pageRoot}
             className="no-scrollbar"
         >
             {/* WARNING PANEL OVERLAY */}
@@ -855,28 +856,44 @@ const DateBox = ({ label, value, icon, isEditing, theme, onChange, emptyLabel })
 };
 
 // --- STYLES ---
-const styles = (theme, fSize, accentColor) => {
+const styles = (theme, fSize, rawAccentColor) => {
+    const accent = buildTodoAccent(rawAccentColor || AppData.todoAccentColor || '#8FA6C8');
+    const accentColor = accent.hue;
+    const isLight = theme === 'light' || theme === 'speciallight';
     const bg = Colors.get('background', theme);
-    const panel = Colors.get('simplePanel', theme);
+    const panel = isLight ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.05)';
+    const panelStrong = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(18,21,25,0.92)';
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
-    const border = Colors.get('border', theme);
+    const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
     const done = Colors.get('done', theme);
 
     return {
-        warningOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
-        warningBox: { backgroundColor: panel, borderRadius: 24, padding: 25, width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', border: `1px solid ${border}` },
+        pageRoot: {
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1001,
+            paddingBottom: '100px',
+            overflowY: 'auto',
+            background: isLight
+                ? `linear-gradient(180deg, ${accent.faint} 0%, ${bg} 42%)`
+                : `linear-gradient(180deg, rgba(${accent.rgbText},0.11) 0%, ${bg} 44%)`,
+            fontFamily: 'Segoe UI, sans-serif',
+            color: text
+        },
+        warningOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
+        warningBox: { backgroundColor: panelStrong, borderRadius: 24, padding: 25, width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', border: `1px solid ${border}` },
         cancelBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: border, color: text, fontWeight: 'bold' },
         confirmDeleteBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: '#F44336', color: '#fff', fontWeight: 'bold' },
 
-        resultModalBox: { backgroundColor: panel, borderRadius: 24, padding: 25, width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', border: `1px solid ${border}` },
+        resultModalBox: { backgroundColor: panelStrong, borderRadius: 24, padding: 25, width: '100%', maxWidth: 400, display: 'flex', flexDirection: 'column', border: `1px solid ${border}` },
         resultModalHeader: { display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 15 },
-        resultTextarea: { width: '100%', padding: '12px', borderRadius: 12, border: `1px solid ${border}`, backgroundColor: panel, color: text, fontSize: '16px', resize: 'vertical', fontFamily: 'inherit' },
+        resultTextarea: { width: '100%', padding: '12px', borderRadius: 12, border: `1px solid ${border}`, backgroundColor: panel, color: text, fontSize: '16px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' },
         skipBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: border, color: text, fontWeight: 'bold' },
         saveResultBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: accentColor, color: '#fff', fontWeight: 'bold' },
 
-        headerWrapper: { padding: '0 24px 25px 24px', borderBottom: `1px solid ${border}` },
-        fixedHeader: { display: 'flex', alignItems: 'center', padding: '20px 0', gap: 20 },
+        headerWrapper: { margin: '12px 18px 0', padding: '16px', borderRadius: 26, background: `radial-gradient(240px 170px at 100% 0%, ${accent.soft} 0%, transparent 68%), ${panel}`, border: `1px solid ${border}`, backdropFilter: 'blur(18px)', boxShadow: isLight ? '0 18px 50px rgba(15,23,42,0.08)' : '0 22px 65px rgba(0,0,0,0.36)' },
+        fixedHeader: { display: 'flex', alignItems: 'center', padding: '16px 0', gap: 14 },
         headerLeft: { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 },
         mainCheckbox: (checked) => ({
             width: 32, height: 32, borderRadius: 8,
@@ -885,11 +902,11 @@ const styles = (theme, fSize, accentColor) => {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s ease'
         }),
-        iconBadge: { width: 56, height: 56, borderRadius: 16, fontSize: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: `${accentColor}20`, border: `1px solid ${accentColor}40`, flexShrink: 0 },
+        iconBadge: { width: 56, height: 56, borderRadius: 18, fontSize: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: accent.soft, border: `1px solid ${accent.ring}`, flexShrink: 0 },
         headerCenter: { flex: 1, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 },
-        headerRight: { display: 'flex', width:'100vw', alignItems: 'center', flexShrink: 0 },
-        title: { fontSize: 24, fontWeight: 900, color: text, margin: 0, width:"70%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
-        titleInput: { width: '100%', border: 'none', background: 'rgba(255,255,255,0.05)', fontSize: '24px', fontWeight: '900', color: text, outline: 'none', borderRadius: '14px', padding: '8px 12px' },
+        headerRight: { display: 'flex', width:'100%', alignItems: 'center', flexShrink: 0 },
+        title: { fontSize: 24, fontWeight: 950, color: text, margin: 0, width:"100%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: 0 },
+        titleInput: { width: '100%', border: 'none', background: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.05)', fontSize: '24px', fontWeight: '900', color: text, outline: 'none', borderRadius: '14px', padding: '8px 12px', boxSizing: 'border-box' },
         statusBadge: (isDone) => ({
             padding: '8px 16px', borderRadius: 12, fontSize: 10, fontWeight: 900, border: 'none',
             backgroundColor: isDone ? done : panel, color: isDone ? '#fff' : sub,
@@ -903,28 +920,28 @@ const styles = (theme, fSize, accentColor) => {
         editResultBtn: { width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: sub },
         resultDisplayText: { fontSize: '14px', color: text, lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' },
 
-        progressContainer: { width: '90vw' },
+        progressContainer: { width: '100%' },
         progressText: { fontSize: 11, fontWeight: 800, color: accentColor, textAlign: 'center' },
         progressBarBg: { width: '100%', height: 6, backgroundColor: border, borderRadius: 10, marginTop: 4, overflow: 'hidden' },
         progressBarFill: { height: '100%', backgroundColor: accentColor, borderRadius: 10 },
 
-        bodyPadding: { padding: 24 },
+        bodyPadding: { padding: '18px 18px 24px' },
         gridTwo: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 12, marginBottom: 24 },
-        modernBadge: { borderRadius: 20, padding: 15, display: 'flex', flexDirection: 'column', alignItems: 'center' },
+        modernBadge: { borderRadius: 20, padding: 15, display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: panelStrong },
         badgeLabel: { display: 'flex', alignItems: 'center', fontSize: 10, color: sub, textTransform: 'uppercase', letterSpacing: 1 },
         badgeValue: { fontSize: 14, fontWeight: 800, marginTop: 4 },
 
         dateRow: { display: 'flex', gap: 12, marginBottom: 24 },
-        dateItem: { flex: 1, display: 'flex', alignItems: 'center', backgroundColor: panel, padding: 12, borderRadius: 16 },
+        dateItem: { flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', backgroundColor: panel, padding: 12, borderRadius: 16, border: `1px solid ${border}` },
         dateInput: { background: 'transparent', border: 'none', color: text, fontSize: 16, width: '100%', outline: 'none' },
         label: { fontSize: 9, color: sub, textTransform: 'uppercase' },
         dateValue: { fontSize: 13, fontWeight: 700, color: text },
 
         sectionHeader: { display: 'flex', alignItems: 'center', fontSize: 17, fontWeight: 800, color: text, marginBottom: 15 },
-        counterBadge: { marginLeft: 'auto', fontSize: 11, backgroundColor: panel, padding: '4px 10px', borderRadius: 8, color: sub },
+        counterBadge: { marginLeft: 'auto', fontSize: 11, backgroundColor: accent.soft, border: `1px solid ${accent.ring}`, padding: '4px 10px', borderRadius: 999, color: accentColor },
         goalsContainer: {},
 
-        subGoalCard: { backgroundColor: panel, borderRadius: 16, overflow: 'hidden', transition: 'all 0.2s ease' },
+        subGoalCard: { backgroundColor: panelStrong, borderRadius: 18, overflow: 'hidden', transition: 'all 0.2s ease', backdropFilter: 'blur(18px)' },
         subGoalMainRow: { display: 'flex', alignItems: 'center', padding: '12px 14px', gap: 10 },
         checkbox: (checked) => ({
             width: 22, height: 22, borderRadius: 6,
@@ -943,7 +960,7 @@ const styles = (theme, fSize, accentColor) => {
         expandedField: { marginBottom: 16 },
         fieldHeader: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 },
         fieldTitle: { fontSize: 12, fontWeight: '700', color: sub, textTransform: 'uppercase' },
-        fieldDisplay: { display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', backgroundColor: `${panel}80`, borderRadius: 12, minHeight: '40px' },
+        fieldDisplay: { display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', backgroundColor: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)', borderRadius: 12, minHeight: '40px' },
         fieldValue: { flex: 1, fontSize: 14, color: text, margin: 0, lineHeight: 1.4, wordBreak: 'break-word' },
         fieldPlaceholder: { flex: 1, fontSize: 14, color: sub, opacity: 0.6, fontStyle: 'italic', margin: 0 },
         editFieldBtn: { width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: sub, flexShrink: 0, transition: 'all 0.2s ease' },
@@ -953,13 +970,13 @@ const styles = (theme, fSize, accentColor) => {
         cancelFieldBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: border, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 },
         inlineEditInput: { flex: 1, background: 'transparent', border: `1px solid ${border}`, borderRadius: 8, padding: '6px 10px', color: text, fontSize: 16, outline: 'none', fontFamily: 'inherit', minWidth: 0 },
 
-        addSubRow: { display: 'flex', alignItems: 'center', padding: '16px 15px', border: `2px dashed ${border}`, borderRadius: 16, marginTop: 8 },
+        addSubRow: { display: 'flex', alignItems: 'center', padding: '16px 15px', border: `1px dashed ${accent.ring}`, borderRadius: 18, marginTop: 8, background: accent.faint },
         addSubInput: { flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: text, outline: 'none', marginLeft: '10px' },
         addSubBtn: { background: accentColor, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 'bold', marginLeft: 10, flexShrink: 0 },
         description: { fontSize: 15, lineHeight: 1.6, color: text, margin: 0, opacity: 0.9 },
-        descriptionInput: { width: '90%', padding: '12px', borderRadius: '14px', border: 'none', backgroundColor: 'rgba(255,255,255,0.05)', color: text, fontSize: '16px', fontFamily: 'inherit', resize: 'vertical', outline: 'none' },
+        descriptionInput: { width: '100%', padding: '12px', borderRadius: '14px', border: 'none', backgroundColor: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.05)', color: text, fontSize: '16px', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
 
-        pickerCard: { backgroundColor: panel, borderRadius: 20, padding: '15px', marginBottom: 24, border: `1px solid ${border}30` },
+        pickerCard: { backgroundColor: panel, borderRadius: 20, padding: '15px', marginBottom: 24, border: `1px solid ${border}`, backdropFilter: 'blur(18px)' },
         pickerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
         pickerCol: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' },
         pickerDivider: { width: 1, height: 60, backgroundColor: border, margin: '0 5px' },

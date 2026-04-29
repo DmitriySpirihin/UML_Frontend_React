@@ -42,6 +42,8 @@ const ToDoMain = lazy(() => import('./assets/Pages/ToDoPages/ToDoMain'));
 const ToDoMetrics = lazy(() => import('./assets/Pages/ToDoPages/ToDoMetrics'));
 const ToDoNew = lazy(() => import('./assets/Pages/ToDoPages/ToDoNew'));
 const ToDoPage = lazy(() => import('./assets/Pages/ToDoPages/ToDoPage'));
+const ToDoInsight = lazy(() => import('./assets/Pages/ToDoPages/ToDoInsight'));
+const ToDoCollab = lazy(() => import('./assets/Pages/ToDoPages/ToDoCollab'));
 const SleepNew = lazy(() => import('./assets/Pages/SleepPages/SleepNew'));
 const RobotMain = lazy(() => import('./assets/Pages/Robot/RobotMain'));
 const UserPanel = lazy(() => import('./assets/Pages/UserPanel'));
@@ -57,6 +59,8 @@ const AddExercisePanel = lazy(() => import('./assets/Pages/TrainingPages/AddExer
 
 const SleepMetrics = lazy(() => import('./assets/Pages/SleepPages/SleepMetrics'));
 const SleepMain = lazy(() => import('./assets/Pages/SleepPages/SleepMain'));
+const SleepDevices = lazy(() => import('./assets/Pages/SleepPages/SleepDevices'));
+const SleepInsight = lazy(() => import('./assets/Pages/SleepPages/SleepInsight'));
 
 const tg = window.Telegram?.WebApp;
 
@@ -256,7 +260,7 @@ function App() {
         </motion.div>
     
       }
-      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'HabitsMain' && page !== 'HabitCalendar' && page !== 'HabitMetrics' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && page !== 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'HabitsMain' && page !== 'HabitCalendar' && page !== 'HabitMetrics' && page !== 'AddHabitPanel' && page !== 'ToDoMain' && page !== 'ToDoMetrics' && page !== 'ToDoInsight' && page !== 'ToDoCollab' && page !== 'ToDoNew' && page !== 'ToDoPage' && page !== 'SleepMain' && page !== 'SleepMetrics' && page !== 'SleepDevices' && page !== 'SleepInsight' && page !== 'SleepNew' && page !== 'AddExercisePanel' && page !== 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <MainBtns/>
       </Suspense>}
       
@@ -347,6 +351,12 @@ function App() {
       {page === 'SleepMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <SleepMetrics/>
       </Suspense>}
+      {page === 'SleepDevices' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <SleepDevices/>
+      </Suspense>}
+      {page === 'SleepInsight' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <SleepInsight/>
+      </Suspense>}
       {page === 'ToDoMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <ToDoMain/>
       </Suspense>}
@@ -355,6 +365,12 @@ function App() {
       </Suspense>}
       {page === 'ToDoMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <ToDoMetrics/>
+      </Suspense>}
+      {page === 'ToDoInsight' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <ToDoInsight/>
+      </Suspense>}
+      {page === 'ToDoCollab' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <ToDoCollab/>
       </Suspense>}
       {page === 'ToDoNew' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <ToDoNew/>

@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaCog, FaThumbtack, FaTrashRestore } from 'react-icons/fa';
 import { buildHabitsAccent } from './HabitsPages/HabitVisuals.jsx';
+import { buildSleepAccent } from './SleepPages/SleepVisuals.js';
 
 const EASE = [0.2, 0.8, 0.2, 1];
 
@@ -120,6 +121,14 @@ const iconMap = {
 function getAccent(id) {
   const accent = tokens.accents[id] || tokens.accents.HabitsMain;
   return accent.rgb ? accent : { ...accent, rgb: buildHabitsAccent(accent.hue).rgb };
+}
+
+function toMenuAccent(accent) {
+  if (!accent?.rgb || typeof accent.rgb === 'string') return accent;
+  return {
+    ...accent,
+    rgb: `${accent.rgb.r},${accent.rgb.g},${accent.rgb.b}`
+  };
 }
 
 function getMetricParts(metric) {
@@ -855,13 +864,15 @@ export default function MainMenuRedesign({
   const actionItemVisible = visibleItems.some((item) => item.id === 'MainCard');
   const sectionItems = visibleItems.filter((item) => item.icon);
   tokens.accents.HabitsMain = buildHabitsAccent(visibleItems.find((item) => item.id === 'HabitsMain')?.color);
+  tokens.accents.SleepMain = toMenuAccent(buildSleepAccent(visibleItems.find((item) => item.id === 'SleepMain')?.color));
   const habitsAccent = tokens.accents.HabitsMain;
+  const sleepAccent = tokens.accents.SleepMain;
 
   return (
     <div style={{
       background: isLight
-        ? `radial-gradient(900px 450px at 80% -10%, rgba(${habitsAccent.rgb},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7`
-        : `radial-gradient(1000px 500px at 80% -10%, rgba(${habitsAccent.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013`,
+        ? `radial-gradient(900px 450px at 80% -10%, rgba(${habitsAccent.rgb},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(${sleepAccent.rgb},0.1), transparent 58%), #F4F5F7`
+        : `radial-gradient(1000px 500px at 80% -10%, rgba(${habitsAccent.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(${sleepAccent.rgb},0.07), transparent 55%), #0E1013`,
       color: palette.text,
       width: '100vw',
       height: '100vh',

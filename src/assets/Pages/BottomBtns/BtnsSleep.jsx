@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Home from '@mui/icons-material/HomeRounded';
 import Back from '@mui/icons-material/ArrowBackIosNewRounded';
 import Add from '@mui/icons-material/AddRounded';
-import { FaRobot, FaChartLine } from 'react-icons/fa';
+import Devices from '@mui/icons-material/DevicesRounded';
+import AutoAwesome from '@mui/icons-material/AutoAwesomeRounded';
+import { FaChartLine } from 'react-icons/fa';
 
 import { 
     setPage, setAddPanel, setPage$, addPanel$, theme$, 
@@ -35,7 +37,9 @@ const BtnsSleep = () => {
     // Logic to sync button state with Sleep pages
     useEffect(() => {
         if (currentBtn === 0 || currentBtn === -1) {
-            if (page === 'SleepMetrics') setCurrentBottomBtn(1);
+            if (page === 'SleepInsight') setCurrentBottomBtn(1);
+            else if (page === 'SleepDevices') setCurrentBottomBtn(3);
+            else if (page === 'SleepMetrics') setCurrentBottomBtn(4);
             else if (page === 'SleepMain' && addPanel === '') setCurrentBottomBtn(0);
         }
     }, [page, addPanel]);
@@ -44,7 +48,7 @@ const BtnsSleep = () => {
         <div style={containerStyle(theme)}>
             <div style={glassOverlay(theme)} />
             
-            <NavButton 
+            <NavButton
                 id={0}
                 current={currentBtn}
                 icon={page === 'SleepMain' && addPanel === '' ? <Home /> : <Back />}
@@ -55,7 +59,18 @@ const BtnsSleep = () => {
                 theme={theme}
             />
 
-            
+            <NavButton
+                id={1}
+                current={currentBtn}
+                icon={<AutoAwesome />}
+                onClick={() => {
+                    setCurrentBottomBtn(1);
+                    setPage('SleepInsight');
+                    setAddPanel('');
+                    playEffects(switchSound);
+                }}
+                theme={theme}
+            />
 
             <AddButton 
                 active={addPanel === 'SleepMain'}
@@ -70,12 +85,25 @@ const BtnsSleep = () => {
                 theme={theme}
             />
 
+            <NavButton
+                id={3}
+                current={currentBtn}
+                icon={<Devices />}
+                onClick={() => {
+                    setCurrentBottomBtn(3);
+                    setPage('SleepDevices');
+                    setAddPanel('');
+                    playEffects(switchSound);
+                }}
+                theme={theme}
+            />
+
             <NavButton 
-                id={1}
+                id={4}
                 current={currentBtn}
                 icon={<FaChartLine />}
                 onClick={() => {
-                    setCurrentBottomBtn(1);
+                    setCurrentBottomBtn(4);
                     setPage('SleepMetrics');
                     setAddPanel('');
                     playEffects(switchSound);

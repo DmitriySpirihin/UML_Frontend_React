@@ -11,6 +11,7 @@ import {
   FaRunning, FaBrain, FaBed, FaListUl, FaMedal, FaInfoCircle,
 } from "react-icons/fa";
 import { MdOutlineSelfImprovement } from "react-icons/md";
+import { buildSleepAccent } from "./SleepPages/SleepVisuals.js";
 
 const HEADER_TOP_PADDING = "calc(env(safe-area-inset-top, 0px) + 14px)";
 
@@ -27,6 +28,7 @@ const InfoPanel = () => {
     return () => s.unsubscribe();
   }, []);
 
+  const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || "#6F8BD6");
   const menuItems = useMemo(
     () => [
       { id: "MainCard",     icon: <FaInfoCircle />,             title: lang === 0 ? "Общее"          : "General",  color: "#9FB4C4" },
@@ -35,9 +37,9 @@ const InfoPanel = () => {
       { id: "MentalMain",   icon: <FaBrain />,                  title: lang === 0 ? "Тренировка ума" : "Mind Training", color: "#8A7CD6" },
       { id: "TrainingMain", icon: <FaRunning />,                title: lang === 0 ? "Дневник тренировок" : "Training Log", color: "#D8785E" },
       { id: "RecoveryMain", icon: <MdOutlineSelfImprovement />, title: lang === 0 ? "Антистресс" : "Stress Reset", color: "#78B879" },
-      { id: "SleepMain",    icon: <FaBed />,                    title: lang === 0 ? "Качество сна"   : "Sleep Quality", color: "#6F8BD6" },
+      { id: "SleepMain",    icon: <FaBed />,                    title: lang === 0 ? "Качество сна"   : "Sleep Quality", color: sleepAccent.hue },
     ],
-    [lang]
+    [lang, sleepAccent.hue]
   );
 
   useEffect(() => {

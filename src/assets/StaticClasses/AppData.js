@@ -68,14 +68,16 @@ export class AppData{
   static mentalLog = {};
   static mentalRecords = [[0,0,0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
   //
-  static sleepingLog = {};
+	  static sleepingLog = {};
+	  static sleepAccentColor = '#6F8BD6';
   static sleepIntegrations = {
     appleHealth: { connected: false, autoSync: false, lastSync: '', error: '' },
     whoop: { connected: false, autoSync: false, lastSync: '', error: '' },
     oura: { connected: false, autoSync: false, lastSync: '', error: '' }
   };
-  static todoList = [];
-  static todoCustomCategories = []; // [{icon, label:[ru,en]}]
+	  static todoList = [];
+	  static todoAccentColor = '#8FA6C8';
+	  static todoCustomCategories = []; // [{icon, label:[ru,en]}]
   static sectionVisits = { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
   static profileFriendsExpanded = true;
   static menuCardsStates =
@@ -180,14 +182,16 @@ static habitCardWidgets = {
     this.hardeningLog = data.hardeningLog;
     this.mentalLog = data.mentalLog;
     this.mentalRecords = data.mentalRecords;
-    this.sleepingLog = data.sleepingLog || {};
+	    this.sleepingLog = data.sleepingLog || {};
+	    this.sleepAccentColor = typeof data.sleepAccentColor === 'string' ? data.sleepAccentColor : '#6F8BD6';
     this.sleepIntegrations = {
       appleHealth: { connected: false, autoSync: false, lastSync: '', error: '', ...(data.sleepIntegrations?.appleHealth || {}) },
       whoop: { connected: false, autoSync: false, lastSync: '', error: '', ...(data.sleepIntegrations?.whoop || {}) },
       oura: { connected: false, autoSync: false, lastSync: '', error: '', ...(data.sleepIntegrations?.oura || {}) }
-    };
-    this.todoList = data.todoList || [];
-    this.todoCustomCategories = Array.isArray(data.todoCustomCategories) ? data.todoCustomCategories : [];
+	    };
+	    this.todoList = data.todoList || [];
+	    this.todoAccentColor = typeof data.todoAccentColor === 'string' ? data.todoAccentColor : '#8FA6C8';
+	    this.todoCustomCategories = Array.isArray(data.todoCustomCategories) ? data.todoCustomCategories : [];
     this.habitCustomCategories = Array.isArray(data.habitCustomCategories) ? data.habitCustomCategories : [];
     this.habitCategoryOverrides = data.habitCategoryOverrides && typeof data.habitCategoryOverrides === 'object' ? data.habitCategoryOverrides : {};
     this.deletedDefaultHabitCategories = Array.isArray(data.deletedDefaultHabitCategories) ? data.deletedDefaultHabitCategories : [];
@@ -746,10 +750,12 @@ export class Data{
     this.hardeningLog = AppData.hardeningLog;
     this.mentalRecords = AppData.mentalRecords;
     this.sleepingLog = AppData.sleepingLog;
+    this.sleepAccentColor = AppData.sleepAccentColor;
     this.sleepIntegrations = AppData.sleepIntegrations;
     this.mentalLog = AppData.mentalLog;
-    this.todoList = AppData.todoList;
-    this.todoCustomCategories = AppData.todoCustomCategories;
+	    this.todoList = AppData.todoList;
+	    this.todoAccentColor = AppData.todoAccentColor;
+	    this.todoCustomCategories = AppData.todoCustomCategories;
     this.sectionVisits = AppData.sectionVisits;
     this.profileFriendsExpanded = AppData.profileFriendsExpanded;
     this.todoFieldsVisibility = AppData.todoFieldsVisibility;
