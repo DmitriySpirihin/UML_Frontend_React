@@ -6,7 +6,6 @@ import {
   FaCheckCircle,
   FaChevronDown,
   FaClock,
-  FaClipboardList,
   FaEye,
   FaFilter,
   FaFire,
@@ -15,6 +14,8 @@ import {
   FaLayerGroup,
   FaListUl,
   FaPalette,
+  FaPen,
+  FaPlus,
   FaRegEyeSlash,
   FaSearch,
   FaSlidersH,
@@ -27,7 +28,7 @@ import Colors from '../../StaticClasses/Colors';
 import { playEffects } from '../../StaticClasses/Effects.js';
 import { saveData } from '../../StaticClasses/SaveHelper';
 import { fontSize$, lang$, selectedTodo$, setAddPanel, setPage, theme$ } from '../../StaticClasses/HabitsBus';
-import { todoEvents$, toggleGoal, toggleHidden, togglePending, togglePinned } from './ToDoHelper.js';
+import { addSubGoal, todoEvents$, toggleGoal, toggleHidden, togglePending, togglePinned, toggleSubGoal } from './ToDoHelper.js';
 import {
   buildTodoAccent,
   DEFAULT_TODO_ACCENT_COLOR,
@@ -40,6 +41,8 @@ import {
 
 const clickSound = new Audio('Audio/Click.wav');
 const doneSound = new Audio('Audio/IsDone.wav');
+const TODO_FOCUS_COLLAPSE_KEY = 'uml_todo_focus_collapsed_v1';
+const TODO_CATEGORY_COLLAPSE_KEY = 'uml_todo_category_collapsed_v1';
 
 const PRIORITY_LABELS = [['Низкий', 'Low'], ['Обычный', 'Normal'], ['Важный', 'Important'], ['Высокий', 'High'], ['Критический', 'Critical']];
 const DIFFICULTY_LABELS = [['Очень легко', 'Very Easy'], ['Легко', 'Easy'], ['Средне', 'Medium'], ['Сложно', 'Hard'], ['Кошмар', 'Nightmare']];
@@ -63,6 +66,88 @@ const SORTS = [
   { id: 2, label: ['Сложность', 'Difficulty'], icon: <FaLayerGroup /> }
 ];
 
+const getTodoCollapsedCategories = () => {
+  try {
+    return JSON.parse(localStorage.getItem(TODO_CATEGORY_COLLAPSE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+};
+
+const isTodoCategoryCollapsed = (categoryKey) => Boolean(getTodoCollapsedCategories()[categoryKey]);
+
+const setTodoCategoryCollapsed = (categoryKey, isCollapsed) => {
+  try {
+    localStorage.setItem(TODO_CATEGORY_COLLAPSE_KEY, JSON.stringify({
+      ...getTodoCollapsedCategories(),
+      [categoryKey]: isCollapsed
+    }));
+  } catch {
+    // localStorage can be unavailable in restricted webviews.
+  }
+};
+
+const isTodoFocusCollapsed = () => {
+  try {
+    return localStorage.getItem(TODO_FOCUS_COLLAPSE_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
+const setTodoFocusCollapsed = (isCollapsed) => {
+  try {
+    localStorage.setItem(TODO_FOCUS_COLLAPSE_KEY, isCollapsed ? '1' : '0');
+  } catch {
+    // localStorage can be unavailable in restricted webviews.
+  }
+};
+
+function getDateKeyWithOffset(offset) {
+  const date = new Date();
+  date.setDate(date.getDate() + offset);
+  return date.toISOString().split('T')[0];
+}
+
+function getWeekdayLabel(offset, langIndex) {
+  if (offset === 0) return langIndex === 0 ? 'СЕГ' : 'TODAY';
+  const date = new Date();
+  date.setDate(date.getDate() + offset);
+  const ru = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+  const en = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+  return (langIndex === 0 ? ru : en)[date.getDay()];
+}
+
+function isTaskActiveOnDate(task, targetDateKey) {
+  const start = parseDate(task.startDate);
+  const deadline = parseDate(task.deadLine);
+  const startKey = dateKey(start);
+  const deadlineKey = dateKey(deadline);
+
+  if (startKey && deadlineKey) return targetDateKey >= startKey && targetDateKey <= deadlineKey;
+  if (startKey) return targetDateKey === startKey;
+  if (deadlineKey) return targetDateKey === deadlineKey;
+  return targetDateKey === dateKey(new Date());
+}
+
+function buildTodoWeekSummary(tasks, langIndex) {
+  const visibleTasks = (tasks || []).filter(task => !task.isHidden);
+  return [-6, -5, -4, -3, -2, -1, 0].map(offset => {
+    const key = getDateKeyWithOffset(offset);
+    const dayTasks = visibleTasks.filter(task => isTaskActiveOnDate(task, key));
+    const done = dayTasks.filter(task => task.isDone).length;
+
+    return {
+      key,
+      label: getWeekdayLabel(offset, langIndex),
+      isToday: offset === 0,
+      done,
+      total: dayTasks.length,
+      progress: dayTasks.length ? done / dayTasks.length : 0
+    };
+  });
+}
+
 const ToDoMain = () => {
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
@@ -79,6 +164,8 @@ const ToDoMain = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [showAccentSettings, setShowAccentSettings] = useState(false);
   const [accentColor, setAccentColor] = useState(AppData.todoAccentColor || DEFAULT_TODO_ACCENT_COLOR);
+  const [selectedDateKey, setSelectedDateKey] = useState(dateKey(new Date()));
+  const [expandedTaskId, setExpandedTaskId] = useState(null);
   const searchInputRef = useRef(null);
 
   const accent = useMemo(() => buildTodoAccent(accentColor), [accentColor]);
@@ -112,7 +199,7 @@ const ToDoMain = () => {
 
   useEffect(() => {
     processTaskList();
-  }, [filterParams, sortParams, searchQuery, refreshTrigger, showHiddenTasks]);
+  }, [filterParams, sortParams, searchQuery, refreshTrigger, showHiddenTasks, selectedDateKey]);
 
   useEffect(() => {
     if (searchInputRef.current) searchInputRef.current.focus();
@@ -129,6 +216,8 @@ const ToDoMain = () => {
         (task.description && task.description.toLowerCase().includes(q))
       );
     }
+
+    processedList = processedList.filter(task => isTaskActiveOnDate(task, selectedDateKey));
 
     switch (filterParams) {
       case 1:
@@ -179,8 +268,9 @@ const ToDoMain = () => {
     const done = visible.filter(task => task.isDone).length;
     const today = visible.filter(task => !task.isDone && isTodayTask(task)).length;
     const overdue = visible.filter(task => isDeadlinePassed(task.deadLine) && !task.isDone).length;
+    const pending = visible.filter(task => task.isPending && !task.isDone).length;
     const total = visible.length;
-    return { active, done, today, overdue, total };
+    return { active, done, today, overdue, pending, total };
   }, [refreshTrigger, filterParams, showHiddenTasks]);
 
   const groupedTasks = useMemo(() => {
@@ -198,6 +288,22 @@ const ToDoMain = () => {
     await toggleGoal(item.id);
     setRefreshTrigger(prev => prev + 1);
     playEffects(item.isDone ? doneSound : clickSound);
+  };
+
+  const handleQuickSubComplete = async (event, item, index) => {
+    event.stopPropagation();
+    await toggleSubGoal(item.id, index);
+    setRefreshTrigger(prev => prev + 1);
+    playEffects(clickSound);
+  };
+
+  const handleQuickSubAdd = async (event, item, text) => {
+    event.stopPropagation();
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    await addSubGoal(item.id, trimmed);
+    setRefreshTrigger(prev => prev + 1);
+    playEffects(clickSound);
   };
 
   const handleTogglePinned = async (id) => {
@@ -221,6 +327,11 @@ const ToDoMain = () => {
   const openTask = (item) => {
     selectedTodo$.next(item);
     setPage('ToDoPage');
+    playEffects(clickSound);
+  };
+
+  const toggleTaskExpansion = (item) => {
+    setExpandedTaskId(prev => (prev === item.id ? null : item.id));
     playEffects(clickSound);
   };
 
@@ -251,7 +362,13 @@ const ToDoMain = () => {
         onAccentChange={changeAccentColor}
       />
       <div style={s.scroll} className="no-scrollbar">
-        <ToDoPageHeader theme={theme} fSize={fSize} langIndex={langIndex} />
+        <ToDoPageHeader
+          theme={theme}
+          fSize={fSize}
+          langIndex={langIndex}
+          accent={accent}
+          onAccentClick={() => setShowAccentSettings(true)}
+        />
         <FocusHero
           stats={stats}
           theme={theme}
@@ -272,11 +389,20 @@ const ToDoMain = () => {
             setFilterParams,
             hiddenTasksCount,
             showHiddenTasks,
-            setShowHiddenTasks,
-            openAccent: () => setShowAccentSettings(true)
+            setShowHiddenTasks
           }}
         />
-
+        <ToDoWeekStrip
+          theme={theme}
+          accent={accent}
+          langIndex={langIndex}
+          tasks={AppData.todoList || []}
+          selectedDateKey={selectedDateKey}
+          onSelectDate={(key) => {
+            setSelectedDateKey(key);
+            setFilterParams(0);
+          }}
+        />
         <section style={s.listWrap}>
           <AnimatePresence mode="popLayout">
             {sortedList.length === 0 ? (
@@ -311,8 +437,15 @@ const ToDoMain = () => {
                       accent={accent}
                       fSize={fSize}
                       fieldVisibility={fieldVisibility}
-                      onOpen={() => openTask(item)}
+                      expanded={expandedTaskId === item.id}
+                      onOpen={() => toggleTaskExpansion(item)}
+                      onEdit={(event) => {
+                        event.stopPropagation();
+                        openTask(item);
+                      }}
                       onCheck={(event) => handleQuickComplete(event, item)}
+                      onSubCheck={(event, index) => handleQuickSubComplete(event, item, index)}
+                      onSubAdd={(event, text) => handleQuickSubAdd(event, item, text)}
                       onPinned={handleTogglePinned}
                       onHidden={handleToggleHidden}
                       onPending={handleTogglePending}
@@ -331,8 +464,8 @@ const ToDoMain = () => {
 
 export default ToDoMain;
 
-const ToDoPageHeader = ({ theme, fSize, langIndex }) => {
-  const s = styles(theme, buildTodoAccent(AppData.todoAccentColor || DEFAULT_TODO_ACCENT_COLOR), fSize);
+const ToDoPageHeader = ({ theme, fSize, langIndex, accent, onAccentClick }) => {
+  const s = styles(theme, accent || buildTodoAccent(AppData.todoAccentColor || DEFAULT_TODO_ACCENT_COLOR), fSize);
   return (
     <motion.div
       initial={{ opacity: 0, y: -6 }}
@@ -340,18 +473,25 @@ const ToDoPageHeader = ({ theme, fSize, langIndex }) => {
       transition={{ duration: 0.32 }}
       style={s.pageHeader}
     >
-      <div style={s.pageTitle}>UltyMyLife</div>
-      <div style={s.pageSubtitle}>
-        {langIndex === 0 ? 'Вся твоя жизнь в одном месте' : 'Your whole life in one place'}
+      <div style={s.pageHeaderSpacer} />
+      <div style={s.pageHeaderBrand}>
+        <div style={s.pageTitle}>UltyMyLife</div>
+        <div style={s.pageSubtitle}>
+          {langIndex === 0 ? 'Вся твоя жизнь в одном месте' : 'Your whole life in one place'}
+        </div>
       </div>
+      <motion.button type="button" whileTap={{ scale: 0.96 }} onClick={onAccentClick} style={s.headerAccentButton}>
+        <span>{langIndex === 0 ? 'Акцент' : 'Accent'}</span>
+        <span style={s.actionColorDot} />
+      </motion.button>
     </motion.div>
   );
 };
 
 const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
+  const [isOpen, setIsOpen] = useState(() => !isTodoFocusCollapsed());
   const s = styles(theme, accent, fSize);
-  const activeTotal = Math.max(stats.active + stats.today + stats.overdue, 1);
-  const focusProgress = Math.min(1, (stats.today + stats.overdue) / activeTotal);
+  const doneProgress = stats.total ? stats.done / stats.total : 0;
   const {
     showFilters,
     setShowFilters,
@@ -367,67 +507,63 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
     hiddenTasksCount,
     showHiddenTasks,
     setShowHiddenTasks,
-    openAccent
   } = controls;
 
+  const toggleHero = () => {
+    const next = !isOpen;
+    setIsOpen(next);
+    setTodoFocusCollapsed(!next);
+    playEffects(clickSound);
+  };
+
   return (
-    <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={s.hero}>
-      <div style={s.heroTop}>
-        <div style={s.heroIcon}>
-          <FaClipboardList />
-        </div>
+    <motion.section layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={s.hero}>
+      <div style={s.heroGlow} />
+      <div style={s.heroHeader}>
         <div style={s.heroTextBlock}>
-          <div style={s.eyebrow}>{langIndex === 0 ? 'СЕГОДНЯ' : 'TODAY'}</div>
-          <h1 style={s.title}>{langIndex === 0 ? 'Фокус' : 'Focus'}</h1>
+          <div style={s.eyebrow}>{langIndex === 0 ? 'Сегодня' : 'Today'}</div>
+          <h1 style={s.title}>{langIndex === 0 ? 'Задачи' : 'Tasks'}</h1>
         </div>
-        <div style={s.heroMeter}>
-          <span style={s.heroMeterValue}>{stats.today}</span>
-          <span style={s.heroMeterLabel}>{langIndex === 0 ? 'сегодня' : 'today'}</span>
-          <span style={s.heroMeterBar}>
-            <motion.span initial={{ width: 0 }} animate={{ width: `${focusProgress * 100}%` }} style={s.heroMeterFill} />
-          </span>
+        <div style={s.heroControls}>
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.96 }}
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleHero();
+            }}
+            style={s.heroUtilityButton(isOpen)}
+          >
+            <FaSlidersH size={12} />
+            <span>{langIndex === 0 ? 'Виджеты' : 'Widgets'}</span>
+          </motion.button>
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.94 }}
+            onClick={(event) => {
+              event.stopPropagation();
+              setShowFilters(prev => !prev);
+              playEffects(clickSound);
+            }}
+            aria-label={langIndex === 0 ? 'Поиск и фильтры' : 'Search & filters'}
+            style={s.heroIconButton(showFilters)}
+          >
+            <span style={s.heroSearchGlyph(showFilters)} aria-hidden="true">
+              <span style={s.heroSearchCircle(showFilters)} />
+              <span style={s.heroSearchHandle(showFilters)} />
+            </span>
+          </motion.button>
         </div>
       </div>
-      <div style={s.focusSignal}>
-        <span style={s.focusSignalDot(stats.overdue > 0)} />
-        {stats.overdue > 0
-          ? (langIndex === 0 ? `${stats.overdue} задач требуют внимания` : `${stats.overdue} tasks need attention`)
-          : stats.today > 0
-            ? (langIndex === 0 ? 'День собран вокруг ближайших задач' : 'The day is centered on nearest tasks')
-            : (langIndex === 0 ? 'Нет срочного давления на сегодня' : 'No urgent pressure today')}
-      </div>
-      <div style={s.focusStats}>
-        <HeroStat label={langIndex === 0 ? 'в работе' : 'active'} value={stats.active} theme={theme} accent={accent} />
-        <HeroStat label={langIndex === 0 ? 'сегодня' : 'today'} value={stats.today} theme={theme} accent={accent} />
-        <HeroStat label={langIndex === 0 ? 'готово' : 'done'} value={stats.done} theme={theme} accent={accent} />
-      </div>
-      <div style={s.heroActions}>
-        <button
-          type="button"
-          onClick={() => {
-            setShowFilters(prev => !prev);
-            playEffects(clickSound);
-          }}
-          style={s.heroActionButton(showFilters)}
-        >
-          <FaSlidersH size={12} />
-          {langIndex === 0 ? 'Фильтр' : 'Filter'}
-          <motion.span animate={{ rotate: showFilters ? 180 : 0 }} style={{ display: 'flex' }}>
-            <FaChevronDown size={11} />
-          </motion.span>
-        </button>
-        <button type="button" onClick={openAccent} style={s.heroActionButton(false)}>
-          <FaPalette size={12} />
-          {langIndex === 0 ? 'Акцент' : 'Accent'}
-          <span style={s.actionColorDot} />
-        </button>
-      </div>
+
+      {/* Поиск и фильтры — независимый раскрывающийся блок */}
       <AnimatePresence initial={false}>
         {showFilters && (
           <motion.div
             initial={{ height: 0, opacity: 0, y: -6 }}
             animate={{ height: 'auto', opacity: 1, y: 0 }}
             exit={{ height: 0, opacity: 0, y: -6 }}
+            transition={{ type: 'spring', stiffness: 240, damping: 28 }}
             style={s.filterDrawer}
           >
             <div style={s.searchCard}>
@@ -519,23 +655,105 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
           </motion.div>
         )}
       </AnimatePresence>
-      {stats.overdue > 0 && (
-        <div style={s.warningPill}>
-          <FaFire size={11} />
-          {langIndex === 0 ? `${stats.overdue} просрочено` : `${stats.overdue} overdue`}
-        </div>
-      )}
+
+      {/* Виджеты-статистика — открывается кнопкой "Виджеты" */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0, y: -6 }}
+            animate={{ height: 'auto', opacity: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, y: -6 }}
+            transition={{ type: 'spring', stiffness: 230, damping: 28 }}
+            style={s.heroCollapsible}
+          >
+            <div style={s.heroSummaryCard}>
+              <div style={s.heroSummaryTop}>
+                <span>{langIndex === 0 ? 'Готово' : 'Done'}</span>
+                <strong style={s.heroSummaryValue}>{stats.done}<small style={s.heroSummarySmall}> / {stats.total}</small></strong>
+              </div>
+              <div style={s.progressTrackHero}>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.round(doneProgress * 100)}%` }}
+                  transition={{ duration: 0.72 }}
+                  style={s.heroProgressFill}
+                />
+              </div>
+            </div>
+            <div style={s.heroMetricGrid}>
+              <HeroMetric label={langIndex === 0 ? 'В работе' : 'Active'} value={stats.active} tone={accent} stylesObj={s} />
+              <HeroMetric label={langIndex === 0 ? 'Сегодня' : 'Today'} value={stats.today} tone={accent} stylesObj={s} />
+              <HeroMetric label={langIndex === 0 ? 'Отложено' : 'Pending'} value={stats.pending} tone={accent} stylesObj={s} wide />
+            </div>
+            {stats.overdue > 0 && (
+              <div style={s.warningPill}>
+                <FaFire size={11} />
+                {langIndex === 0 ? `${stats.overdue} просрочено` : `${stats.overdue} overdue`}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.section>
   );
 };
 
-const HeroStat = ({ label, value, theme, accent }) => {
-  const s = styles(theme, accent);
-  return (
-  <div style={s.heroStat}>
-    <strong style={s.heroStatValue}>{value}</strong>
-    <span style={s.heroStatLabel}>{label}</span>
+const HeroMetric = ({ label, value, tone, stylesObj, wide = false }) => (
+  <div style={stylesObj.heroMetric(wide)}>
+    <span style={stylesObj.heroMetricLabel(tone)}>
+      <span style={stylesObj.heroMetricDot(tone)} />
+      <span>{label}</span>
+    </span>
+    <strong style={stylesObj.heroMetricValue}>{value}</strong>
   </div>
+);
+
+const ToDoWeekStrip = ({ theme, accent, langIndex, tasks, selectedDateKey, onSelectDate }) => {
+  const s = styles(theme, accent);
+  const week = buildTodoWeekSummary(tasks, langIndex);
+
+  return (
+    <div style={s.weekStrip}>
+      {week.map(day => {
+        const active = day.key === selectedDateKey;
+        const full = day.total > 0 && day.done === day.total;
+        const strokeColor = active
+          ? accent.hue
+          : full
+            ? Colors.get('done', theme)
+            : s.weekRingColor(day);
+
+        return (
+          <motion.div
+            key={day.key}
+            whileTap={{ scale: 0.94 }}
+            onClick={() => {
+              onSelectDate(day.key);
+              playEffects(clickSound);
+            }}
+            style={s.weekDay(active)}
+          >
+            <div style={s.weekLabel(active)}>{day.label}</div>
+            <svg width="24" height="24" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9" stroke={s.weekRingBg} strokeWidth="2.4" fill="none" />
+              <circle
+                cx="12"
+                cy="12"
+                r="9"
+                stroke={strokeColor}
+                strokeWidth="2.4"
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={s.weekRingLength}
+                strokeDashoffset={s.weekRingLength - s.weekRingLength * day.progress}
+                transform="rotate(-90 12 12)"
+              />
+            </svg>
+            <div style={s.weekCount}>{day.done}/{day.total}</div>
+          </motion.div>
+        );
+      })}
+    </div>
   );
 };
 
@@ -615,43 +833,56 @@ const TodoAccentModal = ({ show, onClose, theme, langIndex, accent, accentColor,
 };
 
 const CategoryPanel = ({ title, categoryKey, count, doneCount, todayCount, children, theme, accent, langIndex }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(() => !isTodoCategoryCollapsed(categoryKey || title));
   const s = styles(theme, accent);
-  const tone = getTodoCategoryTone(categoryKey || title, accent);
+  const categoryTone = getTodoCategoryTone(categoryKey || title, accent);
+  const tone = categoryTone;
   const Icon = tone.icon;
   const done = Math.min(doneCount, count);
-  const metaText = todayCount > 0
-    ? `${done} / ${count} ${langIndex === 0 ? 'сегодня' : 'today'}`
-    : `${done} / ${count} ${langIndex === 0 ? 'готово' : 'done'}`;
+
+  useEffect(() => {
+    setIsOpen(!isTodoCategoryCollapsed(categoryKey || title));
+  }, [categoryKey, title]);
+
+  const toggleOpen = () => {
+    const next = !isOpen;
+    setIsOpen(next);
+    setTodoCategoryCollapsed(categoryKey || title, !next);
+    playEffects(clickSound);
+  };
 
   return (
     <div style={s.category}>
-      <button
-        type="button"
-        onClick={() => {
-          setIsOpen(prev => !prev);
-          playEffects(clickSound);
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={toggleOpen}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleOpen();
+          }
         }}
         style={s.categoryHeader}
       >
         <div style={s.categoryIdentity}>
           <div style={{ ...s.categoryIcon, color: tone.hue, background: tone.soft, borderColor: tone.ring }}>
-            <Icon size={15} />
+            <Icon size={16} />
           </div>
           <div style={s.categoryTextBlock}>
             <span style={s.categoryName}>{title}</span>
             <span style={s.categoryMeta}>
-              {metaText}
+              <span style={{ color: tone.hue }}>{done}</span> / {count} {todayCount > 0 ? (langIndex === 0 ? 'сегодня' : 'today') : (langIndex === 0 ? 'готово' : 'done')}
             </span>
           </div>
         </div>
         <div style={s.categoryRight}>
           <span style={s.categoryCount(done === count && count > 0, tone)}>{done}/{count}</span>
           <motion.span animate={{ rotate: isOpen ? 0 : -90 }} style={s.chevron}>
-            <FaChevronDown size={13} />
+            <FaChevronDown size={14} />
           </motion.span>
         </div>
-      </button>
+      </div>
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -675,29 +906,42 @@ const TaskCard = ({
   accent,
   fSize,
   fieldVisibility = {},
+  expanded,
   onOpen,
+  onEdit,
   onCheck,
+  onSubCheck,
+  onSubAdd,
   onPinned,
   onHidden,
   onPending
 }) => {
   const s = styles(theme, accent, fSize);
+  const [subDraft, setSubDraft] = useState('');
   const totalGoals = item.goals ? item.goals.length : 0;
   const doneGoals = item.goals ? item.goals.filter(goal => goal.isDone).length : 0;
   const progress = totalGoals === 0 ? (item.isDone ? 100 : 0) : Math.round((doneGoals / totalGoals) * 100);
   const isOverdue = isDeadlinePassed(item.deadLine) && !item.isDone;
-  const cardAccent = getTodoCategoryTone(item.category, accent);
+  const categoryTone = getTodoCategoryTone(item.category, accent);
+  const cardAccent = categoryTone;
   const TaskIcon = cardAccent.icon;
+  const submitSubDraft = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const nextText = subDraft.trim();
+    if (!nextText) return;
+    onSubAdd(event, nextText);
+    setSubDraft('');
+  };
 
   return (
     <motion.article
-      layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
       whileTap={{ scale: 0.985 }}
       onClick={onOpen}
-      style={s.taskCard(item.isDone, isOverdue, item.isPinned, cardAccent)}
+      style={s.taskCard(item.isDone, isOverdue, item.isPinned, cardAccent, expanded)}
     >
       <div style={s.taskMainRow}>
         <div style={{ ...s.taskGlyph, color: cardAccent.hue, background: cardAccent.soft, borderColor: cardAccent.ring }}>
@@ -710,6 +954,25 @@ const TaskCard = ({
             {item.isPinned && <FaThumbtack size={11} color={accent.hue} />}
           </div>
           {item.description && <div style={s.description}>{item.description}</div>}
+          <div style={s.metaRow}>
+            {(fieldVisibility.difficulty ?? true) && item.difficulty != null && (
+              <MiniBadge icon={<FaLayerGroup />} text={DIFFICULTY_LABELS[item.difficulty]?.[lang]} color={DIFFICULTY_COLORS[item.difficulty] || DIFFICULTY_COLORS[0]} accent={accent} theme={theme} expanded />
+            )}
+            {(fieldVisibility.urgency ?? true) && item.urgency != null && (
+              <MiniBadge icon={<FaFire />} text={URGENCY_LABELS[item.urgency]?.[lang]} color={URGENCY_COLORS[item.urgency] || URGENCY_COLORS[0]} accent={accent} theme={theme} expanded />
+            )}
+            <MiniBadge
+              icon={isOverdue ? <FaFire /> : <FaCalendarDay />}
+              text={item.deadLine ? getDeadlineText(item.deadLine, lang) : (lang === 0 ? 'Без срока' : 'No deadline')}
+              color={isOverdue ? '#E95F5F' : accent.hue}
+              accent={accent}
+              theme={theme}
+              expanded
+            />
+            {totalGoals > 0 && (
+              <MiniBadge icon={<FaListUl />} text={`${doneGoals}/${totalGoals}`} color={cardAccent.hue} accent={accent} theme={theme} expanded />
+            )}
+          </div>
         </div>
 
         <button type="button" onClick={onCheck} style={s.checkButton(item.isDone)}>
@@ -717,31 +980,95 @@ const TaskCard = ({
         </button>
       </div>
 
-      <div style={s.metaRow}>
-        {(fieldVisibility.priority ?? true) && item.priority != null && (
-          <MiniBadge icon={<FaFlag />} text={PRIORITY_LABELS[item.priority]?.[lang]} color={PRIORITY_COLORS[item.priority] || PRIORITY_COLORS[0]} />
-        )}
-        {(fieldVisibility.difficulty ?? true) && item.difficulty != null && (
-          <MiniBadge icon={<FaLayerGroup />} text={DIFFICULTY_LABELS[item.difficulty]?.[lang]} color={DIFFICULTY_COLORS[item.difficulty] || DIFFICULTY_COLORS[0]} />
-        )}
-        {(fieldVisibility.urgency ?? true) && item.urgency != null && (
-          <MiniBadge icon={<FaFire />} text={URGENCY_LABELS[item.urgency]?.[lang]} color={URGENCY_COLORS[item.urgency] || URGENCY_COLORS[0]} />
-        )}
-        <MiniBadge
-          icon={isOverdue ? <FaFire /> : <FaCalendarDay />}
-          text={item.deadLine ? getDeadlineText(item.deadLine, lang) : (lang === 0 ? 'Без срока' : 'No deadline')}
-          color={isOverdue ? '#E95F5F' : accent.hue}
-        />
-        {totalGoals > 0 && (
-          <MiniBadge icon={<FaListUl />} text={`${doneGoals}/${totalGoals}`} color={accent.hue} />
-        )}
-      </div>
+      {(totalGoals > 0 || item.isDone) && (
+        <div style={s.progressTrack}>
+          <div style={{ ...s.progressFill(cardAccent.hue), width: `${progress}%` }} />
+        </div>
+      )}
 
-      <div style={s.progressTrack}>
-        <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }} style={s.progressFill(cardAccent.hue)} />
-      </div>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ maxHeight: 0, opacity: 0 }}
+            animate={{ maxHeight: 720, opacity: 1 }}
+            exit={{ maxHeight: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: [0.2, 0, 0.2, 1] }}
+            style={s.taskExpanded}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div style={s.expandedInfoGrid}>
+              <div style={s.expandedInfo}>
+                <FaCalendarDay size={10} />
+                <span>{formatTaskDate(item.startDate, lang) || (lang === 0 ? 'Без старта' : 'No start')}</span>
+              </div>
+              <div style={s.expandedInfo}>
+                <FaClock size={10} />
+                <span>{item.deadLine ? formatTaskDate(item.deadLine, lang) : (lang === 0 ? 'Без дедлайна' : 'No deadline')}</span>
+              </div>
+            </div>
 
-      <div style={s.actionRow}>
+            {item.description && <div style={s.expandedDescription}>{item.description}</div>}
+
+            <div style={s.expandedChecklist}>
+              <div style={s.expandedTitle}>
+                <FaListUl size={11} />
+                <span>{lang === 0 ? 'Чек-лист' : 'Checklist'}</span>
+                <b>{doneGoals}/{totalGoals}</b>
+              </div>
+              {totalGoals > 0 ? (
+                <div style={s.expandedGoals}>
+                  {item.goals.slice(0, 4).map((goal, index) => (
+                    <button
+                      key={`${goal.text}-${index}`}
+                      type="button"
+                      onClick={(event) => onSubCheck(event, index)}
+                      style={s.expandedGoal(goal.isDone)}
+                    >
+                      <span style={s.expandedGoalDot(goal.isDone)}>
+                        {goal.isDone && <FaCheck size={7} />}
+                      </span>
+                      <span>{goal.text}</span>
+                    </button>
+                  ))}
+                  {totalGoals > 4 && <div style={s.moreGoals}>+{totalGoals - 4}</div>}
+                </div>
+              ) : (
+                <div style={s.emptyChecklist}>{lang === 0 ? 'Шаги не добавлены' : 'No steps added'}</div>
+              )}
+              <form style={s.checklistAddRow} onSubmit={submitSubDraft} onClick={(event) => event.stopPropagation()}>
+                <FaPlus size={10} />
+                <input
+                  type="text"
+                  value={subDraft}
+                  onChange={(event) => setSubDraft(event.target.value)}
+                  placeholder={lang === 0 ? 'Добавить шаг...' : 'Add step...'}
+                  style={s.checklistAddInput}
+                />
+                <button
+                  type="submit"
+                  disabled={!subDraft.trim()}
+                  style={s.checklistAddButton(Boolean(subDraft.trim()))}
+                >
+                  <FaCheck size={9} />
+                </button>
+              </form>
+            </div>
+
+            <div style={s.expandedActions}>
+              <button type="button" onClick={onCheck} style={s.completeTaskButton(item.isDone)}>
+                <FaCheckCircle size={13} />
+                <span>{item.isDone ? (lang === 0 ? 'Вернуть в работу' : 'Reopen') : (lang === 0 ? 'Выполнено' : 'Complete')}</span>
+              </button>
+              <button type="button" onClick={onEdit} style={s.editTaskButton}>
+                <FaPen size={12} />
+                <span>{lang === 0 ? 'Редактировать' : 'Edit'}</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div style={s.actionRow(expanded)}>
         <ActionButton active={item.isPinned} label={lang === 0 ? 'Пин' : 'Pin'} icon={<FaThumbtack />} onClick={(event) => { event.stopPropagation(); onPinned(item.id); }} theme={theme} accent={accent} />
         <ActionButton active={item.isPending} label={lang === 0 ? 'Позже' : 'Later'} icon={<FaClock />} onClick={(event) => { event.stopPropagation(); onPending(item.id); }} theme={theme} accent={accent} />
         <ActionButton active={item.isHidden} label={lang === 0 ? 'Скрыто' : 'Hidden'} icon={<FaRegEyeSlash />} onClick={(event) => { event.stopPropagation(); onHidden(item.id); }} theme={theme} accent={accent} />
@@ -766,25 +1093,46 @@ const ActionButton = ({ active, label, icon, onClick, theme, accent }) => {
   );
 };
 
-const MiniBadge = ({ icon, text, color }) => (
-  <span style={{
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 5,
-    minHeight: 24,
-    padding: '3px 8px',
-    borderRadius: 999,
-    background: `${color}18`,
-    border: `1px solid ${color}30`,
-    color,
-    fontSize: 10,
-    fontWeight: 850,
-    whiteSpace: 'nowrap'
-  }}>
-    {React.cloneElement(icon, { size: 9 })}
-    {text}
-  </span>
-);
+const MiniBadge = ({ icon, text, color, theme, expanded = false }) => {
+  const isLight = theme === 'light' || theme === 'speciallight';
+  const hex = (color || '#8FA6C8').replace('#', '');
+  const r = parseInt(hex.slice(0, 2), 16) || 143;
+  const g = parseInt(hex.slice(2, 4), 16) || 166;
+  const b = parseInt(hex.slice(4, 6), 16) || 200;
+  const tintBg = `rgba(${r},${g},${b},${isLight ? 0.045 : 0.055})`;
+  const tintBorder = `rgba(${r},${g},${b},${isLight ? 0.11 : 0.13})`;
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: expanded ? 3 : 0,
+        height: expanded ? 16 : 20,
+        width: expanded ? 'auto' : 24,
+        minWidth: expanded ? 16 : 20,
+        padding: expanded ? '0 6px' : 0,
+        justifyContent: 'center',
+        borderRadius: 999,
+        background: tintBg,
+        border: `1px solid ${tintBorder}`,
+        color,
+        fontSize: expanded ? 8.5 : 9,
+        fontWeight: 850,
+        letterSpacing: 0.1,
+        whiteSpace: 'nowrap',
+        boxSizing: 'border-box',
+        lineHeight: 1,
+        flexShrink: 0,
+        overflow: 'hidden',
+        opacity: 0.76
+      }}
+    >
+      {React.cloneElement(icon, { size: expanded ? 7 : 9, color })}
+      {expanded && <span>{text}</span>}
+    </span>
+  );
+};
 
 const styles = (theme, accent, fSize = 0) => {
   const isLight = theme === 'light' || theme === 'speciallight';
@@ -800,28 +1148,34 @@ const styles = (theme, accent, fSize = 0) => {
       height: '100vh',
       overflow: 'hidden',
       background: isLight
-        ? `linear-gradient(180deg, ${accent.faint} 0%, ${Colors.get('background', theme)} 42%)`
-        : `linear-gradient(180deg, rgba(${accent.rgbText},0.11) 0%, ${Colors.get('background', theme)} 44%)`,
+        ? `radial-gradient(900px 450px at 80% -10%, rgba(${accent.rgbText},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7`
+        : `radial-gradient(1000px 500px at 80% -10%, rgba(${accent.rgbText},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013`,
       color: text,
-      fontFamily: 'Segoe UI, sans-serif'
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
     },
     scroll: {
       height: '100%',
       overflowY: 'auto',
-      padding: `${TODO_SECTION_TOP} 18px 150px`,
+      padding: `${TODO_SECTION_TOP} 0 calc(132px + env(safe-area-inset-bottom, 0px))`,
       boxSizing: 'border-box'
     },
     pageHeader: {
-      width: '100%',
+      width: 'calc(100% - 56px)',
+      maxWidth: 660,
       margin: '0 auto 8px',
-      padding: '4px 18px 8px',
+      padding: '4px 0 8px',
       boxSizing: 'border-box',
-      textAlign: 'center'
+      display: 'grid',
+      gridTemplateColumns: '96px minmax(0, 1fr) 96px',
+      alignItems: 'center',
+      gap: 12
     },
+    pageHeaderSpacer: { width: 96, height: 38 },
+    pageHeaderBrand: { minWidth: 0, textAlign: 'center' },
     pageTitle: {
       color: text,
       fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: fSize === 0 ? 24 : 26,
+      fontSize: fSize === 0 ? 21 : 24,
       fontWeight: 700,
       letterSpacing: 0,
       lineHeight: 1.05,
@@ -835,137 +1189,196 @@ const styles = (theme, accent, fSize = 0) => {
       letterSpacing: '0.14em',
       opacity: 0.82
     },
+    headerAccentButton: {
+      minWidth: 0,
+      height: 38,
+      borderRadius: 999,
+      border: `1px solid ${accent.ring}`,
+      background: accent.soft,
+      color: accent.hue,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      justifySelf: 'end',
+      gap: 7,
+      fontSize: 12,
+      fontWeight: 900,
+      fontFamily: 'inherit',
+      padding: '0 12px',
+      whiteSpace: 'nowrap'
+    },
     hero: {
       position: 'relative',
+      width: 'calc(100% - 56px)',
+      maxWidth: 660,
+      margin: '0 auto',
       borderRadius: 24,
-      padding: 15,
+      padding: '14px 16px',
       overflow: 'hidden',
       background: isLight
-        ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${accent.faint})`
-        : `radial-gradient(260px 140px at 4% 0%, ${accent.soft}, transparent 74%), linear-gradient(145deg, rgba(24,28,31,0.92), rgba(20,23,25,0.94))`,
-      border: `1px solid ${border}`,
-      boxShadow: isLight ? '0 12px 28px -24px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.72) inset' : '0 1px 0 rgba(255,255,255,0.04) inset, 0 14px 34px -28px rgba(0,0,0,0.72)',
-      backdropFilter: 'blur(18px)'
+        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(${accent.rgbText},0.12) 58%, rgba(${accent.rgbText},0.08) 100%)`
+        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, rgba(${accent.rgbText},0.14) 54%, rgba(${accent.rgbText},0.08) 100%)`,
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : accent.ring}`,
+      boxShadow: isLight
+        ? `0 16px 38px -34px rgba(${accent.rgbText},0.45), 0 1px 0 rgba(255,255,255,0.72) inset`
+        : `0 18px 40px -34px rgba(${accent.rgbText},0.50), 0 1px 0 rgba(255,255,255,0.055) inset`,
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+      boxSizing: 'border-box',
+      isolation: 'isolate'
     },
-    heroTop: { display: 'flex', alignItems: 'center', gap: 13 },
-    heroIcon: {
-      width: 48,
-      height: 48,
-      borderRadius: 16,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: accent.hue,
-      background: accent.soft,
-      border: `1px solid ${accent.ring}`,
-      fontSize: 22,
-      flexShrink: 0
+    heroGlow: {
+      position: 'absolute',
+      right: -44,
+      top: -58,
+      width: 170,
+      height: 170,
+      borderRadius: '50%',
+      background: `radial-gradient(circle, rgba(${accent.rgbText},0.22) 0%, transparent 62%)`,
+      pointerEvents: 'none',
+      zIndex: 0
     },
+    heroHeader: { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minWidth: 0 },
+    heroControls: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 },
+    heroCollapsible: { position: 'relative', zIndex: 1, overflow: 'hidden', marginTop: 12 },
     heroTextBlock: { minWidth: 0 },
-    eyebrow: { color: accent.hue, fontSize: 11, fontWeight: 950, letterSpacing: 1.6 },
-    title: { margin: '3px 0 0', color: text, fontSize: fSize === 0 ? 28 : 30, lineHeight: 1.05, fontWeight: 950, letterSpacing: 0 },
-	    heroMeter: {
-	      position: 'relative',
-	      width: 78,
-	      minHeight: 64,
-	      marginLeft: 'auto',
-	      display: 'flex',
-	      flexDirection: 'column',
-	      alignItems: 'center',
-	      justifyContent: 'center',
-	      gap: 4,
-	      color: accent.hue,
-	      flexShrink: 0,
-	      borderRadius: 20,
-	      background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)',
-	      border: `1px solid ${border}`,
-	      boxShadow: `0 16px 36px -30px ${accent.hue}`
-	    },
-	    heroMeterValue: {
-	      color: text,
-	      fontSize: 22,
-	      lineHeight: 1,
-	      fontWeight: 950,
-	      fontVariantNumeric: 'tabular-nums'
-	    },
-	    heroMeterLabel: {
-	      color: sub,
-	      fontSize: 9,
-	      lineHeight: 1,
-	      fontWeight: 900
-	    },
-	    heroMeterBar: {
-	      width: 42,
-	      height: 4,
-	      borderRadius: 999,
-	      overflow: 'hidden',
-	      background: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)'
-	    },
-	    heroMeterFill: {
-	      display: 'block',
-	      height: '100%',
-	      borderRadius: 999,
-	      background: accent.hue,
-	      boxShadow: `0 0 16px ${accent.glow}`
-	    },
-	    focusSignal: {
-	      minHeight: 34,
-	      marginTop: 13,
-	      padding: '0 12px',
-	      borderRadius: 999,
-	      display: 'flex',
-	      alignItems: 'center',
-	      gap: 8,
-	      color: sub,
-	      background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
-	      border: `1px solid ${border}`,
-	      fontSize: 11,
-	      fontWeight: 850,
-	      lineHeight: 1.2
-	    },
-	    focusSignalDot: (danger) => ({
-	      width: 8,
-	      height: 8,
-	      borderRadius: 999,
-	      flexShrink: 0,
-	      background: danger ? '#E95F5F' : accent.hue,
-	      boxShadow: `0 0 14px ${danger ? 'rgba(233,95,95,0.5)' : accent.glow}`
-	    }),
-	    focusStats: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, marginTop: 14 },
-	    heroStat: {
-      minHeight: 54,
-      borderRadius: 16,
-      background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)',
-      border: `1px solid ${border}`,
-      display: 'flex',
-      flexDirection: 'column',
+    eyebrow: { color: sub, fontSize: 10, fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase' },
+    title: { margin: '4px 0 0', color: text, fontSize: fSize === 0 ? 20 : 22, lineHeight: 1.08, fontWeight: 950, letterSpacing: 0 },
+    heroUtilityButton: (active) => ({
+      minHeight: 38,
+      borderRadius: 15,
+      border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(159,180,196,0.18)',
+      background: active ? accent.soft : isLight ? 'rgba(255,255,255,0.64)' : 'rgba(175,196,212,0.095)',
+      color: active ? accent.hue : sub,
+      display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      minWidth: 0
+      gap: 7,
+      padding: '0 11px',
+      fontFamily: 'inherit',
+      fontSize: 11,
+      fontWeight: 900,
+      flexShrink: 0,
+      cursor: 'pointer',
+      outline: 'none',
+      boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.045) inset'
+    }),
+    heroCollapseButton: {
+      width: 38,
+      height: 38,
+      borderRadius: 15,
+      border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(159,180,196,0.18)',
+      background: isLight ? 'rgba(255,255,255,0.58)' : 'rgba(175,196,212,0.075)',
+      color: sub,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      cursor: 'pointer',
+      outline: 'none',
+      boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.04) inset'
     },
-	    heroStatValue: { color: text, fontSize: 20, lineHeight: 1, fontWeight: 950, fontVariantNumeric: 'tabular-nums' },
-	    heroStatLabel: { color: sub, fontSize: 10, fontWeight: 850, marginTop: 5, textAlign: 'center' },
-	    heroActions: {
-	      display: 'grid',
-	      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-	      gap: 8,
-	      marginTop: 12
-	    },
-	    heroActionButton: (active) => ({
-	      minHeight: 38,
-	      borderRadius: 15,
-	      border: `1px solid ${active ? accent.ring : border}`,
-	      background: active ? accent.soft : isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)',
-	      color: active ? accent.hue : sub,
-	      display: 'flex',
-	      alignItems: 'center',
-	      justifyContent: 'center',
-	      gap: 7,
-	      fontSize: 12,
-	      fontWeight: 900,
-	      fontFamily: 'inherit',
-	      outline: 'none'
-	    }),
+    heroIconButton: (active) => ({
+      width: 38,
+      height: 38,
+      borderRadius: 15,
+      border: `1px solid ${active ? accent.ring : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(159,180,196,0.18)')}`,
+      background: active ? accent.soft : (isLight ? 'rgba(255,255,255,0.58)' : 'rgba(175,196,212,0.075)'),
+      color: active ? accent.hue : sub,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+      flexShrink: 0,
+      cursor: 'pointer',
+      outline: 'none',
+      boxShadow: active ? `0 0 18px ${accent.glow}` : (isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.04) inset')
+    }),
+    heroSearchGlyph: (active) => ({
+      position: 'absolute',
+      left: 'calc(50% - 2px)',
+      top: 'calc(50% - 1px)',
+      width: 16,
+      height: 16,
+      display: 'block',
+      color: active ? accent.hue : sub,
+      opacity: active ? 0.86 : 0.72,
+      transform: 'translate(-50%, -50%)'
+    }),
+    heroSearchCircle: (active) => ({
+      position: 'absolute',
+      left: 2,
+      top: 2,
+      width: 9.5,
+      height: 9.5,
+      borderRadius: '50%',
+      border: `2px solid ${active ? accent.hue : sub}`,
+      boxSizing: 'border-box'
+    }),
+    heroSearchHandle: (active) => ({
+      position: 'absolute',
+      left: 10.5,
+      top: 10.5,
+      width: 5,
+      height: 1.9,
+      borderRadius: 999,
+      background: active ? accent.hue : sub,
+      transform: 'rotate(45deg)',
+      transformOrigin: 'left center'
+    }),
+    heroSummaryCard: {
+      borderRadius: 14,
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
+      background: isLight ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.032)',
+      padding: '10px 11px',
+      boxSizing: 'border-box',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
+    },
+    heroSummaryTop: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10,
+      marginBottom: 8,
+      color: sub,
+      fontSize: 10,
+      fontWeight: 900,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase'
+    },
+    heroSummaryValue: { color: text, fontSize: 13, fontWeight: 950, fontVariantNumeric: 'tabular-nums', letterSpacing: 0 },
+    heroSummarySmall: { color: sub, fontSize: 10, fontWeight: 850 },
+    progressTrackHero: { height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.07)', overflow: 'hidden' },
+    heroProgressFill: { height: '100%', borderRadius: 999, background: accent.hue, boxShadow: `0 0 16px ${accent.glow}` },
+    heroMetricGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginTop: 10 },
+    heroMetric: (wide = false) => ({
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10,
+      width: '100%',
+      minWidth: 0,
+      minHeight: wide ? 34 : 32,
+      borderRadius: 12,
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
+      background: isLight ? 'rgba(255,255,255,0.56)' : 'rgba(255,255,255,0.035)',
+      padding: '0 10px',
+      boxSizing: 'border-box',
+      overflow: 'hidden',
+      gridColumn: wide ? '1 / -1' : 'auto'
+    }),
+    heroMetricLabel: (tone) => ({
+      display: 'flex',
+      alignItems: 'center',
+      gap: 6,
+      color: sub,
+      fontSize: 10.5,
+      fontWeight: 850,
+      minWidth: 0,
+      flex: 1
+    }),
+    heroMetricDot: (tone) => ({ width: 5, height: 5, borderRadius: 99, background: tone.hue, flexShrink: 0 }),
+    heroMetricValue: { color: text, fontSize: 12, fontWeight: 950, fontVariantNumeric: 'tabular-nums', flexShrink: 0 },
 	    actionColorDot: {
 	      width: 8,
 	      height: 8,
@@ -994,9 +1407,9 @@ const styles = (theme, accent, fSize = 0) => {
       background: 'rgba(233,95,95,0.13)',
       border: '1px solid rgba(233,95,95,0.26)',
       color: '#E95F5F',
-      fontSize: 11,
-      fontWeight: 900
-    },
+	      fontSize: 11,
+	      fontWeight: 900
+	    },
 	    toolPanel: {
 	      marginTop: 12,
 	      borderRadius: 22,
@@ -1112,7 +1525,40 @@ const styles = (theme, accent, fSize = 0) => {
 	      fontFamily: 'inherit',
 	      outline: 'none'
 	    }),
-	    listWrap: { marginTop: 16, display: 'flex', flexDirection: 'column', gap: 2 },
+    weekStrip: {
+      width: 'calc(100% - 56px)',
+      maxWidth: 660,
+      margin: '14px auto 0',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+      gap: 6
+    },
+    weekDay: (active) => ({
+      minHeight: 70,
+      borderRadius: 16,
+      border: active ? `1px solid ${accent.ring}` : '1px solid transparent',
+      background: active ? accent.soft : 'transparent',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+      cursor: 'pointer'
+    }),
+    weekLabel: (active) => ({ color: active ? accent.hue : sub, fontSize: 9, fontWeight: 900, letterSpacing: '0.06em' }),
+    weekRingBg: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)',
+    weekRingLength: 2 * Math.PI * 9,
+    weekRingColor: (day) => day.total > 0 && day.done === day.total ? Colors.get('done', theme) : (isLight ? 'rgba(15,23,42,0.32)' : 'rgba(255,255,255,0.24)'),
+    weekCount: { color: sub, fontSize: 10, fontWeight: 850, fontVariantNumeric: 'tabular-nums' },
+	    listWrap: {
+	      width: 'calc(100% - 56px)',
+	      maxWidth: 660,
+	      margin: '20px auto 0',
+	      display: 'flex',
+	      flexDirection: 'column',
+	      gap: 18,
+	      boxSizing: 'border-box'
+	    },
     emptyState: {
       minHeight: 210,
       borderRadius: 26,
@@ -1139,56 +1585,54 @@ const styles = (theme, accent, fSize = 0) => {
     },
     emptyTitle: { marginTop: 12, color: text, fontSize: 18, fontWeight: 950 },
     emptySub: { marginTop: 6, color: sub, fontSize: 13, lineHeight: 1.35, fontWeight: 700, maxWidth: 260 },
-	    category: { display: 'flex', flexDirection: 'column', gap: 8 },
+	    category: { width: '100%', margin: '0 auto', boxSizing: 'border-box' },
 	    categoryHeader: {
 	      width: '100%',
-	      minHeight: 66,
-	      border: 'none',
-	      background: 'transparent',
 	      display: 'flex',
 	      alignItems: 'center',
 	      justifyContent: 'space-between',
-	      padding: '8px 0',
-	      gap: 12,
+	      padding: '4px 4px 10px',
+	      gap: 10,
 	      color: text,
-	      fontFamily: 'inherit',
+	      cursor: 'pointer',
+	      userSelect: 'none',
 	      outline: 'none'
 	    },
-	    categoryIdentity: { display: 'flex', alignItems: 'center', gap: 16, minWidth: 0, flex: 1 },
+	    categoryIdentity: { display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 },
 	    categoryIcon: {
-	      width: 48,
-	      height: 48,
-	      borderRadius: 17,
+	      width: 32,
+	      height: 32,
+	      borderRadius: 11,
 	      border: '1px solid',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       flexShrink: 0
     },
-    categoryTextBlock: { minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' },
-	    categoryName: { fontSize: 19, fontWeight: 950, width: '100%', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.08 },
-	    categoryMeta: { color: sub, fontSize: 13, fontWeight: 850, marginTop: 4 },
-	    categoryRight: { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 },
-	    categoryCount: (completed, tone) => ({
-	      minWidth: 54,
-	      height: 36,
+    categoryTextBlock: { minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
+	    categoryName: { display: 'block', fontSize: 15, fontWeight: 900, width: '100%', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.15 },
+	    categoryMeta: { display: 'block', width: '100%', color: sub, fontSize: 11, fontWeight: 800, marginTop: 3, lineHeight: 1.2, textAlign: 'center' },
+	    categoryRight: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 },
+    categoryCount: (completed, tone) => ({
+      minWidth: 44,
+	      height: 28,
 	      borderRadius: 999,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       color: completed ? Colors.get('done', theme) : sub,
-      background: completed ? 'rgba(16,185,129,0.13)' : isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)',
-      border: `1px solid ${completed ? 'rgba(16,185,129,0.24)' : border}`,
-	      fontSize: 15,
-	      fontWeight: 950,
+      background: completed ? 'rgba(16,185,129,0.13)' : (isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)'),
+      border: `1px solid ${completed ? 'rgba(16,185,129,0.24)' : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)')}`,
+	      fontSize: 12,
+	      fontWeight: 900,
       fontVariantNumeric: 'tabular-nums'
     }),
     chevron: { color: sub, display: 'flex' },
     categoryBody: { overflowY: 'hidden', overflowX: 'visible', display: 'flex', flexDirection: 'column', gap: 10, padding: '0 1px', boxSizing: 'border-box' },
-    taskCard: (done, overdue, pinned, tone = accent) => ({
+    taskCard: (done, overdue, pinned, tone = accent, expanded = false) => ({
       position: 'relative',
       borderRadius: 20,
-      padding: 13,
+      padding: '14px 16px 13px',
       overflow: 'hidden',
       background: isLight
         ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${tone.soft})`
@@ -1199,7 +1643,7 @@ const styles = (theme, accent, fSize = 0) => {
       cursor: 'pointer',
       backdropFilter: 'blur(18px)'
     }),
-    taskMainRow: { display: 'flex', alignItems: 'center', gap: 12, minHeight: 56 },
+    taskMainRow: { display: 'flex', alignItems: 'center', gap: 14, minHeight: 56 },
     taskGlyph: {
       width: 46,
       height: 46,
@@ -1210,25 +1654,27 @@ const styles = (theme, accent, fSize = 0) => {
       border: '1px solid',
       flexShrink: 0
     },
-	    taskContent: { minWidth: 0, flex: 1 },
-    taskHeaderLine: { display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 },
+	    taskContent: { minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' },
+    taskHeaderLine: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, minWidth: 0, flexWrap: 'nowrap' },
     taskName: (done) => ({
       color: done ? sub : text,
       fontSize: fSize === 0 ? 16 : 17,
       fontWeight: 950,
       lineHeight: 1.2,
       minWidth: 0,
+      flex: '0 1 auto',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
       whiteSpace: 'nowrap',
-      textDecoration: done ? 'line-through' : 'none'
+      textDecoration: done ? 'line-through' : 'none',
+      textAlign: 'center'
     }),
-    description: { marginTop: 4, color: sub, fontSize: 12, fontWeight: 700, lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical' },
+    description: { width: '100%', marginTop: 4, color: sub, fontSize: 12, fontWeight: 700, lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', textAlign: 'center' },
     checkButton: (done) => ({
-      width: 32,
-      height: 32,
-      borderRadius: 999,
-      border: `2px solid ${done ? Colors.get('done', theme) : accent.ring}`,
+      width: 40,
+      height: 30,
+      borderRadius: 10,
+      border: `1px solid ${done ? 'rgba(16,185,129,0.30)' : (isLight ? 'rgba(15,23,42,0.1)' : 'rgba(255,255,255,0.095)')}`,
       background: done ? Colors.get('done', theme) : 'transparent',
       color: '#fff',
       display: 'flex',
@@ -1236,36 +1682,150 @@ const styles = (theme, accent, fSize = 0) => {
       justifyContent: 'center',
       flexShrink: 0
     }),
-    metaRow: { display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 },
-    progressTrack: { height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)', overflow: 'hidden', marginTop: 12 },
+    metaRow: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 4,
+      marginTop: 6,
+      paddingLeft: 0,
+      paddingRight: 0,
+      boxSizing: 'border-box',
+      opacity: 0.82,
+      width: '100%',
+      maxWidth: 270
+    },
+    progressTrack: { height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)', overflow: 'hidden', marginTop: 10 },
     progressFill: (color) => ({ height: '100%', borderRadius: 999, background: color, boxShadow: `0 0 18px ${color}66` }),
-    actionRow: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, flexWrap: 'wrap' },
+    taskExpanded: { overflow: 'hidden', marginTop: 10, borderTop: `1px solid ${border}`, paddingTop: 10, willChange: 'max-height, opacity', contain: 'layout paint' },
+    expandedInfoGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 7 },
+    expandedInfo: {
+      minHeight: 32,
+      borderRadius: 12,
+      background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
+      border: `1px solid ${border}`,
+      color: sub,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 7,
+      padding: '0 10px',
+      fontSize: 11,
+      fontWeight: 850,
+      minWidth: 0,
+      overflow: 'hidden'
+    },
+    expandedDescription: { marginTop: 8, color: text, fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, opacity: 0.86 },
+    expandedChecklist: { marginTop: 9, borderRadius: 14, background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.028)', border: `1px solid ${border}`, padding: 10 },
+    expandedTitle: { display: 'flex', alignItems: 'center', gap: 7, color: sub, fontSize: 11, fontWeight: 900, marginBottom: 8 },
+    expandedGoals: { display: 'flex', flexDirection: 'column', gap: 6 },
+    expandedGoal: (done) => ({ width: '100%', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', gap: 8, minHeight: 30, color: done ? sub : text, fontSize: 12, fontWeight: 780, textDecoration: done ? 'line-through' : 'none', fontFamily: 'inherit', textAlign: 'left', padding: '3px 2px', cursor: 'pointer', borderRadius: 9 }),
+    expandedGoalDot: (done) => ({ width: 16, height: 16, borderRadius: 5, border: `1px solid ${done ? Colors.get('done', theme) : border}`, background: done ? Colors.get('done', theme) : 'transparent', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }),
+    moreGoals: { color: sub, fontSize: 11, fontWeight: 850 },
+    emptyChecklist: { color: sub, fontSize: 12, fontWeight: 750, minHeight: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' },
+    checklistAddRow: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      minHeight: 38,
+      marginTop: 8,
+      padding: '0 8px',
+      borderRadius: 12,
+      border: `1px dashed ${accent.ring}`,
+      background: accent.faint,
+      color: accent.hue,
+      boxSizing: 'border-box'
+    },
+    checklistAddInput: {
+      flex: 1,
+      minWidth: 0,
+      border: 'none',
+      outline: 'none',
+      background: 'transparent',
+      color: text,
+      fontSize: 12,
+      fontWeight: 800,
+      fontFamily: 'inherit'
+    },
+    checklistAddButton: (enabled) => ({
+      width: 26,
+      height: 26,
+      borderRadius: 9,
+      border: `1px solid ${enabled ? accent.ring : border}`,
+      background: enabled ? accent.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)'),
+      color: enabled ? accent.hue : sub,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 0,
+      opacity: enabled ? 1 : 0.46,
+      cursor: enabled ? 'pointer' : 'default'
+    }),
+    expandedActions: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 8, marginTop: 9 },
+    completeTaskButton: (done) => ({
+      minHeight: 38,
+      borderRadius: 14,
+      border: `1px solid ${done ? 'rgba(159,180,196,0.18)' : 'rgba(16,185,129,0.28)'}`,
+      background: done ? (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)') : 'rgba(16,185,129,0.16)',
+      color: done ? sub : Colors.get('done', theme),
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 7,
+      fontSize: 12,
+      fontWeight: 950,
+      fontFamily: 'inherit'
+    }),
+    editTaskButton: {
+      minHeight: 38,
+      borderRadius: 14,
+      border: `1px solid ${accent.ring}`,
+      background: accent.soft,
+      color: accent.hue,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 7,
+      fontSize: 12,
+      fontWeight: 950,
+      fontFamily: 'inherit'
+    },
+    actionRow: (expanded = false) => ({
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 5,
+      marginTop: expanded ? 10 : 7,
+      paddingLeft: expanded ? 0 : 60,
+      paddingRight: expanded ? 0 : 56,
+      boxSizing: 'border-box',
+      flexWrap: 'wrap'
+    }),
     actionButton: (active) => ({
       border: `1px solid ${active ? accent.ring : border}`,
       background: active ? accent.soft : isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.025)',
       color: active ? accent.hue : sub,
       borderRadius: 999,
-      minHeight: 26,
-      padding: '0 8px',
+      minHeight: 20,
+      padding: '0 6px',
       display: 'flex',
       alignItems: 'center',
-      gap: 5,
-      fontSize: 10,
+      gap: 3,
+      fontSize: 8.5,
       fontWeight: 900,
       fontFamily: 'inherit'
     }),
     donePill: {
-      marginLeft: 'auto',
-      minHeight: 28,
-      padding: '0 10px',
+      minHeight: 22,
+      padding: '0 8px',
       borderRadius: 999,
       display: 'flex',
       alignItems: 'center',
-      gap: 6,
+      gap: 4,
       color: Colors.get('done', theme),
       background: 'rgba(16,185,129,0.13)',
       border: '1px solid rgba(16,185,129,0.24)',
-      fontSize: 10,
+      fontSize: 9,
       fontWeight: 950
     }
   };
@@ -1324,4 +1884,14 @@ function getDeadlineText(dateStr, lang) {
   if (days === 1) return 'Tomorrow';
   if (days < 0) return `${Math.abs(days)}d ago`;
   return `${days}d`;
+}
+
+function formatTaskDate(dateStr, lang) {
+  const date = parseDate(dateStr);
+  if (!date) return '';
+  return date.toLocaleDateString(lang === 0 ? 'ru-RU' : 'en-US', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 }

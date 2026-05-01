@@ -39,7 +39,7 @@ export async function createGoal(name, description, difficulty, priority, catego
     ? deadLine
     : null;
 
-AppData.todoList.push({
+const createdGoal = {
   id,
   name: ((name ?? '').trim() || 'Untitled'),
   description: (description ?? '').trim(),
@@ -57,11 +57,14 @@ AppData.todoList.push({
   isPinned : isPinned,
   isHidden : isHidden,
   isPending : isPending
-});
+};
+
+AppData.todoList.push(createdGoal);
 
   await saveData();
   // Уведомляем всех подписчиков, что список изменился
   if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+  return createdGoal;
 }
 
 // new methods i added
@@ -201,12 +204,32 @@ export async function addSubGoal(id, subGoalText) {
   
   if (item) {
     if (!item.goals) item.goals = [];
-    item.goals.push({ text: subGoalText, isDone: false });
+    item.goals.push({ text: subGoalText, aim: '', result: '', isDone: false });
     
     await saveData();
     if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
   }
 }
+
+export async function moveSubGoal(id, fromIndex, toIndex) {
+  const item = AppData.todoList.find(i => i.id === id);
+
+  if (!item || !Array.isArray(item.goals)) return;
+  if (
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= item.goals.length ||
+    toIndex >= item.goals.length ||
+    fromIndex === toIndex
+  ) return;
+
+  const [movedGoal] = item.goals.splice(fromIndex, 1);
+  item.goals.splice(toIndex, 0, movedGoal);
+
+  await saveData();
+  if (todoEvents$) todoEvents$.next({ type: 'UPDATE_LIST' });
+}
+
 export async function updateSubGoal(goalId, index, newText) {
   const item = AppData.todoList.find(i => i.id === goalId);
   

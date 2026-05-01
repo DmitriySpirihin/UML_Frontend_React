@@ -1,34 +1,50 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Colors from '../../StaticClasses/Colors';
 import { AppData } from '../../StaticClasses/AppData';
-import ScrollPicker from '../../Helpers/ScrollPicker';
 import { IoIosArrowBack } from 'react-icons/io';
 import {
-    FaCheck, FaCalendarDay, FaFlag, FaTimes, FaClock,
+    FaCheck, FaCalendarDay, FaTimes, FaClock,
     FaTasks, FaLayerGroup, FaPen, FaSave, FaPlus,
-    FaExclamationTriangle, FaExclamation, FaChevronDown, FaChevronUp,
-    FaBullseye, FaAward
+    FaExclamationTriangle, FaChevronDown, FaChevronUp,
+    FaBullseye, FaAward, FaTrash, FaCheckCircle,
+    FaEye, FaEyeSlash, FaFire
 } from "react-icons/fa";
 import {
     redactGoal, deleteGoal, toggleGoal, toggleSubGoal,
     deleteSubGoal, addSubGoal, updateSubGoal,
     setOrRedactSubgoalAim,
     setOrRedactSubgoalResult,
-    addOrRedactResult
+    addOrRedactResult,
+    setTodoFieldVisibility,
+    moveSubGoal
 } from "./ToDoHelper";
 import { selectedTodo$, theme$, lang$, fontSize$, setPage, lastPage$ } from '../../StaticClasses/HabitsBus';
-import { buildTodoAccent } from './ToDoVisuals.js';
+import { buildTodoAccent, getTodoCategoryTone } from './ToDoVisuals.js';
 
 // --- CONSTANTS ---
-const PRIORITY_LABELS = [['Низкий', 'Low'], ['Обычный', 'Normal'], ['Важный', 'Important'], ['Высокий', 'High'], ['Критический', 'Critical']];
 const DIFFICULTY_LABELS = [['Очень легко', 'Very Easy'], ['Легко', 'Easy'], ['Средне', 'Medium'], ['Сложно', 'Hard'], ['Кошмар', 'Nightmare']];
 const URGENCY_LABELS = [['Не горит', 'Not Urgent'], ['Обычная', 'Normal'], ['Срочно', 'Urgent'], ['Очень срочно', 'Very Urgent'], ['ASAP', 'ASAP']];
-const NOT_SET_LABELS = ['Не задано', 'Not set'];
-const PRIORITY_COLORS = ['#B0BEC5', '#29B6F6', '#FFCA28', '#FB8C00', '#F44336'];
 const DIFFICULTY_COLORS = ['#66BB6A', '#9CCC65', '#FFCA28', '#FF7043', '#D32F2F'];
 const URGENCY_COLORS = ['#81C784', '#64B5F6', '#FFD54F', '#FF8A65', '#E57373'];
 const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 18px)';
+const EDITABLE_TASK_FIELDS = ['name', 'description', 'difficulty', 'priority', 'category', 'icon', 'color', 'startDate', 'deadLine', 'note', 'urgency'];
+
+const cloneTask = (item) => (item ? JSON.parse(JSON.stringify(item)) : null);
+
+const editableSnapshot = (item) => {
+    if (!item) return {};
+    return EDITABLE_TASK_FIELDS.reduce((acc, field) => {
+        if (field === 'difficulty' || field === 'priority' || field === 'urgency') acc[field] = item[field] ?? 0;
+        else acc[field] = item[field] ?? '';
+        return acc;
+    }, {});
+};
+
+const applyEditableFields = (target, source) => EDITABLE_TASK_FIELDS.reduce((acc, field) => ({
+    ...acc,
+    [field]: source?.[field]
+}), { ...target });
 
 const ToDoPage = () => {
     const [task, setTask] = useState(null);
@@ -36,10 +52,6 @@ const ToDoPage = () => {
     const [lang, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setFSize] = useState(AppData.prefs[4]);
 
-    const [isEditing, setIsEditing] = useState(false);
-    const [editPriority, setEditPriority] = useState('');
-    const [editDifficulty, setEditDifficulty] = useState('');
-    const [editUrgency, setEditUrgency] = useState('');
     const [newSubGoalText, setNewSubGoalText] = useState('');
     const [showDeleteWarning, setShowDeleteWarning] = useState(null);
     const [showResultModal, setShowResultModal] = useState(false);
@@ -49,10 +61,13 @@ const ToDoPage = () => {
 
     const [editingSubGoalIndex, setEditingSubGoalIndex] = useState(null);
     const [editingSubGoalText, setEditingSubGoalText] = useState('');
+    const [accentColor] = useState(AppData.todoAccentColor || '#8FA6C8');
+    const [fieldsVisibility, setFieldsVisibility] = useState({ difficulty: true, urgency: true, startDate: true, deadLine: true, ...(AppData.todoFieldsVisibility || {}) });
 
     const resultInputRef = useRef(null);
     const aimInputRef = useRef(null);
     const subGoalTextInputRef = useRef(null);
+    const originalTaskRef = useRef(null);
 
     useEffect(() => {
         const subs = [
@@ -61,13 +76,15 @@ const ToDoPage = () => {
             fontSize$.subscribe(setFSize),
             selectedTodo$.subscribe((t) => {
                 if (t) {
-                    setTask(t);
+                    const nextTask = cloneTask(t);
+                    originalTaskRef.current = cloneTask(t);
+                    setTask(nextTask);
                     setTaskResultText(t.result || '');
                     setEditingSubGoalIndex(null);
                     setEditingSubGoalText('');
                     setExpandedSubGoals({});
                     setEditingFields({});
-                    setIsEditing(false);
+                    setFieldsVisibility({ difficulty: true, urgency: true, startDate: true, deadLine: true, ...(AppData.todoFieldsVisibility || {}) });
                 }
             }),
         ];
@@ -81,14 +98,66 @@ const ToDoPage = () => {
     }, [showResultModal]);
 
     const goBack = () => setPage(lastPage$.value || 'ToDoMain');
+    const hasTaskChanges = useMemo(() => (
+        JSON.stringify(editableSnapshot(task)) !== JSON.stringify(editableSnapshot(originalTaskRef.current))
+    ), [task]);
 
     if (!task) return null;
 
     const totalGoals = task.goals?.length || 0;
     const completedGoals = task.goals?.filter(g => g.isDone).length || 0;
     const progressPercent = totalGoals === 0 ? (task.isDone ? 100 : 0) : Math.round((completedGoals / totalGoals) * 100);
-    const s = styles(theme, fSize, task.color);
-    const isLight = theme === 'light' || theme === 'speciallight';
+    const s = styles(theme, fSize, accentColor);
+    const pageAccent = buildTodoAccent(accentColor);
+    const categoryTone = getTodoCategoryTone(task.category, pageAccent);
+    const TaskIcon = categoryTone.icon;
+
+    const persistTask = async () => {
+        const cleanTask = {
+            ...task,
+            name: (task.name || '').trim() || (lang === 0 ? 'Без названия' : 'Untitled'),
+            description: task.description || '',
+            deadLine: task.deadLine || null
+        };
+        setTask(cleanTask);
+        selectedTodo$.next(cleanTask);
+        originalTaskRef.current = cloneTask(cleanTask);
+        await redactGoal(
+            cleanTask.id,
+            cleanTask.name,
+            cleanTask.description,
+            cleanTask.difficulty,
+            cleanTask.priority,
+            cleanTask.category,
+            cleanTask.icon,
+            cleanTask.color,
+            cleanTask.startDate,
+            cleanTask.deadLine,
+            cleanTask.note,
+            cleanTask.urgency
+        );
+    };
+
+    const updateTaskField = (field, value) => {
+        setTask(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleCancelTaskChanges = () => {
+        const original = originalTaskRef.current;
+        if (!original) return;
+        setTask(prev => applyEditableFields(prev, original));
+    };
+
+    const handleSaveTaskChanges = async () => {
+        if (!hasTaskChanges) return;
+        await persistTask();
+    };
+
+    const toggleFieldVisibility = async (field) => {
+        const nextVisible = !fieldsVisibility[field];
+        setFieldsVisibility(prev => ({ ...prev, [field]: nextVisible }));
+        await setTodoFieldVisibility(field, nextVisible);
+    };
 
     // --- MAIN TASK COMPLETION HANDLER ---
     const handleToggleMainTask = async () => {
@@ -119,6 +188,7 @@ const ToDoPage = () => {
 
     // --- SUB-GOAL EDITING HANDLERS ---
     const handleEditSubGoalField = (index, field, currentValue) => {
+        setEditingSubGoalIndex(index);
         setEditingFields(prev => ({
             ...prev,
             [`${index}-${field}`]: true
@@ -155,6 +225,7 @@ const ToDoPage = () => {
 
         setTask(prev => ({ ...prev, goals: updatedGoals }));
         setEditingFields(prev => ({ ...prev, [`${index}-${field}`]: false }));
+        setEditingSubGoalIndex(null);
         setEditingSubGoalText('');
     };
 
@@ -164,6 +235,7 @@ const ToDoPage = () => {
 
     const handleCancelSubGoalEdit = (index, field) => {
         setEditingFields(prev => ({ ...prev, [`${index}-${field}`]: false }));
+        setEditingSubGoalIndex(null);
         setEditingSubGoalText('');
     };
 
@@ -199,46 +271,6 @@ const ToDoPage = () => {
         setShowDeleteWarning(null);
     };
 
-    const enterEditMode = () => {
-        const pStr = task.priority != null ? (PRIORITY_LABELS[task.priority]?.[lang] ?? NOT_SET_LABELS[lang]) : NOT_SET_LABELS[lang];
-        const dStr = task.difficulty != null ? (DIFFICULTY_LABELS[task.difficulty]?.[lang] ?? NOT_SET_LABELS[lang]) : NOT_SET_LABELS[lang];
-        const uStr = task.urgency != null ? (URGENCY_LABELS[task.urgency]?.[lang] ?? NOT_SET_LABELS[lang]) : NOT_SET_LABELS[lang];
-        setEditPriority(pStr);
-        setEditDifficulty(dStr);
-        setEditUrgency(uStr);
-        setIsEditing(true);
-    };
-
-    const handleSaveEdit = async () => {
-        const toIdx = (val, labels) => {
-            if (val === NOT_SET_LABELS[lang]) return null;
-            const i = labels.findIndex(l => l[lang] === val);
-            return i === -1 ? null : i;
-        };
-        const updatedTask = {
-            ...task,
-            priority: toIdx(editPriority, PRIORITY_LABELS),
-            difficulty: toIdx(editDifficulty, DIFFICULTY_LABELS),
-            urgency: toIdx(editUrgency, URGENCY_LABELS),
-        };
-        setTask(updatedTask);
-        await redactGoal(
-            updatedTask.id,
-            updatedTask.name,
-            updatedTask.description,
-            updatedTask.difficulty,
-            updatedTask.priority,
-            updatedTask.category,
-            updatedTask.icon,
-            updatedTask.color,
-            updatedTask.startDate,
-            updatedTask.deadLine,
-            updatedTask.note,
-            updatedTask.urgency
-        );
-        setIsEditing(false);
-    };
-
     const handleToggleSub = async (index) => {
         if (!task.goals) return;
 
@@ -257,6 +289,29 @@ const ToDoPage = () => {
 
         setTask(prev => ({ ...prev, goals: newGoals }));
         await toggleSubGoal(task.id, index);
+    };
+
+    const handleMoveSub = async (index, direction) => {
+        if (!task.goals) return;
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= task.goals.length) return;
+
+        const newGoals = [...task.goals];
+        const [movedGoal] = newGoals.splice(index, 1);
+        newGoals.splice(targetIndex, 0, movedGoal);
+
+        setTask(prev => ({ ...prev, goals: newGoals }));
+        setExpandedSubGoals(prev => {
+            const next = {};
+            Object.entries(prev).forEach(([key, value]) => {
+                const numericKey = Number(key);
+                if (numericKey === index) next[targetIndex] = value;
+                else if (numericKey === targetIndex) next[index] = value;
+                else next[numericKey] = value;
+            });
+            return next;
+        });
+        await moveSubGoal(task.id, index, targetIndex);
     };
 
     const handleAddSub = async () => {
@@ -354,43 +409,45 @@ const ToDoPage = () => {
                 )}
             </AnimatePresence>
 
-            {/* iOS-STYLE TOP BAR */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: `${HEADER_TOP_PADDING} 20px 0`, minHeight: '56px' }}>
-                <motion.div
+            {/* TOP BAR */}
+            <div style={s.topBar}>
+                <motion.button
+                    type="button"
                     whileTap={{ scale: 0.9 }}
                     onClick={goBack}
-                    style={{ width: '36px', height: '36px', borderRadius: '12px', backgroundColor: Colors.get('bottomPanel', theme), display: 'flex', alignItems: 'center', justifyContent: 'center', color: Colors.get('icons', theme) }}
+                    style={s.roundTopBtn}
+                    aria-label={lang === 0 ? 'Назад' : 'Back'}
                 >
-                    <IoIosArrowBack size={20} />
-                </motion.div>
-                <motion.div whileTap={{ scale: 0.95 }} onClick={isEditing ? handleSaveEdit : enterEditMode} style={{ padding: '8px 4px' }}>
-                    <span style={{ fontSize: 17, fontWeight: 600, color: isEditing ? task.color : Colors.get('subText', theme) }}>
-                        {isEditing ? (lang === 0 ? 'Готово' : 'Done') : (lang === 0 ? 'Изменить' : 'Edit')}
-                    </span>
-                </motion.div>
+                    <IoIosArrowBack size={24} color={Colors.get('mainText', theme)} style={{ display: 'block', flexShrink: 0 }} />
+                </motion.button>
+                <div style={s.topTitleBlock}>
+                    <div style={s.topEyebrow}>{lang === 0 ? 'ЗАДАЧА' : 'TASK'}</div>
+                    <div style={s.topTitle}>{task.category || (lang === 0 ? 'Общее' : 'General')}</div>
+                </div>
+                <div style={s.topSpacer} />
             </div>
 
             {/* CONTENT */}
             <div style={s.headerWrapper}>
-                <motion.div whileTap={{ scale: 0.95 }} onClick={handleToggleMainTask} style={s.statusBadge(task.isDone)}>
-                    {task.isDone ? (lang === 0 ? 'ВЫПОЛНЕНО ✓' : 'COMPLETED ✓') : (lang === 0 ? 'В ПРОЦЕССЕ' : 'IN PROGRESS')}
-                </motion.div>
                 <div style={s.fixedHeader}>
                     <div style={s.headerLeft}>
-                        <div style={s.iconBadge}>{task.icon}</div>
+                        <div style={s.iconBadge(categoryTone)}>
+                            <TaskIcon size={22} />
+                        </div>
                     </div>
                     <div style={s.headerCenter}>
-                        {isEditing ? (
-                            <input
-                                type="text"
-                                placeholder={lang === 0 ? 'Название' : 'Name'}
-                                value={task.name}
-                                onChange={(e) => setTask({...task, name: e.target.value})}
-                                style={s.titleInput}
-                            />
-                        ) : (
-                            <h2 style={s.title}>{task.name}</h2>
-                        )}
+                        <input
+                            type="text"
+                            placeholder={lang === 0 ? 'Название' : 'Name'}
+                            value={task.name || ''}
+                            onChange={(e) => updateTaskField('name', e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                            style={s.titleInput}
+                        />
+                        <div style={s.categoryPill(categoryTone)}>
+                            <TaskIcon size={11} />
+                            <span>{task.category || (lang === 0 ? 'Общее' : 'General')}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -435,121 +492,159 @@ const ToDoPage = () => {
             </div>
 
             <div style={s.bodyPadding}>
-                {isEditing && (
-                    <div style={s.pickerCard}>
-                        <div style={s.pickerRow}>
-                            {(AppData.todoFieldsVisibility?.priority ?? true) && (
-                                <div style={s.pickerCol}>
-                                    <span style={s.smallLabel}>{lang===0?'Приоритет':'Priority'}</span>
-                                    <ScrollPicker
-                                        items={[NOT_SET_LABELS[lang], ...PRIORITY_LABELS.map(l => l[lang])]}
-                                        value={editPriority}
-                                        onChange={setEditPriority}
-                                        theme={theme}
-                                        width="100%"
-                                    />
-                                </div>
-                            )}
-                            {(AppData.todoFieldsVisibility?.priority ?? true) && (AppData.todoFieldsVisibility?.difficulty ?? true) && (
-                                <div style={s.pickerDivider} />
-                            )}
-                            {(AppData.todoFieldsVisibility?.difficulty ?? true) && (
-                                <div style={s.pickerCol}>
-                                    <span style={s.smallLabel}>{lang===0?'Сложность':'Difficulty'}</span>
-                                    <ScrollPicker
-                                        items={[NOT_SET_LABELS[lang], ...DIFFICULTY_LABELS.map(l => l[lang])]}
-                                        value={editDifficulty}
-                                        onChange={setEditDifficulty}
-                                        theme={theme}
-                                        width="100%"
-                                    />
-                                </div>
-                            )}
-                            {(AppData.todoFieldsVisibility?.difficulty ?? true) && (AppData.todoFieldsVisibility?.urgency ?? true) && (
-                                <div style={s.pickerDivider} />
-                            )}
-                            {(AppData.todoFieldsVisibility?.urgency ?? true) && (
-                                <div style={s.pickerCol}>
-                                    <span style={s.smallLabel}>{lang===0?'Срочность':'Urgency'}</span>
-                                    <ScrollPicker
-                                        items={[NOT_SET_LABELS[lang], ...URGENCY_LABELS.map(l => l[lang])]}
-                                        value={editUrgency}
-                                        onChange={setEditUrgency}
-                                        theme={theme}
-                                        width="100%"
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {!isEditing && (task.priority != null || task.difficulty != null || task.urgency != null) && (
-                    <div style={s.gridTwo}>
-                        {(AppData.todoFieldsVisibility?.priority ?? true) && task.priority != null && (
-                            <Badge
-                                icon={<FaFlag/>}
-                                label={lang===0?'Приоритет':'Priority'}
-                                value={PRIORITY_LABELS[task.priority]?.[lang]}
-                                color={PRIORITY_COLORS[task.priority] || PRIORITY_COLORS[0]}
-                                theme={theme}
-                            />
-                        )}
-                        {(AppData.todoFieldsVisibility?.difficulty ?? true) && task.difficulty != null && (
-                            <Badge
-                                icon={<FaLayerGroup/>}
-                                label={lang===0?'Сложность':'Difficulty'}
-                                value={DIFFICULTY_LABELS[task.difficulty]?.[lang]}
-                                color={DIFFICULTY_COLORS[task.difficulty] || DIFFICULTY_COLORS[0]}
-                                theme={theme}
-                            />
-                        )}
-                        {(AppData.todoFieldsVisibility?.urgency ?? true) && task.urgency != null && (
-                            <Badge
-                                icon={<FaExclamation/>}
-                                label={lang===0?'Срочность':'Urgency'}
-                                value={URGENCY_LABELS[task.urgency]?.[lang]}
-                                color={URGENCY_COLORS[task.urgency] || URGENCY_COLORS[0]}
-                                theme={theme}
-                            />
-                        )}
-                    </div>
-                )}
-
                 <div style={{width: '100%', display: 'flex', flexDirection: 'column', marginBottom: 12}}>
-                    {isEditing ? (
-                        <textarea
-                            placeholder={lang === 0 ? 'Описание' : 'Description'}
-                            value={task.description}
-                            onChange={(e) => setTask({...task, description: e.target.value})}
-                            style={s.descriptionInput}
-                            rows={3}
-                        />
-                    ) : (
-                        <p style={s.description}>
-                            {task.description || (lang === 0 ? "Нет описания" : "No description")}
-                        </p>
-                    )}
+                    <textarea
+                        placeholder={lang === 0 ? 'Описание' : 'Description'}
+                        value={task.description || ''}
+                        onChange={(e) => updateTaskField('description', e.target.value)}
+                        style={s.descriptionInput}
+                        rows={3}
+                    />
                 </div>
 
-                <div style={s.dateRow}>
-                    <DateBox
-                        label={lang===0?'Старт':'Start'}
-                        value={task.startDate}
-                        icon={<FaCalendarDay/>}
-                        isEditing={isEditing}
-                        theme={theme}
-                        onChange={(v) => setTask({...task, startDate: v})}
-                    />
-                    <DateBox
-                        label={lang===0?'Срок':'Deadline'}
-                        value={task.deadLine}
-                        icon={<FaClock/>}
-                        isEditing={isEditing}
-                        theme={theme}
-                        emptyLabel={lang === 0 ? 'Без дедлайна' : 'No deadline'}
-                        onChange={(v) => setTask({...task, deadLine: v})}
-                    />
+                <div style={s.parameterSection}>
+                    <div style={s.parameterSectionTitle}>
+                        <FaLayerGroup />
+                        <span>{lang === 0 ? 'ПАРАМЕТРЫ' : 'PARAMETERS'}</span>
+                    </div>
+                    <div style={s.parameterCards}>
+                        <AnimatePresence initial={false}>
+                            {fieldsVisibility.difficulty && (
+                                <motion.div
+                                    key="difficulty"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    style={{ overflow: 'hidden' }}
+                                >
+                                    <ParameterScaleCard
+                                        icon={<FaLayerGroup size={13} />}
+                                        label={lang === 0 ? 'Сложность' : 'Difficulty'}
+                                        value={task.difficulty ?? 2}
+                                        labels={DIFFICULTY_LABELS.map(item => item[lang])}
+                                        colors={DIFFICULTY_COLORS}
+                                        theme={theme}
+                                        accentColor={accentColor}
+                                        onChange={(value) => updateTaskField('difficulty', value)}
+                                        onHide={() => toggleFieldVisibility('difficulty')}
+                                    />
+                                </motion.div>
+                            )}
+                            {fieldsVisibility.urgency && (
+                                <motion.div
+                                    key="urgency"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    style={{ overflow: 'hidden' }}
+                                >
+                                    <ParameterScaleCard
+                                        icon={<FaFire size={13} />}
+                                        label={lang === 0 ? 'Срочность' : 'Urgency'}
+                                        value={task.urgency ?? 1}
+                                        labels={URGENCY_LABELS.map(item => item[lang])}
+                                        colors={URGENCY_COLORS}
+                                        theme={theme}
+                                        accentColor={accentColor}
+                                        onChange={(value) => updateTaskField('urgency', value)}
+                                        onHide={() => toggleFieldVisibility('urgency')}
+                                    />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <AnimatePresence initial={false}>
+                            {(fieldsVisibility.startDate || fieldsVisibility.deadLine) && (
+                                <motion.div
+                                    key="dates"
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    style={{ overflow: 'hidden' }}
+                                >
+                                    <div style={s.dateParamGrid}>
+                                        {fieldsVisibility.startDate && (
+                                            <DateParameterCard
+                                                icon={<FaCalendarDay size={13} />}
+                                                label={lang === 0 ? 'Старт' : 'Start'}
+                                                value={task.startDate}
+                                                theme={theme}
+                                                accentColor={accentColor}
+                                                onChange={(v) => updateTaskField('startDate', v)}
+                                                onHide={() => toggleFieldVisibility('startDate')}
+                                            />
+                                        )}
+                                        {fieldsVisibility.deadLine && (
+                                            <DateParameterCard
+                                                icon={<FaClock size={13} />}
+                                                label={lang === 0 ? 'Дедлайн' : 'Deadline'}
+                                                value={task.deadLine}
+                                                emptyLabel={lang === 0 ? 'Без дедлайна' : 'No deadline'}
+                                                clearable
+                                                theme={theme}
+                                                accentColor={accentColor}
+                                                onChange={(v) => updateTaskField('deadLine', v)}
+                                                onHide={() => toggleFieldVisibility('deadLine')}
+                                            />
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {(!fieldsVisibility.difficulty || !fieldsVisibility.urgency || !fieldsVisibility.startDate || !fieldsVisibility.deadLine) && (
+                            <div style={s.parameterRestoreRow}>
+                                {!fieldsVisibility.difficulty && (
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.96 }}
+                                        onClick={() => toggleFieldVisibility('difficulty')}
+                                        style={s.restoreParamChip}
+                                    >
+                                        <FaEye size={11} color={accentColor} />
+                                        <FaLayerGroup size={11} />
+                                        <span>{lang === 0 ? 'Сложность' : 'Difficulty'}</span>
+                                    </motion.button>
+                                )}
+                                {!fieldsVisibility.urgency && (
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.96 }}
+                                        onClick={() => toggleFieldVisibility('urgency')}
+                                        style={s.restoreParamChip}
+                                    >
+                                        <FaEye size={11} color={accentColor} />
+                                        <FaFire size={11} />
+                                        <span>{lang === 0 ? 'Срочность' : 'Urgency'}</span>
+                                    </motion.button>
+                                )}
+                                {!fieldsVisibility.startDate && (
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.96 }}
+                                        onClick={() => toggleFieldVisibility('startDate')}
+                                        style={s.restoreParamChip}
+                                    >
+                                        <FaEye size={11} color={accentColor} />
+                                        <FaCalendarDay size={11} />
+                                        <span>{lang === 0 ? 'Старт' : 'Start'}</span>
+                                    </motion.button>
+                                )}
+                                {!fieldsVisibility.deadLine && (
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.96 }}
+                                        onClick={() => toggleFieldVisibility('deadLine')}
+                                        style={s.restoreParamChip}
+                                    >
+                                        <FaEye size={11} color={accentColor} />
+                                        <FaClock size={11} />
+                                        <span>{lang === 0 ? 'Дедлайн' : 'Deadline'}</span>
+                                    </motion.button>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div style={{ marginTop: '30px' }}>
@@ -576,6 +671,9 @@ const ToDoPage = () => {
                                         isExpanded={expandedSubGoals[idx]}
                                         onToggleExpand={toggleSubGoalExpand}
                                         onToggleComplete={handleToggleSub}
+                                        onMove={(direction) => handleMoveSub(idx, direction)}
+                                        canMoveUp={idx > 0}
+                                        canMoveDown={idx < (task.goals?.length || 0) - 1}
                                         onDelete={() => setShowDeleteWarning(idx)}
                                         task={task}
                                         theme={theme}
@@ -610,24 +708,53 @@ const ToDoPage = () => {
                         </div>
                     </div>
                 </div>
-                <AnimatePresence>
-                    {isEditing && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                        >
-                            <motion.button
-                                whileTap={{ scale: 0.97 }}
-                                onClick={() => setShowDeleteWarning('main')}
-                                style={s.deleteBtn}
-                            >
-                                {lang === 0 ? 'Удалить задачу' : 'Delete task'}
-                            </motion.button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                <div style={{ marginBottom: '120px' }} />
+                <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleToggleMainTask}
+                    style={s.completeBtn(task.isDone)}
+                >
+                    <FaCheckCircle size={13} />
+                    {task.isDone ? (lang === 0 ? 'Вернуть в работу' : 'Reopen task') : (lang === 0 ? 'Выполнено' : 'Complete task')}
+                </motion.button>
+                <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setShowDeleteWarning('main')}
+                    style={s.deleteBtn}
+                >
+                    <FaTrash size={12} />
+                    {lang === 0 ? 'Удалить задачу' : 'Delete task'}
+                </motion.button>
+            </div>
+            <div style={s.editActionBar}>
+                <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.94 }}
+                    onClick={goBack}
+                    style={s.editBackBtn}
+                >
+                    <IoIosArrowBack size={18} />
+                    <span>{lang === 0 ? 'Назад' : 'Back'}</span>
+                </motion.button>
+                <motion.button
+                    type="button"
+                    whileTap={{ scale: hasTaskChanges ? 0.94 : 1 }}
+                    disabled={!hasTaskChanges}
+                    onClick={handleCancelTaskChanges}
+                    style={s.editCancelBtn(hasTaskChanges)}
+                >
+                    <FaTimes size={13} />
+                    <span>{lang === 0 ? 'Отменить' : 'Cancel'}</span>
+                </motion.button>
+                <motion.button
+                    type="button"
+                    whileTap={{ scale: hasTaskChanges ? 0.96 : 1 }}
+                    disabled={!hasTaskChanges}
+                    onClick={handleSaveTaskChanges}
+                    style={s.editSaveBtn(hasTaskChanges)}
+                >
+                    <FaSave size={13} />
+                    <span>{lang === 0 ? 'Сохранить' : 'Save'}</span>
+                </motion.button>
             </div>
         </motion.div>
     );
@@ -635,19 +762,21 @@ const ToDoPage = () => {
 
 // --- SUB-GOAL CARD COMPONENT ---
 const SubGoalCard = ({
-    goal, index, idx, isExpanded, onToggleExpand, onToggleComplete, onDelete,
+    goal, index, idx, isExpanded, onToggleExpand, onToggleComplete, onMove, canMoveUp, canMoveDown, onDelete,
     task, theme, lang, editingFields, editingSubGoalText, onEditField, onSaveField,
     onCancelEdit, onKeyDown, aimInputRef, subGoalTextInputRef, onEditingTextChange
 }) => {
     const s = styles(theme, null, task.color);
     const border = Colors.get('border', theme);
     const sub = Colors.get('subText', theme);
+    const hasAim = !!goal.aim;
+    const hasResult = !!goal.result;
 
     return (
         <div style={{ ...s.subGoalCard, border: goal.isDone ? `2px solid #2ed177` : `1px solid ${border}30` }}>
             <div style={s.subGoalMainRow}>
                 <div
-                    onClick={() => onToggleComplete(index)}
+                    onClick={(e) => { e.stopPropagation(); onToggleComplete(index); }}
                     style={s.checkbox(goal.isDone)}
                     role="checkbox"
                     aria-checked={goal.isDone}
@@ -661,17 +790,32 @@ const SubGoalCard = ({
                             ref={subGoalTextInputRef}
                             type="text"
                             value={editingSubGoalText}
-                            onChange={() => {}}
+                            onChange={(e) => onEditingTextChange(e.target.value)}
                             onKeyDown={(e) => onKeyDown(e, index, 'text')}
+                            onClick={(e) => e.stopPropagation()}
                             style={s.inlineEditInput}
                             autoFocus
                         />
                     ) : (
-                        <div
-                            onClick={() => onToggleExpand(index)}
-                            style={s.subGoalText(goal.isDone)}
-                        >
-                            {goal.text}
+                        <div style={s.subGoalTextWrap}>
+                            <div style={s.subGoalText(goal.isDone)}>{goal.text}</div>
+                            <div style={s.subGoalMetaRow}>
+                                <span style={s.subGoalStatus(goal.isDone)}>
+                                    {goal.isDone ? (lang === 0 ? 'Готово' : 'Done') : (lang === 0 ? 'Шаг' : 'Step')}
+                                </span>
+                                {hasAim && (
+                                    <span style={s.subGoalMetaChip}>
+                                        <FaBullseye size={9} />
+                                        {lang === 0 ? 'Цель' : 'Aim'}
+                                    </span>
+                                )}
+                                {hasResult && (
+                                    <span style={s.subGoalMetaChip}>
+                                        <FaAward size={9} />
+                                        {lang === 0 ? 'Результат' : 'Result'}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -679,10 +823,10 @@ const SubGoalCard = ({
                 <div style={s.subGoalActions}>
                     {editingFields[`${index}-text`] ? (
                         <>
-                            <div onClick={() => onSaveField(index, 'text')} style={s.actionBtn}>
+                            <div onClick={(e) => { e.stopPropagation(); onSaveField(index, 'text'); }} style={s.actionBtn}>
                                 <FaSave size={12} color={task.color} />
                             </div>
-                            <div onClick={() => onCancelEdit(index, 'text')} style={{ ...s.actionBtn, color: sub }}>
+                            <div onClick={(e) => { e.stopPropagation(); onCancelEdit(index, 'text'); }} style={{ ...s.actionBtn, color: sub }}>
                                 <FaTimes size={12} />
                             </div>
                         </>
@@ -728,7 +872,7 @@ const SubGoalCard = ({
                             <div style={s.fieldHeader}>
                                 <FaBullseye size={14} color={task.color} />
                                 <span style={s.fieldTitle}>
-                                    {lang === 0 ? 'Цель подзадачи' : 'Sub-goal Aim'}
+                                    {lang === 0 ? 'Цель / заметка' : 'Aim / note'}
                                 </span>
                             </div>
                             {editingFields[`${index}-aim`] ? (
@@ -770,51 +914,88 @@ const SubGoalCard = ({
                             )}
                         </div>
 
-                        {goal.isDone && (
-                            <div style={s.expandedField}>
-                                <div style={s.fieldHeader}>
-                                    <FaAward size={14} color="#2ed177" />
-                                    <span style={{ ...s.fieldTitle, color: '#2ed177' }}>
-                                        {lang === 0 ? 'Результат' : 'Result'}
-                                    </span>
-                                </div>
-                                {editingFields[`${index}-result`] ? (
-                                    <div style={s.editFieldRow}>
-                                        <textarea
-                                            value={editingSubGoalText}
-                                            onChange={(e) => onEditingTextChange(e.target.value)}
-                                            onKeyDown={(e) => onKeyDown(e, index, 'result')}
-                                            style={{ ...s.fieldEditInput, minHeight: '60px' }}
-                                            placeholder={lang === 0 ? 'Что было достигнуто?' : 'What was achieved?'}
-                                            autoFocus
-                                        />
-                                        <div onClick={() => onSaveField(index, 'result')} style={s.saveFieldBtn}>
-                                            <FaSave size={12} />
-                                        </div>
-                                        <div onClick={() => onCancelEdit(index, 'result')} style={s.cancelFieldBtn}>
-                                            <FaTimes size={12} />
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div style={s.fieldDisplay}>
-                                        {goal.result ? (
-                                            <p style={s.fieldValue}>{goal.result}</p>
-                                        ) : (
-                                            <p style={s.fieldPlaceholder}>
-                                                {lang === 0 ? 'Результат не указан' : 'No result specified'}
-                                            </p>
-                                        )}
-                                        <motion.div
-                                            whileTap={{ scale: 0.9 }}
-                                            onClick={() => onEditField(index, 'result', goal.result || '')}
-                                            style={s.editFieldBtn}
-                                        >
-                                            <FaPen size={12} />
-                                        </motion.div>
-                                    </div>
-                                )}
+                        <div style={s.expandedField}>
+                            <div style={s.fieldHeader}>
+                                <FaAward size={14} color="#2ed177" />
+                                <span style={{ ...s.fieldTitle, color: goal.isDone ? '#2ed177' : sub }}>
+                                    {lang === 0 ? 'Результат' : 'Result'}
+                                </span>
                             </div>
-                        )}
+                            {editingFields[`${index}-result`] ? (
+                                <div style={s.editFieldRow}>
+                                    <textarea
+                                        value={editingSubGoalText}
+                                        onChange={(e) => onEditingTextChange(e.target.value)}
+                                        onKeyDown={(e) => onKeyDown(e, index, 'result')}
+                                        style={{ ...s.fieldEditInput, minHeight: '60px' }}
+                                        placeholder={lang === 0 ? 'Что было достигнуто?' : 'What was achieved?'}
+                                        autoFocus
+                                    />
+                                    <div onClick={() => onSaveField(index, 'result')} style={s.saveFieldBtn}>
+                                        <FaSave size={12} />
+                                    </div>
+                                    <div onClick={() => onCancelEdit(index, 'result')} style={s.cancelFieldBtn}>
+                                        <FaTimes size={12} />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div style={s.fieldDisplay}>
+                                    {goal.result ? (
+                                        <p style={s.fieldValue}>{goal.result}</p>
+                                    ) : (
+                                        <p style={s.fieldPlaceholder}>
+                                            {lang === 0 ? 'Результат не указан' : 'No result specified'}
+                                        </p>
+                                    )}
+                                    <motion.div
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => onEditField(index, 'result', goal.result || '')}
+                                        style={s.editFieldBtn}
+                                    >
+                                        <FaPen size={12} />
+                                    </motion.div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={s.subGoalFooterActions}>
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.96 }}
+                                onClick={() => onToggleComplete(index)}
+                                style={s.subGoalFooterBtn(goal.isDone ? 'neutral' : 'done')}
+                            >
+                                <FaCheck size={10} />
+                                {goal.isDone ? (lang === 0 ? 'Вернуть' : 'Reopen') : (lang === 0 ? 'Готово' : 'Done')}
+                            </motion.button>
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: canMoveUp ? 0.96 : 1 }}
+                                disabled={!canMoveUp}
+                                onClick={() => onMove(-1)}
+                                style={s.subGoalIconBtn(!canMoveUp)}
+                            >
+                                <FaChevronUp size={10} />
+                            </motion.button>
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: canMoveDown ? 0.96 : 1 }}
+                                disabled={!canMoveDown}
+                                onClick={() => onMove(1)}
+                                style={s.subGoalIconBtn(!canMoveDown)}
+                            >
+                                <FaChevronDown size={10} />
+                            </motion.button>
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.96 }}
+                                onClick={onDelete}
+                                style={s.subGoalFooterBtn('danger')}
+                            >
+                                <FaTrash size={10} />
+                                {lang === 0 ? 'Удалить' : 'Delete'}
+                            </motion.button>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -823,26 +1004,131 @@ const SubGoalCard = ({
 };
 
 // --- SUB-COMPONENTS ---
-const Badge = ({ icon, label, value, color, theme }) => (
-    <div style={{...styles(theme).modernBadge, backgroundColor: `${color}15`, border: `1px solid ${color}30`}}>
-        <div style={styles(theme).badgeLabel}>{icon} <span style={{marginLeft: 6}}>{label}</span></div>
-        <div style={{...styles(theme).badgeValue, color: color}}>{value}</div>
-    </div>
-);
+const normalizeScaleIndex = (value, length, fallback = 0) => {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return fallback;
+    return Math.max(0, Math.min(length - 1, numericValue));
+};
 
-const DateBox = ({ label, value, icon, isEditing, theme, onChange, emptyLabel }) => {
-    const s = styles(theme);
+const ParameterScaleCard = ({ icon, label, value, labels, colors, theme, accentColor, onChange, onHide }) => {
+    const s = styles(theme, null, accentColor);
+    const activeIndex = normalizeScaleIndex(value, labels.length, 0);
+    const activeColor = colors[activeIndex] || accentColor;
     return (
-        <div style={s.dateItem}>
-            <div style={{ color: Colors.get('subText', theme), marginRight: 10 }}>{icon}</div>
-            <div style={{display:'flex', flexDirection:'column', flex: 1}}>
+        <div style={s.parameterCard}>
+            <div style={s.parameterHead}>
+                <span style={{ ...s.parameterIcon, color: activeColor }}>{icon}</span>
+                <span style={s.parameterLabel}>{label}</span>
+                <span style={{ ...s.parameterValue, color: activeColor }}>{labels[activeIndex]}</span>
+                <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.86 }}
+                    onClick={onHide}
+                    style={s.hideParamBtn}
+                    aria-label="Скрыть параметр"
+                >
+                    <FaEyeSlash size={11} />
+                </motion.button>
+            </div>
+            <div style={s.scaleTrack}>
+                <div style={s.scaleFill(activeIndex, labels.length, activeColor)} />
+                {labels.map((_, index) => {
+                    const color = colors[index] || activeColor;
+                    const active = index <= activeIndex;
+                    return (
+                        <motion.button
+                            key={index}
+                            type="button"
+                            whileTap={{ scale: 0.86 }}
+                            onClick={() => onChange(index)}
+                            style={s.scaleNode(active, index === activeIndex, color)}
+                            aria-label={labels[index]}
+                        />
+                    );
+                })}
+            </div>
+            <div style={s.scaleDots}>
+                {labels.map((item, index) => (
+                    <span key={`${item}-${index}`} style={s.scaleDot(index === activeIndex, colors[index] || activeColor)}>
+                        {index === activeIndex ? '●' : '·'}
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const DateParameterCard = ({ icon, label, value, emptyLabel, clearable, theme, accentColor, onChange, onHide }) => {
+    const s = styles(theme, null, accentColor);
+    const inputRef = useRef(null);
+    const displayValue = formatDateForDisplay(value, emptyLabel || '—');
+    const openPicker = () => {
+        if (typeof inputRef.current?.showPicker === 'function') inputRef.current.showPicker();
+        else inputRef.current?.focus();
+    };
+
+    return (
+        <motion.div whileTap={{ scale: 0.99 }} onClick={openPicker} style={{ ...s.parameterCard, ...s.dateParameterCard }}>
+            <div style={s.parameterHead}>
+                <span style={{ ...s.parameterIcon, color: accentColor }}>{icon}</span>
+                <span style={s.parameterLabel}>{label}</span>
+                <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.86 }}
+                    onClick={(e) => { e.stopPropagation(); onHide(); }}
+                    style={s.hideParamBtn}
+                    aria-label="Скрыть параметр"
+                >
+                    <FaEyeSlash size={11} />
+                </motion.button>
+            </div>
+            <div style={s.dateParamBody}>
+                <div style={s.dateParamIcon}>{icon}</div>
+                <span style={s.dateParamValue(value)}>{displayValue}</span>
+                {clearable && value && (
+                    <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.86 }}
+                        onClick={(e) => { e.stopPropagation(); onChange(''); }}
+                        style={s.dateParamClear}
+                        aria-label="Очистить дату"
+                    >
+                        <FaTimes size={10} />
+                    </motion.button>
+                )}
+                <input
+                    ref={inputRef}
+                    type="date"
+                    value={value || ''}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => onChange(e.target.value)}
+                    style={s.dateParamInput}
+                />
+            </div>
+        </motion.div>
+    );
+};
+
+const DateBox = ({ label, value, icon, isEditing, theme, onChange, emptyLabel, clearable }) => {
+    const s = styles(theme);
+    const inputRef = useRef(null);
+    const displayValue = formatDateForDisplay(value, emptyLabel || '-');
+    const openPicker = () => {
+        if (typeof inputRef.current?.showPicker === 'function') inputRef.current.showPicker();
+        else inputRef.current?.focus();
+    };
+    return (
+        <div style={s.dateItem} onClick={isEditing ? openPicker : undefined}>
+            <div style={s.dateIcon}>{icon}</div>
+            <div style={{display:'flex', flexDirection:'column', flex: 1, minWidth: 0}}>
                 <span style={s.label}>{label}</span>
                 {isEditing ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <input type="date" style={s.dateInput} value={value || ''} onChange={(e) => onChange(e.target.value)} />
-                        {value && (
-                            <motion.div whileTap={{ scale: 0.9 }} onClick={() => onChange('')}
-                                style={{ cursor: 'pointer', color: Colors.get('subText', theme), flexShrink: 0 }}>
+                    <div style={s.dateInputWrap}>
+                        <span style={s.dateDisplay(value)}>{displayValue}</span>
+                        <input ref={inputRef} type="date" style={s.dateInput} value={value || ''} onChange={(e) => onChange(e.target.value)} />
+                        {clearable && value && (
+                            <motion.div whileTap={{ scale: 0.9 }} onClick={(event) => { event.stopPropagation(); onChange(''); }}
+                                style={s.clearDateBtn}>
                                 <FaTimes size={12} />
                             </motion.div>
                         )}
@@ -855,6 +1141,13 @@ const DateBox = ({ label, value, icon, isEditing, theme, onChange, emptyLabel })
     );
 };
 
+function formatDateForDisplay(value, fallback) {
+    if (!value) return fallback;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return value;
+    return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 // --- STYLES ---
 const styles = (theme, fSize, rawAccentColor) => {
     const accent = buildTodoAccent(rawAccentColor || AppData.todoAccentColor || '#8FA6C8');
@@ -866,19 +1159,18 @@ const styles = (theme, fSize, rawAccentColor) => {
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
     const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
-    const done = Colors.get('done', theme);
 
     return {
         pageRoot: {
             position: 'fixed',
             inset: 0,
-            zIndex: 1001,
-            paddingBottom: '100px',
+            zIndex: 1100,
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 148px)',
             overflowY: 'auto',
             background: isLight
-                ? `linear-gradient(180deg, ${accent.faint} 0%, ${bg} 42%)`
-                : `linear-gradient(180deg, rgba(${accent.rgbText},0.11) 0%, ${bg} 44%)`,
-            fontFamily: 'Segoe UI, sans-serif',
+                ? `radial-gradient(900px 450px at 80% -10%, rgba(${accent.rgbText},0.1), transparent 58%), #F4F5F7`
+                : `radial-gradient(1000px 500px at 80% -10%, rgba(${accent.rgbText},0.07), transparent 55%), #0E1013`,
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             color: text
         },
         warningOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
@@ -892,8 +1184,39 @@ const styles = (theme, fSize, rawAccentColor) => {
         skipBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: border, color: text, fontWeight: 'bold' },
         saveResultBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: accentColor, color: '#fff', fontWeight: 'bold' },
 
-        headerWrapper: { margin: '12px 18px 0', padding: '16px', borderRadius: 26, background: `radial-gradient(240px 170px at 100% 0%, ${accent.soft} 0%, transparent 68%), ${panel}`, border: `1px solid ${border}`, backdropFilter: 'blur(18px)', boxShadow: isLight ? '0 18px 50px rgba(15,23,42,0.08)' : '0 22px 65px rgba(0,0,0,0.36)' },
-        fixedHeader: { display: 'flex', alignItems: 'center', padding: '16px 0', gap: 14 },
+        topBar: { display: 'grid', gridTemplateColumns: '44px minmax(0, 1fr) 44px', alignItems: 'center', gap: 10, padding: `${HEADER_TOP_PADDING} 18px 0`, minHeight: 54 },
+        roundTopBtn: {
+            width: 40,
+            height: 40,
+            borderRadius: 999,
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.1)' : 'rgba(255,255,255,0.12)'}`,
+            background: panelStrong,
+            color: text,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            WebkitTapHighlightColor: 'transparent',
+            outline: 'none',
+            backdropFilter: 'blur(18px)',
+            boxShadow: isLight ? '0 10px 24px rgba(15,23,42,0.08)' : '0 14px 28px rgba(0,0,0,0.28)'
+        },
+        topSpacer: { width: 40, height: 40 },
+        colorDotInline: {
+            width: 8,
+            height: 8,
+            borderRadius: 999,
+            background: accentColor,
+            boxShadow: `0 0 10px ${accentColor}`,
+            flexShrink: 0
+        },
+        topTitleBlock: { minWidth: 0, textAlign: 'center' },
+        topEyebrow: { color: accentColor, fontSize: 10, fontWeight: 950, letterSpacing: 1.6 },
+        topTitle: { color: sub, fontSize: 12, fontWeight: 800, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+
+        headerWrapper: { margin: '8px 18px 0', padding: '14px 15px 13px', borderRadius: 22, background: `radial-gradient(220px 150px at 100% 0%, ${accent.soft} 0%, transparent 68%), ${panel}`, border: `1px solid ${border}`, backdropFilter: 'blur(18px)', boxShadow: isLight ? '0 16px 40px rgba(15,23,42,0.08)' : '0 18px 54px rgba(0,0,0,0.32)' },
+        heroTopLine: { display: 'none' },
+        fixedHeader: { display: 'flex', alignItems: 'center', padding: 0, gap: 13, textAlign: 'left' },
         headerLeft: { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 },
         mainCheckbox: (checked) => ({
             width: 32, height: 32, borderRadius: 8,
@@ -902,17 +1225,81 @@ const styles = (theme, fSize, rawAccentColor) => {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s ease'
         }),
-        iconBadge: { width: 56, height: 56, borderRadius: 18, fontSize: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: accent.soft, border: `1px solid ${accent.ring}`, flexShrink: 0 },
-        headerCenter: { flex: 1, display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 },
+        iconBadge: (tone = accent) => ({ width: 54, height: 54, borderRadius: 18, fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: tone.soft, border: `1px solid ${tone.ring}`, color: tone.hue, flexShrink: 0 }),
+        headerCenter: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 7, minWidth: 0 },
         headerRight: { display: 'flex', width:'100%', alignItems: 'center', flexShrink: 0 },
         title: { fontSize: 24, fontWeight: 950, color: text, margin: 0, width:"100%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: 0 },
-        titleInput: { width: '100%', border: 'none', background: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.05)', fontSize: '24px', fontWeight: '900', color: text, outline: 'none', borderRadius: '14px', padding: '8px 12px', boxSizing: 'border-box' },
-        statusBadge: (isDone) => ({
-            padding: '8px 16px', borderRadius: 12, fontSize: 10, fontWeight: 900, border: 'none',
-            backgroundColor: isDone ? done : panel, color: isDone ? '#fff' : sub,
-            width: 'fit-content', marginBottom: 8, cursor: 'pointer', userSelect: 'none'
+        titleInput: { width: '100%', border: 'none', background: 'transparent', fontSize: '21px', lineHeight: 1.12, fontWeight: '950', color: text, outline: 'none', borderRadius: '12px', padding: '2px 0', boxSizing: 'border-box', textAlign: 'left', letterSpacing: 0 },
+        categoryPill: (tone = accent) => ({ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, maxWidth: '100%', padding: '5px 9px', borderRadius: 999, background: tone.soft, border: `1px solid ${tone.ring}`, color: tone.hue, fontSize: 10.5, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }),
+        completeBtn: (isDone) => ({ width: '100%', minHeight: 46, padding: '12px 14px', borderRadius: 14, border: `1px solid ${isDone ? border : 'rgba(46,209,119,0.28)'}`, backgroundColor: isDone ? panel : 'rgba(46,209,119,0.13)', color: isDone ? sub : '#2ed177', fontSize: 13, fontWeight: 900, textAlign: 'center', cursor: 'pointer', marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' }),
+        deleteBtn: { width: '100%', minHeight: 44, padding: '12px 14px', borderRadius: 14, border: '1px solid rgba(244,67,54,0.16)', backgroundColor: 'rgba(244,67,54,0.06)', color: '#E57373', fontSize: 13, fontWeight: 850, textAlign: 'center', cursor: 'pointer', marginTop: 14, marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' },
+        editActionBar: {
+            position: 'fixed',
+            left: '50%',
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)',
+            transform: 'translateX(-50%)',
+            width: 'calc(100% - 36px)',
+            maxWidth: 660,
+            minHeight: 66,
+            display: 'grid',
+            gridTemplateColumns: '0.85fr 1fr 1.25fr',
+            gap: 9,
+            padding: 10,
+            borderRadius: 22,
+            background: isLight ? 'rgba(255,255,255,0.88)' : 'rgba(14,16,19,0.88)',
+            border: `1px solid ${border}`,
+            boxShadow: isLight ? '0 16px 36px rgba(15,23,42,0.14)' : '0 18px 46px rgba(0,0,0,0.42)',
+            backdropFilter: 'blur(22px) saturate(150%)',
+            boxSizing: 'border-box',
+            zIndex: 1200
+        },
+        editBackBtn: {
+            minWidth: 0,
+            border: `1px solid ${border}`,
+            background: panel,
+            color: text,
+            borderRadius: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+            fontSize: 12,
+            fontWeight: 900,
+            fontFamily: 'inherit',
+            cursor: 'pointer'
+        },
+        editCancelBtn: (enabled) => ({
+            minWidth: 0,
+            border: `1px solid ${enabled ? 'rgba(244,67,54,0.24)' : border}`,
+            background: enabled ? 'rgba(244,67,54,0.08)' : panel,
+            color: enabled ? '#E57373' : sub,
+            borderRadius: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 900,
+            fontFamily: 'inherit',
+            cursor: enabled ? 'pointer' : 'default',
+            opacity: enabled ? 1 : 0.58
         }),
-        deleteBtn: { width: '100%', padding: '16px', borderRadius: 16, border: 'none', backgroundColor: 'rgba(244,67,54,0.10)', color: '#F44336', fontSize: 17, fontWeight: 700, textAlign: 'center', cursor: 'pointer', marginTop: 24, marginBottom: 8 },
+        editSaveBtn: (enabled) => ({
+            minWidth: 0,
+            border: `1px solid ${enabled ? accent.ring : border}`,
+            background: enabled ? accent.soft : panel,
+            color: enabled ? accentColor : sub,
+            borderRadius: 16,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 7,
+            fontSize: 12,
+            fontWeight: 950,
+            fontFamily: 'inherit',
+            cursor: enabled ? 'pointer' : 'default',
+            opacity: enabled ? 1 : 0.62
+        }),
 
         resultDisplayCard: { backgroundColor: `${accentColor}10`, border: `1px solid ${accentColor}30`, borderRadius: 16, padding: '16px', marginTop: '16px' },
         resultDisplayHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 },
@@ -920,29 +1307,52 @@ const styles = (theme, fSize, rawAccentColor) => {
         editResultBtn: { width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: sub },
         resultDisplayText: { fontSize: '14px', color: text, lineHeight: 1.5, margin: 0, whiteSpace: 'pre-wrap' },
 
-        progressContainer: { width: '100%' },
-        progressText: { fontSize: 11, fontWeight: 800, color: accentColor, textAlign: 'center' },
+        progressContainer: { width: '100%', marginTop: 12 },
+        progressText: { display: 'block', fontSize: 11, fontWeight: 850, color: accentColor, textAlign: 'center' },
         progressBarBg: { width: '100%', height: 6, backgroundColor: border, borderRadius: 10, marginTop: 4, overflow: 'hidden' },
         progressBarFill: { height: '100%', backgroundColor: accentColor, borderRadius: 10 },
 
-        bodyPadding: { padding: '18px 18px 24px' },
-        gridTwo: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 12, marginBottom: 24 },
-        modernBadge: { borderRadius: 20, padding: 15, display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: panelStrong },
-        badgeLabel: { display: 'flex', alignItems: 'center', fontSize: 10, color: sub, textTransform: 'uppercase', letterSpacing: 1 },
-        badgeValue: { fontSize: 14, fontWeight: 800, marginTop: 4 },
+        bodyPadding: { padding: '16px 18px calc(env(safe-area-inset-bottom, 0px) + 28px)' },
+        parameterSection: { marginBottom: 14 },
+        parameterSectionTitle: { display: 'flex', alignItems: 'center', gap: 8, color: sub, fontSize: 10, fontWeight: 950, letterSpacing: '0.14em', margin: '0 0 9px 4px', textTransform: 'uppercase' },
+        parameterCards: { display: 'flex', flexDirection: 'column', gap: 10 },
+        parameterCard: { borderRadius: 20, padding: 16, background: `linear-gradient(145deg, ${panelStrong}, ${panel})`, border: `1px solid ${border}`, boxShadow: isLight ? '0 14px 32px rgba(15,23,42,0.07)' : '0 18px 42px rgba(0,0,0,0.24)', boxSizing: 'border-box', backdropFilter: 'blur(18px)' },
+        parameterHead: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 },
+        parameterIcon: { display: 'flex', flexShrink: 0 },
+        parameterLabel: { color: text, fontSize: 14, fontWeight: 850, flex: 1 },
+        parameterValue: { fontSize: 13, fontWeight: 950, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
+        hideParamBtn: { width: 28, height: 28, borderRadius: 10, border: `1px solid ${border}`, background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.055)', color: sub, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer', flexShrink: 0 },
+        scaleTrack: { position: 'relative', height: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px', background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.055)', borderRadius: 999, border: `1px solid ${border}` },
+        scaleFill: (value, total, color) => ({ position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)', height: 4, width: value === 0 || total <= 1 ? 0 : `calc(${(value / (total - 1)) * 100}% - 8px)`, minWidth: 0, background: `linear-gradient(90deg, ${color}66, ${color})`, borderRadius: 999, transition: 'all 0.25s ease' }),
+        scaleNode: (active, current, color) => ({ position: 'relative', zIndex: 2, width: current ? 22 : 14, height: current ? 22 : 14, borderRadius: 999, padding: 0, background: active ? color : panelStrong, border: `2px solid ${active ? color : border}`, boxShadow: current ? `0 0 16px ${color}88` : 'none', cursor: 'pointer', transition: 'all 0.2s ease', flexShrink: 0 }),
+        scaleDots: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, padding: '0 4px' },
+        scaleDot: (active, color) => ({ color: active ? color : sub, fontSize: 9, fontWeight: 850, flex: 1, textAlign: 'center', lineHeight: 1 }),
+        parameterRestoreRow: { display: 'flex', flexWrap: 'wrap', gap: 8 },
+        restoreParamChip: { display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 12px', borderRadius: 12, background: accent.soft, border: `1px dashed ${accent.ring}`, color: accentColor, fontSize: 12, fontWeight: 850, cursor: 'pointer', fontFamily: 'inherit' },
+        dateParamGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 },
+        dateParameterCard: { padding: 14, cursor: 'pointer' },
+        dateParamBody: { position: 'relative', display: 'flex', alignItems: 'center', gap: 10, minHeight: 42, padding: '9px 10px', borderRadius: 14, background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)', border: `1px solid ${border}`, overflow: 'hidden' },
+        dateParamIcon: { width: 30, height: 30, borderRadius: 10, color: accentColor, background: accent.soft, border: `1px solid ${accent.ring}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+        dateParamValue: (hasValue) => ({ color: hasValue ? text : sub, fontSize: 15, fontWeight: 950, minWidth: 0, flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }),
+        dateParamClear: { width: 26, height: 26, borderRadius: 9, border: `1px solid ${border}`, background: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.06)', color: sub, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer', flexShrink: 0, position: 'relative', zIndex: 2 },
+        dateParamInput: { position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', pointerEvents: 'auto', border: 'none', background: 'transparent', cursor: 'pointer', zIndex: 1 },
 
-        dateRow: { display: 'flex', gap: 12, marginBottom: 24 },
-        dateItem: { flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', backgroundColor: panel, padding: 12, borderRadius: 16, border: `1px solid ${border}` },
-        dateInput: { background: 'transparent', border: 'none', color: text, fontSize: 16, width: '100%', outline: 'none' },
-        label: { fontSize: 9, color: sub, textTransform: 'uppercase' },
+        dateRow: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginBottom: 22 },
+        dateItem: { position: 'relative', flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', backgroundColor: panel, padding: '12px', minHeight: 66, borderRadius: 16, border: `1px solid ${border}`, overflow: 'hidden', cursor: 'pointer', boxSizing: 'border-box' },
+        dateIcon: { width: 30, height: 30, borderRadius: 10, color: accentColor, background: accent.soft, display: 'flex', alignItems: 'center', justifyContent: 'center', marginRight: 10, flexShrink: 0 },
+        dateInputWrap: { position: 'relative', display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, width: '100%' },
+        dateDisplay: (hasValue) => ({ fontSize: 15, fontWeight: 900, color: hasValue ? text : sub, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flex: 1 }),
+        dateInput: { position: 'absolute', inset: 0, opacity: 0, width: '100%', pointerEvents: 'none' },
+        clearDateBtn: { cursor: 'pointer', color: sub, flexShrink: 0, position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.06)' },
+        label: { fontSize: 9, color: sub, textTransform: 'uppercase', fontWeight: 850, letterSpacing: 0.4 },
         dateValue: { fontSize: 13, fontWeight: 700, color: text },
 
-        sectionHeader: { display: 'flex', alignItems: 'center', fontSize: 17, fontWeight: 800, color: text, marginBottom: 15 },
+        sectionHeader: { display: 'flex', alignItems: 'center', fontSize: 17, fontWeight: 850, color: text, marginBottom: 12 },
         counterBadge: { marginLeft: 'auto', fontSize: 11, backgroundColor: accent.soft, border: `1px solid ${accent.ring}`, padding: '4px 10px', borderRadius: 999, color: accentColor },
         goalsContainer: {},
 
-        subGoalCard: { backgroundColor: panelStrong, borderRadius: 18, overflow: 'hidden', transition: 'all 0.2s ease', backdropFilter: 'blur(18px)' },
-        subGoalMainRow: { display: 'flex', alignItems: 'center', padding: '12px 14px', gap: 10 },
+        subGoalCard: { backgroundColor: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(255,255,255,0.035)', borderRadius: 16, overflow: 'hidden', transition: 'all 0.2s ease', backdropFilter: 'blur(18px)' },
+        subGoalMainRow: { display: 'flex', alignItems: 'center', padding: '11px 12px', gap: 10 },
         checkbox: (checked) => ({
             width: 22, height: 22, borderRadius: 6,
             border: `2px solid ${checked ? accentColor : border}`,
@@ -951,13 +1361,17 @@ const styles = (theme, fSize, rawAccentColor) => {
             flexShrink: 0, cursor: 'pointer', transition: 'all 0.2s ease'
         }),
         subGoalContent: { flex: 1, minWidth: 0 },
-        subGoalText: (checked) => ({ fontSize: 15, color: text, opacity: checked ? 0.6 : 1, textDecoration: checked ? 'line-through' : 'none', cursor: 'pointer', wordBreak: 'break-word', lineHeight: 1.4 }),
-        subGoalActions: { display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 },
-        expandBtn: { width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, cursor: 'pointer', color: sub, transition: 'all 0.2s ease' },
-        actionBtn: { width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, cursor: 'pointer', color: sub, transition: 'all 0.2s ease' },
+        subGoalTextWrap: { display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 },
+        subGoalText: (checked) => ({ fontSize: 15, color: text, opacity: checked ? 0.62 : 1, textDecoration: checked ? 'line-through' : 'none', cursor: 'default', wordBreak: 'break-word', lineHeight: 1.35, fontWeight: 780 }),
+        subGoalMetaRow: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 5 },
+        subGoalStatus: (checked) => ({ display: 'inline-flex', alignItems: 'center', minHeight: 18, padding: '2px 7px', borderRadius: 999, background: checked ? 'rgba(46,209,119,0.13)' : accent.soft, border: `1px solid ${checked ? 'rgba(46,209,119,0.24)' : accent.ring}`, color: checked ? '#2ed177' : accentColor, fontSize: 9, fontWeight: 900, lineHeight: 1 }),
+        subGoalMetaChip: { display: 'inline-flex', alignItems: 'center', gap: 4, minHeight: 18, padding: '2px 7px', borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)', border: `1px solid ${border}`, color: sub, fontSize: 9, fontWeight: 850, lineHeight: 1 },
+        subGoalActions: { display: 'flex', alignItems: 'center', gap: 2, flexShrink: 0 },
+        expandBtn: { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, cursor: 'pointer', color: sub, transition: 'all 0.2s ease', background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)' },
+        actionBtn: { width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 10, cursor: 'pointer', color: sub, transition: 'all 0.2s ease', background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)' },
 
         expandedContent: { padding: '0 14px 16px 14px', borderTop: `1px solid ${border}30` },
-        expandedField: { marginBottom: 16 },
+        expandedField: { marginBottom: 12 },
         fieldHeader: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 },
         fieldTitle: { fontSize: 12, fontWeight: '700', color: sub, textTransform: 'uppercase' },
         fieldDisplay: { display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px', backgroundColor: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)', borderRadius: 12, minHeight: '40px' },
@@ -969,12 +1383,35 @@ const styles = (theme, fSize, rawAccentColor) => {
         saveFieldBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 },
         cancelFieldBtn: { width: 28, height: 28, borderRadius: 8, backgroundColor: border, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 },
         inlineEditInput: { flex: 1, background: 'transparent', border: `1px solid ${border}`, borderRadius: 8, padding: '6px 10px', color: text, fontSize: 16, outline: 'none', fontFamily: 'inherit', minWidth: 0 },
+        subGoalFooterActions: { display: 'flex', alignItems: 'center', gap: 7, marginTop: 2 },
+        subGoalFooterBtn: (type) => {
+            const isDanger = type === 'danger';
+            const isDoneAction = type === 'done';
+            return {
+                minHeight: 32,
+                borderRadius: 11,
+                border: `1px solid ${isDanger ? 'rgba(244,67,54,0.18)' : isDoneAction ? 'rgba(46,209,119,0.24)' : border}`,
+                background: isDanger ? 'rgba(244,67,54,0.07)' : isDoneAction ? 'rgba(46,209,119,0.12)' : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)'),
+                color: isDanger ? '#E57373' : isDoneAction ? '#2ed177' : sub,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                padding: '0 10px',
+                fontSize: 11,
+                fontWeight: 900,
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                flex: isDanger ? 0 : 1
+            };
+        },
+        subGoalIconBtn: (disabled) => ({ width: 32, height: 32, borderRadius: 11, border: `1px solid ${border}`, background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)', color: sub, opacity: disabled ? 0.36 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: disabled ? 'default' : 'pointer', fontFamily: 'inherit' }),
 
-        addSubRow: { display: 'flex', alignItems: 'center', padding: '16px 15px', border: `1px dashed ${accent.ring}`, borderRadius: 18, marginTop: 8, background: accent.faint },
+        addSubRow: { display: 'flex', alignItems: 'center', padding: '13px 14px', border: `1px dashed ${accent.ring}`, borderRadius: 16, marginTop: 8, background: accent.faint },
         addSubInput: { flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: text, outline: 'none', marginLeft: '10px' },
         addSubBtn: { background: accentColor, color: '#fff', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 'bold', marginLeft: 10, flexShrink: 0 },
         description: { fontSize: 15, lineHeight: 1.6, color: text, margin: 0, opacity: 0.9 },
-        descriptionInput: { width: '100%', padding: '12px', borderRadius: '14px', border: 'none', backgroundColor: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.05)', color: text, fontSize: '16px', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
+        descriptionInput: { width: '100%', padding: '12px', borderRadius: '14px', border: `1px solid ${border}`, backgroundColor: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)', color: text, fontSize: '16px', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
 
         pickerCard: { backgroundColor: panel, borderRadius: 20, padding: '15px', marginBottom: 24, border: `1px solid ${border}`, backdropFilter: 'blur(18px)' },
         pickerRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },

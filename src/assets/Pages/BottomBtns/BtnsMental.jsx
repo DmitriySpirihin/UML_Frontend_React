@@ -14,6 +14,7 @@ import { saveData } from '../../StaticClasses/SaveHelper';
 import { playEffects } from '../../StaticClasses/Effects';
 
 const switchSound = new Audio('Audio/Click.wav');
+const MENTAL_ACCENT = '#8A7CD6';
 
 const BtnsMental = () => {
     const [theme, setthemeState] = useState('dark');
@@ -83,11 +84,19 @@ const NavButton = ({ id, current, icon, onClick, theme }) => {
             style={navBtnWrapper}
         >
             <div style={{
-                color: isActive ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
-                fontSize: '26px',
+                width: 46,
+                height: 46,
+                borderRadius: 17,
+                color: isActive ? MENTAL_ACCENT : Colors.get('icons', theme),
+                background: isActive ? 'rgba(138,124,214,0.14)' : 'transparent',
+                border: `1px solid ${isActive ? 'rgba(138,124,214,0.28)' : 'transparent'}`,
+                fontSize: '25px',
                 display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 transition: 'color 0.3s ease',
-                filter: isActive ? `drop-shadow(0 0 8px ${Colors.get('iconsHighlited', theme)}66)` : 'none'
+                filter: isActive ? `drop-shadow(0 0 10px rgba(138,124,214,0.32))` : 'none',
+                boxSizing: 'border-box'
             }}>
                 {icon}
             </div>
@@ -121,27 +130,36 @@ async function onBack(page, addPanel) {
 // Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '7vw',
-    left: '15vw', // Narrower because there are fewer buttons
-    width: '70vw',
-    height: '65px',
-    borderRadius: '25px',
+    bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 'min(70vw, 420px)',
+    height: '74px',
+    borderRadius: '30px',
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backdropFilter: 'blur(6px)',
+    backdropFilter: 'blur(18px)',
+    WebkitBackdropFilter: 'blur(18px)',
     zIndex: 1000,
+    boxSizing: 'border-box',
+    padding: '0 28px'
 });
 
 const glassOverlay = (theme) => ({
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: Colors.get('bottomPanel', theme),
-    opacity: 0.85,
+    background: theme === 'dark'
+        ? 'linear-gradient(145deg, rgba(20,23,27,0.9), rgba(15,18,21,0.84))'
+        : 'rgba(255,255,255,0.86)',
+    opacity: 1,
     backdropFilter: 'blur(15px)',
     WebkitBackdropFilter: 'blur(15px)',
-    border: `1px solid ${Colors.get('border', theme)}`,
-    borderRadius: '25px',
+    border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.075)' : 'rgba(15,23,42,0.08)'}`,
+    borderRadius: '30px',
+    boxShadow: theme === 'dark'
+        ? '0 1px 0 rgba(255,255,255,0.045) inset, 0 18px 42px -32px rgba(0,0,0,0.86)'
+        : '0 14px 32px -26px rgba(0,0,0,0.2)',
     zIndex: -1,
 });
 
@@ -158,12 +176,12 @@ const navBtnWrapper = {
 
 const activeIndicator = (theme) => ({
     position: 'absolute',
-    bottom: '6px',
-    width: '4px',
-    height: '4px',
+    bottom: '7px',
+    width: '5px',
+    height: '5px',
     borderRadius: '50%',
-    backgroundColor: Colors.get('iconsHighlited', theme),
-    boxShadow: `0 0 8px ${Colors.get('iconsHighlited', theme)}`
+    backgroundColor: MENTAL_ACCENT,
+    boxShadow: `0 0 10px rgba(138,124,214,0.75)`
 });
 
 export default BtnsMental;

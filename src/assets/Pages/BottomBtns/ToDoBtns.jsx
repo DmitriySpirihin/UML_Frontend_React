@@ -51,7 +51,8 @@ const BtnsToDo = () => {
   }, [page, addPanel]);
 
   return (
-    <div style={containerStyle(theme, accent)}>
+    <div style={containerStyle(theme)}>
+      <div style={glassOverlay(theme)} />
       <NavButton
         id={0}
         current={currentBtn}
@@ -87,9 +88,9 @@ const BtnsToDo = () => {
           setPage('ToDoNew');
           playEffects(switchSound);
         }}
-        style={addButtonStyle(theme, accent, page !== 'ToDoMain')}
+        style={addButtonStyle(theme, accent, page !== 'ToDoMain', currentBtn === 2 && page === 'ToDoMain')}
       >
-        <Add style={{ fontSize: 34 }} />
+        <Add style={{ fontSize: 32 }} />
       </motion.button>
 
       <NavButton
@@ -149,31 +150,41 @@ const onBack = async (page, addPanel) => {
   playEffects(switchSound);
 };
 
-const containerStyle = (theme, accent) => {
-  const isLight = theme === 'light' || theme === 'speciallight';
-  return {
-    position: 'fixed',
-    left: '50%',
-    bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
-    transform: 'translateX(-50%)',
-    width: 'calc(100vw - 40px)',
-    maxWidth: 340,
-    height: 66,
-    borderRadius: 999,
-    display: 'flex',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    padding: '10px 14px',
-    boxSizing: 'border-box',
-    overflow: 'hidden',
-    background: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(16,18,21,0.82)',
-    border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)'}`,
-    backdropFilter: 'blur(24px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-    boxShadow: isLight ? '0 18px 60px rgba(15,23,42,0.16)' : '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)',
-    zIndex: 2000
-  };
-};
+const containerStyle = (theme) => ({
+  position: 'fixed',
+  bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  width: 'calc(100vw - 40px)',
+  maxWidth: '360px',
+  height: '66px',
+  borderRadius: '999px',
+  display: 'flex',
+  justifyContent: 'space-around',
+  alignItems: 'center',
+  zIndex: 1000,
+  boxSizing: 'border-box',
+  padding: '10px 14px',
+  backdropFilter: 'blur(24px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+  overflow: 'hidden',
+  boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)'
+});
+
+const glassOverlay = (theme) => ({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: Colors.get('bottomPanel', theme),
+  opacity: 0.9,
+  backdropFilter: 'blur(24px) saturate(180%)',
+  WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+  border: `1px solid ${Colors.get('border', theme)}`,
+  borderRadius: '999px',
+  zIndex: -1
+});
 
 const navButtonStyle = (theme, active) => {
   const isLight = theme === 'light' || theme === 'speciallight';
@@ -190,25 +201,34 @@ const navButtonStyle = (theme, active) => {
     justifyContent: 'center',
     padding: 0,
     boxShadow: 'none',
-    opacity: isLight || active ? 1 : 0.94
+    opacity: isLight || active ? 1 : 0.94,
+    cursor: 'pointer',
+    outline: 'none',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    WebkitTapHighlightColor: 'transparent'
   };
 };
 
-const addButtonStyle = (theme, accent, disabled) => {
-  const isLight = theme === 'light' || theme === 'speciallight';
+const addButtonStyle = (theme, accent, disabled, active) => {
   return {
     width: 50,
     height: 50,
     borderRadius: 999,
-    border: `1px solid ${disabled ? Colors.get('border', theme) : accent.ring}`,
-    background: disabled ? Colors.get('simplePanel', theme) : isLight ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.055)',
-    color: disabled ? Colors.get('iconsDisabled', theme) : accent.hue,
+    border: active ? `1px solid ${accent.ring}` : `1px solid ${Colors.get('border', theme)}`,
+    background: active ? accent.soft : Colors.get('simplePanel', theme),
+    color: active ? accent.hue : Colors.get('icons', theme),
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     opacity: disabled ? 0.45 : 1,
-    boxShadow: disabled ? 'none' : `0 16px 30px -18px ${accent.hue}`,
-    padding: 0
+    boxShadow: `0 16px 30px -18px ${Colors.get('shadow', theme)}`,
+    padding: 0,
+    cursor: disabled ? 'default' : 'pointer',
+    outline: 'none',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    WebkitTapHighlightColor: 'transparent'
   };
 };
 
