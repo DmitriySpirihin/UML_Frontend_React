@@ -5,6 +5,7 @@ import { theme$, lang$, fontSize$,premium$, setPage} from '../../StaticClasses/H
 import { FaCrown } from 'react-icons/fa';
 import HomeRounded from '@mui/icons-material/HomeRounded';
 import Insight from '../SleepPages/Insight.jsx';
+import { buildTodoAccent } from '../ToDoPages/ToDoVisuals.js';
 
 
 const RobotMain = () => {
@@ -78,9 +79,14 @@ const RobotMain = () => {
 
 export default RobotMain;
 
-const styles = (theme, fSize) => ({
+const styles = (theme, fSize) => {
+  const accent = buildTodoAccent(AppData.todoAccentColor || '#149DFF');
+
+  return {
   container: {
-    backgroundColor: Colors.get('background', theme),
+    background: theme === 'light' || theme === 'speciallight'
+      ? `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${accent.rgbText},0.1), transparent 66%), #F4F5F7`
+      : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgbText},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'start',
@@ -128,4 +134,5 @@ const styles = (theme, fSize) => ({
     background: Colors.get('iconsHighlited', theme),
     boxShadow: `0 0 10px ${Colors.get('iconsHighlited', theme)}`,
   }
-});
+  };
+};

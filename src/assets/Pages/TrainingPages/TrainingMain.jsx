@@ -1346,17 +1346,19 @@ const styles = (theme, fSize = 0) => {
       overflow: 'hidden',
       boxSizing: 'border-box',
       background: isDark
-        ? `linear-gradient(135deg, rgba(${trainingAccent.rgb},0.22), rgba(16,30,44,0.96) 44%, rgba(12,22,32,0.94))`
-        : `linear-gradient(135deg, rgba(255,255,255,0.98), rgba(${trainingAccent.rgb},0.12))`,
-      border: `1px solid ${trainingAccent.ring}`,
+        ? `linear-gradient(135deg, rgba(${trainingAccent.rgb},0.14), rgba(16,30,44,0.66) 44%, rgba(12,22,32,0.56))`
+        : `linear-gradient(135deg, rgba(255,255,255,0.72), rgba(${trainingAccent.rgb},0.10))`,
+      border: `1px solid ${isDark ? 'rgba(190,220,235,0.13)' : 'rgba(15,23,42,0.075)'}`,
       boxShadow: isDark
-        ? '0 24px 70px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.08)'
-        : '0 18px 44px rgba(15,23,42,0.08)',
+        ? '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)'
+        : '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)',
+      backdropFilter: 'blur(26px) saturate(170%)',
+      WebkitBackdropFilter: 'blur(26px) saturate(170%)',
     },
     heroGlow: {
       position: 'absolute',
       inset: 0,
-      background: `radial-gradient(circle at 78% 22%, ${trainingAccent.glow}, transparent 34%), radial-gradient(circle at 22% 110%, rgba(${trainingAccent.rgb},0.10), transparent 42%)`,
+      background: `radial-gradient(circle at 78% 22%, rgba(${trainingAccent.rgb},0.12), transparent 38%), radial-gradient(circle at 22% 110%, rgba(${trainingAccent.rgb},0.055), transparent 44%)`,
       pointerEvents: 'none',
     },
     heroCopy: {
@@ -1402,8 +1404,10 @@ const styles = (theme, fSize = 0) => {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
-      backgroundColor: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.74)',
-      border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)'}`,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.038)' : 'rgba(255,255,255,0.42)',
+      border: `1px solid ${isDark ? 'rgba(190,220,235,0.105)' : 'rgba(15,23,42,0.075)'}`,
+      backdropFilter: 'blur(16px) saturate(150%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(150%)',
       boxSizing: 'border-box',
       minWidth: 0,
     },
@@ -1453,12 +1457,12 @@ const styles = (theme, fSize = 0) => {
       borderRadius: '28px',
       boxSizing: 'border-box',
       background: isDark
-        ? `linear-gradient(135deg, rgba(${trainingAccent.rgb},0.13), rgba(255,255,255,0.026))`
-        : 'rgba(255,255,255,0.86)',
+        ? `linear-gradient(135deg, rgba(${trainingAccent.rgb},0.09), rgba(255,255,255,0.026))`
+        : 'linear-gradient(135deg, rgba(255,255,255,0.68), rgba(255,255,255,0.40))',
       border: `1px solid ${isDark ? `rgba(${trainingAccent.rgb},0.18)` : 'rgba(15,23,42,0.08)'}`,
-      boxShadow: isDark ? `0 18px 48px rgba(0,0,0,0.22), 0 0 46px rgba(${trainingAccent.rgb},0.06)` : '0 14px 36px rgba(15,23,42,0.08)',
-      backdropFilter: 'blur(18px)',
-      WebkitBackdropFilter: 'blur(18px)',
+      boxShadow: isDark ? '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)' : '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)',
+      backdropFilter: 'blur(22px) saturate(165%)',
+      WebkitBackdropFilter: 'blur(22px) saturate(165%)',
     },
     calendarHead: {
       padding: '8px 6px 14px',

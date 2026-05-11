@@ -22,6 +22,27 @@ const PERIODS = [
   { key: 0, label: ['Всё', 'All'] }
 ];
 
+const getCompletionTone = (rate) => {
+  if (rate >= 80) return buildTodoAccent('#22C55E');
+  if (rate >= 50) return buildTodoAccent('#73D597');
+  if (rate >= 20) return buildTodoAccent('#F2C14D');
+  return buildTodoAccent('#E88C65');
+};
+
+const getOverdueTone = (overdue) => {
+  if (overdue === 0) return buildTodoAccent('#22C55E');
+  if (overdue <= 2) return buildTodoAccent('#F2C14D');
+  return buildTodoAccent('#E95F5F');
+};
+
+const getAverageTone = (avgDays) => {
+  if (avgDays === null || avgDays === undefined) return buildTodoAccent('#7AA8FF');
+  if (avgDays <= 1) return buildTodoAccent('#22C55E');
+  if (avgDays <= 3) return buildTodoAccent('#149DFF');
+  if (avgDays <= 7) return buildTodoAccent('#F2C14D');
+  return buildTodoAccent('#E88C65');
+};
+
 const ToDoMetrics = () => {
   const [theme, setThemeState] = useState('dark');
   const [lang, setLangIndex] = useState(AppData.prefs[0]);
@@ -127,6 +148,9 @@ const ToDoMetrics = () => {
   }, [periodDays, lang]);
 
   const itemV = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } };
+  const completionTone = getCompletionTone(stats.completionRate);
+  const overdueTone = getOverdueTone(stats.overdue);
+  const averageTone = getAverageTone(stats.avgDays);
 
   return (
     <div style={s.container}>
@@ -138,6 +162,29 @@ const ToDoMetrics = () => {
         variants={{ show: { transition: { staggerChildren: 0.055 } } }}
       >
         <ToDoMetricsPageHeader theme={theme} fSize={fSize} langIndex={lang} />
+
+        <motion.section variants={itemV} style={s.deadlinePanel}>
+          <div style={s.panelHeader}>
+            <div>
+              <div style={s.panelTitle}>{lang === 0 ? 'Ближайшие сроки' : 'Next deadlines'}</div>
+              <div style={s.panelSub}>{lang === 0 ? 'Что горит по дедлайну сейчас' : 'Deadline pressure right now'}</div>
+            </div>
+          </div>
+          {stats.nextDeadlines.length === 0 ? (
+            <div style={s.empty}>{lang === 0 ? 'Нет задач со сроком' : 'No tasks with deadline'}</div>
+          ) : (
+            <div style={s.deadlineList}>
+              {stats.nextDeadlines.map(task => (
+                <div key={task.id || task.name} style={s.deadlineRow}>
+                  <div style={s.deadlineDot(isDeadlinePassed(task.deadLine))} />
+                  <div style={s.deadlineName}>{task.name}</div>
+                  <div style={s.deadlineValue}>{getDeadlineText(task.deadLine, lang)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.section>
+
         <motion.section variants={itemV} style={s.hero}>
           <div style={s.heroTop}>
             <div style={s.heroIcon}><FaChartBar /></div>
@@ -159,10 +206,10 @@ const ToDoMetrics = () => {
         </motion.section>
 
         <motion.section variants={itemV} style={s.summaryGrid}>
-          <MetricCard icon={<FaCheckDouble />} label={lang === 0 ? 'Выполнено' : 'Completed'} value={`${stats.completionRate}%`} sub={`${stats.completed}/${Math.max(stats.created, stats.completed)}`} theme={theme} accent={accent} />
+          <MetricCard icon={<FaCheckDouble />} label={lang === 0 ? 'Выполнено' : 'Completed'} value={`${stats.completionRate}%`} sub={`${stats.completed}/${Math.max(stats.created, stats.completed)}`} theme={theme} accent={accent} tone={completionTone} />
+          <MetricCard icon={<FaFire />} label={lang === 0 ? 'Просрочено' : 'Overdue'} value={stats.overdue} sub={lang === 0 ? 'требуют внимания' : 'need focus'} theme={theme} accent={accent} tone={overdueTone} />
           <MetricCard icon={<FaListUl />} label={lang === 0 ? 'В работе' : 'Active'} value={stats.active} sub={lang === 0 ? 'активных' : 'active'} theme={theme} accent={accent} />
-          <MetricCard icon={<FaFire />} label={lang === 0 ? 'Просрочено' : 'Overdue'} value={stats.overdue} sub={lang === 0 ? 'требуют внимания' : 'need focus'} theme={theme} accent={accent} danger={stats.overdue > 0} />
-          <MetricCard icon={<FaClock />} label={lang === 0 ? 'Средний срок' : 'Avg time'} value={formatAvg(stats.avgDays, lang)} sub={lang === 0 ? 'до выполнения' : 'to complete'} theme={theme} accent={accent} />
+          <MetricCard icon={<FaClock />} label={lang === 0 ? 'Средний срок' : 'Avg time'} value={formatAvg(stats.avgDays, lang)} sub={lang === 0 ? 'до выполнения' : 'to complete'} theme={theme} accent={accent} tone={averageTone} />
         </motion.section>
 
         <motion.section variants={itemV} style={s.focusPanel}>
@@ -182,7 +229,7 @@ const ToDoMetrics = () => {
           <div style={s.panelHeader}>
             <div>
               <div style={s.panelTitle}>{lang === 0 ? 'Динамика недели' : 'Weekly flow'}</div>
-              <div style={s.panelSub}>{lang === 0 ? 'Создано и выполнено' : 'Created and completed'}</div>
+              <div style={s.panelSub}>{lang === 0 ? 'Создано по старту, выполнено по закрытию' : 'Created by start date, done by completion date'}</div>
             </div>
           </div>
           <div style={s.weekChart}>
@@ -200,13 +247,18 @@ const ToDoMetrics = () => {
             <span><i style={{ background: accent.hue }} />{lang === 0 ? 'Выполнено' : 'Done'}</span>
             <span><i style={{ background: accent.soft, border: `1px solid ${accent.ring}` }} />{lang === 0 ? 'Создано' : 'Created'}</span>
           </div>
+          <div style={s.panelHint}>
+            {lang === 0
+              ? 'Показывает, сколько задач появилось и сколько было закрыто в каждый из последних 7 дней.'
+              : 'Shows how many tasks appeared and how many were closed on each of the last 7 days.'}
+          </div>
         </motion.section>
 
         <motion.section variants={itemV} style={s.categoriesPanel}>
           <div style={s.panelHeader}>
             <div>
               <div style={s.panelTitle}>{lang === 0 ? 'Категории' : 'Categories'}</div>
-              <div style={s.panelSub}>{lang === 0 ? 'Баланс нагрузки' : 'Workload balance'}</div>
+              <div style={s.panelSub}>{lang === 0 ? 'Доля задач в каждой категории за период' : 'Task share by category in the selected period'}</div>
             </div>
             <FaLayerGroup color={accent.hue} />
           </div>
@@ -232,39 +284,18 @@ const ToDoMetrics = () => {
           )}
         </motion.section>
 
-        <motion.section variants={itemV} style={s.deadlinePanel}>
-          <div style={s.panelHeader}>
-            <div>
-              <div style={s.panelTitle}>{lang === 0 ? 'Ближайшие сроки' : 'Next deadlines'}</div>
-              <div style={s.panelSub}>{lang === 0 ? 'Активные задачи по времени' : 'Active tasks by time'}</div>
-            </div>
-          </div>
-          {stats.nextDeadlines.length === 0 ? (
-            <div style={s.empty}>{lang === 0 ? 'Нет задач со сроком' : 'No tasks with deadline'}</div>
-          ) : (
-            <div style={s.deadlineList}>
-              {stats.nextDeadlines.map(task => (
-                <div key={task.id || task.name} style={s.deadlineRow}>
-                  <div style={s.deadlineDot(isDeadlinePassed(task.deadLine))} />
-                  <div style={s.deadlineName}>{task.name}</div>
-                  <div style={s.deadlineValue}>{getDeadlineText(task.deadLine, lang)}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </motion.section>
-
-        <div style={{ height: 120 }} />
+        <div style={{ height: 24 }} />
       </motion.div>
     </div>
   );
 };
 
-const MetricCard = ({ icon, label, value, sub, theme, accent, danger }) => {
+const MetricCard = ({ icon, label, value, sub, theme, accent, tone }) => {
   const s = styles(theme, accent);
+  const cardTone = tone || accent;
   return (
-    <div style={s.metricCard(danger)}>
-      <div style={s.metricIcon(danger)}>{icon}</div>
+    <div style={s.metricCard(cardTone)}>
+      <div style={s.metricIcon(cardTone)}>{icon}</div>
       <div style={s.metricValue}>{value}</div>
       <div style={s.metricLabel}>{label}</div>
       <div style={s.metricSub}>{sub}</div>
@@ -305,8 +336,15 @@ const styles = (theme, accent, fSize = 0) => {
   const text = Colors.get('mainText', theme);
   const sub = Colors.get('subText', theme);
   const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
-  const panel = isLight ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.045)';
-  const panelStrong = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(18,21,25,0.9)';
+  const panel = isLight
+    ? 'linear-gradient(145deg, rgba(255,255,255,0.76), rgba(255,255,255,0.42))'
+    : 'linear-gradient(145deg, rgba(255,255,255,0.074), rgba(255,255,255,0.028))';
+  const panelStrong = isLight
+    ? 'linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,255,255,0.48))'
+    : 'linear-gradient(145deg, rgba(255,255,255,0.068), rgba(255,255,255,0.024))';
+  const glassShadow = isLight
+    ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)'
+    : '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)';
 
   return {
     container: {
@@ -314,12 +352,12 @@ const styles = (theme, accent, fSize = 0) => {
       height: '100vh',
       overflow: 'hidden',
       background: isLight
-        ? `linear-gradient(180deg, ${accent.faint} 0%, ${Colors.get('background', theme)} 42%)`
-        : `linear-gradient(180deg, rgba(${accent.rgbText},0.11) 0%, ${Colors.get('background', theme)} 44%)`,
+        ? `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${accent.rgbText},0.1), transparent 66%), #F4F5F7`
+        : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgbText},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
       color: text,
       fontFamily: 'Segoe UI, sans-serif'
     },
-    scroll: { height: '100%', overflowY: 'auto', padding: `${TODO_SECTION_TOP} 18px 150px`, boxSizing: 'border-box' },
+    scroll: { height: '100%', overflowY: 'auto', padding: `${TODO_SECTION_TOP} 18px 104px`, boxSizing: 'border-box' },
     pageHeader: {
       width: '100%',
       margin: '0 auto 8px',
@@ -345,12 +383,14 @@ const styles = (theme, accent, fSize = 0) => {
       opacity: 0.82
     },
     hero: {
+      marginTop: 12,
       borderRadius: 26,
       padding: 16,
       background: `radial-gradient(260px 180px at 100% 0%, ${accent.soft} 0%, transparent 68%), ${panel}`,
       border: `1px solid ${border}`,
-      boxShadow: isLight ? '0 18px 50px rgba(15,23,42,0.08)' : '0 22px 65px rgba(0,0,0,0.36)',
-      backdropFilter: 'blur(18px)'
+      boxShadow: glassShadow,
+      backdropFilter: 'blur(26px) saturate(170%)',
+      WebkitBackdropFilter: 'blur(26px) saturate(170%)'
     },
     heroTop: { display: 'flex', alignItems: 'center', gap: 13, marginBottom: 14 },
     heroIcon: { width: 52, height: 52, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent.hue, background: accent.soft, border: `1px solid ${accent.ring}`, fontSize: 22, flexShrink: 0 },
@@ -359,12 +399,28 @@ const styles = (theme, accent, fSize = 0) => {
     periodRow: { display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 },
     periodChip: (active) => ({ minHeight: 38, borderRadius: 14, border: `1px solid ${active ? accent.ring : border}`, background: active ? accent.soft : 'transparent', color: active ? accent.hue : sub, fontSize: 11, fontWeight: 950, fontFamily: 'inherit' }),
     summaryGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginTop: 12 },
-    metricCard: (danger) => ({ minHeight: 138, borderRadius: 22, padding: 14, background: panelStrong, border: `1px solid ${danger ? 'rgba(233,95,95,0.34)' : border}`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }),
-    metricIcon: (danger) => ({ width: 38, height: 38, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: danger ? 'rgba(233,95,95,0.13)' : accent.soft, color: danger ? '#E95F5F' : accent.hue, border: `1px solid ${danger ? 'rgba(233,95,95,0.26)' : accent.ring}` }),
+    metricCard: (tone = accent) => ({
+      position: 'relative',
+      minHeight: 138,
+      borderRadius: 22,
+      padding: 14,
+      overflow: 'hidden',
+      background: `radial-gradient(180px 120px at 0% 0%, ${tone.soft}, transparent 72%), ${panelStrong}`,
+      border: `1px solid ${tone.ring}`,
+      boxShadow: glassShadow,
+      backdropFilter: 'blur(26px) saturate(170%)',
+      WebkitBackdropFilter: 'blur(26px) saturate(170%)',
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      minWidth: 0
+    }),
+    metricIcon: (tone = accent) => ({ width: 38, height: 38, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: tone.soft, color: tone.hue, border: `1px solid ${tone.ring}` }),
     metricValue: { color: text, fontSize: 29, fontWeight: 950, lineHeight: 1, fontVariantNumeric: 'tabular-nums' },
     metricLabel: { color: text, fontSize: 13, fontWeight: 900 },
     metricSub: { color: sub, fontSize: 11, fontWeight: 750 },
-    focusPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: panel, border: `1px solid ${border}`, backdropFilter: 'blur(18px)' },
+    focusPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: `radial-gradient(260px 160px at 100% 0%, ${accent.soft}, transparent 72%), ${panel}`, border: `1px solid ${accent.ring}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
     panelHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 13 },
     panelTitle: { color: text, fontSize: 18, fontWeight: 950 },
     panelSub: { color: sub, fontSize: 12, fontWeight: 750, marginTop: 2 },
@@ -373,7 +429,7 @@ const styles = (theme, accent, fSize = 0) => {
     focusIcon: { width: 28, height: 28, borderRadius: 10, background: accent.soft, color: accent.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 },
     focusLabel: { color: text, fontSize: 14, fontWeight: 850, minWidth: 0 },
     focusValue: { color: accent.hue, fontSize: 17, fontWeight: 950, textAlign: 'right' },
-    chartPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: panel, border: `1px solid ${border}`, backdropFilter: 'blur(18px)' },
+    chartPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: `radial-gradient(260px 160px at 0% 0%, ${accent.faint}, transparent 72%), ${panel}`, border: `1px solid ${accent.ring}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
     weekChart: { height: 170, display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 9, alignItems: 'end', paddingTop: 8 },
     weekColumn: { height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', gap: 8 },
     barStack: { position: 'relative', width: '100%', maxWidth: 30, height: 126, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.055)', overflow: 'hidden' },
@@ -381,7 +437,8 @@ const styles = (theme, accent, fSize = 0) => {
     doneBar: { position: 'absolute', left: 4, right: 4, bottom: 0, borderRadius: 999, background: accent.hue, boxShadow: `0 0 18px ${accent.glow}` },
     weekLabel: { color: sub, fontSize: 10, fontWeight: 900, textTransform: 'uppercase' },
     legend: { display: 'flex', gap: 12, marginTop: 12, color: sub, fontSize: 11, fontWeight: 800 },
-    categoriesPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: panel, border: `1px solid ${border}`, backdropFilter: 'blur(18px)' },
+    panelHint: { marginTop: 10, color: sub, fontSize: 11, fontWeight: 750, lineHeight: 1.35 },
+    categoriesPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: `radial-gradient(260px 160px at 100% 0%, ${accent.faint}, transparent 72%), ${panel}`, border: `1px solid ${accent.ring}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
     categoryList: { display: 'flex', flexDirection: 'column', gap: 13 },
     categoryRow: {},
     categoryInfo: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 7 },
@@ -389,7 +446,7 @@ const styles = (theme, accent, fSize = 0) => {
     categoryCount: { color: accent.hue, fontSize: 12, fontWeight: 950 },
     categoryTrack: { height: 9, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.055)', overflow: 'hidden' },
     categoryFill: { display: 'block', height: '100%', borderRadius: 999, background: accent.hue, boxShadow: `0 0 14px ${accent.glow}` },
-    deadlinePanel: { marginTop: 12, borderRadius: 24, padding: 15, background: panel, border: `1px solid ${border}`, backdropFilter: 'blur(18px)' },
+    deadlinePanel: { marginTop: 12, borderRadius: 24, padding: 15, background: `radial-gradient(260px 160px at 0% 0%, ${accent.faint}, transparent 72%), ${panel}`, border: `1px solid ${accent.ring}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
     deadlineList: { display: 'flex', flexDirection: 'column', gap: 9 },
     deadlineRow: { minHeight: 42, display: 'grid', gridTemplateColumns: '10px minmax(0, 1fr) auto', alignItems: 'center', gap: 10, borderRadius: 15, padding: '0 10px', background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)' },
     deadlineDot: (danger) => ({ width: 8, height: 8, borderRadius: 999, background: danger ? '#E95F5F' : accent.hue }),

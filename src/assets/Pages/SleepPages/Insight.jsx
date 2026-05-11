@@ -307,6 +307,10 @@ const Insight = ({
                     0%, 100% { opacity: .55; }
                     50% { opacity: 1; }
                 }
+                @keyframes insightMascotFloat {
+                    0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg); }
+                    50% { transform: translate3d(0, -5px, 0) rotate(1deg); }
+                }
                 .insightScroll::-webkit-scrollbar { width: 0; }
             `}</style>
         </section>
@@ -427,14 +431,16 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             height: `calc(100dvh - ${bottomInset + 24}px)`,
             minHeight: 0,
             maxHeight: 780,
-            borderRadius: 30,
+            borderRadius: 34,
             background: theme === 'dark'
-                ? `radial-gradient(360px 220px at 12% -8%, ${p.accentSoft}, transparent 72%), linear-gradient(180deg, rgba(24,27,31,0.96), rgba(15,18,21,0.98))`
-                : `radial-gradient(360px 220px at 12% -8%, ${p.accentSoft}, transparent 72%), rgba(255,255,255,0.96)`,
+                ? `radial-gradient(360px 220px at 12% -8%, ${p.accentSoft}, transparent 72%), linear-gradient(145deg, rgba(35,46,56,0.62), rgba(255,255,255,0.035) 58%, rgba(12,17,21,0.52))`
+                : `radial-gradient(360px 220px at 12% -8%, ${p.accentSoft}, transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.74), rgba(255,255,255,0.38))`,
             border: `1px solid ${p.accentRing}`,
             boxShadow: theme === 'dark'
-                ? '0 26px 72px rgba(0,0,0,0.52), inset 0 1px 0 rgba(255,255,255,0.05)'
-                : '0 22px 50px rgba(15,23,42,0.13)',
+                ? '0 1px 0 rgba(255,255,255,0.08) inset, 0 24px 62px -34px rgba(0,0,0,0.72)'
+                : '0 1px 0 rgba(255,255,255,0.82) inset, 0 22px 50px -34px rgba(15,23,42,0.20)',
+            backdropFilter: 'blur(28px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(28px) saturate(170%)',
             overflow: 'hidden',
             color: p.text,
             fontFamily: '"Inter", "Segoe UI", sans-serif'
@@ -447,26 +453,33 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             padding: '16px 16px 14px',
             borderBottom: `1px solid ${p.border}`,
             background: theme === 'dark'
-                ? `linear-gradient(135deg, ${p.accentSoft}, rgba(255,255,255,0.018))`
-                : 'linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.55))'
+                ? `linear-gradient(135deg, ${p.accentSoft}, rgba(255,255,255,0.052))`
+                : 'linear-gradient(180deg, rgba(255,255,255,0.66), rgba(255,255,255,0.36))',
+            backdropFilter: 'blur(18px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(160%)'
         },
         botFrame: {
             width: 72,
             height: 72,
             borderRadius: 22,
-            background: p.accentSoft,
+            background: theme === 'dark'
+                ? `linear-gradient(145deg, rgba(255,255,255,0.11), ${p.accentSoft})`
+                : `linear-gradient(145deg, rgba(255,255,255,0.76), ${p.accentSoft})`,
             border: `1px solid ${p.accentRing}`,
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
             overflow: 'hidden',
-            boxShadow: `0 0 24px ${p.accentSoft}`
+            boxShadow: theme === 'dark'
+                ? `0 1px 0 rgba(255,255,255,0.11) inset, 0 0 24px ${p.accentSoft}`
+                : '0 1px 0 rgba(255,255,255,0.82) inset, 0 16px 28px -24px rgba(15,23,42,0.22)'
         },
         mascot: {
             width: 72,
             height: 72,
             objectFit: 'contain',
-            filter: theme === 'dark' ? 'drop-shadow(0 8px 14px rgba(0,0,0,0.38))' : 'none'
+            filter: theme === 'dark' ? 'drop-shadow(0 8px 14px rgba(0,0,0,0.38))' : 'none',
+            animation: 'insightMascotFloat 4.2s ease-in-out infinite'
         },
         headerCopy: {
             minWidth: 0,
@@ -514,7 +527,10 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             overflowX: 'auto',
             scrollbarWidth: 'none',
             borderBottom: `1px solid ${p.border}`,
-            WebkitOverflowScrolling: 'touch'
+            WebkitOverflowScrolling: 'touch',
+            background: theme === 'dark' ? 'rgba(255,255,255,0.018)' : 'rgba(255,255,255,0.22)',
+            backdropFilter: 'blur(14px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(14px) saturate(150%)'
         },
         typeChip: {
             minHeight: 34,
@@ -522,15 +538,20 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             alignItems: 'center',
             gap: 7,
             padding: '7px 11px',
-            borderRadius: 14,
+            borderRadius: 16,
             border: `1px solid ${isActive ? p.accentRing : p.border}`,
-            background: isActive ? p.accentSoft : p.panelSoft,
+            background: isActive
+                ? `linear-gradient(145deg, ${p.accentSoft}, rgba(255,255,255,0.055))`
+                : (theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.42)'),
             color: isActive ? p.text : p.sub,
             fontSize: 12,
             fontWeight: 800,
             whiteSpace: 'nowrap',
             cursor: 'pointer',
-            fontFamily: 'inherit'
+            fontFamily: 'inherit',
+            boxShadow: theme === 'dark' ? '0 1px 0 rgba(255,255,255,0.045) inset' : '0 1px 0 rgba(255,255,255,0.72) inset',
+            backdropFilter: 'blur(16px) saturate(155%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(155%)'
         },
         chipIcon: {
             display: 'flex',
@@ -541,13 +562,15 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             height: 36,
             borderRadius: 999,
             border: `1px solid ${p.border}`,
-            background: p.panelSoft,
+            background: theme === 'dark' ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.46)',
             color: p.sub,
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            flexShrink: 0
+            flexShrink: 0,
+            backdropFilter: 'blur(16px) saturate(155%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(155%)'
         },
         contentBody: {
             flex: 1,
@@ -563,13 +586,16 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             animation: 'insightFade 0.32s ease-out'
         },
         insightCard: {
-            borderRadius: 20,
+            borderRadius: 22,
             background: theme === 'dark'
-                ? `linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))`
-                : p.panelStrong,
+                ? `linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))`
+                : 'linear-gradient(145deg, rgba(255,255,255,0.66), rgba(255,255,255,0.34))',
             border: `1px solid ${p.border}`,
             padding: '14px 14px',
-            textAlign: 'left'
+            textAlign: 'left',
+            boxShadow: theme === 'dark' ? '0 1px 0 rgba(255,255,255,0.05) inset' : '0 1px 0 rgba(255,255,255,0.72) inset',
+            backdropFilter: 'blur(18px) saturate(155%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(155%)'
         },
         sectionHeader: {
             display: 'flex',
@@ -640,8 +666,8 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             gridTemplateColumns: '18px minmax(0, 1fr)',
             gap: 9,
             padding: '12px 13px',
-            borderRadius: 16,
-            background: p.panelSoft,
+            borderRadius: 18,
+            background: theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.38)',
             border: `1px solid ${p.border}`,
             textAlign: 'left'
         },
@@ -690,7 +716,7 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             borderRadius: 18,
             padding: 14,
             border: `1px solid ${p.border}`,
-            background: p.panelStrong,
+            background: theme === 'dark' ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.46)',
             animation: 'insightPulse 1.35s ease-in-out infinite'
         },
         skeletonTitle: {

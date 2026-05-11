@@ -6,12 +6,11 @@ import Back from '@mui/icons-material/ArrowBackIosNewRounded';
 import Metrics from '@mui/icons-material/BarChartRounded';
 import Calendar from '@mui/icons-material/CalendarMonthRounded';
 import Add from '@mui/icons-material/AddRounded';
-import FaBell from '@mui/icons-material/NotificationsRounded';
 import AutoAwesome from '@mui/icons-material/AutoAwesomeRounded';
 
 import { 
     setPage, setAddPanel, setPage$, addPanel$, theme$, 
-    currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, notify$, habitAccent$
+    currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, habitAccent$
 } from '../../StaticClasses/HabitsBus';
 import Colors from '../../StaticClasses/Colors';
 import { saveData } from '../../StaticClasses/SaveHelper';
@@ -94,16 +93,6 @@ const BtnsHabits = () => {
                 playEffects(switchSound);
             }
         },
-        ...(page.startsWith('H') ? [{
-            id: 5,
-            icon: <FaBell />,
-            onClick: () => {
-                setCurrentBottomBtn(5);
-                setNotifyPanel(true);
-                setAddPanel('');
-                playEffects(switchSound);
-            }
-        }] : []),
         {
             id: 6,
             icon: <AutoAwesome />,
@@ -117,11 +106,6 @@ const BtnsHabits = () => {
         }
     ];
 
-    const isExpandedDock = navItems.length > 5;
-    const gridColumnById = isExpandedDock
-        ? { 0: 1, 1: 2, 2: 4, 4: 5, 5: 6, 6: 7 }
-        : {};
-
     return (
         <div style={containerStyle(theme, navItems.length)}>
             <div style={glassOverlay(theme)} />
@@ -132,7 +116,6 @@ const BtnsHabits = () => {
                     disabled={item.disabled}
                     onClick={item.onClick}
                     theme={theme}
-                    gridColumn={gridColumnById[item.id]}
                 />
             ) : (
                 <NavButton
@@ -142,7 +125,6 @@ const BtnsHabits = () => {
                     icon={item.icon}
                     onClick={item.onClick}
                     theme={theme}
-                    gridColumn={gridColumnById[item.id]}
                 />
             ))}
         </div>
@@ -150,13 +132,13 @@ const BtnsHabits = () => {
 };
 
 // Sub-components for cleaner code
-const NavButton = ({ id, current, icon, onClick, theme, gridColumn }) => {
+const NavButton = ({ id, current, icon, onClick, theme }) => {
     const isActive = current === id;
     return (
         <motion.div 
             whileTap={{ scale: 0.9 }}
             onClick={onClick}
-            style={{ ...navBtnWrapper, gridColumn }}
+            style={navBtnWrapper}
         >
             <div style={{
                 color: isActive ? HABITS_ACCENT.hue : Colors.get('icons', theme),
@@ -180,20 +162,19 @@ const NavButton = ({ id, current, icon, onClick, theme, gridColumn }) => {
     );
 };
 
-const AddButton = ({ disabled, onClick, theme, active, gridColumn }) => (
+const AddButton = ({ disabled, onClick, theme, active }) => (
     <motion.div
         whileHover={!disabled ? { scale: 1.04 } : {}}
         whileTap={!disabled ? { scale: 0.92 } : {}}
         onClick={onClick}
         style={{
             ...addBtnStyle(theme),
-            gridColumn,
             opacity: disabled ? 0.42 : 1,
             background: active ? HABITS_ACCENT.soft : 'rgba(255,255,255,0.045)',
             border: '1px solid transparent',
         }}
     >
-        <Add style={{ fontSize: '28px', color: active ? HABITS_ACCENT.hue : Colors.get('icons', theme) }} />
+        <Add style={{ fontSize: '26px', color: active ? HABITS_ACCENT.hue : Colors.get('icons', theme) }} />
     </motion.div>
 );
 
@@ -212,20 +193,20 @@ const onBack = async (page, addPanel) => {
 // Styles
 const containerStyle = (theme, itemCount = 6) => ({
     position: 'fixed',
-    bottom: 'max(18px, calc(24px + env(safe-area-inset-bottom, 0px)))',
+    bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
     left: '50%',
     transform: 'translateX(-50%)',
-    width: 'calc(100vw - 40px)',
-    maxWidth: '420px',
-    height: '66px',
+    width: 'calc(100vw - 72px)',
+    maxWidth: '360px',
+    height: '58px',
     borderRadius: '999px',
     display: 'grid',
-    gridTemplateColumns: `repeat(${itemCount > 5 ? 7 : itemCount}, minmax(0, 1fr))`,
+    gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`,
     justifyItems: 'center',
     alignItems: 'center',
     zIndex: 1000,
     boxSizing: 'border-box',
-    padding: '9px 12px',
+    padding: '7px 10px',
     columnGap: 3,
     backdropFilter: 'blur(24px) saturate(180%)',
     WebkitBackdropFilter: 'blur(24px) saturate(180%)',
@@ -256,7 +237,7 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '44px',
+    width: '40px',
     borderRadius: '999px',
     cursor: 'pointer'
 };
@@ -272,8 +253,8 @@ const activeIndicator = (theme) => ({
 });
 
 const addBtnStyle = (theme) => ({
-    width: '46px',
-    height: '46px',
+    width: '42px',
+    height: '42px',
     borderRadius: '999px',
     display: 'flex',
     alignItems: 'center',

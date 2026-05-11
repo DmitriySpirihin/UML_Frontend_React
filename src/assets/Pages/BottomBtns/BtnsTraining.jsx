@@ -210,7 +210,7 @@ const AddButton = ({ active, onClick, theme }) => {
                 boxShadow: active ? `0 12px 30px ${accent.glow}` : `0 4px 15px ${Colors.get('shadow', theme)}`,
             }}
         >
-            <Add style={{ fontSize: '28px', color: active ? '#fff' : accent.hue }} />
+            <Add style={{ fontSize: '26px', color: active ? '#fff' : accent.hue }} />
         </Motion.div>
     </div>
     );
@@ -229,19 +229,19 @@ async function onBack(page, addPanel) {
 
 const containerStyle = () => ({
     position: 'fixed',
-    bottom: 'max(18px, calc(24px + env(safe-area-inset-bottom, 0px)))',
+    bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
     left: '50%',
     transform: 'translateX(-50%)',
-    width: 'calc(100vw - 40px)',
-    maxWidth: '420px',
-    height: '66px',
+    width: 'calc(100vw - 72px)',
+    maxWidth: '360px',
+    height: '58px',
     borderRadius: '999px',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2200,
     boxSizing: 'border-box',
-    padding: '10px 12px',
+    padding: '7px 10px',
     backdropFilter: 'blur(24px) saturate(180%)',
     WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     overflow: 'hidden',
@@ -253,7 +253,7 @@ const dockSide = (side) => ({
     position: 'absolute',
     top: '50%',
     transform: 'translateY(-50%)',
-    [side]: '16px',
+    [side]: '12px',
     zIndex: 1,
     display: 'flex',
     alignItems: 'center',
@@ -284,7 +284,7 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '44px',
+    width: '40px',
     borderRadius: '999px',
     cursor: 'pointer'
 };
@@ -305,13 +305,13 @@ const addBtnShell = {
     top: '50%',
     transform: 'translate(-50%, -50%)',
     zIndex: 2,
-    width: '46px',
-    height: '46px',
+    width: '42px',
+    height: '42px',
 };
 
 const addBtnStyle = () => ({
-    width: '46px',
-    height: '46px',
+    width: '42px',
+    height: '42px',
     borderRadius: '999px',
     display: 'flex',
     alignItems: 'center',

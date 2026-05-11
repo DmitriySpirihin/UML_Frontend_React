@@ -99,8 +99,8 @@ const NavButton = ({ id, current, icon, onClick, theme }) => {
     return (
         <Motion.div whileTap={{ scale: 0.9 }} onClick={onClick} style={navBtnWrapper}>
             <div style={{
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 borderRadius: 999,
                 color: isActive ? accent.hue : Colors.get('icons', theme),
                 background: isActive ? accent.soft : 'transparent',
@@ -143,12 +143,12 @@ async function onBack(page, addPanel) {
 
 const containerStyle = () => ({
     position: 'fixed',
-    bottom: 'max(18px, calc(24px + env(safe-area-inset-bottom, 0px)))',
+    bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
     left: '50%',
     transform: 'translateX(-50%)',
-    width: 'calc(100vw - 40px)',
-    maxWidth: '420px',
-    height: '66px',
+    width: 'calc(100vw - 72px)',
+    maxWidth: '360px',
+    height: '58px',
     borderRadius: '999px',
     display: 'flex',
     justifyContent: 'space-around',
@@ -157,7 +157,7 @@ const containerStyle = () => ({
     WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     zIndex: 1000,
     boxSizing: 'border-box',
-    padding: '10px 12px',
+    padding: '7px 10px',
     overflow: 'hidden'
 });
 
@@ -185,7 +185,7 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '44px',
+    width: '40px',
     borderRadius: '999px',
     cursor: 'pointer'
 };

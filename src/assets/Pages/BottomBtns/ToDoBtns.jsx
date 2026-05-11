@@ -52,81 +52,74 @@ const BtnsToDo = () => {
   }, [page, addPanel]);
 
   return (
-    <div style={containerStyle(theme)}>
+    <div style={containerStyle(theme, 5)}>
       <div style={glassOverlay(theme)} />
-      <div style={dockSide('left')}>
-        <NavButton
-          id={0}
-          current={currentBtn}
-          icon={page === 'ToDoMain' && addPanel === '' ? <Home /> : <Back />}
-          onClick={() => {
-            onBack(page, addPanel);
-            setCurrentBottomBtn(0);
-          }}
-          theme={theme}
-          accent={accent}
-        />
+      <NavButton
+        id={0}
+        current={currentBtn}
+        icon={page === 'ToDoMain' && addPanel === '' ? <Home /> : <Back />}
+        onClick={() => {
+          onBack(page, addPanel);
+          setCurrentBottomBtn(0);
+        }}
+        theme={theme}
+        accent={accent}
+      />
 
-        <NavButton
-          id={4}
-          current={currentBtn}
-          icon={<FaChartLine />}
-          onClick={() => {
-            setCurrentBottomBtn(4);
-            setPage('ToDoMetrics');
-            setAddPanel('');
-            playEffects(switchSound);
-          }}
-          theme={theme}
-          accent={accent}
-        />
-      </div>
+      <NavButton
+        id={4}
+        current={currentBtn}
+        icon={<FaChartLine />}
+        onClick={() => {
+          setCurrentBottomBtn(4);
+          setPage('ToDoMetrics');
+          setAddPanel('');
+          playEffects(switchSound);
+        }}
+        theme={theme}
+        accent={accent}
+      />
 
-      <div style={addButtonShell}>
-        <motion.button
-          type="button"
-          whileTap={page === 'ToDoMain' ? { scale: 0.92 } : {}}
-          onClick={() => {
-            if (page !== 'ToDoMain') return;
-            setCurrentBottomBtn(2);
-            setPage('ToDoNew');
-            playEffects(switchSound);
-          }}
-          style={addButtonStyle(theme, accent, page !== 'ToDoMain', currentBtn === 2 && page === 'ToDoMain')}
-        >
-          <Add style={{ fontSize: 28 }} />
-        </motion.button>
-      </div>
+      <AddNavButton
+        disabled={page !== 'ToDoMain'}
+        active={currentBtn === 2 && page === 'ToDoMain'}
+        theme={theme}
+        accent={accent}
+        onClick={() => {
+          if (page !== 'ToDoMain') return;
+          setCurrentBottomBtn(2);
+          setPage('ToDoNew');
+          playEffects(switchSound);
+        }}
+      />
 
-      <div style={dockSide('right')}>
-        <NavButton
-          id={3}
-          current={currentBtn}
-          icon={<FaUsers />}
-          onClick={() => {
-            setCurrentBottomBtn(3);
-            setPage('ToDoCollab');
-            setAddPanel('');
-            playEffects(switchSound);
-          }}
-          theme={theme}
-          accent={accent}
-        />
+      <NavButton
+        id={3}
+        current={currentBtn}
+        icon={<FaUsers />}
+        onClick={() => {
+          setCurrentBottomBtn(3);
+          setPage('ToDoCollab');
+          setAddPanel('');
+          playEffects(switchSound);
+        }}
+        theme={theme}
+        accent={accent}
+      />
 
-        <NavButton
-          id={1}
-          current={currentBtn}
-          icon={<AutoAwesome />}
-          onClick={() => {
-            setCurrentBottomBtn(1);
-            setPage('ToDoInsight');
-            setAddPanel('');
-            playEffects(switchSound);
-          }}
-          theme={theme}
-          accent={accent}
-        />
-      </div>
+      <NavButton
+        id={1}
+        current={currentBtn}
+        icon={<AutoAwesome />}
+        onClick={() => {
+          setCurrentBottomBtn(1);
+          setPage('ToDoInsight');
+          setAddPanel('');
+          playEffects(switchSound);
+        }}
+        theme={theme}
+        accent={accent}
+      />
     </div>
   );
 };
@@ -136,7 +129,7 @@ const NavButton = ({ id, current, icon, onClick, theme, accent }) => {
   const isMui = React.isValidElement(icon) && icon.type?.muiName;
   return (
     <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={onClick} style={navButtonStyle(theme, active)}>
-      <span style={{ display: 'flex', color: active ? accent.hue : Colors.get('icons', theme), fontSize: 28 }}>
+      <span style={{ display: 'flex', color: active ? accent.hue : Colors.get('icons', theme), fontSize: 26 }}>
         {isMui ? React.cloneElement(icon, { fontSize: 'inherit' }) : icon}
       </span>
       <AnimatePresence>
@@ -145,6 +138,17 @@ const NavButton = ({ id, current, icon, onClick, theme, accent }) => {
     </motion.button>
   );
 };
+
+const AddNavButton = ({ disabled, active, onClick, theme, accent }) => (
+  <motion.button
+    type="button"
+    whileTap={!disabled ? { scale: 0.92 } : {}}
+    onClick={onClick}
+    style={addButtonStyle(theme, accent, disabled, active)}
+  >
+    <Add style={{ fontSize: 26 }} />
+  </motion.button>
+);
 
 const onBack = async (page, addPanel) => {
   if (page === 'ToDoMain' && addPanel === '') {
@@ -157,37 +161,26 @@ const onBack = async (page, addPanel) => {
   playEffects(switchSound);
 };
 
-const containerStyle = (theme) => ({
+const containerStyle = (theme, itemCount) => ({
   position: 'fixed',
-  bottom: 'max(18px, calc(24px + env(safe-area-inset-bottom, 0px)))',
+  bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
   left: '50%',
   transform: 'translateX(-50%)',
-  width: 'calc(100vw - 40px)',
-  maxWidth: '420px',
-  height: '66px',
+  width: 'calc(100vw - 72px)',
+  maxWidth: '360px',
+  height: '58px',
   borderRadius: '999px',
-  display: 'flex',
-  justifyContent: 'center',
+  display: 'grid',
+  gridTemplateColumns: `repeat(${itemCount}, minmax(0, 1fr))`,
+  justifyItems: 'center',
   alignItems: 'center',
   zIndex: 1000,
   boxSizing: 'border-box',
-  padding: '10px 12px',
+  padding: '7px 10px',
   backdropFilter: 'blur(24px) saturate(180%)',
   WebkitBackdropFilter: 'blur(24px) saturate(180%)',
   overflow: 'hidden',
   boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)'
-});
-
-const dockSide = (side) => ({
-  position: 'absolute',
-  top: '50%',
-  transform: 'translateY(-50%)',
-  [side]: '16px',
-  zIndex: 1,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: side === 'left' ? 'flex-start' : 'flex-end',
-  gap: '4px'
 });
 
 const glassOverlay = (theme) => ({
@@ -213,8 +206,8 @@ const navButtonStyle = (theme, active) => {
   const isLight = theme === 'light' || theme === 'speciallight';
   return {
     position: 'relative',
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: 999,
     border: 'none',
     background: 'transparent',
@@ -233,20 +226,10 @@ const navButtonStyle = (theme, active) => {
   };
 };
 
-const addButtonShell = {
-  position: 'absolute',
-  left: '50%',
-  top: '50%',
-  transform: 'translate(-50%, -50%)',
-  zIndex: 2,
-  width: 46,
-  height: 46
-};
-
 const addButtonStyle = (theme, accent, disabled, active) => {
   return {
-    width: 46,
-    height: 46,
+    width: 42,
+    height: 42,
     borderRadius: 999,
     border: active ? `1px solid ${accent.ring}` : `1px solid ${Colors.get('border', theme)}`,
     background: active ? accent.soft : Colors.get('simplePanel', theme),

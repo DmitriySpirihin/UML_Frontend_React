@@ -298,7 +298,9 @@ const styles = (theme, fontSize = 0) => {
     const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || MENTAL_ACCENT, MENTAL_ACCENT);
     const accentText = mentalAccent.rgb;
     const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
-    const panel = isLight ? 'rgba(255,255,255,0.86)' : 'rgba(255,255,255,0.045)';
+    const panel = isLight
+        ? 'linear-gradient(135deg, rgba(255,255,255,0.68), rgba(255,255,255,0.40))'
+        : 'linear-gradient(135deg, rgba(255,255,255,0.070), rgba(255,255,255,0.026))';
     return {
         container: {
             width: '100vw',
@@ -385,14 +387,14 @@ const styles = (theme, fontSize = 0) => {
             overflow: 'hidden',
             boxSizing: 'border-box',
             background: isLight
-                ? `linear-gradient(145deg, rgba(255,255,255,0.96), rgba(${accentText},0.1))`
-                : `linear-gradient(145deg, rgba(23,27,31,0.96), rgba(${accentText},0.12))`,
-            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : mentalAccent.ring}`,
+                ? `linear-gradient(145deg, rgba(255,255,255,0.70), rgba(${accentText},0.09))`
+                : `linear-gradient(145deg, rgba(23,27,31,0.68), rgba(${accentText},0.10))`,
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.13)'}`,
             boxShadow: isLight
-                ? '0 16px 38px -34px rgba(0,0,0,0.28), 0 1px 0 rgba(255,255,255,0.74) inset'
-                : '0 1px 0 rgba(255,255,255,0.055) inset, 0 18px 42px -34px rgba(0,0,0,0.78)',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)',
+                ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)'
+                : '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)',
+            backdropFilter: 'blur(26px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(26px) saturate(170%)',
             isolation: 'isolate'
         },
         heroGlow: {
@@ -402,7 +404,7 @@ const styles = (theme, fontSize = 0) => {
             width: 210,
             height: 210,
             borderRadius: '50%',
-            background: `radial-gradient(circle, rgba(${accentText},0.28) 0%, transparent 64%)`,
+            background: `radial-gradient(circle, rgba(${accentText},0.12) 0%, transparent 66%)`,
             zIndex: 0,
             pointerEvents: 'none'
         },
@@ -457,7 +459,9 @@ const styles = (theme, fontSize = 0) => {
             minHeight: 42,
             borderRadius: 14,
             border: `1px solid ${border}`,
-            background: isLight ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.036)',
+            background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.038)',
+            backdropFilter: 'blur(16px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(150%)',
             display: 'flex',
             alignItems: 'center',
             gap: 7,
@@ -563,8 +567,8 @@ const styles = (theme, fontSize = 0) => {
             border: `1px solid ${border}`,
             boxSizing: 'border-box',
             boxShadow: isLight ? '0 12px 28px -26px rgba(0,0,0,0.18)' : '0 1px 0 rgba(255,255,255,0.035) inset',
-            backdropFilter: 'blur(18px)',
-            WebkitBackdropFilter: 'blur(18px)'
+            backdropFilter: 'blur(22px) saturate(165%)',
+            WebkitBackdropFilter: 'blur(22px) saturate(165%)'
         },
         progressHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
         panelTitle: { color: text, fontSize: 14, fontWeight: 950, lineHeight: 1.15 },

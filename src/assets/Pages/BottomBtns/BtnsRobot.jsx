@@ -118,18 +118,24 @@ const onBack = async (page, addPanel) => {
 // Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
-    bottom: '14px',
+    bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
     left: '50%',
     transform: 'translateX(-50%)',
-    width: 'min(360px, calc(100vw - 84px))',
+    width: 'calc(100vw - 72px)',
+    maxWidth: '360px',
     height: '58px',
-    borderRadius: '20px',
-    display: 'flex',
-    justifyContent: 'center',
+    borderRadius: '999px',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(1, minmax(0, 1fr))',
+    justifyItems: 'center',
     alignItems: 'center',
-    backdropFilter: 'blur(16px)',
+    padding: '7px 10px',
+    boxSizing: 'border-box',
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     zIndex: 5500,
-    boxShadow: theme === 'dark' ? '0 18px 44px rgba(0,0,0,0.38)' : '0 16px 34px rgba(15,23,42,0.12)',
+    overflow: 'hidden',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset, 0 22px 46px -24px rgba(0,0,0,0.74)',
 });
 
 const glassOverlay = (theme) => ({
@@ -141,10 +147,10 @@ const glassOverlay = (theme) => ({
     backdropFilter: 'blur(30px) saturate(190%)',
     WebkitBackdropFilter: 'blur(30px) saturate(190%)',
     border: `1px solid ${theme === 'light' || theme === 'speciallight' ? 'rgba(148,163,184,0.28)' : 'rgba(190,220,235,0.14)'}`,
-    borderRadius: '20px',
+    borderRadius: '999px',
     boxShadow: theme === 'light' || theme === 'speciallight'
         ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 20px 44px -30px rgba(15,23,42,0.28)'
-        : '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px -20px rgba(0,0,0,0.76)',
+        : '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px -20px rgba(0,0,0,0.76), 0 0 28px rgba(34,197,94,0.08)',
     zIndex: -1,
 });
 
@@ -155,18 +161,19 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '58px',
+    width: '40px',
+    borderRadius: '999px',
     cursor: 'pointer'
 };
 
 const activeIndicator = (theme) => ({
     position: 'absolute',
-    bottom: '8px',
+    bottom: '4px',
     width: '5px',
     height: '5px',
     borderRadius: '50%',
     backgroundColor: Colors.get('iconsHighlited', theme),
-    boxShadow: `0 0 10px ${Colors.get('iconsHighlited', theme)}`
+    boxShadow: `0 0 7px ${Colors.get('iconsHighlited', theme)}`
 });
 
 const addBtnStyle = (theme) => ({

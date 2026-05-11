@@ -21,6 +21,7 @@ export const bottomBtnPanel$ = new BehaviorSubject('');
 export const notifyPanel$ = new BehaviorSubject(false);
 export const notify$ = new BehaviorSubject([{enabled:false,cron:''},{enabled:false,cron:''},{enabled:false,cron:''}]);
 export const habitsChanged$ = new Subject();
+export const habitsSelectedDate$ = new BehaviorSubject(null);
 export const sectionAccent$ = new Subject();
 export const daysToFormAHabit$ = new BehaviorSubject(66);
 export const currentBottomBtn$ = new BehaviorSubject(0);
@@ -91,6 +92,7 @@ export const setPage = (page) => {
 }
 export const setAddPanel = (state) => addPanel$.next(state);
 export const emitHabitsChanged = () => habitsChanged$.next(Date.now());
+export const setHabitsSelectedDate = (dateKey) => habitsSelectedDate$.next(dateKey);
 export const emitSectionAccentChanged = () => sectionAccent$.next(Date.now());
 export const setDaysToFormAHabit = (days) => {daysToFormAHabit$.next(days);AppData.daysToFormAHabit = days;};
 export const setSoundAndVibro = (s,v) => {sound$.next(s);vibro$.next(v);}

@@ -36,6 +36,7 @@ import {
   getTodoCategoryTone,
   normalizeTodoCategory,
   TODO_ACCENT_PRESETS,
+  TODO_SUCCESS,
   TODO_SECTION_TOP
 } from './ToDoVisuals.js';
 
@@ -63,7 +64,7 @@ const FILTERS = [
   { id: 1, label: ['Сегодня', 'Today'] },
   { id: 2, label: ['В работе', 'Active'] },
   { id: 3, label: ['Отложено', 'Pending'] },
-  { id: 4, label: ['Готово', 'Done'] }
+  { id: 4, label: ['Архив', 'Archive'] }
 ];
 
 const SORTS = [
@@ -122,6 +123,14 @@ function getWeekdayLabel(offset, langIndex) {
   const ru = ['ВС', 'ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
   const en = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
   return (langIndex === 0 ? ru : en)[date.getDay()];
+}
+
+function getSelectedDateLabel(selectedDateKey, langIndex) {
+  const today = dateKey(new Date());
+  if (selectedDateKey === today) return langIndex === 0 ? 'сегодня' : 'today';
+  const date = parseDate(selectedDateKey);
+  if (!date) return langIndex === 0 ? 'готово' : 'done';
+  return date.toLocaleDateString(langIndex === 0 ? 'ru-RU' : 'en-US', { day: '2-digit', month: '2-digit' });
 }
 
 function isTaskActiveOnDate(task, targetDateKey) {
@@ -224,7 +233,9 @@ const ToDoMain = () => {
       );
     }
 
-    processedList = processedList.filter(task => isTaskActiveOnDate(task, selectedDateKey));
+    if (filterParams !== 4) {
+      processedList = processedList.filter(task => isTaskActiveOnDate(task, selectedDateKey));
+    }
 
     switch (filterParams) {
       case 1:
@@ -234,12 +245,13 @@ const ToDoMain = () => {
         processedList = processedList.filter(task => !task.isDone && !task.isPending);
         break;
       case 3:
-        processedList = processedList.filter(task => task.isPending);
+        processedList = processedList.filter(task => !task.isDone && task.isPending);
         break;
       case 4:
         processedList = processedList.filter(task => task.isDone);
         break;
       default:
+        processedList = processedList.filter(task => !task.isDone);
         break;
     }
 
@@ -279,6 +291,11 @@ const ToDoMain = () => {
     const total = visible.length;
     return { active, done, today, overdue, pending, total };
   }, [refreshTrigger, filterParams, showHiddenTasks]);
+
+  const archiveTasksCount = useMemo(
+    () => (AppData.todoList || []).filter(task => task.isDone).length,
+    [refreshTrigger]
+  );
 
   const groupedTasks = useMemo(() => {
     const groups = {};
@@ -441,6 +458,7 @@ const ToDoMain = () => {
                   theme={theme}
                   accent={accent}
                   langIndex={langIndex}
+                  summaryLabel={getSelectedDateLabel(selectedDateKey, langIndex)}
                 >
                   {groupedTasks[category].map((item, index) => (
                     <TaskCard
@@ -470,6 +488,51 @@ const ToDoMain = () => {
               })
             )}
           </AnimatePresence>
+          {(hiddenTasksCount > 0 || archiveTasksCount > 0) && (
+            <div style={s.revealActions}>
+              {hiddenTasksCount > 0 && (
+                <motion.button
+                  key="hidden-toggle-bottom"
+                  type="button"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setShowHiddenTasks(prev => !prev);
+                    playEffects(clickSound);
+                  }}
+                  style={s.hiddenRevealBar(showHiddenTasks)}
+                >
+                  {showHiddenTasks ? <FaRegEyeSlash /> : <FaEye />}
+                  <span>
+                    {showHiddenTasks
+                      ? (langIndex === 0 ? 'Скрыть скрытые' : 'Hide hidden')
+                      : (langIndex === 0 ? 'Скрытые' : 'Hidden')}
+                  </span>
+                  <b>{hiddenTasksCount}</b>
+                </motion.button>
+              )}
+              {(hiddenTasksCount > 0 || archiveTasksCount > 0) && (
+                <motion.button
+                  key="archive-toggle-bottom"
+                  type="button"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    setFilterParams(4);
+                    setShowHiddenTasks(false);
+                    playEffects(clickSound);
+                  }}
+                  style={s.hiddenRevealBar(filterParams === 4)}
+                >
+                  <FaCheckCircle />
+                  <span>{langIndex === 0 ? 'Архив' : 'Archive'}</span>
+                  <b>{archiveTasksCount}</b>
+                </motion.button>
+              )}
+            </div>
+          )}
         </section>
       </div>
     </div>
@@ -531,9 +594,8 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
   };
 
   return (
-    <motion.section layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={s.hero}>
+    <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={s.hero}>
       <div style={s.heroGlow} />
-      <img style={s.heroImage} src="images/bro_task.png" alt="" />
       <div style={s.heroHeader}>
         <div style={s.heroTextBlock}>
           <div style={s.eyebrow}>{langIndex === 0 ? 'Сегодня' : 'Today'}</div>
@@ -578,7 +640,7 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
             initial={{ height: 0, opacity: 0, y: -6 }}
             animate={{ height: 'auto', opacity: 1, y: 0 }}
             exit={{ height: 0, opacity: 0, y: -6 }}
-            transition={{ type: 'spring', stiffness: 240, damping: 28 }}
+            transition={{ duration: 0.18, ease: [0.2, 0, 0.2, 1] }}
             style={s.filterDrawer}
           >
             <div style={s.searchCard}>
@@ -678,7 +740,7 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
             initial={{ height: 0, opacity: 0, y: -6 }}
             animate={{ height: 'auto', opacity: 1, y: 0 }}
             exit={{ height: 0, opacity: 0, y: -6 }}
-            transition={{ type: 'spring', stiffness: 230, damping: 28 }}
+            transition={{ duration: 0.18, ease: [0.2, 0, 0.2, 1] }}
             style={s.heroCollapsible}
           >
             <div style={s.heroSummaryCard}>
@@ -876,7 +938,7 @@ const TodoAccentModal = ({ show, onClose, theme, langIndex, accent, accentColor,
   );
 };
 
-const CategoryPanel = ({ title, categoryKey, count, doneCount, todayCount, children, theme, accent, langIndex }) => {
+const CategoryPanel = ({ title, categoryKey, count, doneCount, todayCount, children, theme, accent, langIndex, summaryLabel }) => {
   const [isOpen, setIsOpen] = useState(() => !isTodoCategoryCollapsed(categoryKey || title));
   const s = styles(theme, accent);
   const categoryTone = getTodoCategoryTone(categoryKey || title, accent);
@@ -916,7 +978,7 @@ const CategoryPanel = ({ title, categoryKey, count, doneCount, todayCount, child
           <div style={s.categoryTextBlock}>
             <span style={s.categoryName}>{title}</span>
             <span style={s.categoryMeta}>
-              <span style={{ color: tone.hue }}>{done}</span> / {count} {todayCount > 0 ? (langIndex === 0 ? 'сегодня' : 'today') : (langIndex === 0 ? 'готово' : 'done')}
+              <span style={{ color: tone.hue }}>{done}</span> / {count} {summaryLabel || (langIndex === 0 ? 'сегодня' : 'today')}
             </span>
           </div>
         </div>
@@ -968,6 +1030,7 @@ const TaskCard = ({
   const isOverdue = isDeadlinePassed(item.deadLine) && !item.isDone;
   const categoryTone = getTodoCategoryTone(item.category, accent);
   const cardAccent = categoryTone;
+  const progressTone = item.isDone ? TODO_SUCCESS : cardAccent;
   const TaskIcon = cardAccent.icon;
   const submitSubDraft = (event) => {
     event.preventDefault();
@@ -980,9 +1043,11 @@ const TaskCard = ({
 
   return (
     <motion.article
+      layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ type: 'spring', stiffness: 118, damping: 27, mass: 0.92 }}
       whileTap={{ scale: 0.985 }}
       onClick={onOpen}
       style={s.taskCard(item.isDone, isOverdue, item.isPinned, cardAccent, expanded)}
@@ -1003,7 +1068,7 @@ const TaskCard = ({
               <MiniBadge icon={<FaLayerGroup />} text={DIFFICULTY_LABELS[item.difficulty]?.[lang]} color={DIFFICULTY_COLORS[item.difficulty] || DIFFICULTY_COLORS[0]} accent={accent} theme={theme} expanded />
             )}
             {(fieldVisibility.urgency ?? true) && item.urgency != null && (
-              <MiniBadge icon={<FaFire />} text={URGENCY_LABELS[item.urgency]?.[lang]} color={URGENCY_COLORS[item.urgency] || URGENCY_COLORS[0]} accent={accent} theme={theme} expanded />
+              <MiniBadge icon={<FaFlag />} text={URGENCY_LABELS[item.urgency]?.[lang]} color={URGENCY_COLORS[item.urgency] || URGENCY_COLORS[0]} accent={accent} theme={theme} expanded />
             )}
             <MiniBadge
               icon={isOverdue ? <FaFire /> : <FaCalendarDay />}
@@ -1026,20 +1091,23 @@ const TaskCard = ({
 
       {(totalGoals > 0 || item.isDone) && (
         <div style={s.progressTrack}>
-          <div style={{ ...s.progressFill(cardAccent.hue), width: `${progress}%` }} />
+          <div style={{ ...s.progressFill(progressTone.hue), width: `${progress}%` }} />
         </div>
       )}
 
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
-            initial={{ maxHeight: 0, opacity: 0 }}
-            animate={{ maxHeight: 720, opacity: 1 }}
-            exit={{ maxHeight: 0, opacity: 0 }}
-            transition={{ duration: 0.18, ease: [0.2, 0, 0.2, 1] }}
+            layout
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.16, ease: [0.2, 0, 0.2, 1] }}
             style={s.taskExpanded}
             onClick={(event) => event.stopPropagation()}
           >
+            {item.description && <div style={s.expandedDescription}>{item.description}</div>}
+
             <div style={s.expandedInfoGrid}>
               <div style={s.expandedInfo}>
                 <FaCalendarDay size={10} />
@@ -1050,8 +1118,6 @@ const TaskCard = ({
                 <span>{item.deadLine ? formatTaskDate(item.deadLine, lang) : (lang === 0 ? 'Без дедлайна' : 'No deadline')}</span>
               </div>
             </div>
-
-            {item.description && <div style={s.expandedDescription}>{item.description}</div>}
 
             <div style={s.expandedChecklist}>
               <div style={s.expandedTitle}>
@@ -1068,10 +1134,10 @@ const TaskCard = ({
                       onClick={(event) => onSubCheck(event, index)}
                       style={s.expandedGoal(goal.isDone)}
                     >
+                      <span style={s.expandedGoalText(goal.isDone)}>{goal.text}</span>
                       <span style={s.expandedGoalDot(goal.isDone)}>
-                        {goal.isDone && <FaCheck size={7} />}
+                        {goal.isDone && <FaCheck size={12} />}
                       </span>
-                      <span>{goal.text}</span>
                     </button>
                   ))}
                   {totalGoals > 4 && <div style={s.moreGoals}>+{totalGoals - 4}</div>}
@@ -1112,17 +1178,27 @@ const TaskCard = ({
         )}
       </AnimatePresence>
 
-      <div style={s.actionRow(expanded)}>
-        <ActionButton active={item.isPinned} label={lang === 0 ? 'Пин' : 'Pin'} icon={<FaThumbtack />} onClick={(event) => { event.stopPropagation(); onPinned(item.id); }} theme={theme} accent={accent} />
-        <ActionButton active={item.isPending} label={lang === 0 ? 'Позже' : 'Later'} icon={<FaClock />} onClick={(event) => { event.stopPropagation(); onPending(item.id); }} theme={theme} accent={accent} />
-        <ActionButton active={item.isHidden} label={lang === 0 ? 'Скрыто' : 'Hidden'} icon={<FaRegEyeSlash />} onClick={(event) => { event.stopPropagation(); onHidden(item.id); }} theme={theme} accent={accent} />
-        {item.isDone && (
-          <span style={s.donePill}>
-            <FaCheckCircle size={11} />
-            {lang === 0 ? 'Готово' : 'Done'}
-          </span>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.14 }}
+            style={s.actionRow(expanded)}
+          >
+            <ActionButton active={item.isPinned} label={lang === 0 ? 'Закрепить' : 'Pin'} icon={<FaThumbtack />} onClick={(event) => { event.stopPropagation(); onPinned(item.id); }} theme={theme} accent={accent} />
+            <ActionButton active={item.isPending} label={lang === 0 ? 'Позже' : 'Later'} icon={<FaClock />} onClick={(event) => { event.stopPropagation(); onPending(item.id); }} theme={theme} accent={accent} />
+            <ActionButton active={item.isHidden} label={lang === 0 ? 'Скрыть' : 'Hide'} icon={<FaRegEyeSlash />} onClick={(event) => { event.stopPropagation(); onHidden(item.id); }} theme={theme} accent={accent} />
+            {item.isDone && (
+              <span style={s.donePill}>
+                <FaCheckCircle size={11} />
+                {lang === 0 ? 'Готово' : 'Done'}
+              </span>
+            )}
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </motion.article>
   );
 };
@@ -1183,8 +1259,13 @@ const styles = (theme, accent, fSize = 0) => {
   const text = Colors.get('mainText', theme);
   const sub = Colors.get('subText', theme);
   const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
-  const panel = isLight ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.045)';
+  const panel = isLight
+    ? 'linear-gradient(135deg, rgba(255,255,255,0.68), rgba(255,255,255,0.40))'
+    : 'linear-gradient(135deg, rgba(255,255,255,0.070), rgba(255,255,255,0.026))';
   const panelStrong = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(20,23,27,0.86)';
+  const glassShadow = isLight
+    ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)'
+    : '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)';
 
   return {
     container: {
@@ -1260,14 +1341,12 @@ const styles = (theme, accent, fSize = 0) => {
       padding: '14px 16px',
       overflow: 'hidden',
       background: isLight
-        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(${accent.rgbText},0.12) 58%, rgba(${accent.rgbText},0.08) 100%)`
-        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, rgba(${accent.rgbText},0.14) 54%, rgba(${accent.rgbText},0.08) 100%)`,
-      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : accent.ring}`,
-      boxShadow: isLight
-        ? `0 16px 38px -34px rgba(${accent.rgbText},0.45), 0 1px 0 rgba(255,255,255,0.72) inset`
-        : `0 18px 40px -34px rgba(${accent.rgbText},0.50), 0 1px 0 rgba(255,255,255,0.055) inset`,
-      backdropFilter: 'blur(18px)',
-      WebkitBackdropFilter: 'blur(18px)',
+        ? `linear-gradient(145deg, rgba(255,255,255,0.70) 0%, rgba(${accent.rgbText},0.10) 58%, rgba(255,255,255,0.36) 100%)`
+        : `linear-gradient(145deg, rgba(23,27,31,0.68) 0%, rgba(${accent.rgbText},0.11) 54%, rgba(255,255,255,0.025) 100%)`,
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.13)'}`,
+      boxShadow: glassShadow,
+      backdropFilter: 'blur(26px) saturate(170%)',
+      WebkitBackdropFilter: 'blur(26px) saturate(170%)',
       boxSizing: 'border-box',
       isolation: 'isolate'
     },
@@ -1278,7 +1357,7 @@ const styles = (theme, accent, fSize = 0) => {
       width: 170,
       height: 170,
       borderRadius: '50%',
-      background: `radial-gradient(circle, rgba(${accent.rgbText},0.22) 0%, transparent 62%)`,
+      background: `radial-gradient(circle, rgba(${accent.rgbText},0.12) 0%, transparent 64%)`,
       pointerEvents: 'none',
       zIndex: 0
     },
@@ -1386,8 +1465,8 @@ const styles = (theme, accent, fSize = 0) => {
     }),
     heroSummaryCard: {
       borderRadius: 14,
-      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
-      background: isLight ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.032)',
+      border: `1px solid ${border}`,
+      background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.038)',
       padding: '10px 11px',
       boxSizing: 'border-box',
       boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
@@ -1418,8 +1497,8 @@ const styles = (theme, accent, fSize = 0) => {
       minWidth: 0,
       minHeight: wide ? 34 : 32,
       borderRadius: 12,
-      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
-      background: isLight ? 'rgba(255,255,255,0.56)' : 'rgba(255,255,255,0.035)',
+      border: `1px solid ${border}`,
+      background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.038)',
       padding: '0 10px',
       boxSizing: 'border-box',
       overflow: 'hidden',
@@ -1449,10 +1528,11 @@ const styles = (theme, accent, fSize = 0) => {
 	      marginTop: 12,
 	      borderRadius: 20,
 	      padding: 10,
-	      background: isLight ? 'rgba(255,255,255,0.58)' : 'rgba(0,0,0,0.13)',
+	      background: panel,
 	      border: `1px solid ${border}`,
-	      backdropFilter: 'blur(18px)',
-	      WebkitBackdropFilter: 'blur(18px)'
+	      boxShadow: glassShadow,
+	      backdropFilter: 'blur(22px) saturate(165%)',
+	      WebkitBackdropFilter: 'blur(22px) saturate(165%)'
 	    },
 	    warningPill: {
       width: 'fit-content',
@@ -1474,8 +1554,9 @@ const styles = (theme, accent, fSize = 0) => {
 	      padding: 10,
 	      background: panel,
 	      border: `1px solid ${border}`,
-	      backdropFilter: 'blur(18px)',
-	      WebkitBackdropFilter: 'blur(18px)'
+	      boxShadow: glassShadow,
+	      backdropFilter: 'blur(22px) saturate(165%)',
+	      WebkitBackdropFilter: 'blur(22px) saturate(165%)'
 	    },
 	    searchCard: {
 	      minHeight: 44,
@@ -1516,7 +1597,9 @@ const styles = (theme, accent, fSize = 0) => {
 	      padding: 12,
 	      background: panel,
 	      border: `1px solid ${border}`,
-	      backdropFilter: 'blur(18px)'
+	      boxShadow: glassShadow,
+	      backdropFilter: 'blur(22px) saturate(165%)',
+	      WebkitBackdropFilter: 'blur(22px) saturate(165%)'
 	    },
 	    controlHead: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, margin: '10px 0 9px' },
     controlTitle: { display: 'flex', alignItems: 'center', gap: 7, color: sub, fontSize: 12, fontWeight: 900 },
@@ -1583,6 +1666,37 @@ const styles = (theme, accent, fSize = 0) => {
 	      fontFamily: 'inherit',
 	      outline: 'none'
 	    }),
+    hiddenRevealBar: (active) => ({
+      width: 'fit-content',
+      maxWidth: '100%',
+      minHeight: 32,
+      borderRadius: 999,
+      border: `1px solid ${active ? accent.ring : border}`,
+      background: active ? accent.soft : (isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.026)'),
+      color: active ? accent.hue : sub,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      padding: '0 12px',
+      boxSizing: 'border-box',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset',
+      backdropFilter: 'blur(16px) saturate(145%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(145%)',
+      fontFamily: 'inherit',
+      fontSize: 11,
+      fontWeight: 900,
+      cursor: 'pointer',
+      outline: 'none'
+    }),
+    revealActions: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      flexWrap: 'wrap',
+      width: '100%'
+    },
     weekStrip: {
       width: 'calc(100% - 56px)',
       maxWidth: 660,
@@ -1650,6 +1764,7 @@ const styles = (theme, accent, fSize = 0) => {
 	      alignItems: 'center',
 	      justifyContent: 'space-between',
 	      padding: '4px 4px 10px',
+	      marginBottom: 6,
 	      gap: 10,
 	      color: text,
 	      cursor: 'pointer',
@@ -1689,19 +1804,31 @@ const styles = (theme, accent, fSize = 0) => {
     categoryBody: { overflowY: 'hidden', overflowX: 'visible', display: 'flex', flexDirection: 'column', gap: 10, padding: '0 1px', boxSizing: 'border-box' },
     taskCard: (done, overdue, pinned, tone = accent, expanded = false) => ({
       position: 'relative',
-      borderRadius: 20,
+      borderRadius: 28,
       padding: '14px 16px 13px',
+      minHeight: expanded ? 'auto' : 108,
       overflow: 'hidden',
-      background: isLight
-        ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${tone.soft})`
-        : `radial-gradient(230px 115px at 4% 8%, ${tone.soft}, transparent 72%), linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.92))`,
-      border: `1px solid ${overdue ? 'rgba(233,95,95,0.34)' : pinned ? tone.ring : border}`,
-      boxShadow: pinned ? `0 14px 36px -24px ${tone.hue}` : isLight ? '0 12px 28px -24px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.72) inset' : '0 1px 0 rgba(255,255,255,0.04) inset, 0 14px 34px -28px rgba(0,0,0,0.72)',
-      opacity: done ? 0.72 : 1,
+      background: done
+        ? (isLight
+          ? `linear-gradient(145deg, rgba(255,255,255,0.95), ${TODO_SUCCESS.soft})`
+          : `radial-gradient(240px 128px at 6% 8%, ${TODO_SUCCESS.soft}, transparent 72%), linear-gradient(145deg, rgba(22,34,27,0.82), rgba(15,21,18,0.76))`)
+        : (pinned
+          ? (isLight
+            ? `linear-gradient(145deg, rgba(255,255,255,0.90), ${tone.soft})`
+            : `radial-gradient(230px 115px at 4% 8%, ${tone.soft}, transparent 72%), linear-gradient(145deg, rgba(24,28,31,0.86), rgba(20,23,25,0.82))`)
+          : (isLight
+            ? 'linear-gradient(145deg, rgba(255,255,255,0.82), rgba(244,246,248,0.56))'
+            : 'linear-gradient(145deg, rgba(42,49,55,0.52), rgba(17,22,26,0.66))')),
+      border: `1px solid ${done ? TODO_SUCCESS.ring : overdue ? 'rgba(233,95,95,0.34)' : pinned ? tone.ring : border}`,
+      boxShadow: done ? `0 1px 0 rgba(255,255,255,0.06) inset, 0 16px 38px -28px ${TODO_SUCCESS.glow}` : pinned ? `0 14px 36px -24px ${tone.hue}` : isLight ? '0 12px 28px -24px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.72) inset' : '0 1px 0 rgba(255,255,255,0.04) inset, 0 14px 34px -28px rgba(0,0,0,0.72)',
+      opacity: 1,
       cursor: 'pointer',
-      backdropFilter: 'blur(18px)'
+      backdropFilter: 'blur(24px) saturate(160%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+      clipPath: 'inset(0 round 28px)',
+      transition: 'background 0.42s ease, border-color 0.42s ease, box-shadow 0.42s ease'
     }),
-    taskMainRow: { display: 'flex', alignItems: 'center', gap: 14, minHeight: 56 },
+    taskMainRow: { display: 'flex', alignItems: 'center', gap: 14, minHeight: 58 },
     taskGlyph: {
       width: 46,
       height: 46,
@@ -1731,13 +1858,13 @@ const styles = (theme, accent, fSize = 0) => {
     checkButton: (done) => ({
       width: 40,
       height: 30,
-      borderRadius: 10,
-      border: `1px solid ${done ? 'rgba(16,185,129,0.30)' : (isLight ? 'rgba(15,23,42,0.1)' : 'rgba(255,255,255,0.095)')}`,
-      background: done ? Colors.get('done', theme) : 'transparent',
+      borderRadius: 12,
+      border: `1px solid ${done ? TODO_SUCCESS.ring : (isLight ? 'rgba(15,23,42,0.1)' : 'rgba(255,255,255,0.095)')}`,
+      background: done ? TODO_SUCCESS.hue : 'transparent',
       color: '#fff',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
       flexShrink: 0
     }),
     metaRow: {
@@ -1752,12 +1879,12 @@ const styles = (theme, accent, fSize = 0) => {
       boxSizing: 'border-box',
       opacity: 0.82,
       width: '100%',
-      maxWidth: 270
+      maxWidth: '100%'
     },
     progressTrack: { height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)', overflow: 'hidden', marginTop: 10 },
     progressFill: (color) => ({ height: '100%', borderRadius: 999, background: color, boxShadow: `0 0 18px ${color}66` }),
-    taskExpanded: { overflow: 'hidden', marginTop: 10, borderTop: `1px solid ${border}`, paddingTop: 10, willChange: 'max-height, opacity', contain: 'layout paint' },
-    expandedInfoGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 7 },
+    taskExpanded: { overflow: 'hidden', marginTop: 10, borderTop: `1px solid ${border}`, paddingTop: 10, willChange: 'opacity, transform' },
+    expandedInfoGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 7, marginTop: 8 },
     expandedInfo: {
       minHeight: 32,
       borderRadius: 12,
@@ -1773,12 +1900,29 @@ const styles = (theme, accent, fSize = 0) => {
       minWidth: 0,
       overflow: 'hidden'
     },
-    expandedDescription: { marginTop: 8, color: text, fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, opacity: 0.86 },
+    expandedDescription: { color: text, fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, opacity: 0.86, textAlign: 'center' },
     expandedChecklist: { marginTop: 9, borderRadius: 14, background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.028)', border: `1px solid ${border}`, padding: 10 },
     expandedTitle: { display: 'flex', alignItems: 'center', gap: 7, color: sub, fontSize: 11, fontWeight: 900, marginBottom: 8 },
-    expandedGoals: { display: 'flex', flexDirection: 'column', gap: 6 },
-    expandedGoal: (done) => ({ width: '100%', border: 'none', background: 'transparent', display: 'flex', alignItems: 'center', gap: 8, minHeight: 30, color: done ? sub : text, fontSize: 12, fontWeight: 780, textDecoration: done ? 'line-through' : 'none', fontFamily: 'inherit', textAlign: 'left', padding: '3px 2px', cursor: 'pointer', borderRadius: 9 }),
-    expandedGoalDot: (done) => ({ width: 16, height: 16, borderRadius: 5, border: `1px solid ${done ? Colors.get('done', theme) : border}`, background: done ? Colors.get('done', theme) : 'transparent', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }),
+    expandedGoals: { display: 'flex', flexDirection: 'column', gap: 8 },
+    expandedGoal: (done) => ({
+      width: '100%',
+      border: `1px solid ${done ? TODO_SUCCESS.ring : border}`,
+      background: done
+        ? (isLight ? 'linear-gradient(135deg, rgba(57,217,130,0.18), rgba(57,217,130,0.08))' : 'linear-gradient(135deg, rgba(57,217,130,0.16), rgba(57,217,130,0.055))')
+        : (isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.035)'),
+      boxShadow: done ? `0 1px 0 rgba(255,255,255,0.055) inset, 0 12px 22px -24px ${TODO_SUCCESS.hue}` : '0 1px 0 rgba(255,255,255,0.035) inset',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      minHeight: 48,
+      fontFamily: 'inherit',
+      textAlign: 'left',
+      padding: '10px 12px',
+      cursor: 'pointer',
+      borderRadius: 15
+    }),
+    expandedGoalText: (done) => ({ flex: 1, minWidth: 0, color: done ? TODO_SUCCESS.hue : text, fontSize: 13, fontWeight: done ? 800 : 650, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
+    expandedGoalDot: (done) => ({ width: 25, height: 25, borderRadius: 9, border: `1px solid ${done ? TODO_SUCCESS.ring : (isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)')}`, background: done ? TODO_SUCCESS.hue : 'transparent', color: isLight ? '#FFFFFF' : '#0E1512', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: done ? `0 8px 16px -12px ${TODO_SUCCESS.hue}` : 'none' }),
     moreGoals: { color: sub, fontSize: 11, fontWeight: 850 },
     emptyChecklist: { color: sub, fontSize: 12, fontWeight: 750, minHeight: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' },
     checklistAddRow: {
@@ -1854,8 +1998,8 @@ const styles = (theme, accent, fSize = 0) => {
       justifyContent: 'center',
       gap: 5,
       marginTop: expanded ? 10 : 7,
-      paddingLeft: expanded ? 0 : 60,
-      paddingRight: expanded ? 0 : 56,
+      paddingLeft: 0,
+      paddingRight: 0,
       boxSizing: 'border-box',
       flexWrap: 'wrap'
     }),

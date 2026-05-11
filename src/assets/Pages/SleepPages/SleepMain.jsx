@@ -449,8 +449,13 @@ export default SleepMain;
 
 const styles = (theme, accent) => {
   const isLight = theme === 'light' || theme === 'speciallight';
-  const panel = isLight ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.045)';
-  const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
+  const panel = isLight
+    ? 'linear-gradient(135deg, rgba(255,255,255,0.68), rgba(255,255,255,0.40))'
+    : 'linear-gradient(135deg, rgba(255,255,255,0.070), rgba(255,255,255,0.026))';
+  const border = isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.105)';
+  const glassShadow = isLight
+    ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)'
+    : '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)';
 
   return {
     container: {
@@ -539,16 +544,18 @@ const styles = (theme, accent) => {
       padding: '18px 18px',
       boxSizing: 'border-box',
       background: isLight
-        ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${accent.faint})`
-        : `linear-gradient(145deg, rgba(23,27,31,0.96), rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.16))`,
-      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : accent.ring}`,
-      boxShadow: isLight ? '0 16px 34px -28px rgba(15,23,42,0.2)' : '0 18px 44px -32px rgba(0,0,0,0.74)',
+        ? `linear-gradient(145deg, rgba(255,255,255,0.70), ${accent.faint})`
+        : `linear-gradient(145deg, rgba(23,27,31,0.68), rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.12))`,
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.13)'}`,
+      boxShadow: glassShadow,
+      backdropFilter: 'blur(26px) saturate(170%)',
+      WebkitBackdropFilter: 'blur(26px) saturate(170%)',
       isolation: 'isolate'
     },
     sleepHeroGlow: {
       position: 'absolute',
       inset: 0,
-      background: `radial-gradient(circle at 84% 22%, ${accent.soft} 0%, transparent 40%)`,
+      background: `radial-gradient(circle at 84% 22%, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.12) 0%, transparent 44%)`,
       pointerEvents: 'none',
       zIndex: 0
     },
@@ -600,6 +607,9 @@ const styles = (theme, accent) => {
       padding: 14,
       background: panel,
       border: `1px solid ${border}`,
+      boxShadow: glassShadow,
+      backdropFilter: 'blur(22px) saturate(165%)',
+      WebkitBackdropFilter: 'blur(22px) saturate(165%)',
       boxSizing: 'border-box'
     },
     monthHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 },
@@ -630,15 +640,15 @@ const styles = (theme, accent) => {
     selectedDot: { position: 'absolute', left: '50%', bottom: 6, width: 5, height: 5, borderRadius: 999, background: accent.hue, transform: 'translateX(-50%)', zIndex: 2 },
     details: { marginTop: 14 },
     dateLabel: { color: Colors.get('subText', theme), fontSize: 13, fontWeight: 900, padding: '0 4px 8px' },
-    entryCard: { position: 'relative', overflow: 'hidden', borderRadius: 22, padding: 14, background: panel, border: `1px solid ${border}` },
+    entryCard: { position: 'relative', overflow: 'hidden', borderRadius: 22, padding: 14, background: panel, border: `1px solid ${border}`, boxShadow: glassShadow, backdropFilter: 'blur(22px) saturate(165%)', WebkitBackdropFilter: 'blur(22px) saturate(165%)' },
     entryGlow: (color) => ({ position: 'absolute', right: -70, top: -90, width: 200, height: 200, borderRadius: '50%', background: `${color}25`, filter: 'blur(32px)' }),
     metricsGrid: { position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 9, zIndex: 1 },
-    metricBox: { minWidth: 0, minHeight: 78, borderRadius: 16, background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 8, boxSizing: 'border-box' },
+    metricBox: { minWidth: 0, minHeight: 78, borderRadius: 16, background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.038)', border: `1px solid ${border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 8, boxSizing: 'border-box' },
     metricIcon: { fontSize: 17, marginBottom: 6 },
     metricLabel: { color: Colors.get('subText', theme), fontSize: 9, fontWeight: 900, textTransform: 'uppercase', textAlign: 'center' },
     metricValue: { color: Colors.get('mainText', theme), fontSize: 14, fontWeight: 950, marginTop: 3 },
     starRow: { display: 'flex', gap: 2, marginTop: 5 },
-    noteBox: { position: 'relative', zIndex: 1, display: 'flex', gap: 10, marginTop: 10, padding: 12, borderRadius: 14, background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)', color: Colors.get('mainText', theme), fontSize: 13, fontWeight: 700, lineHeight: 1.4 },
-    emptyState: { minHeight: 122, borderRadius: 22, border: `1px dashed ${border}`, background: panel, color: Colors.get('subText', theme), display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800 }
+    noteBox: { position: 'relative', zIndex: 1, display: 'flex', gap: 10, marginTop: 10, padding: 12, borderRadius: 14, background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.038)', border: `1px solid ${border}`, color: Colors.get('mainText', theme), fontSize: 13, fontWeight: 700, lineHeight: 1.4 },
+    emptyState: { minHeight: 122, borderRadius: 22, border: `1px dashed ${border}`, background: panel, boxShadow: glassShadow, backdropFilter: 'blur(22px) saturate(165%)', WebkitBackdropFilter: 'blur(22px) saturate(165%)', color: Colors.get('subText', theme), display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800 }
   };
 };

@@ -165,7 +165,7 @@ const AddButton = ({ disabled, onClick, theme, active, accent }) => (
             border: active ? `1px solid ${accent.ring}` : `1px solid ${Colors.get('border', theme)}`,
         }}
     >
-        <Add style={{ fontSize: '28px', color: active ? accent.hue : Colors.get('icons', theme) }} />
+        <Add style={{ fontSize: '26px', color: active ? accent.hue : Colors.get('icons', theme) }} />
     </Motion.div>
 );
 
@@ -183,19 +183,19 @@ const onBack = async (page, addPanel) => {
 // Styles
 const containerStyle = () => ({
     position: 'fixed',
-    bottom: 'max(18px, calc(24px + env(safe-area-inset-bottom, 0px)))',
+    bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
     left: '50%',
     transform: 'translateX(-50%)',
-    width: 'calc(100vw - 40px)',
-    maxWidth: '420px',
-    height: '66px',
+    width: 'calc(100vw - 72px)',
+    maxWidth: '360px',
+    height: '58px',
     borderRadius: '999px',
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
     zIndex: 1000,
     boxSizing: 'border-box',
-    padding: '10px 12px',
+    padding: '7px 10px',
     backdropFilter: 'blur(24px) saturate(180%)',
     WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     overflow: 'hidden',
@@ -225,7 +225,7 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '44px',
+    width: '40px',
     borderRadius: '999px',
     cursor: 'pointer'
 };
@@ -241,8 +241,8 @@ const activeIndicator = (accent) => ({
 });
 
 const addBtnStyle = (theme) => ({
-    width: '46px',
-    height: '46px',
+    width: '42px',
+    height: '42px',
     borderRadius: '999px',
     display: 'flex',
     alignItems: 'center',

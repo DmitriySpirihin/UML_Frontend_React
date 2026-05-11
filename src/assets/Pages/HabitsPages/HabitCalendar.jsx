@@ -8,26 +8,35 @@ import { HABITS_ACCENT, HabitOutlineIcon, getHabitCategoryTone } from './HabitVi
 
 // ВАЖНО: Импорты как в HabitsMain
 import { expandedCard$, setExpandedCard } from '../../StaticClasses/HabitsBus.js';
-import { theme$ ,lang$,fontSize$, emitHabitsChanged, setPage } from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$, emitHabitsChanged, setPage, setHabitsSelectedDate } from '../../StaticClasses/HabitsBus'
 
-import Check from '@mui/icons-material/Check';
 import Close from '@mui/icons-material/Close';
 import {MdDoneAll} from 'react-icons/md'
+import { FaCheck } from 'react-icons/fa6'
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 
 const HABITS_SUCCESS = {
-    hue: '#78B879',
-    soft: 'rgba(120,184,121,0.18)',
-    ring: 'rgba(120,184,121,0.30)',
-    glow: 'rgba(120,184,121,0.20)',
-    rgb: '120,184,121'
+    hue: '#10C76A',
+    soft: 'rgba(16,199,106,0.34)',
+    ring: 'rgba(16,199,106,0.76)',
+    glow: 'rgba(16,199,106,0.36)',
+    rgb: '16,199,106'
+};
+
+const CALENDAR_PARTIAL = {
+    hue: '#376BEA',
+    soft: 'rgba(55,107,234,0.34)',
+    ring: 'rgba(55,107,234,0.76)',
+    glow: 'rgba(55,107,234,0.38)',
+    rgb: '55,107,234'
 };
 
 const NEGATIVE_SUCCESS = {
     hue: '#D8785E',
     soft: 'rgba(216,120,94,0.18)',
     ring: 'rgba(216,120,94,0.32)',
-    glow: 'rgba(216,120,94,0.20)'
+    glow: 'rgba(216,120,94,0.20)',
+    rgb: '216,120,94'
 };
 const NEGATIVE_CATEGORY = 'Отказ от вредного';
 const NEGATIVE_CATEGORY_EN = 'Bad habits to quit';
@@ -183,11 +192,17 @@ function getDayProgressStats(dateKey) {
 const styles = (theme, fSize = 0) => {
     const isLight = theme === 'light' || theme === 'speciallight';
     const bg = isLight
-        ? `radial-gradient(900px 450px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7`
-        : `radial-gradient(1000px 500px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013`;
+        ? `radial-gradient(640px 420px at 86% -8%, rgba(${HABITS_ACCENT.rgb},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 66%), #F4F5F7`
+        : `radial-gradient(640px 420px at 86% -8%, rgba(${HABITS_ACCENT.rgb},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`;
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
-    const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
+    const glassBorder = isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.13)';
+    const glassPanel = isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.72), rgba(${HABITS_ACCENT.rgb},0.08), rgba(255,255,255,0.38))`
+        : `linear-gradient(145deg, rgba(35,46,56,0.62), rgba(255,255,255,0.038) 58%, rgba(12,17,21,0.52))`;
+    const glassShadow = isLight
+        ? '0 1px 0 rgba(255,255,255,0.82) inset, 0 18px 40px -30px rgba(15,23,42,0.20)'
+        : '0 1px 0 rgba(255,255,255,0.08) inset, 0 20px 44px -30px rgba(0,0,0,0.66)';
 
     return {
         container: {
@@ -199,6 +214,8 @@ const styles = (theme, fSize = 0) => {
             width: '100vw',
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             overflowY: 'auto',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
             boxSizing: 'border-box',
             padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 0 calc(132px + env(safe-area-inset-bottom, 0px))',
             overscrollBehavior: 'contain',
@@ -231,14 +248,14 @@ const styles = (theme, fSize = 0) => {
             width: 'calc(100% - 56px)',
             maxWidth: 660,
             margin: '0 auto',
-            borderRadius: 28,
+            borderRadius: 34,
             padding: '16px 14px 18px',
             boxSizing: 'border-box',
-            background: isLight
-                ? `linear-gradient(145deg, rgba(255,255,255,0.96), rgba(${HABITS_ACCENT.rgb},0.08))`
-                : `radial-gradient(260px 190px at 88% 8%, rgba(${HABITS_ACCENT.rgb},0.13) 0%, transparent 66%), linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.92))`,
-            border: `1px solid ${border}`,
-            boxShadow: isLight ? '0 16px 38px -34px rgba(15,23,42,0.28)' : '0 18px 42px -34px rgba(0,0,0,0.75)',
+            background: glassPanel,
+            border: `1px solid ${glassBorder}`,
+            boxShadow: glassShadow,
+            backdropFilter: 'blur(28px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(28px) saturate(170%)',
             overflow: 'visible'
         },
         calendarHead: {
@@ -285,17 +302,22 @@ const styles = (theme, fSize = 0) => {
         navBtn: {
             width: 40,
             height: 40,
-            borderRadius: 15,
+            borderRadius: 16,
             cursor: 'pointer',
-            background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.055)',
-            border: `1px solid ${border}`,
+            background: isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.72), rgba(15,23,42,0.035))'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.045))',
+            border: `1px solid ${glassBorder}`,
             color: text,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'background 0.2s',
             zIndex: 10,
-            flexShrink: 0
+            flexShrink: 0,
+            boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.82) inset' : '0 1px 0 rgba(255,255,255,0.075) inset',
+            backdropFilter: 'blur(18px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(160%)'
         },
         tableWrapper: {
             width: '100%',
@@ -318,30 +340,32 @@ const styles = (theme, fSize = 0) => {
             width: '100%',
             maxWidth: 45,
             minHeight: 42,
-            borderRadius: 15,
+            borderRadius: 18,
             fontSize: fSize === 0 ? 15 : 16,
             fontWeight: 850,
             transition: 'all 0.2s ease-in-out',
             cursor: 'pointer',
             margin: 'auto',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            backdropFilter: 'blur(16px) saturate(155%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(155%)'
         },
         infoPanelContainer: {
             width: 'calc(100% - 56px)',
             maxWidth: 660,
             margin: '14px auto 0',
-            borderRadius: 28,
-            border: `1px solid ${border}`,
+            borderRadius: 32,
+            border: `1px solid ${glassBorder}`,
             padding: 14,
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'visible',
-            background: isLight
-                ? `linear-gradient(145deg, rgba(255,255,255,0.94), rgba(${HABITS_ACCENT.rgb},0.06))`
-                : 'linear-gradient(145deg, rgba(24,28,31,0.86), rgba(20,23,25,0.92))',
-            boxShadow: isLight ? '0 12px 30px -26px rgba(15,23,42,0.24)' : '0 16px 38px -32px rgba(0,0,0,0.72)'
+            background: glassPanel,
+            boxShadow: glassShadow,
+            backdropFilter: 'blur(28px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(28px) saturate(170%)'
         },
         infoHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
         text: { fontSize: fSize === 0 ? '15px' : '17px', color: text },
@@ -354,27 +378,30 @@ const getProgressVisual = (percent, theme, isSelected = false) => {
     const isLight = theme === 'light' || theme === 'speciallight';
     if (percent <= 0) {
         return {
-            background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
-            border: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)',
-            shadow: 'none'
+            background: isLight ? 'rgba(255,255,255,0.46)' : 'rgba(255,255,255,0.055)',
+            border: isLight ? 'rgba(15,23,42,0.075)' : 'rgba(220,235,245,0.10)',
+            shadow: isLight ? '0 1px 0 rgba(255,255,255,0.70) inset' : '0 1px 0 rgba(255,255,255,0.045) inset'
         };
     }
 
-    const strength = Math.min(Math.max(percent, 1), 100) / 100;
-    const tone = percent >= 100
-        ? { rgb: HABITS_SUCCESS.rgb, rim: HABITS_SUCCESS.ring, glow: HABITS_SUCCESS.glow }
-        : { rgb: HABITS_ACCENT.rgb, rim: `rgba(${HABITS_ACCENT.rgb},0.34)`, glow: HABITS_ACCENT.glow };
-    const alpha = isLight ? 0.08 + strength * 0.24 : 0.09 + strength * 0.22;
-    const secondAlpha = isLight ? 0.04 + strength * 0.11 : 0.045 + strength * 0.1;
+    const isDone = percent >= 100;
+    const tone = isDone
+        ? { ...HABITS_SUCCESS, rim: HABITS_SUCCESS.ring, from: '#13B765', to: '#075A37' }
+        : { ...CALENDAR_PARTIAL, rim: CALENDAR_PARTIAL.ring, from: '#3569E4', to: '#1B3F9B' };
+    const highlight = isLight ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.055)';
     return {
-        background: `linear-gradient(145deg, rgba(${tone.rgb},${alpha}), rgba(${tone.rgb},${secondAlpha}))`,
-        border: isSelected ? tone.rim : tone.rim.replace(/0\.\d+\)/, isLight ? '0.26)' : '0.24)'),
-        shadow: isSelected ? `0 0 24px ${tone.glow}` : 'none'
+        background: isLight
+            ? `radial-gradient(circle at 30% 18%, ${highlight}, transparent 44%), linear-gradient(145deg, ${tone.from}, ${tone.to})`
+            : `radial-gradient(circle at 30% 18%, ${highlight}, transparent 44%), linear-gradient(145deg, ${tone.from}, ${tone.to})`,
+        border: isSelected ? tone.rim : tone.rim,
+        shadow: isSelected
+            ? `0 0 0 1px rgba(${tone.rgb},0.72), 0 0 24px ${tone.glow}, 0 1px 0 rgba(255,255,255,0.14) inset`
+            : `0 0 0 1px rgba(${tone.rgb},0.56), 0 16px 24px -17px rgba(${tone.rgb},0.82), 0 1px 0 rgba(255,255,255,0.10) inset`
     };
 };
 
 const getProgressTextColor = (percent, theme) => {
-     return Colors.get('mainText', theme);; 
+     return percent > 0 ? '#FFFFFF' : Colors.get('mainText', theme);
 }
 
 const monthStatChip = (theme, tone) => {
@@ -392,16 +419,17 @@ const monthStatChip = (theme, tone) => {
         whiteSpace: 'nowrap',
         color: Colors.get('mainText', theme),
         background: tone === 'accent'
-            ? HABITS_ACCENT.soft
+            ? `rgba(${CALENDAR_PARTIAL.rgb},${isLight ? 0.24 : 0.30})`
             : tone === 'done'
-                ? 'rgba(120,184,121,0.12)'
-                : (isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.045)'),
+                ? `rgba(${HABITS_SUCCESS.rgb},${isLight ? 0.20 : 0.26})`
+                : (isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.075)'),
         border: `1px solid ${tone === 'accent'
-            ? HABITS_ACCENT.ring
+            ? CALENDAR_PARTIAL.ring
             : tone === 'done'
-                ? 'rgba(120,184,121,0.22)'
-                : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)')}`,
-        boxSizing: 'border-box'
+                ? HABITS_SUCCESS.ring
+                : (isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.11)')}`,
+        boxSizing: 'border-box',
+        boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.72) inset' : '0 1px 0 rgba(255,255,255,0.06) inset'
     };
 };
 
@@ -409,7 +437,7 @@ const monthStatDot = (tone) => ({
     width: 5,
     height: 5,
     borderRadius: 99,
-    background: tone === 'done' ? '#78B879' : tone === 'accent' ? HABITS_ACCENT.hue : 'rgba(166,173,184,0.72)',
+    background: tone === 'done' ? HABITS_SUCCESS.hue : tone === 'accent' ? CALENDAR_PARTIAL.hue : 'rgba(190,202,216,0.82)',
     flexShrink: 0
 });
 
@@ -511,14 +539,15 @@ const HabitCalendar = () => {
         ? Math.round(monthStats.filter((item) => item.hasData).reduce((sum, item) => sum + item.percent, 0) / daysWithData)
         : 0;
 
-    const onHabitClick = (habitId) => {
+    const onHabitClick = (habitId, habitDate = date) => {
         playEffects(clickSound);
+        setHabitsSelectedDate(formatDateKey(habitDate));
         if(setExpandedCard) setExpandedCard(habitId);
         if(setPage) setPage('HabitsMain');
     };
 
     return (
-        <div style={s.container}>
+        <div className="habitCalendarScroll" style={s.container}>
             <motion.div
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -624,7 +653,7 @@ const HabitCalendar = () => {
                                                 : null;
 
                                             if (isChoosen) {
-                                                cellBg = progressVisual?.background || `linear-gradient(145deg, rgba(${HABITS_ACCENT.rgb},0.38), rgba(143,166,200,0.18))`;
+                                                cellBg = progressVisual?.background || `linear-gradient(145deg, rgba(${HABITS_ACCENT.rgb},0.26), rgba(255,255,255,0.08))`;
                                                 cellColor = isLight ? '#101418' : '#FFFFFF';
                                                 cellBorder = `1px solid ${progressVisual?.border || HABITS_ACCENT.ring}`;
                                                 cellShadow = progressVisual?.shadow || `0 0 24px ${HABITS_ACCENT.glow}`;
@@ -706,7 +735,7 @@ const HabitCalendar = () => {
                 {inFoPanelData ? (
                     <div style={{width: '100%', display:'flex', flexDirection:'column', minWidth: 0}}>
                         <div style={s.infoHeader}>
-                            <div style={{minWidth: 0}}>
+                            <div style={{minWidth: 0, width: '100%', textAlign: 'center'}}>
                             <h2 style={{
                                 fontSize: fSize === 0 ? 17 : 19, 
                                 fontWeight: 950, 
@@ -715,7 +744,8 @@ const HabitCalendar = () => {
                                 margin: 0,
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                textAlign: 'center'
                             }}>
                                 {currentDate.getDate()} {monthNames[langIndex][currentDate.getMonth()]}, {fullNames[langIndex][getMondayIndex(currentDate)]}
                             </h2>
@@ -769,6 +799,12 @@ const HabitCalendar = () => {
                     </div>
                 )}
             </motion.div>
+            <style>{`
+                .habitCalendarScroll::-webkit-scrollbar {
+                    width: 0;
+                    height: 0;
+                }
+            `}</style>
             
             <div style={{height: 12, flexShrink: 0}}></div>
         </div>
@@ -962,29 +998,51 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
         setCanDrag(true);
     };
 
+    const toggleDoneFromCalendar = async (event) => {
+        event.stopPropagation();
+        const dayKey = formatDateKey(date);
+
+        if (isNegative) {
+            if (status === 1) {
+                await AppData.changeStatus(dayKey, id, 0);
+                setStatus(0);
+                emitHabitsChanged();
+                if (AppData.prefs[2] == 0) playEffects(clickSound);
+                return;
+            }
+
+            await saveCleanDay();
+            return;
+        }
+
+        const nextStatus = status === 1 ? 0 : 1;
+        await AppData.changeStatus(dayKey, id, nextStatus);
+        setStatus(nextStatus);
+        emitHabitsChanged();
+        if (AppData.prefs[2] == 0) playEffects(nextStatus === 1 ? isDoneSound : clickSound);
+    };
+
     let cardBg = isLight
-        ? `linear-gradient(145deg, rgba(255,255,255,0.92), ${tone.hue}0f)`
-        : `radial-gradient(180px 110px at 4% 10%, ${tone.soft}, transparent 72%), rgba(24,28,31,0.82)`;
-    let cardBorder = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.86), rgba(244,246,248,0.66))'
+        : 'linear-gradient(145deg, rgba(42,49,55,0.58), rgba(17,22,26,0.72))';
+    let cardBorder = isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.08)';
     let textColor = Colors.get('mainText', theme);
     let subTextColor = Colors.get('subText', theme);
-    let checkBg = isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.05)';
-    let checkColor = Colors.get('subText', theme);
     const categoryTone = isNegative ? NEGATIVE_SUCCESS : tone;
-    let iconColor = categoryTone.hue;
-    let iconBg = categoryTone.soft;
-    let iconBorder = categoryTone.ring;
+    let iconColor = isLight ? 'rgba(31,41,55,0.58)' : 'rgba(196,211,222,0.62)';
+    let iconBg = isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.065)';
+    let iconBorder = 'transparent';
     let categoryTextColor = categoryTone.hue;
     let statusHint = '';
+    const checkTone = isNegative ? NEGATIVE_SUCCESS : HABITS_SUCCESS;
+    const isChecked = status === 1;
 
     if (status === 1) {
         const doneTone = isNegative ? NEGATIVE_SUCCESS : HABITS_SUCCESS;
         cardBg = isLight
-            ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${doneTone.soft})`
-            : `radial-gradient(180px 110px at 4% 10%, ${doneTone.soft}, transparent 72%), ${isNegative ? 'rgba(30,24,22,0.92)' : 'rgba(22,30,26,0.9)'}`;
+            ? `linear-gradient(145deg, rgba(255,255,255,0.92), ${doneTone.soft})`
+            : `radial-gradient(220px 120px at 6% 4%, ${doneTone.soft}, transparent 72%), ${isNegative ? 'rgba(30,24,22,0.92)' : 'linear-gradient(145deg, rgba(24,35,29,0.84), rgba(16,24,19,0.76))'}`;
         cardBorder = doneTone.ring;
-        checkBg = doneTone.soft;
-        checkColor = doneTone.hue;
         iconColor = doneTone.hue;
         iconBg = doneTone.soft;
         iconBorder = doneTone.ring;
@@ -995,8 +1053,6 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
             ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(216,120,94,0.12))'
             : 'radial-gradient(180px 110px at 4% 10%, rgba(216,120,94,0.15), transparent 72%), rgba(30,22,22,0.9)';
         cardBorder = 'rgba(216,120,94,0.24)';
-        checkBg = 'rgba(216,120,94,0.2)';
-        checkColor = '#D8785E';
         iconColor = '#D8785E';
         iconBg = 'rgba(216,120,94,0.16)';
         iconBorder = 'rgba(216,120,94,0.28)';
@@ -1005,7 +1061,7 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
     }
 
     return (
-        <div style={{width:'100%', maxWidth: '100%', overflow: 'hidden', borderRadius: 20, boxSizing: 'border-box', touchAction: 'pan-y'}}>
+        <div style={{width:'100%', maxWidth: '100%', overflow: 'hidden', borderRadius: 28, boxSizing: 'border-box', touchAction: 'pan-y'}}>
             <motion.div
                 id={`cal-${id}`}
                 style={{
@@ -1014,16 +1070,22 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
                     display:'flex',
                     flexDirection:'row',
                     width:'100%',
-                    padding: '12px 12px',
+                    minHeight: 88,
+                    padding: '14px 16px',
                     alignItems:'center',
-                    borderRadius: 20,
+                    borderRadius: 28,
+                    gap: 14,
                     boxSizing: 'border-box',
                     minWidth: 0,
                     x: constrainedX,
                     cursor: 'pointer',
                     position: 'relative',
                     touchAction: 'pan-y',
-                    boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.04) inset'
+                    overflow: 'hidden',
+                    clipPath: 'inset(0 round 28px)',
+                    backdropFilter: isLight ? 'none' : 'blur(24px) saturate(160%)',
+                    WebkitBackdropFilter: isLight ? 'none' : 'blur(24px) saturate(160%)',
+                    boxShadow: isLight ? '0 14px 28px -24px rgba(15,23,42,0.24), 0 1px 0 rgba(255,255,255,0.72) inset' : '0 1px 0 rgba(255,255,255,0.055) inset, 0 18px 34px -28px rgba(0,0,0,0.72)'
                 }}
                 drag={canDrag ? 'x' : false} dragConstraints={{ left: minX, right: status === 1 ? 0 : maxX }} dragElastic={0.1} onDrag={onDrag} onDragEnd={onDragEnd}
                 onClick={() => {
@@ -1032,24 +1094,13 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
                         return;
                     }
                     if (isNegative) setShowResetPanel(true);
-                    else onHabitClick?.(id);
+                    else onHabitClick?.(id, date);
                 }}
             >
                 <div style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 14,
-                    bottom: 14,
-                    width: 3,
-                    borderRadius: '0 999px 999px 0',
-                    background: categoryTextColor,
-                    opacity: status === 0 ? 0.58 : 0.95
-                }} />
-                <div style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 14,
-                    marginRight: 11,
+                    width: 46,
+                    height: 46,
+                    borderRadius: 15,
                     color: iconColor,
                     background: iconBg,
                     border: `1px solid ${iconBorder}`,
@@ -1058,33 +1109,46 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
                     justifyContent: 'center',
                     flexShrink: 0
                 }}>
-                    <HabitOutlineIcon iconName={habitData.iconName} habitName={habitData.name} categoryKey={categoryKey} size={20} />
+                    <HabitOutlineIcon iconName={habitData.iconName} habitName={habitData.name} categoryKey={categoryKey} size={22} />
                 </div>
-                <div style={{flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column'}}>
-                    <span style={{ color: categoryTextColor, fontSize: '9px', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.08em', pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{category}</span>
-                    <p style={{ color: textColor, margin: 0, fontWeight: 900, fontSize: fSize === 0 ? '15px' : '17px', pointerEvents: 'none', lineHeight: 1.18, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
+                <div style={{flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'left'}}>
+                    <p style={{ color: textColor, margin: 0, fontWeight: 900, fontSize: fSize === 0 ? '16px' : '18px', pointerEvents: 'none', lineHeight: 1.16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</p>
                     {statusHint && (
-                        <span style={{ color: status === 0 ? subTextColor : categoryTextColor, fontSize: '11px', marginTop: '5px', fontWeight: '850', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ color: status === 0 ? subTextColor : categoryTextColor, fontSize: '12px', marginTop: '6px', fontWeight: '850', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {statusHint}
                         </span>
                     )}
                 </div>
-                <div style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 11,
-                    background: status !== 0 ? checkBg : 'transparent',
-                    border: status === 0 ? `1px solid ${isLight ? 'rgba(15,23,42,0.14)' : 'rgba(255,255,255,0.12)'}` : `1px solid ${status === 1 ? (isNegative ? NEGATIVE_SUCCESS.ring : HABITS_SUCCESS.ring) : 'rgba(216,120,94,0.3)'}`,
-                    color: checkColor,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginLeft: '8px',
-                    flexShrink: 0
-                }}>
-                    {status === 1 && <Check style={{fontSize: '18px'}}/>}
-                    {status === -1 && <Close style={{fontSize: '18px'}}/>}
-                </div>
+                <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.94 }}
+                    onClick={toggleDoneFromCalendar}
+                    aria-label={isChecked ? (langIndex === 0 ? 'Снять отметку' : 'Unmark done') : (langIndex === 0 ? 'Отметить выполненным' : 'Mark done')}
+                    style={{
+                        width: 44,
+                        height: 40,
+                        borderRadius: 15,
+                        border: `1px solid ${isChecked ? checkTone.ring : (isLight ? 'rgba(15,23,42,0.1)' : 'rgba(190,220,235,0.12)')}`,
+                        background: isChecked
+                            ? `linear-gradient(145deg, ${checkTone.soft}, rgba(${checkTone.rgb || '16,199,106'},0.18))`
+                            : (isLight ? 'rgba(255,255,255,0.46)' : 'rgba(255,255,255,0.045)'),
+                        color: isChecked ? checkTone.hue : subTextColor,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        padding: 0,
+                        cursor: 'pointer',
+                        boxShadow: isChecked
+                            ? `0 1px 0 rgba(255,255,255,0.11) inset, 0 0 20px ${checkTone.glow}`
+                            : '0 1px 0 rgba(255,255,255,0.045) inset',
+                        transition: 'background 0.32s ease, border-color 0.32s ease, color 0.32s ease, box-shadow 0.32s ease',
+                        backdropFilter: isLight ? 'none' : 'blur(14px) saturate(140%)',
+                        WebkitBackdropFilter: isLight ? 'none' : 'blur(14px) saturate(140%)'
+                    }}
+                >
+                    {isChecked && <FaCheck size={15} />}
+                </motion.button>
             </motion.div>
             <AnimatePresence>
                 {showResetPanel && (
@@ -1105,9 +1169,12 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
 
 const NegativeHabitResetPanel = ({ theme, langIndex, time, onTimeChange, onClose, onReset, onClean }) => {
     const isLight = theme === 'light' || theme === 'speciallight';
-    const bg = isLight ? '#FFFFFF' : Colors.get('simplePanel', theme);
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
+    const sheetBg = isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.78), rgba(${HABITS_ACCENT.rgb},0.08), rgba(255,255,255,0.42))`
+        : `linear-gradient(145deg, rgba(35,46,56,0.72), rgba(255,255,255,0.06) 52%, rgba(12,17,21,0.68))`;
+    const sheetBorder = isLight ? 'rgba(15,23,42,0.09)' : 'rgba(190,220,235,0.18)';
 
     return (
         <>
@@ -1119,8 +1186,9 @@ const NegativeHabitResetPanel = ({ theme, langIndex, time, onTimeChange, onClose
                 style={{
                     position: 'fixed',
                     inset: 0,
-                    backgroundColor: 'rgba(0,0,0,0.55)',
-                    backdropFilter: 'blur(5px)',
+                    background: isLight ? 'rgba(15,23,42,0.18)' : 'rgba(0,0,0,0.48)',
+                    backdropFilter: 'blur(14px) saturate(135%)',
+                    WebkitBackdropFilter: 'blur(14px) saturate(135%)',
                     zIndex: 5000
                 }}
             />
@@ -1136,18 +1204,24 @@ const NegativeHabitResetPanel = ({ theme, langIndex, time, onTimeChange, onClose
                     bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)',
                     maxWidth: '520px',
                     margin: '0 auto',
-                    borderRadius: '24px',
-                    padding: '18px',
-                    backgroundColor: bg,
-                    border: isLight ? '1px solid rgba(0,0,0,0.06)' : `1px solid ${Colors.get('border', theme)}80`,
-                    boxShadow: isLight ? '0 24px 70px rgba(0,0,0,0.18)' : '0 28px 80px rgba(0,0,0,0.72)',
+                    borderRadius: '34px',
+                    padding: '22px 24px 24px',
+                    background: sheetBg,
+                    border: `1px solid ${sheetBorder}`,
+                    boxShadow: isLight
+                        ? '0 1px 0 rgba(255,255,255,0.82) inset, 0 24px 70px -34px rgba(15,23,42,0.30)'
+                        : '0 1px 0 rgba(255,255,255,0.10) inset, 0 28px 80px -34px rgba(0,0,0,0.82)',
+                    backdropFilter: 'blur(30px) saturate(175%)',
+                    WebkitBackdropFilter: 'blur(30px) saturate(175%)',
+                    boxSizing: 'border-box',
+                    overflow: 'hidden',
                     zIndex: 5001
                 }}
             >
-                <div style={{ color: text, fontSize: '18px', fontWeight: 900, marginBottom: '6px' }}>
+                <div style={{ color: text, fontSize: '18px', fontWeight: 950, marginBottom: '8px', textAlign: 'center' }}>
                     {langIndex === 0 ? 'Записать срыв' : 'Record reset'}
                 </div>
-                <div style={{ color: sub, fontSize: '13px', fontWeight: 650, marginBottom: '16px' }}>
+                <div style={{ color: sub, fontSize: '13px', fontWeight: 750, lineHeight: 1.45, margin: '0 auto 18px', textAlign: 'center', maxWidth: 310 }}>
                     {langIndex === 0 ? 'Выберите точное время для выбранной даты.' : 'Choose the exact time for the selected date.'}
                 </div>
                 <input
@@ -1157,22 +1231,25 @@ const NegativeHabitResetPanel = ({ theme, langIndex, time, onTimeChange, onClose
                     style={{
                         width: '100%',
                         boxSizing: 'border-box',
-                        border: `1px solid ${Colors.get('border', theme)}88`,
-                        borderRadius: '16px',
-                        padding: '13px 14px',
-                        backgroundColor: isLight ? '#F7F7F8' : 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(190,220,235,0.13)'}`,
+                        borderRadius: '22px',
+                        padding: '15px 18px',
+                        background: isLight ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.07)',
                         color: text,
                         fontSize: '18px',
-                        fontWeight: 800,
+                        fontWeight: 900,
                         outline: 'none',
-                        marginBottom: '14px'
+                        marginBottom: '18px',
+                        boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.76) inset' : '0 1px 0 rgba(255,255,255,0.07) inset',
+                        backdropFilter: 'blur(18px) saturate(155%)',
+                        WebkitBackdropFilter: 'blur(18px) saturate(155%)'
                     }}
                 />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={onClean} style={calendarActionButton('#32D74B')}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <motion.button type="button" whileTap={{ scale: 0.97 }} onClick={onClean} style={calendarActionButton('#32D74B', isLight)}>
                         <MdDoneAll size={18} /> {langIndex === 0 ? 'Чистый день' : 'Clean day'}
                     </motion.button>
-                    <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={onReset} style={calendarActionButton('#FF453A')}>
+                    <motion.button type="button" whileTap={{ scale: 0.97 }} onClick={onReset} style={calendarActionButton('#FF453A', isLight)}>
                         <Close style={{ fontSize: '18px' }} /> {langIndex === 0 ? 'Срыв' : 'Reset'}
                     </motion.button>
                 </div>
@@ -1181,19 +1258,24 @@ const NegativeHabitResetPanel = ({ theme, langIndex, time, onTimeChange, onClose
     );
 };
 
-const calendarActionButton = (color) => ({
-    minHeight: '48px',
-    border: 'none',
-    borderRadius: '16px',
-    backgroundColor: color,
+const calendarActionButton = (color, isLight = false) => ({
+    minHeight: '52px',
+    border: `1px solid ${color}66`,
+    borderRadius: '22px',
+    background: `linear-gradient(145deg, ${color}e6, ${color}b8)`,
     color: '#FFF',
     fontSize: '13px',
-    fontWeight: 850,
+    fontWeight: 900,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '7px',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    boxShadow: isLight
+        ? `0 1px 0 rgba(255,255,255,0.42) inset, 0 14px 28px -22px ${color}`
+        : `0 1px 0 rgba(255,255,255,0.20) inset, 0 16px 32px -22px ${color}`,
+    backdropFilter: 'blur(16px) saturate(155%)',
+    WebkitBackdropFilter: 'blur(16px) saturate(155%)'
 });
 
 function habitAmountString(date,langIndex) {

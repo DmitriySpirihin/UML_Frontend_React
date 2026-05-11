@@ -150,12 +150,12 @@ async function onBack(page, addPanel) {
 // Styles
 const containerStyle = () => ({
     position: 'fixed',
-    bottom: 'max(18px, calc(24px + env(safe-area-inset-bottom, 0px)))',
+    bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
     left: '50%',
     transform: 'translateX(-50%)',
-    width: 'calc(100vw - 40px)',
-    maxWidth: '420px',
-    height: '66px',
+    width: 'calc(100vw - 72px)',
+    maxWidth: '360px',
+    height: '58px',
     borderRadius: '999px',
     display: 'flex',
     justifyContent: 'space-around',
@@ -164,7 +164,7 @@ const containerStyle = () => ({
     WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     zIndex: 1000,
     boxSizing: 'border-box',
-    padding: '10px 12px',
+    padding: '7px 10px',
     overflow: 'hidden',
     boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)'
 });
@@ -192,7 +192,7 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '44px',
+    width: '40px',
     borderRadius: '999px',
     cursor: 'pointer'
 };

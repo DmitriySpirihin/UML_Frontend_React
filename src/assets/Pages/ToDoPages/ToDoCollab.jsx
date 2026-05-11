@@ -128,21 +128,26 @@ const styles = (theme, accent, fSize = 0) => {
   const text = Colors.get('mainText', theme);
   const sub = Colors.get('subText', theme);
   const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
-  const panel = isLight ? 'rgba(255,255,255,0.88)' : 'rgba(255,255,255,0.045)';
+  const panel = isLight
+    ? 'linear-gradient(145deg, rgba(255,255,255,0.76), rgba(255,255,255,0.42))'
+    : 'linear-gradient(145deg, rgba(255,255,255,0.074), rgba(255,255,255,0.028))';
+  const glassShadow = isLight
+    ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)'
+    : '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)';
 
   return {
-    container: { width: '100vw', height: '100vh', overflow: 'hidden', background: isLight ? `linear-gradient(180deg, ${accent.faint} 0%, ${Colors.get('background', theme)} 42%)` : `linear-gradient(180deg, rgba(${accent.rgbText},0.11) 0%, ${Colors.get('background', theme)} 44%)`, color: text, fontFamily: 'Segoe UI, sans-serif' },
+    container: { width: '100vw', height: '100vh', overflow: 'hidden', background: isLight ? `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${accent.rgbText},0.1), transparent 66%), #F4F5F7` : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgbText},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`, color: text, fontFamily: 'Segoe UI, sans-serif' },
     scroll: { height: '100%', overflowY: 'auto', padding: `${TODO_SECTION_TOP} 18px 150px`, boxSizing: 'border-box' },
     pageHeader: { width: '100%', margin: '0 auto 8px', padding: '4px 18px 8px', boxSizing: 'border-box', textAlign: 'center' },
     pageTitle: { color: text, fontFamily: 'Georgia, "Times New Roman", serif', fontSize: fSize === 0 ? 24 : 26, fontWeight: 700, letterSpacing: 0, lineHeight: 1.05, opacity: 0.86 },
     pageSubtitle: { marginTop: 5, color: sub, fontSize: fSize === 0 ? 8 : 9, fontWeight: 600, letterSpacing: '0.14em', opacity: 0.82 },
-    hero: { display: 'flex', alignItems: 'center', gap: 14, borderRadius: 26, padding: 16, background: isLight ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${accent.faint})` : `radial-gradient(260px 150px at 0% 0%, ${accent.soft}, transparent 72%), rgba(20,23,25,0.92)`, border: `1px solid ${border}` },
+    hero: { display: 'flex', alignItems: 'center', gap: 14, borderRadius: 26, padding: 16, background: `radial-gradient(260px 150px at 0% 0%, ${accent.soft}, transparent 72%), ${panel}`, border: `1px solid ${border}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
     heroIcon: { width: 54, height: 54, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent.hue, background: accent.soft, border: `1px solid ${accent.ring}`, fontSize: 22, flexShrink: 0 },
     eyebrow: { color: accent.hue, fontSize: 11, fontWeight: 950, letterSpacing: 1.5 },
     title: { margin: '3px 0 0', color: text, fontSize: fSize === 0 ? 27 : 29, lineHeight: 1.05, fontWeight: 950, letterSpacing: 0 },
     heroText: { marginTop: 7, color: sub, fontSize: 12, fontWeight: 750, lineHeight: 1.35 },
-    invitePanel: { marginTop: 14, borderRadius: 24, padding: 15, background: panel, border: `1px solid ${border}` },
-    taskPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: panel, border: `1px solid ${border}` },
+    invitePanel: { marginTop: 14, borderRadius: 24, padding: 15, background: panel, border: `1px solid ${border}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
+    taskPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: panel, border: `1px solid ${border}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
     panelHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
     panelTitle: { color: text, fontSize: 18, fontWeight: 950 },
     panelSub: { color: sub, fontSize: 12, fontWeight: 750, marginTop: 2 },

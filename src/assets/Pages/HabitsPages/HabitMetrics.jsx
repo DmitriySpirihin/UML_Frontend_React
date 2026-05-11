@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { allHabits } from '../../Classes/Habit.js'
 import { AppData, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
-import { FaChevronLeft, FaChevronRight, FaListUl, FaPencilAlt, FaInfoCircle, FaTrophy, FaFire, FaCrown } from 'react-icons/fa'
+import { FaChevronLeft, FaChevronRight, FaListUl, FaPencilAlt, FaInfoCircle, FaCrown } from 'react-icons/fa'
+import { TbFlame, TbTrophy } from 'react-icons/tb'
 import { theme$, lang$, fontSize$, premium$, setPage, habitAccent$ } from '../../StaticClasses/HabitsBus'
 import { MdAutoGraph, MdClose } from 'react-icons/md'
 import Slider from '@mui/material/Slider';
@@ -18,6 +19,22 @@ const NEGATIVE_TONE = {
     glow: 'rgba(216,120,94,0.20)',
     rgb: '216,120,94',
     icon: 'negative'
+};
+
+const getFormationProgressTone = (amount) => {
+    const p = Math.max(0, Math.min(1, amount || 0));
+    const start = { r: 86, g: 98, b: 112 };
+    const end = { r: 47, g: 226, b: 125 };
+    const eased = p * p * (3 - 2 * p);
+    const r = Math.round(start.r + (end.r - start.r) * eased);
+    const g = Math.round(start.g + (end.g - start.g) * eased);
+    const b = Math.round(start.b + (end.b - start.b) * eased);
+    return {
+        hue: `rgb(${r},${g},${b})`,
+        soft: `rgba(${r},${g},${b},${0.10 + p * 0.18})`,
+        ring: `rgba(${r},${g},${b},${0.24 + p * 0.36})`,
+        glow: `rgba(${r},${g},${b},${0.14 + p * 0.30})`
+    };
 };
 
 const isNegativeHabit = (id, habit) => {
@@ -69,9 +86,9 @@ const HabitMetrics = () => {
 
     const ui = {
         bg: isLight
-            ? `radial-gradient(900px 450px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7`
-            : `radial-gradient(1000px 500px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013`,
-        panel: isLight ? 'rgba(255,255,255,0.84)' : 'rgba(24,28,31,0.82)',
+            ? `radial-gradient(640px 420px at 86% -8%, rgba(${HABITS_ACCENT.rgb},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 66%), #F4F5F7`
+            : `radial-gradient(640px 420px at 86% -8%, rgba(${HABITS_ACCENT.rgb},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
+        panel: isLight ? 'rgba(255,255,255,0.66)' : 'rgba(24,28,31,0.50)',
         text: isLight ? '#1D1D1F' : '#F4F5F7',
         sub: isLight ? 'rgba(31,41,55,0.54)' : 'rgba(166,173,184,0.72)',
         accent: selectedTone.hue,
@@ -79,14 +96,14 @@ const HabitMetrics = () => {
         accentRing: selectedTone.ring,
         accentGlow: selectedTone.glow,
         orange: '#D8785E',
-        success: '#C4D3DE',
-        successSoft: 'rgba(196,211,222,0.14)',
-        successRing: 'rgba(196,211,222,0.24)',
+        success: '#2FE27D',
+        successSoft: 'rgba(47,226,125,0.18)',
+        successRing: 'rgba(47,226,125,0.36)',
         negative: NEGATIVE_TONE.hue,
         negativeSoft: NEGATIVE_TONE.soft,
         negativeRing: NEGATIVE_TONE.ring,
-        blur: 'blur(25px)',
-        border: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)'
+        blur: 'blur(26px) saturate(170%)',
+        border: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(190,220,235,0.13)'
     };
 
     useEffect(() => { setTempDaysToForm(daysToForm); }, [daysToForm]);
@@ -129,6 +146,7 @@ const HabitMetrics = () => {
     }, [currentStreak, daysToForm]);
 
     const progressPercent = Math.round(fillAmount * 100);
+    const progressTone = getFormationProgressTone(fillAmount);
     const daysLeft = Math.max((daysToForm || 66) - currentStreak, 0);
     const stageLabel = fillAmount >= 1
         ? (langIndex === 0 ? 'Готово' : 'Done')
@@ -374,22 +392,27 @@ const HabitMetrics = () => {
                                             </span>
                                         )}
                                         <span style={{
-                                            minWidth: 68,
-                                            height: 28,
+                                            minWidth: 82,
+                                            height: 31,
                                             borderRadius: 999,
-                                            background: ui.accentSoft,
-                                            border: '1px solid transparent',
+                                            background: isLight
+                                                ? `linear-gradient(145deg, rgba(255,255,255,0.78), rgba(${HABITS_ACCENT.rgb},0.32))`
+                                                : `linear-gradient(145deg, rgba(${HABITS_ACCENT.rgb},0.44), rgba(${HABITS_ACCENT.rgb},0.18))`,
+                                            border: `1px solid rgba(${HABITS_ACCENT.rgb},0.58)`,
                                             color: ui.text,
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             gap: 5,
-                                            padding: '0 9px',
+                                            padding: '0 10px',
                                             boxSizing: 'border-box',
-                                            whiteSpace: 'nowrap'
+                                            whiteSpace: 'nowrap',
+                                            boxShadow: `0 1px 0 rgba(255,255,255,0.14) inset, 0 12px 24px -16px rgba(${HABITS_ACCENT.rgb},0.70)`,
+                                            backdropFilter: ui.blur,
+                                            WebkitBackdropFilter: ui.blur
                                         }}>
                                             <span style={{ fontSize: 15, fontWeight: 950, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{progressPercent}%</span>
-                                            <span style={{ color: ui.sub, fontSize: 8.5, fontWeight: 900, lineHeight: 1, letterSpacing: '0.04em' }}>{pathLabel}</span>
+                                            <span style={{ color: ui.sub, fontSize: 8.5, fontWeight: 950, lineHeight: 1, letterSpacing: '0.08em' }}>{pathLabel}</span>
                                         </span>
                                     </div>
                                     <motion.button
@@ -441,16 +464,19 @@ const HabitMetrics = () => {
 
                             <div style={sectionWidth}>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12, marginTop: 14 }}>
-                                    <div style={statCard(ui, isLight)}>
-                                        <FaTrophy style={{ position: 'absolute', right: -7, bottom: -7, fontSize: 48, color: ui.accent, opacity: 0.09 }} />
-                                        <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.08em', color: ui.accent }}>{langIndex === 0 ? 'РЕКОРД' : 'RECORD'}</span>
+                                    <div style={{ ...statCard(ui, isLight), ...recordStatGlow(isLight) }}>
+                                        <TbTrophy style={{ position: 'absolute', right: -9, bottom: -9, fontSize: 58, color: '#F6C95C', opacity: 0.24 }} strokeWidth={1.7} />
+                                        <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.08em', color: '#F6C95C' }}>{langIndex === 0 ? 'РЕКОРД' : 'RECORD'}</span>
                                         <span style={{ fontSize: 28, fontWeight: 950, color: ui.text, lineHeight: 1 }}>{maxStreak}</span>
                                         <span style={{ fontSize: 10.5, fontWeight: 750, color: ui.sub }}>{langIndex === 0 ? 'лучшая серия' : 'best streak'}</span>
                                     </div>
-                                    <div style={statCard(ui, isLight)}>
-                                        <FaFire style={{ position: 'absolute', right: -5, bottom: -9, fontSize: 50, color: ui.accent, opacity: 0.08 }} />
-                                        <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.08em', color: ui.accent }}>{langIndex === 0 ? 'ТЕКУЩАЯ' : 'CURRENT'}</span>
-                                        <span style={{ fontSize: 28, fontWeight: 950, color: ui.text, lineHeight: 1 }}>{currentStreak}</span>
+                                    <div style={{ ...statCard(ui, isLight), ...currentStatGlow(isLight) }}>
+                                        <TbFlame style={{ position: 'absolute', right: -7, bottom: -10, fontSize: 62, color: '#FF5C45', opacity: 0.25 }} strokeWidth={1.65} />
+                                        <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.08em', color: '#FF7A5A' }}>{langIndex === 0 ? 'ТЕКУЩАЯ' : 'CURRENT'}</span>
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 28, fontWeight: 950, color: ui.text, lineHeight: 1 }}>
+                                            {currentStreak}
+                                            <TbFlame size={18} color="#FF765C" strokeWidth={2.5} />
+                                        </span>
                                         <span style={{ fontSize: 10.5, fontWeight: 750, color: ui.sub }}>{langIndex === 0 ? 'сейчас' : 'now'}</span>
                                     </div>
                                 </div>
@@ -464,19 +490,20 @@ const HabitMetrics = () => {
                                     width: 190,
                                     height: 190,
                                     borderRadius: '50%',
-                                    background: `radial-gradient(circle, ${ui.accent}22 0%, transparent 66%)`,
+                                    background: `radial-gradient(circle, ${progressTone.glow} 0%, transparent 66%)`,
                                     pointerEvents: 'none'
                                 }} />
                                 <div style={{ position: 'relative', width: 164, height: 164, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                                    <div style={{ position: 'absolute', width: 100, height: 100, background: ui.accent, filter: 'blur(48px)', opacity: isLight ? 0.11 : 0.14 }} />
+                                    <div style={{ position: 'absolute', width: 104, height: 104, background: progressTone.hue, filter: 'blur(48px)', opacity: isLight ? 0.12 : 0.18 }} />
                                     <svg width="176" height="176" viewBox="0 0 150 150" style={{ transform: 'rotate(-90deg)' }}>
                                         <circle stroke={isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)'} fill="none" strokeWidth="11" r="60" cx="75" cy="75" />
                                         <motion.circle 
                                             initial={{ strokeDashoffset: 377 }}
                                             animate={{ strokeDashoffset: 377 - (fillAmount * 377) }}
                                             transition={{ duration: 1.2, ease: "easeOut" }}
-                                            stroke={ui.accent}
+                                            stroke={progressTone.hue}
                                             fill="none" strokeWidth="11" r="60" cx="75" cy="75" strokeDasharray="377" strokeLinecap="round"
+                                            style={{ filter: `drop-shadow(0 0 10px ${progressTone.glow})` }}
                                         />
                                     </svg>
                                     <div style={{ position: 'absolute', textAlign: 'center' }}>
@@ -648,23 +675,46 @@ const HabitMetrics = () => {
 
                 {showChangeDaysPanel && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ ...overlayStyle, justifyContent: 'center', alignItems: 'flex-end' }} onClick={() => setShowChangeDaysPanel(false)}>
-                        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 165 }}
                             style={{
                                 ...bottomSheetStyle,
                                 background: isLight
-                                    ? `radial-gradient(260px 180px at 92% 6%, ${ui.accent}12 0%, transparent 66%), rgba(255,255,255,0.95)`
-                                    : `radial-gradient(260px 180px at 92% 6%, ${ui.accent}18 0%, transparent 66%), rgba(20,23,25,0.96)`,
+                                    ? `radial-gradient(280px 190px at 88% 0%, ${ui.accent}18 0%, transparent 68%), linear-gradient(145deg, rgba(255,255,255,0.78), rgba(255,255,255,0.46))`
+                                    : `radial-gradient(280px 190px at 88% 0%, ${ui.accent}22 0%, transparent 68%), linear-gradient(145deg, rgba(35,46,56,0.74), rgba(12,17,21,0.74))`,
+                                border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(190,220,235,0.18)'}`,
+                                boxShadow: isLight
+                                    ? '0 1px 0 rgba(255,255,255,0.80) inset, 0 -24px 70px -42px rgba(15,23,42,0.34)'
+                                    : '0 1px 0 rgba(255,255,255,0.10) inset, 0 -28px 82px -42px rgba(0,0,0,0.84)',
                                 backdropFilter: ui.blur,
-                                textAlign: 'center'
+                                WebkitBackdropFilter: ui.blur,
+                                textAlign: 'center',
+                                padding: '12px 28px 28px',
+                                boxSizing: 'border-box'
                             }} onClick={e => e.stopPropagation()}
                         >
                             <div style={dragHandle} />
-                            <h3 style={{ color: ui.text, marginBottom: '20px' }}>{langIndex === 0 ? 'Срок формирования' : 'Formation Period'}</h3>
-                            <Slider min={21} max={180} value={tempDaysToForm} onChange={(e, v) => setTempDaysToForm(v)} sx={{ color: ui.accent, marginBottom: '20px' }} />
-                            <div style={{ fontSize: '28px', fontWeight: '900', color: ui.text, marginBottom: '30px' }}>{tempDaysToForm} {langIndex === 0 ? 'дней' : 'days'}</div>
-                            <div style={{ display: 'flex', gap: '15px', padding: '0 20px' }}>
-                                <button style={modalBtnStyle} onClick={() => setShowChangeDaysPanel(false)}>{langIndex === 0 ? 'Отмена' : 'Cancel'}</button>
-                                <button style={{ ...modalBtnStyle, backgroundColor: ui.accent, color: '#FFF' }} onClick={() => {
+                            <h3 style={{ color: ui.text, margin: '10px 0 18px', fontSize: 20, fontWeight: 950 }}>{langIndex === 0 ? 'Срок формирования' : 'Formation period'}</h3>
+                            <div style={{
+                                borderRadius: 24,
+                                border: `1px solid ${isLight ? 'rgba(15,23,42,0.07)' : 'rgba(190,220,235,0.10)'}`,
+                                background: isLight ? 'rgba(255,255,255,0.44)' : 'rgba(255,255,255,0.045)',
+                                padding: '22px 18px 16px',
+                                boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset',
+                                marginBottom: 16
+                            }}>
+                                <div style={{ fontSize: '32px', fontWeight: '950', color: ui.text, marginBottom: 14 }}>{tempDaysToForm} {langIndex === 0 ? 'дней' : 'days'}</div>
+                                <Slider min={21} max={180} value={tempDaysToForm} onChange={(e, v) => setTempDaysToForm(v)}
+                                    sx={{
+                                        color: ui.accent,
+                                        '& .MuiSlider-rail': { opacity: 0.22 },
+                                        '& .MuiSlider-track': { boxShadow: `0 0 18px ${ui.accentGlow}` },
+                                        '& .MuiSlider-thumb': { width: 22, height: 22, boxShadow: `0 0 0 6px ${ui.accentSoft}` }
+                                    }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px' }}>
+                                <button style={modalBtnStyle(isLight)} onClick={() => setShowChangeDaysPanel(false)}>{langIndex === 0 ? 'Отмена' : 'Cancel'}</button>
+                                <button style={{ ...modalBtnStyle(isLight), background: `linear-gradient(145deg, ${ui.accent}, rgba(${HABITS_ACCENT.rgb},0.78))`, color: '#FFF', border: `1px solid ${ui.accentRing}`, boxShadow: `0 1px 0 rgba(255,255,255,0.22) inset, 0 16px 32px -24px ${ui.accent}` }} onClick={() => {
                                     const idx = AppData.choosenHabits.indexOf(habitId);
                                     if (idx !== -1) AppData.choosenHabitsDaysToForm[idx] = tempDaysToForm;
                                     setDaysToForm(tempDaysToForm); setShowChangeDaysPanel(false);
@@ -692,12 +742,14 @@ const selectorShell = (ui, isLight) => ({
     borderRadius: 24,
     padding: '16px',
     background: isLight
-        ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${ui.accent}14)`
-        : `radial-gradient(260px 170px at 88% 8%, ${ui.accent}1f 0%, transparent 66%), linear-gradient(145deg, rgba(23,27,31,0.96), rgba(23,27,31,0.82))`,
-    border: '1px solid transparent',
+        ? `linear-gradient(145deg, rgba(255,255,255,0.70) 0%, rgba(255,255,255,0.42) 100%)`
+        : `linear-gradient(145deg, rgba(23,27,31,0.68) 0%, rgba(255,255,255,0.026) 100%)`,
+    border: `1px solid ${ui.border}`,
     boxShadow: isLight
-        ? `0 16px 38px -34px ${ui.accent}44, 0 1px 0 rgba(255,255,255,0.72) inset`
-        : `0 18px 40px -34px ${ui.accent}44, 0 1px 0 rgba(255,255,255,0.045) inset`,
+        ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)'
+        : '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)',
+    backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -707,22 +759,29 @@ const selectorShell = (ui, isLight) => ({
 
 const selectorControlBar = (ui, isLight) => ({
     minHeight: 42,
-    borderRadius: 16,
-    padding: '5px 6px',
-    background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.035)',
-    border: '1px solid transparent',
+    borderRadius: 18,
+    padding: '5px 7px',
+    background: isLight
+        ? `radial-gradient(180px 70px at 50% 0%, rgba(${HABITS_ACCENT.rgb},0.22), transparent 68%), linear-gradient(145deg, rgba(255,255,255,0.68), rgba(255,255,255,0.36))`
+        : `radial-gradient(220px 80px at 50% 0%, rgba(${HABITS_ACCENT.rgb},0.32), transparent 70%), linear-gradient(145deg, rgba(255,255,255,0.12), rgba(255,255,255,0.045))`,
+    border: `1px solid ${isLight ? `rgba(${HABITS_ACCENT.rgb},0.34)` : `rgba(${HABITS_ACCENT.rgb},0.48)`}`,
+    boxShadow: `0 1px 0 rgba(255,255,255,0.08) inset, 0 18px 32px -24px rgba(${HABITS_ACCENT.rgb},0.44)`,
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur
 });
 
 const selectorArrowButton = (ui, isLight) => ({
     width: 34,
     height: 32,
-    borderRadius: 12,
-    border: '1px solid transparent',
-    background: isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.055)',
+    borderRadius: 13,
+    border: `1px solid rgba(${HABITS_ACCENT.rgb},${isLight ? 0.26 : 0.34})`,
+    background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.76), rgba(${HABITS_ACCENT.rgb},0.14))`
+        : `linear-gradient(145deg, rgba(${HABITS_ACCENT.rgb},0.20), rgba(255,255,255,0.05))`,
     color: ui.accent,
     display: 'flex',
     alignItems: 'center',
@@ -731,7 +790,8 @@ const selectorArrowButton = (ui, isLight) => ({
     cursor: 'pointer',
     outline: 'none',
     WebkitTapHighlightColor: 'transparent',
-    flexShrink: 0
+    flexShrink: 0,
+    boxShadow: '0 1px 0 rgba(255,255,255,0.07) inset'
 });
 
 const heroMiniChip = (ui, isLight) => ({
@@ -739,8 +799,9 @@ const heroMiniChip = (ui, isLight) => ({
     minHeight: 42,
     borderRadius: 14,
     padding: '7px 8px',
-    background: isLight ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.035)',
-    border: '1px solid transparent',
+    background: isLight ? 'rgba(255,255,255,0.46)' : 'rgba(255,255,255,0.046)',
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(190,220,235,0.075)'}`,
+    boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
@@ -773,9 +834,10 @@ const heroMiniValue = (ui) => ({
 const statCard = (ui, isLight) => ({
     minHeight: 94,
     background: isLight
-        ? `linear-gradient(145deg, rgba(255,255,255,0.92), ${ui.accent}10)`
-        : `radial-gradient(180px 100px at 8% 0%, ${ui.accent}18 0%, transparent 72%), rgba(24,28,31,0.82)`,
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.66), rgba(255,255,255,0.34))'
+        : 'linear-gradient(145deg, rgba(255,255,255,0.058), rgba(255,255,255,0.022))',
     backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur,
     padding: '16px 14px',
     borderRadius: 22,
     textAlign: 'center',
@@ -786,8 +848,28 @@ const statCard = (ui, isLight) => ({
     gap: 6,
     position: 'relative',
     overflow: 'hidden',
-    border: '1px solid transparent',
-    boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.04) inset'
+    border: `1px solid ${ui.border}`,
+    boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.72) inset, 0 16px 34px -28px rgba(15,23,42,0.20)' : '0 1px 0 rgba(255,255,255,0.07) inset, 0 18px 36px -30px rgba(0,0,0,0.70)'
+});
+
+const recordStatGlow = (isLight) => ({
+    background: isLight
+        ? 'radial-gradient(130px 100px at 70% 28%, rgba(246,201,92,0.20), transparent 68%), linear-gradient(145deg, rgba(255,255,255,0.70), rgba(255,255,255,0.34))'
+        : 'radial-gradient(140px 105px at 72% 28%, rgba(246,201,92,0.22), transparent 68%), linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.024))',
+    border: '1px solid rgba(246,201,92,0.28)',
+    boxShadow: isLight
+        ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 34px -26px rgba(246,201,92,0.34)'
+        : '0 1px 0 rgba(255,255,255,0.08) inset, 0 22px 40px -28px rgba(246,201,92,0.42)'
+});
+
+const currentStatGlow = (isLight) => ({
+    background: isLight
+        ? 'radial-gradient(140px 105px at 72% 30%, rgba(255,92,69,0.22), transparent 68%), linear-gradient(145deg, rgba(255,255,255,0.68), rgba(255,255,255,0.32))'
+        : 'radial-gradient(150px 110px at 74% 30%, rgba(255,92,69,0.28), transparent 68%), linear-gradient(145deg, rgba(255,92,69,0.12), rgba(255,255,255,0.024))',
+    border: '1px solid rgba(255,92,69,0.34)',
+    boxShadow: isLight
+        ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 34px -26px rgba(255,92,69,0.36)'
+        : '0 1px 0 rgba(255,255,255,0.08) inset, 0 22px 40px -28px rgba(255,92,69,0.50)'
 });
 
 const progressPanel = (ui, isLight) => ({
@@ -796,15 +878,16 @@ const progressPanel = (ui, isLight) => ({
     padding: '22px 18px 18px',
     borderRadius: 28,
     background: isLight
-        ? `linear-gradient(145deg, rgba(255,255,255,0.94), ${ui.accent}0f)`
-        : `radial-gradient(260px 190px at 50% 10%, ${ui.accent}14 0%, transparent 72%), linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.92))`,
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.68), rgba(255,255,255,0.36))'
+        : `radial-gradient(260px 190px at 50% 10%, ${ui.accent}10 0%, transparent 72%), linear-gradient(145deg, rgba(23,27,31,0.68), rgba(255,255,255,0.024))`,
     backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     gap: 18,
-    boxShadow: isLight ? '0 16px 38px -34px rgba(15,23,42,0.28)' : '0 18px 42px -34px rgba(0,0,0,0.75)',
-    border: '1px solid transparent',
+    boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.72) inset, 0 16px 38px -34px rgba(15,23,42,0.28)' : '0 1px 0 rgba(255,255,255,0.08) inset, 0 18px 42px -34px rgba(0,0,0,0.75)',
+    border: `1px solid ${ui.border}`,
     boxSizing: 'border-box',
     position: 'relative',
     overflow: 'hidden'
@@ -815,8 +898,8 @@ const periodPill = (ui, isLight) => ({
     alignItems: 'center',
     gap: 10,
     minHeight: 31,
-    background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.055)',
-    border: '1px solid transparent',
+    background: isLight ? 'rgba(255,255,255,0.48)' : 'rgba(255,255,255,0.055)',
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(190,220,235,0.08)'}`,
     padding: '0 12px',
     borderRadius: 999
 });
@@ -829,15 +912,16 @@ const timelineWrap = (ui, isLight) => ({
     marginBottom: 13,
     padding: 3,
     borderRadius: 999,
-    background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
-    border: '1px solid transparent',
+    background: isLight ? 'rgba(255,255,255,0.46)' : 'rgba(255,255,255,0.045)',
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(190,220,235,0.075)'}`,
     boxSizing: 'border-box'
 });
 
 const actionCard = (ui, isLight) => ({
     minHeight: 52,
-    background: isLight ? 'rgba(255,255,255,0.76)' : 'rgba(24,28,31,0.78)',
+    background: isLight ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.045)',
     backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur,
     padding: '0 10px',
     borderRadius: 18,
     display: 'flex',
@@ -845,15 +929,26 @@ const actionCard = (ui, isLight) => ({
     justifyContent: 'center',
     gap: 8,
     cursor: 'pointer',
-    border: '1px solid transparent',
-    boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.04) inset',
+    border: `1px solid ${ui.border}`,
+    boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.72) inset, 0 12px 24px -24px rgba(15,23,42,0.20)' : '0 1px 0 rgba(255,255,255,0.06) inset, 0 14px 28px -26px rgba(0,0,0,0.68)',
     minWidth: 0
 });
 
-const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.58)', backdropFilter: 'blur(8px)', zIndex: 7000, display: 'flex' };
-const bottomSheetStyle = { width: '100%', borderRadius: '32px 32px 0 0', maxHeight: '80vh', overflowY: 'auto', border: '1px solid transparent' };
-const dragHandle = { width: '40px', height: '5px', backgroundColor: '#8E8E93', borderRadius: '3px', margin: '15px auto', opacity: 0.3 };
-const modalBtnStyle = { flex: 1, padding: '16px', borderRadius: '18px', border: 'none', fontWeight: '800', fontSize: '16px', backgroundColor: 'rgba(120,120,128,0.1)', cursor: 'pointer' };
+const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(14px) saturate(135%)', WebkitBackdropFilter: 'blur(14px) saturate(135%)', zIndex: 7000, display: 'flex' };
+const bottomSheetStyle = { width: '100%', borderRadius: '34px 34px 0 0', maxHeight: '80vh', overflowY: 'auto', border: '1px solid transparent' };
+const dragHandle = { width: '42px', height: '5px', backgroundColor: '#8E8E93', borderRadius: '3px', margin: '6px auto 12px', opacity: 0.38 };
+const modalBtnStyle = (isLight = false) => ({
+    flex: 1,
+    minHeight: 52,
+    borderRadius: 20,
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.07)' : 'rgba(190,220,235,0.09)'}`,
+    fontWeight: 900,
+    fontSize: 15,
+    background: isLight ? 'rgba(255,255,255,0.48)' : 'rgba(255,255,255,0.055)',
+    color: isLight ? '#1D1D1F' : '#F4F5F7',
+    cursor: 'pointer',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset'
+});
 
 function getHabitStatusElements(daysCount, habitsByDate, habitId, isLight, ui, isNegative = false) {
     const daysMapping = [7, 30, 90];

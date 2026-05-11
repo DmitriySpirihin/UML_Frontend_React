@@ -18,6 +18,13 @@ import {
 
 export const DEFAULT_TODO_ACCENT_COLOR = '#149DFF';
 export const TODO_ACCENT_PRESETS = ['#149DFF', '#22C55E', '#A66BFF', '#2FD6BD', '#7C6CFF', '#C29AD6', '#B48BC8', '#66D9E8'];
+export const TODO_SUCCESS = {
+  hue: '#22C55E',
+  soft: 'rgba(34,197,94,0.14)',
+  ring: 'rgba(34,197,94,0.28)',
+  glow: 'rgba(34,197,94,0.18)',
+  rgbText: '34, 197, 94'
+};
 
 export const TODO_BASE_CATEGORIES = [
   { key: 'general', icon: 'general', label: ['Общее', 'General'] },

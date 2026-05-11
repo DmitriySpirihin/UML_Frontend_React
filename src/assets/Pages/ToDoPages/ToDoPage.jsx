@@ -1154,11 +1154,17 @@ const styles = (theme, fSize, rawAccentColor) => {
     const accentColor = accent.hue;
     const isLight = theme === 'light' || theme === 'speciallight';
     const bg = Colors.get('background', theme);
-    const panel = isLight ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.05)';
-    const panelStrong = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(18,21,25,0.92)';
+    const panel = isLight ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.052)';
+    const panelStrong = isLight ? 'rgba(255,255,255,0.86)' : 'rgba(24,32,39,0.58)';
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
     const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
+    const glassPanel = isLight
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.76), rgba(255,255,255,0.42))'
+        : 'linear-gradient(145deg, rgba(255,255,255,0.074), rgba(255,255,255,0.028))';
+    const glassShadow = isLight
+        ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)'
+        : '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)';
 
     return {
         pageRoot: {
@@ -1168,8 +1174,8 @@ const styles = (theme, fSize, rawAccentColor) => {
             paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 148px)',
             overflowY: 'auto',
             background: isLight
-                ? `radial-gradient(900px 450px at 80% -10%, rgba(${accent.rgbText},0.1), transparent 58%), #F4F5F7`
-                : `radial-gradient(1000px 500px at 80% -10%, rgba(${accent.rgbText},0.07), transparent 55%), #0E1013`,
+                ? `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${accent.rgbText},0.1), transparent 66%), #F4F5F7`
+                : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgbText},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${bg} 46%, #10161A 100%)`,
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             color: text
         },
@@ -1214,7 +1220,7 @@ const styles = (theme, fSize, rawAccentColor) => {
         topEyebrow: { color: accentColor, fontSize: 10, fontWeight: 950, letterSpacing: 1.6 },
         topTitle: { color: sub, fontSize: 12, fontWeight: 800, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' },
 
-        headerWrapper: { margin: '8px 18px 0', padding: '14px 15px 13px', borderRadius: 22, background: `radial-gradient(220px 150px at 100% 0%, ${accent.soft} 0%, transparent 68%), ${panel}`, border: `1px solid ${border}`, backdropFilter: 'blur(18px)', boxShadow: isLight ? '0 16px 40px rgba(15,23,42,0.08)' : '0 18px 54px rgba(0,0,0,0.32)' },
+        headerWrapper: { margin: '8px 18px 0', padding: '14px 15px 13px', borderRadius: 22, background: `radial-gradient(220px 150px at 100% 0%, ${accent.soft} 0%, transparent 68%), ${glassPanel}`, border: `1px solid ${border}`, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)', boxShadow: glassShadow },
         heroTopLine: { display: 'none' },
         fixedHeader: { display: 'flex', alignItems: 'center', padding: 0, gap: 13, textAlign: 'left' },
         headerLeft: { display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 },
@@ -1246,10 +1252,11 @@ const styles = (theme, fSize, rawAccentColor) => {
             gap: 9,
             padding: 10,
             borderRadius: 22,
-            background: isLight ? 'rgba(255,255,255,0.88)' : 'rgba(14,16,19,0.88)',
+            background: glassPanel,
             border: `1px solid ${border}`,
-            boxShadow: isLight ? '0 16px 36px rgba(15,23,42,0.14)' : '0 18px 46px rgba(0,0,0,0.42)',
-            backdropFilter: 'blur(22px) saturate(150%)',
+            boxShadow: glassShadow,
+            backdropFilter: 'blur(26px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(26px) saturate(170%)',
             boxSizing: 'border-box',
             zIndex: 1200
         },
@@ -1316,7 +1323,7 @@ const styles = (theme, fSize, rawAccentColor) => {
         parameterSection: { marginBottom: 14 },
         parameterSectionTitle: { display: 'flex', alignItems: 'center', gap: 8, color: sub, fontSize: 10, fontWeight: 950, letterSpacing: '0.14em', margin: '0 0 9px 4px', textTransform: 'uppercase' },
         parameterCards: { display: 'flex', flexDirection: 'column', gap: 10 },
-        parameterCard: { borderRadius: 20, padding: 16, background: `linear-gradient(145deg, ${panelStrong}, ${panel})`, border: `1px solid ${border}`, boxShadow: isLight ? '0 14px 32px rgba(15,23,42,0.07)' : '0 18px 42px rgba(0,0,0,0.24)', boxSizing: 'border-box', backdropFilter: 'blur(18px)' },
+        parameterCard: { borderRadius: 22, padding: 16, background: glassPanel, border: `1px solid ${border}`, boxShadow: glassShadow, boxSizing: 'border-box', backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
         parameterHead: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 },
         parameterIcon: { display: 'flex', flexShrink: 0 },
         parameterLabel: { color: text, fontSize: 14, fontWeight: 850, flex: 1 },
@@ -1351,7 +1358,7 @@ const styles = (theme, fSize, rawAccentColor) => {
         counterBadge: { marginLeft: 'auto', fontSize: 11, backgroundColor: accent.soft, border: `1px solid ${accent.ring}`, padding: '4px 10px', borderRadius: 999, color: accentColor },
         goalsContainer: {},
 
-        subGoalCard: { backgroundColor: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(255,255,255,0.035)', borderRadius: 16, overflow: 'hidden', transition: 'all 0.2s ease', backdropFilter: 'blur(18px)' },
+        subGoalCard: { background: glassPanel, borderRadius: 18, overflow: 'hidden', transition: 'all 0.2s ease', backdropFilter: 'blur(24px) saturate(160%)', WebkitBackdropFilter: 'blur(24px) saturate(160%)' },
         subGoalMainRow: { display: 'flex', alignItems: 'center', padding: '11px 12px', gap: 10 },
         checkbox: (checked) => ({
             width: 22, height: 22, borderRadius: 6,

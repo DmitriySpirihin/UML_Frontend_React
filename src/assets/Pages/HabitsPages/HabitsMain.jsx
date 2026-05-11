@@ -8,15 +8,15 @@ import { playEffects } from '../../StaticClasses/Effects.js'
 
 // --- ИМПОРТЫ ---
 import { expandedCard$, setExpandedCard } from '../../StaticClasses/HabitsBus.js';
-import { theme$, lang$, fontSize$, premium$, confirmationPanel$, setShowPopUpPanel, setPage,setActiveTab, habitAccent$, habitsChanged$, setHabitAccent } from '../../StaticClasses/HabitsBus'
+import { theme$, lang$, fontSize$, premium$, confirmationPanel$, setShowPopUpPanel, setPage,setActiveTab, habitAccent$, habitsChanged$, habitsSelectedDate$, setHabitAccent } from '../../StaticClasses/HabitsBus'
 import Colors from '../../StaticClasses/Colors'
 import { saveData } from '../../StaticClasses/SaveHelper.js';
 import { HABITS_ACCENT as SHARED_HABITS_ACCENT, HABIT_ACCENT_PRESETS, buildHabitsAccent } from './HabitVisuals.jsx';
 
 import { MdDone, MdClose } from 'react-icons/md'
-import { FaPlus, FaTrash, FaPencilAlt, FaArrowUp, FaFire, FaChevronDown , FaClock, FaSlidersH, FaPalette } from 'react-icons/fa'
+import { FaPlus, FaTrash, FaPencilAlt, FaFire, FaChevronDown , FaClock, FaSlidersH, FaPalette } from 'react-icons/fa'
 //new
-import {FiCalendar} from 'react-icons/fi'
+import {FiCalendar, FiEdit3, FiTrash2, FiChevronUp} from 'react-icons/fi'
 import {MdSkipNext} from 'react-icons/md'
 
 import { FaCheck } from 'react-icons/fa6'
@@ -409,10 +409,11 @@ function getTodayStatus(id) {
     return getHabitStatus(id, dateKey);
 }
 
-function buildHabitSummary(habitsCards) {
+function buildHabitSummary(habitsCards, selectedDateKey = dateKey) {
     const total = habitsCards.length;
-    const done = habitsCards.filter(id => getTodayStatus(id) === 1 || AppData.isHabitAutoComplete(id)).length;
-    const skipped = habitsCards.filter(id => getTodayStatus(id) < 0).length;
+    const dayData = AppData.habitsByDate?.[selectedDateKey] || {};
+    const done = habitsCards.filter(id => dayData[id] === 1 || (selectedDateKey === dateKey && AppData.isHabitAutoComplete(id))).length;
+    const skipped = habitsCards.filter(id => dayData[id] < 0).length;
     const bestStreak = habitsCards.reduce((max, id) => Math.max(max, getDoneAmount(id)), 0);
     const avgFormation = total
         ? Math.round(habitsCards.reduce((sum, id) => sum + getHabitPerformPercent(id), 0) / total)
@@ -456,13 +457,15 @@ const styles = (theme, fSize = 0) => {
     const bg = isLight
         ? `radial-gradient(640px 420px at 86% -8%, rgba(${HABITS_ACCENT.rgb},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 66%), #F4F5F7`
         : `radial-gradient(640px 420px at 86% -8%, rgba(${HABITS_ACCENT.rgb},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`;
-    const modalBg = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(20,23,25,0.96)';
-    const borderColor = isLight ? '1px solid rgba(15,23,42,0.08)' : `1px solid rgba(255,255,255,0.08)`;
+    const modalBg = isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.82), rgba(${HABITS_ACCENT.rgb},0.09), rgba(255,255,255,0.54))`
+        : `linear-gradient(145deg, rgba(34,43,52,0.74), rgba(${HABITS_ACCENT.rgb},0.08) 48%, rgba(12,17,21,0.72))`;
+    const borderColor = isLight ? '1px solid rgba(15,23,42,0.1)' : `1px solid rgba(190,220,235,0.16)`;
     
     // --- УЛУЧШЕННЫЕ ТЕНИ ДЛЯ МОДАЛОК (Многослойные, мягкие) ---
     const shadow = isLight 
-        ? '0 20px 40px -10px rgba(0,0,0,0.1), 0 10px 20px -5px rgba(0,0,0,0.04)' // Светлая: мягкая двойная тень
-        : '0 30px 60px -12px rgba(0,0,0,0.5)'; // Темная: глубокая, размытая тень
+        ? '0 26px 54px -22px rgba(15,23,42,0.22), 0 1px 0 rgba(255,255,255,0.8) inset'
+        : '0 34px 72px -30px rgba(0,0,0,0.78), 0 1px 0 rgba(255,255,255,0.07) inset';
 
     return {
         container: {
@@ -475,7 +478,8 @@ const styles = (theme, fSize = 0) => {
             alignItems: "center",
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             background: bg,
-            transition: 'background-color 0.3s ease'
+            transition: 'background-color 0.3s ease',
+            overflow: 'hidden'
         },
         scrollView: {
             width: "100%",
@@ -483,6 +487,8 @@ const styles = (theme, fSize = 0) => {
             padding: 'calc(env(safe-area-inset-top, 0px) + 10px) 0 calc(104px + env(safe-area-inset-bottom, 0px))',
             boxSizing: 'border-box',
             overflowY: "auto",
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
             overflowAnchor: 'none',
             overscrollBehavior: 'contain',
             scrollPaddingTop: '16px',
@@ -492,7 +498,7 @@ const styles = (theme, fSize = 0) => {
         },
         cP: {
             display: 'flex', flexDirection: 'column', alignItems: "center", justifyContent: "center",
-            borderRadius: "28px",
+            borderRadius: "32px",
             border: borderColor,
             background: modalBg,
             boxShadow: shadow,
@@ -501,37 +507,62 @@ const styles = (theme, fSize = 0) => {
 	            maxHeight: 'calc(100dvh - 48px)',
 	            overflowY: 'auto',
 	            padding: '25px',
-            gap: '20px'
+            gap: '20px',
+            backdropFilter: 'blur(26px) saturate(155%)',
+            WebkitBackdropFilter: 'blur(26px) saturate(155%)'
         },
         confirmContainer: {
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(8px)',
+            backgroundColor: isLight ? 'rgba(15,23,42,0.18)' : 'rgba(0,0,0,0.52)',
+            backdropFilter: 'blur(16px) saturate(135%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(135%)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             zIndex: 3000, padding: '20px',
         },
         selectPanel: {
-            backgroundColor: modalBg,
-            borderRadius: '24px',
+            background: modalBg,
+            borderRadius: '28px',
             border: borderColor,
             position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
             display: 'flex', flexWrap: 'wrap', width: '85vw', maxHeight: '50vh', overflowY: 'auto', padding: '20px', gap: '10px', justifyContent: 'center', zIndex: 6000,
             boxShadow: shadow,
+            backdropFilter: 'blur(26px) saturate(155%)',
+            WebkitBackdropFilter: 'blur(26px) saturate(155%)'
         },
         mainText: { fontSize: "17px", fontWeight: '600', color: Colors.get('mainText', theme), textAlign: 'center', marginBottom: '10px' },
         subText: { textAlign: "center", fontSize: "14px", color: Colors.get('subText', theme), marginBottom: '5px' },
         buttonsRow: { width: '100%', display: 'flex', flexDirection: 'row', gap: '15px', marginTop: '10px' },
         btnCancel: {
-            flex: 1, padding: '14px', borderRadius: '16px', border: 'none', cursor: 'pointer',
-            backgroundColor: isLight ? '#E5E5EA' : 'rgba(255,255,255,0.1)',
-            color: isLight ? '#000' : '#FFF',
-            display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '600', fontSize: '15px'
+            flex: 1, padding: '14px', borderRadius: '20px', cursor: 'pointer',
+            border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.08)',
+            background: isLight ? 'rgba(255,255,255,0.54)' : 'rgba(255,255,255,0.08)',
+            color: Colors.get('mainText', theme),
+            display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '700', fontSize: '15px',
+            boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.78) inset' : '0 1px 0 rgba(255,255,255,0.055) inset',
+            backdropFilter: 'blur(18px) saturate(145%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(145%)'
         },
         btnSave: {
-            flex: 1, padding: '14px', borderRadius: '16px', border: 'none', cursor: 'pointer',
-            backgroundColor: '#007AFF',
+            flex: 1, padding: '14px', borderRadius: '20px', cursor: 'pointer',
+            border: `1px solid rgba(${HABITS_ACCENT.rgb},0.28)`,
+            background: `linear-gradient(145deg, rgba(${HABITS_ACCENT.rgb},0.86), ${HABITS_ACCENT.hue})`,
             color: '#FFF',
-            display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '600', fontSize: '15px'
+            display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '800', fontSize: '15px',
+            boxShadow: `0 14px 28px -20px rgba(${HABITS_ACCENT.rgb},0.72), 0 1px 0 rgba(255,255,255,0.18) inset`
+        },
+        goalInput: {
+            flex: 1,
+            border: isLight ? '1px solid rgba(15,23,42,0.1)' : '1px solid rgba(190,220,235,0.16)',
+            background: isLight ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.055)',
+            fontSize: '16px',
+            color: Colors.get('mainText', theme),
+            outline: 'none',
+            borderRadius: '20px',
+            padding: '14px 16px',
+            boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.8) inset' : '0 1px 0 rgba(255,255,255,0.055) inset',
+            backdropFilter: 'blur(18px) saturate(145%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(145%)',
+            boxSizing: 'border-box'
         },
         widgetSettingsBtn: {
             width: '95%',
@@ -714,6 +745,15 @@ const HabitsMain = () => {
 
     useEffect(() => {
         const subscription = habitAccent$.subscribe(() => setDataVersion(v => v + 1));
+        return () => subscription.unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        const subscription = habitsSelectedDate$.subscribe((nextDateKey) => {
+            if (typeof nextDateKey === 'string' && nextDateKey) {
+                setSelectedDateKey(nextDateKey);
+            }
+        });
         return () => subscription.unsubscribe();
     }, []);
 
@@ -916,14 +956,14 @@ const HabitsMain = () => {
                         <button style={styles(theme).btnCancel} onClick={() => setNeedConfirmation(false)}>
                             <MdClose size={20} style={{marginRight: 5}}/> {langIndex === 0 ? 'Нет' : 'No'}
                         </button>
-                        <button style={{...styles(theme).btnSave, backgroundColor: '#FF453A'}} onClick={() => { removeHabit(habitTodelete); setNeedConfirmation(false) }}>
+                        <button style={{...styles(theme).btnSave, background: 'linear-gradient(145deg, rgba(255,69,58,0.86), #FF453A)', border: '1px solid rgba(255,69,58,0.34)'}} onClick={() => { removeHabit(habitTodelete); setNeedConfirmation(false) }}>
                             <MdDone size={20} style={{marginRight: 5}}/> {langIndex === 0 ? 'Да' : 'Yes'}
                         </button>
                     </div>
                 </div>
             </div>}
             {!hasHabits && (
-                <div ref={scrollViewRef} style={styles(theme).scrollView}>
+                <div ref={scrollViewRef} className="habitsMainScroll" style={styles(theme).scrollView}>
                     <HabitsPageHeader
                         theme={theme}
                         fSize={fSize}
@@ -934,21 +974,14 @@ const HabitsMain = () => {
                 </div>
             )}
             
-            {hasHabits && <div ref={scrollViewRef} style={styles(theme).scrollView} key={dataVersion}>
+            {hasHabits && <div ref={scrollViewRef} className="habitsMainScroll" style={styles(theme).scrollView}>
                 <HabitsPageHeader
                     theme={theme}
                     fSize={fSize}
                     langIndex={langIndex}
                     onAccentClick={() => setShowWidgetSettings(true)}
                 />
-                <HabitsHero theme={theme} langIndex={langIndex} habitsCards={habitsCards} fSize={fSize} onOpenWidgets={() => setShowWidgetSettings(true)} />
-                <HabitsWeekStrip
-                    theme={theme}
-                    langIndex={langIndex}
-                    habitsCards={habitsCards}
-                    selectedDateKey={selectedDateKey}
-                    onSelectDate={setSelectedDateKey}
-                />
+                <HabitsHero theme={theme} langIndex={langIndex} habitsCards={habitsCards} fSize={fSize} selectedDateKey={selectedDateKey} onOpenWidgets={() => setShowWidgetSettings(true)} />
                 <div style={styles(theme).categoriesWrap}>
                     {buildMenu({
                         theme,
@@ -986,7 +1019,7 @@ const HabitsMain = () => {
                                 placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'}
                                 value={newGoal}
                                  onChange={(e) => setNewGoal(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                style={styles(theme).goalInput}
                                 />
                                 </div>
                          }
@@ -997,7 +1030,7 @@ const HabitsMain = () => {
                                 placeholder={langIndex === 0 ? 'Название цели...' : 'Goal title...'}
                                 value={newGoal}
                                  onChange={(e) => setNewGoal(e.target.value)}
-                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                style={styles(theme).goalInput}
                                 />
                                 </div>
                          }
@@ -1146,7 +1179,11 @@ const HabitsMain = () => {
                             <button style={styles(theme).btnCancel} onClick={() => setCP(prev => ({ ...prev, show: false }))}>
                                 <MdClose size={22} style={{marginRight: '6px'}}/> {langIndex === 0 ? 'Отмена' : 'Cancel'}
                             </button>
-	                            <button style={{...styles(theme).btnSave, backgroundColor: cP.type === 3 ? '#D95C5C' : HABITS_ACCENT.hue}} onClick={() => { onConfirmAction(); }}>
+	                            <button style={{
+                                    ...styles(theme).btnSave,
+                                    background: cP.type === 3 ? 'linear-gradient(145deg, rgba(216,92,92,0.82), #D95C5C)' : `linear-gradient(145deg, rgba(${HABITS_ACCENT.rgb},0.86), ${HABITS_ACCENT.hue})`,
+                                    border: cP.type === 3 ? '1px solid rgba(216,92,92,0.34)' : `1px solid rgba(${HABITS_ACCENT.rgb},0.32)`
+                                }} onClick={() => { onConfirmAction(); }}>
                                 <MdDone size={22} style={{marginRight: '6px'}}/> {cP.type === 3 ? (langIndex === 0 ? 'Удалить' : 'Delete') : (langIndex === 0 ? 'Готово' : 'Save')}
                             </button>
                         </div>
@@ -1171,6 +1208,12 @@ const HabitsMain = () => {
                     </div>
                 </div>
             )}
+            <style>{`
+                .habitsMainScroll::-webkit-scrollbar {
+                    width: 0;
+                    height: 0;
+                }
+            `}</style>
         </div>
     )
 }
@@ -1209,13 +1252,14 @@ function HabitsPageHeader({ theme, fSize, langIndex, onAccentClick }) {
     );
 }
 
-function HabitsHero({ theme, langIndex, habitsCards, fSize, onOpenWidgets }) {
+function HabitsHero({ theme, langIndex, habitsCards, fSize, selectedDateKey = dateKey, onOpenWidgets }) {
     const [detailsCollapsed, setDetailsCollapsed] = useState(getHeroDetailsCollapsed);
     const isLight = theme === 'light' || theme === 'speciallight';
-    const summary = buildHabitSummary(habitsCards);
+    const summary = buildHabitSummary(habitsCards, selectedDateKey);
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
     const progress = summary.total ? summary.done / summary.total : 0;
+    const heroDateLabel = getSelectedDateLabel(selectedDateKey, langIndex).toUpperCase();
     const toggleDetails = () => {
         const nextValue = !detailsCollapsed;
         setDetailsCollapsed(nextValue);
@@ -1223,12 +1267,12 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, onOpenWidgets }) {
         playEffects(clickSound);
     };
     const heroBackground = isLight
-        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(${HABITS_ACCENT.rgb},0.12) 58%, rgba(${HABITS_ACCENT.rgb},0.08) 100%)`
-        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, rgba(${HABITS_ACCENT.rgb},0.14) 54%, rgba(${HABITS_ACCENT.rgb},0.08) 100%)`;
-    const heroBorder = `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : HABITS_ACCENT.ring}`;
+        ? `linear-gradient(145deg, rgba(255,255,255,0.70) 0%, rgba(${HABITS_ACCENT.rgb},0.10) 58%, rgba(255,255,255,0.36) 100%)`
+        : `linear-gradient(145deg, rgba(23,27,31,0.68) 0%, rgba(${HABITS_ACCENT.rgb},0.11) 54%, rgba(255,255,255,0.025) 100%)`;
+    const heroBorder = `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.13)'}`;
     const heroShadow = isLight
-        ? `0 16px 38px -34px rgba(${HABITS_ACCENT.rgb},0.45), 0 1px 0 rgba(255,255,255,0.72) inset`
-        : `0 18px 40px -34px rgba(${HABITS_ACCENT.rgb},0.50), 0 1px 0 rgba(255,255,255,0.055) inset`;
+        ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)'
+        : '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)';
 
     const stat = (label, value, tone = HABITS_ACCENT, wide = false) => (
         <div style={{
@@ -1240,8 +1284,8 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, onOpenWidgets }) {
             minWidth: 0,
             minHeight: wide ? 34 : 32,
             borderRadius: 12,
-            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
-            background: isLight ? 'rgba(255,255,255,0.56)' : 'rgba(255,255,255,0.035)',
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.105)'}`,
+            background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.038)',
             padding: '0 10px',
             boxSizing: 'border-box',
             overflow: 'hidden',
@@ -1282,6 +1326,8 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, onOpenWidgets }) {
                 background: heroBackground,
                 border: heroBorder,
                 boxShadow: heroShadow,
+                backdropFilter: 'blur(26px) saturate(170%)',
+                WebkitBackdropFilter: 'blur(26px) saturate(170%)',
                 boxSizing: 'border-box'
             }}>
                 <div style={{
@@ -1291,24 +1337,8 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, onOpenWidgets }) {
                     width: 170,
                     height: 170,
                     borderRadius: '50%',
-                    background: `radial-gradient(circle, rgba(${HABITS_ACCENT.rgb},0.22) 0%, transparent 62%)`
+                    background: `radial-gradient(circle, rgba(${HABITS_ACCENT.rgb},0.12) 0%, transparent 64%)`
                 }} />
-                <img
-                    src="images/bro_habits.png"
-                    alt=""
-                    style={{
-                        position: 'absolute',
-                        right: 4,
-                        bottom: -6,
-                        width: 'min(28vw, 118px)',
-                        maxHeight: 120,
-                        objectFit: 'contain',
-                        opacity: isLight ? 0.78 : 0.82,
-                        filter: isLight ? 'drop-shadow(0 16px 24px rgba(15,23,42,0.16))' : 'drop-shadow(0 18px 28px rgba(0,0,0,0.46))',
-                        WebkitMaskImage: 'radial-gradient(ellipse at 52% 48%, #000 0 62%, rgba(0,0,0,0.72) 72%, transparent 88%)',
-                        maskImage: 'radial-gradient(ellipse at 52% 48%, #000 0 62%, rgba(0,0,0,0.72) 72%, transparent 88%)'
-                    }}
-                />
             </div>
             <div style={{
                 position: 'relative',
@@ -1323,7 +1353,7 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, onOpenWidgets }) {
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: detailsCollapsed ? 0 : 12, minWidth: 0 }}>
                 <div style={{ minWidth: 0 }}>
                     <div style={{ color: sub, fontSize: 10, fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase' }}>
-                        {langIndex === 0 ? 'Сегодня' : 'Today'}
+                        {heroDateLabel}
                     </div>
                     <div style={{ color: text, fontSize: fSize === 0 ? 20 : 22, fontWeight: 950, lineHeight: 1.08, marginTop: 4 }}>
                         {langIndex === 0 ? 'Привычки' : 'Habits'}
@@ -1397,8 +1427,8 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, onOpenWidgets }) {
                     >
                 <div style={{
                     borderRadius: 14,
-                    border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
-                    background: isLight ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.032)',
+                    border: `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.105)'}`,
+                    background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.038)',
                     padding: '10px 11px',
                     boxSizing: 'border-box',
                     boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
@@ -1422,8 +1452,8 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, onOpenWidgets }) {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginTop: 10 }}>
                     {stat(langIndex === 0 ? 'Ждут' : 'Pending', summary.pending)}
-                    {stat(langIndex === 0 ? 'Серия' : 'Streak', summary.bestStreak, HABITS_SUCCESS)}
-                    {stat(langIndex === 0 ? 'Формирование' : 'Formation', `${summary.avgFormation}%`, HABITS_ACCENT, true)}
+                    {stat(langIndex === 0 ? 'Лучшая серия' : 'Best streak', summary.bestStreak, HABITS_SUCCESS)}
+                    {stat(langIndex === 0 ? 'Формирование привычек' : 'Habit formation', `${summary.avgFormation}%`, HABITS_ACCENT, true)}
                 </div>
                     </motion.div>
                 )}
@@ -1663,18 +1693,18 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     const safePercent = Math.max(0, Math.min(100, percent));
 
     let cardBg = isLight
-        ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(255,255,255,0.78))'
-        : `radial-gradient(240px 120px at 4% 10%, ${categoryTone.soft}, transparent 72%), linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.92))`;
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.86), rgba(244,246,248,0.66))'
+        : 'linear-gradient(145deg, rgba(42,49,55,0.58), rgba(17,22,26,0.72))';
     let textColor = isLight ? '#1D1D1F' : Colors.get('mainText', theme);
     let subTextColor = isLight ? '#8E8E93' : Colors.get('subText', theme);
-    let iconBg = categoryTone.soft;
-    let iconColor = habitColor;
-    let borderColor = '1px solid transparent';
-    let progressColor = categoryTone.hue;
+    let iconBg = isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.065)';
+    let iconColor = isLight ? 'rgba(31,41,55,0.58)' : 'rgba(196,211,222,0.62)';
+    let borderColor = `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.08)'}`;
+    let progressColor = isLight ? 'rgba(31,41,55,0.28)' : 'rgba(196,211,222,0.28)';
 
     let shadow = isLight 
-        ? '0 12px 28px -24px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.72) inset'
-        : `0 1px 0 rgba(255,255,255,0.04) inset, 0 14px 34px -28px rgba(0,0,0,0.72)`;
+        ? '0 14px 28px -24px rgba(15,23,42,0.24), 0 1px 0 rgba(255,255,255,0.72) inset'
+        : '0 1px 0 rgba(255,255,255,0.055) inset, 0 18px 34px -28px rgba(0,0,0,0.72)';
 
     if (isNegative) {
         cardBg = isLight
@@ -1697,15 +1727,15 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
             progressColor = negativeTone.hue;
         } else {
             cardBg = isLight
-                ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${categoryTone.soft})`
-                : `radial-gradient(240px 120px at 4% 10%, ${categoryTone.soft}, transparent 72%), radial-gradient(190px 110px at 94% 48%, ${HABITS_SUCCESS.soft}, transparent 72%), linear-gradient(145deg, rgba(24,28,31,0.94), rgba(20,23,25,0.92))`;
-            iconBg = categoryTone.soft;
-            iconColor = categoryTone.hue;
-            borderColor = '1px solid transparent';
+                ? `linear-gradient(145deg, rgba(255,255,255,0.92), ${HABITS_SUCCESS.soft})`
+                : `radial-gradient(220px 120px at 6% 4%, ${HABITS_SUCCESS.soft}, transparent 72%), linear-gradient(145deg, rgba(24,35,29,0.84), rgba(16,24,19,0.76))`;
+            iconBg = HABITS_SUCCESS.soft;
+            iconColor = HABITS_SUCCESS.hue;
+            borderColor = `1px solid ${HABITS_SUCCESS.ring}`;
             progressColor = HABITS_SUCCESS.hue;
             shadow = isLight
-                ? '0 12px 30px -24px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.72) inset'
-                : `0 1px 0 rgba(255,255,255,0.04) inset, 0 16px 34px -28px rgba(0,0,0,0.76), 0 12px 28px -30px ${HABITS_SUCCESS.ring}`;
+                ? '0 14px 30px -24px rgba(15,23,42,0.20), 0 1px 0 rgba(255,255,255,0.72) inset'
+                : '0 1px 0 rgba(255,255,255,0.055) inset, 0 18px 34px -28px rgba(0,0,0,0.76)';
         }
     } else if (statusValue === -1) {
         cardBg = isLight
@@ -1810,6 +1840,26 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     const startTimer = () => { if (statusValue < 1 && !isNegative && !isAutoComplete) { setTimer(true); setTime(0); } }
     const stopTimer = () => { if (!isNegative) { setTimer(false); setProgress(0); setTime(0); } }
     const onDeleteHabit = (id) => { setHabitToDelete(id); setNeedConfirmation(true); setConfirmMessage(AppData.prefs[0] === 0 ? `⚠️ Вы уверены?` : `⚠️ Are you sure?`); }
+    const actionButtonStyle = {
+        width: 34,
+        height: 34,
+        borderRadius: 13,
+        border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(190,220,235,0.09)'}`,
+        background: isLight
+            ? 'linear-gradient(145deg, rgba(255,255,255,0.66), rgba(15,23,42,0.035))'
+            : 'linear-gradient(145deg, rgba(255,255,255,0.065), rgba(255,255,255,0.025))',
+        color: Colors.get('icons', theme),
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 0,
+        cursor: 'pointer',
+        outline: 'none',
+        boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.72) inset' : '0 1px 0 rgba(255,255,255,0.045) inset',
+        backdropFilter: isLight ? 'none' : 'blur(14px) saturate(150%)',
+        WebkitBackdropFilter: isLight ? 'none' : 'blur(14px) saturate(150%)',
+        WebkitTapHighlightColor: 'transparent'
+    };
 
     return (
         <motion.div
@@ -1821,21 +1871,27 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
                 boxSizing: 'border-box',
                 overflow: 'hidden',
                 position: 'relative',
-                borderRadius: 20,
+                borderRadius: 28,
                 background: cardBg,
                 backdropFilter: isLight ? 'none' : 'blur(24px) saturate(160%)',
                 WebkitBackdropFilter: isLight ? 'none' : 'blur(24px) saturate(160%)',
                 border: borderColor,
                 boxShadow: shadow,
-                x: constrainedX
+                cursor: 'pointer',
+                WebkitTapHighlightColor: 'transparent',
+                clipPath: 'inset(0 round 28px)',
+                backgroundClip: 'padding-box',
+                isolation: 'isolate',
+                x: constrainedX,
+                transition: 'background 0.52s ease, border-color 0.52s ease, box-shadow 0.52s ease'
             }}
             onClick={(event) => {
                 const el = document.getElementById(id);
                 if (el.clientHeight < 88 || (event.nativeEvent.pageY - (el.getBoundingClientRect().top + window.scrollY)) < 88) toggleIsActive();
             }}
             drag={canDrag && !isAutoComplete ? 'x' : false} dragConstraints={{ left: minX, right: statusValue > 0 || isNegative ? 0 : maxX }}
-            onDrag={handledDrag} onDragEnd={onDragEnd} whileTap={{ scale: 0.99 }}
-            animate={{ height: expanded ? 'auto' : '88px' }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+            onDrag={handledDrag} onDragEnd={onDragEnd} whileHover={{ y: -1 }} whileTap={{ scale: 0.985 }}
+            animate={{ height: expanded ? 'auto' : '88px' }} transition={{ type: 'spring', stiffness: 118, damping: 27, mass: 0.92 }}
         >
            
             <div style={{ display: "flex", alignItems: "center", minHeight: 88, width: '100%', padding: '14px 16px', boxSizing: 'border-box', gap: 14 }}>
@@ -1868,7 +1924,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 
                     */}
 
-	                    {showStatsRow && <div style={{display:'flex',gap: 6, marginTop: 8, justifyContent:'flex-start', overflow: 'hidden'}}>
+	                    {showStatsRow && <div style={{display:'flex', gap: 6, marginTop: 8, justifyContent:'center', alignItems: 'center', width: '100%', overflow: 'hidden'}}>
 
 	                    {widgets.days && <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getDaysAmount(id)} color={subTextColor} />}
 	                    {widgets.skips && <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={statusValue === -1 ? '#D95C5C' : subTextColor} />}
@@ -1885,9 +1941,9 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingLeft: '2px', alignSelf: 'center', gap: 8, flexShrink: 0 }}>
                     {!isNegative && !isAutoComplete && <>
                     
-                        {!timer && statusValue === 0 && <TimerOffIcon onClick={(e) => { e.stopPropagation(); setShowTimerSlider(true); }} style={{ color: subTextColor, opacity: 0.52, fontSize: '23px' }} />}
-                        {timer && <TimerIcon onClick={(e) => { e.stopPropagation(); stopTimer() }} style={{ color: categoryTone.hue, fontSize: '23px' }} />}
-		                        <div onClick={(e) => {e.stopPropagation(); setNewStatus(statusValue !== 1)}} style={{ width: 40, height: 30, borderRadius: 12, border: '1px solid transparent', background: statusValue === 1 ? 'linear-gradient(135deg, rgba(196,211,222,0.24), rgba(196,211,222,0.11))' : 'rgba(255,255,255,0.035)', color: statusValue === 1 ? '#EDF5FA' : subTextColor, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease', boxSizing: 'border-box', cursor: 'pointer', boxShadow: statusValue === 1 ? '0 1px 0 rgba(255,255,255,0.08) inset, 0 10px 18px -16px rgba(196,211,222,0.65)' : 'none' }}>{statusValue === 1 && <FaCheck size={14} />}</div>
+                        {!timer && statusValue === 0 && <TimerOffIcon onClick={(e) => { e.stopPropagation(); setShowTimerSlider(true); }} style={{ color: subTextColor, opacity: 0.52, fontSize: '23px', transition: 'color 0.42s ease, opacity 0.42s ease' }} />}
+                        {timer && <TimerIcon onClick={(e) => { e.stopPropagation(); stopTimer() }} style={{ color: categoryTone.hue, fontSize: '23px', transition: 'color 0.42s ease' }} />}
+		                        <div onClick={(e) => {e.stopPropagation(); setNewStatus(statusValue !== 1)}} style={{ width: 40, height: 30, borderRadius: 12, border: statusValue === 1 ? `1px solid ${HABITS_SUCCESS.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`, background: statusValue === 1 ? HABITS_SUCCESS.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)'), color: statusValue === 1 ? HABITS_SUCCESS.hue : subTextColor, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.45s ease, border-color 0.45s ease, color 0.45s ease, box-shadow 0.45s ease', boxSizing: 'border-box', cursor: 'pointer', boxShadow: statusValue === 1 ? `0 1px 0 rgba(255,255,255,0.08) inset, 0 0 16px ${HABITS_SUCCESS.glow}` : '0 1px 0 rgba(255,255,255,0.035) inset' }}>{statusValue === 1 && <FaCheck size={14} />}</div>
                     </>}
 
 
@@ -1902,7 +1958,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     <motion.div 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
-        transition={{ duration: 0.2, delay: 0.1 }} 
+        transition={{ duration: 0.34, ease: 'easeOut', delay: 0.06 }} 
         style={{ padding: '0 16px 18px 16px' }}
     >
         {/* Separator Line */}
@@ -1957,8 +2013,26 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 	                {widgets.achievements && <div style={{ marginTop: '22px', marginBottom: '10px', fontSize: '11px', fontWeight: 900, color: Colors.get('subText', theme), textTransform: 'uppercase', letterSpacing: '0.08em' }}>
 	                    {langIndex === 0 ? 'Достижения' : 'Achievements'}
 	                </div>}
-	                {widgets.achievements && AppData.choosenHabitsAchievements[id]?.map((milestone, index) => (
-	                    <Achievement key={index} index={index} milestone={milestone} id={id} isNegative={isNegative} percent={percent} theme={theme} fSize={fSize} langIndex={langIndex} />
+	                {widgets.achievements && ((AppData.choosenHabitsAchievements[id] || []).length > 0 ? (
+	                    AppData.choosenHabitsAchievements[id].map((milestone, index) => (
+	                        <Achievement key={index} index={index} milestone={milestone} id={id} isNegative={isNegative} percent={percent} theme={theme} fSize={fSize} langIndex={langIndex} />
+	                    ))
+	                ) : (
+	                    <div style={{
+	                        borderRadius: 17,
+	                        border: `1px solid ${isLight ? 'rgba(15,23,42,0.07)' : 'rgba(190,220,235,0.08)'}`,
+	                        background: isLight ? 'rgba(255,255,255,0.48)' : 'rgba(255,255,255,0.04)',
+	                        color: subTextColor,
+	                        padding: '13px 14px',
+	                        fontSize: 12,
+	                        fontWeight: 750,
+	                        lineHeight: 1.45,
+	                        boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
+	                    }}>
+	                        {langIndex === 0
+	                            ? 'Достижения появятся за длинную серию без пропусков. Держи привычку 30, 50 и 100 дней подряд, чтобы открыть этапы.'
+	                            : 'Achievements appear after a long streak without skips. Keep the habit for 30, 50, and 100 days in a row to unlock them.'}
+	                    </div>
 	                ))}
             </>
         ) : (
@@ -1969,17 +2043,22 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
         )}
 
         {/* --- BOTTOM ACTIONS (Visible to All) --- */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '18px', gap: 10 }}>
-            <FaPencilAlt onClick={(e) => { e.stopPropagation(); setCP(prev => ({ ...prev, show: true, type: 0, hId: id, gId: 0, hInfo: setHabitInfo })); }} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
-            <FaTrash onClick={(e) => { e.stopPropagation(); onDeleteHabit(id); }} style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} />
-            <FaArrowUp style={{ fontSize: '18px', color: Colors.get('icons', theme), opacity: 0.7 }} onClick={(e) => { e.stopPropagation(); toggleIsActive(); }} />
-	           {!isNegative && !isAutoComplete && <div onClick={(e) => { e.stopPropagation(); setNewStatus(statusValue !== 1); }} style={{ width: 22, height: 22, borderRadius: 8, border: statusValue !== 0 ? 'none' : `1px solid ${isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)'}`, background: statusValue === 1 ? 'linear-gradient(135deg, rgba(196,211,222,0.24), rgba(196,211,222,0.11))' : 'transparent', color: statusValue === 1 ? '#EDF5FA' : HABITS_SUCCESS.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s ease', cursor: 'pointer' }}>{statusValue === 1 && <FaCheck size={13} />}</div>}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '18px', gap: 9 }}>
+            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={(e) => { e.stopPropagation(); setCP(prev => ({ ...prev, show: true, type: 0, hId: id, gId: 0, hInfo: setHabitInfo })); }} style={actionButtonStyle}>
+                <FiEdit3 size={17} />
+            </motion.button>
+            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={(e) => { e.stopPropagation(); onDeleteHabit(id); }} style={actionButtonStyle}>
+                <FiTrash2 size={17} />
+            </motion.button>
+            <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={(e) => { e.stopPropagation(); toggleIsActive(); }} style={actionButtonStyle}>
+                <FiChevronUp size={20} />
+            </motion.button>
         </div>
 
     </motion.div>
 )}
             {showTimerSlider && (
-                <div style={{ display: 'flex', alignItems: 'center', position: 'absolute', borderRadius: 20, width: '100%', height: 88, top: 0, zIndex: 1001, background: isLight ? 'rgba(255,255,255,0.98)' : 'rgba(20,23,25,0.98)', border: borderColor }} onClick={(e) => e.stopPropagation()}>
+                <div style={{ display: 'flex', alignItems: 'center', position: 'absolute', borderRadius: 28, width: '100%', height: 88, top: 0, zIndex: 1001, background: isLight ? 'rgba(255,255,255,0.98)' : 'rgba(20,23,25,0.98)', border: borderColor }} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '90%', margin: '0 auto' }}>
                         <div style={{color: Colors.get('mainText', theme), fontWeight: 'bold'}}>{parsedTimeSimple(maxTimer)}</div>
                         <Slider style={{ width: '50%', color: theme === 'dark' ? '#3abfe4' : '#14868878' }} min={1} max={59} value={maxTimer / 60000} valueLabelDisplay="off" onChange={(e) => { setMaxTimer(e.target.value * 60000); e.stopPropagation(); }} />
@@ -2229,15 +2308,18 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
 
     return (
         <div style={{ width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-            <div 
+            <motion.div
+                whileTap={{ scale: 0.992 }}
                 onClick={toggleOpen}
                 style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'space-between',
-                    padding: '4px 4px 10px', 
+                    padding: '4px 4px 10px',
+                    marginBottom: 6,
                     cursor: 'pointer',
-                    userSelect: 'none'
+                    userSelect: 'none',
+                    WebkitTapHighlightColor: 'transparent'
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
@@ -2296,7 +2378,7 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
                         <FaChevronDown size={14} />
                     </motion.div>
                 </div>
-            </div>
+            </motion.div>
             
             <AnimatePresence initial={false}>
                 {isOpen && (

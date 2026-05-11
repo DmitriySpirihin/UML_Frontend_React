@@ -423,18 +423,20 @@ const styles = (theme, fontSize = 0, item = null) => {
             boxSizing: 'border-box',
             background:
                 isDark
-                    ? 'linear-gradient(135deg, rgba(25, 34, 35, 0.94), rgba(21, 24, 28, 0.92) 54%, rgba(41, 36, 58, 0.88))'
-                    : 'linear-gradient(135deg, #ffffff, #eef8f5)',
-            border: `1px solid ${recoveryAccent.ring}`,
+                    ? 'linear-gradient(135deg, rgba(25, 34, 35, 0.68), rgba(21, 24, 28, 0.60) 54%, rgba(41, 36, 58, 0.48))'
+                    : 'linear-gradient(135deg, rgba(255,255,255,0.72), rgba(238,248,245,0.42))',
+            border: `1px solid ${isDark ? 'rgba(190,220,235,0.13)' : 'rgba(15,23,42,0.075)'}`,
             boxShadow: isDark
-                ? '0 24px 70px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255,255,255,0.08)'
-                : '0 18px 44px rgba(15, 23, 42, 0.08)',
+                ? '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)'
+                : '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)',
+            backdropFilter: 'blur(26px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(26px) saturate(170%)',
         },
         heroGlow: {
             position: 'absolute',
             inset: 0,
             background:
-                `radial-gradient(circle at 78% 24%, ${recoveryAccent.glow}, transparent 34%), radial-gradient(circle at 30% 115%, rgba(180, 139, 200, 0.1), transparent 44%)`,
+                `radial-gradient(circle at 78% 24%, rgba(${rgb}, 0.12), transparent 38%), radial-gradient(circle at 30% 115%, rgba(180, 139, 200, 0.055), transparent 46%)`,
             pointerEvents: 'none',
         },
         heroCopy: {
@@ -484,8 +486,10 @@ const styles = (theme, fontSize = 0, item = null) => {
             padding: '5px 4px',
             boxSizing: 'border-box',
             borderRadius: '15px',
-            backgroundColor: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.74)',
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)'}`,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.038)' : 'rgba(255,255,255,0.42)',
+            border: `1px solid ${isDark ? 'rgba(190,220,235,0.105)' : 'rgba(15,23,42,0.075)'}`,
+            backdropFilter: 'blur(16px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(150%)',
         },
         heroStatIcon: {
             display: 'flex',
@@ -587,11 +591,13 @@ const styles = (theme, fontSize = 0, item = null) => {
             border: `1px solid rgba(${rgb}, ${isDark ? 0.27 : 0.34})`,
             background:
                 isDark
-                    ? `linear-gradient(135deg, rgba(${rgb}, 0.12), rgba(26, 29, 33, 0.9) 38%, rgba(16, 18, 22, 0.92))`
-                    : `linear-gradient(135deg, rgba(${rgb}, 0.18), rgba(255,255,255,0.94))`,
+                    ? `linear-gradient(135deg, rgba(${rgb}, 0.10), rgba(26, 29, 33, 0.62) 38%, rgba(16, 18, 22, 0.56))`
+                    : `linear-gradient(135deg, rgba(${rgb}, 0.12), rgba(255,255,255,0.62))`,
             boxShadow: isDark
-                ? `0 18px 45px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.07)`
-                : '0 12px 28px rgba(15,23,42,0.08)',
+                ? '0 1px 0 rgba(255,255,255,0.08) inset, 0 18px 38px -28px rgba(0,0,0,0.58)'
+                : '0 1px 0 rgba(255,255,255,0.76) inset, 0 14px 32px -26px rgba(15,23,42,0.16)',
+            backdropFilter: 'blur(22px) saturate(165%)',
+            WebkitBackdropFilter: 'blur(22px) saturate(165%)',
             boxSizing: 'border-box',
             color: mainText,
             appearance: 'none',

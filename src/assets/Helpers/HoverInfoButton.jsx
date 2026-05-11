@@ -45,13 +45,15 @@ const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007
         alignItems: "center",
         justifyContent: "center",
         background: theme === 'dark'
-            ? `linear-gradient(145deg, rgba(24,28,31,0.94), ${accent}24)`
-            : `linear-gradient(145deg, rgba(255,255,255,0.94), ${accent}18)`,
+            ? `linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.055)), ${accent}18`
+            : `linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.34)), ${accent}10`,
         boxShadow: theme === 'dark'
-            ? "0 1px 0 rgba(255,255,255,0.05) inset, 0 16px 34px -28px rgba(0,0,0,0.85)"
-            : "0 12px 28px -24px rgba(0,0,0,0.22)",
-        border: `1px solid ${accent}55`,
+            ? "0 1px 0 rgba(255,255,255,0.12) inset, 0 18px 34px -26px rgba(0,0,0,0.72)"
+            : "0 1px 0 rgba(255,255,255,0.85) inset, 0 14px 28px -24px rgba(15,23,42,0.22)",
+        border: `1px solid ${theme === 'dark' ? 'rgba(220,235,245,0.20)' : 'rgba(15,23,42,0.09)'}`,
         color: accent,
+        backdropFilter: "blur(20px) saturate(170%)",
+        WebkitBackdropFilter: "blur(20px) saturate(170%)",
         zIndex: 1001,
         cursor: "pointer"
     } : {
@@ -64,9 +66,15 @@ const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "linear-gradient(135deg, #007AFF, #0055FF)",
-        boxShadow: "0 8px 20px rgba(0, 122, 255, 0.4)",
-        border: "2px solid rgba(255,255,255,0.2)",
+        background: theme === 'dark'
+            ? `radial-gradient(circle at 30% 20%, rgba(255,255,255,0.32), rgba(255,255,255,0.11) 42%, ${accent}22 100%)`
+            : `radial-gradient(circle at 30% 20%, rgba(255,255,255,0.92), rgba(255,255,255,0.56) 46%, ${accent}16 100%)`,
+        boxShadow: theme === 'dark'
+            ? `0 1px 0 rgba(255,255,255,0.2) inset, 0 18px 36px -26px rgba(0,0,0,0.78), 0 0 28px ${accent}22`
+            : `0 1px 0 rgba(255,255,255,0.88) inset, 0 16px 34px -26px rgba(15,23,42,0.22), 0 0 22px ${accent}16`,
+        border: theme === 'dark' ? "1px solid rgba(225,240,255,0.26)" : "1px solid rgba(255,255,255,0.62)",
+        backdropFilter: "blur(24px) saturate(175%)",
+        WebkitBackdropFilter: "blur(24px) saturate(175%)",
         zIndex: 1000,
         cursor: "pointer"
     };
@@ -93,8 +101,8 @@ const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007
             {!isSubtle && <motion.div
                 animate={{
                     boxShadow: [
-                        "0 0 0 0px rgba(0, 122, 255, 0.7)",
-                        "0 0 0 10px rgba(0, 122, 255, 0)"
+                        `0 0 0 0px ${accent}42`,
+                        `0 0 0 12px ${accent}00`
                     ]
                 }}
                 transition={{
@@ -109,7 +117,7 @@ const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007
                 }}
             />}
             
-            <FaQuestion size={isSubtle ? 16 : 20} color={isSubtle ? accent : "#FFF"} style={{filter: isSubtle ? 'none' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'}}/>
+            <FaQuestion size={isSubtle ? 16 : 20} color={isSubtle ? accent : (theme === 'dark' ? '#EAF3FF' : accent)} style={{filter: isSubtle ? 'none' : 'drop-shadow(0 2px 5px rgba(0,0,0,0.28))'}}/>
         </motion.div>
     );
 }

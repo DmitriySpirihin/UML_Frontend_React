@@ -95,9 +95,9 @@ const ToDoNew = () => {
   const ui = {
     bg: isLight
       ? `radial-gradient(900px 450px at 80% -10%, rgba(${accent.rgbText},0.10), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.08), transparent 58%), #F4F5F7`
-      : `radial-gradient(1000px 500px at 80% -10%, rgba(${accent.rgbText},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.05), transparent 55%), #0E1013`,
-    card: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(24,28,31,0.88)',
-    cardSoft: isLight ? 'rgba(255,255,255,0.68)' : 'rgba(255,255,255,0.045)',
+      : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgbText},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
+    card: isLight ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.070)',
+    cardSoft: isLight ? 'rgba(255,255,255,0.44)' : 'rgba(255,255,255,0.026)',
     field: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.055)',
     text: Colors.get('mainText', theme),
     sub: Colors.get('subText', theme),
@@ -105,7 +105,7 @@ const ToDoNew = () => {
     blur: 'blur(30px)',
     border: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)',
     borderStrong: isLight ? 'rgba(15,23,42,0.12)' : 'rgba(159,180,196,0.2)',
-    shadow: isLight ? '0 18px 42px rgba(15,23,42,0.08)' : '0 26px 60px rgba(0,0,0,0.34)'
+    shadow: isLight ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)' : '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)'
   };
 
   const currentTone = getTodoCategoryTone(currentCat?.label?.[0], accent);
@@ -527,7 +527,7 @@ const ToDoNew = () => {
         {/* Footer */}
         <div style={footerButtons(ui)}>
           <motion.div whileTap={{ scale: 0.94 }} onClick={closePanel} style={btnCancel(ui)}>
-            <MdClose size={22} color="#fff" />
+            <MdClose size={22} color="#F87171" />
           </motion.div>
           <motion.div whileTap={{ scale: 0.96 }} onClick={handleSave} style={btnSave(ui, accent)}>
             <MdDone size={24} color="#fff" />
@@ -851,7 +851,7 @@ const categoryChipIcon = (active, tone) => ({ width: 24, height: 24, borderRadiu
 const categoryActionBtn = (ui, danger = false) => ({ width: 22, height: 22, borderRadius: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: danger ? 'rgba(216,120,94,0.1)' : 'rgba(255,255,255,0.055)', border: `1px solid ${danger ? 'rgba(216,120,94,0.18)' : ui.border}`, color: danger ? '#D8785E' : ui.sub, cursor: 'pointer', flexShrink: 0, marginLeft: 2 });
 const addCategoryChip = (ui, accent) => ({ minHeight: 40, padding: '8px 14px', borderRadius: 14, whiteSpace: 'nowrap', background: ui.cardSoft, color: accent.hue, border: `1px dashed ${accent.ring}`, fontSize: 13, fontWeight: 850, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flexShrink: 0, boxSizing: 'border-box' });
 
-const configCard = (ui) => ({ background: `linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`, borderRadius: 20, padding: 16, border: `1px solid ${ui.border}`, boxShadow: ui.shadow, boxSizing: 'border-box' });
+const configCard = (ui) => ({ background: `linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`, borderRadius: 22, padding: 16, border: `1px solid ${ui.border}`, boxShadow: ui.shadow, boxSizing: 'border-box', backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' });
 const cardLabel = (ui) => ({ color: ui.sub, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10, marginTop: 0 });
 
 const dateCard = (ui) => ({ ...configCard(ui), padding: 14, cursor: 'pointer', position: 'relative' });
@@ -925,12 +925,17 @@ const subDraftIconBtn = (ui, disabled) => ({ width: 32, height: 32, borderRadius
 const advancedToggle = (ui) => ({ display: 'flex', alignItems: 'center', gap: 9, padding: '14px 16px', background: ui.cardSoft, border: `1px solid ${ui.border}`, borderRadius: 16, color: ui.text, fontSize: 13, fontWeight: 800, marginTop: 16, cursor: 'pointer' });
 
 const footerButtons = (ui) => ({
-  display: 'flex', gap: 12, padding: '18px 0 calc(18px + env(safe-area-inset-bottom, 0px))',
+  display: 'flex', gap: 10, padding: '10px',
   alignItems: 'center', position: 'sticky', bottom: 0, zIndex: 5, marginTop: 18,
-  background: 'transparent'
+  borderRadius: 26,
+  background: `linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
+  border: `1px solid ${ui.border}`,
+  boxShadow: ui.shadow,
+  backdropFilter: 'blur(26px) saturate(170%)',
+  WebkitBackdropFilter: 'blur(26px) saturate(170%)'
 });
 const btnBase = { height: 60, borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' };
-const btnCancel = (ui) => ({ ...btnBase, width: 60, background: '#FF3B30', border: `1px solid ${ui.border}` });
+const btnCancel = (ui) => ({ ...btnBase, width: 60, background: 'rgba(248,113,113,0.14)', border: '1px solid rgba(248,113,113,0.30)' });
 const btnSave = (ui, accent) => ({ ...btnBase, flex: 1, background: `linear-gradient(135deg, ${accent.hue}, ${accent.solidSoft})`, border: `1px solid ${accent.ring}`, boxShadow: `0 0 28px ${accent.glow}` });
 
 // Bottom sheet

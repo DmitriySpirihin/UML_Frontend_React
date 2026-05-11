@@ -7,6 +7,7 @@ import { buildTodoAccent } from './ToDoPages/ToDoVisuals.js';
 import { buildSectionAccent } from './SectionAccentSettings.jsx';
 
 const EASE = [0.2, 0.8, 0.2, 1];
+const HERO_SUMMARY_COLLAPSE_KEY = 'uml_main_menu_summary_collapsed_v1';
 
 const tokens = {
   dark: {
@@ -109,24 +110,24 @@ const BurntFlame = ({ size = 15 }) => (
 const StreakWatermark = ({ delay = 0 }) => (
   <Motion.div
     aria-hidden="true"
-    animate={{ opacity: [0.12, 0.2, 0.13], scale: [0.98, 1.04, 0.99] }}
+    animate={{ opacity: [0.045, 0.075, 0.05], scale: [0.99, 1.025, 1] }}
     transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay }}
     style={{
       position: 'absolute',
-      right: 18,
+      right: 26,
       top: '50%',
-      marginTop: -49,
-      width: 96,
-      height: 98,
+      marginTop: -40,
+      width: 78,
+      height: 80,
       pointerEvents: 'none',
       zIndex: 0,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      filter: 'drop-shadow(0 10px 20px rgba(255,122,61,0.12))'
+      filter: 'drop-shadow(0 8px 14px rgba(255,122,61,0.08))'
     }}
   >
-    <StreakFlame size={96} />
+    <StreakFlame size={78} />
   </Motion.div>
 );
 const DockUserIcon = ({ color }) => (
@@ -284,15 +285,15 @@ function FocusCopy({ data, accent, palette }) {
 
 function HeroStat({ accent, label, value, palette, onClick }) {
   const statBackground = palette.isLight
-    ? `linear-gradient(135deg, rgba(${accent.rgb},0.18) 0%, rgba(255,255,255,0.86) 52%, rgba(${accent.rgb},0.08) 100%)`
+    ? `linear-gradient(135deg, rgba(${accent.rgb},0.13) 0%, rgba(255,255,255,0.72) 58%, rgba(255,255,255,0.36) 100%)`
     : palette.isCoffee
-      ? `linear-gradient(135deg, rgba(${accent.rgb},0.16) 0%, rgba(74,49,34,0.18) 48%, rgba(22,14,10,0.42) 100%)`
-      : `linear-gradient(135deg, rgba(${accent.rgb},0.18) 0%, rgba(${accent.rgb},0.08) 46%, rgba(255,255,255,0.035) 100%)`;
+      ? `linear-gradient(135deg, rgba(${accent.rgb},0.11) 0%, rgba(74,49,34,0.12) 48%, rgba(22,14,10,0.34) 100%)`
+      : `linear-gradient(135deg, rgba(${accent.rgb},0.12) 0%, rgba(255,255,255,0.052) 48%, rgba(255,255,255,0.026) 100%)`;
   const statShadow = palette.isLight
-    ? `0 1px 0 rgba(255,255,255,0.82) inset, 0 12px 24px -18px rgba(15,23,42,0.28), 0 12px 24px -20px rgba(${accent.rgb},0.58)`
+    ? '0 1px 0 rgba(255,255,255,0.76) inset, 0 12px 24px -20px rgba(15,23,42,0.20)'
     : palette.isCoffee
-      ? `0 1px 0 rgba(255,232,205,0.08) inset, 0 -12px 20px -22px rgba(0,0,0,0.9) inset, 0 12px 24px -17px rgba(0,0,0,0.74), 0 12px 24px -22px rgba(${accent.rgb},0.7)`
-      : `0 1px 0 rgba(255,255,255,0.08) inset, 0 -12px 20px -22px rgba(0,0,0,0.9) inset, 0 10px 22px -16px rgba(0,0,0,0.62), 0 12px 24px -20px rgba(${accent.rgb},0.92)`;
+      ? '0 1px 0 rgba(255,232,205,0.08) inset, 0 -12px 20px -22px rgba(0,0,0,0.82) inset, 0 12px 24px -18px rgba(0,0,0,0.58)'
+      : '0 1px 0 rgba(255,255,255,0.075) inset, 0 -12px 20px -22px rgba(0,0,0,0.82) inset, 0 10px 22px -17px rgba(0,0,0,0.54)';
 
   return (
     <Motion.button
@@ -323,7 +324,7 @@ function HeroStat({ accent, label, value, palette, onClick }) {
       overflow: 'hidden'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-        <div style={{ width: 5, height: 5, borderRadius: 999, background: accent.hue, flexShrink: 0, boxShadow: `0 0 10px rgba(${accent.rgb},0.72)` }} />
+        <div style={{ width: 5, height: 5, borderRadius: 999, background: accent.hue, flexShrink: 0, opacity: 0.88 }} />
         <div style={{ fontSize: 10, color: palette.sub, fontWeight: 750, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
       </div>
       <div style={{ fontSize: 15, color: palette.text, fontWeight: 850, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
@@ -425,6 +426,24 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         { id: 'TrainingMain', label: lang === 0 ? 'Тоннаж' : 'Volume', value: data.trainingValue },
         { id: 'MentalMain', label: lang === 0 ? 'Ум' : 'Mind', value: data.mentalValue }
       ];
+  const [summaryCollapsed, setSummaryCollapsed] = React.useState(() => {
+    try {
+      return window.localStorage.getItem(HERO_SUMMARY_COLLAPSE_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleSummary = () => {
+    setSummaryCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(HERO_SUMMARY_COLLAPSE_KEY, next ? '1' : '0');
+      } catch {
+        // Storage can be unavailable in embedded browsers; the current-session toggle still works.
+      }
+      return next;
+    });
+  };
   const heroBackground = palette.isLight
     ? `linear-gradient(145deg, rgba(255,255,255,0.74) 0%, rgba(${heroAccent.rgb},0.11) 48%, rgba(235,242,246,0.72) 100%)`
     : palette.isCoffee
@@ -527,65 +546,124 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         </div>
       </div>
 
-      <div style={{
-        marginTop: 18,
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div style={{
+      <Motion.button
+        type="button"
+        whileTap={{ scale: 0.985 }}
+        onClick={toggleSummary}
+        aria-expanded={!summaryCollapsed}
+        aria-label={summaryCollapsed ? (lang === 0 ? 'Раскрыть сводку метрик' : 'Expand metrics summary') : (lang === 0 ? 'Скрыть сводку метрик' : 'Hide metrics summary')}
+        style={{
+          marginTop: 18,
           minWidth: 0,
           width: '100%',
-          padding: '9px 12px',
+          minHeight: 50,
+          padding: '8px 10px 8px 13px',
           borderRadius: 18,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 12,
-          background: palette.isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.055)',
-          border: `1px solid rgba(${heroAccent.rgb},${palette.isLight ? 0.16 : 0.22})`,
-          boxShadow: `0 1px 0 rgba(255,255,255,0.08) inset, 0 12px 22px -20px rgba(${heroAccent.rgb},0.58)`
+          gap: 10,
+          background: palette.isLight
+            ? 'linear-gradient(135deg, rgba(255,255,255,0.56), rgba(255,255,255,0.30))'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.075), rgba(255,255,255,0.032))',
+          border: `1px solid rgba(${heroAccent.rgb},${palette.isLight ? 0.15 : 0.18})`,
+          boxShadow: '0 1px 0 rgba(255,255,255,0.09) inset',
+          backdropFilter: 'blur(18px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+          fontFamily: 'inherit',
+          cursor: 'pointer',
+          outline: 'none',
+          appearance: 'none',
+          WebkitAppearance: 'none',
+          WebkitTapHighlightColor: 'transparent'
         }}>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 7,
-            height: 24,
-            padding: '0 10px',
-            borderRadius: 999,
-            background: `rgba(${heroAccent.rgb},0.14)`,
-            border: `1px solid rgba(${heroAccent.rgb},0.24)`,
-            color: heroAccent.hue,
-            fontSize: 10,
-            fontWeight: 900,
-            letterSpacing: '0.07em',
-            textTransform: 'uppercase',
-            flexShrink: 0
-          }}>
-            <span style={{ width: 5, height: 5, borderRadius: 999, background: heroAccent.hue, boxShadow: `0 0 10px rgba(${heroAccent.rgb},0.8)` }} />
-            {lang === 0 ? 'Сегодня' : 'Today'}
-          </div>
           <div style={{
             minWidth: 0,
             flex: 1,
-            color: palette.text,
-            fontSize: 14,
-            fontWeight: 900,
-            lineHeight: 1.16,
-            textAlign: 'right',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: 3
           }}>
-            {data.progressLabel}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 7,
+              minWidth: 0,
+              color: palette.sub,
+              fontSize: 9,
+              fontWeight: 900,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap'
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: 999, background: heroAccent.hue, opacity: 0.86 }} />
+              <span>{lang === 0 ? 'Сегодня' : 'Today'}</span>
+              <span style={{ color: palette.muted, letterSpacing: 0 }}>·</span>
+              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {lang === 0 ? 'выбранные метрики' : 'selected metrics'}
+              </span>
+            </div>
+            <div style={{
+              minWidth: 0,
+              color: palette.text,
+              fontSize: 16,
+              fontWeight: 950,
+              lineHeight: 1.05,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
+              {lang === 0 ? 'Обзор дня' : 'Day overview'}
+            </div>
           </div>
-        </div>
-      </div>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            flexShrink: 0
+          }}>
+            <span style={{
+              height: 26,
+              minWidth: 28,
+              padding: '0 8px',
+              borderRadius: 999,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: heroAccent.hue,
+              background: `rgba(${heroAccent.rgb},0.10)`,
+              border: `1px solid rgba(${heroAccent.rgb},0.16)`,
+              fontSize: 11,
+              fontWeight: 950,
+              fontVariantNumeric: 'tabular-nums'
+            }}>
+              {selectedStats.length}
+            </span>
+            <Motion.span
+              animate={{ rotate: summaryCollapsed ? 0 : 90 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 25 }}
+              style={{ color: palette.sub, display: 'flex' }}
+            >
+              <IconChevron size={16} stroke={2.2} />
+            </Motion.span>
+          </div>
+        </Motion.button>
 
-      <div style={{ marginTop: 14 }}>
-        <SummaryChips stats={selectedStats} palette={palette} onOpenSection={onOpenSection} />
-      </div>
+      <AnimatePresence initial={false}>
+        {!summaryCollapsed && (
+          <Motion.div
+            initial={{ height: 0, opacity: 0, y: -6 }}
+            animate={{ height: 'auto', opacity: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, y: -6 }}
+            transition={{ type: 'spring', stiffness: 240, damping: 28 }}
+            style={{ marginTop: 12, overflow: 'hidden' }}
+          >
+            <SummaryChips stats={selectedStats} palette={palette} onOpenSection={onOpenSection} />
+          </Motion.div>
+        )}
+      </AnimatePresence>
     </Motion.div>
   );
 }
@@ -683,28 +761,28 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
     : accent;
   const rowBackground = palette.isLight
     ? metricParts.isZero
-      ? `radial-gradient(190px 90px at 14% 50%, rgba(${accent.rgb},0.18), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.14) 0%, rgba(255,255,255,0.88) 54%, rgba(238,244,247,0.94) 100%)`
-      : `radial-gradient(220px 102px at 14% 50%, rgba(${accent.rgb},0.25), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.20) 0%, rgba(255,255,255,0.86) 56%, rgba(232,239,243,0.94) 100%)`
+      ? `linear-gradient(135deg, rgba(${accent.rgb},0.10) 0%, rgba(255,255,255,0.76) 58%, rgba(238,244,247,0.78) 100%)`
+      : `linear-gradient(135deg, rgba(${accent.rgb},0.15) 0%, rgba(255,255,255,0.74) 58%, rgba(232,239,243,0.80) 100%)`
     : palette.isCoffee
       ? metricParts.isZero
-        ? `radial-gradient(180px 90px at 12% 50%, rgba(${accent.rgb},0.19), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.13) 0%, rgba(45,29,20,0.93) 100%)`
-        : `radial-gradient(210px 100px at 12% 50%, rgba(${accent.rgb},0.28), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.18) 0%, rgba(45,29,20,0.93) 100%)`
+        ? `linear-gradient(135deg, rgba(${accent.rgb},0.08) 0%, rgba(45,29,20,0.74) 52%, rgba(22,14,10,0.62) 100%)`
+        : `linear-gradient(135deg, rgba(${accent.rgb},0.12) 0%, rgba(45,29,20,0.76) 52%, rgba(22,14,10,0.64) 100%)`
       : metricParts.isZero
-        ? `radial-gradient(180px 90px at 12% 50%, rgba(${accent.rgb},0.20), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.13) 0%, rgba(18,28,35,0.92) 100%)`
-        : `radial-gradient(210px 100px at 12% 50%, rgba(${accent.rgb},0.30), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.19) 0%, rgba(18,28,35,0.92) 100%)`;
+        ? `linear-gradient(135deg, rgba(${accent.rgb},0.09) 0%, rgba(18,28,35,0.72) 52%, rgba(12,17,22,0.58) 100%)`
+        : `linear-gradient(135deg, rgba(${accent.rgb},0.14) 0%, rgba(18,28,35,0.74) 52%, rgba(12,17,22,0.60) 100%)`;
   const rowBorder = palette.isLight
-    ? `1px solid rgba(${accent.rgb},0.22)`
+    ? `1px solid rgba(${accent.rgb},0.18)`
     : palette.isCoffee
-      ? `1px solid rgba(${accent.rgb},0.13)`
-      : '1px solid rgba(255,255,255,0.035)';
+      ? `1px solid rgba(${accent.rgb},0.12)`
+      : `1px solid rgba(${accent.rgb},0.13)`;
   const rowShadow = palette.isLight
-    ? `0 1px 0 rgba(255,255,255,0.88) inset, 0 -18px 28px -28px rgba(15,23,42,0.18) inset, 0 16px 30px -22px rgba(15,23,42,0.26), 0 16px 30px -26px rgba(${accent.rgb},0.6)`
+    ? '0 1px 0 rgba(255,255,255,0.82) inset, 0 -18px 28px -28px rgba(15,23,42,0.15) inset, 0 16px 30px -24px rgba(15,23,42,0.20)'
     : palette.isCoffee
-      ? `0 1px 0 rgba(255,232,205,0.08) inset, 0 -20px 32px -28px rgba(0,0,0,0.86) inset, 0 18px 34px -22px rgba(0,0,0,0.82), 0 18px 34px -30px rgba(${accent.rgb},0.7)`
-      : `0 1px 0 rgba(255,255,255,0.09) inset, 0 -20px 32px -28px rgba(0,0,0,0.86) inset, 0 18px 34px -22px rgba(0,0,0,0.88), 0 18px 34px -28px rgba(${accent.rgb},0.82)`;
+      ? '0 1px 0 rgba(255,232,205,0.07) inset, 0 -20px 32px -28px rgba(0,0,0,0.80) inset, 0 18px 34px -23px rgba(0,0,0,0.70)'
+      : '0 1px 0 rgba(255,255,255,0.08) inset, 0 -20px 32px -28px rgba(0,0,0,0.80) inset, 0 18px 34px -23px rgba(0,0,0,0.74)';
   const rowInnerGlow = palette.isLight
-    ? `radial-gradient(220px 70px at 20% 0%, rgba(255,255,255,0.68), transparent 70%), radial-gradient(190px 70px at 15% 100%, rgba(${accent.rgb},0.08), transparent 72%)`
-    : `radial-gradient(220px 70px at 20% 0%, rgba(255,255,255,0.085), transparent 70%), radial-gradient(190px 70px at 15% 100%, rgba(${accent.rgb},0.08), transparent 72%)`;
+    ? 'linear-gradient(180deg, rgba(255,255,255,0.46), rgba(255,255,255,0.05) 48%, rgba(255,255,255,0.18))'
+    : 'linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.012) 48%, rgba(255,255,255,0.026))';
 
   return (
     <Motion.button
@@ -764,13 +842,13 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
       {metricParts.isZero && (
         <Motion.div
           aria-hidden="true"
-          animate={{ opacity: [0.06, 0.16, 0.06], scale: [0.99, 1.01, 0.99] }}
+          animate={{ opacity: [0.035, 0.07, 0.035], scale: [0.995, 1.006, 0.995] }}
           transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: idx * 0.16 }}
           style={{
             position: 'absolute',
             inset: 1,
             borderRadius: 35,
-            background: `radial-gradient(280px 130px at 12% 50%, rgba(${accent.rgb},0.46), transparent 70%)`,
+            background: `radial-gradient(220px 110px at 16% 50%, rgba(${accent.rgb},0.18), transparent 72%)`,
             pointerEvents: 'none'
           }}
         />
@@ -782,10 +860,10 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
         flexShrink: 0,
         background: palette.isLight
           ? `linear-gradient(135deg, rgba(${accent.rgb},0.18), rgba(${accent.rgb},0.08))`
-          : `linear-gradient(135deg, rgba(${accent.rgb},0.56), rgba(${accent.rgb},0.22) 58%, rgba(255,255,255,0.06))`,
+          : `linear-gradient(135deg, rgba(${accent.rgb},0.42), rgba(${accent.rgb},0.16) 58%, rgba(255,255,255,0.055))`,
         color: palette.isLight ? iconTone.hue : '#F8FBFF',
-        border: `1px solid rgba(${accent.rgb},${palette.isLight ? 0.30 : 0.48})`,
-        boxShadow: `0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 22px -18px rgba(${accent.rgb},0.92)`,
+        border: `1px solid rgba(${accent.rgb},${palette.isLight ? 0.26 : 0.34})`,
+        boxShadow: `0 1px 0 rgba(255,255,255,0.10) inset, 0 10px 18px -18px rgba(${accent.rgb},0.45)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -811,7 +889,7 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
             <Motion.div
               animate={hasActiveStreak ? { scale: isFreshStreak ? [1, 1.045, 1] : [1, 1.028, 1], boxShadow: [
                 '0 1px 0 rgba(255,255,255,0.05) inset, 0 0 0 rgba(255,122,61,0)',
-                '0 1px 0 rgba(255,255,255,0.08) inset, 0 0 16px rgba(255,122,61,0.26)',
+                '0 1px 0 rgba(255,255,255,0.075) inset, 0 0 10px rgba(255,122,61,0.16)',
                 '0 1px 0 rgba(255,255,255,0.05) inset, 0 0 0 rgba(255,122,61,0)'
               ] } : undefined}
               transition={hasActiveStreak ? { duration: isFreshStreak ? 2.8 : 3.2, repeat: Infinity, ease: 'easeInOut' } : undefined}
@@ -824,8 +902,8 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
               height: 27,
               padding: '0 8px',
               borderRadius: 999,
-              background: 'linear-gradient(135deg, rgba(255,122,61,0.18), rgba(255,211,106,0.08))',
-              border: '1px solid rgba(255,122,61,0.3)',
+              background: 'linear-gradient(135deg, rgba(255,122,61,0.14), rgba(255,211,106,0.055))',
+              border: '1px solid rgba(255,122,61,0.22)',
               boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset',
               boxSizing: 'border-box'
             }}>
@@ -1026,37 +1104,38 @@ function Dock({ palette, onBack, onOpenUser, onOpenSettings }) {
     <div style={{
       position: 'fixed',
       left: '50%',
-      bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
+      bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
       transform: 'translateX(-50%)',
       zIndex: 40,
-      width: 230,
-      height: 64,
-      display: 'flex',
+      width: 'calc(100vw - 72px)',
+      maxWidth: 360,
+      height: 58,
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      justifyItems: 'center',
       alignItems: 'center',
-      justifyContent: 'space-around',
-      padding: '10px 14px',
+      padding: '7px 10px',
       boxSizing: 'border-box',
       borderRadius: 999,
-      background: palette.isLight
-        ? 'linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42))'
-        : 'linear-gradient(135deg, rgba(19,29,36,0.64), rgba(8,13,17,0.50))',
-      border: `1px solid ${palette.isLight ? 'rgba(148,163,184,0.28)' : 'rgba(190,220,235,0.14)'}`,
-      boxShadow: palette.isLight
-        ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 24px 48px -28px rgba(15,23,42,0.28)'
-        : '0 1px 0 rgba(255,255,255,0.13) inset, 0 24px 48px -20px rgba(0,0,0,0.74), 0 0 32px rgba(80,160,220,0.08)',
-      backdropFilter: 'blur(30px) saturate(190%)',
-      WebkitBackdropFilter: 'blur(30px) saturate(190%)',
+      columnGap: 3,
+      backdropFilter: 'blur(24px) saturate(180%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset, 0 22px 46px -24px rgba(0,0,0,0.74)',
       overflow: 'hidden'
     }}>
       <div
         aria-hidden="true"
         style={{
           position: 'absolute',
-          inset: 1,
+          inset: 0,
           borderRadius: 999,
           background: palette.isLight
-            ? 'linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0.12))'
-            : 'linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.025))',
+            ? 'linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42))'
+            : 'linear-gradient(135deg, rgba(19,29,36,0.64), rgba(8,13,17,0.50))',
+          border: `1px solid ${palette.isLight ? 'rgba(148,163,184,0.28)' : 'rgba(190,220,235,0.14)'}`,
+          boxShadow: palette.isLight
+            ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 20px 44px -30px rgba(15,23,42,0.28)'
+            : '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px -20px rgba(0,0,0,0.76), 0 0 28px rgba(34,197,94,0.08)',
           pointerEvents: 'none',
           zIndex: -1
         }}
@@ -1077,8 +1156,8 @@ function DockBtn({ Icon, onClick, primary, palette }) {
       whileTap={{ scale: 0.92 }}
       onClick={onClick}
       style={{
-        width: 44,
-        height: 44,
+        width: 40,
+        height: 40,
         borderRadius: 999,
         border: '1px solid transparent',
         cursor: 'pointer',

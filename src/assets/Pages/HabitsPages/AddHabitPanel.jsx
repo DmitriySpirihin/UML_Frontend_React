@@ -247,11 +247,11 @@ const AddHabitPanel = () => {
     const isLight = theme === 'light' || theme === 'speciallight';
     const ui = {
         bg: isLight
-            ? `radial-gradient(900px 450px at 80% -10%, rgba(${dynamicAccent.rgb},0.10), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.08), transparent 58%), #F4F5F7`
-            : `radial-gradient(1000px 500px at 80% -10%, rgba(${dynamicAccent.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.05), transparent 55%), #0E1013`,
-        card: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(24,28,31,0.88)',
-        cardSoft: isLight ? 'rgba(255,255,255,0.68)' : 'rgba(255,255,255,0.045)',
-        field: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.055)',
+            ? `radial-gradient(640px 420px at 86% -8%, rgba(${dynamicAccent.rgb},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${dynamicAccent.rgb},0.10), transparent 66%), #F4F5F7`
+            : `radial-gradient(640px 420px at 86% -8%, rgba(${dynamicAccent.rgb},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${dynamicAccent.rgb},0.10), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
+        card: isLight ? 'rgba(255,255,255,0.70)' : 'rgba(23,34,43,0.58)',
+        cardSoft: isLight ? 'rgba(255,255,255,0.50)' : 'rgba(255,255,255,0.070)',
+        field: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.062)',
         text: Colors.get('mainText', theme),
         sub: Colors.get('subText', theme),
         accent: dynamicAccent.hue,
@@ -260,9 +260,11 @@ const AddHabitPanel = () => {
         accentGlow: dynamicAccent.glow,
         accentRgb: dynamicAccent.rgb,
         blur: 'blur(30px)',
-        border: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)',
-        borderStrong: isLight ? 'rgba(15,23,42,0.12)' : 'rgba(159,180,196,0.2)',
-        shadow: isLight ? '0 18px 42px rgba(15,23,42,0.08)' : '0 26px 60px rgba(0,0,0,0.34)'
+        border: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(190,220,235,0.14)',
+        borderStrong: isLight ? 'rgba(15,23,42,0.12)' : 'rgba(190,220,235,0.23)',
+        shadow: isLight
+            ? '0 1px 0 rgba(255,255,255,0.82) inset, 0 18px 40px -30px rgba(15,23,42,0.20)'
+            : '0 1px 0 rgba(255,255,255,0.08) inset, 0 20px 44px -30px rgba(0,0,0,0.66)'
     };
 
     const getLibraryHabitIcon = (habit, size = 26) => {
@@ -690,7 +692,7 @@ const AddHabitPanel = () => {
                                                                     <motion.div
                                                                         whileTap={{ scale: 0.96 }}
                                                                         onClick={openCreatePanelFromSearch}
-                                                                        style={{ padding: '11px 15px', borderRadius: '14px', background: ui.accentSoft, border: '1px solid transparent', color: ui.accent, fontWeight: '800', cursor: 'pointer' }}
+                                                                        style={{ padding: '11px 15px', borderRadius: '14px', background: ui.accentSoft, border: `1px solid ${ui.accentRing}`, color: ui.accent, fontWeight: '800', cursor: 'pointer' }}
                                                                     >
                                                                         {langIndex === 0 ? `Создать "${habitSearchQuery.trim()}"` : `Create "${habitSearchQuery.trim()}"`}
                                                                     </motion.div>
@@ -794,7 +796,7 @@ const AddHabitPanel = () => {
                                                                                         placeholder={langIndex === 0 ? 'Добавить цель...' : 'Add goal...'}
                                                                                         value={goalName}
                                                                                          onChange={(e) => setGoalName(e.target.value)}
-                                                                                        style={{flex: 1, border: 'none', background: ui.field, borderRadius: 14, fontSize: '16px', color: ui.text, padding: '12px 14px', outline: 'none'}}
+                                                                                        style={{flex: 1, border: `1px solid ${ui.border}`, background: ui.field, borderRadius: 16, fontSize: '16px', color: ui.text, padding: '12px 14px', outline: 'none', boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset'}}
                                                                                         />
                                                 <motion.div whileTap={{ scale: 0.9 }} onClick={setNewGoal} style={addBtn(ui)}><FaPlus color={ui.accent} size={18} /></motion.div>
                                             </div>
@@ -855,12 +857,12 @@ const AddHabitPanel = () => {
                                     <div style={dragHandle} />
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 25px 15px' }}>
                                         <h3 style={{ margin: 0, color: ui.text }}>{langIndex === 0 ? 'Выбрать иконку' : 'Choose icon'}</h3>
-                                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => setSelectIconPanel(false)} style={{ padding: '8px', backgroundColor: ui.card, borderRadius: '50%' }}>
+                                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => setSelectIconPanel(false)} style={{ padding: '8px', background: ui.cardSoft, border: `1px solid ${ui.border}`, borderRadius: '50%' }}>
                                             <MdClose color={ui.sub} />
                                         </motion.div>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', borderRadius: '10px', padding: '0 25px 12px', gap: '8px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', borderRadius: '10px', padding: '0 10px', backgroundColor: ui.card, width: '100%' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', borderRadius: '16px', padding: '0 10px', background: ui.field, border: `1px solid ${ui.border}`, width: '100%' }}>
                                             <FaSearch color={ui.sub} style={{ marginRight: '8px' }} />
                                             <input
                                                 type="text"
@@ -890,7 +892,7 @@ const AddHabitPanel = () => {
                                     <div style={dragHandle} />
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 25px 15px' }}>
                                         <h3 style={{ margin: 0, color: ui.text }}>{editingCategoryIndex !== null ? (langIndex === 0 ? 'Редактировать' : 'Edit') : (langIndex === 0 ? 'Новая категория' : 'New Category')}</h3>
-                                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => { setSelectCategoryPanel(false); resetCategoryForm(); }} style={{ padding: '8px', backgroundColor: ui.card, borderRadius: '50%' }}>
+                                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => { setSelectCategoryPanel(false); resetCategoryForm(); }} style={{ padding: '8px', background: ui.cardSoft, border: `1px solid ${ui.border}`, borderRadius: '50%' }}>
                                             <MdClose color={ui.sub} />
                                         </motion.div>
                                     </div>
@@ -975,7 +977,7 @@ const AddHabitPanel = () => {
                                                 </motion.div>
                                             )}
                                             <motion.div whileTap={{ scale: 0.95 }} onClick={handleSaveCategory}
-                                                style={{ flex: editingCategoryIndex !== null ? 1 : 2, padding: '14px', background: ui.accentSoft, border: '1px solid transparent', borderRadius: '14px', cursor: 'pointer', textAlign: 'center' }}>
+                                                style={{ flex: editingCategoryIndex !== null ? 1 : 2, padding: '14px', background: ui.accentSoft, border: `1px solid ${ui.accentRing}`, borderRadius: '14px', cursor: 'pointer', textAlign: 'center' }}>
                                                 <span style={{ color: ui.accent, fontWeight: '800', fontSize: '14px' }}>
                                                     {langIndex === 0 ? (editingCategoryIndex !== null ? 'Сохранить' : 'Создать') : (editingCategoryIndex !== null ? 'Save' : 'Create')}
                                                 </span>
@@ -1179,7 +1181,7 @@ function HabitLibraryPicker({ habits, selectedHabit, onSelect, langIndex, ui, ge
 const pageStyle = { position: 'fixed', inset: 0, width: '100vw', height: '100vh', overflowY: 'auto', overflowX: 'hidden', zIndex: 1000, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" };
 const pageHeader = { width: 'calc(100% - 32px)', maxWidth: 440, margin: '0 auto', padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 0 10px', display: 'grid', gridTemplateColumns: '46px minmax(0, 1fr) 46px', alignItems: 'center', gap: 10, boxSizing: 'border-box' };
 const contentWrap = () => ({ width: 'calc(100% - 32px)', maxWidth: 440, margin: '0 auto', minHeight: 'calc(100vh - 82px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' });
-const backBtn = (ui) => ({ width: '46px', height: '46px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(145deg, ${ui.cardSoft}, ${ui.field})`, border: '1px solid transparent', boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset, 0 14px 32px rgba(0,0,0,0.16)', cursor: 'pointer', flexShrink: 0 });
+const backBtn = (ui) => ({ width: '46px', height: '46px', borderRadius: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(145deg, ${ui.cardSoft}, ${ui.field})`, border: `1px solid ${ui.border}`, boxShadow: ui.shadow, cursor: 'pointer', flexShrink: 0, backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
 const brandBlock = () => ({ minWidth: 0, textAlign: 'center' });
 const brandTitle = (ui) => ({ color: ui.text, fontSize: 24, fontWeight: 950, lineHeight: 1.02, letterSpacing: 0 });
 const brandSubtitle = (ui) => ({ marginTop: 5, color: ui.sub, fontSize: 9, fontWeight: 850, letterSpacing: '0.14em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' });
@@ -1187,18 +1189,20 @@ const addHero = (ui) => ({
     position: 'relative',
     overflow: 'hidden',
     minHeight: 98,
-    borderRadius: 26,
+    borderRadius: 34,
     padding: '18px 18px',
     margin: '8px 0 16px',
     display: 'flex',
     alignItems: 'center',
     gap: 14,
-    background: `radial-gradient(300px 140px at 84% -22%, rgba(${ui.accentRgb},0.15), transparent 70%), linear-gradient(145deg, rgba(25,31,34,0.9), rgba(20,23,25,0.92))`,
-    border: '1px solid transparent',
-    boxShadow: '0 18px 42px -30px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.035) inset',
-    boxSizing: 'border-box'
+    background: `radial-gradient(300px 150px at 86% -18%, rgba(${ui.accentRgb},0.18), transparent 72%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
+    border: `1px solid ${ui.borderStrong}`,
+    boxShadow: ui.shadow,
+    boxSizing: 'border-box',
+    backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur
 });
-const addHeroIcon = (ui) => ({ width: 54, height: 54, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ui.accent, background: ui.accentSoft, border: '1px solid transparent', boxShadow: `0 12px 24px -22px ${ui.accent}`, flexShrink: 0 });
+const addHeroIcon = (ui) => ({ width: 54, height: 54, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ui.accent, background: `radial-gradient(circle at 35% 20%, rgba(255,255,255,0.12), transparent 45%), ${ui.accentSoft}`, border: `1px solid ${ui.accentRing}`, boxShadow: `0 16px 28px -22px ${ui.accent}`, flexShrink: 0 });
 const heroEyebrow = (ui) => ({ color: ui.sub, fontSize: 11, fontWeight: 900, letterSpacing: '0.16em' });
 const heroTitle = (ui) => ({ color: ui.text, fontSize: 25, lineHeight: 1.05, fontWeight: 950, margin: '6px 0 0' });
 
@@ -1224,39 +1228,43 @@ const categoryChip = (active, tone, ui) => ({
     borderRadius: 16,
     whiteSpace: 'nowrap',
     background: active
-        ? `linear-gradient(135deg, ${tone.soft}, rgba(255,255,255,0.055))`
-        : ui.cardSoft,
-    border: '1px solid transparent',
+        ? `radial-gradient(140px 70px at 20% 0%, ${tone.soft}, transparent 70%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`
+        : `linear-gradient(145deg, ${ui.cardSoft}, ${ui.field})`,
+    border: `1px solid ${active ? tone.ring : ui.border}`,
     color: active ? tone.hue : ui.text,
     fontSize: 13,
     fontWeight: 850,
     transition: '0.2s all',
-    boxShadow: active ? `0 12px 24px -22px ${tone.hue}` : '0 1px 0 rgba(255,255,255,0.03) inset',
+    boxShadow: active ? `0 12px 24px -22px ${tone.hue}, 0 1px 0 rgba(255,255,255,0.07) inset` : '0 1px 0 rgba(255,255,255,0.05) inset',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
     gap: 8,
     flexShrink: 0,
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    backdropFilter: 'blur(18px) saturate(160%)',
+    WebkitBackdropFilter: 'blur(18px) saturate(160%)'
 });
-const categoryChipIcon = (active, tone) => ({ width: 25, height: 25, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: tone.hue, background: active ? tone.soft : 'rgba(255,255,255,0.045)', border: '1px solid transparent', flexShrink: 0 });
+const categoryChipIcon = (active, tone) => ({ width: 25, height: 25, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: tone.hue, background: active ? tone.soft : 'rgba(255,255,255,0.045)', border: `1px solid ${active ? tone.ring : 'rgba(255,255,255,0.08)'}`, flexShrink: 0 });
 const categoryChipActions = (active, ui) => ({ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: active ? 2 : 0, color: ui.sub });
-const categoryActionBtn = (ui, danger = false) => ({ width: 23, height: 23, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: danger ? 'rgba(216,120,94,0.1)' : 'rgba(255,255,255,0.055)', border: '1px solid transparent', color: danger ? '#D8785E' : ui.sub, cursor: 'pointer', flexShrink: 0 });
-const addCategoryChip = (ui) => ({ minHeight: 42, padding: '8px 14px', borderRadius: 16, whiteSpace: 'nowrap', background: ui.cardSoft, color: ui.accent, border: '1px solid transparent', fontSize: 13, fontWeight: 850, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flexShrink: 0, boxSizing: 'border-box' });
-const restoreToggle = (ui) => ({ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 11px', borderRadius: 13, background: ui.cardSoft, border: '1px solid transparent', color: ui.sub, cursor: 'pointer', marginBottom: 8, fontSize: 12, fontWeight: 800 });
+const categoryActionBtn = (ui, danger = false) => ({ width: 23, height: 23, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: danger ? 'rgba(216,120,94,0.1)' : 'rgba(255,255,255,0.055)', border: `1px solid ${danger ? 'rgba(216,120,94,0.22)' : ui.border}`, color: danger ? '#D8785E' : ui.sub, cursor: 'pointer', flexShrink: 0 });
+const addCategoryChip = (ui) => ({ minHeight: 42, padding: '8px 14px', borderRadius: 16, whiteSpace: 'nowrap', background: `linear-gradient(145deg, ${ui.cardSoft}, ${ui.field})`, color: ui.accent, border: `1px solid ${ui.border}`, fontSize: 13, fontWeight: 850, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flexShrink: 0, boxSizing: 'border-box', boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset' });
+const restoreToggle = (ui) => ({ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 11px', borderRadius: 13, background: ui.cardSoft, border: `1px solid ${ui.border}`, color: ui.sub, cursor: 'pointer', marginBottom: 8, fontSize: 12, fontWeight: 800 });
 const restoreGrid = () => ({ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 });
-const restoreChip = (tone, ui) => ({ padding: '8px 11px', borderRadius: 13, background: tone.soft, border: '1px solid transparent', color: ui.text, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 12, fontWeight: 800 });
-const textInput = (ui) => ({ width: '100%', border: '1px solid transparent', background: ui.field, boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset', fontSize: '16px', color: ui.text, outline: 'none', borderRadius: '18px', padding: '15px 16px', boxSizing: 'border-box' });
+const restoreChip = (tone, ui) => ({ padding: '8px 11px', borderRadius: 13, background: tone.soft, border: `1px solid ${tone.ring}`, color: ui.text, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 12, fontWeight: 800 });
+const textInput = (ui) => ({ width: '100%', border: `1px solid ${ui.border}`, background: ui.field, boxShadow: '0 1px 0 rgba(255,255,255,0.055) inset', fontSize: '16px', color: ui.text, outline: 'none', borderRadius: '18px', padding: '15px 16px', boxSizing: 'border-box', backdropFilter: 'blur(18px) saturate(155%)', WebkitBackdropFilter: 'blur(18px) saturate(155%)' });
 const customFormCard = (ui) => ({
     display: 'flex',
     flexDirection: 'column',
     gap: 14,
     padding: '14px',
-    borderRadius: 26,
-    background: `radial-gradient(260px 150px at 88% 0%, rgba(${ui.accentRgb},0.12), transparent 72%), linear-gradient(145deg, rgba(24,28,31,0.88), rgba(18,21,23,0.94))`,
-    border: '1px solid transparent',
-    boxShadow: '0 18px 42px -32px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.035) inset',
-    boxSizing: 'border-box'
+    borderRadius: 32,
+    background: `radial-gradient(260px 150px at 88% 0%, rgba(${ui.accentRgb},0.14), transparent 72%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
+    border: `1px solid ${ui.borderStrong}`,
+    boxShadow: ui.shadow,
+    boxSizing: 'border-box',
+    backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur
 });
 
 const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
@@ -1264,11 +1272,13 @@ const dragHandle = { width: '45px', height: '5px', backgroundColor: '#8E8E93', b
 
 const libraryPanel = (ui) => ({
     position: 'relative',
-    background: `radial-gradient(260px 160px at 100% 8%, rgba(${ui.accentRgb},0.10), transparent 74%), linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.94))`,
-    borderRadius: '26px',
-    border: '1px solid transparent',
+    background: `radial-gradient(260px 160px at 100% 8%, rgba(${ui.accentRgb},0.12), transparent 74%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
+    borderRadius: '32px',
+    border: `1px solid ${ui.borderStrong}`,
     overflow: 'hidden',
-    boxShadow: '0 18px 42px -32px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.035) inset'
+    boxShadow: ui.shadow,
+    backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur
 });
 const librarySearchRow = (ui) => ({
     display: 'flex',
@@ -1276,7 +1286,7 @@ const librarySearchRow = (ui) => ({
     gap: '12px',
     padding: '0 16px',
     height: '54px',
-    background: 'rgba(255,255,255,0.028)',
+    background: 'rgba(255,255,255,0.040)',
     borderBottom: `1px solid ${ui.border}`
 });
 const libraryCount = (ui) => ({
@@ -1284,7 +1294,7 @@ const libraryCount = (ui) => ({
     padding: '5px 8px',
     borderRadius: '999px',
     background: ui.accentSoft,
-    border: '1px solid transparent',
+    border: `1px solid ${ui.accentRing}`,
     color: ui.accent,
     fontSize: '12px',
     fontWeight: '800',
@@ -1315,17 +1325,19 @@ const habitListCard = (active, tone, ui) => ({
     width: '100%',
     minHeight: 96,
     padding: '12px',
-    borderRadius: 20,
+    borderRadius: 24,
     display: 'flex',
     alignItems: 'center',
     gap: 12,
     cursor: 'pointer',
     boxSizing: 'border-box',
     background: active
-        ? `radial-gradient(220px 120px at 0% 20%, ${tone.soft}, transparent 72%), linear-gradient(145deg, rgba(28,34,36,0.96), rgba(22,25,27,0.96))`
-        : 'rgba(255,255,255,0.025)',
+        ? `radial-gradient(220px 120px at 0% 20%, ${tone.soft}, transparent 72%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`
+        : `linear-gradient(145deg, ${ui.cardSoft}, rgba(255,255,255,0.025))`,
     border: `1px solid ${active ? tone.ring : ui.border}`,
-    boxShadow: active ? `0 12px 24px -22px ${tone.hue}, 0 1px 0 rgba(255,255,255,0.04) inset` : '0 1px 0 rgba(255,255,255,0.03) inset'
+    boxShadow: active ? `0 12px 24px -22px ${tone.hue}, 0 1px 0 rgba(255,255,255,0.07) inset` : '0 1px 0 rgba(255,255,255,0.05) inset',
+    backdropFilter: 'blur(18px) saturate(160%)',
+    WebkitBackdropFilter: 'blur(18px) saturate(160%)'
 });
 const habitListIcon = (tone, active) => ({
     position: 'relative',
@@ -1338,7 +1350,7 @@ const habitListIcon = (tone, active) => ({
     flexShrink: 0,
     color: tone.hue,
     background: active ? tone.soft : 'rgba(255,255,255,0.04)',
-    border: `1px solid ${active ? tone.ring : 'rgba(255,255,255,0.07)'}`,
+    border: `1px solid ${active ? tone.ring : 'rgba(190,220,235,0.11)'}`,
     boxShadow: active ? `0 12px 22px -20px ${tone.hue}` : 'none'
 });
 const habitListTitle = (ui) => ({
@@ -1385,8 +1397,8 @@ const habitListAction = (active, tone, ui) => ({
     alignItems: 'center',
     justifyContent: 'center',
     color: active ? tone.hue : ui.sub,
-    background: active ? tone.soft : 'rgba(255,255,255,0.035)',
-    border: '1px solid transparent',
+    background: active ? tone.soft : 'rgba(255,255,255,0.045)',
+    border: `1px solid ${active ? tone.ring : ui.border}`,
     flexShrink: 0,
     padding: 0,
     cursor: 'pointer',
@@ -1496,7 +1508,7 @@ const habitPickerDescription = (visible, focus, ui) => ({
     whiteSpace: 'nowrap',
     opacity: Math.max(0, Math.min(1, focus))
 });
-const drumContainer = (ui) => ({ position: 'relative', height: '220px', backgroundColor: ui.card, borderRadius: '25px', overflow: 'hidden' });
+const drumContainer = (ui) => ({ position: 'relative', height: '220px', background: `linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`, border: `1px solid ${ui.border}`, borderRadius: '25px', overflow: 'hidden', boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset' });
 const drumScroll = { width: '100%', height: '100%', overflowY: 'scroll', scrollSnapType: 'y mandatory', scrollbarWidth: 'none', msOverflowStyle: 'none' };
 const drumItem = (active, ui) => ({ height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center', color: active ? ui.accent : ui.text, fontSize: active ? '20px' : '17px', fontWeight: active ? '900' : '400', opacity: active ? 1 : 0.4, transition: '0.3s all' });
 const drumLens = (ui) => ({ position: 'absolute', top: '88px', left: 0, right: 0, height: '44px', borderTop: `1px solid ${ui.border}`, borderBottom: `1px solid ${ui.border}`, pointerEvents: 'none' });
@@ -1504,11 +1516,13 @@ const drumLens = (ui) => ({ position: 'absolute', top: '88px', left: 0, right: 0
 const confirmTitle = (ui) => ({
     margin: '12px 0 16px',
     padding: '18px',
-    borderRadius: 24,
-    background: `radial-gradient(260px 130px at 90% 0%, rgba(${ui.accentRgb},0.13), transparent 72%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
-    border: '1px solid transparent',
-    boxShadow: '0 18px 42px -32px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.035) inset',
-    textAlign: 'left'
+    borderRadius: 30,
+    background: `radial-gradient(260px 130px at 90% 0%, rgba(${ui.accentRgb},0.15), transparent 72%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
+    border: `1px solid ${ui.borderStrong}`,
+    boxShadow: ui.shadow,
+    textAlign: 'left',
+    backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur
 });
 const confirmEyebrow = (ui) => ({
     color: ui.accent,
@@ -1519,12 +1533,12 @@ const confirmEyebrow = (ui) => ({
     marginBottom: 6
 });
 const configCard = (ui) => ({
-    background: `radial-gradient(260px 140px at 92% 0%, rgba(${ui.accentRgb},0.09), transparent 74%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
-    borderRadius: 24,
+    background: `radial-gradient(260px 140px at 92% 0%, rgba(${ui.accentRgb},0.11), transparent 74%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
+    borderRadius: 28,
     padding: '19px',
     marginBottom: 14,
-    border: '1px solid transparent',
-    boxShadow: '0 16px 38px -32px rgba(0,0,0,0.74), 0 1px 0 rgba(255,255,255,0.032) inset',
+    border: `1px solid ${ui.border}`,
+    boxShadow: ui.shadow,
     backdropFilter: ui.blur,
     WebkitBackdropFilter: ui.blur
 });
@@ -1533,10 +1547,10 @@ const cardLabel = (ui) => ({ color: ui.sub, fontSize: '11px', fontWeight: '950',
 const footerButtons = { display: 'flex', gap: '10px', padding: '12px 0 calc(12px + env(safe-area-inset-bottom, 0px))', alignItems: 'center', position: 'sticky', bottom: 0, background: 'transparent', zIndex: 5 };
 const btnBase = { height: '58px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', fontSize: 15, fontWeight: 950, fontFamily: 'inherit' };
 const btnCancel = (ui) => ({ ...btnBase, flex: 1, backgroundColor: '#FF3B30', border: `1px solid ${ui.border}` });
-const btnNew = (ui) => ({ ...btnBase, width: '58px', background: ui.accentSoft, color: ui.accent, border: '1px solid transparent', boxShadow: `0 14px 24px -22px ${ui.accent}` });
-const btnNext = (ui) => ({ ...btnBase, flex: 2, background: `linear-gradient(135deg, rgba(${ui.accentRgb},0.22), rgba(143,166,200,0.11))`, color: ui.text, border: '1px solid transparent', boxShadow: `0 14px 34px -28px rgba(${ui.accentRgb},0.45), inset 0 1px 0 rgba(255,255,255,0.08)` });
+const btnNew = (ui) => ({ ...btnBase, width: '58px', background: `linear-gradient(145deg, ${ui.accentSoft}, ${ui.field})`, color: ui.accent, border: `1px solid ${ui.accentRing}`, boxShadow: `0 14px 24px -22px ${ui.accent}, inset 0 1px 0 rgba(255,255,255,0.08)`, backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
+const btnNext = (ui) => ({ ...btnBase, flex: 2, background: `linear-gradient(135deg, rgba(${ui.accentRgb},0.28), rgba(143,166,200,0.13))`, color: ui.text, border: `1px solid ${ui.borderStrong}`, boxShadow: `0 14px 34px -28px rgba(${ui.accentRgb},0.55), inset 0 1px 0 rgba(255,255,255,0.10)`, backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
 
-const iconSheet = (ui) => ({ width: '100%', maxHeight: '76vh', borderRadius: '34px 34px 0 0', overflow: 'hidden', borderTop: '1px solid transparent', background: 'linear-gradient(180deg, rgba(24,28,31,0.98), rgba(15,17,19,0.98))' });
+const iconSheet = (ui) => ({ width: '100%', maxHeight: '76vh', borderRadius: '34px 34px 0 0', overflow: 'hidden', borderTop: `1px solid ${ui.borderStrong}`, background: `radial-gradient(520px 240px at 80% 0%, rgba(${ui.accentRgb},0.12), transparent 70%), linear-gradient(180deg, ${ui.card}, rgba(15,17,19,0.92))`, boxShadow: '0 -18px 60px -34px rgba(0,0,0,0.72)', backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
 const iconGrid = { maxHeight: '50vh', overflowY: 'scroll', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '15px', padding: '0 25px 40px', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehavior: 'contain' };
 const iconGroupsScroll = (compact = false) => ({
     maxHeight: compact ? 'min(330px, 38vh)' : '50vh',
@@ -1586,13 +1600,13 @@ const categoryIconGrid = () => ({
     touchAction: 'pan-y',
     overscrollBehavior: 'contain'
 });
-const iconItem = (active, ui) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px', borderRadius: '18px', background: active ? ui.accentSoft : ui.field, border: '1px solid transparent', boxShadow: active ? `0 14px 24px -22px ${ui.accent}` : 'none' });
-const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 16px', background: ui.field, border: '1px solid transparent', borderRadius: '18px', boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset' });
-const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', background: ui.accentSoft, border: '1px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '12px', flexShrink: 0, cursor: 'pointer' });
-const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '15px', background: ui.field, border: '1px solid transparent', borderRadius: '16px' });
+const iconItem = (active, ui) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px', borderRadius: '18px', background: active ? ui.accentSoft : ui.field, border: `1px solid ${active ? ui.accentRing : ui.border}`, boxShadow: active ? `0 14px 24px -22px ${ui.accent}, 0 1px 0 rgba(255,255,255,0.07) inset` : '0 1px 0 rgba(255,255,255,0.04) inset' });
+const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 16px', background: ui.field, border: `1px solid ${ui.border}`, borderRadius: '18px', boxShadow: '0 1px 0 rgba(255,255,255,0.055) inset', backdropFilter: 'blur(18px) saturate(155%)', WebkitBackdropFilter: 'blur(18px) saturate(155%)' });
+const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', background: ui.accentSoft, border: `1px solid ${ui.accentRing}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '12px', flexShrink: 0, cursor: 'pointer', boxShadow: `0 12px 22px -20px ${ui.accent}` });
+const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '15px', background: ui.field, border: `1px solid ${ui.border}`, borderRadius: '16px', boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset' });
 const inputStyle = (ui) => ({ width: '100%', border: 'none', background: 'transparent', fontSize: '16px', color: ui.text, outline: 'none' });
 const completionModeButton = (ui, active) => ({
-    border: '1px solid transparent',
+    border: `1px solid ${active ? ui.accentRing : ui.border}`,
     background: active ? ui.accentSoft : 'rgba(255,255,255,0.035)',
     color: active ? ui.accent : ui.text,
     borderRadius: '14px',

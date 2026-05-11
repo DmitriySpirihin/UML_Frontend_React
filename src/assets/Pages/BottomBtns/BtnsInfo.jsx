@@ -117,20 +117,25 @@ const onBack = async (page, addPanel) => {
 // Styles
 const containerStyle = (theme) => ({
     position: 'fixed',
+    bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
     left: '50%',
-    bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
     transform: 'translateX(-50%)',
-    width: '230px',
-    height: '64px',
+    width: 'calc(100vw - 72px)',
+    maxWidth: '360px',
+    height: '58px',
     borderRadius: '999px',
-    display: 'flex',
-    justifyContent: 'space-around',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    justifyItems: 'center',
     alignItems: 'center',
-    padding: '10px 14px',
+    padding: '7px 10px',
+    columnGap: 3,
     boxSizing: 'border-box',
     backdropFilter: 'blur(24px) saturate(180%)',
     WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     zIndex: 1000,
+    overflow: 'hidden',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset, 0 22px 46px -24px rgba(0,0,0,0.74)'
 });
 
 const glassOverlay = (theme) => ({
@@ -145,7 +150,7 @@ const glassOverlay = (theme) => ({
     borderRadius: '999px',
     boxShadow: theme === 'light' || theme === 'speciallight'
         ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 20px 44px -30px rgba(15,23,42,0.28)'
-        : '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px -20px rgba(0,0,0,0.76)',
+        : '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px -20px rgba(0,0,0,0.76), 0 0 28px rgba(34,197,94,0.08)',
     zIndex: -1,
 });
 
@@ -156,18 +161,19 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '44px',
+    width: '40px',
+    borderRadius: '999px',
     cursor: 'pointer'
 };
 
 const activeIndicator = (theme) => ({
     position: 'absolute',
-    bottom: '8px',
+    bottom: '4px',
     width: '5px',
     height: '5px',
     borderRadius: '50%',
     backgroundColor: Colors.get('iconsHighlited', theme),
-    boxShadow: `0 0 10px ${Colors.get('iconsHighlited', theme)}`
+    boxShadow: `0 0 7px ${Colors.get('iconsHighlited', theme)}`
 });
 
 const addBtnStyle = (theme) => ({

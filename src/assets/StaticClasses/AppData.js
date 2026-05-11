@@ -15,7 +15,8 @@ const DEFAULT_HABIT_CATEGORIES = [
   { key: 'relationships', icon: 'people', label: ['Отношения и отдых', 'Relationships & recreation'], isNegative: false },
   { key: 'bad_habits', icon: 'ban', label: ['Отказ от вредного', 'Bad habits to quit'], isNegative: true }
 ];
-const DEFAULT_HABITS_ACCENT_COLOR = '#22C55E';
+const DEFAULT_HABITS_ACCENT_COLOR = '#149DFF';
+const PREVIOUS_DEFAULT_HABITS_ACCENT_COLOR = '#22C55E';
 const LEGACY_HABITS_ACCENT_COLORS = ['#8FAE9B', '#9A92C8', '#8FA6C8', '#7FC8B8', '#68C08F', '#B48BC8', '#D48AB6', '#DC8FA6', '#E4A7C3', '#D8DEE7', '#D6E2F2', '#CFE6FF', '#50D4E5', '#8A7CD6', '#7D92D6', '#39D982'];
 const DEFAULT_SLEEP_ACCENT_COLOR = '#7C6CFF';
 const LEGACY_SLEEP_ACCENT_COLORS = ['#7A86D9', '#6772A6', '#6F8BD6', '#7FC8B8', '#56C7B5', '#6F7DFF'];
@@ -288,8 +289,8 @@ static habitCardWidgets = {
     this.habitCustomCategories = Array.isArray(data.habitCustomCategories) ? data.habitCustomCategories : [];
     this.habitCategoryOverrides = data.habitCategoryOverrides && typeof data.habitCategoryOverrides === 'object' ? data.habitCategoryOverrides : {};
     this.deletedDefaultHabitCategories = Array.isArray(data.deletedDefaultHabitCategories) ? data.deletedDefaultHabitCategories : [];
-    this.habitAccentColor = setHabitAccent(typeof data.habitAccentColor === 'string' && !LEGACY_HABITS_ACCENT_COLORS.includes(data.habitAccentColor.toUpperCase()) && !isCoffeeSectionAccent(data.habitAccentColor)
-      ? normalizeSectionAccentColor(data.habitAccentColor, DEFAULT_HABITS_ACCENT_COLOR)
+    this.habitAccentColor = setHabitAccent(typeof data.habitAccentColor === 'string' && !isCoffeeSectionAccent(data.habitAccentColor) && normalizeAccentHex(data.habitAccentColor, DEFAULT_HABITS_ACCENT_COLOR) !== PREVIOUS_DEFAULT_HABITS_ACCENT_COLOR
+      ? normalizeAccentHex(data.habitAccentColor, DEFAULT_HABITS_ACCENT_COLOR)
       : DEFAULT_HABITS_ACCENT_COLOR).hue;
     this.habitAccentPresets = normalizeAccentPresetList(data.habitAccentPresets);
     this.sectionVisits = data.sectionVisits || { ...DEFAULT_SECTION_VISITS };
