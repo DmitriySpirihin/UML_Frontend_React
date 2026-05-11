@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { AppData, UserData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors.js';
-import { theme$, lang$, fontSize$, setPage, premium$ } from '../../StaticClasses/HabitsBus.js';
+import { theme$, lang$, fontSize$, premium$ } from '../../StaticClasses/HabitsBus.js';
 import { FaStarHalf, FaStar, FaInfinity, FaLock, FaTrophy, FaLayerGroup, FaBolt, FaBrain } from 'react-icons/fa';
 import { GiStarsStack, GiCrownedSkull } from 'react-icons/gi';
 import { memorySequenceLevels } from './MentalHelper';
@@ -49,37 +49,49 @@ const MemoryMain = () => {
         show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 25 } }
     };
 
-    const pageInfo = { emoji: '🧠', ru: 'Память', en: 'Memory' };
+    const pageInfo = { Icon: FaBrain, ru: 'N-back', en: 'N-back' };
+    const HeroIcon = pageInfo.Icon;
+    const s = styles(theme, fSize);
+    const totalRecord = (AppData.mentalRecords?.[1] || []).reduce((sum, value) => sum + (Number(value) || 0), 0);
+    const bestRecord = Math.max(0, ...(AppData.mentalRecords?.[1] || [0]));
 
     return (
-        <div style={styles(theme).container}>
-            <div style={styles(theme).scrollView}>
-                <div style={{ height: '3vh' }} /> 
-
-                {/* Header Section */}
-                <div style={{ width: '92%', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '5px',marginTop:'20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '28px' }}>{pageInfo.emoji}</span>
-                        <h1 style={{ margin: 0, color: Colors.get('mainText', theme), fontSize: '26px', fontFamily: 'Segoe UI', fontWeight: '800' }}>
-                            {langIndex === 0 ? pageInfo.ru : pageInfo.en}
-                        </h1>
-                    </div>
-                    <span style={{ fontSize: '14px', color: Colors.get('subText', theme), opacity: 0.7, marginLeft: '4px' }}>
-                        {langIndex === 0 ? 'Запоминание последовательности' : 'Sequence memorization'}
-                    </span>
+        <div style={s.container}>
+            <div style={s.scrollView} className="no-scrollbar">
+                <div style={s.pageHeader}>
+                    <div style={s.pageTitle}>UltyMyLife</div>
+                    <div style={s.pageSubtitle}>{langIndex === 0 ? 'Тренируй разум как тело' : 'Train your mind like your body'}</div>
                 </div>
 
-                <motion.div
+                <Motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34 }} style={s.hero}>
+                    <div style={s.heroGlow} />
+                    <div style={s.heroTop}>
+                        <div style={s.heroIcon}><HeroIcon size={22} /></div>
+                        <div style={s.heroText}>
+                            <div style={s.eyebrow}>{langIndex === 0 ? 'Память' : 'Memory'}</div>
+                            <h1 style={s.heroTitle}>{langIndex === 0 ? pageInfo.ru : pageInfo.en}</h1>
+                            <div style={s.heroSubtitle}>{langIndex === 0 ? 'Запоминание последовательностей и образов' : 'Memorize sequences and patterns'}</div>
+                        </div>
+                    </div>
+                    <div style={s.heroStats}>
+                        <div style={s.statPill}>
+                            <FaTrophy size={11} />
+                            <span>{langIndex === 0 ? 'Итог' : 'Total'}</span>
+                            <strong>{totalRecord}</strong>
+                        </div>
+                        <div style={s.statPill}>
+                            <FaStar size={11} />
+                            <span>{langIndex === 0 ? 'Лучший' : 'Best'}</span>
+                            <strong>{bestRecord}</strong>
+                        </div>
+                    </div>
+                </Motion.section>
+
+                <Motion.div
                     variants={containerAnim}
                     initial="hidden"
                     animate="show"
-                    style={{
-                        width: '94%',
-                        display: "grid",
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: '12px',
-                        paddingBottom: '30px'
-                    }}
+                    style={s.grid}
                 >
                     {memorySequenceLevels.map((protocol, ind) => {
                         const needBlur = ind > 1 && !hasPremium;
@@ -97,7 +109,6 @@ const MemoryMain = () => {
                                     lang={langIndex}
                                     fSize={fSize}
                                     needBlur={needBlur}
-                                    hasPremium={hasPremium}
                                     record={getRecord(ind)}
                                     isFullWidth={isFullWidth}
                                     onClick={() => {
@@ -110,7 +121,7 @@ const MemoryMain = () => {
                             </div>
                         );
                     })}
-                </motion.div>
+                </Motion.div>
 
                 <div style={{ height: '10vh', width: '100%' }} /> {/* Bottom Spacer */}
             </div>
@@ -172,7 +183,7 @@ const getMemoryThemeColors = (difficulty) => {
 
 const capFirst = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
-function MemoryCard({ protocol, difficulty, onClick, theme, lang, fSize, variants, needBlur, hasPremium, record, isFullWidth }) {
+function MemoryCard({ protocol, difficulty, onClick, theme, lang, fSize, variants, needBlur, record, isFullWidth }) {
     
     const isDark = theme === 'dark';
     const isLocked = needBlur;
@@ -182,7 +193,7 @@ function MemoryCard({ protocol, difficulty, onClick, theme, lang, fSize, variant
     const cardStyle = {
         position: 'relative',
         width: '100%', 
-        height: isFullWidth ? '120px' : '185px',
+        minHeight: isFullWidth ? '92px' : '154px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -190,14 +201,15 @@ function MemoryCard({ protocol, difficulty, onClick, theme, lang, fSize, variant
         overflow: 'hidden',
         cursor: isLocked ? 'default' : 'pointer',
         
-        // Background & Depth
-        backgroundColor: Colors.get('simplePanel', theme), 
-        boxShadow: isDark 
-            ? '0 4px 20px rgba(0,0,0,0.3)' 
-            : '0 4px 15px rgba(0,0,0,0.05)',
-        border: isDark 
-            ? '1px solid rgba(255,255,255,0.05)' 
-            : '1px solid rgba(0,0,0,0.02)',
+        background: isDark
+            ? `${bgGlow}, rgba(20,23,27,0.94)`
+            : `${bgGlow}, rgba(255,255,255,0.9)`,
+        boxShadow: isDark
+            ? '0 1px 0 rgba(255,255,255,0.045) inset, 0 14px 34px -30px rgba(0,0,0,0.78)'
+            : '0 12px 28px -24px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.72) inset',
+        border: isDark
+            ? `1px solid ${accent}44`
+            : '1px solid rgba(15,23,42,0.08)',
             
         padding: '16px',
         boxSizing: 'border-box'
@@ -216,20 +228,13 @@ function MemoryCard({ protocol, difficulty, onClick, theme, lang, fSize, variant
     }
 
     return (
-        <motion.div 
+        <Motion.div 
             variants={variants}
             whileTap={!isLocked ? { scale: 0.96 } : {}}
             whileHover={!isLocked ? { y: -2 } : {}}
             onClick={onClick}
             style={cardStyle}
         >
-            {/* Ambient Glow */}
-            <div style={{
-                position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
-                background: bgGlow,
-                pointerEvents: 'none'
-            }} />
-
             {/* Lock Overlay */}
             {isLocked && (
                 <div onClick={(e) => { e.stopPropagation(); }} 
@@ -307,31 +312,66 @@ function MemoryCard({ protocol, difficulty, onClick, theme, lang, fSize, variant
                      </span>
                 </div>
             )}
-        </motion.div>
+        </Motion.div>
     )
 }
 
 export default MemoryMain
 
-const styles = (theme) => ({
-    container: {
-        backgroundColor: Colors.get('background', theme), 
-        display: "flex",
-        flexDirection: "column",
-        justifyItems: "center",
-        alignItems: "center",
-        height: "90vh",
-        marginTop:'110px',
-        width: "100vw",
-        fontFamily: "Segoe UI, sans-serif",
-        overflow: 'hidden'
-    },
-    scrollView: {
-        height: "100%",
-        width: '100%',
-        overflowY: "scroll",
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-    }
-});
+const styles = (theme, fSize = 0) => {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const text = Colors.get('mainText', theme);
+    const sub = Colors.get('subText', theme);
+    const accent = '#8A7CD6';
+    const accentRgb = '138,124,214';
+    const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
+
+    return {
+        container: {
+            width: "100vw",
+            height: "100vh",
+            overflow: 'hidden',
+            color: text,
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+            background: isLight
+                ? `radial-gradient(900px 440px at 82% -12%, rgba(${accentRgb},0.12), transparent 58%), radial-gradient(720px 360px at -12% 100%, rgba(102,217,232,0.09), transparent 58%), #F4F5F7`
+                : `radial-gradient(980px 500px at 82% -12%, rgba(${accentRgb},0.10), transparent 56%), radial-gradient(760px 380px at -10% 100%, rgba(102,217,232,0.065), transparent 56%), #0E1013`
+        },
+        scrollView: {
+            height: "100%",
+            width: '100%',
+            overflowY: "auto",
+            padding: 'calc(env(safe-area-inset-top, 0px) + 10px) 0 calc(132px + env(safe-area-inset-bottom, 0px))',
+            boxSizing: 'border-box'
+        },
+        pageHeader: { width: 'calc(100% - 56px)', maxWidth: 660, margin: '0 auto 8px', padding: '4px 20px 8px', boxSizing: 'border-box', textAlign: 'center' },
+        pageTitle: { color: text, fontFamily: 'Georgia, "Times New Roman", serif', fontSize: fSize === 0 ? 21 : 24, fontWeight: 700, letterSpacing: 0, lineHeight: 1.05, opacity: 0.86 },
+        pageSubtitle: { marginTop: 5, color: sub, fontSize: fSize === 0 ? 8 : 9, fontWeight: 600, letterSpacing: '0.14em', opacity: 0.82 },
+        hero: {
+            position: 'relative',
+            width: 'calc(100% - 56px)',
+            maxWidth: 660,
+            margin: '0 auto',
+            borderRadius: 24,
+            padding: '14px 16px',
+            overflow: 'hidden',
+            boxSizing: 'border-box',
+            background: isLight ? `linear-gradient(145deg, rgba(255,255,255,0.96), rgba(${accentRgb},0.12))` : `linear-gradient(145deg, rgba(23,27,31,0.96), rgba(${accentRgb},0.14))`,
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(138,124,214,0.28)'}`,
+            boxShadow: isLight ? `0 16px 38px -34px rgba(${accentRgb},0.45), 0 1px 0 rgba(255,255,255,0.72) inset` : `0 18px 40px -34px rgba(${accentRgb},0.50), 0 1px 0 rgba(255,255,255,0.055) inset`,
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)',
+            isolation: 'isolate'
+        },
+        heroGlow: { position: 'absolute', right: -44, top: -58, width: 170, height: 170, borderRadius: '50%', background: `radial-gradient(circle, rgba(${accentRgb},0.24) 0%, transparent 62%)`, pointerEvents: 'none' },
+        heroTop: { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 12 },
+        heroIcon: { width: 42, height: 42, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `rgba(${accentRgb},0.13)`, border: `1px solid rgba(${accentRgb},0.28)`, color: accent, boxShadow: `0 12px 26px -20px rgba(${accentRgb},0.85), inset 0 1px 0 rgba(255,255,255,0.08)`, fontSize: 21, flexShrink: 0 },
+        heroText: { minWidth: 0 },
+        eyebrow: { color: sub, fontSize: 10, fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase' },
+        heroTitle: { margin: '4px 0 0', color: text, fontSize: fSize === 0 ? 22 : 24, lineHeight: 1.08, fontWeight: 950, letterSpacing: 0 },
+        heroSubtitle: { marginTop: 5, color: sub, fontSize: fSize === 0 ? 11 : 12, lineHeight: 1.3, fontWeight: 720 },
+        heroStats: { position: 'relative', zIndex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginTop: 12 },
+        statPill: { minHeight: 34, borderRadius: 14, border: `1px solid ${border}`, background: isLight ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.036)', display: 'flex', alignItems: 'center', gap: 7, padding: '7px 9px', boxSizing: 'border-box', color: accent, fontSize: 10, fontWeight: 850 },
+        grid: { width: 'calc(100% - 56px)', maxWidth: 660, margin: '14px auto 0', display: "grid", gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px', paddingBottom: '30px', boxSizing: 'border-box' }
+    };
+};

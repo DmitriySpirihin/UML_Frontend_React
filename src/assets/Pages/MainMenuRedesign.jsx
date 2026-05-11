@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { FaCog, FaThumbtack, FaTrashRestore } from 'react-icons/fa';
 import { buildHabitsAccent } from './HabitsPages/HabitVisuals.jsx';
 import { buildSleepAccent } from './SleepPages/SleepVisuals.js';
@@ -9,16 +9,16 @@ const EASE = [0.2, 0.8, 0.2, 1];
 const tokens = {
   dark: {
     isLight: false,
-    bg: '#0E1013',
-    settingsTop: '#15181c',
-    settingsBorder: '#242830',
-    panel: 'rgba(26,29,33,0.84)',
-    panelStrong: 'rgba(20,23,25,0.92)',
-    border: 'rgba(255,255,255,0.07)',
+    bg: '#11171C',
+    settingsTop: '#172027',
+    settingsBorder: '#2A3944',
+    panel: 'rgba(22,30,37,0.9)',
+    panelStrong: 'rgba(16,22,27,0.96)',
+    border: 'rgba(163,196,210,0.13)',
     text: '#F2F3F5',
     sub: '#A6ADB8',
-    muted: '#6B7280',
-    faint: 'rgba(255,255,255,0.04)'
+    muted: '#798692',
+    faint: 'rgba(255,255,255,0.052)'
   },
   light: {
     isLight: true,
@@ -33,13 +33,28 @@ const tokens = {
     muted: '#8A94A6',
     faint: 'rgba(15,23,42,0.04)'
   },
+  coffee: {
+    isLight: false,
+    isCoffee: true,
+    bg: '#1A120E',
+    settingsTop: '#261A13',
+    settingsBorder: '#493226',
+    panel: 'rgba(39,26,19,0.9)',
+    panelStrong: 'rgba(27,18,13,0.96)',
+    border: 'rgba(226,173,118,0.14)',
+    text: '#FFF4E6',
+    sub: '#C9AD96',
+    muted: '#9F8067',
+    faint: 'rgba(255,215,178,0.052)'
+  },
   accents: {
-    HabitsMain: { hue: '#7FC8B8', soft: 'rgba(127,200,184,0.14)', ring: 'rgba(127,200,184,0.28)' },
-    TrainingMain: { hue: '#D8785E', soft: 'rgba(216,120,94,0.14)', ring: 'rgba(216,120,94,0.28)' },
-    MentalMain: { hue: '#8A7CD6', soft: 'rgba(138,124,214,0.14)', ring: 'rgba(138,124,214,0.28)' },
-    RecoveryMain: { hue: '#78B879', soft: 'rgba(120,184,121,0.13)', ring: 'rgba(120,184,121,0.26)' },
-    SleepMain: { hue: '#6F8BD6', soft: 'rgba(111,139,214,0.14)', ring: 'rgba(111,139,214,0.28)' },
-    ToDoMain: { hue: '#8FA6C8', soft: 'rgba(143,166,200,0.14)', ring: 'rgba(143,166,200,0.28)' },
+    profile: { hue: '#AEBCC8', soft: 'rgba(174,188,200,0.14)', ring: 'rgba(174,188,200,0.24)', rgb: '174,188,200' },
+    HabitsMain: { hue: '#24C875', soft: 'rgba(36,200,117,0.14)', ring: 'rgba(36,200,117,0.28)' },
+    TrainingMain: { hue: '#21B6EF', soft: 'rgba(33,182,239,0.12)', ring: 'rgba(33,182,239,0.24)' },
+    MentalMain: { hue: '#8F65E8', soft: 'rgba(143,101,232,0.14)', ring: 'rgba(143,101,232,0.28)' },
+    RecoveryMain: { hue: '#25C6B2', soft: 'rgba(37,198,178,0.14)', ring: 'rgba(37,198,178,0.26)' },
+    SleepMain: { hue: '#5B69E8', soft: 'rgba(91,105,232,0.14)', ring: 'rgba(91,105,232,0.28)' },
+    ToDoMain: { hue: '#4D7BEF', soft: 'rgba(77,123,239,0.14)', ring: 'rgba(77,123,239,0.28)' },
     RobotMain: { hue: '#66D9E8', soft: 'rgba(102,217,232,0.14)', ring: 'rgba(102,217,232,0.28)' },
     premium: { hue: '#C4D3DE', soft: 'rgba(196,211,222,0.16)', ring: 'rgba(196,211,222,0.34)' }
   }
@@ -88,6 +103,29 @@ const BurntFlame = ({ size = 15 }) => (
       fill="#3F4650"
     />
   </svg>
+);
+const StreakWatermark = ({ delay = 0 }) => (
+  <Motion.div
+    aria-hidden="true"
+    animate={{ opacity: [0.12, 0.2, 0.13], scale: [0.98, 1.04, 0.99] }}
+    transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay }}
+    style={{
+      position: 'absolute',
+      right: 18,
+      top: '50%',
+      marginTop: -49,
+      width: 96,
+      height: 98,
+      pointerEvents: 'none',
+      zIndex: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      filter: 'drop-shadow(0 10px 20px rgba(255,122,61,0.12))'
+    }}
+  >
+    <StreakFlame size={96} />
+  </Motion.div>
 );
 const DockUserIcon = ({ color }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
@@ -163,52 +201,110 @@ function Pill({ children, style }) {
   );
 }
 
-function RingStack({ rings }) {
-  const data = [
-    { v: rings.habits, c: tokens.accents.HabitsMain.hue, r: 42 },
-    { v: rings.training, c: tokens.accents.TrainingMain.hue, r: 32 },
-    { v: rings.mental, c: tokens.accents.MentalMain.hue, r: 22 }
-  ];
-
+function TopStreakPill({ value }) {
   return (
-    <svg width="104" height="104" viewBox="0 0 104 104" aria-hidden="true">
-      {data.map((d, i) => {
-        const circumference = 2 * Math.PI * d.r;
-        return (
-          <g key={d.c} transform="rotate(-90 52 52)">
-            <circle cx="52" cy="52" r={d.r} stroke="rgba(255,255,255,0.07)" strokeWidth="4" fill="none" />
-            <motion.circle
-              cx="52"
-              cy="52"
-              r={d.r}
-              stroke={d.c}
-              strokeWidth="4"
-              strokeLinecap="round"
-              fill="none"
-              strokeDasharray={circumference}
-              initial={{ strokeDashoffset: circumference }}
-              animate={{ strokeDashoffset: circumference - circumference * Math.max(0, Math.min(1, d.v)) }}
-              transition={{ duration: 1, ease: EASE, delay: i * 0.08 }}
-            />
-          </g>
-        );
-      })}
-    </svg>
+    <Motion.div
+      aria-hidden="true"
+      animate={{
+        scale: [1, 1.035, 1],
+        boxShadow: [
+          '0 1px 0 rgba(255,255,255,0.05) inset, 0 0 0 rgba(255,122,61,0)',
+          '0 1px 0 rgba(255,255,255,0.08) inset, 0 0 18px rgba(255,122,61,0.24)',
+          '0 1px 0 rgba(255,255,255,0.05) inset, 0 0 0 rgba(255,122,61,0)'
+        ]
+      }}
+      transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+      style={{
+        height: 30,
+        minWidth: 54,
+        padding: '0 10px',
+        borderRadius: 999,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 5,
+        border: '1px solid rgba(255,122,61,0.38)',
+        background: 'linear-gradient(135deg, rgba(255,122,61,0.22), rgba(73,37,24,0.28) 58%, rgba(255,211,106,0.08))',
+        color: '#FFD36A',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.07) inset, 0 10px 20px -16px rgba(255,122,61,0.48)'
+      }}
+    >
+      <StreakFlame size={13} />
+      <span style={{ color: '#F2F3F5', fontSize: 12, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+    </Motion.div>
   );
 }
 
-function HeroStat({ dot, label, value, palette, onClick }) {
+function SummaryChips({ stats, palette, onOpenSection }) {
   return (
-    <motion.button
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: `repeat(${Math.min(3, stats.length)}, minmax(0, 1fr))`,
+      gap: 8,
+      position: 'relative'
+    }}>
+      {stats.map((stat) => (
+        <HeroStat
+          key={stat.id}
+          accent={getAccent(stat.id)}
+          label={stat.label}
+          value={stat.value}
+          palette={palette}
+          onClick={() => onOpenSection(stat.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function FocusCopy({ data, accent, palette }) {
+  return (
+    <div style={{ minWidth: 0, flex: 1 }}>
+      <div style={{
+        fontSize: 10,
+        color: accent.hue,
+        fontWeight: 900,
+        letterSpacing: '0.07em',
+        textTransform: 'uppercase',
+        marginBottom: 5,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis'
+      }}>
+        {data.status}
+      </div>
+      <div style={{ fontSize: 18, fontWeight: 900, color: palette.text, lineHeight: 1.12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {data.title}
+      </div>
+    </div>
+  );
+}
+
+function HeroStat({ accent, label, value, palette, onClick }) {
+  const statBackground = palette.isLight
+    ? `linear-gradient(135deg, rgba(${accent.rgb},0.18) 0%, rgba(255,255,255,0.86) 52%, rgba(${accent.rgb},0.08) 100%)`
+    : palette.isCoffee
+      ? `linear-gradient(135deg, rgba(${accent.rgb},0.16) 0%, rgba(74,49,34,0.18) 48%, rgba(22,14,10,0.42) 100%)`
+      : `linear-gradient(135deg, rgba(${accent.rgb},0.18) 0%, rgba(${accent.rgb},0.08) 46%, rgba(255,255,255,0.035) 100%)`;
+  const statShadow = palette.isLight
+    ? `0 1px 0 rgba(255,255,255,0.82) inset, 0 12px 24px -18px rgba(15,23,42,0.28), 0 12px 24px -20px rgba(${accent.rgb},0.58)`
+    : palette.isCoffee
+      ? `0 1px 0 rgba(255,232,205,0.08) inset, 0 -12px 20px -22px rgba(0,0,0,0.9) inset, 0 12px 24px -17px rgba(0,0,0,0.74), 0 12px 24px -22px rgba(${accent.rgb},0.7)`
+      : `0 1px 0 rgba(255,255,255,0.08) inset, 0 -12px 20px -22px rgba(0,0,0,0.9) inset, 0 10px 22px -16px rgba(0,0,0,0.62), 0 12px 24px -20px rgba(${accent.rgb},0.92)`;
+
+  return (
+    <Motion.button
       type="button"
+      whileHover={{ y: -1, scale: 1.01 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
       style={{
       minHeight: 46,
       padding: '9px 10px',
-      borderRadius: 15,
-      background: 'rgba(255,255,255,0.035)',
-      border: '1px solid rgba(255,255,255,0.055)',
+      borderRadius: 22,
+      background: statBackground,
+      border: `1px solid rgba(${accent.rgb},0.26)`,
+      boxShadow: statShadow,
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
@@ -220,21 +316,23 @@ function HeroStat({ dot, label, value, palette, onClick }) {
       outline: 'none',
       appearance: 'none',
       WebkitAppearance: 'none',
-      WebkitTapHighlightColor: 'transparent'
+      WebkitTapHighlightColor: 'transparent',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-        <div style={{ width: 5, height: 5, borderRadius: 999, background: dot, flexShrink: 0 }} />
+        <div style={{ width: 5, height: 5, borderRadius: 999, background: accent.hue, flexShrink: 0, boxShadow: `0 0 10px rgba(${accent.rgb},0.72)` }} />
         <div style={{ fontSize: 10, color: palette.sub, fontWeight: 750, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
       </div>
       <div style={{ fontSize: 15, color: palette.text, fontWeight: 850, fontVariantNumeric: 'tabular-nums' }}>{value}</div>
-    </motion.button>
+    </Motion.button>
   );
 }
 
 function Topbar({ lang, isPremium, onOpenRobot, onOpenReferral, onOpenSettings, palette }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 12px' }}>
-      <motion.button
+      <Motion.button
         type="button"
         whileTap={{ scale: 0.96 }}
         onClick={onOpenRobot}
@@ -250,7 +348,7 @@ function Topbar({ lang, isPremium, onOpenRobot, onOpenReferral, onOpenSettings, 
           <IconSparkle size={12} />
           <span>{lang === 0 ? 'AI готов' : 'AI ready'}</span>
         </Pill>
-      </motion.button>
+      </Motion.button>
       <div style={{ display: 'flex', gap: 8 }}>
         <TopIconButton onClick={onOpenReferral} palette={palette} Icon={IconCrown} active={isPremium} />
         <TopIconButton onClick={onOpenSettings} palette={palette} Icon={ReactSettingsIcon} />
@@ -261,25 +359,29 @@ function Topbar({ lang, isPremium, onOpenRobot, onOpenReferral, onOpenSettings, 
 
 function TopIconButton({ Icon, onClick, palette, active }) {
   return (
-    <motion.button
+    <Motion.button
       type="button"
+      whileHover={{ y: -1, scale: 1.02 }}
       whileTap={{ scale: 0.92 }}
       onClick={onClick}
       style={{
         width: 38,
         height: 38,
-        borderRadius: 13,
+        borderRadius: 20,
         border: `1px solid ${active ? tokens.accents.premium.ring : palette.border}`,
-        background: active ? tokens.accents.premium.soft : palette.panel,
+        background: active
+          ? tokens.accents.premium.soft
+          : 'linear-gradient(135deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025))',
         color: active ? tokens.accents.premium.hue : palette.sub,
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.08) inset, 0 10px 20px -16px rgba(0,0,0,0.72)'
       }}
     >
-      <Icon size={18} />
-    </motion.button>
+      {React.createElement(Icon, { size: 18 })}
+    </Motion.button>
   );
 }
 
@@ -313,7 +415,7 @@ function BrandHeader({ lang, palette }) {
 }
 
 function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection }) {
-  const heroAccent = getAccent('HabitsMain');
+  const heroAccent = getAccent('profile');
   const selectedStats = Array.isArray(data.stats) && data.stats.length > 0
     ? data.stats
     : [
@@ -321,81 +423,79 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         { id: 'TrainingMain', label: lang === 0 ? 'Тоннаж' : 'Volume', value: data.trainingValue },
         { id: 'MentalMain', label: lang === 0 ? 'Ум' : 'Mind', value: data.mentalValue }
       ];
+  const heroBackground = palette.isLight
+    ? `linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(${heroAccent.rgb},0.08) 58%, rgba(235,242,246,0.96) 100%)`
+    : palette.isCoffee
+      ? `linear-gradient(145deg, rgba(67,44,31,0.32) 0%, rgba(39,26,19,0.96) 44%, rgba(22,14,10,0.96) 100%)`
+      : `linear-gradient(145deg, rgba(${heroAccent.rgb},0.16) 0%, rgba(22,31,38,0.96) 42%, rgba(14,20,25,0.96) 100%)`;
+  const heroShadow = palette.isLight
+    ? `0 18px 40px -30px rgba(15,23,42,0.28), 0 1px 0 rgba(255,255,255,0.86) inset`
+    : palette.isCoffee
+      ? `0 18px 40px -34px rgba(0,0,0,0.72), 0 1px 0 rgba(255,226,196,0.055) inset`
+      : `0 18px 40px -34px rgba(${heroAccent.rgb},0.38), 0 1px 0 rgba(255,255,255,0.045) inset`;
 
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: EASE }}
       style={{
         margin: '0 20px',
-        padding: 18,
-        borderRadius: 24,
-        background: palette.isLight
-          ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, rgba(${heroAccent.rgb},0.08) 58%, rgba(${heroAccent.rgb},0.08) 100%)`
-          : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, rgba(${heroAccent.rgb},0.10) 54%, rgba(${heroAccent.rgb},0.08) 100%)`,
-        border: `1px solid ${heroAccent.ring}`,
-        boxShadow: palette.isLight
-          ? `0 16px 38px -34px rgba(${heroAccent.rgb},0.45), 0 1px 0 rgba(255,255,255,0.72) inset`
-          : `0 18px 40px -34px rgba(${heroAccent.rgb},0.50), 0 1px 0 rgba(255,255,255,0.055) inset`,
+        padding: 17,
+        borderRadius: 32,
+        background: heroBackground,
+        border: `1px solid ${palette.isLight ? 'rgba(148,163,184,0.16)' : palette.border}`,
+        boxShadow: heroShadow,
         position: 'relative',
         overflow: 'hidden'
       }}
     >
-      <div style={{
-        position: 'absolute',
-        right: '-44px',
-        top: '-58px',
-        width: 170,
-        height: 170,
-        borderRadius: '50%',
-        background: `radial-gradient(circle, rgba(${heroAccent.rgb},0.22) 0%, transparent 62%)`,
-        pointerEvents: 'none'
-      }} />
-
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, position: 'relative' }}>
-        <motion.button
+        <Motion.button
           type="button"
-          whileTap={{ scale: 0.98 }}
+          whileHover={{ y: -1, scale: 1.005 }}
+          whileTap={{ scale: 0.975 }}
           onClick={onOpenUser}
           style={{
             minWidth: 0,
             flex: 1,
-            padding: 0,
-            border: 'none',
-            background: 'transparent',
+            padding: '8px 12px',
+            border: `1px solid rgba(${heroAccent.rgb},0.14)`,
+            borderRadius: 23,
+            background: `linear-gradient(135deg, rgba(${heroAccent.rgb},0.09), rgba(255,255,255,0.018))`,
             textAlign: 'left',
             fontFamily: 'inherit',
             cursor: 'pointer',
             outline: 'none',
-            WebkitTapHighlightColor: 'transparent'
+            appearance: 'none',
+            WebkitAppearance: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            boxShadow: `0 1px 0 rgba(255,255,255,0.045) inset, 0 10px 20px -20px rgba(${heroAccent.rgb},0.55)`
           }}
         >
           <div style={{ fontSize: 10, color: palette.muted, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>
             {data.greeting}
           </div>
-          <div style={{ fontSize: 23, fontWeight: 850, lineHeight: 1.05, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 19, fontWeight: 820, lineHeight: 1.08, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {data.name}
           </div>
-        </motion.button>
+        </Motion.button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {data.streak > 0 && (
-            <Pill style={{ color: tokens.accents.HabitsMain.hue, borderColor: tokens.accents.HabitsMain.ring, background: tokens.accents.HabitsMain.soft }}>
-              <IconFlame size={12} />
-              <span>{data.streak}</span>
-            </Pill>
+            <TopStreakPill value={data.streak} />
           )}
-          <motion.button
+          <Motion.button
             type="button"
+            whileHover={{ y: -1, scale: 1.035 }}
             whileTap={{ scale: 0.96 }}
             onClick={onOpenWidgets}
             aria-label={lang === 0 ? 'Настроить верхнюю карточку' : 'Customize top card'}
             style={{
               width: 34,
               height: 34,
-              borderRadius: 12,
-              border: `1px solid ${palette.border}`,
-              background: 'rgba(255,255,255,0.055)',
+              borderRadius: 18,
+              border: `1px solid rgba(${heroAccent.rgb},0.22)`,
+              background: `linear-gradient(135deg, rgba(${heroAccent.rgb},0.12), rgba(255,255,255,0.045))`,
               color: palette.sub,
               padding: 0,
               display: 'inline-flex',
@@ -403,51 +503,51 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
               justifyContent: 'center',
               fontFamily: 'inherit',
               cursor: 'pointer',
-              boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
+              boxShadow: `0 1px 0 rgba(255,255,255,0.075) inset, 0 10px 20px -16px rgba(0,0,0,0.72), 0 12px 22px -20px rgba(${heroAccent.rgb},0.62)`
             }}
           >
             <IconSliders size={15} />
-          </motion.button>
+          </Motion.button>
         </div>
       </div>
 
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${Math.min(3, selectedStats.length)}, minmax(0, 1fr))`,
-        gap: 8,
         marginTop: 18,
+        textAlign: 'center',
         position: 'relative'
       }}>
-        {selectedStats.map((stat) => (
-          <HeroStat
-            key={stat.id}
-            dot={getAccent(stat.id).hue}
-            label={stat.label}
-            value={stat.value}
-            palette={palette}
-            onClick={() => onOpenSection(stat.id)}
-          />
-        ))}
+        <div style={{ fontSize: 11, color: heroAccent.hue, fontWeight: 850, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6 }}>
+          {lang === 0 ? 'Сегодня' : 'Today'}
+        </div>
+        <div style={{ fontSize: 15, fontWeight: 820, color: palette.text, lineHeight: 1.18 }}>
+          {data.progressLabel}
+        </div>
       </div>
-    </motion.div>
+
+      <div style={{ marginTop: 14 }}>
+        <SummaryChips stats={selectedStats} palette={palette} onOpenSection={onOpenSection} />
+      </div>
+    </Motion.div>
   );
 }
 
-function Focus({ data, palette, lang, onOpen }) {
+function Focus({ data, palette, onOpen, lang }) {
   const accent = getAccent(data.targetId);
   const IconComponent = data.targetId === 'HabitsMain' ? IconFlame : iconMap[data.targetId] || IconSparkle;
 
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.38, ease: EASE, delay: 0.08 }}
       onClick={onOpen}
       style={{
-        margin: '18px 20px 0',
-        padding: 20,
+        margin: '14px 20px 0',
+        padding: '16px 18px',
         borderRadius: 24,
-        background: data.empty ? `rgba(${accent.rgb},0.06)` : palette.panel,
+        background: data.empty
+          ? `linear-gradient(145deg, rgba(${accent.rgb},0.15), rgba(18,26,32,0.94))`
+          : `linear-gradient(145deg, rgba(${accent.rgb},0.12), rgba(18,26,32,0.94) 46%, rgba(14,20,25,0.94))`,
         border: data.empty ? `1px solid ${accent.ring}` : `1px solid ${palette.border}`,
         boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 12px 30px -22px rgba(0,0,0,0.68)',
         position: 'relative',
@@ -455,8 +555,7 @@ function Focus({ data, palette, lang, onOpen }) {
         cursor: 'pointer'
       }}
     >
-      {!data.empty && <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: accent.hue }} />}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, position: 'relative', zIndex: 1 }}>
         <div style={{
           width: 48,
           height: 48,
@@ -469,20 +568,10 @@ function Focus({ data, palette, lang, onOpen }) {
           border: `1px solid ${accent.ring}`,
           flexShrink: 0
         }}>
-          <IconComponent size={22} />
+          {data.targetId === 'HabitsMain' ? <StreakFlame size={24} /> : <IconComponent size={22} />}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, color: accent.hue, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 4 }}>
-            {data.status}
-          </div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: palette.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {data.title}
-          </div>
-          <div style={{ fontSize: 12, color: palette.sub, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {data.meta}
-          </div>
-        </div>
-        <motion.button
+        <FocusCopy data={data} accent={accent} palette={palette} />
+        <Motion.button
           type="button"
           whileTap={{ scale: 0.94 }}
           onClick={(event) => {
@@ -490,49 +579,84 @@ function Focus({ data, palette, lang, onOpen }) {
             onOpen();
           }}
           style={{
-            width: 40,
+            minWidth: 86,
             height: 40,
-            borderRadius: 12,
-            border: 'none',
+            borderRadius: 999,
+            border: `1px solid rgba(${accent.rgb},0.46)`,
             cursor: 'pointer',
-            background: accent.hue,
-            color: '#0E1013',
-            display: 'flex',
+            background: `linear-gradient(135deg, rgba(${accent.rgb},0.28), rgba(${accent.rgb},0.14))`,
+            color: accent.hue,
+            display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            flexShrink: 0
+            flexShrink: 0,
+            gap: 7,
+            fontFamily: 'inherit',
+            fontSize: 12,
+            fontWeight: 900,
+            boxShadow: `0 12px 22px -18px rgba(${accent.rgb},0.9), 0 1px 0 rgba(255,255,255,0.07) inset`
           }}
         >
-          <IconArrow size={18} stroke={2} />
-        </motion.button>
+          <span>{lang === 0 ? 'Открыть' : 'Open'}</span>
+          <IconArrow size={15} stroke={2.2} />
+        </Motion.button>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }
 
-function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin, onHide, palette }) {
+function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHide, palette }) {
   const accent = getAccent(item.id);
   const IconComponent = iconMap[item.id] || (() => item.icon);
-  const metric = showInfo && info ? info : '';
+  const metric = showInfo ? (info || '0') : '';
   const metricParts = getMetricParts(metric);
+  const streakNumber = Number.parseInt(metricParts.value, 10);
+  const isFreshStreak = metricParts.isStreak && streakNumber === 1;
+  const hasActiveStreak = metricParts.isStreak && !metricParts.isZero;
   const iconTone = metricParts.isZero
     ? {
-      hue: palette.muted,
+      hue: accent.hue,
       soft: palette.isLight
-        ? 'linear-gradient(135deg, rgba(100,111,124,0.1), rgba(15,23,42,0.035))'
-        : 'linear-gradient(135deg, rgba(104,113,123,0.18), rgba(255,255,255,0.035))',
-      ring: palette.isLight ? 'rgba(100,111,124,0.2)' : 'rgba(104,113,123,0.32)'
+        ? `linear-gradient(135deg, rgba(${accent.rgb},0.13), rgba(15,23,42,0.035))`
+        : `linear-gradient(135deg, rgba(${accent.rgb},0.16), rgba(255,255,255,0.035))`,
+      ring: `rgba(${accent.rgb},${palette.isLight ? 0.22 : 0.30})`
     }
     : accent;
+  const rowBackground = palette.isLight
+    ? metricParts.isZero
+      ? `radial-gradient(190px 90px at 14% 50%, rgba(${accent.rgb},0.20), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.16) 0%, rgba(255,255,255,0.88) 54%, rgba(238,244,247,0.94) 100%)`
+      : `radial-gradient(220px 102px at 14% 50%, rgba(${accent.rgb},0.28), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.22) 0%, rgba(255,255,255,0.86) 56%, rgba(232,239,243,0.94) 100%)`
+    : palette.isCoffee
+      ? metricParts.isZero
+        ? `radial-gradient(180px 90px at 12% 50%, rgba(${accent.rgb},0.19), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.13) 0%, rgba(45,29,20,0.93) 100%)`
+        : `radial-gradient(210px 100px at 12% 50%, rgba(${accent.rgb},0.28), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.18) 0%, rgba(45,29,20,0.93) 100%)`
+      : metricParts.isZero
+        ? `radial-gradient(180px 90px at 12% 50%, rgba(${accent.rgb},0.24), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.16) 0%, rgba(18,28,35,0.92) 100%)`
+        : `radial-gradient(210px 100px at 12% 50%, rgba(${accent.rgb},0.36), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.24) 0%, rgba(18,28,35,0.92) 100%)`;
+  const rowBorder = palette.isLight
+    ? `1px solid rgba(${accent.rgb},0.22)`
+    : palette.isCoffee
+      ? `1px solid rgba(${accent.rgb},0.13)`
+      : '1px solid rgba(255,255,255,0.035)';
+  const rowShadow = palette.isLight
+    ? `0 1px 0 rgba(255,255,255,0.88) inset, 0 -18px 28px -28px rgba(15,23,42,0.18) inset, 0 16px 30px -22px rgba(15,23,42,0.26), 0 16px 30px -26px rgba(${accent.rgb},0.6)`
+    : palette.isCoffee
+      ? `0 1px 0 rgba(255,232,205,0.08) inset, 0 -20px 32px -28px rgba(0,0,0,0.86) inset, 0 18px 34px -22px rgba(0,0,0,0.82), 0 18px 34px -30px rgba(${accent.rgb},0.7)`
+      : `0 1px 0 rgba(255,255,255,0.09) inset, 0 -20px 32px -28px rgba(0,0,0,0.86) inset, 0 18px 34px -22px rgba(0,0,0,0.88), 0 18px 34px -28px rgba(${accent.rgb},0.82)`;
+  const rowInnerGlow = palette.isLight
+    ? `radial-gradient(220px 70px at 20% 0%, rgba(255,255,255,0.68), transparent 70%), radial-gradient(190px 70px at 15% 100%, rgba(${accent.rgb},0.08), transparent 72%)`
+    : `radial-gradient(220px 70px at 20% 0%, rgba(255,255,255,0.085), transparent 70%), radial-gradient(190px 70px at 15% 100%, rgba(${accent.rgb},0.08), transparent 72%)`;
 
   return (
-    <motion.div
+    <Motion.button
+      type="button"
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -80, height: 0, marginBottom: 0 }}
       transition={{ duration: 0.32, ease: EASE, delay: 0.04 * idx }}
-      whileTap={{ scale: 0.985 }}
+      whileHover={{ y: -2, scale: 1.005 }}
+      whileTap={{ scale: 0.975, y: 1 }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={(event, { offset }) => {
@@ -540,52 +664,96 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
         if (offset.x > 80) onPin();
       }}
       onClick={onOpen}
+      aria-label={item.title}
       style={{
+        width: '100%',
         minHeight: 72,
-        padding: '13px 16px',
-        borderRadius: 18,
-        marginBottom: 10,
-        background: metricParts.isZero
-          ? palette.panel
-          : `radial-gradient(260px 130px at 6% 50%, ${accent.soft} 0%, transparent 72%), ${palette.panel}`,
-        border: `1px solid ${isPinned ? accent.ring : palette.border}`,
-        boxShadow: `0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px -18px rgba(0,0,0,0.65), 0 18px 34px -34px ${accent.ring}`,
+        padding: '14px 16px',
+        borderRadius: 36,
+        marginBottom: 14,
+        background: rowBackground,
+        border: rowBorder,
+        boxShadow: rowShadow,
+        boxSizing: 'border-box',
         display: 'flex',
         alignItems: 'center',
         gap: 13,
         cursor: 'pointer',
-        touchAction: 'pan-y'
+        touchAction: 'pan-y',
+        position: 'relative',
+        overflow: 'hidden',
+        fontFamily: 'inherit',
+        textAlign: 'left',
+        outline: 'none',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        WebkitTapHighlightColor: 'transparent'
       }}
     >
+      {hasActiveStreak && <StreakWatermark delay={idx * 0.14} />}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 1,
+          borderRadius: 35,
+          background: rowInnerGlow,
+          pointerEvents: 'none',
+          zIndex: 0
+        }}
+      />
+      {metricParts.isZero && (
+        <Motion.div
+          aria-hidden="true"
+          animate={{ opacity: [0.06, 0.16, 0.06], scale: [0.99, 1.01, 0.99] }}
+          transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: idx * 0.16 }}
+          style={{
+            position: 'absolute',
+            inset: 1,
+            borderRadius: 35,
+            background: `radial-gradient(280px 130px at 12% 50%, rgba(${accent.rgb},0.46), transparent 70%)`,
+            pointerEvents: 'none'
+          }}
+        />
+      )}
       <div style={{
         width: 42,
         height: 42,
-        borderRadius: 13,
+        borderRadius: 20,
         flexShrink: 0,
         background: iconTone.soft,
         color: iconTone.hue,
         border: `1px solid ${iconTone.ring}`,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        position: 'relative',
+        zIndex: 1
       }}>
         <IconComponent size={19} />
       </div>
-      <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+      <div style={{ flex: 1, minWidth: 0, textAlign: 'left', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ fontSize: 15, fontWeight: 850, color: palette.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {item.title}
           </div>
           {isPinned && <FaThumbtack size={11} color={accent.hue} style={{ transform: 'rotate(45deg)', flexShrink: 0 }} />}
         </div>
-        <div style={{ fontSize: 11, color: palette.sub, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div style={{ fontSize: 11, color: palette.sub, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {item.subtitle}
         </div>
       </div>
       {metric ? (
-        <div style={{ textAlign: 'right', minWidth: metricParts.isStreak || metricParts.isZero ? 58 : 44, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+        <div style={{ textAlign: 'right', minWidth: metricParts.isStreak || metricParts.isZero ? 48 : 40, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'relative', zIndex: 2 }}>
           {metricParts.isStreak ? (
-            <div style={{
+            <Motion.div
+              animate={hasActiveStreak ? { scale: isFreshStreak ? [1, 1.045, 1] : [1, 1.028, 1], boxShadow: [
+                '0 1px 0 rgba(255,255,255,0.05) inset, 0 0 0 rgba(255,122,61,0)',
+                '0 1px 0 rgba(255,255,255,0.08) inset, 0 0 16px rgba(255,122,61,0.26)',
+                '0 1px 0 rgba(255,255,255,0.05) inset, 0 0 0 rgba(255,122,61,0)'
+              ] } : undefined}
+              transition={hasActiveStreak ? { duration: isFreshStreak ? 2.8 : 3.2, repeat: Infinity, ease: 'easeInOut' } : undefined}
+              style={{
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -603,7 +771,7 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
                 {metricParts.value}
               </span>
               <StreakFlame />
-            </div>
+            </Motion.div>
           ) : metricParts.isZero ? (
             <div style={{
               display: 'inline-flex',
@@ -615,12 +783,12 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
               padding: '0 8px',
               borderRadius: 999,
               background: palette.isLight
-                ? 'linear-gradient(135deg, rgba(100,111,124,0.1), rgba(15,23,42,0.035))'
-                : 'linear-gradient(135deg, rgba(104,113,123,0.18), rgba(255,255,255,0.035))',
-              border: palette.isLight ? '1px solid rgba(100,111,124,0.2)' : '1px solid rgba(104,113,123,0.32)',
-              boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset, 0 10px 20px -18px rgba(104,113,123,0.7)',
+                ? `linear-gradient(135deg, rgba(${accent.rgb},0.14), rgba(15,23,42,0.035))`
+                : `linear-gradient(135deg, rgba(${accent.rgb},0.18), rgba(255,255,255,0.035))`,
+              border: `1px solid rgba(${accent.rgb},${palette.isLight ? 0.24 : 0.34})`,
+              boxShadow: `0 1px 0 rgba(255,255,255,0.04) inset, 0 10px 20px -18px rgba(${accent.rgb},0.75)`,
               boxSizing: 'border-box',
-              color: palette.muted
+              color: accent.hue
             }}>
               <span style={{ fontSize: 15, fontWeight: 900, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
                 0
@@ -628,24 +796,31 @@ function CategoryRow({ item, info, showInfo, isPinned, lang, idx, onOpen, onPin,
               <BurntFlame />
             </div>
           ) : (
-            <div style={{ fontSize: 14, fontWeight: 850, color: palette.text, fontVariantNumeric: 'tabular-nums' }}>
-              {metricParts.value}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: 42,
+              height: 27,
+              padding: '0 9px',
+              borderRadius: 999,
+              background: accent.soft,
+              border: `1px solid ${accent.ring}`,
+              boxShadow: `0 1px 0 rgba(255,255,255,0.05) inset, 0 10px 22px -18px ${accent.ring}`,
+              boxSizing: 'border-box'
+            }}>
+              <span style={{ fontSize: 15, fontWeight: 900, color: palette.text, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+                {metricParts.value}
+              </span>
             </div>
           )}
-          <div style={{ fontSize: 9, color: palette.muted, fontWeight: 750, letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: 2 }}>
-            {metricParts.isStreak
-              ? (lang === 0 ? 'серия' : 'streak')
-              : metricParts.isZero
-                ? (lang === 0 ? 'начать' : 'start')
-                : (lang === 0 ? 'итог' : 'total')}
-          </div>
         </div>
       ) : (
-        <div style={{ color: palette.muted }}>
+        <div style={{ color: palette.muted, position: 'relative', zIndex: 1 }}>
           <IconChevron size={16} />
         </div>
       )}
-    </motion.div>
+    </Motion.button>
   );
 }
 
@@ -653,7 +828,7 @@ function ActionStrip({ visible, lang, onOpenReferral, onOpenRobot, palette }) {
   if (!visible) return null;
 
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32, ease: EASE }}
@@ -667,7 +842,7 @@ function ActionStrip({ visible, lang, onOpenReferral, onOpenRobot, palette }) {
     >
       <ActionButton Icon={IconCrown} label={lang === 0 ? 'Пригласи друга' : 'Invite'} accent={tokens.accents.premium} onClick={onOpenReferral} palette={palette} />
       <ActionButton Icon={IconSparkle} label={lang === 0 ? 'AI Ассистент' : 'AI Assistant'} accent={tokens.accents.RobotMain} onClick={onOpenRobot} palette={palette} />
-    </motion.div>
+    </Motion.div>
   );
 }
 
@@ -675,13 +850,14 @@ function ActionButton({ Icon, label, accent, onClick, palette }) {
   const isPremium = accent === tokens.accents.premium;
 
   return (
-    <motion.button
+    <Motion.button
       type="button"
+      whileHover={{ y: -1, scale: 1.01 }}
       whileTap={{ scale: 0.96 }}
       onClick={onClick}
       style={{
         minHeight: 54,
-        borderRadius: 18,
+        borderRadius: 22,
         border: `1px solid ${accent.ring}`,
         background: isPremium
           ? `linear-gradient(135deg, rgba(159,180,196,0.18), rgba(159,180,196,0.08))`
@@ -700,23 +876,24 @@ function ActionButton({ Icon, label, accent, onClick, palette }) {
           : '0 1px 0 rgba(255,255,255,0.04) inset'
       }}
     >
-      <Icon size={18} />
+      {React.createElement(Icon, { size: 18 })}
       <span style={{ color: palette.text }}>{label}</span>
-    </motion.button>
+    </Motion.button>
   );
 }
 
 function HeaderIconAction({ Icon, accent, onClick, label }) {
   return (
-    <motion.button
+    <Motion.button
       type="button"
+      whileHover={{ y: -1, scale: 1.03 }}
       whileTap={{ scale: 0.94 }}
       onClick={onClick}
       aria-label={label}
       style={{
         width: 34,
         height: 34,
-        borderRadius: 12,
+        borderRadius: 17,
         border: `1px solid ${accent.ring}`,
         background: accent.soft,
         color: accent.hue,
@@ -726,32 +903,34 @@ function HeaderIconAction({ Icon, accent, onClick, label }) {
         cursor: 'pointer'
       }}
     >
-      <Icon size={15} />
-    </motion.button>
+      {React.createElement(Icon, { size: 15 })}
+    </Motion.button>
   );
 }
 
 function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
   const isPremium = accent === tokens.accents.premium;
   const isNeutral = accent?.tone === 'menu';
+  const accentRgb = accent.rgb || buildHabitsAccent(accent.hue).rgb;
   const minWidth = isNeutral ? 82 : (compact ? 46 : 92);
 
   return (
-    <motion.button
+    <Motion.button
       type="button"
+      whileHover={{ y: -1, scale: 1.02 }}
       whileTap={{ scale: 0.96 }}
       onClick={onClick}
       aria-label={label}
       style={{
         height: 34,
         minWidth,
-        borderRadius: 12,
+        borderRadius: 18,
         border: `1px solid ${accent.ring}`,
         background: isPremium
           ? `linear-gradient(135deg, rgba(196,211,222,0.24), rgba(116,132,146,0.12))`
           : isNeutral
-            ? 'linear-gradient(135deg, rgba(175,196,212,0.12), rgba(92,108,122,0.075))'
-          : accent.soft,
+            ? 'linear-gradient(135deg, rgba(175,196,212,0.17), rgba(92,108,122,0.09))'
+          : `linear-gradient(135deg, rgba(${accentRgb},0.22), rgba(${accentRgb},0.08))`,
         color: accent.hue,
         display: 'inline-flex',
         alignItems: 'center',
@@ -768,15 +947,15 @@ function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
         boxShadow: isPremium
           ? '0 1px 0 rgba(255,255,255,0.085) inset, 0 14px 26px -20px rgba(196,211,222,0.62)'
           : isNeutral
-            ? '0 1px 0 rgba(255,255,255,0.045) inset'
-          : 'none'
+            ? '0 1px 0 rgba(255,255,255,0.075) inset, 0 12px 22px -18px rgba(0,0,0,0.72)'
+          : `0 1px 0 rgba(255,255,255,0.075) inset, 0 12px 22px -18px rgba(${accentRgb},0.74)`
       }}
     >
       <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-        <Icon size={14} />
+        {React.createElement(Icon, { size: 14 })}
         <span>{label}</span>
       </span>
-    </motion.button>
+    </Motion.button>
   );
 }
 
@@ -813,7 +992,7 @@ function DockBtn({ Icon, onClick, primary, palette }) {
   const iconColor = primary ? tokens.accents.premium.hue : palette.sub;
 
   return (
-    <motion.button
+    <Motion.button
       type="button"
       whileTap={{ scale: 0.92 }}
       onClick={onClick}
@@ -821,9 +1000,9 @@ function DockBtn({ Icon, onClick, primary, palette }) {
         width: 44,
         height: 44,
         borderRadius: 999,
-        border: primary ? `1px solid ${tokens.accents.premium.ring}` : '1px solid transparent',
+        border: '1px solid transparent',
         cursor: 'pointer',
-        background: primary ? tokens.accents.premium.soft : 'transparent',
+        background: 'transparent',
         color: iconColor,
         display: 'flex',
         alignItems: 'center',
@@ -831,8 +1010,8 @@ function DockBtn({ Icon, onClick, primary, palette }) {
         lineHeight: 1
       }}
     >
-      <Icon color={iconColor} size={22} />
-    </motion.button>
+      {React.createElement(Icon, { color: iconColor, size: 22 })}
+    </Motion.button>
   );
 }
 
@@ -860,19 +1039,25 @@ export default function MainMenuRedesign({
   getInfo
 }) {
   const isLight = theme === 'light' || theme === 'speciallight';
-  const palette = isLight ? tokens.light : tokens.dark;
+  const isCoffee = theme === 'coffee' || theme === 'specialcoffee';
+  const palette = isCoffee ? tokens.coffee : isLight ? tokens.light : tokens.dark;
   const actionItemVisible = visibleItems.some((item) => item.id === 'MainCard');
   const sectionItems = visibleItems.filter((item) => item.icon);
   tokens.accents.HabitsMain = buildHabitsAccent(visibleItems.find((item) => item.id === 'HabitsMain')?.color);
+  tokens.accents.ToDoMain = buildHabitsAccent(visibleItems.find((item) => item.id === 'ToDoMain')?.color || tokens.accents.ToDoMain.hue);
+  tokens.accents.RecoveryMain = buildHabitsAccent(visibleItems.find((item) => item.id === 'RecoveryMain')?.color || tokens.accents.RecoveryMain.hue);
   tokens.accents.SleepMain = toMenuAccent(buildSleepAccent(visibleItems.find((item) => item.id === 'SleepMain')?.color));
   const habitsAccent = tokens.accents.HabitsMain;
   const sleepAccent = tokens.accents.SleepMain;
+  const pageBackground = palette.isLight
+    ? `radial-gradient(900px 450px at 80% -10%, rgba(${habitsAccent.rgb},0.08), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(${sleepAccent.rgb},0.08), transparent 58%), #F4F5F7`
+    : palette.isCoffee
+      ? `radial-gradient(900px 460px at 82% -8%, rgba(200,135,74,0.16), transparent 58%), radial-gradient(760px 420px at -12% 42%, rgba(${sleepAccent.rgb},0.08), transparent 60%), linear-gradient(180deg, #271A13 0%, #1A120E 47%, #120C09 100%)`
+      : `radial-gradient(900px 460px at 82% -8%, rgba(${habitsAccent.rgb},0.13), transparent 58%), radial-gradient(760px 420px at -12% 42%, rgba(${sleepAccent.rgb},0.11), transparent 60%), linear-gradient(180deg, #18232B 0%, #11171C 46%, #0F1418 100%)`;
 
   return (
     <div style={{
-      background: isLight
-        ? `radial-gradient(900px 450px at 80% -10%, rgba(${habitsAccent.rgb},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(${sleepAccent.rgb},0.1), transparent 58%), #F4F5F7`
-        : `radial-gradient(1000px 500px at 80% -10%, rgba(${habitsAccent.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(${sleepAccent.rgb},0.07), transparent 55%), #0E1013`,
+      background: pageBackground,
       color: palette.text,
       width: '100vw',
       height: '100vh',
@@ -901,8 +1086,7 @@ export default function MainMenuRedesign({
           onOpenUser={onOpenUser}
           onOpenSection={onOpenSection}
         />
-
-        <div style={{ padding: '18px 20px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '22px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontSize: 11, color: palette.muted, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
             {lang === 0 ? 'Разделы' : 'Sections'}
           </div>
@@ -959,7 +1143,7 @@ export default function MainMenuRedesign({
           </AnimatePresence>
 
           {hasHiddenItems && (
-            <motion.button
+            <Motion.button
               type="button"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -984,7 +1168,7 @@ export default function MainMenuRedesign({
               }}
             >
               <FaTrashRestore /> {lang === 0 ? 'Вернуть скрытые разделы' : 'Restore hidden sections'}
-            </motion.button>
+            </Motion.button>
           )}
           <div style={{ height: 28, width: '100%' }} onClick={onBottomSecretTap} />
         </div>

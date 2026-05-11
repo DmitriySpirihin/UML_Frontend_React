@@ -426,13 +426,14 @@ const ActionButton = ({ icon, text, onClick, theme, color }) => (
 
 const s = (theme, fSize = 0) => {
     const isLight = theme === 'light' || theme === 'speciallight';
+    const isCoffee = theme === 'coffee';
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
-    const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)';
-    const panel = isLight ? 'rgba(255,255,255,0.86)' : 'rgba(26,29,33,0.84)';
-    const panelStrong = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(20,23,25,0.92)';
-    const faint = isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.04)';
-    const heroAccent = '#5fb6c6';
+    const border = isLight ? 'rgba(15,23,42,0.08)' : isCoffee ? 'rgba(226,173,118,0.12)' : 'rgba(255,255,255,0.07)';
+    const panel = isLight ? 'rgba(255,255,255,0.86)' : isCoffee ? 'rgba(38,25,18,0.84)' : 'rgba(26,29,33,0.84)';
+    const panelStrong = isLight ? 'rgba(255,255,255,0.96)' : isCoffee ? 'rgba(29,19,14,0.92)' : 'rgba(20,23,25,0.92)';
+    const faint = isLight ? 'rgba(15,23,42,0.04)' : isCoffee ? 'rgba(255,215,178,0.045)' : 'rgba(255,255,255,0.04)';
+    const heroAccent = isCoffee ? '#C8874A' : '#5fb6c6';
 
     return {
         faint,
@@ -445,6 +446,8 @@ const s = (theme, fSize = 0) => {
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
             background: isLight
                 ? 'radial-gradient(900px 450px at 80% -10%, rgba(201,162,75,0.11), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7'
+                : isCoffee
+                    ? 'radial-gradient(1000px 500px at 82% -10%, rgba(200,135,74,0.13), transparent 56%), radial-gradient(760px 390px at -10% 92%, rgba(99,67,43,0.2), transparent 58%), #1A120E'
                 : 'radial-gradient(1000px 500px at 80% -10%, rgba(201,162,75,0.08), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013'
         },
         content: {
@@ -1062,6 +1065,7 @@ function getThemeShortName(langIndex, theme) {
     switch (theme) {
         case 'dark': return langIndex === 0 ? 'Тёмная' : 'Dark';
         case 'light': return langIndex === 0 ? 'Светлая' : 'Light';
+        case 'coffee': return langIndex === 0 ? 'Кофейная' : 'Coffee';
         default: return '';
     }
 }
@@ -1084,6 +1088,7 @@ function changeSettings(prefIndex, size) {
 const toggleTheme = () => {
     let next; let themeNum = 0;
     if (Colors.theme === THEME.DARK) { themeNum = 1; next = THEME.LIGHT; }
+    else if (Colors.theme === THEME.LIGHT) { themeNum = 2; next = THEME.COFFEE; }
     else { themeNum = 0; next = THEME.DARK; }
     AppData.setPrefs(1, themeNum); Colors.setTheme(next); setGlobalTheme(next);
 };

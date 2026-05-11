@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { MdClose, MdDone, MdDeleteOutline } from 'react-icons/md';
@@ -124,7 +124,7 @@ const BreathingConstructor = ({ theme, langIndex, fSize, setProtocol, show, setS
         <AnimatePresence>
             {show && (
                 <div style={styles(theme).overlay}>
-                    <motion.div
+                    <Motion.div
                         initial="hidden"
                         animate="visible"
                         exit="exit"
@@ -197,7 +197,7 @@ const BreathingConstructor = ({ theme, langIndex, fSize, setProtocol, show, setS
                                 <span style={{ marginLeft: 8 }}>{langIndex === 0 ? 'Готово' : 'Done'}</span>
                             </button>
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 </div>
             )}
         </AnimatePresence>
@@ -207,7 +207,7 @@ const BreathingConstructor = ({ theme, langIndex, fSize, setProtocol, show, setS
 // === SUB-COMPONENTS ===
 
 const StepChip = ({ theme, label, color, icon, onClick }) => (
-    <motion.button
+    <Motion.button
         whileTap={{ scale: 0.95 }}
         onClick={onClick}
         style={{
@@ -219,7 +219,7 @@ const StepChip = ({ theme, label, color, icon, onClick }) => (
     >
         <span style={{ fontSize: '12px', marginRight: 6 }}>{icon}</span>
         {label}
-    </motion.button>
+    </Motion.button>
 );
 
 const StepItem = ({ index, step, theme, onDelete, addTime, langIndex }) => {
@@ -241,7 +241,7 @@ const StepItem = ({ index, step, theme, onDelete, addTime, langIndex }) => {
     if (isInOut) accentColor = Colors.get('reload', theme);
 
     return (
-        <motion.div
+        <Motion.div
             layout
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -288,7 +288,7 @@ const StepItem = ({ index, step, theme, onDelete, addTime, langIndex }) => {
                     </div>
                 )}
             </div>
-        </motion.div>
+        </Motion.div>
     );
 };
 
@@ -302,27 +302,29 @@ const styles = (theme) => ({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.4)', // Lighter backdrop
-        backdropFilter: 'blur(5px)',
+        backgroundColor: 'rgba(2,6,10,0.66)',
+        backdropFilter: 'blur(14px)',
         zIndex: 2900,
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'flex-end', // Bottom sheet style
+        alignItems: 'flex-end',
     },
     panel: {
         width: '100%',
-        maxWidth: '500px',
-        height: '85vh',
-        backgroundColor: Colors.get('background', theme),
-        borderTopLeftRadius: '24px',
-        borderTopRightRadius: '24px',
+        maxWidth: '560px',
+        height: 'min(82vh, 760px)',
+        background: `radial-gradient(420px 260px at 100% 0%, ${Colors.get('in', theme)}20 0%, transparent 62%), ${Colors.get('background', theme)}`,
+        border: `1px solid ${Colors.get('border', theme)}70`,
+        borderBottom: 'none',
+        borderTopLeftRadius: '28px',
+        borderTopRightRadius: '28px',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 -10px 30px rgba(0,0,0,0.2)',
+        boxShadow: '0 -28px 80px rgba(0,0,0,0.58)',
         overflow: 'hidden',
     },
     header: {
-        padding: '20px 24px',
+        padding: '20px 20px 16px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -330,7 +332,8 @@ const styles = (theme) => ({
     },
     title: {
         margin: 0,
-        fontSize: '20px',
+        fontSize: '22px',
+        fontWeight: 900,
         color: Colors.get('mainText', theme),
     },
     cycleControl: {
@@ -348,17 +351,18 @@ const styles = (theme) => ({
     stepperContainer: {
         display: 'flex',
         alignItems: 'center',
-        backgroundColor: Colors.get('border', theme),
+        backgroundColor: Colors.get('simplePanel', theme),
         borderRadius: '20px',
-        padding: '2px',
+        padding: '4px',
+        border: `1px solid ${Colors.get('border', theme)}70`,
     },
     stepperBtnSmall: {
-        width: '38px',
-        height: '38px',
+        width: '34px',
+        height: '34px',
         borderRadius: '50%',
         border: 'none',
-        margin:'8px',
-        backgroundColor: Colors.get('simplePanel', theme),
+        margin: '2px',
+        backgroundColor: Colors.get('background', theme),
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -373,19 +377,20 @@ const styles = (theme) => ({
         textAlign: 'center',
     },
     toolBar: {
-        padding: '16px',
+        padding: '12px 16px',
         display: 'flex',
-        gap: '10px',
-        overflowX: 'scroll',
-        
+        gap: '8px',
+        overflowX: 'auto',
         borderBottom: `1px solid ${Colors.get('border', theme)}20`,
+        background: 'rgba(255,255,255,0.02)'
     },
     chip: {
         flex: '0 0 auto',
-        padding: '8px 16px',
-        borderRadius: '20px',
+        padding: '9px 14px',
+        borderRadius: '999px',
+        border: 'none',
         fontSize: '14px',
-        fontWeight: '600',
+        fontWeight: '800',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
@@ -394,15 +399,21 @@ const styles = (theme) => ({
     listContainer: {
         flex: 1,
         overflowY: 'auto',
-        padding: '16px',
+        padding: '16px 18px',
         display: 'flex',
         flexDirection: 'column',
         gap: '12px',
     },
     emptyState: {
+        minHeight: '180px',
+        borderRadius: '22px',
+        border: `1px dashed ${Colors.get('border', theme)}`,
+        background: 'rgba(255,255,255,0.025)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         textAlign: 'center',
         color: Colors.get('subText', theme),
-        marginTop: '40px',
         opacity: 0.6,
         fontStyle: 'italic',
     },
@@ -471,19 +482,19 @@ const styles = (theme) => ({
         transition: 'opacity 0.2s',
     },
     footer: {
-        padding: '20px',
+        padding: '16px 18px calc(18px + env(safe-area-inset-bottom, 0px))',
         borderTop: `1px solid ${Colors.get('border', theme)}40`,
         display: 'flex',
-        gap: '16px',
-        backgroundColor: Colors.get('background', theme), // opaque background for footer
+        gap: '12px',
+        background: `linear-gradient(to top, ${Colors.get('background', theme)} 78%, transparent)`,
     },
     secondaryBtn: {
-        width: '50px',
-        height: '50px',
-        borderRadius: '16px',
+        width: '56px',
+        height: '56px',
+        borderRadius: '18px',
         border: 'none',
-        backgroundColor: Colors.get('skipped', theme),
-        color: Colors.get('mainText', theme),
+        backgroundColor: '#ef4444',
+        color: '#fff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -491,10 +502,10 @@ const styles = (theme) => ({
     },
     primaryBtn: {
         flex: 1,
-        height: '50px',
-        borderRadius: '16px',
+        height: '56px',
+        borderRadius: '18px',
         border: 'none',
-        backgroundColor: Colors.get('maxValColor', theme),
+        background: `linear-gradient(135deg, ${Colors.get('done', theme)}, #245c32)`,
         color: '#fff',
         display: 'flex',
         alignItems: 'center',
@@ -505,4 +516,3 @@ const styles = (theme) => ({
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
     },
 });
-

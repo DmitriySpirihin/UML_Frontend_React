@@ -6,13 +6,9 @@ import { AppData } from '../../StaticClasses/AppData';
 import Insight from './Insight';
 import { INSIGHT_TYPES } from './InsightHelper';
 
-const SLEEP_INSIGHT_TYPES = [
-  INSIGHT_TYPES.SLEEP
-];
-
 const SleepInsight = () => {
   const [theme, setTheme] = useState(theme$.value);
-  const accent = buildSleepAccent(AppData.sleepAccentColor || '#6F8BD6');
+  const accent = buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF');
   const isLight = theme === 'light' || theme === 'speciallight';
 
   useEffect(() => {
@@ -36,7 +32,6 @@ const SleepInsight = () => {
     }}>
       <Insight
         initialType={INSIGHT_TYPES.SLEEP}
-        allowedTypes={SLEEP_INSIGHT_TYPES}
         accentOverride={accent}
       />
     </div>

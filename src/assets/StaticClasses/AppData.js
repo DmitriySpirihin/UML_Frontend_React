@@ -15,6 +15,71 @@ const DEFAULT_HABIT_CATEGORIES = [
   { key: 'relationships', icon: 'people', label: ['Отношения и отдых', 'Relationships & recreation'], isNegative: false },
   { key: 'bad_habits', icon: 'ban', label: ['Отказ от вредного', 'Bad habits to quit'], isNegative: true }
 ];
+const DEFAULT_HABITS_ACCENT_COLOR = '#39D982';
+const LEGACY_HABITS_ACCENT_COLORS = ['#8FAE9B', '#9A92C8', '#8FA6C8', '#7FC8B8', '#68C08F', '#B48BC8', '#D48AB6', '#DC8FA6', '#E4A7C3', '#D8DEE7', '#D6E2F2', '#CFE6FF', '#50D4E5', '#8A7CD6', '#7D92D6'];
+const DEFAULT_SLEEP_ACCENT_COLOR = '#6F7DFF';
+const LEGACY_SLEEP_ACCENT_COLORS = ['#7A86D9', '#6772A6', '#6F8BD6', '#7FC8B8', '#56C7B5'];
+const DEFAULT_TODO_ACCENT_COLOR = '#5F8DFF';
+const LEGACY_TODO_ACCENT_COLORS = ['#8FA6C8', '#C65F9D', '#7FC8B8', '#C29AD6', '#DE8F9A', '#EAA6B4', '#C8D2DE', '#AFC7E8', '#9FCBFF', '#5DADEC'];
+const DEFAULT_MENTAL_ACCENT_COLOR = '#A66BFF';
+const LEGACY_MENTAL_ACCENT_COLORS = ['#9A84C8', '#8A7CD6', '#B66DFF'];
+const DEFAULT_RECOVERY_ACCENT_COLOR = '#2FD6BD';
+const LEGACY_RECOVERY_ACCENT_COLORS = ['#74B8AF', '#68C08F', '#78B879', '#5ED28F'];
+const DEFAULT_TRAINING_ACCENT_COLOR = '#35C2FF';
+const LEGACY_TRAINING_ACCENT_COLORS = ['#FC5200', '#FF7A1A', '#9A8580', '#B87963', '#D8785E', '#7D92D6', '#8F7CFF'];
+const DEFAULT_SECTION_VISITS = { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
+const DEFAULT_SECTION_LAST_OPENED_AT = { habits: 0, todo: 0, mental: 0, recovery: 0, training: 0, sleep: 0 };
+const COFFEE_SECTION_ACCENT_COLORS = ['#B86A37', '#B87963', '#D8785E', '#D49A5C', '#C8A46F', '#A57926', '#A46C3B', '#A6846B', '#8F6A4A', '#9A8580'];
+
+const normalizeAccentHex = (color, fallback = DEFAULT_HABITS_ACCENT_COLOR) => {
+  if (typeof color !== 'string') return fallback;
+  const trimmed = color.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toUpperCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
+    return `#${trimmed.slice(1).split('').map(char => char + char).join('')}`.toUpperCase();
+  }
+  return fallback;
+};
+
+const isCoffeeSectionAccent = (color) => {
+  const normalized = normalizeAccentHex(color, '');
+  if (!normalized) return false;
+  if (COFFEE_SECTION_ACCENT_COLORS.includes(normalized)) return true;
+  const int = Number.parseInt(normalized.slice(1), 16);
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const saturation = max === 0 ? 0 : (max - min) / max;
+  return r > g && g > b && r >= 120 && g >= 70 && b <= 120 && saturation > 0.22;
+};
+
+const normalizeSectionAccentColor = (color, fallback) => {
+  const normalized = normalizeAccentHex(color, fallback);
+  return isCoffeeSectionAccent(normalized) ? fallback : normalized;
+};
+
+const normalizeAccentPresetList = (presets = []) => {
+  if (!Array.isArray(presets)) return [];
+  return presets
+    .map(color => normalizeAccentHex(color, ''))
+    .filter(Boolean)
+    .filter(color => !isCoffeeSectionAccent(color))
+    .filter((color, index, list) => list.indexOf(color) === index)
+    .slice(-12);
+};
+
+const isLegacyTrainingAccentColor = (color) => {
+  const normalized = normalizeAccentHex(color, '');
+  if (!normalized) return true;
+  if (LEGACY_TRAINING_ACCENT_COLORS.includes(normalized) || isCoffeeSectionAccent(normalized)) return true;
+  const int = Number.parseInt(normalized.slice(1), 16);
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+  return r > 150 && g >= 45 && g < 145 && b < 120;
+};
 
 export class AppData{
    static insightData = '';
@@ -28,7 +93,8 @@ export class AppData{
   static habitCustomCategories = []; // [{icon, label:[ru,en]}]
   static habitCategoryOverrides = {};
   static deletedDefaultHabitCategories = [];
-  static habitAccentColor = '#7FC8B8';
+  static habitAccentColor = DEFAULT_HABITS_ACCENT_COLOR;
+  static habitAccentPresets = [];
   static CustomHabits = [];
    static choosenHabitsGoals = {};//{id:[{text:'',isDone:false}]}
    static choosenHabitsStartDates = [];
@@ -44,9 +110,11 @@ export class AppData{
    static lastBackupDate = '';
    // training log
    static currentProgramId = null;
-   static exercises = exercises;
-   static programs = programs;
-   static trainingLog = {};
+  static exercises = exercises;
+  static programs = programs;
+  static trainingAccentColor = DEFAULT_TRAINING_ACCENT_COLOR;
+  static trainingAccentPresets = [];
+  static trainingLog = {};
    static pData = {filled:false,age:20,gender:0,height:180,weight:70,goal:1,activityLevel:1};
    static profileOnboardingShown = false;
    static profileNicknameMode = 'telegram';
@@ -64,21 +132,28 @@ export class AppData{
   static breathingLog = {};
   static meditationLog = {};
   static hardeningLog = {};
+  static recoveryAccentColor = DEFAULT_RECOVERY_ACCENT_COLOR;
+  static recoveryAccentPresets = [];
   //mental
   static mentalLog = {};
   static mentalRecords = [[0,0,0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+  static mentalAccentColor = DEFAULT_MENTAL_ACCENT_COLOR;
+  static mentalAccentPresets = [];
   //
 	  static sleepingLog = {};
-	  static sleepAccentColor = '#6F8BD6';
+	  static sleepAccentColor = DEFAULT_SLEEP_ACCENT_COLOR;
+	  static sleepAccentPresets = [];
   static sleepIntegrations = {
     appleHealth: { connected: false, autoSync: false, lastSync: '', error: '' },
     whoop: { connected: false, autoSync: false, lastSync: '', error: '' },
     oura: { connected: false, autoSync: false, lastSync: '', error: '' }
   };
 	  static todoList = [];
-	  static todoAccentColor = '#8FA6C8';
+	  static todoAccentColor = DEFAULT_TODO_ACCENT_COLOR;
+	  static todoAccentPresets = [];
 	  static todoCustomCategories = []; // [{icon, label:[ru,en]}]
-  static sectionVisits = { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
+  static sectionVisits = { ...DEFAULT_SECTION_VISITS };
+  static sectionLastOpenedAt = { ...DEFAULT_SECTION_LAST_OPENED_AT };
   static profileFriendsExpanded = true;
   static menuCardsStates =
 {
@@ -143,7 +218,7 @@ static habitCardWidgets = {
     }
     else this.isFirstStart = false;
     setLang(this.prefs[0] === 0 ? 'ru' : 'en');
-    setTheme(this.prefs[1]  === 0 ? THEME.DARK : THEME.LIGHT );
+    setTheme(this.prefs[1] === 1 ? THEME.LIGHT : this.prefs[1] === 2 ? THEME.COFFEE : THEME.DARK);
     setSoundAndVibro(this.prefs[2],this.prefs[3]);
     setFontSize(this.prefs[4]);
     this.choosenHabitsStartDates = [...data.choosenHabitsStartDates];
@@ -170,6 +245,10 @@ static habitCardWidgets = {
     this.measurements = data.measurements;
     if (data.exercises && typeof data.exercises === 'object' && !Array.isArray(data.exercises)) this.exercises = data.exercises;
     if (data.programs && typeof data.programs === 'object' && !Array.isArray(data.programs)) this.programs = data.programs;
+    this.trainingAccentColor = typeof data.trainingAccentColor === 'string' && !isLegacyTrainingAccentColor(data.trainingAccentColor)
+      ? normalizeSectionAccentColor(data.trainingAccentColor, DEFAULT_TRAINING_ACCENT_COLOR)
+      : DEFAULT_TRAINING_ACCENT_COLOR;
+    this.trainingAccentPresets = normalizeAccentPresetList(data.trainingAccentPresets);
     if(data.ownPlates?.length > 0)this.ownPlates = data.ownPlates;
     if(data.platesAmount?.length > 0)this.platesAmount = data.platesAmount;
     this.barWeight = data.barWeight;
@@ -180,27 +259,47 @@ static habitCardWidgets = {
     this.breathingLog = data.breathingLog;
     this.meditationLog = data.meditationLog;
     this.hardeningLog = data.hardeningLog;
+    this.recoveryAccentColor = typeof data.recoveryAccentColor === 'string' && !LEGACY_RECOVERY_ACCENT_COLORS.includes(data.recoveryAccentColor.toUpperCase()) && !isCoffeeSectionAccent(data.recoveryAccentColor)
+      ? normalizeSectionAccentColor(data.recoveryAccentColor, DEFAULT_RECOVERY_ACCENT_COLOR)
+      : DEFAULT_RECOVERY_ACCENT_COLOR;
+    this.recoveryAccentPresets = normalizeAccentPresetList(data.recoveryAccentPresets);
     this.mentalLog = data.mentalLog;
     this.mentalRecords = data.mentalRecords;
+    this.mentalAccentColor = typeof data.mentalAccentColor === 'string' && !LEGACY_MENTAL_ACCENT_COLORS.includes(data.mentalAccentColor.toUpperCase()) && !isCoffeeSectionAccent(data.mentalAccentColor)
+      ? normalizeSectionAccentColor(data.mentalAccentColor, DEFAULT_MENTAL_ACCENT_COLOR)
+      : DEFAULT_MENTAL_ACCENT_COLOR;
+    this.mentalAccentPresets = normalizeAccentPresetList(data.mentalAccentPresets);
 	    this.sleepingLog = data.sleepingLog || {};
-	    this.sleepAccentColor = typeof data.sleepAccentColor === 'string' ? data.sleepAccentColor : '#6F8BD6';
+	    this.sleepAccentColor = typeof data.sleepAccentColor === 'string' && !LEGACY_SLEEP_ACCENT_COLORS.includes(data.sleepAccentColor.toUpperCase()) && !isCoffeeSectionAccent(data.sleepAccentColor)
+        ? normalizeSectionAccentColor(data.sleepAccentColor, DEFAULT_SLEEP_ACCENT_COLOR)
+        : DEFAULT_SLEEP_ACCENT_COLOR;
+	    this.sleepAccentPresets = normalizeAccentPresetList(data.sleepAccentPresets);
     this.sleepIntegrations = {
       appleHealth: { connected: false, autoSync: false, lastSync: '', error: '', ...(data.sleepIntegrations?.appleHealth || {}) },
       whoop: { connected: false, autoSync: false, lastSync: '', error: '', ...(data.sleepIntegrations?.whoop || {}) },
       oura: { connected: false, autoSync: false, lastSync: '', error: '', ...(data.sleepIntegrations?.oura || {}) }
 	    };
 	    this.todoList = data.todoList || [];
-	    this.todoAccentColor = typeof data.todoAccentColor === 'string' ? data.todoAccentColor : '#8FA6C8';
+	    this.todoAccentColor = typeof data.todoAccentColor === 'string' && !LEGACY_TODO_ACCENT_COLORS.includes(data.todoAccentColor.toUpperCase()) && !isCoffeeSectionAccent(data.todoAccentColor)
+        ? normalizeSectionAccentColor(data.todoAccentColor, DEFAULT_TODO_ACCENT_COLOR)
+        : DEFAULT_TODO_ACCENT_COLOR;
+	    this.todoAccentPresets = normalizeAccentPresetList(data.todoAccentPresets);
 	    this.todoCustomCategories = Array.isArray(data.todoCustomCategories) ? data.todoCustomCategories : [];
     this.habitCustomCategories = Array.isArray(data.habitCustomCategories) ? data.habitCustomCategories : [];
     this.habitCategoryOverrides = data.habitCategoryOverrides && typeof data.habitCategoryOverrides === 'object' ? data.habitCategoryOverrides : {};
     this.deletedDefaultHabitCategories = Array.isArray(data.deletedDefaultHabitCategories) ? data.deletedDefaultHabitCategories : [];
-    this.habitAccentColor = setHabitAccent(typeof data.habitAccentColor === 'string' ? data.habitAccentColor : '#7FC8B8').hue;
-    this.sectionVisits = data.sectionVisits || { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
+    this.habitAccentColor = setHabitAccent(typeof data.habitAccentColor === 'string' && !LEGACY_HABITS_ACCENT_COLORS.includes(data.habitAccentColor.toUpperCase()) && !isCoffeeSectionAccent(data.habitAccentColor)
+      ? normalizeSectionAccentColor(data.habitAccentColor, DEFAULT_HABITS_ACCENT_COLOR)
+      : DEFAULT_HABITS_ACCENT_COLOR).hue;
+    this.habitAccentPresets = normalizeAccentPresetList(data.habitAccentPresets);
+    this.sectionVisits = data.sectionVisits || { ...DEFAULT_SECTION_VISITS };
+    this.sectionLastOpenedAt = data.sectionLastOpenedAt && typeof data.sectionLastOpenedAt === 'object'
+      ? { ...DEFAULT_SECTION_LAST_OPENED_AT, ...data.sectionLastOpenedAt }
+      : { ...DEFAULT_SECTION_LAST_OPENED_AT };
     this.profileFriendsExpanded = data.profileFriendsExpanded ?? true;
     this.todoFieldsVisibility = data.todoFieldsVisibility || { priority: true, difficulty: true, urgency: true };
     this.insightCache = data.insightCache || {};
-    this.sectionVisits = data.sectionVisits || { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
+    this.sectionVisits = data.sectionVisits || { ...DEFAULT_SECTION_VISITS };
     this.menuCardsStates = data.menuCardsStates ||
 {
   "MainCard": {
@@ -265,6 +364,31 @@ static habitCardWidgets = {
   static async setHabitAccentColor(color) {
     this.habitAccentColor = setHabitAccent(color).hue;
     await saveData();
+  }
+  static async addAccentPreset(section, color, defaultPresets = []) {
+    const fieldBySection = {
+      habits: 'habitAccentPresets',
+      todo: 'todoAccentPresets',
+      sleep: 'sleepAccentPresets',
+      mental: 'mentalAccentPresets',
+      recovery: 'recoveryAccentPresets',
+      training: 'trainingAccentPresets'
+    };
+    const field = fieldBySection[section];
+    if (!field) return [];
+
+    const nextColor = normalizeAccentHex(color, '');
+    if (!nextColor) return this[field] || [];
+
+    const defaults = normalizeAccentPresetList(defaultPresets);
+    const current = normalizeAccentPresetList(this[field]);
+    if (!defaults.includes(nextColor) && !current.includes(nextColor)) {
+      this[field] = [...current, nextColor].slice(-12);
+      await saveData();
+    } else {
+      this[field] = current;
+    }
+    return this[field];
   }
   static getLastProgramId() {
   const allDates = Object.keys(this.trainingLog).filter(dateKey => this.trainingLog[dateKey]?.length > 0);
@@ -342,9 +466,9 @@ static getLastTrainingDayIndex() {
     this.choosenHabitsLastSkip[habitId] = latestSkip || new Date(this.choosenHabitsStartDates[habitIndex]).getTime();
   }
   static async addHabit(habitId,dateString,goals,isNegative,daysToForm,autoComplete = false){
-    const now = new Date();
-    const habitDate = new Date(dateString);
     const isStartDateEarlier = Date.now() - new Date(dateString).getTime() > 86400000;
+    const todayKey = new Date().toISOString().split('T')[0];
+    if (!this.habitsByDate || typeof this.habitsByDate !== 'object') this.habitsByDate = {};
     if(!this.choosenHabits.includes(habitId)) {
        this.choosenHabits.push(habitId);
        this.choosenHabitsAchievements[habitId] = getAchievements(isNegative);
@@ -365,18 +489,19 @@ static getLastTrainingDayIndex() {
     const current = currentDate.toISOString().split('T')[0];
     if(!(current in this.habitsByDate)) {
       this.habitsByDate[current] = {};
-      this.habitsByDate[current][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 1 : 1; 
+      this.habitsByDate[current][habitId] = getHabitPerformPercent(habitId) < 100 ? 1 : 1; 
      }
      else{
-      this.habitsByDate[current][this.choosenHabits[this.choosenHabits.length - 1]] = getHabitPerformPercent(habitId) < 100 ? 1 : 1; 
+      this.habitsByDate[current][habitId] = getHabitPerformPercent(habitId) < 100 ? 1 : 1; 
      }
      currentDate.setDate(currentDate.getDate() + 1);
    }
+   if (!this.habitsByDate[todayKey]) this.habitsByDate[todayKey] = {};
    if(isNegative){
-       if(getHabitPerformPercent(habitId) < 100)this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = isStartDateEarlier ? 1 : -1;
-       else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = 1;
+       if(getHabitPerformPercent(habitId) < 100)this.habitsByDate[todayKey][habitId] = isStartDateEarlier ? 1 : -1;
+       else this.habitsByDate[todayKey][habitId] = 1;
    }
-   else this.habitsByDate[endDate.toISOString().split('T')[0]][this.choosenHabits[this.choosenHabits.length - 1]] = this.isHabitAutoComplete(habitId) || getHabitPerformPercent(habitId) >= 100 ? 1 : 0;
+   else this.habitsByDate[todayKey][habitId] = this.isHabitAutoComplete(habitId) || getHabitPerformPercent(habitId) >= 100 ? 1 : 0;
    await saveData();
   }
   static async addHabitGoal(habitId,goal){
@@ -608,10 +733,14 @@ export const logSectionVisit = async (sectionId) => {
   if (!AppData.sectionVisits[sectionId]) {
     AppData.sectionVisits[sectionId] = [];
   }
+  if (!AppData.sectionLastOpenedAt) {
+    AppData.sectionLastOpenedAt = { ...DEFAULT_SECTION_LAST_OPENED_AT };
+  }
+  AppData.sectionLastOpenedAt[sectionId] = Date.now();
   if (!AppData.sectionVisits[sectionId].includes(today)) {
     AppData.sectionVisits[sectionId].push(today);
-    await saveData();
   }
+  await saveData();
 };
 
 export const getSectionStreak = (sectionId) => {
@@ -728,10 +857,13 @@ export class Data{
     this.habitCategoryOverrides = AppData.habitCategoryOverrides;
     this.deletedDefaultHabitCategories = AppData.deletedDefaultHabitCategories;
     this.habitAccentColor = AppData.habitAccentColor;
+    this.habitAccentPresets = AppData.habitAccentPresets;
     this.choosenHabitsDaysToForm = AppData.choosenHabitsDaysToForm;
     this.notify = AppData.notify;
     this.exercises = AppData.exercises;
     this.programs = AppData.programs;
+    this.trainingAccentColor = AppData.trainingAccentColor;
+    this.trainingAccentPresets = AppData.trainingAccentPresets;
     this.trainingLog = AppData.trainingLog;
     this.pData = AppData.pData;
     this.profileOnboardingShown = AppData.profileOnboardingShown;
@@ -748,15 +880,22 @@ export class Data{
     this.breathingLog = AppData.breathingLog;
     this.meditationLog = AppData.meditationLog;
     this.hardeningLog = AppData.hardeningLog;
+    this.recoveryAccentColor = AppData.recoveryAccentColor;
+    this.recoveryAccentPresets = AppData.recoveryAccentPresets;
     this.mentalRecords = AppData.mentalRecords;
+    this.mentalAccentColor = AppData.mentalAccentColor;
+    this.mentalAccentPresets = AppData.mentalAccentPresets;
     this.sleepingLog = AppData.sleepingLog;
     this.sleepAccentColor = AppData.sleepAccentColor;
+    this.sleepAccentPresets = AppData.sleepAccentPresets;
     this.sleepIntegrations = AppData.sleepIntegrations;
     this.mentalLog = AppData.mentalLog;
 	    this.todoList = AppData.todoList;
 	    this.todoAccentColor = AppData.todoAccentColor;
+	    this.todoAccentPresets = AppData.todoAccentPresets;
 	    this.todoCustomCategories = AppData.todoCustomCategories;
     this.sectionVisits = AppData.sectionVisits;
+    this.sectionLastOpenedAt = AppData.sectionLastOpenedAt;
     this.profileFriendsExpanded = AppData.profileFriendsExpanded;
     this.todoFieldsVisibility = AppData.todoFieldsVisibility;
     this.menuCardsStates = AppData.menuCardsStates;
@@ -783,12 +922,4 @@ export function getHabitPerformPercent(habitId){
   }
   
   return Math.ceil(currentStreak / AppData.choosenHabitsDaysToForm[AppData.choosenHabits.indexOf(habitId)] * 100) ;
-}
-
-function formatDateKey(date) {
-  const d = new Date(date);
-  const y = d.getFullYear(); // LOCAL year
-  const m = String(d.getMonth() + 1).padStart(2, '0'); // LOCAL month
-  const day = String(d.getDate()).padStart(2, '0'); // LOCAL day
-  return `${y}-${m}-${day}`;
 }

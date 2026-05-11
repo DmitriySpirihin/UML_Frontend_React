@@ -1,6 +1,8 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import Colors from '../StaticClasses/Colors';
+import { AppData } from '../StaticClasses/AppData';
+import { buildSectionAccent } from '../Pages/SectionAccentSettings.jsx';
 
 export const VolumeTabs = ({ type, theme, langIndex, activeTab, onChange }) => {
   
@@ -26,19 +28,22 @@ export const VolumeTabs = ({ type, theme, langIndex, activeTab, onChange }) => {
     }
   ];
 
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'speciallight';
+  const accent = buildSectionAccent(AppData.trainingAccentColor || '#35C2FF', '#35C2FF');
 
   return (
     <div
       style={{
         display: 'flex',
         width: '94%',
-        maxWidth: '400px', // Prevent it from getting too wide on tablets
-        marginTop: 35,
-        marginBottom: 10,
+        maxWidth: '420px',
+        marginTop: 0,
+        marginBottom: 16,
         padding: '4px',
-        borderRadius: '16px', // Modern "Squircle" look
-        backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)', // Subtle track
+        borderRadius: '18px',
+        background: isLight ? 'rgba(255,255,255,0.56)' : 'rgba(255,255,255,0.055)',
+        border: `1px solid ${isLight ? 'rgba(18,24,31,0.08)' : 'rgba(255,255,255,0.10)'}`,
+        boxShadow: isLight ? '0 12px 28px rgba(20,24,28,0.08)' : '0 16px 36px rgba(0,0,0,0.24)',
         position: 'relative',
         zIndex: 1
       }}
@@ -58,9 +63,7 @@ export const VolumeTabs = ({ type, theme, langIndex, activeTab, onChange }) => {
               cursor: 'pointer',
               fontSize: '13px',
               fontWeight: isActive ? '600' : '500',
-              color: isActive 
-                ? (!isLight ? '#000000' : '#FFF') 
-                : Colors.get('subText', theme),
+              color: isActive ? accent.hue : Colors.get('subText', theme),
               transition: 'color 0.2s ease',
               userSelect: 'none',
               zIndex: 2,
@@ -70,7 +73,7 @@ export const VolumeTabs = ({ type, theme, langIndex, activeTab, onChange }) => {
           >
             {/* The Floating Active Background */}
             {isActive && (
-              <motion.div
+              <Motion.div
                 layoutId="activeTabBackground"
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 style={{
@@ -79,10 +82,11 @@ export const VolumeTabs = ({ type, theme, langIndex, activeTab, onChange }) => {
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  backgroundColor: Colors.get('iconsHighlited', theme), // Or use card background color for standard segmented look
-                  borderRadius: '12px',
+                  background: `linear-gradient(135deg, ${accent.soft}, rgba(${accent.rgb}, 0.20))`,
+                  border: `1px solid ${accent.ring}`,
+                  borderRadius: '14px',
                   zIndex: -1,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                  boxShadow: `0 8px 20px rgba(${accent.rgb}, 0.18)`
                 }}
               />
             )}
@@ -92,7 +96,7 @@ export const VolumeTabs = ({ type, theme, langIndex, activeTab, onChange }) => {
                 position: 'relative', 
                 zIndex: 2,
                 textTransform: 'capitalize', // Enforce consistent capitalization
-                color: isActive ? Colors.get('bgMain', theme) : 'inherit'
+                color: isActive ? accent.hue : 'inherit'
             }}>
                 {tab.label}
             </span>

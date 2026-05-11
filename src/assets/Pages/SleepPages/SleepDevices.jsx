@@ -20,7 +20,7 @@ const SleepDevices = () => {
   const [version, setVersion] = useState(0);
   const [syncingProvider, setSyncingProvider] = useState('');
   const [message, setMessage] = useState('');
-  const accent = buildSleepAccent(AppData.sleepAccentColor || '#6F8BD6');
+  const accent = buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF');
   const s = styles(theme, accent);
 
   useEffect(() => {
@@ -135,7 +135,7 @@ const SleepDevices = () => {
 };
 
 const ActionButton = ({ icon, text, onClick, theme, accent, disabled = false, filled = false }) => {
-  const active = accent || buildSleepAccent('#8FA6C8');
+  const active = accent || buildSleepAccent('#6F7DFF');
   const isLight = theme === 'light' || theme === 'speciallight';
   return (
     <motion.button type="button" disabled={disabled} whileTap={!disabled ? { scale: 0.96 } : {}} onClick={onClick} style={{

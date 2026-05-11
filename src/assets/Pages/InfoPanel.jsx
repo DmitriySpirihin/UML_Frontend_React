@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion as Motion, AnimatePresence } from "framer-motion";
 import Colors from "../StaticClasses/Colors";
 import {
   theme$, lang$, fontSize$, activeTab$,
@@ -12,6 +12,9 @@ import {
 } from "react-icons/fa";
 import { MdOutlineSelfImprovement } from "react-icons/md";
 import { buildSleepAccent } from "./SleepPages/SleepVisuals.js";
+import { buildTodoAccent } from "./ToDoPages/ToDoVisuals.js";
+import { buildHabitsAccent } from "./HabitsPages/HabitVisuals.jsx";
+import { buildSectionAccent } from "./SectionAccentSettings.jsx";
 
 const HEADER_TOP_PADDING = "calc(env(safe-area-inset-top, 0px) + 14px)";
 
@@ -28,18 +31,23 @@ const InfoPanel = () => {
     return () => s.unsubscribe();
   }, []);
 
-  const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || "#6F8BD6");
+  const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || "#6F7DFF");
+  const todoAccent = buildTodoAccent(AppData.todoAccentColor || "#5F8DFF");
+  const habitsAccent = buildHabitsAccent(AppData.habitAccentColor || "#39D982");
+  const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || "#A66BFF", "#A66BFF");
+  const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || "#35C2FF", "#35C2FF");
+  const recoveryAccent = buildSectionAccent(AppData.recoveryAccentColor || "#2FD6BD", "#2FD6BD");
   const menuItems = useMemo(
     () => [
       { id: "MainCard",     icon: <FaInfoCircle />,             title: lang === 0 ? "Общее"          : "General",  color: "#9FB4C4" },
-      { id: "ToDoMain",     icon: <FaListUl />,                 title: lang === 0 ? "Задачи"         : "Tasks",    color: "#8FA6C8" },
-      { id: "HabitsMain",   icon: <FaMedal />,                  title: lang === 0 ? "Привычки"       : "Habits",   color: "#7FC8B8" },
-      { id: "MentalMain",   icon: <FaBrain />,                  title: lang === 0 ? "Тренировка ума" : "Mind Training", color: "#8A7CD6" },
-      { id: "TrainingMain", icon: <FaRunning />,                title: lang === 0 ? "Дневник тренировок" : "Training Log", color: "#D8785E" },
-      { id: "RecoveryMain", icon: <MdOutlineSelfImprovement />, title: lang === 0 ? "Антистресс" : "Stress Reset", color: "#78B879" },
+      { id: "ToDoMain",     icon: <FaListUl />,                 title: lang === 0 ? "Задачи"         : "Tasks",    color: todoAccent.hue },
+      { id: "HabitsMain",   icon: <FaMedal />,                  title: lang === 0 ? "Привычки"       : "Habits",   color: habitsAccent.hue },
+      { id: "MentalMain",   icon: <FaBrain />,                  title: lang === 0 ? "Тренировка ума" : "Mind Training", color: mentalAccent.hue },
+      { id: "TrainingMain", icon: <FaRunning />,                title: lang === 0 ? "Дневник тренировок" : "Training Log", color: trainingAccent.hue },
+      { id: "RecoveryMain", icon: <MdOutlineSelfImprovement />, title: lang === 0 ? "Антистресс" : "Stress Reset", color: recoveryAccent.hue },
       { id: "SleepMain",    icon: <FaBed />,                    title: lang === 0 ? "Качество сна"   : "Sleep Quality", color: sleepAccent.hue },
     ],
-    [lang, sleepAccent.hue]
+    [lang, sleepAccent.hue, todoAccent.hue, habitsAccent.hue, mentalAccent.hue, trainingAccent.hue, recoveryAccent.hue]
   );
 
   useEffect(() => {
@@ -95,13 +103,13 @@ const InfoPanel = () => {
       {/* STICKY HEADER */}
       <div style={s.header}>
         <div style={s.topBar}>
-          <motion.button
+          <Motion.button
             style={s.backBtn}
             onClick={handleBack}
             whileTap={{ scale: 0.88 }}
           >
             <IoIosArrowBack size={22} />
-          </motion.button>
+          </Motion.button>
           <span style={s.headerTitle}>{lang === 0 ? "Как пользоваться" : "How to use"}</span>
           <div style={{ width: 40 }} />
         </div>
@@ -110,7 +118,7 @@ const InfoPanel = () => {
           {menuItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
-              <motion.div
+              <Motion.div
                 key={item.id}
                 ref={(el) => { tabRefs.current[item.id] = el; }}
                 onClick={() => setActiveTab(item.id)}
@@ -119,15 +127,15 @@ const InfoPanel = () => {
               >
                 <div style={{ fontSize: "18px", display: "flex" }}>{item.icon}</div>
                 {isActive && (
-                  <motion.span
+                  <Motion.span
                     initial={{ opacity: 0, width: 0 }}
                     animate={{ opacity: 1, width: "auto" }}
                     style={s.tabText}
                   >
                     {item.title}
-                  </motion.span>
+                  </Motion.span>
                 )}
-              </motion.div>
+              </Motion.div>
             );
           })}
         </div>
@@ -136,7 +144,7 @@ const InfoPanel = () => {
       {/* CONTENT */}
       <div style={s.contentWrap}>
         <AnimatePresence mode="wait">
-          <motion.div
+          <Motion.div
             key={activeTab}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -145,13 +153,13 @@ const InfoPanel = () => {
             style={s.contentContainer}
           >
             {/* COACH ROW */}
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.22 }}
               style={s.coachRow}
             >
-              <motion.img
+              <Motion.img
                 key={currentGuideImg}
                 src={currentGuideImg}
                 alt="Guide"
@@ -164,13 +172,13 @@ const InfoPanel = () => {
                 <div style={s.speechText}>{getCoachText(lang, activeTab)}</div>
                 <div style={s.speechTail} />
               </div>
-            </motion.div>
+            </Motion.div>
 
             {/* HTML INSTRUCTION */}
             <div style={s.htmlContent} dangerouslySetInnerHTML={{ __html: htmlContent }} />
 
             {/* GO TO SECTION */}
-            <motion.button
+            <Motion.button
               style={s.goToBtn(accent)}
               onClick={() => setPage(getGoToPage(activeTab))}
               whileTap={{ scale: 0.96 }}
@@ -178,8 +186,8 @@ const InfoPanel = () => {
             >
               <span>{getGoToLabel(lang, activeTab)}</span>
               <IoIosArrowForward size={18} />
-            </motion.button>
-          </motion.div>
+            </Motion.button>
+          </Motion.div>
         </AnimatePresence>
       </div>
     </div>
@@ -781,7 +789,6 @@ function getHtmlCss(theme) {
   const sub    = isDark ? "#A6ADB8" : "#596273";
   const border = isDark ? "rgba(255,255,255,0.08)" : "rgba(15,23,42,0.08)";
   const panel  = isDark ? "rgba(24,28,31,0.82)" : "rgba(255,255,255,0.84)";
-  const panelStrong = isDark ? "rgba(20,23,25,0.94)" : "rgba(255,255,255,0.96)";
   const stepBg = isDark ? "rgba(255,255,255,0.036)" : "rgba(15,23,42,0.025)";
   const iconCol = isDark ? "rgba(242,243,245,0.82)" : "rgba(17,24,39,0.72)";
 

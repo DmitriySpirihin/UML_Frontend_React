@@ -1,259 +1,773 @@
-import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion';
-import { AppData } from '../../StaticClasses/AppData.js'
-import { logSectionVisit } from '../../StaticClasses/AppData.js'
-import Colors from '../../StaticClasses/Colors'
-import { theme$, lang$, fontSize$, setPage, setRecoveryType } from '../../StaticClasses/HabitsBus'
-import {  FaChevronRight } from 'react-icons/fa'
+import React, { useState, useEffect } from 'react';
+import { motion as Motion } from 'framer-motion';
+import {
+    FaChevronRight,
+    FaWind,
+    FaSpa,
+    FaSnowflake,
+    FaLeaf,
+    FaCheckCircle,
+    FaChartLine,
+    FaPalette,
+} from 'react-icons/fa';
+import { AppData, logSectionVisit } from '../../StaticClasses/AppData.js';
+import Colors from '../../StaticClasses/Colors';
+import { theme$, lang$, fontSize$, setPage, setRecoveryType, emitSectionAccentChanged } from '../../StaticClasses/HabitsBus';
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
+import SectionAccentSettings, { POSITIVE_ACCENT_PRESETS, buildSectionAccent } from '../SectionAccentSettings.jsx';
+import { saveData } from '../../StaticClasses/SaveHelper.js';
+
+const RECOVERY_ACCENT = '#2FD6BD';
+
+const RECOVERY_ITEMS = [
+    {
+        id: 0,
+        Icon: FaWind,
+        tone: '#7ee6d2',
+        rgb: '126, 230, 210',
+        ru: {
+            kicker: 'Дыхание',
+            title: 'Дыхание',
+            subtitle: 'Практики для сна, спокойствия и быстрого сброса напряжения',
+            cta: 'Начать практику',
+        },
+        en: {
+            kicker: 'Breath',
+            title: 'Breathing',
+            subtitle: 'Sleep, calm, and fast downshift practices',
+            cta: 'Start practice',
+        },
+    },
+    {
+        id: 1,
+        Icon: FaSpa,
+        tone: '#8FA6C8',
+        rgb: '143, 166, 200',
+        ru: {
+            kicker: 'Фокус',
+            title: 'Медитация',
+            subtitle: 'Фокус, пауза и ровное внимание без перегруза',
+            cta: 'Выбрать сеанс',
+        },
+        en: {
+            kicker: 'Mindful',
+            title: 'Meditation',
+            subtitle: 'Focus, pause, and steady attention without overload',
+            cta: 'Choose session',
+        },
+    },
+    {
+        id: 2,
+        Icon: FaSnowflake,
+        tone: '#69d6f0',
+        rgb: '105, 214, 240',
+        ru: {
+            kicker: 'Холод',
+            title: 'Закаливание',
+            subtitle: 'Мягкая адаптация, энергия и устойчивость тела',
+            cta: 'Открыть план',
+        },
+        en: {
+            kicker: 'Cold',
+            title: 'Cold exposure',
+            subtitle: 'Gentle adaptation, energy, and body resilience',
+            cta: 'Open plan',
+        },
+    },
+];
 
 const RecoveryMain = () => {
-    // states
-    const [theme, setthemeState] = useState('dark');
+    const [theme, setThemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setFSize] = useState(AppData.prefs[4]);
+    const [showAccentSettings, setShowAccentSettings] = useState(false);
+    const [accentColor, setAccentColor] = useState(buildSectionAccent(AppData.recoveryAccentColor || RECOVERY_ACCENT, RECOVERY_ACCENT).hue);
+    const [, setAccentPresetVersion] = useState(0);
 
-    // subscriptions
     useEffect(() => {
-        const subscription = theme$.subscribe(setthemeState);
-        const subscription2 = lang$.subscribe((lang) => {
-            setLangIndex(lang === 'ru' ? 0 : 1);
-        });
-        const subscription3 = fontSize$.subscribe((fontSize) => {
-            setFSize(fontSize);
-        });
-        return () => {
-            subscription.unsubscribe();
-            subscription2.unsubscribe();
-            subscription3.unsubscribe();
-        }
+        const subs = [
+            theme$.subscribe(setThemeState),
+            lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1)),
+            fontSize$.subscribe(setFSize),
+        ];
+        return () => subs.forEach((subscription) => subscription.unsubscribe());
     }, []);
 
-    useEffect(() => { logSectionVisit('recovery'); }, []);
+    useEffect(() => {
+        logSectionVisit('recovery');
+    }, []);
 
-    const menuItems = [
-        {
-            id: 0,
-            icon: '🌬️',
-            title: langIndex === 0 ? 'Дыхание' : 'Breathing',
-            subtitle: langIndex === 0 ? 'Практики для сна и спокойствия' : 'Exercises for sleep & calm',
-            color: '#4DFF88', // Green
-            action: () => { setPage('RecoveryBreath'); setRecoveryType(0); }
-        },
-        {
-            id: 1,
-            icon: '🧘',
-            title: langIndex === 0 ? 'Медитация' : 'Meditation',
-            subtitle: langIndex === 0 ? 'Концентрация и осознанность' : 'Focus & Mindfulness',
-            color: '#A64DFF', // Purple
-            action: () => { setPage('RecoveryBreath'); setRecoveryType(1); }
-        },
-        {
-            id: 2,
-            icon: '💧',
-            title: langIndex === 0 ? 'Закаливание' : 'Cold Exposure',
-            subtitle: langIndex === 0 ? 'Иммунитет и энергия' : 'Immunity & Energy',
-            color: '#00E5FF', // Cyan
-            action: () => { setPage('RecoveryBreath'); setRecoveryType(2); }
-        }
-    ];
+    const progressByType = RECOVERY_ITEMS.map((item) => getRecoveryProgress(item.id));
+    const summary = getRecoverySummary(progressByType);
+    const isRu = langIndex === 0;
+    const s = styles(theme, fSize);
+    const activeAccent = accentColor;
+    const changeAccentColor = async (color) => {
+        const next = buildSectionAccent(color, RECOVERY_ACCENT).hue;
+        AppData.recoveryAccentColor = next;
+        setAccentColor(next);
+        await saveData();
+        emitSectionAccentChanged();
+    };
+    const saveAccentPreset = async () => {
+        await AppData.addAccentPreset('recovery', accentColor, POSITIVE_ACCENT_PRESETS);
+        setAccentPresetVersion(version => version + 1);
+    };
 
     const containerAnim = {
         hidden: { opacity: 0 },
-        show: { opacity: 1, transition: { staggerChildren: 0.09 } }
+        show: { opacity: 1, transition: { staggerChildren: 0.08 } },
     };
 
     const itemAnim = {
-        hidden: { opacity: 0, y: 15, scale: 0.98 },
-        show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 25 } }
+        hidden: { opacity: 0, y: 16, scale: 0.98 },
+        show: {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            transition: { type: 'spring', stiffness: 320, damping: 28 },
+        },
     };
 
     return (
-        <div style={styles(theme).container}>
-            {<HoverInfoButton tab='RecoveryMain'/>}
-            <div style={{ height: '16vh' }} /> 
-            
-            <div style={styles(theme).scrollView}>
-                
-                <motion.div
-                    variants={containerAnim}
-                    initial="hidden"
-                    animate="show"
-                    style={styles(theme).grid}
+        <div style={s.container}>
+            <SectionAccentSettings
+                show={showAccentSettings}
+                onClose={() => setShowAccentSettings(false)}
+                theme={theme}
+                langIndex={langIndex}
+                title={isRu ? 'Акцент антистресса' : 'Stress reset accent'}
+                subtitle={isRu ? 'Цвет практик, прогресса и нижнего меню' : 'Practices, progress, and bottom navigation color'}
+                accentColor={accentColor}
+                fallbackColor={RECOVERY_ACCENT}
+                customPresets={AppData.recoveryAccentPresets}
+                onAccentChange={changeAccentColor}
+                onSavePreset={saveAccentPreset}
+            />
+            <HoverInfoButton tab="RecoveryMain" variant="subtle" accent={activeAccent} />
+
+            <div style={s.scrollView} className="no-scrollbar">
+                <div style={s.pageHeader}>
+                    <div style={s.pageHeaderSpacer} />
+                    <div style={s.pageHeaderBrand}>
+                        <div style={s.pageTitle}>UltyMyLife</div>
+                        <div style={s.pageSubtitle}>
+                            {isRu ? 'Восстановление — часть роста' : 'Recovery is where growth happens'}
+                        </div>
+                    </div>
+                    <Motion.button
+                        type="button"
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setShowAccentSettings(true)}
+                        style={s.headerAccentButton}
+                    >
+                        <FaPalette size={12} />
+                        <span>{isRu ? 'Акцент' : 'Accent'}</span>
+                        <span style={s.actionColorDot} />
+                    </Motion.button>
+                </div>
+
+                <Motion.section
+                    initial={{ opacity: 0, y: 16, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+                    style={s.hero}
                 >
-                    
-                    {menuItems.map((item, index) => (
-                        <MenuCard
+                    <div style={s.heroGlow} />
+                    <div style={s.heroCopy}>
+                        <div style={s.eyebrow}>{isRu ? 'АНТИСТРЕСС' : 'STRESS RESET'}</div>
+                        <h1 style={s.heroTitle}>{isRu ? 'Восстановление' : 'Recovery'}</h1>
+
+                        <div style={s.heroStats}>
+                            <HeroStat
+                                theme={theme}
+                                icon={<FaLeaf />}
+                                label={isRu ? 'режима' : 'modes'}
+                                value={RECOVERY_ITEMS.length}
+                            />
+                            <HeroStat
+                                theme={theme}
+                                icon={<FaCheckCircle />}
+                                label={isRu ? 'готово' : 'done'}
+                                value={summary.done}
+                            />
+                            <HeroStat
+                                theme={theme}
+                                icon={<FaChartLine />}
+                                label={isRu ? 'прогресс' : 'progress'}
+                                value={`${summary.percent}%`}
+                            />
+                        </div>
+                    </div>
+
+                    <img style={s.heroImage} src="images/bro_meditating.png" alt="" />
+                </Motion.section>
+
+                <div style={s.sectionHeader}>
+                    <div>
+                        <h2 style={s.sectionTitle}>{isRu ? 'Практики' : 'Practices'}</h2>
+                    </div>
+                    <div style={s.summaryPill}>
+                        <span>{summary.done}</span>
+                        <span style={s.summaryMuted}>/ {summary.total}</span>
+                    </div>
+                </div>
+
+                <Motion.div variants={containerAnim} initial="hidden" animate="show" style={s.grid}>
+                    {RECOVERY_ITEMS.map((item, index) => (
+                        <RecoveryCard
                             key={item.id}
                             item={item}
                             theme={theme}
-                            variants={itemAnim}
                             fSize={fSize}
-                            info={getDaylyFinishedExercises(index)}
+                            isRu={isRu}
+                            variants={itemAnim}
+                            progress={progressByType[index]}
                         />
                     ))}
-                </motion.div>
-                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{width: '54px', height: '154px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '35% 25% 15% auto'}}>
-                                            <img style={{ width: '18vh' }} src={'images/Meditate.png'} alt="logo" />
-                                        </motion.div>
-                
-                <div style={{ height: '10vh', width: '100%' }} />
+                </Motion.div>
+
+                <div style={s.bottomSpace} />
             </div>
         </div>
-    )
-}
+    );
+};
 
-function MenuCard({ item, theme, variants, fSize, info }) {
-    const isDark = theme === 'dark';
-
-    const cardStyle = {
-        position: 'relative',
-        width: '100%',
-        height: '80px',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 20px',
-        boxSizing: 'border-box',
-        borderRadius: '24px',
-        overflow: 'hidden',
-        marginBottom: '12px',
-        // Exact styling match from MainMenu
-        backgroundColor: isDark 
-            ? Colors.get('simplePanel', theme) + '99' 
-            : '#FFFFFF',
-        backdropFilter: isDark ? 'blur(40px)' : 'none',
-        border: `1px solid ${isDark ? Colors.get('border', theme) + '30' : '#E5E7EB'}`,
-        boxShadow: isDark 
-            ? '0 8px 20px 0 rgba(0, 0, 0, 0.4), inset 0 1px 1px 0 rgba(255, 255, 255, 0.1)' 
-            : '0 4px 10px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)',
-    };
-
-    const iconWrapperStyle = {
-        width: '48px',
-        height: '48px',
-        borderRadius: '16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: '16px',
-        flexShrink: 0,
-        fontSize:'28px',
-        backgroundColor: isDark 
-            ? Colors.get('background', theme) + '80' 
-            : Colors.get('background', theme),
-        color: item.color,
-        border: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,0,0,0.03)'
-    };
-
+function HeroStat({ theme, icon, label, value }) {
     return (
-        <motion.div
-            variants={variants}
-            whileTap={{ scale: 0.97 }}
-            onClick={item.action}
-            style={cardStyle}
-        >
-            <div style={iconWrapperStyle}>
-                {item.icon}
+        <div style={styles(theme).heroStat}>
+            <div style={styles(theme).heroStatIcon}>{icon}</div>
+            <div style={styles(theme).heroStatCopy}>
+                <div style={styles(theme).heroStatValue}>{value}</div>
+                <div style={styles(theme).heroStatLabel}>{label}</div>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flexGrow: 1, overflow: 'hidden' }}>
-                <h4 style={{ 
-                    ...styles(theme, fSize).title, 
-                    color: Colors.get('mainText', theme), 
-                    margin: 0, 
-                    fontWeight: isDark ? '900' : '700' 
-                }}>
-                    {item.title}
-                </h4>
-                <div style={{ 
-                    ...styles(theme, fSize).subtitle, 
-                    color: Colors.get('subText', theme), 
-                    opacity: isDark ? 0.6 : 0.8,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis'
-                }}>
-                    {item.subtitle}
-                </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', marginLeft: '8px' }}>
-                {info && (
-                    <div style={{
-                        padding: '4px 10px',
-                        backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
-                        borderRadius: '12px',
-                        fontSize: '13px',
-                        fontWeight: '700',
-                        color: Colors.get('perfect', theme),
-                        marginRight: '8px'
-                    }}>
-                        {info}
-                    </div>
-                )}
-                <FaChevronRight size={14} color={Colors.get('subText', theme)} style={{ opacity: 0.3 }} />
-            </div>
-        </motion.div>
+        </div>
     );
 }
 
-export default RecoveryMain
+function RecoveryCard({ item, theme, fSize, isRu, variants, progress }) {
+    const text = isRu ? item.ru : item.en;
+    const Icon = item.Icon;
+    const s = styles(theme, fSize, item);
 
-const getDaylyFinishedExercises = (index) => {
-    const data = AppData.recoveryProtocols[index];
-    let allSessions = 0;
-    let doneSessions = 0;
-    if (!data) return '';
-    
-    for (let i = 0; i < data.length; i++) {
-        const protocol = data[i];
-        for (let j = 0; j < protocol.length; j++) {
-            const levels = protocol[j];
-            levels.forEach(el => {
-                allSessions++;
-                if (el === true) doneSessions++;
-            });
-        }
-    }
-    return doneSessions + '/' + allSessions;
+    return (
+        <Motion.button
+            type="button"
+            variants={variants}
+            whileTap={{ scale: 0.985 }}
+            onClick={() => {
+                setRecoveryType(item.id);
+                setPage('RecoveryBreath');
+            }}
+            style={s.card}
+        >
+            <div style={s.cardIcon}>
+                <Icon />
+            </div>
+
+            <div style={s.cardBody}>
+                <div style={s.cardTop}>
+                    <div style={s.cardTextBlock}>
+                        <h3 style={s.cardTitle}>{text.title}</h3>
+                    </div>
+                    <div style={s.cardProgressPill}>
+                        <span>{progress.done}</span>
+                        <span style={s.cardProgressMuted}>/ {progress.total}</span>
+                    </div>
+                </div>
+
+                <div style={s.cardBottom}>
+                    <div style={s.progressTrack}>
+                        <div style={{ ...s.progressFill, width: `${Math.round(progress.ratio * 100)}%` }} />
+                    </div>
+                </div>
+            </div>
+
+            <FaChevronRight style={s.chevron} />
+        </Motion.button>
+    );
 }
 
-const styles = (theme, fontSize) => ({
-    container: {
-        backgroundColor: Colors.get('background', theme),
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "start",
-        alignItems: "center",
-        height: "100vh",
-        width: "100vw",
-        fontFamily: "Segoe UI",
-        overflow: 'hidden'
-    },
-    scrollView: {
-        width: "100vw",
-        maxHeight: "90vh",
-        overflowY: "scroll",
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center'
-    },
-    grid: {
-        width: '92%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-        marginTop: '15px'
-    },
-    title: {
-        fontFamily: 'Segoe UI',
-        fontSize: fontSize === 0 ? '19px' : '21px',
-        letterSpacing: '0.2px'
-    },
-    subtitle: {
-        fontFamily: 'Segoe UI',
-        fontWeight: '500',
-        fontSize: fontSize === 0 ? '12px' : '14px',
-        marginTop: '2px'
+const getRecoveryProgress = (index) => {
+    const data = AppData.recoveryProtocols?.[index];
+    let total = 0;
+    let done = 0;
+
+    if (!Array.isArray(data)) {
+        return { done, total, ratio: 0 };
     }
-})
+
+    data.forEach((category) => {
+        category?.forEach((protocol) => {
+            protocol?.forEach((session) => {
+                total += 1;
+                if (session === true) done += 1;
+            });
+        });
+    });
+
+    return {
+        done,
+        total,
+        ratio: total > 0 ? done / total : 0,
+    };
+};
+
+const getRecoverySummary = (items) => {
+    const done = items.reduce((sum, item) => sum + item.done, 0);
+    const total = items.reduce((sum, item) => sum + item.total, 0);
+    return {
+        done,
+        total,
+        percent: total > 0 ? Math.round((done / total) * 100) : 0,
+    };
+};
+
+const styles = (theme, fontSize = 0, item = null) => {
+    const isDark = theme === 'dark';
+    const mainText = Colors.get('mainText', theme);
+    const subText = Colors.get('subText', theme);
+    const background = Colors.get('background', theme);
+    const border = Colors.get('border', theme);
+    const recoveryAccent = buildSectionAccent(AppData.recoveryAccentColor || RECOVERY_ACCENT, RECOVERY_ACCENT);
+    const tone = item?.tone || recoveryAccent.hue;
+    const rgb = item?.rgb || recoveryAccent.rgb;
+
+    return {
+        container: {
+            width: '100vw',
+            height: '100vh',
+            overflow: 'hidden',
+            background:
+                isDark
+                    ? `radial-gradient(640px 420px at 86% -8%, rgba(${recoveryAccent.rgb},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${recoveryAccent.rgb},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${background} 46%, #10161A 100%)`
+                    : `radial-gradient(640px 420px at 86% -8%, rgba(${recoveryAccent.rgb},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${recoveryAccent.rgb},0.1), transparent 66%), ${background}`,
+            color: mainText,
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        },
+        scrollView: {
+            width: '100vw',
+            height: '100vh',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '24px 4.5vw 140px',
+            boxSizing: 'border-box',
+        },
+        pageHeader: {
+            width: '100%',
+            maxWidth: '560px',
+            display: 'grid',
+            gridTemplateColumns: '96px minmax(0, 1fr) 96px',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            padding: '8px 0 16px',
+            boxSizing: 'border-box',
+        },
+        pageHeaderSpacer: { width: '96px', height: '38px' },
+        pageHeaderBrand: { minWidth: 0, textAlign: 'center' },
+        headerAccentButton: {
+            minWidth: 0,
+            height: '38px',
+            borderRadius: '999px',
+            border: `1px solid ${recoveryAccent.ring}`,
+            background: recoveryAccent.soft,
+            color: recoveryAccent.hue,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            justifySelf: 'end',
+            gap: '6px',
+            fontSize: '12px',
+            fontWeight: 900,
+            fontFamily: 'inherit',
+            padding: '0 11px',
+            whiteSpace: 'nowrap',
+            cursor: 'pointer',
+        },
+        actionColorDot: {
+            width: '8px',
+            height: '8px',
+            borderRadius: '99px',
+            background: recoveryAccent.hue,
+            boxShadow: `0 0 12px ${recoveryAccent.glow}`,
+            flexShrink: 0,
+        },
+        pageTitle: {
+            color: mainText,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: fontSize === 0 ? '25px' : '27px',
+            fontWeight: 700,
+            letterSpacing: 0,
+            lineHeight: 1.05,
+            opacity: 0.9,
+        },
+        pageSubtitle: {
+            marginTop: '6px',
+            color: subText,
+            fontSize: fontSize === 0 ? '10px' : '11px',
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            lineHeight: 1.3,
+        },
+        hero: {
+            position: 'relative',
+            width: '100%',
+            maxWidth: '560px',
+            minHeight: '156px',
+            padding: '18px 18px 16px',
+            borderRadius: '30px',
+            overflow: 'hidden',
+            boxSizing: 'border-box',
+            background:
+                isDark
+                    ? 'linear-gradient(135deg, rgba(25, 34, 35, 0.94), rgba(21, 24, 28, 0.92) 54%, rgba(41, 36, 58, 0.88))'
+                    : 'linear-gradient(135deg, #ffffff, #eef8f5)',
+            border: `1px solid ${recoveryAccent.ring}`,
+            boxShadow: isDark
+                ? '0 24px 70px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255,255,255,0.08)'
+                : '0 18px 44px rgba(15, 23, 42, 0.08)',
+        },
+        heroGlow: {
+            position: 'absolute',
+            inset: 0,
+            background:
+                `radial-gradient(circle at 78% 24%, ${recoveryAccent.glow}, transparent 34%), radial-gradient(circle at 30% 115%, rgba(180, 139, 200, 0.1), transparent 44%)`,
+            pointerEvents: 'none',
+        },
+        heroCopy: {
+            position: 'relative',
+            zIndex: 1,
+            width: 'calc(100% - min(30vw, 132px))',
+            minWidth: '210px',
+        },
+        eyebrow: {
+            marginBottom: '5px',
+            color: recoveryAccent.hue,
+            fontSize: fontSize === 0 ? '11px' : '12px',
+            fontWeight: 900,
+            letterSpacing: '0.18em',
+        },
+        heroTitle: {
+            margin: 0,
+            color: mainText,
+            fontSize: fontSize === 0 ? '28px' : '31px',
+            lineHeight: 1.04,
+            fontWeight: 900,
+            letterSpacing: 0,
+        },
+        heroText: {
+            margin: '8px 0 13px',
+            maxWidth: '340px',
+            color: subText,
+            fontSize: fontSize === 0 ? '15px' : '16px',
+            lineHeight: 1.35,
+            fontWeight: 700,
+        },
+        heroStats: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: '6px',
+            width: '100%',
+            maxWidth: '258px',
+            marginTop: '14px',
+        },
+        heroStat: {
+            minHeight: '46px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '3px',
+            padding: '5px 4px',
+            boxSizing: 'border-box',
+            borderRadius: '15px',
+            backgroundColor: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.74)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)'}`,
+        },
+        heroStatIcon: {
+            display: 'flex',
+            color: recoveryAccent.hue,
+            fontSize: '12px',
+            flexShrink: 0,
+        },
+        heroStatCopy: {
+            alignItems: 'center',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1px',
+        },
+        heroStatLabel: {
+            color: subText,
+            fontSize: '8px',
+            fontWeight: 800,
+            lineHeight: 1.05,
+            textTransform: 'uppercase',
+            letterSpacing: 0,
+            whiteSpace: 'nowrap',
+            maxWidth: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+        },
+        heroStatValue: {
+            color: mainText,
+            fontSize: '15px',
+            fontWeight: 900,
+            lineHeight: 1.05,
+        },
+        heroImage: {
+            position: 'absolute',
+            right: '-2px',
+            top: '50%',
+            transform: 'translateY(-42%)',
+            width: 'min(30vw, 132px)',
+            maxHeight: '144px',
+            objectFit: 'contain',
+            filter: 'drop-shadow(0 20px 32px rgba(0,0,0,0.45))',
+            opacity: isDark ? 0.96 : 0.9,
+            pointerEvents: 'none',
+            WebkitMaskImage: 'radial-gradient(circle at 50% 52%, #000 0 58%, transparent 76%)',
+            maskImage: 'radial-gradient(circle at 50% 52%, #000 0 58%, transparent 76%)',
+        },
+        sectionHeader: {
+            width: '100%',
+            maxWidth: '560px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '14px',
+            margin: '14px 0 10px',
+        },
+        sectionTitle: {
+            margin: 0,
+            color: mainText,
+            fontSize: fontSize === 0 ? '21px' : '23px',
+            fontWeight: 900,
+            lineHeight: 1.1,
+            letterSpacing: 0,
+        },
+        summaryPill: {
+            minWidth: '76px',
+            minHeight: '36px',
+            padding: '0 12px',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: recoveryAccent.hue,
+            fontSize: '16px',
+            fontWeight: 900,
+            backgroundColor: recoveryAccent.soft,
+            border: `1px solid ${recoveryAccent.ring}`,
+        },
+        summaryMuted: {
+            color: subText,
+            marginLeft: '4px',
+            fontSize: '13px',
+        },
+        grid: {
+            width: '100%',
+            maxWidth: '560px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px',
+        },
+        card: {
+            position: 'relative',
+            width: '100%',
+            minHeight: '78px',
+            display: 'flex',
+            alignItems: 'stretch',
+            gap: '14px',
+            padding: '11px 14px',
+            borderRadius: '24px',
+            border: `1px solid rgba(${rgb}, ${isDark ? 0.27 : 0.34})`,
+            background:
+                isDark
+                    ? `linear-gradient(135deg, rgba(${rgb}, 0.12), rgba(26, 29, 33, 0.9) 38%, rgba(16, 18, 22, 0.92))`
+                    : `linear-gradient(135deg, rgba(${rgb}, 0.18), rgba(255,255,255,0.94))`,
+            boxShadow: isDark
+                ? `0 18px 45px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.07)`
+                : '0 12px 28px rgba(15,23,42,0.08)',
+            boxSizing: 'border-box',
+            color: mainText,
+            appearance: 'none',
+            outline: 'none',
+            cursor: 'pointer',
+            textAlign: 'left',
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        },
+        cardIcon: {
+            width: '46px',
+            height: '46px',
+            borderRadius: '17px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            marginTop: '2px',
+            color: tone,
+            fontSize: '21px',
+            backgroundColor: isDark ? `rgba(${rgb}, 0.13)` : `rgba(${rgb}, 0.2)`,
+            border: `1px solid rgba(${rgb}, ${isDark ? 0.3 : 0.42})`,
+            boxShadow: `0 0 22px rgba(${rgb}, ${isDark ? 0.09 : 0.13})`,
+        },
+        cardBody: {
+            minWidth: 0,
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '8px',
+        },
+        cardTop: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '10px',
+            minWidth: 0,
+        },
+        cardTextBlock: {
+            minWidth: 0,
+            flex: 1,
+        },
+        cardKicker: {
+            color: tone,
+            fontSize: '11px',
+            fontWeight: 900,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            lineHeight: 1.15,
+        },
+        cardTitle: {
+            margin: 0,
+            color: mainText,
+            fontSize: fontSize === 0 ? '19px' : '21px',
+            lineHeight: 1.08,
+            fontWeight: 900,
+            letterSpacing: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+        },
+        cardSubtitle: {
+            margin: '4px 0 0',
+            color: subText,
+            fontSize: fontSize === 0 ? '13px' : '14px',
+            lineHeight: 1.25,
+            fontWeight: 700,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+        },
+        cardProgressPill: {
+            minWidth: '62px',
+            minHeight: '32px',
+            padding: '0 10px',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: tone,
+            fontSize: '14px',
+            fontWeight: 900,
+            backgroundColor: isDark ? `rgba(${rgb}, 0.1)` : `rgba(${rgb}, 0.18)`,
+            border: `1px solid rgba(${rgb}, ${isDark ? 0.23 : 0.36})`,
+            flexShrink: 0,
+        },
+        cardProgressMuted: {
+            marginLeft: '2px',
+            color: subText,
+            fontSize: '12px',
+            fontWeight: 800,
+        },
+        cardBottom: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+        },
+        progressTrack: {
+            position: 'relative',
+            height: '7px',
+            flex: 1,
+            overflow: 'hidden',
+            borderRadius: '999px',
+            backgroundColor: isDark ? 'rgba(255,255,255,0.075)' : 'rgba(15,23,42,0.09)',
+        },
+        progressFill: {
+            position: 'absolute',
+            inset: '0 auto 0 0',
+            minWidth: '8px',
+            borderRadius: '999px',
+            background: `linear-gradient(90deg, ${tone}, rgba(${rgb}, 0.56))`,
+            boxShadow: `0 0 18px rgba(${rgb}, 0.32)`,
+        },
+        cardCta: {
+            color: subText,
+            fontSize: '11px',
+            fontWeight: 900,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+        },
+        chevron: {
+            alignSelf: 'center',
+            color: subText,
+            opacity: 0.5,
+            fontSize: '15px',
+            flexShrink: 0,
+        },
+        insightPanel: {
+            width: '100%',
+            maxWidth: '560px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            marginTop: '12px',
+            padding: '12px 15px',
+            boxSizing: 'border-box',
+            borderRadius: '24px',
+            backgroundColor: isDark ? 'rgba(26, 29, 33, 0.42)' : 'rgba(255,255,255,0.62)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : border}`,
+            boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.035)' : '0 10px 24px rgba(15,23,42,0.05)',
+        },
+        insightIcon: {
+            width: '44px',
+            height: '44px',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            color: recoveryAccent.hue,
+            backgroundColor: recoveryAccent.soft,
+            border: `1px solid ${recoveryAccent.ring}`,
+        },
+        insightCopy: {
+            minWidth: 0,
+        },
+        insightTitle: {
+            color: mainText,
+            fontSize: fontSize === 0 ? '15px' : '16px',
+            fontWeight: 900,
+            lineHeight: 1.15,
+        },
+        insightText: {
+            marginTop: '4px',
+            color: subText,
+            fontSize: fontSize === 0 ? '12px' : '13px',
+            lineHeight: 1.35,
+            fontWeight: 700,
+        },
+        bottomSpace: {
+            height: '2vh',
+            minHeight: '24px',
+        },
+    };
+};
+
+export default RecoveryMain;

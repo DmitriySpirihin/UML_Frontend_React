@@ -90,16 +90,10 @@ export function findPreviousSimilarExercise(exId, setIndex, beforeDate, training
 
   return bestMatch; // null if none found
 }
-export async function addNewSession(date, programId, dayIndex) {
-  const program = AppData.programs[programId];
-  if (!program || !program.schedule[dayIndex]) {
-    console.error('Invalid program or dayIndex');
-    return false;
-  }
+const buildGymExerciseState = (exercisePlan = []) => {
   const exercises = {};
   const exerciseOrder = [];
-  program.schedule[dayIndex].exercises.forEach(ex => {
-    // ✅ DIRECT ACCESS — NOT .find()
+  exercisePlan.forEach(ex => {
     const exercise = AppData.exercises[ex.exId];
     if (!exercise) {
       console.warn(`Exercise ${ex.exId} not found in AppData.exercises`);
@@ -113,6 +107,16 @@ export async function addNewSession(date, programId, dayIndex) {
     };
     exerciseOrder.push(ex.exId);
   });
+  return { exercises, exerciseOrder };
+};
+
+export async function addNewSession(date, programId, dayIndex) {
+  const program = AppData.programs[programId];
+  if (!program || !program.schedule[dayIndex]) {
+    console.error('Invalid program or dayIndex');
+    return false;
+  }
+  const { exercises, exerciseOrder } = buildGymExerciseState(program.schedule[dayIndex].exercises);
 
   const dateKey = formatDateKey(date);
   const newSession = {
@@ -135,6 +139,32 @@ export async function addNewSession(date, programId, dayIndex) {
   }
   AppData.trainingLog[dateKey].push(newSession);
   await saveData();
+}
+
+export async function addFreeGymSession(date = new Date()) {
+  const dateKey = formatDateKey(date);
+  const newSession = {
+    type: 'GYM',
+    programId: null,
+    dayIndex: null,
+    isFree: true,
+    completed: false,
+    startTime: Date.now(),
+    endTime: null,
+    duration: 0,
+    tonnage: 0,
+    exercises: {},
+    RPE: null,
+    note: '',
+    exerciseOrder: []
+  };
+
+  if (!AppData.trainingLog[dateKey]) {
+    AppData.trainingLog[dateKey] = [];
+  }
+  AppData.trainingLog[dateKey].push(newSession);
+  await saveData();
+  return true;
 }
 export async function redactRPEandNote(date,sessionIndex,rpe,note){
    const dateKey = formatDateKey(date);
@@ -281,6 +311,9 @@ export async function addExerciseToSession(date, sessionIndex, exerciseId) {
     totalTonnage: 0,
     completed: false
   };
+  if (!Array.isArray(session.exerciseOrder)) {
+    session.exerciseOrder = [];
+  }
   session.exerciseOrder.push(exerciseId);
   await saveData();
   return true;
@@ -300,7 +333,7 @@ export async function removeExerciseFromSession(date, sessionIndex, exerciseId) 
 
   // 3. Remove from exerciseOrder array (if exists)
   if (session.exerciseOrder) {
-    session.exerciseOrder = session.exerciseOrder.filter(id => id !== exerciseId);
+    session.exerciseOrder = session.exerciseOrder.filter(id => String(id) !== String(exerciseId));
   }
   await saveData();
   return true;

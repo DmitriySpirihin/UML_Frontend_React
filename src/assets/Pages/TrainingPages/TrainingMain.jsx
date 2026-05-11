@@ -1,18 +1,20 @@
 import React, {useState, useEffect, useRef, useMemo} from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import { logSectionVisit } from '../../StaticClasses/AppData.js'
 import { playEffects } from '../../StaticClasses/Effects.js'
 import Colors from '../../StaticClasses/Colors'
-import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel,addNewTrainingDay$} from '../../StaticClasses/HabitsBus'
-import {addNewSession, addPreviousSession, deleteSession, addCardioSession} from '../../StaticClasses/TrainingLogHelper.js'
-import { FaTrash , FaRunning , FaSwimmer, FaBicycle} from "react-icons/fa"
+import { theme$ ,lang$,fontSize$,setPage,setTrainInfo,setShowPopUpPanel,addNewTrainingDay$, emitSectionAccentChanged} from '../../StaticClasses/HabitsBus'
+import {addFreeGymSession, addNewSession, addPreviousSession, deleteSession} from '../../StaticClasses/TrainingLogHelper.js'
+import { FaTrash , FaRunning , FaSwimmer, FaBicycle, FaPalette} from "react-icons/fa"
 import { FaList } from "react-icons/fa6"
 import {MdClose,MdDone, MdAccessTime,MdFitnessCenter} from 'react-icons/md'
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx'
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx'
-import { cardioType$, trainInfo$ } from './TrainingCardio'; // Only import cardioType$ for navigation
+import SectionAccentSettings, { POSITIVE_ACCENT_PRESETS, buildSectionAccent } from '../SectionAccentSettings.jsx'
+import { saveData } from '../../StaticClasses/SaveHelper.js'
+import { cardioType$, trainInfo$ } from './TrainingCardioBus.js';
 
 // --- HELPERS ---
 const formatDateKey = (d) => {
@@ -23,6 +25,7 @@ const formatDateKey = (d) => {
 };
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
 const clickSound = new Audio('Audio/Click.wav');
+const TRAINING_ACCENT = '#35C2FF';
 
 // Range Helpers (only needed for GYM time pickers)
 const hoursRange = Array.from({ length: 24 }, (_, i) => i);
@@ -52,12 +55,14 @@ const TrainingMain = () => {
   const [date, setDate] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(date);
   const currentDateRef = useRef(currentDate);
-  const [trainingAmount, setTrainingAmount] = useState(0);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [showNewSessionPanel, setShowNewSessionPanel] = useState(false);
   const [showPreviousSessionPanel, setShowPreviousSessionPanel] = useState(false);
   const [showConfirmPanel,setShowConfirmPanel] = useState(false);
   const [showTypeSelector, setShowTypeSelector] = useState(false);
+  const [showAccentSettings, setShowAccentSettings] = useState(false);
+  const [accentColor, setAccentColor] = useState(buildSectionAccent(AppData.trainingAccentColor || TRAINING_ACCENT, TRAINING_ACCENT).hue);
+  const [, setAccentPresetVersion] = useState(0);
   const [selectedTrainingType, setSelectedTrainingType] = useState('GYM');
   
   // GYM specific (cardio state removed)
@@ -153,25 +158,6 @@ const TrainingMain = () => {
     }));
   }, [programId, langIndex]);
 
-  // Helpers to sync ScrollPicker
-  const currentProgramLabel = useMemo(() =>
-    programOptions.find(p => p.value === programId)?.label || programOptions[0].label,
-    [programId, programOptions]);
-  
-  const currentDayLabel = useMemo(() =>
-    dayOptions.find(d => d.value === dayIndex)?.label || dayOptions[0].label,
-    [dayIndex, dayOptions]);
-  
-  const handleProgramChange = (label) => {
-    const found = programOptions.find(p => p.label === label);
-    if (found) setProgrammId(found.value);
-  };
-  
-  const handleDayChange = (label) => {
-    const found = dayOptions.find(d => d.label === label);
-    if (found) setDayIndex(found.value);
-  };
-  
   const setTimeFromPicker = (setter, currentMs, type, val) => {
     const totalMinutes = Math.floor(currentMs / 60000);
     let h = Math.floor(totalMinutes / 60) % 24;
@@ -183,12 +169,41 @@ const TrainingMain = () => {
   };
 
   // --- CARDIO TYPE PICKER DATA ---
+  const strengthAccent = useMemo(() => buildSectionAccent(accentColor || TRAINING_ACCENT), [accentColor]);
   const trainingTypeOptions = useMemo(() => [
-    { value: 'GYM', label: langIndex === 0 ? 'Силовая' : 'Strength', icon: <MdFitnessCenter size={20}/> , color: theme === 'dark' ? '#f33b3b' : '#861010c6'},
-    { value: 'RUNNING', label: langIndex === 0 ? 'Бег' : 'Running', icon: <FaRunning size={20}/> , color: theme === 'dark' ? '#f3da3b' : '#867210c6'},
-    { value: 'CYCLING', label: langIndex === 0 ? 'Велосипед' : 'Cycling', icon: <FaBicycle size={20}/> , color: theme === 'dark' ? '#5af33b' : '#108614c6'},
-    { value: 'SWIMMING', label: langIndex === 0 ? 'Плавание' : 'Swimming', icon: <FaSwimmer size={20}/> , color: theme === 'dark' ? '#3bf3f0' : '#10867ec6'}
-  ], [langIndex, theme]);
+    {
+      value: 'GYM',
+      label: langIndex === 0 ? 'Силовая' : 'Strength',
+      description: langIndex === 0 ? 'Свободно или по программе' : 'Free or from a program',
+      icon: <MdFitnessCenter size={22}/>,
+      color: strengthAccent.hue,
+      glow: strengthAccent.glow
+    },
+    {
+      value: 'RUNNING',
+      label: langIndex === 0 ? 'Бег' : 'Running',
+      description: langIndex === 0 ? 'Дистанция, темп, пульс' : 'Distance, pace, heart rate',
+      icon: <FaRunning size={22}/>,
+      color: '#F43F5E',
+      glow: 'rgba(244,63,94,0.26)'
+    },
+    {
+      value: 'CYCLING',
+      label: langIndex === 0 ? 'Велосипед' : 'Cycling',
+      description: langIndex === 0 ? 'Скорость, набор, каденс' : 'Speed, elevation, cadence',
+      icon: <FaBicycle size={22}/>,
+      color: '#22C55E',
+      glow: 'rgba(34,197,94,0.24)'
+    },
+    {
+      value: 'SWIMMING',
+      label: langIndex === 0 ? 'Плавание' : 'Swimming',
+      description: langIndex === 0 ? 'Метры, время, ощущение' : 'Meters, time, effort',
+      icon: <FaSwimmer size={22}/>,
+      color: '#38BDF8',
+      glow: 'rgba(56,189,248,0.24)'
+    }
+  ], [langIndex, strengthAccent.hue, strengthAccent.glow]);
 
   const getTrainingTypeData = (type) => {
     const option = trainingTypeOptions.find(opt => opt.value === type) || trainingTypeOptions[0];
@@ -199,28 +214,50 @@ const TrainingMain = () => {
   };
 
   // --- TYPE ICONS HELPER ---
-  const getTrainingIcon = (type, size = 16, color = '#ffffff') => {
-    switch(type) {
-      case 'RUNNING': return <FaRunning size={size} color={color} />;
-      case 'CYCLING': return <FaBicycle size={size} color={color} />;
-      case 'SWIMMING': return <FaSwimmer size={size} color={color} />;
-      default: return <FaList size={size} color={color} />;
-    }
-  };
-  
   const getTrainingIconColor = (type) => {
     switch(type) {
-      case 'RUNNING': return theme === 'dark' ? '#f3da3b' : '#867210c6';
-      case 'CYCLING':return theme === 'dark' ? '#5af33b' : '#108614c6';
-      case 'SWIMMING': return  theme === 'dark' ? '#3bf3f0' : '#10867ec6';
-      default: return theme === 'dark' ? '#f33b3b' : '#861010c6';
+      case 'RUNNING': return '#F43F5E';
+      case 'CYCLING':return '#22C55E';
+      case 'SWIMMING': return '#38BDF8';
+      default: return strengthAccent.hue;
     }
   };
 
   // --- ACTIONS ---
-  const onSessionStart = () => {
+  const openCreatedGymSession = (sessionDate, mode = 'new') => {
+    const daykey = formatDateKey(sessionDate);
+    setTimeout(() => {
+      const sessionIndex = AppData.trainingLog[daykey].length - 1;
+      setTrainInfo({mode, dayKey: daykey, dInd: sessionIndex});
+      setPage('TrainingCurrent');
+    },100);
+  };
+
+  const onFreeSessionStart = async () => {
+    const sessionDate = currentDateRef.current || new Date();
+    await addFreeGymSession(sessionDate);
+    setShowNewSessionPanel(false);
+    setShowPreviousSessionPanel(false);
+    setShowTypeSelector(false);
+    openCreatedGymSession(sessionDate);
+  };
+
+  const openProgramSessionPanel = () => {
+    setSelectedTrainingType('GYM');
+    setShowTypeSelector(false);
+
     const today = new Date();
-    const daykey = formatDateKey(today);
+    const currentDateKey = formatDateKey(currentDateRef.current);
+    const todayKey = formatDateKey(today);
+    if (currentDateKey === todayKey) {
+      setShowNewSessionPanel(true);
+    } else {
+      setShowPreviousSessionPanel(true);
+    }
+  };
+
+  const onSessionStart = async () => {
+    const sessionDate = currentDateRef.current || new Date();
     if(!AppData.programs[programId]){
       setShowPopUpPanel(langIndex === 0 ? 'Ошибка! Программа не найдена' : 'Error! The program not found',2000,false);
       return null;
@@ -229,14 +266,10 @@ const TrainingMain = () => {
       setShowPopUpPanel(langIndex === 0 ? 'Ошибка! Программа пустая' : 'Error! The program is empty',2000,false);
       return null;
     }
-    addNewSession(new Date(),programId,dayIndex);
+    await addNewSession(sessionDate,programId,dayIndex);
     setShowNewSessionPanel(false);
     setShowTypeSelector(false);
-    setTimeout(() => {
-      const sessionIndex = AppData.trainingLog[daykey].length - 1;
-      setTrainInfo({mode:'new',dayKey:daykey,dInd:sessionIndex});
-      setPage('TrainingCurrent');
-    },100);
+    openCreatedGymSession(sessionDate);
   };
 
   // REMOVED: onAddPreviousSession cardio logic - now handled in TrainingCardio
@@ -250,7 +283,7 @@ const TrainingMain = () => {
   };
 
   // Navigate to appropriate page based on type
-  const handleTypeSelect = (type,index) => {
+  const handleTypeSelect = (type) => {
     setSelectedTrainingType(type);
     setShowTypeSelector(false);
     
@@ -301,18 +334,111 @@ const TrainingMain = () => {
     }
   };
 
+  const selectedDateKey = formatDateKey(currentDate);
+  const selectedSessions = AppData.trainingLog[selectedDateKey] || [];
+  const selectedDoneCount = selectedSessions.filter((session) => session.completed).length;
+  const monthStats = Object.entries(AppData.trainingLog || {}).reduce(
+    (acc, [dateKey, sessions]) => {
+      const sessionDate = new Date(dateKey);
+      if (sessionDate.getFullYear() !== date.getFullYear() || sessionDate.getMonth() !== date.getMonth()) {
+        return acc;
+      }
+
+      sessions.forEach((session) => {
+        acc.total += 1;
+        if (session.completed) acc.done += 1;
+        if ((session.type || 'GYM') === 'GYM') acc.strength += 1;
+        else acc.cardio += 1;
+        acc.minutes += Math.max(0, Math.round((session.duration || 0) / 60000));
+      });
+
+      return acc;
+    },
+    { total: 0, done: 0, strength: 0, cardio: 0, minutes: 0 }
+  );
+  const isRu = langIndex === 0;
+  const activeAccent = accentColor;
+  const changeAccentColor = async (color) => {
+    const next = buildSectionAccent(color, TRAINING_ACCENT).hue;
+    AppData.trainingAccentColor = next;
+    setAccentColor(next);
+    await saveData();
+    emitSectionAccentChanged();
+  };
+  const saveAccentPreset = async () => {
+    await AppData.addAccentPreset('training', accentColor, POSITIVE_ACCENT_PRESETS);
+    setAccentPresetVersion(version => version + 1);
+  };
+
   return (
     <div style={styles(theme).container}>
-      {<HoverInfoButton tab='TrainingMain'/>}
+      <SectionAccentSettings
+        show={showAccentSettings}
+        onClose={() => setShowAccentSettings(false)}
+        theme={theme}
+        langIndex={langIndex}
+        title={isRu ? 'Акцент тренировок' : 'Training accent'}
+        subtitle={isRu ? 'Цвет календаря, карточек и нижнего меню' : 'Calendar, cards, and bottom navigation color'}
+        accentColor={accentColor}
+        fallbackColor={TRAINING_ACCENT}
+        customPresets={AppData.trainingAccentPresets}
+        onAccentChange={changeAccentColor}
+        onSavePreset={saveAccentPreset}
+      />
+      {<HoverInfoButton tab='TrainingMain' variant="subtle" accent={activeAccent}/>}
+      <div style={styles(theme).pageScroll} className="no-scrollbar">
+        <div style={styles(theme).pageHeader}>
+          <div style={styles(theme).pageHeaderSpacer} />
+          <div style={styles(theme).pageHeaderBrand}>
+            <div style={styles(theme).pageTitle}>UltyMyLife</div>
+            <div style={styles(theme).pageSubtitle}>
+              {isRu ? 'Дневник тренировок — доказательства прогресса' : 'Training journal — proof of progress'}
+            </div>
+          </div>
+          <Motion.button
+            type="button"
+            whileTap={{ scale: 0.96 }}
+            onClick={() => setShowAccentSettings(true)}
+            style={styles(theme).headerAccentButton}
+          >
+            <FaPalette size={12} />
+            <span>{isRu ? 'Акцент' : 'Accent'}</span>
+            <span style={styles(theme).actionColorDot} />
+          </Motion.button>
+        </div>
+
+        <Motion.section
+          initial={{ opacity: 0, y: 16, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+          style={styles(theme).hero}
+        >
+          <div style={styles(theme).heroGlow} />
+          <div style={styles(theme).heroCopy}>
+            <div style={styles(theme).eyebrow}>{isRu ? 'ДНЕВНИК' : 'JOURNAL'}</div>
+            <h1 style={styles(theme).heroTitle}>{isRu ? 'Тренировки' : 'Training'}</h1>
+            <div style={styles(theme).heroSubtitle}>
+              {isRu ? 'Календарь и история нагрузки' : 'Calendar and load history'}
+            </div>
+            <div style={styles(theme).heroStats}>
+              <HeroStat theme={theme} label={isRu ? 'тренировок' : 'workouts'} value={monthStats.total} accent={activeAccent} />
+              <HeroStat theme={theme} label={isRu ? 'готово' : 'done'} value={monthStats.done} accent={activeAccent} />
+              <HeroStat theme={theme} label={isRu ? 'минут' : 'minutes'} value={monthStats.minutes} accent={activeAccent} />
+            </div>
+          </div>
+          <img style={styles(theme).heroImage} src="images/bro_training.png" alt="" />
+        </Motion.section>
+
       <div style={styles(theme).panel}>
         {/* --- HEADER & CALENDAR --- */}
         <div style={styles(theme).calendarHead}>
-          <motion.div whileTap={{scale: 0.9}} onClick={prevMonth} style={styles(theme).navBtn}>
+          <Motion.div whileTap={{scale: 0.9}} onClick={prevMonth} style={styles(theme).navBtn}>
             <IoIosArrowBack size={22} color={Colors.get('mainText', theme)}/>
-          </motion.div>
+          </Motion.div>
           <div style={styles(theme).headerWrapper}>
+            <div style={styles(theme).calendarKicker}>{isRu ? 'Нагрузка месяца' : 'Monthly load'}</div>
             <AnimatePresence mode="popLayout" custom={direction}>
-              <motion.h1
+              <Motion.h1
                 key={date.toISOString()}
                 variants={textVariants}
                 custom={direction}
@@ -321,17 +447,22 @@ const TrainingMain = () => {
                 style={styles(theme).header}
               >
                 {monthNames[langIndex][date.getMonth()]} {date.getFullYear()}
-              </motion.h1>
+              </Motion.h1>
             </AnimatePresence>
+            <div style={styles(theme).calendarMeta}>
+              <span>{monthStats.strength} {isRu ? 'сил.' : 'strength'}</span>
+              <span style={styles(theme).calendarMetaDot} />
+              <span>{monthStats.cardio} {isRu ? 'кардио' : 'cardio'}</span>
+            </div>
           </div>
-          <motion.div whileTap={{scale: 0.9}} onClick={nextMonth} style={styles(theme).navBtn}>
+          <Motion.div whileTap={{scale: 0.9}} onClick={nextMonth} style={styles(theme).navBtn}>
             <IoIosArrowForward size={22} color={Colors.get('mainText', theme)}/>
-          </motion.div>
+          </Motion.div>
         </div>
         
         <div style={{width: '100%', paddingBottom: '20px', overflow: 'hidden'}}>
           <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
+            <Motion.div
               key={date.toISOString()}
               variants={slideVariants}
               custom={direction}
@@ -344,7 +475,7 @@ const TrainingMain = () => {
                   <tr>
                     {daysOfWeek[langIndex].map((day, i) => (
                       <th key={day} style={{paddingBottom:'10px'}}>
-                        <p style={{textAlign:'center', fontSize: '13px', fontWeight: '600', opacity: 0.8, color: (i >= 5) ? '#ff5e5e' : Colors.get('subText', theme)}}>{day}</p>
+                        <p style={{...styles(theme).weekdayLabel, color: (i >= 5) ? '#ff6b7a' : Colors.get('subText', theme)}}>{day}</p>
                       </th>
                     ))}
                   </tr>
@@ -358,38 +489,30 @@ const TrainingMain = () => {
                         const isChoosen = day === currentDate.getDate() && cellMonth === currentDate.getMonth() && cellYear === currentDate.getFullYear();
                         const dayKey = formatDateKey(new Date(cellYear,cellMonth,day));
                         const trAmount = dayKey in AppData.trainingLog ? AppData.trainingLog[dayKey].length : 0;
-                        let pendingAmount = 0; let doneAmount = 0;
-                        let gymCount = 0; let cardioCount = 0;
-                        if(trAmount > 0){
-                          AppData.trainingLog[dayKey].forEach(tr => {
-                            if(!tr.completed) pendingAmount++; else doneAmount++;
-                            if (tr.type === 'GYM') gymCount++;
-                            else cardioCount++;
-                          });
-                        }
                         let cellBg = 'transparent';
                         let cellColor = Colors.get('mainText', theme);
-                        if (isChoosen) { cellBg = Colors.get('currentDateBorder', theme); cellColor = '#ffffff'; }
+                        if (isChoosen) { cellBg = activeAccent; cellColor = '#ffffff'; }
+                        const isToday = today === day && curMonth === cellMonth;
                         return(
                           <td key={j} style={{padding: '3px'}}>
                             {day ? (
                               <div style={{
                                 ...styles(theme).cell,
                                 backgroundColor: cellBg, color: cellColor,
-                                border: today === day && curMonth === cellMonth ? `2px solid ${Colors.get('currentDateBorder', theme)}` : 'transparent',
-                                boxShadow: isChoosen ? `0 4px 12px ${Colors.get('shadow', theme)}` : 'none',
+                                border: isToday ? `1px solid ${activeAccent}` : '1px solid transparent',
+                                boxShadow: isChoosen ? `0 12px 28px rgba(${buildSectionAccent(activeAccent).rgb}, 0.22)` : 'none',
                               }}
-                              onClick={() => {setCurrentDate(new Date(Date.UTC(cellYear, cellMonth, day)));setTrainingAmount(trAmount);playEffects(clickSound);}} >
-                                {day}
+                              onClick={() => {setCurrentDate(new Date(Date.UTC(cellYear, cellMonth, day)));playEffects(clickSound);}} >
+                                <span style={styles(theme).cellDayNumber}>{day}</span>
                                 {/* ICONS FOR DIFFERENT TYPES */}
                                 {trAmount > 0 &&  (
-                                  <div style={{display:'flex', flexWrap: 'wrap', gap: '1px',  justifyContent: 'center'}}>
+                                  <div style={styles(theme).cellIconRail}>
                                     {/* GYM sessions */}
                                     {AppData.trainingLog[dayKey].filter(tr => tr.type === 'GYM' || tr.type === undefined).length > 0 && (
                                       <div
                                         title={`${langIndex === 0 ? 'Силовая' : 'Strength'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'GYM').length}`}
                                       >
-                                        <MdFitnessCenter size={8} color={getTrainingIconColor('GYM')}/>
+                                        <MdFitnessCenter size={9} color={getTrainingIconColor('GYM')}/>
                                       </div>
                                     )}
                                     {/* RUNNING sessions */}
@@ -398,7 +521,7 @@ const TrainingMain = () => {
                                        
                                         title={`${langIndex === 0 ? 'Бег' : 'Running'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'RUNNING').length}`}
                                       >
-                                        <FaRunning size={8} color={getTrainingIconColor('RUNNING')}/>
+                                        <FaRunning size={9} color={getTrainingIconColor('RUNNING')}/>
                                       </div>
                                     )}
                                     {/* CYCLING sessions */}
@@ -407,7 +530,7 @@ const TrainingMain = () => {
                                         
                                         title={`${langIndex === 0 ? 'Велосипед' : 'Cycling'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'CYCLING').length}`}
                                       >
-                                        <FaBicycle size={8} color={getTrainingIconColor('CYCLING')} />
+                                        <FaBicycle size={9} color={getTrainingIconColor('CYCLING')} />
                                       </div>
                                     )}
                                     {/* SWIMMING sessions */}
@@ -416,11 +539,12 @@ const TrainingMain = () => {
                                         
                                         title={`${langIndex === 0 ? 'Плавание' : 'Swimming'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'SWIMMING').length}`}
                                       >
-                                        <FaSwimmer size={8} color={getTrainingIconColor('SWIMMING')} />
+                                        <FaSwimmer size={9} color={getTrainingIconColor('SWIMMING')} />
                                       </div>
                                     )}
                                   </div>
                                 )}
+                                {trAmount > 1 && <span style={styles(theme).cellCountPill}>{trAmount}</span>}
                               </div>
                             ) : <div style={{...styles(theme).cell, pointerEvents: 'none'}}></div>}
                           </td>
@@ -430,151 +554,127 @@ const TrainingMain = () => {
                   ))}
                 </tbody>
               </table>
-            </motion.div>
+            </Motion.div>
           </AnimatePresence>
         </div>
       </div>
       
       {/* --- JOURNAL LIST SECTION --- */}
-<div style={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', backgroundColor: Colors.get('background', theme) }}>
-  <div 
-    onClick={() => setPage('TrainingList')} 
-    style={styles(theme).journalBtn}
-    role="button"
-    tabIndex={0}
-    onKeyPress={(e) => e.key === 'Enter' && setPage('TrainingList')}
-  >
-    <div style={{ fontWeight: '600', fontSize: '15px' }}>
-      {langIndex === 0 ? 'Журнал' : 'Journal'}
-    </div>
-    <FaList size={14} />
-  </div>
-  
+<div style={styles(theme).journalPanel}>
   <div style={{ flex: 1, overflowY: 'hidden', display: 'flex', flexDirection: 'column' }}>
-    <div style={{ padding: '15px 20px 10px 20px' }}>
-      <h2 style={{ margin: 0, fontSize: '18px', color: Colors.get('mainText', theme) }}>
+    <div style={styles(theme).dayHeader}>
+      <div>
+      <div style={styles(theme).dayKicker}>{isRu ? 'Выбранный день' : 'Selected day'}</div>
+      <h2 style={styles(theme).dayTitle}>
         {currentDate.getDate()} {monthNames[langIndex][currentDate.getMonth()]}, {fullNames[langIndex][getMondayIndex(currentDate)]}
       </h2>
-      <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: Colors.get('subText', theme) }}>
-        {trainingAmountText(trainingAmount, langIndex)}
+      <p style={styles(theme).daySub}>
+        {trainingAmountText(selectedSessions.length, langIndex)}
       </p>
+      </div>
+      <div style={styles(theme).dayActions}>
+        <div
+          onClick={() => setPage('TrainingList')}
+          style={styles(theme).journalBtn}
+          role="button"
+          tabIndex={0}
+          onKeyPress={(e) => e.key === 'Enter' && setPage('TrainingList')}
+        >
+          <div style={{ fontWeight: 900, fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            {langIndex === 0 ? 'Вся история' : 'Full history'}
+          </div>
+          <FaList size={13} />
+        </div>
+        <div style={styles(theme).dayBadge}>
+          <span>{selectedDoneCount}</span>
+          <span style={styles(theme).dayBadgeMuted}>/ {selectedSessions.length}</span>
+        </div>
+      </div>
     </div>
     
     <div style={styles(theme).scrollView}>
-      {AppData.trainingLog[formatDateKey(currentDate)]?.map((training, index) => {
+      {selectedSessions.length > 0 ? selectedSessions.map((training, index) => {
         const isGymType = training.type === 'GYM' || !training.type;
-        const trainingKey = `${formatDateKey(currentDate)}-${index}`;
+        const trainingKey = `${selectedDateKey}-${index}`;
+        const typeData = getTrainingTypeData(training.type || 'GYM');
+        const isFreeGym = isGymType && (training.isFree || training.programId == null);
+        const gymProgramName = isFreeGym
+          ? (langIndex === 0 ? 'Свободная тренировка' : 'Free workout')
+          : (Array.isArray(AppData.programs[training.programId]?.name)
+              ? AppData.programs[training.programId]?.name?.[langIndex]
+              : AppData.programs[training.programId]?.name);
+        const gymDayName = isFreeGym
+          ? (langIndex === 0 ? 'Без программы - добавляйте упражнения по ходу' : 'No program - add exercises as you go')
+          : ((langIndex === 0 ? 'День ' : 'Day ') + (training.dayIndex + 1) + ': ' +
+             (AppData.programs[training.programId]?.schedule?.[training.dayIndex]?.name?.[langIndex] ||
+             (langIndex === 0 ? `День ${training.dayIndex + 1}` : `Day ${training.dayIndex + 1}`)));
         
         return (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
             key={trainingKey}
-            style={styles(theme).sessionCard}
+            style={{
+              ...styles(theme).sessionCard,
+              borderColor: `${typeData.color}42`,
+              boxShadow: theme === 'light'
+                ? `0 10px 26px rgba(15,23,42,0.06), inset 3px 0 0 ${typeData.color}`
+                : `0 16px 36px rgba(0,0,0,0.18), inset 3px 0 0 ${typeData.color}`
+            }}
             onClick={() => onSessionCardClick(
               training,
-              formatDateKey(new Date(currentDate)),
+              selectedDateKey,
               index
             )}
             role="button"
             tabIndex={0}
-            onKeyPress={(e) => e.key === 'Enter' && onSessionCardClick(training, formatDateKey(new Date(currentDate)), index)}
+            onKeyPress={(e) => e.key === 'Enter' && onSessionCardClick(training, selectedDateKey, index)}
           >
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'flex-start', 
-              justifyContent: 'space-between', 
-              width: '100%'
-            }}>
+              <div style={styles(theme).sessionCardInner}>
               {/* Training Content */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flex: 1, minWidth: 0 }}>
+              <div style={styles(theme).sessionCardContent}>
                 {/* Type Icon */}
                 <div
-                  style={{
-                    width: '40px', 
-                    height: '40px', 
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(128,128,128,0.3)',
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    flexShrink: 0
-                  }}
+                  style={styles(theme).sessionTypeIcon(typeData.color)}
                 >
                   {training.completed ? (
                     React.cloneElement(
-                      getTrainingTypeData(training.type || 'GYM').icon, 
+                      typeData.icon, 
                       { 
                         size: 25, 
-                        color: getTrainingTypeData(training.type || 'GYM').color 
+                        color: typeData.color 
                       }
                     )
                   ) : (
-                    <span style={{ fontSize: '16px', fontWeight: 'bold' }}>⏳</span>
+                    <MdAccessTime size={19} color={typeData.color} />
                   )}
                 </div>
                 
                 {/* Content Area */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                <div style={styles(theme).sessionTextBlock}>
                   {isGymType ? (
                     // GYM TRAINING DISPLAY
                     <>
-                      <span style={{ 
-                        fontWeight: 'bold', 
-                        color: Colors.get('mainText', theme), 
-                        fontSize: fSize === 0 ? '15px' : '17px', 
-                        lineHeight: 1.3,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {training.type === 'GYM'
-                          ? (Array.isArray(AppData.programs[training.programId]?.name) 
-                              ? AppData.programs[training.programId]?.name?.[langIndex] 
-                              : AppData.programs[training.programId]?.name)
-                          : trainingTypeOptions.find(t => t.value === training.type)?.label
-                        }
+                      <span style={styles(theme, fSize).sessionTitle}>
+                        {isGymType ? gymProgramName : trainingTypeOptions.find(t => t.value === training.type)?.label}
                       </span>
                       
-                      <div style={{ 
-                        fontSize: fSize === 0 ? '13px' : '15px', 
-                        color: Colors.get('mainText', theme), 
-                        lineHeight: 1.4,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {(langIndex === 0 ? 'День ' : 'Day ') + (training.dayIndex + 1) + ': ' + 
-                         (AppData.programs[training.programId]?.schedule?.[training.dayIndex]?.name?.[langIndex] ||
-                         (langIndex === 0 ? `День ${training.dayIndex + 1}` : `Day ${training.dayIndex + 1}`))}
+                      <div style={styles(theme, fSize).sessionDescription}>
+                        {gymDayName}
                       </div>
                       
                       {training.completed && (
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: Colors.get('subText', theme), 
-                          lineHeight: 1.4,
-                          display: 'flex',
-                          flexWrap: 'wrap',
-                          gap: '4px'
-                        }}>
-                          <span>{`${Math.round(training.duration / 60000)}${langIndex === 0 ? ' мин' : ' min'}`}</span>
-                          <span>•</span>
-                          <span>{`${(training.tonnage * 0.001).toFixed(2)} ${langIndex === 0 ? ' т' : ' t'}`}</span>
-                          {getTrainingSummary(training, langIndex)}
+                        <div style={styles(theme).sessionMetricGrid}>
+                          <span style={styles(theme).sessionMetricChip}>{`${Math.round(training.duration / 60000)}${langIndex === 0 ? ' мин' : ' min'}`}</span>
+                          <span style={styles(theme).sessionMetricChip}>{`${(training.tonnage * 0.001).toFixed(2)} ${langIndex === 0 ? 'т' : 't'}`}</span>
+                          <span style={styles(theme).sessionMetricChip}>{getTrainingSummary(training, langIndex).replace(/^ • /, '')}</span>
                         </div>
                       )}
                       
                       {training.RPE && (
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '4px', 
-                          color: '#FFA500',
-                          fontSize: '11px'
-                        }}>
-                          <span>🔥</span>
+                        <div style={styles(theme).sessionRpeChip}>
+                          <MdFitnessCenter size={12} />
                           <span style={{ fontWeight: '600' }}>RPE {training.RPE}/10</span>
                         </div>
                       )}
@@ -593,7 +693,7 @@ const TrainingMain = () => {
                           fontStyle: 'italic',
                           lineHeight: 1.4
                         }}>
-                          <span style={{ marginTop: '2px' }}>📝</span>
+                          <FaList size={10} style={{ marginTop: '2px', flexShrink: 0 }} />
                           <span>
                             {training.note.length > 160 
                               ? training.note.substring(0, 160) + '...' 
@@ -621,7 +721,7 @@ const TrainingMain = () => {
                         <span>{cardioDistanceDisplay(training.distance, training.type, langIndex)}</span>
                         <span style={{ color: Colors.get('subText', theme) }}>•</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ color: Colors.get('subText', theme), fontSize: '11px' }}>⏱️</span>
+                          <MdAccessTime size={12} color={Colors.get('subText', theme)} />
                           {formatDuration(training.duration, langIndex)}
                         </span>
                       </div>
@@ -641,14 +741,14 @@ const TrainingMain = () => {
                         }}>
                           {training.type === 'RUNNING' ? (
                             <>
-                              <span style={{ fontSize: '11px', color: '#4CC9F0' }}>🏃</span>
+                              <FaRunning size={11} color="#4CC9F0" />
                               <span style={{ fontSize: '11px', fontWeight: '600', color: '#4CC9F0' }}>
                                 {calculatePace(training.distance, training.duration)} {langIndex === 0 ? 'мин/км' : 'min/km'}
                               </span>
                             </>
                           ) : (
                             <>
-                              <span style={{ fontSize: '11px', color: '#4361EE' }}>🚴</span>
+                              <FaBicycle size={11} color="#4361EE" />
                               <span style={{ fontSize: '11px', fontWeight: '600', color: '#4361EE' }}>
                                 {calculateSpeed(training.distance, training.duration)} km/h
                               </span>
@@ -668,17 +768,18 @@ const TrainingMain = () => {
                       }}>
                         {training.avgHeartRate > 0 && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FF6B9D' }}>
-                            <span>❤️</span>
+                            <span style={{ fontSize: '10px', fontWeight: 900 }}>HR</span>
                             <span style={{ fontWeight: '600' }}>{training.avgHeartRate} bpm</span>
                           </div>
                         )}
                         
                         {training.avgCadence > 0 && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#4CC9F0' }}>
-                            <span>
-                              {training.type === 'RUNNING' ? '🏃‍♂️' : 
-                               training.type === 'CYCLING' ? '🚴‍♂️' : '🏊‍♂️'}
-                            </span>
+                            {training.type === 'RUNNING'
+                              ? <FaRunning size={11} />
+                              : training.type === 'CYCLING'
+                                ? <FaBicycle size={11} />
+                                : <FaSwimmer size={11} />}
                             <span style={{ fontWeight: '600' }}>
                               {training.avgCadence} {training.type === 'RUNNING' ? 'spm' : training.type === 'CYCLING' ? 'rpm' : 'spm'}
                             </span>
@@ -687,7 +788,7 @@ const TrainingMain = () => {
                         
                         {training.rpe && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FFA500' }}>
-                            <span>🔥</span>
+                            <MdFitnessCenter size={12} />
                             <span style={{ fontWeight: '600' }}>RPE {training.rpe}/10</span>
                           </div>
                         )}
@@ -708,7 +809,7 @@ const TrainingMain = () => {
                           fontStyle: 'italic',
                           lineHeight: 1.4
                         }}>
-                          <span style={{ marginTop: '2px' }}>📝</span>
+                          <FaList size={10} style={{ marginTop: '2px', flexShrink: 0 }} />
                           <span>
                             {training.notes.length > 160 
                               ? training.notes.substring(0, 160) + '...' 
@@ -722,44 +823,46 @@ const TrainingMain = () => {
               </div>
               
               {/* Delete Button */}
-              <motion.div
+              <Motion.div
                 whileTap={{ scale: 0.9 }}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete(formatDateKey(new Date(currentDate)), index);
+                  onDelete(selectedDateKey, index);
                   setShowConfirmPanel(true);
                 }}
-                style={{ 
-                  padding: '8px', 
-                  cursor: 'pointer', 
-                  opacity: 0.7, 
-                  alignSelf: 'flex-start',
-                  marginTop: '4px',
-                  flexShrink: 0
-                }}
+                style={styles(theme).sessionDeleteBtn}
                 role="button"
                 tabIndex={0}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.stopPropagation();
-                    onDelete(formatDateKey(new Date(currentDate)), index);
+                    onDelete(selectedDateKey, index);
                     setShowConfirmPanel(true);
                   }
                 }}
                 aria-label={langIndex === 0 ? "Удалить тренировку" : "Delete workout"}
               >
-                <FaTrash size={16} color={Colors.get('subText', theme)} />
-              </motion.div>
+                <FaTrash size={15} />
+              </Motion.div>
             </div>
-          </motion.div>
+          </Motion.div>
         );
-      })}
+      }) : (
+        <div style={styles(theme).emptyState}>
+          <div style={styles(theme).emptyIcon}><MdFitnessCenter size={20} /></div>
+          <div style={styles(theme).emptyTitle}>{langIndex === 0 ? 'Нет тренировок' : 'No sessions'}</div>
+          <div style={styles(theme).emptyText}>
+            {langIndex === 0 ? 'Нажмите + и начните свободно или по программе.' : 'Tap + to start free or from a program.'}
+          </div>
+        </div>
+      )}
       
       {/* Bottom spacer for scroll area */}
-      <div style={{ height: '55px', flexShrink: 0 }}></div>
+      <div style={{ height: '14px', flexShrink: 0 }}></div>
     </div>
   </div>
 </div>
+      </div>
       
       {/* --- MODALS --- */}
       <AnimatePresence>
@@ -780,27 +883,57 @@ const TrainingMain = () => {
         {/* TYPE SELECTOR */}
         {showTypeSelector &&
           <BottomSheet theme={theme} onClose={() => setShowTypeSelector(false)}>
-            <div style={{textAlign:'center', marginBottom: '25px'}}>
-              <h3 style={styles(theme,fSize).modalTitle}>{langIndex === 0 ? "Тип тренировки" : "Training Type"}</h3>
-              <p style={{color: Colors.get('subText', theme), fontSize: '14px'}}>{langIndex === 0 ? "Выберите тип тренировки для добавления" : "Select training type to add"}</p>
+            <div style={styles(theme).sheetHeader}>
+              <div style={styles(theme).sheetEyebrow}>{langIndex === 0 ? 'НОВАЯ ЗАПИСЬ' : 'NEW ENTRY'}</div>
+              <h3 style={styles(theme,fSize).modalTitle}>{langIndex === 0 ? "Что тренируем?" : "What are you training?"}</h3>
+              <p style={styles(theme).sheetDescription}>
+                {langIndex === 0
+                  ? "Для силовой выберите быстрый старт или готовый план. Кардио ниже."
+                  : "For strength, choose quick start or a planned session. Cardio is below."}
+              </p>
             </div>
-            <div style={{display:'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', width: '100%'}}>
-              {trainingTypeOptions.map((type) => (
-                <motion.div
+            <div style={styles(theme).strengthActionGrid}>
+              <Motion.button
+                type="button"
+                whileTap={{scale: 0.98}}
+                onClick={onFreeSessionStart}
+                style={styles(theme).strengthChoiceButton(true)}
+              >
+                <span style={styles(theme).strengthChoiceIcon(true)}><MdFitnessCenter size={20} /></span>
+                <span style={styles(theme).strengthChoiceText}>
+                  <strong>{langIndex === 0 ? 'Свободная тренировка' : 'Free workout'}</strong>
+                  <span style={styles(theme).strengthChoiceSubtext}>{langIndex === 0 ? 'Начать сразу' : 'Start now'}</span>
+                </span>
+              </Motion.button>
+
+              <Motion.button
+                type="button"
+                whileTap={{scale: 0.98}}
+                onClick={openProgramSessionPanel}
+                style={styles(theme).strengthChoiceButton(false)}
+              >
+                <span style={styles(theme).strengthChoiceIcon(false)}><FaList size={18} /></span>
+                <span style={styles(theme).strengthChoiceText}>
+                  <strong>{langIndex === 0 ? 'По программе' : 'From program'}</strong>
+                  <span style={styles(theme).strengthChoiceSubtext}>{langIndex === 0 ? 'Выбрать день' : 'Pick a day'}</span>
+                </span>
+              </Motion.button>
+            </div>
+            <div style={styles(theme).sheetSectionLabel}>{langIndex === 0 ? 'Кардио' : 'Cardio'}</div>
+            <div style={styles(theme).typeGrid}>
+              {trainingTypeOptions.filter(type => type.value !== 'GYM').map((type) => (
+                <Motion.div
                   key={type.value}
                   whileTap={{scale: 0.98}}
                   onClick={() => handleTypeSelect(type.value)}
-                  style={{
-                    height: '80px', borderRadius: '16px',
-                    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                    color: type.color, cursor: 'pointer', fontWeight: '600',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                  }}
+                  style={styles(theme).typeCard(type)}
                 >
-                  {type.icon}
-                  <span style={{fontSize: '14px'}}>{type.label}</span>
-                </motion.div>
+                  <div style={styles(theme).typeIconBox(type)}>{type.icon}</div>
+                  <div style={{minWidth: 0}}>
+                    <div style={styles(theme).typeLabel}>{type.label}</div>
+                    <div style={styles(theme).typeDescription}>{type.description}</div>
+                  </div>
+                </Motion.div>
               ))}
             </div>
           </BottomSheet>
@@ -809,36 +942,57 @@ const TrainingMain = () => {
         {/* NEW SESSION PANEL (GYM only) */}
         {showNewSessionPanel && selectedTrainingType === 'GYM' &&
           <BottomSheet theme={theme} onClose={() => {setShowNewSessionPanel(false); setShowTypeSelector(true);}}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px'}}>
-              <p style={styles(theme,fSize).modalTitle}>{langIndex === 0 ? 'Новая тренировка' : 'New Session'}</p>
+            <div style={styles(theme).sheetTitleRow}>
+              <div>
+                <div style={styles(theme).sheetEyebrow}>{langIndex === 0 ? 'СИЛОВАЯ' : 'STRENGTH'}</div>
+                <p style={styles(theme,fSize).modalTitle}>{langIndex === 0 ? 'Новая тренировка' : 'New Session'}</p>
+              </div>
               <div onClick={() => {setShowNewSessionPanel(false); setShowTypeSelector(true);}} style={{padding:'5px', cursor:'pointer'}}><MdClose size={24} color={Colors.get('subText', theme)}/></div>
             </div>
-            <div style={{marginBottom: '20px', width: '100%'}}>
-              <PickerLabel label={langIndex === 0 ? "Программа" : "Program"} theme={theme} />
-              <div style={{display:'flex', justifyContent:'center'}}>
-                <ScrollPicker
-                  items={programOptions.map(p => p.label)}
-                  value={currentProgramLabel}
-                  onChange={handleProgramChange}
-                  theme={theme}
-                  width="100%"
-                />
+
+            <Motion.div whileTap={{scale: 0.98}} onClick={onFreeSessionStart} style={styles(theme).quickStartCard}>
+              <div style={styles(theme).quickStartIcon}><MdFitnessCenter size={22} /></div>
+              <div style={{flex: 1, minWidth: 0}}>
+                <div style={styles(theme).choiceTitle}>{langIndex === 0 ? 'Свободная тренировка' : 'Free workout'}</div>
+                <div style={styles(theme).choiceText}>
+                  {langIndex === 0 ? 'Начать сейчас и добавлять упражнения по ходу.' : 'Start now and add exercises as you go.'}
+                </div>
               </div>
-            </div>
-            <div style={{marginBottom: '20px', width: '100%'}}>
-              <PickerLabel label={langIndex === 0 ? "День" : "Day"} theme={theme} />
-              <div style={{display:'flex', justifyContent:'center'}}>
-                <ScrollPicker
-                  items={dayOptions.map(d => d.label)}
-                  value={currentDayLabel}
-                  onChange={handleDayChange}
-                  theme={theme}
-                  width="100%"
-                />
+              <MdDone size={20} />
+            </Motion.div>
+
+            <div style={styles(theme).programStartBlock}>
+              <div style={styles(theme).programStartHeader}>
+                <div style={styles(theme).choiceTitle}>{langIndex === 0 ? 'По программе' : 'From a program'}</div>
+                <div style={styles(theme).choiceText}>{langIndex === 0 ? 'Если уже есть план на день.' : 'When the day is already planned.'}</div>
               </div>
-            </div>
-            <div style={{marginTop: '15px'}}>
-              <ActionButton icon={<MdDone size={24}/>} label={langIndex===0 ? "Начать" : "Start"} onClick={onSessionStart} theme={theme} isPrimary />
+              <div style={styles(theme).pickerGrid}>
+                <div style={styles(theme).fieldStack}>
+                  <PickerLabel label={langIndex === 0 ? "Программа" : "Program"} theme={theme} />
+                  <select
+                    value={programId}
+                    onChange={(e) => setProgrammId(Number(e.target.value))}
+                    style={styles(theme).selectField}
+                  >
+                    {programOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={styles(theme).fieldStack}>
+                  <PickerLabel label={langIndex === 0 ? "День" : "Day"} theme={theme} />
+                  <select
+                    value={dayIndex}
+                    onChange={(e) => setDayIndex(Number(e.target.value))}
+                    style={styles(theme).selectField}
+                  >
+                    {dayOptions.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <ActionButton icon={<MdDone size={24}/>} label={langIndex===0 ? "Начать по программе" : "Start program"} onClick={onSessionStart} theme={theme} isPrimary />
             </div>
           </BottomSheet>
         }
@@ -846,35 +1000,48 @@ const TrainingMain = () => {
         {/* PREVIOUS SESSION PANEL (GYM only - cardio removed) */}
         {showPreviousSessionPanel && selectedTrainingType === 'GYM' &&
           <BottomSheet theme={theme} onClose={() => {setShowPreviousSessionPanel(false); setShowTypeSelector(true);}}>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px'}}>
-              <p style={styles(theme,fSize).modalTitle}>
-                {langIndex === 0 ? 'Добавить прошлую' : 'Log Previous'}
-              </p>
+            <div style={styles(theme).sheetTitleRow}>
+              <div>
+                <div style={styles(theme).sheetEyebrow}>{langIndex === 0 ? 'СИЛОВАЯ' : 'STRENGTH'}</div>
+                <p style={styles(theme,fSize).modalTitle}>
+                  {langIndex === 0 ? 'Добавить тренировку' : 'Log workout'}
+                </p>
+              </div>
               <div onClick={() => {setShowPreviousSessionPanel(false); setShowTypeSelector(true);}} style={{padding:'5px', cursor:'pointer'}}><MdClose size={24} color={Colors.get('subText', theme)}/></div>
             </div>
+            <Motion.div whileTap={{scale: 0.98}} onClick={onFreeSessionStart} style={{...styles(theme).quickStartCard, marginBottom: '16px'}}>
+              <div style={styles(theme).quickStartIcon}><MdFitnessCenter size={22} /></div>
+              <div style={{flex: 1, minWidth: 0}}>
+                <div style={styles(theme).choiceTitle}>{langIndex === 0 ? 'Свободная тренировка' : 'Free workout'}</div>
+                <div style={styles(theme).choiceText}>
+                  {langIndex === 0 ? 'Без программы и выбора дня.' : 'No program or day selection.'}
+                </div>
+              </div>
+              <MdDone size={20} />
+            </Motion.div>
             <div style={{marginBottom: '20px', width: '100%'}}>
               <PickerLabel label={langIndex === 0 ? "Программа" : "Program"} theme={theme} />
-              <div style={{display:'flex', justifyContent:'center'}}>
-                <ScrollPicker
-                  items={programOptions.map(p => p.label)}
-                  value={currentProgramLabel}
-                  onChange={handleProgramChange}
-                  theme={theme}
-                  width="100%"
-                />
-              </div>
+              <select
+                value={programId}
+                onChange={(e) => setProgrammId(Number(e.target.value))}
+                style={styles(theme).selectField}
+              >
+                {programOptions.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
             </div>
             <div style={{marginBottom: '20px', width: '100%'}}>
               <PickerLabel label={langIndex === 0 ? "День" : "Day"} theme={theme} />
-              <div style={{display:'flex', justifyContent:'center'}}>
-                <ScrollPicker
-                  items={dayOptions.map(d => d.label)}
-                  value={currentDayLabel}
-                  onChange={handleDayChange}
-                  theme={theme}
-                  width="100%"
-                />
-              </div>
+              <select
+                value={dayIndex}
+                onChange={(e) => setDayIndex(Number(e.target.value))}
+                style={styles(theme).selectField}
+              >
+                {dayOptions.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
             </div>
             <div style={{backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)', borderRadius: '20px', padding: '15px', marginBottom: '20px'}}>
               <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'10px', opacity:0.7}}>
@@ -962,20 +1129,20 @@ const TrainingMain = () => {
 
 // --- MODERN UI COMPONENTS ---
 const BottomSheet = ({children, theme, onClose}) => (
-  <motion.div
+  <Motion.div
     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
     style={styles(theme).backdrop}
     onClick={onClose}
   >
-    <motion.div
+    <Motion.div
       variants={bottomSheetVariants} initial="hidden" animate="visible" exit="exit"
       style={styles(theme).bottomSheet}
       onClick={(e) => e.stopPropagation()}
     >
       <div style={{width: '40px', height: '4px', backgroundColor: Colors.get('subText', theme), borderRadius: '2px', margin: '0 auto 20px auto', opacity: 0.3}} />
       {children}
-    </motion.div>
-  </motion.div>
+    </Motion.div>
+  </Motion.div>
 );
 
 const PickerLabel = ({label, theme}) => (
@@ -988,26 +1155,35 @@ const ActionButton = ({icon, label, onClick, theme, isPrimary, isDestructive}) =
   let bg = theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)';
   let color = Colors.get('mainText', theme);
   if (isPrimary) {
-    bg = isDestructive ? Colors.get('minValColor', theme) : Colors.get('maxValColor', theme);
+    bg = isDestructive
+      ? 'linear-gradient(135deg, #EF4444, #DC2626)'
+      : 'linear-gradient(135deg, #14B8A6, #10B981)';
     color = '#fff';
   }
   return (
-    <motion.div
+    <Motion.div
       whileTap={{scale: 0.98}}
       onClick={onClick}
       style={{
         flex: 1, height: '56px', borderRadius: '16px',
-        backgroundColor: bg,
+        background: bg,
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
         color: color, cursor: 'pointer', fontWeight: '600', fontSize: '16px',
-        boxShadow: isPrimary ? '0 4px 12px rgba(0,0,0,0.15)' : 'none'
+        boxShadow: isPrimary ? `0 12px 26px ${isDestructive ? 'rgba(239,68,68,0.22)' : 'rgba(16,185,129,0.22)'}` : 'none'
       }}
     >
       {icon}
       {label && <span>{label}</span>}
-    </motion.div>
+    </Motion.div>
   );
 };
+
+const HeroStat = ({ theme, label, value, accent }) => (
+  <div style={{ ...styles(theme).heroStat, borderColor: `${accent}2e`, background: `linear-gradient(145deg, ${accent}16, rgba(255,255,255,0.035))` }}>
+    <div style={{ ...styles(theme).heroStatValue, color: Colors.get('mainText', theme) }}>{value}</div>
+    <div style={styles(theme).heroStatLabel}>{label}</div>
+  </div>
+);
 
 export default TrainingMain
 
@@ -1019,7 +1195,7 @@ const trainingAmountText = (trainingAmount,langIndex) => {
   return trainingAmount + (langIndex == 0 ? ' тренировок' : ' trainings');
 }
 
-export function getTrainingSummary(session, langIndex) {
+function getTrainingSummary(session, langIndex) {
   if (!session?.exercises) { return (langIndex === 0 ? ' • 0 упр.' : ' • 0 ex.'); }
   let exerciseCount = 0; let setCount = 0;
   for (const exercise of Object.values(session.exercises)) {
@@ -1073,74 +1249,854 @@ const cardioDistanceDisplay = (distance, type, langIndex) => {
   return `${distance.toFixed(1)}${langIndex === 0 ? ' км' : ' km'}`;
 };
 
-const styles = (theme,fSize) => ({
-  container : {
-    backgroundColor:Colors.get('background', theme),
-    display: "flex", flexDirection: "column", alignItems: "center",
-    height: "90vh",marginTop:'100px', width: "100vw", fontFamily: "Segoe UI, Roboto, sans-serif",
-    overflowY:'scroll', paddingTop: '10px'
-  },
-  panel : {
-    display:'flex', flexDirection:'column', width: "100%", maxWidth: '500px',
-    alignItems: "center", justifyContent: "start",
-    position: 'relative', zIndex: 1
-  },
-  calendarHead: {
-    padding: '15px 20px', display:'flex', flexDirection:'row', alignItems:'center', justifyContent:'space-between',
-    width:'100%', boxSizing: 'border-box',marginTop:'20px'
-  },
-  headerWrapper: {
-    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden', minWidth: '150px'
-  },
-  header: {
-    fontFamily: "Segoe UI", fontSize: "20px", margin: 0, fontWeight: "700",
-    color: Colors.get('mainText', theme), textTransform: 'capitalize', whiteSpace: 'nowrap'
-  },
-  navBtn: {
-    padding: '8px', borderRadius: '12px', cursor: 'pointer',
-    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10
-  },
-  table: { width:'100%', borderCollapse:'collapse', textAlign:'center' },
-  cell: {
-    boxSizing:'border-box', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-    width: '13vw', height: '13vw', maxHeight: '50px', maxWidth: '50px', borderRadius:'14px',
-    fontSize:'16px', fontWeight:'600', fontFamily: "Segoe UI", transition: 'all 0.2s ease-in-out',
-    cursor: 'pointer', margin: 'auto', position: 'relative'
-  },
-  journalBtn: {
-    alignSelf: 'center', margin: '10px 0',
-    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
-    color: Colors.get('mainText', theme),
-    padding: '10px 20px', borderRadius: '20px',
-    display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer'
-  },
-  scrollView : {
-    flex: 1, width:'100%',  padding: '10px 20px 80px 20px',
-  },
-  sessionCard: {
-    backgroundColor: theme === 'light' ? '#fff' : 'rgba(255,255,255,0.05)',
-    borderRadius: '16px', padding: '16px', marginBottom: '12px',
-    boxShadow: theme === 'light' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-    border: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)'}`,
-    display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
-  },
-  backdrop: {
-    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 3000
-  },
-  bottomSheet: {
-    width: '100%', maxWidth: '500px',
-    backgroundColor: Colors.get('background', theme),
-    borderTopLeftRadius: '28px', borderTopRightRadius: '28px',
-    padding: '20px 25px 40px 25px',
-    boxShadow: '0 -10px 40px rgba(0,0,0,0.2)', position: 'relative', zIndex: 3001,
-    backdropFilter: 'blur(20px)',
-    borderTop: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)'}`
-  },
-  modalTitle: {
-    fontSize: '20px', fontWeight: 'bold', color: Colors.get('mainText', theme), margin: 0
-  }
-})
+const styles = (theme, fSize = 0) => {
+  const isDark = theme === 'dark' || theme === 'specialdark';
+  const mainText = Colors.get('mainText', theme);
+  const subText = Colors.get('subText', theme);
+  const background = Colors.get('background', theme);
+  const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || TRAINING_ACCENT, TRAINING_ACCENT);
+
+  return {
+    container: {
+      width: '100vw',
+      height: '100vh',
+      overflow: 'hidden',
+      background: isDark
+        ? `radial-gradient(circle at 14% -6%, rgba(${trainingAccent.rgb},0.32), transparent 34%),
+           radial-gradient(circle at 92% 12%, rgba(20,184,166,0.16), transparent 30%),
+           linear-gradient(180deg, #162536 0%, ${background} 76%)`
+        : `radial-gradient(circle at 14% -6%, rgba(${trainingAccent.rgb},0.22), transparent 34%),
+           linear-gradient(180deg, rgba(${trainingAccent.rgb},0.12) 0%, ${background} 52%)`,
+      color: mainText,
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    },
+    pageScroll: {
+      width: '100vw',
+      height: '100vh',
+      overflowY: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: '18px 4.5vw 122px',
+      boxSizing: 'border-box',
+    },
+    pageHeader: {
+      width: '100%',
+      maxWidth: '600px',
+      display: 'grid',
+      gridTemplateColumns: '96px minmax(0, 1fr) 96px',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '8px 0 16px',
+      boxSizing: 'border-box',
+    },
+    pageHeaderSpacer: { width: '96px', height: '38px' },
+    pageHeaderBrand: { minWidth: 0, textAlign: 'center' },
+    headerAccentButton: {
+      minWidth: 0,
+      height: '38px',
+      borderRadius: '999px',
+      border: `1px solid ${trainingAccent.ring}`,
+      background: trainingAccent.soft,
+      color: trainingAccent.hue,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      justifySelf: 'end',
+      gap: '6px',
+      fontSize: '12px',
+      fontWeight: 900,
+      fontFamily: 'inherit',
+      padding: '0 11px',
+      whiteSpace: 'nowrap',
+      cursor: 'pointer',
+    },
+    actionColorDot: {
+      width: '8px',
+      height: '8px',
+      borderRadius: '99px',
+      background: trainingAccent.hue,
+      boxShadow: `0 0 12px ${trainingAccent.glow}`,
+      flexShrink: 0,
+    },
+    pageTitle: {
+      color: mainText,
+      fontFamily: 'Georgia, "Times New Roman", serif',
+      fontSize: fSize === 0 ? '25px' : '27px',
+      fontWeight: 700,
+      letterSpacing: 0,
+      lineHeight: 1.05,
+      opacity: 0.92,
+    },
+    pageSubtitle: {
+      marginTop: '6px',
+      color: subText,
+      fontSize: fSize === 0 ? '10px' : '11px',
+      fontWeight: 700,
+      letterSpacing: '0.18em',
+      lineHeight: 1.3,
+    },
+    hero: {
+      position: 'relative',
+      width: '100%',
+      maxWidth: '600px',
+      minHeight: '174px',
+      padding: '18px 18px 16px',
+      borderRadius: '30px',
+      overflow: 'hidden',
+      boxSizing: 'border-box',
+      background: isDark
+        ? `linear-gradient(135deg, rgba(${trainingAccent.rgb},0.22), rgba(16,30,44,0.96) 44%, rgba(12,22,32,0.94))`
+        : `linear-gradient(135deg, rgba(255,255,255,0.98), rgba(${trainingAccent.rgb},0.12))`,
+      border: `1px solid ${trainingAccent.ring}`,
+      boxShadow: isDark
+        ? '0 24px 70px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.08)'
+        : '0 18px 44px rgba(15,23,42,0.08)',
+    },
+    heroGlow: {
+      position: 'absolute',
+      inset: 0,
+      background: `radial-gradient(circle at 78% 22%, ${trainingAccent.glow}, transparent 34%), radial-gradient(circle at 22% 110%, rgba(${trainingAccent.rgb},0.10), transparent 42%)`,
+      pointerEvents: 'none',
+    },
+    heroCopy: {
+      position: 'relative',
+      zIndex: 1,
+      width: 'calc(100% - min(31vw, 156px))',
+      minWidth: '212px',
+    },
+    eyebrow: {
+      marginBottom: '5px',
+      color: trainingAccent.hue,
+      fontSize: fSize === 0 ? '11px' : '12px',
+      fontWeight: 900,
+      letterSpacing: '0.18em',
+    },
+    heroTitle: {
+      margin: 0,
+      color: mainText,
+      fontSize: fSize === 0 ? '30px' : '33px',
+      lineHeight: 1.04,
+      fontWeight: 900,
+      letterSpacing: 0,
+    },
+    heroSubtitle: {
+      margin: '7px 0 12px',
+      maxWidth: '310px',
+      color: subText,
+      fontSize: fSize === 0 ? '14px' : '15px',
+      lineHeight: 1.35,
+      fontWeight: 700,
+    },
+    heroStats: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      gap: '7px',
+      width: '100%',
+      maxWidth: '286px',
+    },
+    heroStat: {
+      minHeight: '50px',
+      padding: '7px 8px',
+      borderRadius: '15px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.74)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)'}`,
+      boxSizing: 'border-box',
+      minWidth: 0,
+    },
+    heroStatValue: {
+      color: mainText,
+      fontSize: '16px',
+      fontWeight: 900,
+      lineHeight: 1.05,
+      fontVariantNumeric: 'tabular-nums',
+    },
+    heroStatLabel: {
+      marginTop: '2px',
+      color: subText,
+      fontSize: '8px',
+      fontWeight: 800,
+      lineHeight: 1.1,
+      textTransform: 'none',
+      letterSpacing: 0,
+      whiteSpace: 'normal',
+      overflow: 'hidden',
+      textOverflow: 'clip',
+    },
+    heroImage: {
+      position: 'absolute',
+      right: '4px',
+      top: '50%',
+      transform: 'translateY(-44%)',
+      width: 'min(31vw, 150px)',
+      maxHeight: '154px',
+      objectFit: 'contain',
+      filter: 'drop-shadow(0 20px 32px rgba(0,0,0,0.45))',
+      opacity: isDark ? 1 : 0.92,
+      pointerEvents: 'none',
+      zIndex: 1,
+    },
+    panel: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: '100%',
+      maxWidth: '600px',
+      alignItems: 'center',
+      justifyContent: 'start',
+      position: 'relative',
+      zIndex: 1,
+      marginTop: '14px',
+      padding: '10px 10px 14px',
+      borderRadius: '28px',
+      boxSizing: 'border-box',
+      background: isDark
+        ? `linear-gradient(135deg, rgba(${trainingAccent.rgb},0.13), rgba(255,255,255,0.026))`
+        : 'rgba(255,255,255,0.86)',
+      border: `1px solid ${isDark ? `rgba(${trainingAccent.rgb},0.18)` : 'rgba(15,23,42,0.08)'}`,
+      boxShadow: isDark ? `0 18px 48px rgba(0,0,0,0.22), 0 0 46px rgba(${trainingAccent.rgb},0.06)` : '0 14px 36px rgba(15,23,42,0.08)',
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+    },
+    calendarHead: {
+      padding: '8px 6px 14px',
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+      boxSizing: 'border-box',
+    },
+    headerWrapper: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      overflow: 'hidden',
+      minWidth: '150px',
+    },
+    calendarKicker: {
+      color: trainingAccent.hue,
+      fontSize: '9px',
+      fontWeight: 950,
+      letterSpacing: '0.16em',
+      textTransform: 'uppercase',
+      lineHeight: 1,
+      marginBottom: '5px',
+    },
+    header: {
+      fontSize: '21px',
+      margin: 0,
+      fontWeight: 900,
+      color: mainText,
+      textTransform: 'capitalize',
+      whiteSpace: 'nowrap',
+      letterSpacing: 0,
+    },
+    calendarMeta: {
+      marginTop: '6px',
+      minHeight: '18px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '7px',
+      color: subText,
+      fontSize: '10px',
+      fontWeight: 850,
+      lineHeight: 1,
+      whiteSpace: 'nowrap',
+    },
+    calendarMetaDot: {
+      width: '4px',
+      height: '4px',
+      borderRadius: '99px',
+      background: trainingAccent.hue,
+      boxShadow: `0 0 10px ${trainingAccent.glow}`,
+      flexShrink: 0,
+    },
+    navBtn: {
+      width: '42px',
+      height: '42px',
+      borderRadius: '16px',
+      cursor: 'pointer',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : 'rgba(15,23,42,0.055)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.07)'}`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 10,
+      boxSizing: 'border-box',
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'separate',
+      borderSpacing: '0 4px',
+      textAlign: 'center',
+    },
+    weekdayLabel: {
+      textAlign: 'center',
+      fontSize: '11px',
+      fontWeight: 900,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
+      opacity: 0.82,
+      margin: 0,
+    },
+    cell: {
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 'min(12.5vw, 48px)',
+      height: 'min(12.5vw, 48px)',
+      minWidth: '38px',
+      minHeight: '38px',
+      borderRadius: '15px',
+      fontSize: '14px',
+      fontWeight: 800,
+      transition: 'all 0.2s ease-in-out',
+      cursor: 'pointer',
+      margin: 'auto',
+      position: 'relative',
+      background: isDark
+        ? 'linear-gradient(180deg, rgba(255,255,255,0.052), rgba(255,255,255,0.018))'
+        : 'linear-gradient(180deg, rgba(255,255,255,0.84), rgba(15,23,42,0.035))',
+      boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.045)' : 'inset 0 1px 0 rgba(255,255,255,0.86)',
+    },
+    cellDayNumber: {
+      display: 'block',
+      lineHeight: 1,
+      fontVariantNumeric: 'tabular-nums',
+    },
+    cellIconRail: {
+      position: 'absolute',
+      left: '50%',
+      bottom: '6px',
+      transform: 'translateX(-50%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '2px',
+      minHeight: '10px',
+      padding: '1px 4px',
+      borderRadius: '999px',
+      background: isDark ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.68)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.05)'}`,
+      boxSizing: 'border-box',
+    },
+    cellCountPill: {
+      position: 'absolute',
+      top: '4px',
+      right: '4px',
+      minWidth: '14px',
+      height: '14px',
+      padding: '0 4px',
+      borderRadius: '99px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: isDark ? '#08111A' : '#fff',
+      background: trainingAccent.hue,
+      fontSize: '9px',
+      fontWeight: 950,
+      lineHeight: 1,
+      boxSizing: 'border-box',
+    },
+    journalPanel: {
+      width: '100%',
+      maxWidth: '600px',
+      display: 'flex',
+      flexDirection: 'column',
+      marginTop: '12px',
+      padding: '10px',
+      borderRadius: '28px',
+      boxSizing: 'border-box',
+      background: isDark
+        ? 'linear-gradient(135deg, rgba(31,35,39,0.88), rgba(18,20,23,0.92))'
+        : 'rgba(255,255,255,0.88)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
+      boxShadow: isDark ? '0 18px 48px rgba(0,0,0,0.22)' : '0 14px 36px rgba(15,23,42,0.08)',
+      backdropFilter: 'blur(18px)',
+      WebkitBackdropFilter: 'blur(18px)',
+    },
+    journalBtn: {
+      alignSelf: 'flex-end',
+      margin: 0,
+      background: trainingAccent.soft,
+      color: trainingAccent.hue,
+      padding: '8px 12px',
+      borderRadius: '16px',
+      border: `1px solid ${trainingAccent.ring}`,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      cursor: 'pointer',
+      boxSizing: 'border-box',
+    },
+    dayHeader: {
+      padding: '2px 2px 14px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '12px',
+    },
+    dayKicker: {
+      marginBottom: '5px',
+      color: trainingAccent.hue,
+      fontSize: '10px',
+      fontWeight: 950,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+    },
+    dayActions: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'flex-end',
+      gap: '8px',
+      flexShrink: 0,
+    },
+    dayTitle: {
+      margin: 0,
+      fontSize: '18px',
+      lineHeight: 1.18,
+      color: mainText,
+      fontWeight: 900,
+      letterSpacing: 0,
+    },
+    daySub: {
+      margin: '5px 0 0',
+      fontSize: '13px',
+      color: subText,
+      fontWeight: 700,
+    },
+    dayBadge: {
+      minWidth: '58px',
+      height: '42px',
+      borderRadius: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: trainingAccent.hue,
+      fontSize: '16px',
+      fontWeight: 900,
+      backgroundColor: isDark ? `rgba(${trainingAccent.rgb},0.1)` : `rgba(${trainingAccent.rgb},0.16)`,
+      border: `1px solid ${trainingAccent.ring}`,
+      flexShrink: 0,
+    },
+    dayBadgeMuted: {
+      color: subText,
+      marginLeft: '4px',
+      fontSize: '13px',
+    },
+    scrollView: {
+      flex: 1,
+      width: '100%',
+      padding: '0 0 14px',
+      boxSizing: 'border-box',
+    },
+    sessionCard: {
+      background: isDark
+        ? `linear-gradient(135deg, rgba(${trainingAccent.rgb},0.105), rgba(255,255,255,0.038) 48%, rgba(255,255,255,0.024))`
+        : 'linear-gradient(135deg, #fff, rgba(248,250,252,0.92))',
+      borderRadius: '22px',
+      padding: '14px',
+      marginBottom: '10px',
+      boxShadow: isDark ? `0 16px 36px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.04)` : '0 8px 22px rgba(15,23,42,0.06)',
+      border: `1px solid ${isDark ? `rgba(${trainingAccent.rgb},0.22)` : 'rgba(15,23,42,0.07)'}`,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      boxSizing: 'border-box',
+      textAlign: 'left',
+      cursor: 'pointer',
+    },
+    sessionCardInner: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      width: '100%',
+      gap: '12px',
+    },
+    sessionCardContent: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '12px',
+      flex: 1,
+      minWidth: 0,
+    },
+    sessionTextBlock: {
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '7px',
+      minWidth: 0,
+    },
+    sessionTypeIcon: (color) => ({
+      width: '46px',
+      height: '46px',
+      borderRadius: '16px',
+      background: isDark
+        ? `linear-gradient(145deg, ${color}34, rgba(255,255,255,0.045))`
+        : `linear-gradient(145deg, ${color}24, rgba(255,255,255,0.92))`,
+      border: `1px solid ${color}55`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      boxShadow: `0 10px 24px ${color}18`,
+    }),
+    sessionTitle: {
+      fontWeight: 900,
+      color: mainText,
+      fontSize: fSize === 0 ? '16px' : '18px',
+      lineHeight: 1.22,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'normal',
+    },
+    sessionDescription: {
+      fontSize: fSize === 0 ? '12px' : '14px',
+      color: subText,
+      lineHeight: 1.35,
+      fontWeight: 750,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'normal',
+    },
+    sessionMetricGrid: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '6px',
+      marginTop: '2px',
+    },
+    sessionMetricChip: {
+      minHeight: '24px',
+      borderRadius: '999px',
+      padding: '5px 8px',
+      background: isDark ? 'rgba(0,0,0,0.20)' : 'rgba(15,23,42,0.045)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)'}`,
+      color: subText,
+      fontSize: '11px',
+      fontWeight: 800,
+      boxSizing: 'border-box',
+    },
+    sessionRpeChip: {
+      width: 'fit-content',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '5px',
+      color: '#FBBF24',
+      background: isDark ? 'rgba(251,191,36,0.10)' : 'rgba(251,191,36,0.14)',
+      border: '1px solid rgba(251,191,36,0.26)',
+      borderRadius: '999px',
+      padding: '5px 8px',
+      fontSize: '11px',
+      fontWeight: 800,
+    },
+    sessionDeleteBtn: {
+      width: '42px',
+      height: '42px',
+      borderRadius: '15px',
+      cursor: 'pointer',
+      alignSelf: 'center',
+      flexShrink: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: isDark ? '#94A3B8' : '#64748B',
+      background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(15,23,42,0.045)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)'}`,
+    },
+    emptyState: {
+      minHeight: '118px',
+      borderRadius: '22px',
+      border: `1px dashed ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.14)'}`,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.028)' : 'rgba(15,23,42,0.035)',
+      color: subText,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      padding: '14px',
+      boxSizing: 'border-box',
+    },
+    emptyIcon: {
+      width: '38px',
+      height: '38px',
+      borderRadius: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: trainingAccent.hue,
+      backgroundColor: trainingAccent.soft,
+      border: `1px solid ${trainingAccent.ring}`,
+      marginBottom: '8px',
+    },
+    emptyTitle: {
+      color: mainText,
+      fontSize: '15px',
+      fontWeight: 900,
+      marginBottom: '4px',
+    },
+    emptyText: {
+      color: subText,
+      fontSize: '12px',
+      fontWeight: 700,
+    },
+    backdrop: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: 'rgba(0,0,0,0.58)',
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+      zIndex: 3000,
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
+    },
+    bottomSheet: {
+      width: '100%',
+      maxWidth: '520px',
+      maxHeight: '88vh',
+      overflowY: 'auto',
+      background: isDark
+        ? 'linear-gradient(180deg, rgba(28,31,35,0.98), rgba(17,19,22,0.98))'
+        : Colors.get('background', theme),
+      borderTopLeftRadius: '30px',
+      borderTopRightRadius: '30px',
+      padding: '20px 25px 40px',
+      boxShadow: '0 -18px 54px rgba(0,0,0,0.34)',
+      position: 'relative',
+      zIndex: 3001,
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+      boxSizing: 'border-box',
+    },
+    modalTitle: {
+      fontSize: '20px',
+      fontWeight: 900,
+      color: mainText,
+      margin: 0,
+      letterSpacing: 0,
+    },
+    sheetHeader: {
+      textAlign: 'left',
+      marginBottom: '20px',
+      padding: '0 2px',
+    },
+    sheetTitleRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: '16px',
+      marginBottom: '16px',
+    },
+    sheetEyebrow: {
+      marginBottom: '6px',
+      color: trainingAccent.hue,
+      fontSize: '11px',
+      fontWeight: 900,
+      letterSpacing: '0.16em',
+    },
+    sheetDescription: {
+      margin: '8px 0 0',
+      color: subText,
+      fontSize: '14px',
+      lineHeight: 1.45,
+      fontWeight: 700,
+    },
+    strengthActionGrid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr',
+      gap: '10px',
+      width: '100%',
+      marginBottom: '16px',
+    },
+    strengthChoiceButton: (isPrimary) => ({
+      width: '100%',
+      minHeight: '68px',
+      borderRadius: '22px',
+      padding: '12px 14px',
+      border: `1px solid ${isPrimary ? 'rgba(16,185,129,0.42)' : 'rgba(59,130,246,0.42)'}`,
+      background: isPrimary
+        ? 'linear-gradient(135deg, rgba(16,185,129,0.22), rgba(20,184,166,0.08))'
+        : 'linear-gradient(135deg, rgba(59,130,246,0.20), rgba(37,99,235,0.07))',
+      color: mainText,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      textAlign: 'left',
+      cursor: 'pointer',
+      boxSizing: 'border-box',
+      fontFamily: 'inherit',
+      boxShadow: isPrimary ? '0 16px 36px rgba(16,185,129,0.14)' : '0 16px 36px rgba(59,130,246,0.12)',
+    }),
+    strengthChoiceIcon: (isPrimary) => ({
+      width: '42px',
+      height: '42px',
+      borderRadius: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+      color: isPrimary ? '#10B981' : '#3B82F6',
+      backgroundColor: isPrimary ? 'rgba(16,185,129,0.14)' : 'rgba(59,130,246,0.14)',
+      border: `1px solid ${isPrimary ? 'rgba(16,185,129,0.34)' : 'rgba(59,130,246,0.34)'}`,
+    }),
+    strengthChoiceText: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '3px',
+      minWidth: 0,
+      fontSize: '15px',
+      lineHeight: 1.15,
+    },
+    strengthChoiceSubtext: {
+      color: subText,
+      fontSize: '12px',
+      fontWeight: 750,
+    },
+    sheetSectionLabel: {
+      margin: '0 0 10px',
+      color: subText,
+      fontSize: '11px',
+      fontWeight: 900,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+    },
+    typeGrid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '12px',
+      width: '100%',
+    },
+    typeCard: (type) => ({
+      minHeight: '104px',
+      borderRadius: '22px',
+      padding: '14px',
+      background: isDark
+        ? `linear-gradient(145deg, ${type.color}1e, rgba(255,255,255,0.045))`
+        : `linear-gradient(145deg, ${type.color}16, rgba(255,255,255,0.88))`,
+      border: `1px solid ${type.color}36`,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      gap: '12px',
+      color: type.color,
+      cursor: 'pointer',
+      boxShadow: `0 16px 34px ${type.glow || 'rgba(0,0,0,0.12)'}`,
+      boxSizing: 'border-box',
+    }),
+    typeIconBox: (type) => ({
+      width: '42px',
+      height: '42px',
+      borderRadius: '16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: `${type.color}18`,
+      border: `1px solid ${type.color}30`,
+      color: type.color,
+    }),
+    typeLabel: {
+      color: mainText,
+      fontSize: '15px',
+      fontWeight: 900,
+      lineHeight: 1.15,
+    },
+    typeDescription: {
+      marginTop: '4px',
+      color: subText,
+      fontSize: '11px',
+      fontWeight: 700,
+      lineHeight: 1.25,
+    },
+    quickStartCard: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      width: '100%',
+      padding: '16px',
+      borderRadius: '24px',
+      background: `linear-gradient(135deg, rgba(${trainingAccent.rgb},0.22), rgba(${trainingAccent.rgb},0.08))`,
+      border: `1px solid ${trainingAccent.ring}`,
+      color: trainingAccent.hue,
+      cursor: 'pointer',
+      boxSizing: 'border-box',
+      boxShadow: `0 16px 38px rgba(${trainingAccent.rgb},0.16)`,
+    },
+    quickStartIcon: {
+      width: '48px',
+      height: '48px',
+      borderRadius: '18px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: `rgba(${trainingAccent.rgb},0.16)`,
+      color: trainingAccent.hue,
+      flexShrink: 0,
+    },
+    programStartBlock: {
+      marginTop: '14px',
+      padding: '16px',
+      borderRadius: '24px',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(15,23,42,0.035)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.075)' : 'rgba(15,23,42,0.075)'}`,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '14px',
+      boxSizing: 'border-box',
+    },
+    programStartHeader: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '4px',
+    },
+    choiceTitle: {
+      color: mainText,
+      fontSize: '16px',
+      fontWeight: 900,
+      lineHeight: 1.2,
+    },
+    choiceText: {
+      color: subText,
+      fontSize: '12px',
+      fontWeight: 700,
+      lineHeight: 1.35,
+    },
+    pickerGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr)',
+      gap: '14px',
+      alignItems: 'start',
+    },
+    fieldStack: {
+      minWidth: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+    },
+    selectField: {
+      width: '100%',
+      minHeight: '48px',
+      borderRadius: '16px',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.12)'}`,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.9)',
+      color: mainText,
+      padding: '0 14px',
+      fontSize: '14px',
+      fontWeight: 800,
+      outline: 'none',
+      boxSizing: 'border-box',
+      fontFamily: 'inherit',
+    },
+  };
+};

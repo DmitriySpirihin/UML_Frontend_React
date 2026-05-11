@@ -4,22 +4,23 @@ import Colors from '../../StaticClasses/Colors'
 import { allHabits } from '../../Classes/Habit.js';
 import { AppData } from '../../StaticClasses/AppData.js';
 import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
-import { setShowPopUpPanel, setPage, lastPage$, theme$, lang$, fontSize$, setCurrentBottomBtn, keyboardVisible$, updateConfirmationPanel } from '../../StaticClasses/HabitsBus';
+import { setShowPopUpPanel, setPage, lastPage$, theme$, lang$, fontSize$, setCurrentBottomBtn, keyboardVisible$, updateConfirmationPanel, emitHabitsChanged } from '../../StaticClasses/HabitsBus';
 import { FaSearch, FaTrashAlt, FaChevronRight, FaPlus, FaListUl, FaUndo, FaPencilAlt } from 'react-icons/fa';
 import { MdFiberNew, MdDone, MdClose , MdListAlt } from 'react-icons/md';
 import { IoIosArrowBack } from 'react-icons/io';
 import Slider from '@mui/material/Slider';
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx'; // Imported Component
 import { playEffects } from '../../StaticClasses/Effects.js';
-import { HABITS_ACCENT, HABIT_ICON_GROUPS, HABIT_ICON_OPTIONS, HabitOutlineIcon, getHabitCategoryTone } from './HabitVisuals.jsx';
+import { HABITS_ACCENT, HABIT_ICON_GROUPS, HABIT_ICON_OPTIONS, HabitOutlineIcon, buildHabitsAccent, getHabitCategoryTone, normalizeHabitIconKey } from './HabitVisuals.jsx';
 
 const click = new Audio('Audio/Click.wav');
 const now = new Date();
 
 // --- ВНЕШНИЕ ХЕЛПЕРЫ (ДЛЯ СТАБИЛЬНОСТИ) ---
 const getAllHabits = () => {
-    return allHabits.concat(
-        (AppData.CustomHabits || []).filter(ch => !allHabits.some(d => d.id === ch.id))
+    const custom = AppData.CustomHabits || [];
+    return custom.concat(
+        allHabits.filter(habit => !custom.some(customHabit => customHabit.id === habit.id))
     );
 }
 
@@ -201,23 +202,6 @@ const AddHabitPanel = () => {
         });
     }, [iconSearchQuery]);
 
-    const isLight = theme === 'light' || theme === 'speciallight';
-    const ui = {
-        bg: isLight
-            ? `radial-gradient(900px 450px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7`
-            : `radial-gradient(1000px 500px at 80% -10%, rgba(${HABITS_ACCENT.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013`,
-        card: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(24,28,31,0.88)',
-        cardSoft: isLight ? 'rgba(255,255,255,0.68)' : 'rgba(255,255,255,0.045)',
-        field: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.055)',
-        text: Colors.get('mainText', theme),
-        sub: Colors.get('subText', theme),
-        accent: HABITS_ACCENT.hue,
-        blur: 'blur(30px)',
-        border: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)',
-        borderStrong: isLight ? 'rgba(15,23,42,0.12)' : 'rgba(159,180,196,0.2)',
-        shadow: isLight ? '0 18px 42px rgba(15,23,42,0.08)' : '0 26px 60px rgba(0,0,0,0.34)'
-    };
-
     useEffect(() => {
         const sub1 = theme$.subscribe(setTheme);
         const sub2 = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
@@ -255,6 +239,32 @@ const AddHabitPanel = () => {
         return filteredHabits.find(h => h.id === habitId) || filteredHabits[0] || null;
     }, [filteredHabits, habitId]);
 
+    const activeCategoryKey = showCreatePanel
+        ? habitCategory
+        : (selectedHabit?.category?.[0] || allCategories.find(c => c.label[langIndex] === filterCategory)?.label?.[0] || filterCategory);
+    const activeCategoryTone = getHabitCategoryTone(activeCategoryKey);
+    const dynamicAccent = buildHabitsAccent(activeCategoryTone.hue || HABITS_ACCENT.hue);
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const ui = {
+        bg: isLight
+            ? `radial-gradient(900px 450px at 80% -10%, rgba(${dynamicAccent.rgb},0.10), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.08), transparent 58%), #F4F5F7`
+            : `radial-gradient(1000px 500px at 80% -10%, rgba(${dynamicAccent.rgb},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.05), transparent 55%), #0E1013`,
+        card: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(24,28,31,0.88)',
+        cardSoft: isLight ? 'rgba(255,255,255,0.68)' : 'rgba(255,255,255,0.045)',
+        field: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.055)',
+        text: Colors.get('mainText', theme),
+        sub: Colors.get('subText', theme),
+        accent: dynamicAccent.hue,
+        accentSoft: dynamicAccent.soft,
+        accentRing: dynamicAccent.ring,
+        accentGlow: dynamicAccent.glow,
+        accentRgb: dynamicAccent.rgb,
+        blur: 'blur(30px)',
+        border: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)',
+        borderStrong: isLight ? 'rgba(15,23,42,0.12)' : 'rgba(159,180,196,0.2)',
+        shadow: isLight ? '0 18px 42px rgba(15,23,42,0.08)' : '0 26px 60px rgba(0,0,0,0.34)'
+    };
+
     const getLibraryHabitIcon = (habit, size = 26) => {
         if (!habit) return <HabitOutlineIcon iconName="default" size={size} />;
         return <HabitOutlineIcon iconName={habit.iconName || 'default'} habitName={habit.name} categoryKey={habit.category?.[0]} size={size} />;
@@ -279,6 +289,23 @@ const AddHabitPanel = () => {
             setDaysToForm(isNeg ? 120 : 66);
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
         }
+    };
+
+    const handleLibraryAdd = (habit) => {
+        if (!habit) return;
+        const selectedCat = allCategories.find(c => c.label[langIndex] === habit.category[langIndex]);
+        const isNeg = selectedCat?.isNegative ?? (habit.category[0] === 'Отказ от вредного');
+
+        setHabitId(habit.id);
+        setHabitName(habit.name[langIndex]);
+        setHabitCategory(habit.category[0]);
+        setIsNegative(isNeg);
+        setHabitAutoComplete(false);
+        setGoals(setGoalForDefault(habit.name[0], langIndex));
+        setDaysToForm(isNeg ? 120 : 66);
+        if (habitSearchQuery.trim()) setFilterCategory(habit.category[langIndex]);
+        setConfirmationPanel(true);
+        if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     };
 
     // Initialize selection when category changes (select first item if current is invalid)
@@ -329,12 +356,49 @@ const AddHabitPanel = () => {
         setHabitId(-1);
     };
 
-    const handleSave = () => {
+    const openCustomHabitPanel = () => {
+        const selectedCat = allCategories.find(c => c.label[langIndex] === filterCategory) || activeCategories[0];
+        setshowCreatePanel(true);
+        setHabitName('');
+        setHabitDescription('');
+        setHabitIcon('default');
+        setGoals([]);
+        setGoalName('');
+        setHabitCategory(selectedCat?.label?.[0] || 'Здоровье');
+        setIsNegative(selectedCat?.isNegative || false);
+        setHabitAutoComplete(false);
+        setDaysToForm(selectedCat?.isNegative ? 120 : 66);
+        setHabitId(-1);
+    };
+
+    const closeCustomHabitPanel = () => {
+        setshowCreatePanel(false);
+        setGoals([]);
+        if (selectedHabit) handleHabitSelect(selectedHabit);
+    };
+
+    const handleNext = () => {
+        if (showCreatePanel && habitName.trim().length < 2) {
+            setShowPopUpPanel(langIndex === 0 ? 'Введите название привычки' : 'Enter habit name', 2000, false);
+            return;
+        }
+        if (!showCreatePanel && !selectedHabit) {
+            setShowPopUpPanel(langIndex === 0 ? 'Выберите привычку' : 'Choose a habit', 2000, false);
+            return;
+        }
+        setConfirmationPanel(true);
+    };
+
+    const handleSave = async () => {
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         const finalGoals = goals.map(g => ({ text: g, isDone: false }));
-        if (showCreatePanel) createHabit(habitName, getCategory(habitCategory), habitDescription, habitIcon, dateStr, finalGoals, isNegative, daysToForm, habitAutoComplete);
-        else addHabit(habitId, habitName, false, dateStr, finalGoals, isNegative, daysToForm, habitAutoComplete);
-        closePanel();
+        const effectiveHabit = !showCreatePanel ? (selectedHabit || filteredHabits[0]) : null;
+        const effectiveHabitId = effectiveHabit?.id ?? habitId;
+        const effectiveHabitName = effectiveHabit?.name?.[langIndex] ?? habitName.trim();
+        const added = showCreatePanel
+            ? await createHabit(habitName.trim(), getCategory(habitCategory), habitDescription.trim(), habitIcon, dateStr, finalGoals, isNegative, daysToForm, habitAutoComplete)
+            : await addHabit(effectiveHabitId, effectiveHabitName, false, dateStr, finalGoals, isNegative, daysToForm, habitAutoComplete);
+        if (added) closePanel();
     };
 
     const resetCategoryForm = () => {
@@ -613,6 +677,7 @@ const AddHabitPanel = () => {
                                                                 habits={filteredHabits}
                                                                 selectedHabit={selectedHabit}
                                                                 onSelect={handleHabitSelect}
+                                                                onAdd={handleLibraryAdd}
                                                                 langIndex={langIndex}
                                                                 ui={ui}
                                                             />
@@ -625,7 +690,7 @@ const AddHabitPanel = () => {
                                                                     <motion.div
                                                                         whileTap={{ scale: 0.96 }}
                                                                         onClick={openCreatePanelFromSearch}
-                                                                        style={{ padding: '11px 15px', borderRadius: '14px', background: HABITS_ACCENT.soft, border: `1px solid ${HABITS_ACCENT.ring}`, color: ui.accent, fontWeight: '800', cursor: 'pointer' }}
+                                                                        style={{ padding: '11px 15px', borderRadius: '14px', background: ui.accentSoft, border: '1px solid transparent', color: ui.accent, fontWeight: '800', cursor: 'pointer' }}
                                                                     >
                                                                         {langIndex === 0 ? `Создать "${habitSearchQuery.trim()}"` : `Create "${habitSearchQuery.trim()}"`}
                                                                     </motion.div>
@@ -636,7 +701,7 @@ const AddHabitPanel = () => {
                                                 </div>
                                             </>
                                         ) : (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                            <div style={customFormCard(ui)}>
                                                 {renderCategoryStrip()}
                                                 {renderDeletedCategories(true)}
 
@@ -665,7 +730,10 @@ const AddHabitPanel = () => {
                                 ) : (
                                     /* ШАГ 2: Подтверждение (Барабаны даты, Цели, Слайдер) */
                                     <motion.div key="step2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }} style={{ flex: 1, overflowY: 'auto' }}>
-                                        <h3 style={{ color: ui.text, textAlign: 'center', fontWeight: '900', margin: '20px 0', fontSize: '22px' }}>{habitName}</h3>
+                                        <div style={confirmTitle(ui)}>
+                                            <div style={confirmEyebrow(ui)}>{langIndex === 0 ? 'Настройка привычки' : 'Habit setup'}</div>
+                                            <h3 style={{ color: ui.text, margin: 0, fontSize: 26, lineHeight: 1.05, fontWeight: 950, letterSpacing: 0 }}>{habitName}</h3>
+                                        </div>
                                         
                                         {/* БАРАБАНЫ ДАТЫ (SCROLLPICKER) */}
                                         <div style={configCard(ui)}>
@@ -744,7 +812,7 @@ const AddHabitPanel = () => {
                                                 ))}
                                             </div>
                                         </div>
-                                        <div style={{ marginBottom: '290px' }} />
+                                        <div style={{ marginBottom: '88px' }} />
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -752,7 +820,7 @@ const AddHabitPanel = () => {
                             {/* --- ФИНАЛЬНЫЕ КНОПКИ --- */}
                             <div style={footerButtons}>
                                 {!confirmationPanel && (
-                                    <motion.div whileTap={{ scale: 0.9 }} style={btnNew(ui)} onClick={() => {setshowCreatePanel(!showCreatePanel);if(!showCreatePanel){setGoals([])}}}>
+                                    <motion.div whileTap={{ scale: 0.9 }} style={btnNew(ui)} onClick={showCreatePanel ? closeCustomHabitPanel : openCustomHabitPanel}>
                                            {showCreatePanel ? <MdListAlt size={24} color={ui.accent} /> :  <MdFiberNew size={24} color={ui.accent} />}
                                     </motion.div>
                                 )}
@@ -760,9 +828,16 @@ const AddHabitPanel = () => {
                                 <motion.div
                                     whileTap={{ scale: 0.95 }}
                                     style={btnNext(ui)}
-                                    onClick={confirmationPanel ? handleSave : () => { if(habitId !== -1 || habitName.length > 3) setConfirmationPanel(true); }}
+                                    onClick={confirmationPanel ? handleSave : handleNext}
                                 >
-                                    {confirmationPanel ? <MdDone size={28} color={ui.accent} /> : <FaChevronRight size={20} color={ui.accent} />}
+                                    {confirmationPanel ? (
+                                        <>
+                                            <MdDone size={24} color={ui.accent} />
+                                            <span>{langIndex === 0 ? 'Добавить привычку' : 'Add habit'}</span>
+                                        </>
+                                    ) : (
+                                        <FaChevronRight size={20} color={ui.accent} />
+                                    )}
                                 </motion.div>
                             </div>
                         </div>
@@ -900,7 +975,7 @@ const AddHabitPanel = () => {
                                                 </motion.div>
                                             )}
                                             <motion.div whileTap={{ scale: 0.95 }} onClick={handleSaveCategory}
-                                                style={{ flex: editingCategoryIndex !== null ? 1 : 2, padding: '14px', background: HABITS_ACCENT.soft, border: `1px solid ${HABITS_ACCENT.ring}`, borderRadius: '14px', cursor: 'pointer', textAlign: 'center' }}>
+                                                style={{ flex: editingCategoryIndex !== null ? 1 : 2, padding: '14px', background: ui.accentSoft, border: '1px solid transparent', borderRadius: '14px', cursor: 'pointer', textAlign: 'center' }}>
                                                 <span style={{ color: ui.accent, fontWeight: '800', fontSize: '14px' }}>
                                                     {langIndex === 0 ? (editingCategoryIndex !== null ? 'Сохранить' : 'Создать') : (editingCategoryIndex !== null ? 'Save' : 'Create')}
                                                 </span>
@@ -918,7 +993,40 @@ const AddHabitPanel = () => {
 const HABIT_PICKER_ITEM_HEIGHT = 96;
 const HABIT_PICKER_VISIBLE_ITEMS = 5;
 
-function HabitLibraryList({ habits, selectedHabit, onSelect, langIndex, ui }) {
+const getCategoryIconPool = (categoryKey) => {
+    const key = String(categoryKey || '');
+    if (key === 'Здоровье' || key === 'Health') {
+        return [
+            ...(HABIT_ICON_GROUPS.find(group => group.key === 'health')?.icons || []),
+            ...(HABIT_ICON_GROUPS.find(group => group.key === 'food')?.icons || [])
+        ];
+    }
+    if (key === 'Развитие' || key === 'Growth') return HABIT_ICON_GROUPS.find(group => group.key === 'growth')?.icons || [];
+    if (key === 'Продуктивность' || key === 'Productivity') {
+        return [
+            ...(HABIT_ICON_GROUPS.find(group => group.key === 'productivity')?.icons || []),
+            ...(HABIT_ICON_GROUPS.find(group => group.key === 'finance')?.icons || [])
+        ];
+    }
+    if (key === 'Отношения и отдых' || key === 'Relationships & recreation') return HABIT_ICON_GROUPS.find(group => group.key === 'relationships')?.icons || [];
+    if (key === 'Отказ от вредного' || key === 'Bad habits to quit') return HABIT_ICON_GROUPS.find(group => group.key === 'limits')?.icons || [];
+    return HABIT_ICON_OPTIONS;
+};
+
+const buildUniqueHabitIconMap = (habits) => {
+    const used = new Set();
+    return new Map((habits || []).map((habit) => {
+        const baseIcon = normalizeHabitIconKey(habit?.iconName || 'default', habit?.name, habit?.category?.[0]);
+        const pool = [baseIcon, ...getCategoryIconPool(habit?.category?.[0]), ...HABIT_ICON_OPTIONS];
+        const icon = pool.find(iconKey => !used.has(iconKey)) || baseIcon;
+        used.add(icon);
+        return [habit.id, icon];
+    }));
+};
+
+function HabitLibraryList({ habits, selectedHabit, onSelect, onAdd, langIndex, ui }) {
+    const displayIconById = useMemo(() => buildUniqueHabitIconMap(habits), [habits]);
+
     return (
         <div className="no-scrollbar" style={habitListScroll()}>
             {habits.map((habit, index) => {
@@ -933,16 +1041,25 @@ function HabitLibraryList({ habits, selectedHabit, onSelect, langIndex, ui }) {
                         style={habitListCard(active, tone, ui)}
                     >
                         <div style={habitListIcon(tone, active)}>
-                            <HabitOutlineIcon iconName={habit.iconName || 'default'} habitName={habit.name} categoryKey={habit.category?.[0]} size={24} />
+                            <HabitOutlineIcon iconName={displayIconById.get(habit.id) || habit.iconName || 'default'} habitName={habit.name} categoryKey={habit.category?.[0]} size={24} />
                         </div>
                         <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={habitListTitle(ui)}>{habit.name[langIndex]}</div>
                             <div style={habitListDescription(ui)}>{habit.description[langIndex]}</div>
                             <div style={habitListMeta(tone)}>{habit.category[langIndex]}</div>
                         </div>
-                        <div style={habitListAction(active, tone, ui)}>
-                            <FaChevronRight size={13} />
-                        </div>
+                        <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.9 }}
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onAdd?.(habit);
+                            }}
+                            aria-label={langIndex === 0 ? 'Добавить привычку' : 'Add habit'}
+                            style={habitListAction(active, tone, ui)}
+                        >
+                            <FaPlus size={13} />
+                        </motion.button>
                     </motion.div>
                 );
             })}
@@ -1060,12 +1177,12 @@ function HabitLibraryPicker({ habits, selectedHabit, onSelect, langIndex, ui, ge
 
 // --- СТИЛИ ---
 const pageStyle = { position: 'fixed', inset: 0, width: '100vw', height: '100vh', overflowY: 'auto', overflowX: 'hidden', zIndex: 1000, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" };
-const pageHeader = { width: 'calc(100% - 56px)', maxWidth: 660, margin: '0 auto', padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 0 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxSizing: 'border-box' };
-const contentWrap = () => ({ width: 'calc(100% - 56px)', maxWidth: 660, margin: '0 auto', minHeight: 'calc(100vh - 92px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' });
-const backBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: ui.field, border: `1px solid ${ui.border}`, boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset', cursor: 'pointer', flexShrink: 0 });
-const brandBlock = () => ({ minWidth: 0, flex: 1, textAlign: 'center', padding: '0 12px' });
-const brandTitle = (ui) => ({ color: ui.text, fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 24, fontWeight: 700, lineHeight: 1.05, opacity: 0.86 });
-const brandSubtitle = (ui) => ({ marginTop: 6, color: ui.sub, fontSize: 9, fontWeight: 650, letterSpacing: '0.16em' });
+const pageHeader = { width: 'calc(100% - 32px)', maxWidth: 440, margin: '0 auto', padding: 'calc(env(safe-area-inset-top, 0px) + 12px) 0 10px', display: 'grid', gridTemplateColumns: '46px minmax(0, 1fr) 46px', alignItems: 'center', gap: 10, boxSizing: 'border-box' };
+const contentWrap = () => ({ width: 'calc(100% - 32px)', maxWidth: 440, margin: '0 auto', minHeight: 'calc(100vh - 82px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' });
+const backBtn = (ui) => ({ width: '46px', height: '46px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(145deg, ${ui.cardSoft}, ${ui.field})`, border: '1px solid transparent', boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset, 0 14px 32px rgba(0,0,0,0.16)', cursor: 'pointer', flexShrink: 0 });
+const brandBlock = () => ({ minWidth: 0, textAlign: 'center' });
+const brandTitle = (ui) => ({ color: ui.text, fontSize: 24, fontWeight: 950, lineHeight: 1.02, letterSpacing: 0 });
+const brandSubtitle = (ui) => ({ marginTop: 5, color: ui.sub, fontSize: 9, fontWeight: 850, letterSpacing: '0.14em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' });
 const addHero = (ui) => ({
     position: 'relative',
     overflow: 'hidden',
@@ -1076,12 +1193,12 @@ const addHero = (ui) => ({
     display: 'flex',
     alignItems: 'center',
     gap: 14,
-    background: `radial-gradient(300px 140px at 84% -22%, rgba(${HABITS_ACCENT.rgb},0.16), transparent 70%), linear-gradient(145deg, rgba(25,31,34,0.9), rgba(20,23,25,0.92))`,
-    border: `1px solid ${ui.borderStrong}`,
-    boxShadow: ui.shadow,
+    background: `radial-gradient(300px 140px at 84% -22%, rgba(${ui.accentRgb},0.15), transparent 70%), linear-gradient(145deg, rgba(25,31,34,0.9), rgba(20,23,25,0.92))`,
+    border: '1px solid transparent',
+    boxShadow: '0 18px 42px -30px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.035) inset',
     boxSizing: 'border-box'
 });
-const addHeroIcon = (ui) => ({ width: 54, height: 54, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ui.accent, background: HABITS_ACCENT.soft, border: `1px solid ${HABITS_ACCENT.ring}`, boxShadow: `0 0 34px ${HABITS_ACCENT.glow}`, flexShrink: 0 });
+const addHeroIcon = (ui) => ({ width: 54, height: 54, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ui.accent, background: ui.accentSoft, border: '1px solid transparent', boxShadow: `0 12px 24px -22px ${ui.accent}`, flexShrink: 0 });
 const heroEyebrow = (ui) => ({ color: ui.sub, fontSize: 11, fontWeight: 900, letterSpacing: '0.16em' });
 const heroTitle = (ui) => ({ color: ui.text, fontSize: 25, lineHeight: 1.05, fontWeight: 950, margin: '6px 0 0' });
 
@@ -1109,12 +1226,12 @@ const categoryChip = (active, tone, ui) => ({
     background: active
         ? `linear-gradient(135deg, ${tone.soft}, rgba(255,255,255,0.055))`
         : ui.cardSoft,
-    border: `1px solid ${active ? tone.ring : ui.border}`,
+    border: '1px solid transparent',
     color: active ? tone.hue : ui.text,
     fontSize: 13,
     fontWeight: 850,
     transition: '0.2s all',
-    boxShadow: active ? `0 0 22px ${tone.soft}` : '0 1px 0 rgba(255,255,255,0.03) inset',
+    boxShadow: active ? `0 12px 24px -22px ${tone.hue}` : '0 1px 0 rgba(255,255,255,0.03) inset',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -1122,25 +1239,36 @@ const categoryChip = (active, tone, ui) => ({
     flexShrink: 0,
     boxSizing: 'border-box'
 });
-const categoryChipIcon = (active, tone) => ({ width: 25, height: 25, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: tone.hue, background: active ? tone.soft : 'rgba(255,255,255,0.045)', border: `1px solid ${active ? tone.ring : 'rgba(255,255,255,0.06)'}`, flexShrink: 0 });
+const categoryChipIcon = (active, tone) => ({ width: 25, height: 25, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: tone.hue, background: active ? tone.soft : 'rgba(255,255,255,0.045)', border: '1px solid transparent', flexShrink: 0 });
 const categoryChipActions = (active, ui) => ({ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: active ? 2 : 0, color: ui.sub });
-const categoryActionBtn = (ui, danger = false) => ({ width: 23, height: 23, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: danger ? 'rgba(216,120,94,0.1)' : 'rgba(255,255,255,0.055)', border: `1px solid ${danger ? 'rgba(216,120,94,0.18)' : ui.border}`, color: danger ? '#D8785E' : ui.sub, cursor: 'pointer', flexShrink: 0 });
-const addCategoryChip = (ui) => ({ minHeight: 42, padding: '8px 14px', borderRadius: 16, whiteSpace: 'nowrap', background: ui.cardSoft, color: ui.accent, border: `1px solid ${HABITS_ACCENT.ring}`, fontSize: 13, fontWeight: 850, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flexShrink: 0, boxSizing: 'border-box' });
-const restoreToggle = (ui) => ({ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 11px', borderRadius: 13, background: ui.cardSoft, border: `1px solid ${ui.border}`, color: ui.sub, cursor: 'pointer', marginBottom: 8, fontSize: 12, fontWeight: 800 });
+const categoryActionBtn = (ui, danger = false) => ({ width: 23, height: 23, borderRadius: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: danger ? 'rgba(216,120,94,0.1)' : 'rgba(255,255,255,0.055)', border: '1px solid transparent', color: danger ? '#D8785E' : ui.sub, cursor: 'pointer', flexShrink: 0 });
+const addCategoryChip = (ui) => ({ minHeight: 42, padding: '8px 14px', borderRadius: 16, whiteSpace: 'nowrap', background: ui.cardSoft, color: ui.accent, border: '1px solid transparent', fontSize: 13, fontWeight: 850, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flexShrink: 0, boxSizing: 'border-box' });
+const restoreToggle = (ui) => ({ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 11px', borderRadius: 13, background: ui.cardSoft, border: '1px solid transparent', color: ui.sub, cursor: 'pointer', marginBottom: 8, fontSize: 12, fontWeight: 800 });
 const restoreGrid = () => ({ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 });
-const restoreChip = (tone, ui) => ({ padding: '8px 11px', borderRadius: 13, background: tone.soft, border: `1px solid ${tone.ring}`, color: ui.text, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 12, fontWeight: 800 });
-const textInput = (ui) => ({ width: '100%', border: `1px solid ${ui.border}`, background: ui.field, boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset', fontSize: '16px', color: ui.text, outline: 'none', borderRadius: '18px', padding: '15px 16px', boxSizing: 'border-box' });
+const restoreChip = (tone, ui) => ({ padding: '8px 11px', borderRadius: 13, background: tone.soft, border: '1px solid transparent', color: ui.text, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 12, fontWeight: 800 });
+const textInput = (ui) => ({ width: '100%', border: '1px solid transparent', background: ui.field, boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset', fontSize: '16px', color: ui.text, outline: 'none', borderRadius: '18px', padding: '15px 16px', boxSizing: 'border-box' });
+const customFormCard = (ui) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 14,
+    padding: '14px',
+    borderRadius: 26,
+    background: `radial-gradient(260px 150px at 88% 0%, rgba(${ui.accentRgb},0.12), transparent 72%), linear-gradient(145deg, rgba(24,28,31,0.88), rgba(18,21,23,0.94))`,
+    border: '1px solid transparent',
+    boxShadow: '0 18px 42px -32px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.035) inset',
+    boxSizing: 'border-box'
+});
 
 const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
 const dragHandle = { width: '45px', height: '5px', backgroundColor: '#8E8E93', borderRadius: '3px', margin: '15px auto', opacity: 0.4 };
 
 const libraryPanel = (ui) => ({
     position: 'relative',
-    background: 'linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.94))',
+    background: `radial-gradient(260px 160px at 100% 8%, rgba(${ui.accentRgb},0.10), transparent 74%), linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.94))`,
     borderRadius: '26px',
-    border: `1px solid ${ui.borderStrong}`,
+    border: '1px solid transparent',
     overflow: 'hidden',
-    boxShadow: ui.shadow
+    boxShadow: '0 18px 42px -32px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.035) inset'
 });
 const librarySearchRow = (ui) => ({
     display: 'flex',
@@ -1155,8 +1283,8 @@ const libraryCount = (ui) => ({
     minWidth: '30px',
     padding: '5px 8px',
     borderRadius: '999px',
-    background: HABITS_ACCENT.soft,
-    border: `1px solid ${HABITS_ACCENT.ring}`,
+    background: ui.accentSoft,
+    border: '1px solid transparent',
     color: ui.accent,
     fontSize: '12px',
     fontWeight: '800',
@@ -1197,7 +1325,7 @@ const habitListCard = (active, tone, ui) => ({
         ? `radial-gradient(220px 120px at 0% 20%, ${tone.soft}, transparent 72%), linear-gradient(145deg, rgba(28,34,36,0.96), rgba(22,25,27,0.96))`
         : 'rgba(255,255,255,0.025)',
     border: `1px solid ${active ? tone.ring : ui.border}`,
-    boxShadow: active ? `0 0 26px ${tone.soft}, 0 1px 0 rgba(255,255,255,0.04) inset` : '0 1px 0 rgba(255,255,255,0.03) inset'
+    boxShadow: active ? `0 12px 24px -22px ${tone.hue}, 0 1px 0 rgba(255,255,255,0.04) inset` : '0 1px 0 rgba(255,255,255,0.03) inset'
 });
 const habitListIcon = (tone, active) => ({
     position: 'relative',
@@ -1211,7 +1339,7 @@ const habitListIcon = (tone, active) => ({
     color: tone.hue,
     background: active ? tone.soft : 'rgba(255,255,255,0.04)',
     border: `1px solid ${active ? tone.ring : 'rgba(255,255,255,0.07)'}`,
-    boxShadow: active ? `0 0 20px ${tone.soft}` : 'none'
+    boxShadow: active ? `0 12px 22px -20px ${tone.hue}` : 'none'
 });
 const habitListTitle = (ui) => ({
     color: ui.text,
@@ -1258,8 +1386,12 @@ const habitListAction = (active, tone, ui) => ({
     justifyContent: 'center',
     color: active ? tone.hue : ui.sub,
     background: active ? tone.soft : 'rgba(255,255,255,0.035)',
-    border: `1px solid ${active ? tone.ring : ui.border}`,
-    flexShrink: 0
+    border: '1px solid transparent',
+    flexShrink: 0,
+    padding: 0,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    outline: 'none'
 });
 const habitPickerFrame = (ui) => ({
     position: 'relative',
@@ -1369,16 +1501,42 @@ const drumScroll = { width: '100%', height: '100%', overflowY: 'scroll', scrollS
 const drumItem = (active, ui) => ({ height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center', color: active ? ui.accent : ui.text, fontSize: active ? '20px' : '17px', fontWeight: active ? '900' : '400', opacity: active ? 1 : 0.4, transition: '0.3s all' });
 const drumLens = (ui) => ({ position: 'absolute', top: '88px', left: 0, right: 0, height: '44px', borderTop: `1px solid ${ui.border}`, borderBottom: `1px solid ${ui.border}`, pointerEvents: 'none' });
 
-const configCard = (ui) => ({ background: 'linear-gradient(145deg, rgba(24,28,31,0.9), rgba(20,23,25,0.94))', borderRadius: '24px', padding: '22px', marginBottom: '15px', border: `1px solid ${ui.border}`, boxShadow: ui.shadow });
-const cardLabel = (ui) => ({ color: ui.sub, fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '15px', letterSpacing: '1px' });
+const confirmTitle = (ui) => ({
+    margin: '12px 0 16px',
+    padding: '18px',
+    borderRadius: 24,
+    background: `radial-gradient(260px 130px at 90% 0%, rgba(${ui.accentRgb},0.13), transparent 72%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
+    border: '1px solid transparent',
+    boxShadow: '0 18px 42px -32px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.035) inset',
+    textAlign: 'left'
+});
+const confirmEyebrow = (ui) => ({
+    color: ui.accent,
+    fontSize: 10,
+    fontWeight: 950,
+    letterSpacing: '0.14em',
+    textTransform: 'uppercase',
+    marginBottom: 6
+});
+const configCard = (ui) => ({
+    background: `radial-gradient(260px 140px at 92% 0%, rgba(${ui.accentRgb},0.09), transparent 74%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
+    borderRadius: 24,
+    padding: '19px',
+    marginBottom: 14,
+    border: '1px solid transparent',
+    boxShadow: '0 16px 38px -32px rgba(0,0,0,0.74), 0 1px 0 rgba(255,255,255,0.032) inset',
+    backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur
+});
+const cardLabel = (ui) => ({ color: ui.sub, fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '13px', letterSpacing: '0.13em' });
 
-const footerButtons = { display: 'flex', gap: '12px', padding: '18px 0 calc(18px + env(safe-area-inset-bottom, 0px))', alignItems: 'center', position: 'sticky', bottom: 0, background: 'linear-gradient(180deg, transparent, rgba(14,16,19,0.72) 22%, rgba(14,16,19,0.95))', zIndex: 5 };
-const btnBase = { height: '60px', borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' };
+const footerButtons = { display: 'flex', gap: '10px', padding: '12px 0 calc(12px + env(safe-area-inset-bottom, 0px))', alignItems: 'center', position: 'sticky', bottom: 0, background: 'transparent', zIndex: 5 };
+const btnBase = { height: '58px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', fontSize: 15, fontWeight: 950, fontFamily: 'inherit' };
 const btnCancel = (ui) => ({ ...btnBase, flex: 1, backgroundColor: '#FF3B30', border: `1px solid ${ui.border}` });
-const btnNew = (ui) => ({ ...btnBase, width: '60px', background: HABITS_ACCENT.soft, color: ui.accent, border: `1px solid ${HABITS_ACCENT.ring}`, boxShadow: `0 0 24px ${HABITS_ACCENT.glow}` });
-const btnNext = (ui) => ({ ...btnBase, flex: 2, background: `linear-gradient(135deg, rgba(${HABITS_ACCENT.rgb},0.24), rgba(143,166,200,0.13))`, color: ui.text, border: `1px solid ${HABITS_ACCENT.ring}`, boxShadow: `0 0 28px ${HABITS_ACCENT.glow}` });
+const btnNew = (ui) => ({ ...btnBase, width: '58px', background: ui.accentSoft, color: ui.accent, border: '1px solid transparent', boxShadow: `0 14px 24px -22px ${ui.accent}` });
+const btnNext = (ui) => ({ ...btnBase, flex: 2, background: `linear-gradient(135deg, rgba(${ui.accentRgb},0.22), rgba(143,166,200,0.11))`, color: ui.text, border: '1px solid transparent', boxShadow: `0 14px 34px -28px rgba(${ui.accentRgb},0.45), inset 0 1px 0 rgba(255,255,255,0.08)` });
 
-const iconSheet = (ui) => ({ width: '100%', maxHeight: '76vh', borderRadius: '34px 34px 0 0', overflow: 'hidden', borderTop: `1px solid ${ui.borderStrong}`, background: 'linear-gradient(180deg, rgba(24,28,31,0.98), rgba(15,17,19,0.98))' });
+const iconSheet = (ui) => ({ width: '100%', maxHeight: '76vh', borderRadius: '34px 34px 0 0', overflow: 'hidden', borderTop: '1px solid transparent', background: 'linear-gradient(180deg, rgba(24,28,31,0.98), rgba(15,17,19,0.98))' });
 const iconGrid = { maxHeight: '50vh', overflowY: 'scroll', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '15px', padding: '0 25px 40px', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehavior: 'contain' };
 const iconGroupsScroll = (compact = false) => ({
     maxHeight: compact ? 'min(330px, 38vh)' : '50vh',
@@ -1428,14 +1586,14 @@ const categoryIconGrid = () => ({
     touchAction: 'pan-y',
     overscrollBehavior: 'contain'
 });
-const iconItem = (active, ui) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px', borderRadius: '18px', background: active ? HABITS_ACCENT.soft : ui.field, border: active ? `1px solid ${HABITS_ACCENT.ring}` : `1px solid ${ui.border}`, boxShadow: active ? `0 0 22px ${HABITS_ACCENT.glow}` : 'none' });
-const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 16px', background: ui.field, border: `1px solid ${ui.border}`, borderRadius: '18px', boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset' });
-const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', background: HABITS_ACCENT.soft, border: `1px solid ${HABITS_ACCENT.ring}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '15px', marginTop: '10px' });
-const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: ui.field, border: `1px solid ${ui.border}`, borderRadius: '16px' });
+const iconItem = (active, ui) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px', borderRadius: '18px', background: active ? ui.accentSoft : ui.field, border: '1px solid transparent', boxShadow: active ? `0 14px 24px -22px ${ui.accent}` : 'none' });
+const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 16px', background: ui.field, border: '1px solid transparent', borderRadius: '18px', boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset' });
+const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', background: ui.accentSoft, border: '1px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '12px', flexShrink: 0, cursor: 'pointer' });
+const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '15px', background: ui.field, border: '1px solid transparent', borderRadius: '16px' });
 const inputStyle = (ui) => ({ width: '100%', border: 'none', background: 'transparent', fontSize: '16px', color: ui.text, outline: 'none' });
 const completionModeButton = (ui, active) => ({
-    border: `1px solid ${active ? HABITS_ACCENT.ring : ui.border}`,
-    background: active ? HABITS_ACCENT.soft : 'transparent',
+    border: '1px solid transparent',
+    background: active ? ui.accentSoft : 'rgba(255,255,255,0.035)',
     color: active ? ui.accent : ui.text,
     borderRadius: '14px',
     padding: '12px',
@@ -1449,7 +1607,10 @@ const months = [['января', 'февраля', 'марта', 'апреля',
 
 const getCategory = (value) => {
     const map = { 'Здоровье': ['Здоровье', 'Health'], 'Health': ['Здоровье', 'Health'], 'Развитие': ["Развитие", "Growth"], 'Growth': ["Развитие", "Growth"], 'Продуктивность': ["Продуктивность", "Productivity"], 'Productivity': ["Продуктивность", "Productivity"], 'Отношения и отдых': ["Отношения и отдых", "Relationships & recreation"], 'Relationships & recreation': ["Отношения и отдых", "Relationships & recreation"], 'Отказ от вредного': ["Отказ от вредного", "Bad habits to quit"], 'Bad habits to quit': ["Отказ от вредного", "Bad habits to quit"] };
-    return map[value] || ['Здоровье', 'Health'];
+    if (map[value]) return map[value];
+
+    const category = AppData.GetAllHabitCategories(0, true).find((cat) => cat.label?.includes(value));
+    return category?.label || [value || 'Здоровье', value || 'Health'];
 };
 
 function needDaysInfo(lang, days, isNegative) {
@@ -1457,18 +1618,28 @@ function needDaysInfo(lang, days, isNegative) {
     return lang === 0 ? 'мне нужно ' + days + ' дней для формирования' : 'it takes ' + days + ' days to form';
 }
 
-const addHabit = (habitId, habitName, isCustom, dateString, goals, isNegative, daysToForm, autoComplete = false) => {
-    if (AppData.IsHabitInChoosenList(habitId)) { setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list', 2500, false); return; }
-    addHabitFn(habitId, dateString, goals, isNegative, daysToForm, autoComplete);
+const addHabit = async (habitId, habitName, isCustom, dateString, goals, isNegative, daysToForm, autoComplete = false) => {
+    if (habitId == null || habitId < 0) {
+        setShowPopUpPanel(AppData.prefs[0] === 0 ? 'выберите привычку' : 'choose a habit', 2500, false);
+        return false;
+    }
+    if (AppData.IsHabitInChoosenList(habitId)) { setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list', 2500, false); return false; }
+    if (typeof addHabitFn === 'function') {
+        await addHabitFn(habitId, dateString, goals, isNegative, daysToForm, autoComplete);
+    } else {
+        await AppData.addHabit(habitId, dateString, goals, isNegative, daysToForm, autoComplete);
+    }
+    emitHabitsChanged();
     setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка добавлена' : 'habit added', 2500, true);
+    return true;
 }
 
-const createHabit = (name, category, description, icon, dateString, goals, isNegative, daysToForm, autoComplete = false) => {
+const createHabit = async (name, category, description, icon, dateString, goals, isNegative, daysToForm, autoComplete = false) => {
     const currentAll = getAllHabits();
     const maxId = currentAll.length > 0 ? Math.max(...currentAll.map(h => h.id)) : 0;
     const habitId = maxId + 1;
-    AppData.AddCustomHabit(name, category, description, icon, habitId);
-    setTimeout(() => { addHabit(habitId, name, true, dateString, goals, category[0] === 'Отказ от вредного', daysToForm, autoComplete); }, 100);
+    await AppData.AddCustomHabit(name, category, description, icon, habitId);
+    return addHabit(habitId, name, true, dateString, goals, isNegative, daysToForm, autoComplete);
 }
 
 const translateToEnglish = (ruText) => {

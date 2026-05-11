@@ -1,32 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 // Icons
 import Home from '@mui/icons-material/HomeRounded';
 import Back from '@mui/icons-material/ArrowBackIosNewRounded';
 import Metrics from '@mui/icons-material/BarChartRounded';
+import AutoAwesome from '@mui/icons-material/AutoAwesomeRounded';
 
 import { 
     setPage, setAddPanel, setPage$, addPanel$, theme$, 
-    currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, notify$ 
+    currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, sectionAccent$
 } from '../../StaticClasses/HabitsBus';
 import Colors from '../../StaticClasses/Colors';
 import { saveData } from '../../StaticClasses/SaveHelper';
 import { playEffects } from '../../StaticClasses/Effects';
+import { AppData } from '../../StaticClasses/AppData.js';
+import { buildSectionAccent } from '../SectionAccentSettings.jsx';
 
 const switchSound = new Audio('Audio/Click.wav');
+const RECOVERY_ACCENT = '#2FD6BD';
 
 const BtnsRecovery = () => {
     const [theme, setthemeState] = useState('dark');
     const [page, setPageState] = useState('');
     const [addPanel, setAddPanelState] = useState('');
     const [currentBtn, setBtnState] = useState(0);
+    const [, setAccentVersion] = useState(0);
 
     useEffect(() => {
         const subs = [
             theme$.subscribe(setthemeState),
             setPage$.subscribe(setPageState),
             addPanel$.subscribe(setAddPanelState),
-            currentBottomBtn$.subscribe(setBtnState)
+            currentBottomBtn$.subscribe(setBtnState),
+            sectionAccent$.subscribe(() => setAccentVersion(version => version + 1))
         ];
         return () => subs.forEach(s => s.unsubscribe());
     }, []);
@@ -35,12 +41,13 @@ const BtnsRecovery = () => {
     useEffect(() => {
         if (currentBtn === 0 || currentBtn === -1) {
             if (page === 'RecoveryAnalitics') setCurrentBottomBtn(1);
+            else if (page === 'RecoveryInsight') setCurrentBottomBtn(2);
             else if (page === 'RecoveryMain' && addPanel === '') setCurrentBottomBtn(0);
         }
     }, [page, addPanel]);
 
     return (
-        <div style={containerStyle(theme)}>
+        <div style={containerStyle()}>
             <div style={glassOverlay(theme)} />
 
             <NavButton 
@@ -68,34 +75,58 @@ const BtnsRecovery = () => {
                 }}
                 theme={theme}
             />
+
+            <NavButton
+                id={2}
+                current={currentBtn}
+                icon={<AutoAwesome />}
+                onClick={() => {
+                    setCurrentBottomBtn(2);
+                    setPage('RecoveryInsight');
+                    setAddPanel('');
+                    setNotifyPanel(false);
+                    playEffects(switchSound);
+                }}
+                theme={theme}
+            />
         </div>
     );
 };
 
 const NavButton = ({ id, current, icon, onClick, theme }) => {
     const isActive = current === id;
+    const accent = buildSectionAccent(AppData.recoveryAccentColor || RECOVERY_ACCENT, RECOVERY_ACCENT);
     return (
-        <motion.div whileTap={{ scale: 0.9 }} onClick={onClick} style={navBtnWrapper}>
+        <Motion.div whileTap={{ scale: 0.9 }} onClick={onClick} style={navBtnWrapper}>
             <div style={{
-                color: isActive ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
-                fontSize: '28px',
+                width: 44,
+                height: 44,
+                borderRadius: 999,
+                color: isActive ? accent.hue : Colors.get('icons', theme),
+                background: isActive ? accent.soft : 'transparent',
+                border: `1px solid ${isActive ? accent.ring : 'transparent'}`,
+                fontSize: '24px',
                 display: 'flex',
-                transition: 'color 0.3s ease'
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'color 0.3s ease, background 0.3s ease, border-color 0.3s ease',
+                filter: isActive ? `drop-shadow(0 0 10px ${accent.glow})` : 'none',
+                boxSizing: 'border-box'
             }}>
                 {React.cloneElement(icon, { fontSize: 'inherit' })}
             </div>
             <AnimatePresence>
                 {isActive && (
-                    <motion.div 
+                    <Motion.div 
                         layoutId="recoveryActiveTab"
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0 }}
-                        style={activeIndicator(theme)}
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        style={activeIndicator()}
                     />
                 )}
             </AnimatePresence>
-        </motion.div>
+        </Motion.div>
     );
 };
 
@@ -110,29 +141,41 @@ async function onBack(page, addPanel) {
     playEffects(switchSound);
 }
 
-const containerStyle = (theme) => ({
+const containerStyle = () => ({
     position: 'fixed',
-    bottom: '7vw',
-    left: '15vw',
-    width: '70vw',
-    height: '65px',
-    borderRadius: '25px',
+    bottom: 'max(18px, calc(24px + env(safe-area-inset-bottom, 0px)))',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 'calc(100vw - 40px)',
+    maxWidth: '420px',
+    height: '66px',
+    borderRadius: '999px',
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backdropFilter: 'blur(6px)',
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     zIndex: 1000,
+    boxSizing: 'border-box',
+    padding: '10px 12px',
+    overflow: 'hidden'
 });
 
 const glassOverlay = (theme) => ({
+    '--accent-ring': buildSectionAccent(AppData.recoveryAccentColor || RECOVERY_ACCENT, RECOVERY_ACCENT).ring,
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: Colors.get('bottomPanel', theme),
-    opacity: 0.85,
-    backdropFilter: 'blur(15px)',
-    WebkitBackdropFilter: 'blur(15px)',
-    border: `1px solid ${Colors.get('border', theme)}`,
-    borderRadius: '25px',
+    background: theme === 'dark'
+        ? 'linear-gradient(145deg, rgba(20,26,27,0.9), rgba(15,18,21,0.84))'
+        : 'rgba(255,255,255,0.86)',
+    opacity: 1,
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+    border: `1px solid ${theme === 'dark' ? buildSectionAccent(AppData.recoveryAccentColor || RECOVERY_ACCENT, RECOVERY_ACCENT).ring : 'rgba(15,23,42,0.08)'}`,
+    borderRadius: '999px',
+    boxShadow: theme === 'dark'
+        ? '0 1px 0 rgba(255,255,255,0.045) inset, 0 24px 48px -20px rgba(0,0,0,0.72)'
+        : '0 14px 32px -26px rgba(0,0,0,0.2)',
     zIndex: -1,
 });
 
@@ -143,18 +186,19 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '60px',
+    width: '44px',
+    borderRadius: '999px',
     cursor: 'pointer'
 };
 
-const activeIndicator = (theme) => ({
+const activeIndicator = () => ({
     position: 'absolute',
-    bottom: '8px',
+    bottom: '4px',
     width: '5px',
     height: '5px',
     borderRadius: '50%',
-    backgroundColor: Colors.get('iconsHighlited', theme),
-    boxShadow: `0 0 10px ${Colors.get('iconsHighlited', theme)}`
+    backgroundColor: buildSectionAccent(AppData.recoveryAccentColor || RECOVERY_ACCENT, RECOVERY_ACCENT).hue,
+    boxShadow: `0 0 10px ${buildSectionAccent(AppData.recoveryAccentColor || RECOVERY_ACCENT, RECOVERY_ACCENT).glow}`
 });
 
 export default BtnsRecovery;

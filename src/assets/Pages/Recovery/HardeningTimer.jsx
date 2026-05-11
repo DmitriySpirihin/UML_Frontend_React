@@ -1,41 +1,63 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { AppData } from '../../StaticClasses/AppData';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, recoveryType$ } from '../../StaticClasses/HabitsBus';
+import { theme$, lang$ } from '../../StaticClasses/HabitsBus';
 import { IoPlay, IoClose, IoPause, IoVolumeMute, IoVolumeHigh, IoCheckmark } from 'react-icons/io5';
-import { FaInfoCircle, FaFire, FaSnowflake, FaMinus, FaPlus } from 'react-icons/fa';
+import { FaInfoCircle, FaFire, FaSnowflake } from 'react-icons/fa';
 import { saveHardeningSession } from '../../StaticClasses/RecoveryLogHelper';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
+
+const AMBIENT_SOUND_URL = 'Audio/Ambient.wav';
+const audio = new Audio(AMBIENT_SOUND_URL);
+audio.loop = true;
+audio.volume = 0.18;
 
 const startTimerDuration = 3000;
+
+const stepperButtonStyle = (accent) => ({
+  width: '34px',
+  height: '34px',
+  borderRadius: '13px',
+  border: `1px solid ${accent}40`,
+  cursor: 'pointer',
+  background: `${accent}1f`,
+  color: accent,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  outline: 'none',
+  fontSize: '22px',
+  fontWeight: 900,
+  lineHeight: 1,
+  fontFamily: 'inherit'
+});
 
 function PhaseStepper({ theme, label, value, min = 0, max = 60, step = 1, onChange, wide = false }) {
   const textMain = Colors.get('mainText', theme);
   const textSub = Colors.get('subText', theme);
+  const isDark = theme === 'dark' || theme === 'specialdark';
   const dec = () => onChange(Math.max(min, value - step));
   const inc = () => onChange(Math.min(max, value + step));
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.03)', borderRadius: '14px', padding: '10px 12px',
-      display: 'flex', flexDirection: 'column', gap: '6px',
-      border: '1px solid rgba(255,255,255,0.05)'
+      background: isDark ? 'rgba(255,255,255,0.035)' : 'rgba(15,23,42,0.045)',
+      borderRadius: '16px',
+      padding: '10px 12px',
+      minHeight: '58px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '7px',
+      border: '1px solid rgba(105,214,240,0.16)'
     }}>
-      <div style={{ fontSize: '10px', color: textSub, textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <motion.button whileTap={{ scale: 0.9 }} onClick={dec}
-          style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer',
-            background: 'rgba(255,255,255,0.08)', color: textMain,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>
-          <FaMinus size={10} />
-        </motion.button>
-        <span style={{ fontSize: wide ? '22px' : '18px', fontWeight: 600, color: textMain,
-          fontVariantNumeric: 'tabular-nums', minWidth: wide ? '60px' : '30px', textAlign: 'center' }}>{value}</span>
-        <motion.button whileTap={{ scale: 0.9 }} onClick={inc}
-          style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer',
-            background: 'rgba(255,255,255,0.08)', color: textMain,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none' }}>
-          <FaPlus size={10} />
-        </motion.button>
+      <div style={{ width: '100%', minWidth: 0, textAlign: 'center', fontSize: '10px', color: textSub, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 900, lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {label}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: `34px ${wide ? '52px' : '42px'} 34px`, alignItems: 'center', justifyItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <Motion.button whileTap={{ scale: 0.92 }} onClick={dec} style={stepperButtonStyle('#69d6f0')}>−</Motion.button>
+        <div style={{ fontSize: wide ? '25px' : '23px', fontWeight: 900, color: textMain, fontVariantNumeric: 'tabular-nums', lineHeight: 1, textAlign: 'center' }}>{value}</div>
+        <Motion.button whileTap={{ scale: 0.92 }} onClick={inc} style={stepperButtonStyle('#69d6f0')}>+</Motion.button>
       </div>
     </div>
   );
@@ -45,7 +67,6 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
   // --- STATE ---
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-  const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [audioEnabled, setAudioEnabled] = useState(false);
 
   // Config
@@ -74,8 +95,7 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
   useEffect(() => {
     const s1 = theme$.subscribe(setThemeState);
     const s2 = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
-    const s3 = fontSize$.subscribe(setFSize);
-    return () => { s1.unsubscribe(); s2.unsubscribe(); s3.unsubscribe(); };
+    return () => { s1.unsubscribe(); s2.unsubscribe(); };
   }, []);
 
   // --- LOGIC ---
@@ -143,6 +163,11 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
     return () => clearInterval(id);
   }, [showStartTimer]);
 
+  useEffect(() => {
+    if (audioEnabled && isStart && isRunning && audio.paused && !isFinished && !isPaused) audio.play().catch(() => {});
+    else audio.pause();
+  }, [audioEnabled, isStart, isRunning, isFinished, isPaused]);
+
   // --- HELPERS ---
   const getPhaseInfo = (step) => {
     if (!step) return { name: '', color: '#94a3b8', type: 'none' };
@@ -165,9 +190,9 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
 
   // --- HANDLERS ---
   const handleStart = () => { setAudioEnabled(true); setStartTime(Date.now()); setIsStart(true); setIsRunning(true); setIsPaused(false); };
-  const handlePause = () => { setEndTime(Date.now()); setIsRunning(false); setIsPaused(true); };
+  const handlePause = () => { setEndTime(Date.now()); setIsRunning(false); setIsPaused(true); audio.pause(); };
   const handleResume = () => { setIsRunning(true); setIsPaused(false); };
-  const handleReload = () => { setCurrentStepIndex(0); setPhaseProgress(0); setIsRunning(false); setIsStart(false); setIsPaused(false); setIsFinished(false); coldTimeRef.current = 0; startTimeRef.current = 0; };
+  const handleReload = () => { setCurrentStepIndex(0); setPhaseProgress(0); setIsRunning(false); setIsStart(false); setIsPaused(false); setIsFinished(false); coldTimeRef.current = 0; startTimeRef.current = 0; audio.pause(); audio.currentTime = 0; };
   const onFinishSession = async () => {
     await saveHardeningSession(startTime, Date.now(), coldTimeRef.current);
     setFinishMessage(congratulations(langIndex)); setIsFinished(true);
@@ -175,7 +200,6 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
   const onSaveSession = async () => { await saveHardeningSession(startTime, endTime, coldTimeRef.current); handleReload(); setShow(false); };
 
   // --- RENDER ---
-  const isDark = theme === 'dark' || theme === 'specialdark';
   const textMain = Colors.get('mainText', theme);
   const textSub = Colors.get('subText', theme);
   const accent = phaseColor || Colors.get('cold', theme);
@@ -184,7 +208,7 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
     <div style={styles(theme, show).container}>
       
       {/* BACKGROUND */}
-      <motion.div 
+      <Motion.div 
         animate={{ 
             background: isStart && !isFinished 
                 ? `linear-gradient(180deg, ${phaseColor}40 0%, ${secondaryColor}10 100%)`
@@ -200,7 +224,7 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
       
       {/* === 1. MENU (FIXED LAYOUT) === */}
       {!isFinished && !isStart && !showStartTimer && (
-        <motion.div 
+        <Motion.div 
             key="menu"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
             style={{ 
@@ -211,40 +235,37 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
             {/* Scrollable Content */}
             <div style={{ 
                 flex: 1, overflowY: 'auto', overflowX: 'hidden', 
-                padding: '40px 20px 100px 20px', // Extra padding bottom for buttons
+                padding: '24px 4.5vw 100px',
                 display: 'flex', flexDirection: 'column', alignItems: 'center'
             }}>
                 {/* Header */}
-                <div style={{ textAlign: 'center', marginBottom: '25px', width: '100%' }}>
-                    <div style={{ fontSize: '11px', color: textSub, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>
-                        {langIndex === 0 ? 'Контраст' : 'Contrast'}
+                <div style={{ textAlign: 'center', marginBottom: '18px', width: '100%' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: '30px', padding: '0 12px', borderRadius: '999px', color: Colors.get('cold', theme), background: 'rgba(105,214,240,0.08)', border: '1px solid rgba(105,214,240,0.16)', fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 900 }}>
+                        {langIndex === 0 ? 'Закаливание' : 'Cold exposure'}
                     </div>
-                    <h2 style={{ fontSize: '28px', color: textMain, margin: 0, fontWeight: '300', fontFamily: 'Segoe UI Light' }}>
+                    <h2 style={{ fontSize: 'clamp(24px, 7vw, 32px)', color: textMain, margin: '10px auto 0', maxWidth: '560px', fontWeight: 900, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", lineHeight: 1.04, letterSpacing: 0 }}>
                         {protocol.name[langIndex]}
                     </h2>
                 </div>
 
                 {/* Card */}
                 <div style={{ 
-                    width: '100%', maxWidth: '360px',
-                    background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255,255,255,0.08)', borderRadius: '30px', 
-                    padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px',
+                    width: '100%', maxWidth: '560px',
+                    background: 'linear-gradient(135deg, rgba(105,214,240,0.085), rgba(18,21,26,0.94))', backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(105,214,240,0.2)', borderRadius: '26px', 
+                    padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px',
                     boxShadow: '0 20px 50px -20px rgba(0,0,0,0.3)'
                 }}>
                     {/* Goal */}
-                    <div style={{ paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ fontSize: '11px', color: textSub, marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                            {langIndex === 0 ? 'Цель' : 'Goal'}
-                        </div>
-                        <div style={{ fontSize: '15px', color: textMain, lineHeight: '1.4' }}>
+                    <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(105,214,240,0.075)', border: '1px solid rgba(105,214,240,0.12)' }}>
+                        <div style={{ fontSize: '13px', color: textSub, lineHeight: '1.35', fontWeight: 800, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {protocol.aim[langIndex]}
                         </div>
                     </div>
 
                     {/* Config Steppers */}
                     <div>
-                        <div style={{ fontSize: '11px', color: textSub, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '10px', color: textSub, fontWeight: 900, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.1em' }}>
                             {langIndex === 0 ? 'Настройки' : 'Settings'}
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
@@ -268,7 +289,7 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
                     </div>
 
                     {/* Summary */}
-                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '15px' }}>
+                    <div style={{ background: 'rgba(105,214,240,0.055)', borderRadius: '16px', padding: '12px', border: '1px solid rgba(105,214,240,0.1)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: Colors.get('hot', theme) }}>
                                 <FaFire size={14}/> <span style={{fontSize: '15px', fontWeight: 'bold'}}>{hotSeconds}s</span>
@@ -282,18 +303,15 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
                         </div>
                     </div>
 
-                    {/* Instruction */}
-                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '15px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: textSub, marginBottom: '6px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                            <FaInfoCircle /> {langIndex === 0 ? 'Инструкция' : 'Instruction'}
-                        </div>
-                        <div style={{ fontSize: '14px', color: textMain, lineHeight: '1.4' }}>
-                            {protocol.instructions[langIndex]}
+                    {/* Pattern */}
+                    <div style={{ background: 'rgba(255,255,255,0.035)', borderRadius: '16px', padding: '11px 12px', border: '1px solid rgba(255,255,255,0.055)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10px', color: Colors.get('cold', theme), fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                            <FaInfoCircle /> {langIndex === 0 ? 'Контрастный цикл' : 'Contrast cycle'}
                         </div>
                     </div>
 
-                    <p style={{ fontSize: '10px', color: textSub, textAlign: 'center', opacity: 0.5, lineHeight: '1.3', margin: 0 }}>
-                        {disclaimer(langIndex)}
+                    <p style={{ fontSize: '10px', color: textSub, textAlign: 'center', opacity: 0.45, lineHeight: '1.3', margin: '-2px 0 0' }}>
+                        {langIndex === 0 ? 'Остановитесь, если стало некомфортно.' : 'Stop if you feel uncomfortable.'}
                     </p>
                 </div>
             </div>
@@ -302,92 +320,95 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
             <div style={{ 
                 position: 'absolute', bottom: 0, left: 0, width: '100%', 
                 padding: '20px', boxSizing: 'border-box',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                display: 'grid', gridTemplateColumns: '56px minmax(0, 1fr)', gap: '12px', alignItems: 'center',
                 background: `linear-gradient(to top, ${Colors.get('background', theme)} 80%, transparent 100%)`,
                 zIndex: 20
             }}>
-                <motion.div whileTap={{ scale: 0.9 }} onClick={() => setShow(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: textSub, cursor: 'pointer' }}>
-                    <IoClose size={24} />
-                    <span style={{ fontSize: '14px' }}>{langIndex === 0 ? 'Закрыть' : 'Close'}</span>
-                </motion.div>
+                <Motion.button whileTap={{ scale: 0.92 }} onClick={() => setShow(false)} aria-label={langIndex === 0 ? 'Закрыть' : 'Close'} style={{ height: '56px', borderRadius: '18px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.045)', color: textSub, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', outline: 'none' }}>
+                    <IoClose size={25} />
+                </Motion.button>
 
-                <motion.button 
+                <Motion.button 
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setShowStartTimer(true)}
                     style={{ 
-                        padding: '15px 45px', borderRadius: '50px', border: 'none',
-                        background: Colors.get('cold', theme), color: '#fff', fontSize: '16px', fontWeight: 'bold',
-                        boxShadow: `0 10px 40px -10px ${Colors.get('cold', theme)}60`
+                        height: '56px', borderRadius: '18px', border: '1px solid rgba(105,214,240,0.28)',
+                        background: `linear-gradient(135deg, ${Colors.get('cold', theme)}, #2095d8)`, color: '#061017', fontSize: '15px', fontWeight: 900,
+                        boxShadow: `0 16px 42px -16px ${Colors.get('cold', theme)}80`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                        cursor: 'pointer',
+                        outline: 'none'
                     }}
                 >
+                    <IoPlay />
                     {langIndex === 0 ? 'Начать' : 'Start'}
-                </motion.button>
+                </Motion.button>
             </div>
-        </motion.div>
+        </Motion.div>
       )}
 
       {/* === 2. COUNTDOWN === */}
       {!isFinished && showStartTimer && (
-        <motion.div 
-            key="countdown"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', zIndex: 10 }}
-        >
-            <motion.div key={seconds} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.2, opacity: 0 }} style={{ fontSize: '140px', fontWeight: '200', color: textMain, fontFamily: 'Segoe UI Light' }}>{seconds}</motion.div>
-            <div style={{ marginTop: '20px', fontSize: '16px', color: textSub, letterSpacing: '1px' }}>{langIndex === 0 ? 'ПРИГОТОВЬТЕСЬ...' : 'GET READY...'}</div>
-        </motion.div>
+        <CountdownStage seconds={seconds} theme={theme} accent={Colors.get('cold', theme)} isRu={langIndex === 0} />
       )}
 
       {/* === 3. ACTIVE TIMER === */}
       {!isFinished && isStart && (
-        <motion.div 
+        <Motion.div 
             key="active"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', zIndex: 10, position: 'relative' }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', zIndex: 10, position: 'relative', padding: '88px 20px 132px', boxSizing: 'border-box' }}
         >
-            <div style={{ position: 'absolute', top: '10%', textAlign: 'center', width: '85%', color: textMain, opacity: 0.8, fontSize: '16px', lineHeight: '1.4' }}>{protocol?.instructions?.[langIndex]}</div>
+            <div style={{ position: 'absolute', top: 'calc(26px + env(safe-area-inset-top, 0px))', left: '50%', transform: 'translateX(-50%)', width: 'min(86vw, 430px)', minHeight: '48px', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '0 14px', boxSizing: 'border-box', color: textMain, background: 'rgba(18,21,24,0.58)', border: `1px solid ${phaseColor}24`, backdropFilter: 'blur(18px)' }}>
+                <span style={{ color: textSub, fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+                    {langIndex === 0 ? 'Контраст' : 'Contrast'}
+                </span>
+                <span style={{ color: phaseColor, fontSize: '12px', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {phaseName}
+                </span>
+            </div>
             
             <div style={{ position: 'relative', width: '340px', height: '340px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <motion.div animate={phaseType === 'hot' ? { scale: [1, 1.1, 1], opacity: 0.8 } : phaseType === 'cold' ? { x: [-2, 2, -2], rotate: [0, 1, -1, 0] } : { scale: 1 }} transition={phaseType === 'hot' ? { duration: 4, repeat: Infinity, ease: "easeInOut" } : { duration: 0.1, repeat: Infinity }} style={{ width: '220px', height: '220px', borderRadius: '50%', background: `radial-gradient(circle at 30% 30%, ${phaseColor} 0%, ${secondaryColor} 100%)`, position: 'absolute', boxShadow: `0 0 60px ${phaseColor}60` }} />
+                <Motion.div animate={phaseType === 'hot' ? { scale: [1, 1.1, 1], opacity: 0.8 } : phaseType === 'cold' ? { x: [-2, 2, -2], rotate: [0, 1, -1, 0] } : { scale: 1 }} transition={phaseType === 'hot' ? { duration: 4, repeat: Infinity, ease: "easeInOut" } : { duration: 0.1, repeat: Infinity }} style={{ width: '220px', height: '220px', borderRadius: '50%', background: `radial-gradient(circle at 30% 30%, ${phaseColor} 0%, ${secondaryColor} 100%)`, position: 'absolute', boxShadow: `0 0 60px ${phaseColor}60` }} />
                 <svg width="320" height="320" style={{ transform: 'rotate(-90deg)', position: 'absolute' }}><circle cx="160" cy="160" r="140" fill="none" stroke={Colors.get('border', theme)} strokeWidth="2" opacity="0.2" /><circle cx="160" cy="160" r="140" fill="none" stroke={phaseColor} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 140}`} strokeDashoffset={`${2 * Math.PI * 140 * (1 - phaseProgress)}`} style={{ transition: 'stroke-dashoffset 0.1s linear', filter: `drop-shadow(0 0 10px ${phaseColor})` }} /></svg>
                 <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 5 }}>
                     <div style={{ fontSize: '72px', fontWeight: '200', color: '#fff', fontFamily: 'Segoe UI Light', fontVariantNumeric: 'tabular-nums', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>{displayTime}</div>
-                    <motion.div key={phaseType} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: '18px', color: '#fff', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold' }}>{phaseName}</motion.div>
+                    <Motion.div key={phaseType} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: '18px', color: '#fff', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold' }}>{phaseName}</Motion.div>
                 </div>
             </div>
             
-            <div style={{ marginTop: '50px', fontSize: '14px', color: textSub, letterSpacing: '1px' }}>{langIndex === 0 ? 'Цикл' : 'Cycle'} {cycleInfo()}</div>
+            <div style={{ marginTop: '20px', padding: '8px 14px', borderRadius: '999px', background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.07)', fontSize: '13px', color: textSub, letterSpacing: '0.03em', fontWeight: 800 }}>{langIndex === 0 ? 'Цикл' : 'Cycle'} {cycleInfo()}</div>
             
-            <div style={{ position: 'absolute', bottom: '50px', display: 'flex', gap: '30px', alignItems: 'center' }}>
-                <CircleButton onClick={() => setAudioEnabled(!audioEnabled)} icon={audioEnabled ? <IoVolumeHigh size={20}/> : <IoVolumeMute size={20}/>} theme={theme} size={50} />
-                <CircleButton onClick={isRunning ? handlePause : handleResume} icon={isRunning ? <IoPause size={30}/> : <IoPlay size={30} style={{marginLeft:'4px'}}/>} theme={theme} size={80} accent={phaseColor} />
-                <CircleButton onClick={handlePause} icon={<IoClose size={24}/>} theme={theme} size={50} />
+            <div style={{ position: 'absolute', bottom: 'calc(42px + env(safe-area-inset-bottom, 0px))', display: 'flex', gap: '22px', alignItems: 'center' }}>
+                <CircleButton onClick={() => setAudioEnabled(!audioEnabled)} icon={audioEnabled ? <IoVolumeHigh size={18}/> : <IoVolumeMute size={18}/>} theme={theme} size={48} />
+                <CircleButton onClick={isRunning ? handlePause : handleResume} icon={isRunning ? <IoPause size={28}/> : <IoPlay size={28} style={{marginLeft:'4px'}}/>} theme={theme} size={72} accent={phaseColor} />
+                <CircleButton onClick={handlePause} icon={<IoClose size={22}/>} theme={theme} size={48} />
             </div>
 
             <AnimatePresence>
                 {isPaused && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '30px', zIndex: 20 }}>
+                    <Motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(15px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '30px', zIndex: 20 }}>
                         <div style={{ fontSize: '24px', fontWeight: '300', color: '#fff', letterSpacing: '1px' }}>{langIndex === 0 ? 'ПАУЗА' : 'PAUSED'}</div>
                         <div style={{ display: 'flex', gap: '20px' }}>
                             <ControlButton onClick={handleReload} icon={<IoClose size={22}/>} label={langIndex === 0 ? 'Выйти' : 'Exit'} theme={theme} />
                             <ControlButton onClick={handleResume} icon={<IoPlay size={32} style={{marginLeft:'4px'}}/>} label={langIndex === 0 ? 'Продолжить' : 'Resume'} theme={theme} type="primary" accent={accent} size={70} />
                             <ControlButton onClick={onSaveSession} icon={<IoCheckmark size={22}/>} label={langIndex === 0 ? 'Финиш' : 'Finish'} theme={theme} />
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 )}
             </AnimatePresence>
-        </motion.div>
+        </Motion.div>
       )}
 
       {/* === 4. FINISH === */}
       {isFinished && (
-        <motion.div 
+        <Motion.div 
             key="finish"
             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '40px', zIndex: 10 }}
         >
              <div style={{ position: 'relative' }}>
-                            <motion.div 
+                            <Motion.div 
                                 animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                                 style={{ width: '150px', height: '150px', borderRadius: '50%', border: `1px dashed ${Colors.get('in', theme)}`, position: 'absolute', top: -15, left: -15 }}
                             />
@@ -397,8 +418,8 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
                 <h2 style={{ fontSize: '32px', color: textMain, margin: '0 0 10px 0', fontWeight: '300' }}>{langIndex === 0 ? 'Закалка завершена' : 'Session Complete'}</h2>
                 <p style={{ width: '80%', color: textSub, fontSize: '16px', lineHeight: '1.6', margin: '0 auto' }}>{finishMessage}</p>
             </div>
-            <motion.button whileTap={{ scale: 0.95 }} onClick={() => { setIsFinished(false); setShow(false); }} style={{ padding: '15px 50px',zIndex: 10, borderRadius: '30px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', color: textMain, fontSize: '16px', fontWeight: '500' }}>{langIndex === 0 ? 'В меню' : 'Done'}</motion.button>
-        </motion.div>
+            <Motion.button whileTap={{ scale: 0.95 }} onClick={() => { setIsFinished(false); setShow(false); }} style={{ padding: '15px 50px',zIndex: 10, borderRadius: '30px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.1)', color: textMain, fontSize: '16px', fontWeight: '500' }}>{langIndex === 0 ? 'В меню' : 'Done'}</Motion.button>
+        </Motion.div>
       )}
 
       </AnimatePresence>
@@ -408,22 +429,48 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
 
 export default HardeningTimer;
 
+function CountdownStage({ seconds, theme, accent, isRu }) {
+  const textMain = Colors.get('mainText', theme);
+  const textSub = Colors.get('subText', theme);
+  return (
+    <Motion.div
+      key="countdown"
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.02 }}
+      style={{ position: 'relative', height: '100%', width: '100%', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+    >
+      <Motion.div animate={{ scale: [1, 1.08, 1], opacity: [0.42, 0.68, 0.42] }} transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', width: '260px', height: '260px', borderRadius: '50%', background: `radial-gradient(circle, ${accent}38 0%, transparent 68%)`, filter: 'blur(16px)' }} />
+      <div style={{ position: 'relative', width: '220px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px solid ${accent}3d`, background: `${accent}0f`, boxShadow: `0 0 48px ${accent}1f inset` }} />
+        <AnimatePresence mode="wait">
+          <Motion.div key={seconds} initial={{ scale: 0.82, opacity: 0, y: 12 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 1.18, opacity: 0, y: -10 }} transition={{ duration: 0.24 }} style={{ color: textMain, fontSize: '112px', fontWeight: 900, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+            {seconds}
+          </Motion.div>
+        </AnimatePresence>
+      </div>
+      <div style={{ marginTop: '24px', color: accent, fontSize: '12px', fontWeight: 900, letterSpacing: '0.22em', textTransform: 'uppercase' }}>{isRu ? 'Старт через' : 'Starting in'}</div>
+      <div style={{ marginTop: '8px', color: textSub, fontSize: '14px', fontWeight: 700 }}>{isRu ? 'Дышите ровно и не форсируйте' : 'Breathe evenly and do not force it'}</div>
+    </Motion.div>
+  );
+}
+
 const CircleButton = ({ onClick, icon, theme, size = 45, accent }) => (
-    <motion.button 
+    <Motion.button 
         whileTap={{ scale: 0.9 }} onClick={onClick}
         style={{ width: size, height: size, borderRadius: '50%', border: 'none', outline: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: accent || (theme === 'dark' || theme === 'specialdark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'), color: accent ? '#fff' : Colors.get('mainText', theme), boxShadow: accent ? `0 8px 25px ${accent}60` : 'none' }}
     >
         {icon}
-    </motion.button>
+    </Motion.button>
 );
 
 const ControlButton = ({ onClick, icon, label, theme, type = 'secondary', accent, size = 55 }) => {
     const isPrimary = type === 'primary';
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-            <motion.button whileTap={{ scale: 0.92 }} onClick={onClick} style={{ width: size, height: size, borderRadius: '50%', border: 'none', outline: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isPrimary ? (accent || '#BF5AF2') : (theme === 'dark' || theme === 'specialdark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'), color: isPrimary ? '#fff' : Colors.get('mainText', theme), boxShadow: isPrimary ? `0 8px 30px ${accent || '#BF5AF2'}50` : 'none', backdropFilter: 'blur(5px)' }}>
+            <Motion.button whileTap={{ scale: 0.92 }} onClick={onClick} style={{ width: size, height: size, borderRadius: '50%', border: 'none', outline: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isPrimary ? (accent || '#BF5AF2') : (theme === 'dark' || theme === 'specialdark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'), color: isPrimary ? '#fff' : Colors.get('mainText', theme), boxShadow: isPrimary ? `0 8px 30px ${accent || '#BF5AF2'}50` : 'none', backdropFilter: 'blur(5px)' }}>
                 {icon}
-            </motion.button>
+            </Motion.button>
             {label && <span style={{ fontSize: '12px', color: Colors.get('subText', theme), fontWeight: '600' }}>{label}</span>}
         </div>
     );
@@ -433,23 +480,18 @@ const styles = (theme, show) => ({
   container: {
     backgroundColor: Colors.get('background', theme),
     position: 'fixed',
-    height: '86vh',
+    height: '100vh',
     transform: show ? 'translateY(0)' : 'translateY(100%)',
     bottom: '0',
     transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
     width: '100vw',
     fontFamily: 'Segoe UI',
-    borderTop: `1px solid ${Colors.get('border', theme)}`,
-    borderTopLeftRadius: '32px', borderTopRightRadius: '32px',
+    borderTop: 'none',
+    borderTopLeftRadius: 0, borderTopRightRadius: 0,
     zIndex: 2000, overflow: 'hidden', 
-    boxShadow: '0 -20px 60px rgba(0,0,0,0.5)'
+    boxShadow: 'none'
   }
 });
-
-const disclaimer = (langIndex) => {
-  if (langIndex === 0) return "Внимание: Закаливание требует осторожности. Если вам стало плохо, немедленно прекратите и согрейтесь.";
-  return "Notice: Cold exposure requires caution. If you feel unwell, stop immediately and warm up.";
-};
 
 const congratulations = (langIndex) => {
   const messages = {

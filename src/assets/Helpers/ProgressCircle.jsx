@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 
 const ProgressCircle = ({ 
   startValue = 50, 
@@ -21,7 +21,11 @@ const ProgressCircle = ({
   const progressValue = endValue - startValue;
   const isEven = endValue === startValue;
   const progressSign = isProgress ? '+' : isEven ? '' : '-';
-  const progressEmoji = isProgress ? '↗️' : isEven ? '➖' : '↘️';
+  const trendLabel = isProgress
+    ? (langIndex === 0 ? 'рост' : 'up')
+    : isEven
+      ? (langIndex === 0 ? 'без изм.' : 'flat')
+      : (langIndex === 0 ? 'снижение' : 'down');
   
   // Colors
   const trackColor = linesColor;
@@ -72,7 +76,7 @@ const ProgressCircle = ({
         {/* --- VALUES (Animated Rings) --- */}
         
         {/* Outer: Start Value */}
-        <motion.circle
+        <Motion.circle
           cx={radius} cy={radius} r={startRadius} fill="none"
           stroke={startColor} strokeWidth={strokeWidth} strokeLinecap="round"
           strokeDasharray={startCirc}
@@ -82,7 +86,7 @@ const ProgressCircle = ({
         />
 
         {/* Middle: Medium Value */}
-        <motion.circle
+        <Motion.circle
           cx={radius} cy={radius} r={mediumRadius} fill="none"
           stroke={mediumColor} strokeWidth={strokeWidth} strokeLinecap="round"
           strokeDasharray={mediumCirc}
@@ -91,7 +95,7 @@ const ProgressCircle = ({
         />
 
         {/* Inner: End Value (Result) */}
-        <motion.circle
+        <Motion.circle
           cx={radius} cy={radius} r={endRadius} fill="none"
           stroke={endColor} strokeWidth={strokeWidth} strokeLinecap="round"
           strokeDasharray={endCirc}
@@ -113,8 +117,19 @@ const ProgressCircle = ({
         }}
       >
         {/* Main Metric: The Change */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
-          <span style={{ fontSize: '18px' }}>{progressEmoji}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+          <span style={{
+            fontSize: '9px',
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            padding: '3px 6px',
+            borderRadius: 999,
+            color: isEven ? textColor : endColor,
+            background: `${isEven ? textColor : endColor}18`,
+          }}>
+            {trendLabel}
+          </span>
           <span style={{ fontSize: '22px', fontWeight: '800', color: isEven ? textColor : endColor, lineHeight: '1' }}>
             {progressSign}{Math.abs(progressValue).toFixed(1)}
           </span>

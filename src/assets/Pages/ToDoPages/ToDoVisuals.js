@@ -16,8 +16,8 @@ import {
   FaWallet
 } from 'react-icons/fa';
 
-export const DEFAULT_TODO_ACCENT_COLOR = '#8FA6C8';
-export const TODO_ACCENT_PRESETS = ['#8FA6C8', '#7FC8B8', '#8A7CD6', '#66D9E8', '#78B879', '#D49A5C', '#C65F9D', '#D8785E'];
+export const DEFAULT_TODO_ACCENT_COLOR = '#5F8DFF';
+export const TODO_ACCENT_PRESETS = ['#5F8DFF', '#39D982', '#A66BFF', '#2FD6BD', '#6F7DFF', '#C29AD6', '#B48BC8', '#66D9E8'];
 
 export const TODO_BASE_CATEGORIES = [
   { key: 'general', icon: 'general', label: ['Общее', 'General'] },
@@ -39,12 +39,31 @@ export const TODO_BASE_CATEGORIES = [
 
 const clamp = (value) => Math.max(0, Math.min(255, Math.round(value)));
 
+const isCoffeeAccentColor = (color) => {
+  if (typeof color !== 'string') return false;
+  const value = color.trim().toUpperCase();
+  if (!/^#[0-9A-F]{6}$/.test(value)) return false;
+  if (['#B86A37', '#B87963', '#D8785E', '#D49A5C', '#C8A46F', '#A57926', '#A46C3B', '#A6846B', '#8F6A4A', '#9A8580'].includes(value)) return true;
+  const int = Number.parseInt(value.slice(1), 16);
+  const r = (int >> 16) & 255;
+  const g = (int >> 8) & 255;
+  const b = int & 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const saturation = max === 0 ? 0 : (max - min) / max;
+  return r > g && g > b && r >= 120 && g >= 70 && b <= 120 && saturation > 0.22;
+};
+
 export const normalizeTodoHex = (color) => {
   if (typeof color !== 'string') return DEFAULT_TODO_ACCENT_COLOR;
   const trimmed = color.trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toUpperCase();
+  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) {
+    const normalized = trimmed.toUpperCase();
+    return isCoffeeAccentColor(normalized) ? DEFAULT_TODO_ACCENT_COLOR : normalized;
+  }
   if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
-    return `#${trimmed.slice(1).split('').map(char => char + char).join('')}`.toUpperCase();
+    const normalized = `#${trimmed.slice(1).split('').map(char => char + char).join('')}`.toUpperCase();
+    return isCoffeeAccentColor(normalized) ? DEFAULT_TODO_ACCENT_COLOR : normalized;
   }
   return DEFAULT_TODO_ACCENT_COLOR;
 };
@@ -67,11 +86,11 @@ export const buildTodoAccent = (color = DEFAULT_TODO_ACCENT_COLOR) => {
     hue,
     rgb,
     rgbText,
-    soft: `rgba(${rgbText}, 0.14)`,
-    faint: `rgba(${rgbText}, 0.08)`,
-    ring: `rgba(${rgbText}, 0.32)`,
-    glow: `rgba(${rgbText}, 0.24)`,
-    wash: `rgba(${rgbText}, 0.055)`,
+    soft: `rgba(${rgbText}, 0.18)`,
+    faint: `rgba(${rgbText}, 0.10)`,
+    ring: `rgba(${rgbText}, 0.40)`,
+    glow: `rgba(${rgbText}, 0.34)`,
+    wash: `rgba(${rgbText}, 0.075)`,
     solidSoft: `rgb(${clamp(rgb.r + 20)}, ${clamp(rgb.g + 20)}, ${clamp(rgb.b + 20)})`
   };
 };

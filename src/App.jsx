@@ -16,8 +16,10 @@ import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, keyboardVisible$,notifyPa
 import Colors from './assets/StaticClasses/Colors'
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaServer, FaCog, FaTools } from 'react-icons/fa';
+import { maybeSeedDemoData } from './assets/StaticClasses/DemoSeed';
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
 const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'));
+const HabitsInsight = lazy(() => import('./assets/Pages/HabitsPages/HabitsInsight'));
 const HabitsMain = lazy(() => import('./assets/Pages/HabitsPages/HabitsMain'));
 const MainMenu = lazy(() => import('./assets/Pages/MainMenu'));
 const LoadPanel = lazy(() => import('./assets/Pages/LoadPanel'));
@@ -34,8 +36,10 @@ const TrainingAnaliticsMain = lazy(() => import('./assets/Pages/TrainingPages/An
 const TrainingAnaliticsTypes = lazy(() => import('./assets/Pages/TrainingPages/Analitics/TrainingAnaliticsTypes'));
 const TrainingAnaliticsCardio = lazy(() => import('./assets/Pages/TrainingPages/Analitics/TrainingAnaliticsCardio'));
 const TrainingList = lazy(() => import('./assets/Pages/TrainingPages/TrainingList'));
+const TrainingInsight = lazy(() => import('./assets/Pages/TrainingPages/TrainingInsight'));
 const Premium = lazy(() => import('./assets/Pages/Premium'));
 const RecoveryMain = lazy(() => import('./assets/Pages/Recovery/RecoveryMain'));
+const RecoveryInsight = lazy(() => import('./assets/Pages/Recovery/RecoveryInsight'));
 const BreathingMain = lazy(() => import('./assets/Pages/Recovery/RecoveryCategories'));
 const RecoveryAnalytics = lazy(() => import('./assets/Pages/Recovery/RecoveryAnalitics')); 
 const ToDoMain = lazy(() => import('./assets/Pages/ToDoPages/ToDoMain'));
@@ -48,6 +52,7 @@ const SleepNew = lazy(() => import('./assets/Pages/SleepPages/SleepNew'));
 const RobotMain = lazy(() => import('./assets/Pages/Robot/RobotMain'));
 const UserPanel = lazy(() => import('./assets/Pages/UserPanel'));
 const MentalMain = lazy(() => import('./assets/Pages/MentalPages/MentalMain'));
+const MentalInsight = lazy(() => import('./assets/Pages/MentalPages/MentalInsight'));
 const MathMain = lazy(() => import('./assets/Pages/MentalPages/MathMain'));
 const MemoryMain = lazy(() => import('./assets/Pages/MentalPages/MemoryMain'));
 const LogicMain = lazy(() => import('./assets/Pages/MentalPages/LogicMain'));
@@ -99,6 +104,13 @@ function App() {
       subscription.unsubscribe();
     }
   }, []);
+
+  useEffect(() => {
+    if (page === 'LoadPanel') return;
+    maybeSeedDemoData().then((seeded) => {
+      if (seeded) window.location.reload();
+    });
+  }, [page]);
 
   // ... rest of your useEffects (subscriptions) — keep these
   useEffect(() => {
@@ -260,7 +272,7 @@ function App() {
         </motion.div>
     
       }
-      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'HabitsMain' && page !== 'HabitCalendar' && page !== 'HabitMetrics' && page !== 'AddHabitPanel' && page !== 'ToDoMain' && page !== 'ToDoMetrics' && page !== 'ToDoInsight' && page !== 'ToDoCollab' && page !== 'ToDoNew' && page !== 'ToDoPage' && page !== 'SleepMain' && page !== 'SleepMetrics' && page !== 'SleepDevices' && page !== 'SleepInsight' && page !== 'SleepNew' && page !== 'AddExercisePanel' && page !== 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'HabitsMain' && page !== 'HabitCalendar' && page !== 'HabitMetrics' && page !== 'HabitsInsight' && page !== 'AddHabitPanel' && page !== 'ToDoMain' && page !== 'ToDoMetrics' && page !== 'ToDoInsight' && page !== 'ToDoCollab' && page !== 'ToDoNew' && page !== 'ToDoPage' && page !== 'SleepMain' && page !== 'SleepMetrics' && page !== 'SleepDevices' && page !== 'SleepInsight' && page !== 'SleepNew' && page !== 'MentalMain' && page !== 'MentalInsight' && page !== 'MentalMath' && page !== 'MentalMemory' && page !== 'MentalLogic' && page !== 'MentalFocus' && page !== 'AddExercisePanel' && page !== 'TrainingInsight' && page !== 'RecoveryInsight' && page !== 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <MainBtns/>
       </Suspense>}
       
@@ -277,6 +289,9 @@ function App() {
       </Suspense>}
       {page === 'HabitMetrics' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <HabitMetrics />
+      </Suspense>}
+      {page === 'HabitsInsight' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <HabitsInsight />
       </Suspense>}
       {page === 'AddHabitPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <AddHabitPanel/>
@@ -315,14 +330,23 @@ function App() {
       {page === 'TrainingProgramm' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <TrainingProgramm/>
       </Suspense>}
+      {page === 'TrainingInsight' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <TrainingInsight/>
+      </Suspense>}
       {page === 'premium' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <Premium/>
       </Suspense>}
       {page === 'RecoveryMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <RecoveryMain/>
       </Suspense>}
+      {page === 'RecoveryInsight' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <RecoveryInsight/>
+      </Suspense>}
       {page === 'MentalMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
         <MentalMain/>
+      </Suspense>}
+      {page === 'MentalInsight' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <MentalInsight/>
       </Suspense>}
         {page === 'RecoveryBreath' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
           <BreathingMain/>
@@ -411,95 +435,139 @@ function App() {
 const SuspenseSpinner = ({ theme }) => {
     const logoSrc = 'images/Ui/Main_Dark.png';
     const bgColor = Colors.get('background', theme);
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const accent = '#AEBCC8';
 
     return (
         <div style={{
-            backgroundColor: bgColor,
+            background: isLight
+                ? `radial-gradient(760px 420px at 50% 22%, rgba(174,188,200,0.18), transparent 62%), ${bgColor}`
+                : `radial-gradient(760px 420px at 50% 22%, rgba(174,188,200,0.13), transparent 62%), linear-gradient(180deg, #121A20 0%, ${bgColor} 54%, #0E1418 100%)`,
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
+            position: 'fixed',
+            inset: 0,
             height: '100vh',
             width: '100vw',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            zIndex: 5000
         }}>
-            
-            <div className="spinner-container">
-                {/* 1. The Glowing Blur Layer (Behind) */}
-                <div className="spinner-ring blur-ring"></div>
-                
-                {/* 2. The Sharp Spinner Layer (Front) */}
-                <div className="spinner-ring main-ring"></div>
-                
-                {/* 3. The Mask/Background for center hole */}
-                <div className="spinner-hole" style={{ backgroundColor: bgColor }}>
-                     {/* 4. The Breathing Logo */}
-                    <img src={logoSrc} className="spinner-logo" alt="Loading..." />
+            <div style={{
+                position: 'absolute',
+                top: 'calc(env(safe-area-inset-top, 0px) + 44px)',
+                left: 0,
+                right: 0,
+                textAlign: 'center'
+            }}>
+                <div style={{
+                    color: Colors.get('mainText', theme),
+                    fontFamily: 'Georgia, "Times New Roman", serif',
+                    fontSize: 25,
+                    fontWeight: 700,
+                    lineHeight: 1.05,
+                    opacity: 0.9
+                }}>UltyMyLife</div>
+                <div style={{
+                    marginTop: 9,
+                    color: Colors.get('subText', theme),
+                    fontSize: 9,
+                    fontWeight: 850,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase'
+                }}>Вся твоя жизнь в одном месте</div>
+            </div>
+
+            <div className="spinner-card">
+                <div className="spinner-container">
+                    <div className="spinner-ring main-ring"></div>
+                    <div className="spinner-hole" style={{ backgroundColor: bgColor }}>
+                        <img src={logoSrc} className="spinner-logo" alt="Loading..." />
+                    </div>
                 </div>
+                <div className="spinner-title">UltyMyLife</div>
+                <div className="spinner-text">Загружаю раздел</div>
             </div>
 
             <style>{`
+                .spinner-card {
+                    width: 178px;
+                    min-height: 184px;
+                    border-radius: 34px;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    background: ${isLight ? 'rgba(255,255,255,0.72)' : 'linear-gradient(145deg, rgba(24,29,33,0.74), rgba(16,20,23,0.82))'};
+                    border: 1px solid transparent;
+                    box-shadow: ${isLight ? '0 18px 42px rgba(15,23,42,0.08)' : '0 28px 70px rgba(0,0,0,0.46), 0 1px 0 rgba(255,255,255,0.035) inset'};
+                    backdrop-filter: blur(22px) saturate(160%);
+                }
                 .spinner-container {
                     position: relative;
-                    width: 150px; 
-                    height: 150px;
+                    width: 92px;
+                    height: 92px;
                     display: flex;
                     justify-content: center;
                     align-items: center;
+                    margin-bottom: 14px;
                 }
 
-                /* --- The Rotating Gradient Rings --- */
                 .spinner-ring {
                     position: absolute;
                     width: 100%;
                     height: 100%;
                     border-radius: 50%;
-                    /* Iridescent Gradient */
                     background: conic-gradient(
                         from 0deg,
-                        #bd4a83b3, 
-                        #894cc5b8, 
-                        #c5588fa8, 
-                        #bf5252ae, 
-                        #bfaa5cbf, 
-                        #5cb2caaf, 
-                        #905cc39e, 
-                        #b95d8bb0
+                        rgba(174,188,200,0.08),
+                        rgba(174,188,200,0.86),
+                        rgba(119,137,152,0.24),
+                        rgba(174,188,200,0.48),
+                        rgba(174,188,200,0.08)
                     );
-                    animation: spin 1.5s linear infinite;
+                    animation: spin 1.45s linear infinite;
+                    box-shadow: 0 12px 26px -24px ${accent};
                 }
 
-                /* The Glow Effect */
-                .blur-ring {
-                    filter: blur(25px);
-                    opacity: 0.8;
-                    transform: scale(1.1); /* Make glow slightly larger */
-                }
-
-                /* --- The Center Hole --- */
-                /* This creates the ring effect by covering the center of the gradient */
                 .spinner-hole {
                     position: absolute;
-                    width: 88%; /* Adjusts border thickness (Smaller % = thicker border) */
-                    height: 88%;
+                    width: 84%;
+                    height: 84%;
                     border-radius: 50%;
                     z-index: 2;
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    box-shadow: inset 0 0 20px rgba(0,0,0,0.5); /* Inner shadow for depth */
+                    box-shadow: inset 0 0 18px rgba(0,0,0,0.32);
                 }
 
-                /* --- The Logo --- */
                 .spinner-logo {
                     width: 60%;
                     height: 60%;
                     object-fit: contain;
                     animation: breathe 3s ease-in-out infinite;
                     z-index: 3;
-                    filter: drop-shadow(0 0 5px rgba(255,255,255,0.2));
+                    filter: drop-shadow(0 0 7px rgba(174,188,200,0.18));
                 }
 
-                /* --- Animations --- */
+                .spinner-title {
+                    color: ${Colors.get('mainText', theme)};
+                    font-family: Georgia, "Times New Roman", serif;
+                    font-size: 18px;
+                    font-weight: 700;
+                    line-height: 1.05;
+                }
+
+                .spinner-text {
+                    margin-top: 8px;
+                    color: ${Colors.get('subText', theme)};
+                    font-size: 11px;
+                    font-weight: 800;
+                    letter-spacing: 0.08em;
+                    text-transform: uppercase;
+                }
+
                 @keyframes spin {
                     0% { transform: rotate(0deg); }
                     100% { transform: rotate(360deg); }
@@ -511,11 +579,10 @@ const SuspenseSpinner = ({ theme }) => {
                     100% { transform: scale(0.95); opacity: 0.9; }
                 }
 
-                /* Mobile Adjustments */
                 @media (max-width: 600px) {
                     .spinner-container {
-                        width: 120px;
-                        height: 120px;
+                        width: 86px;
+                        height: 86px;
                     }
                 }
             `}</style>

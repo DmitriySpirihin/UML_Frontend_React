@@ -6,13 +6,9 @@ import Insight from '../SleepPages/Insight';
 import { INSIGHT_TYPES } from '../SleepPages/InsightHelper';
 import { buildTodoAccent } from './ToDoVisuals.js';
 
-const TODO_INSIGHT_TYPES = [
-  INSIGHT_TYPES.TIME_MANAGEMENT
-];
-
 const ToDoInsight = () => {
   const [theme, setTheme] = useState(theme$.value);
-  const accent = buildTodoAccent(AppData.todoAccentColor || '#8FA6C8');
+  const accent = buildTodoAccent(AppData.todoAccentColor || '#5F8DFF');
   const isLight = theme === 'light' || theme === 'speciallight';
 
   useEffect(() => {
@@ -36,7 +32,6 @@ const ToDoInsight = () => {
     }}>
       <Insight
         initialType={INSIGHT_TYPES.TIME_MANAGEMENT}
-        allowedTypes={TODO_INSIGHT_TYPES}
         accentOverride={accent}
       />
     </div>

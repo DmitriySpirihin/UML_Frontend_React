@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useEffect, useMemo } from 'react'
+import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { AppData, UserData } from '../../StaticClasses/AppData.js'
 import { saveData } from '../../StaticClasses/SaveHelper.js'
 import Colors from '../../StaticClasses/Colors'
@@ -13,6 +13,13 @@ import TrainingMeasurmentsOveview from './TrainingMeasurmentsOverView.jsx'
 import TrainingMeasurmentsAnalitics from './TrainingMeasurmentsAnalitics.jsx'
 import { VolumeTabs } from '../../Helpers/TrainingAnaliticsTabs';
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx'
+import {
+    getTrainingAccent,
+    getTrainingPageBackground,
+    getTrainingPanelBackground,
+    getTrainingPanelBorder,
+    getTrainingPanelShadow
+} from './TrainingVisuals.js'
 
 // --- SCROLL PICKER COMPONENT ---
 const ITEM_HEIGHT = 40;
@@ -113,7 +120,7 @@ const TrainingMesurments = () => {
     useEffect(() => {
         const maxDays = new Date(year, month + 1, 0).getDate();
         if (day > maxDays) setDay(maxDays);
-    }, [year, month]);
+    }, [year, month, day]);
 
     // --- CRUD ---
     const onAddDay = async () => {
@@ -174,9 +181,9 @@ const TrainingMesurments = () => {
     };
 
     // --- Styles Helpers ---
-    const isLight = theme === 'light' || theme === 'speciallight';
-    const cardBg = isLight ? 'rgba(255,255,255,0.7)' : 'rgba(30,30,30,0.6)';
-    const borderColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)';
+    const accent = getTrainingAccent();
+    const cardBg = getTrainingPanelBackground(theme);
+    const borderColor = getTrainingPanelBorder(theme, accent);
 
     return (
         <div style={styles(theme).container}>
@@ -186,10 +193,10 @@ const TrainingMesurments = () => {
                 <div style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '100px' }}>
                     
                     {/* --- PERSONAL DATA (BENTO GRID) --- */}
-                    <motion.div layout style={{ ...styles(theme).card, backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+                    <Motion.div layout style={{ ...styles(theme).card, background: cardBg, border: `1px solid ${borderColor}` }}>
                         <div style={styles(theme).cardHeader} onClick={() => setCurrentType(p => p === -1 ? -2 : -1)}>
                             <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
-                                <div style={styles(theme).iconBox}><IoPerson size={18} color={Colors.get('mainText', theme)} /></div>
+                                <div style={styles(theme).iconBox}><IoPerson size={18} color={accent.hue} /></div>
                                 <span style={styles(theme, fSize).headerText}>{langIndex === 0 ? 'Личные данные' : 'Personal Data'}</span>
                             </div>
                             <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
@@ -199,25 +206,25 @@ const TrainingMesurments = () => {
                         </div>
                         <AnimatePresence>
                             {currentType === -1 && (
-                                <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} style={{ overflow: 'hidden' }}>
+                                <Motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} style={{ overflow: 'hidden' }}>
                                     <div style={{ padding: '0 15px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                         <StatCard label={langIndex===0?'Возраст':'Age'} value={age} sub={langIndex===0?'лет':'y.o.'} theme={theme} />
                                         <StatCard label={langIndex===0?'Пол':'Gender'} value={gender===0?(langIndex===0?'Муж':'Male'):(langIndex===0?'Жен':'Fem')} theme={theme} icon={gender===0?<IoMdMale/>:<IoMdFemale/>} />
                                         <StatCard label={langIndex===0?'Рост':'Height'} value={height} sub="cm" theme={theme} />
                                         <StatCard label={langIndex===0?'Цель':'Goal'} value={goalNames[goal][langIndex]} theme={theme} isWide />
                                     </div>
-                                </motion.div>
+                                </Motion.div>
                             )}
                         </AnimatePresence>
-                    </motion.div>
+                    </Motion.div>
 
                     {/* --- MEASUREMENTS LIST --- */}
                     {data.map((el, ind) => (
-                        <motion.div key={ind} layout style={{ ...styles(theme).card, backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
+                        <Motion.div key={ind} layout style={{ ...styles(theme).card, background: cardBg, border: `1px solid ${borderColor}` }}>
                             <div style={styles(theme).cardHeader} onClick={() => setCurrentType(p => p === ind ? -2 : ind)}>
                                 <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
                                     <div style={styles(theme).iconBox}>
-                                        {ind > 0 ? MeasurmentsIcon.get(ind - 1, langIndex, theme) : <IoScaleSharp size={18} color={Colors.get('mainText', theme)} />}
+                                        {ind > 0 ? MeasurmentsIcon.get(ind - 1, langIndex, theme) : <IoScaleSharp size={18} color={accent.hue} />}
                                     </div>
                                     <span style={styles(theme, fSize).headerText}>{names[ind][langIndex]}</span>
                                 </div>
@@ -230,11 +237,11 @@ const TrainingMesurments = () => {
                             </div>
                             <AnimatePresence>
                                 {currentType === ind && (
-                                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} style={{ overflow: 'hidden' }}>
+                                    <Motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} style={{ overflow: 'hidden' }}>
                                         <div style={{ padding: '0 15px 15px' }}>
-                                            <motion.button whileTap={{scale:0.98}} onClick={openAdd} style={styles(theme).addBtn}>
+                                            <Motion.button whileTap={{scale:0.98}} onClick={openAdd} style={styles(theme).addBtn}>
                                                 <FaPlus size={12}/> {langIndex === 0 ? 'Добавить замер' : 'Add Measurement'}
-                                            </motion.button>
+                                            </Motion.button>
                                             
                                             <div style={{marginTop: '15px', display: 'flex', flexDirection: 'column-reverse', gap: '8px'}}>
                                                 {el.map((day, idx) => (
@@ -246,7 +253,7 @@ const TrainingMesurments = () => {
                                                                     {Number.isInteger(day.value) ? day.value : day.value.toFixed(1)} 
                                                                     <span style={{fontSize:'12px', fontWeight:'400', marginLeft:'4px'}}>{ind === 0 ? (langIndex === 0 ? 'кг' : 'kg') : 'cm'}</span>
                                                                 </span>
-                                                                <DiffBadge data={data} type={ind} ind={idx} theme={theme} />
+                                                                <DiffBadge data={data} type={ind} ind={idx} />
                                                             </div>
                                                         </div>
                                                         <div style={{display:'flex', gap:'15px'}}>
@@ -258,10 +265,10 @@ const TrainingMesurments = () => {
                                                 {el.length === 0 && <div style={{textAlign:'center', fontSize:'13px', color:Colors.get('subText', theme), padding:'10px'}}>{langIndex===0?'Пусто':'Empty'}</div>}
                                             </div>
                                         </div>
-                                    </motion.div>
+                                    </Motion.div>
                                 )}
                             </AnimatePresence>
-                        </motion.div>
+                        </Motion.div>
                     ))}
                 </div>
             )}
@@ -314,7 +321,20 @@ const TrainingMesurments = () => {
                 {showConfirmRemove && (
                     <BottomSheet onClose={() => setShowConfirmRemove(false)} theme={theme}>
                         <div style={{textAlign:'center', padding:'20px'}}>
-                            <div style={{fontSize:'40px', marginBottom:'10px'}}>🗑️</div>
+                            <div style={{
+                                width: 58,
+                                height: 58,
+                                borderRadius: 18,
+                                margin: '0 auto 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'rgba(239,68,68,0.12)',
+                                border: '1px solid rgba(239,68,68,0.24)',
+                                color: '#EF4444',
+                            }}>
+                                <FaTrash size={22} />
+                            </div>
                             <p style={{fontSize:'16px', fontWeight:'bold', color:Colors.get('mainText', theme)}}>{langIndex === 0 ? 'Удалить запись?' : 'Delete entry?'}</p>
                         </div>
                         <ModalActions onClose={() => setShowConfirmRemove(false)} onConfirm={onRemoveConfirm} theme={theme} isDanger />
@@ -324,30 +344,40 @@ const TrainingMesurments = () => {
                 {/* 3. PERSONAL DATA SETTINGS (Scroll Pickers) */}
                 {showPersonalDataPanel && (
                     <BottomSheet onClose={() => setShowPersonalDataPanel(false)} theme={theme}>
-                        <h3 style={styles(theme).modalTitle}>{langIndex === 0 ? 'Настройки' : 'Settings'}</h3>
+                        <div style={styles(theme).settingsHeader}>
+                            <div style={styles(theme).settingsEyebrow}>{langIndex === 0 ? 'Профиль тела' : 'Body profile'}</div>
+                            <h3 style={styles(theme).modalTitle}>{langIndex === 0 ? 'Настройки' : 'Settings'}</h3>
+                            <p style={styles(theme).settingsDescription}>
+                                {langIndex === 0 ? 'Эти параметры улучшают расчёты замеров и рекомендаций.' : 'These values improve measurement and recommendation calculations.'}
+                            </p>
+                        </div>
                         
-                        <div style={{padding:'20px 0'}}>
+                        <div style={styles(theme).settingsGrid}>
                             
                             {/* Row 1: Age & Height */}
-                            <div style={{display:'flex', justifyContent:'space-around', marginBottom:'15px',backgroundColor:theme==='light'?'rgba(0,0,0,0.03)':'rgba(255,255,255,0.05)', borderRadius:'12px'}}>
+                            <div style={styles(theme).settingsCard}>
                                 <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
-                                    <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Возраст':'Age'}</span>
+                                    <span style={styles(theme).settingsLabel}>{langIndex===0?'Возраст':'Age'}</span>
                                     <ScrollPicker items={agesList} value={age} onChange={setAge} theme={theme} width="100px" />
                                 </div>
+                            </div>
+                            <div style={styles(theme).settingsCard}>
                                 <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
-                                    <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Рост (см)':'Height'}</span>
+                                    <span style={styles(theme).settingsLabel}>{langIndex===0?'Рост (см)':'Height'}</span>
                                     <ScrollPicker items={heightsList} value={height} onChange={setHeight} theme={theme} width="100px" />
                                 </div>
                             </div>
 
                             {/* Row 2: Wrist & Gender */}
-                            <div style={{display:'flex', justifyContent:'space-around', alignItems:'center', marginBottom:'20px',backgroundColor:theme==='light'?'rgba(0,0,0,0.03)':'rgba(255,255,255,0.05)', borderRadius:'12px'}}>
+                            <div style={styles(theme).settingsCard}>
                                 <div style={{display:'flex', flexDirection:'column', alignItems:'center'}}>
-                                    <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Запястье (см)':'Wrist'}</span>
+                                    <span style={styles(theme).settingsLabel}>{langIndex===0?'Запястье (см)':'Wrist'}</span>
                                     <ScrollPicker items={wristsList} value={wrist} onChange={setWrist} theme={theme} width="100px" />
                                 </div>
-                                <div style={{display:'flex', flexDirection:'column', alignItems:'center', width:'100px'}}>
-                                    <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'10px'}}>{langIndex===0?'Пол':'Gender'}</span>
+                            </div>
+                            <div style={styles(theme).settingsCard}>
+                                <div style={{display:'flex', flexDirection:'column', alignItems:'center', width:'100%'}}>
+                                    <span style={styles(theme).settingsLabel}>{langIndex===0?'Пол':'Gender'}</span>
                                     <div style={{display:'flex', gap:'10px'}}>
                                         <GenderToggle active={gender===0} icon={<IoMdMale/>} color="#5fb6c6" onClick={()=>setGender(0)} theme={theme}/>
                                         <GenderToggle active={gender===1} icon={<IoMdFemale/>} color="#c65f9d" onClick={()=>setGender(1)} theme={theme}/>
@@ -356,8 +386,8 @@ const TrainingMesurments = () => {
                             </div>
 
                             {/* Row 3: Goal */}
-                            <div style={{display:'flex', flexDirection:'column', alignItems:'center',backgroundColor:theme==='light'?'rgba(0,0,0,0.03)':'rgba(255,255,255,0.05)', borderRadius:'12px'}}>
-                                <span style={{fontSize:'12px', color:Colors.get('subText', theme), marginBottom:'5px'}}>{langIndex===0?'Цель':'Goal'}</span>
+                            <div style={{...styles(theme).settingsCard, gridColumn: '1 / -1'}}>
+                                <span style={styles(theme).settingsLabel}>{langIndex===0?'Цель':'Goal'}</span>
                                 <ScrollPicker 
                                     items={currentGoalNames} 
                                     value={currentGoalNames[goal]} 
@@ -440,7 +470,7 @@ const StatCard = ({ label, value, sub, theme, icon, isWide }) => (
     </div>
 )
 
-const DiffBadge = ({data, type, ind, theme}) => {
+const DiffBadge = ({data, type, ind}) => {
     // FIX: Check if there is a previous element (ind > 0) since array is sorted by Date Ascending
     if (ind > 0) {
         // Calculate difference: Current Value - Previous Value
@@ -467,19 +497,19 @@ const DiffBadge = ({data, type, ind, theme}) => {
 
 const BottomSheet = ({ children, onClose, theme }) => (
     <div style={styles(theme).backdrop} onClick={onClose}>
-        <motion.div 
+        <Motion.div 
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             style={styles(theme).sheet} onClick={e => e.stopPropagation()}
         >
             <div style={styles(theme).handle} />
             {children}
-        </motion.div>
+        </Motion.div>
     </div>
 )
 
 const GenderToggle = ({ active, icon, color, onClick, theme }) => (
-    <motion.div 
+    <Motion.div 
         whileTap={{scale:0.9}} onClick={onClick}
         style={{
             width:'40px', height:'40px', borderRadius:'12px', 
@@ -489,42 +519,59 @@ const GenderToggle = ({ active, icon, color, onClick, theme }) => (
         }}
     >
         {icon}
-    </motion.div>
+    </Motion.div>
 )
 
 const ModalActions = ({ onClose, onConfirm, theme, isDanger }) => (
     <div style={{display:'flex', gap:'15px', marginTop:'25px'}}>
-        <motion.button whileTap={{scale:0.95}} onClick={onClose} style={styles(theme).secBtn}><MdClose size={22}/></motion.button>
-        <motion.button whileTap={{scale:0.95}} onClick={onConfirm} style={{...styles(theme).priBtn, backgroundColor: isDanger ? '#ff4d4d' : Colors.get('done', theme)}}><MdDone size={22}/></motion.button>
+        <Motion.button whileTap={{scale:0.95}} onClick={onClose} style={styles(theme).secBtn}><MdClose size={22}/></Motion.button>
+        <Motion.button whileTap={{scale:0.95}} onClick={onConfirm} style={{...styles(theme).priBtn, backgroundColor: isDanger ? '#ff4d4d' : Colors.get('done', theme)}}><MdDone size={22}/></Motion.button>
     </div>
 )
 
-const styles = (theme, fSize) => ({
+const styles = (theme, fSize) => {
+    const accent = getTrainingAccent();
+    const isLight = theme === 'light' || theme === 'speciallight';
+
+    return {
     container: {
         display: 'flex', width: "100vw", flexDirection: 'column',
         overflowY: 'scroll', overflowX: 'hidden', alignItems: 'center',
-        backgroundColor: Colors.get('background', theme), height: "92vh", marginTop:'110px'
+        background: getTrainingPageBackground(theme, accent),
+        minHeight: "100dvh",
+        height: "100dvh",
+        padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 18px 116px',
+        boxSizing: 'border-box'
     },
     card: {
-        width: '94%', borderRadius: '24px', margin: '0 auto', overflow: 'hidden', transition: 'all 0.3s'
+        width: '100%',
+        borderRadius: '22px',
+        margin: '0 auto',
+        overflow: 'hidden',
+        transition: 'all 0.3s',
+        background: getTrainingPanelBackground(theme),
+        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+        boxShadow: getTrainingPanelShadow(theme, accent)
     },
     cardHeader: {
         padding: '15px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer'
     },
     headerText: { fontSize: fSize===0?'16px':'18px', fontWeight:'700', color:Colors.get('mainText', theme) },
     iconBox: {
-        width:'36px', height:'36px', borderRadius:'10px',
-        backgroundColor: theme==='light'?'rgba(0,0,0,0.05)':'rgba(255,255,255,0.1)',
+        width:'40px', height:'40px', borderRadius:'12px',
+        backgroundColor: accent.soft,
+        border: `1px solid ${accent.ring}`,
         display:'flex', alignItems:'center', justifyContent:'center'
     },
     valueBadge: {
         fontSize:'14px', fontWeight:'700', padding:'4px 10px', borderRadius:'8px',
-        backgroundColor: theme==='light'?'rgba(0,0,0,0.05)':'rgba(255,255,255,0.1)',
+        backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
         color:Colors.get('mainText', theme)
     },
     addBtn: {
-        width:'100%', padding:'12px', borderRadius:'12px', border:'none',
-        backgroundColor: Colors.get('difficulty', theme), color:'#fff',
+        width:'100%', padding:'12px', borderRadius:'14px',
+        border:`1px solid ${accent.ring}`,
+        background:`linear-gradient(135deg, ${accent.hue}, rgba(${accent.rgb}, 0.72))`, color:'#fff',
         fontWeight:'700', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px', cursor:'pointer'
     },
     historyRow: {
@@ -538,7 +585,7 @@ const styles = (theme, fSize) => ({
         zIndex:3000, display:'flex', alignItems:'flex-end', justifyContent:'center'
     },
     sheet: {
-        width:'100%', maxWidth:'600px', backgroundColor:Colors.get('background', theme),
+        width:'100%', maxWidth:'600px', background:getTrainingPanelBackground(theme),
         borderTopLeftRadius:'30px', borderTopRightRadius:'30px',
         padding:'20px 20px 40px 20px', boxShadow:'0 -10px 40px rgba(0,0,0,0.3)',
         borderTop: `1px solid ${Colors.get('border', theme)}`,
@@ -550,6 +597,51 @@ const styles = (theme, fSize) => ({
     },
     modalHeader: { textAlign:'center', marginBottom:'20px' },
     modalTitle: { fontSize:'18px', fontWeight:'800', color:Colors.get('mainText', theme), margin:0 },
+    settingsHeader: {
+        textAlign: 'center',
+        marginBottom: '18px',
+    },
+    settingsEyebrow: {
+        color: accent.hue,
+        fontSize: '11px',
+        fontWeight: 900,
+        letterSpacing: '0.14em',
+        textTransform: 'uppercase',
+        marginBottom: '6px',
+    },
+    settingsDescription: {
+        maxWidth: 360,
+        margin: '8px auto 0',
+        color: Colors.get('subText', theme),
+        fontSize: '13px',
+        lineHeight: 1.45,
+        fontWeight: 650,
+    },
+    settingsGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+        gap: '12px',
+        padding: '6px 0 4px',
+    },
+    settingsCard: {
+        minHeight: '128px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '20px',
+        background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.045)',
+        border: `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.07)'}`,
+        boxSizing: 'border-box',
+    },
+    settingsLabel: {
+        fontSize:'11px',
+        color:Colors.get('subText', theme),
+        marginBottom:'8px',
+        fontWeight: 850,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+    },
     sectionLabel: {
         fontSize:'12px', fontWeight:'700', textTransform:'uppercase', color:Colors.get('subText', theme),
         marginBottom:'10px', display:'flex', alignItems:'center', gap:'6px', letterSpacing:'1px'
@@ -571,7 +663,7 @@ const styles = (theme, fSize) => ({
         color:'#fff', cursor:'pointer', display:'flex', justifyContent:'center',
         boxShadow:'0 5px 15px rgba(0,0,0,0.2)'
     }
-})
+    };
+};
 
 export default TrainingMesurments;
-

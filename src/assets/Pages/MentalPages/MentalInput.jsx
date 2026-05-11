@@ -83,6 +83,7 @@ const MentalInput = ({ setInput, type }) => {
                             label={key}
                             onClick={() => click(key)}
                             isEmpty={key === ''}
+                            isActive={currentKey === key}
                         >
                             {renderKeyContent(key)}
                         </KeyButton>
@@ -98,6 +99,7 @@ const MentalInput = ({ setInput, type }) => {
                     theme={theme} 
                     onClick={() => click('CC')} 
                     specialColor={Colors.get('skipped', theme)} // Red/Orange
+                    isActive={currentKey === 'CC'}
                 >
                     <FaEraser />
                 </KeyButton>
@@ -110,6 +112,7 @@ const MentalInput = ({ setInput, type }) => {
                         label={key}
                         onClick={() => click(key)}
                         isEmpty={key === ''}
+                        isActive={currentKey === key}
                     >
                          {renderKeyContent(key)}
                     </KeyButton>
@@ -120,6 +123,7 @@ const MentalInput = ({ setInput, type }) => {
                     theme={theme} 
                     onClick={() => click('>>>')} 
                     specialColor={Colors.get('done', theme)} // Green
+                    isActive={currentKey === '>>>'}
                 >
                     <FaCheck />
                 </KeyButton>
@@ -129,26 +133,35 @@ const MentalInput = ({ setInput, type }) => {
 }
 
 // Extracted Button Component for cleanliness & animation
-const KeyButton = ({ theme, onClick, children, specialColor, isEmpty, label }) => {
+const KeyButton = ({ theme, onClick, children, specialColor, isEmpty, label, isActive }) => {
     if (isEmpty) return <div style={{...styles(theme).keyBase, opacity: 0, pointerEvents: 'none'}} />;
 
     const isDark = theme === 'dark';
+    const isAction = Boolean(specialColor);
     
     // Determine background color
-    let bg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
-    let border = isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.1)';
+    let bg = isDark
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.03))'
+        : 'linear-gradient(145deg, rgba(255,255,255,0.9), rgba(238,243,246,0.74))';
+    let border = isDark ? '1px solid rgba(255,255,255,0.11)' : '1px solid rgba(20,24,32,0.08)';
     let color = Colors.get('mainText', theme);
+    let shadow = isDark ? 'inset 0 1px 0 rgba(255,255,255,0.06)' : '0 10px 22px rgba(24,36,44,0.08)';
 
     if (specialColor) {
-        bg = specialColor;
-        color = '#fff'; // Always white on special colored buttons
-        border = 'none';
+        bg = specialColor === Colors.get('done', theme)
+            ? 'linear-gradient(135deg, #20D3A0 0%, #0FB883 100%)'
+            : 'linear-gradient(135deg, #FF5A62 0%, #EF3D45 100%)';
+        color = '#fff';
+        border = '1px solid rgba(255,255,255,0.08)';
+        shadow = specialColor === Colors.get('done', theme)
+            ? '0 16px 30px rgba(20,211,160,0.2)'
+            : '0 16px 30px rgba(239,61,69,0.2)';
     } else if (label === 'true') {
-         bg = Colors.get('done', theme) + '40'; // Transparent Green
-         border = `1px solid ${Colors.get('done', theme)}`;
+         bg = 'linear-gradient(135deg, rgba(32,211,160,0.2), rgba(32,211,160,0.08))';
+         border = '1px solid rgba(32,211,160,0.45)';
     } else if (label === 'false') {
-         bg = Colors.get('skipped', theme) + '40'; // Transparent Red
-         border = `1px solid ${Colors.get('skipped', theme)}`;
+         bg = 'linear-gradient(135deg, rgba(255,90,98,0.2), rgba(255,90,98,0.08))';
+         border = '1px solid rgba(255,90,98,0.45)';
     }
 
     return (
@@ -157,13 +170,15 @@ const KeyButton = ({ theme, onClick, children, specialColor, isEmpty, label }) =
             onClick={onClick}
             style={{
                 ...styles(theme).keyBase,
-                backgroundColor: bg,
+                ...(isAction ? styles(theme).actionKey : null),
+                background: bg,
                 border: border,
                 color: color,
-                boxShadow: specialColor ? '0 4px 12px rgba(0,0,0,0.2)' : 'none'
+                boxShadow: isActive ? `${shadow}, 0 0 0 2px rgba(102,217,232,0.28)` : shadow,
+                transform: isActive ? 'translateY(1px)' : 'translateY(0)'
             }}
         >
-            <span style={styles(theme).text}>{children}</span>
+            <span style={isAction ? styles(theme).actionText : styles(theme).text}>{children}</span>
         </motion.button>
     );
 };
@@ -172,51 +187,75 @@ export default MentalInput
 
 const styles = (theme) => ({
     container: {
-        backgroundColor: theme === 'dark' ? 'rgba(20, 20, 20, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-        backdropFilter: 'blur(15px)',
+        background: theme === 'dark'
+            ? 'linear-gradient(180deg, rgba(22,32,38,0.96), rgba(13,16,19,0.98))'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.94), rgba(235,242,245,0.98))',
+        backdropFilter: 'blur(22px)',
         display: "flex",
         position: 'fixed',
         flexDirection: "column",
         alignItems: "center",
         justifyContent: 'center',
-        height: "35vh",
+        height: "min(39vh, 360px)",
+        minHeight: '300px',
         bottom: '0',
-        width: "100vw",
-        fontFamily: "Segoe UI",
-        borderTop: `1px solid ${Colors.get('border', theme)}`,
-        borderTopLeftRadius: '24px',
-        borderTopRightRadius: '24px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: "calc(100vw - 16px)",
+        maxWidth: '720px',
+        boxSizing: 'border-box',
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        border: `1px solid ${theme === 'dark' ? 'rgba(102,217,232,0.12)' : 'rgba(37,87,96,0.12)'}`,
+        borderBottom: 'none',
+        borderTopLeftRadius: '30px',
+        borderTopRightRadius: '30px',
         zIndex: 5000,
-        boxShadow: '0 -4px 20px rgba(0,0,0,0.2)',
-        paddingBottom: '10px' // Safe area for phones
+        boxShadow: theme === 'dark' ? '0 -24px 55px rgba(0,0,0,0.36)' : '0 -20px 46px rgba(24,36,44,0.14)',
+        padding: '12px 14px calc(14px + env(safe-area-inset-bottom, 0px))',
     },
     rowPanel: {
         display: 'flex',
         flexDirection: 'row',
-        justifyContent: 'center', // Center buttons
-        gap: '12px', // Gap between buttons
-        width: '94%',
-        flex: 1, // Distribute height evenly
+        justifyContent: 'center',
+        gap: '12px',
+        width: '100%',
+        flex: 1,
         alignItems: "center",
-        margin: '4px 0'
+        margin: '3px 0'
     },
     keyBase: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        flex: 1, // Grow to fill row
+        flex: 1,
         height: '100%',
-        borderRadius: '16px',
+        minHeight: '56px',
+        borderRadius: '20px',
         cursor: 'pointer',
         userSelect: 'none',
         WebkitTapHighlightColor: 'transparent',
         outline: 'none',
-        transition: 'background-color 0.2s',
-        maxWidth: '120px' // Prevent keys getting too wide on desktop
+        transition: 'background 0.2s, box-shadow 0.2s, transform 0.2s',
+        maxWidth: '132px'
+    },
+    actionKey: {
+        flex: '0 0 clamp(76px, 17vw, 104px)',
+        height: '74%',
+        minHeight: '50px',
+        maxWidth: '104px',
+        borderRadius: '18px',
     },
     text: {
         fontSize: "24px",
-        fontWeight: '600',
-        // Color handled in component based on props
+        fontWeight: '900',
+        lineHeight: 1,
+    },
+    actionText: {
+        fontSize: '20px',
+        fontWeight: 900,
+        lineHeight: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
     }
 })

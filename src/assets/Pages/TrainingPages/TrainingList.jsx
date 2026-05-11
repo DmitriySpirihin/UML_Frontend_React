@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors.js';
 import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus.js';
@@ -106,6 +106,10 @@ const colors = [
   "#ff758c", "#ff7eb3", "#4facfe", "#00f2fe"
 ];
 
+const TRAINING_ACCENT = '#35C2FF';
+const TRAINING_BLUE = '#8FA6C8';
+const TRAINING_GREEN = '#14B8A6';
+
 const TrainingList = () => {
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0] === 'ru' ? 0 : 1);
@@ -137,7 +141,7 @@ const availableYearsMonths = useMemo(() => {
   const yearsSet = new Set();
   const monthsSet = new Set();
   
-  Object.entries(AppData.trainingLog).forEach(([date, sessions]) => {
+  Object.keys(AppData.trainingLog).forEach((date) => {
     const dateObj = new Date(date);
     const year = dateObj.getFullYear();
     const month = dateObj.getMonth(); // 0-11
@@ -154,7 +158,7 @@ const availableYearsMonths = useMemo(() => {
   const months = Array.from(monthsSet).sort((a, b) => a - b); // Ascending
   
   return { years, months };
-}, [AppData.trainingLog, selectedYear]);
+}, [selectedYear]);
   useEffect(() => {
     const subFontSize = fontSize$.subscribe(setFSize);
     return () => subFontSize.unsubscribe();
@@ -238,7 +242,7 @@ const { allTrainings, sessionColorMap } = useMemo(() => {
   });
 
   return { allTrainings: filtered, sessionColorMap: colorMap };
-}, [AppData.trainingLog, filterMode, pId, dayIndex, trainingTypeFilter, selectedYear, selectedMonth]);
+}, [filterMode, pId, dayIndex, trainingTypeFilter, selectedYear, selectedMonth]);
 
   // --- Filter Options ---
   const programOptions = useMemo(() => {
@@ -286,15 +290,6 @@ const { allTrainings, sessionColorMap } = useMemo(() => {
   const allLabel = langIndex === 0 ? 'Все' : 'All';
   const progLabel = langIndex === 0 ? 'Программа' : 'Program';
   const dayLabel = langIndex === 0 ? 'День' : 'Day';
-  const typeLabels = useMemo(() => ({
-  all: langIndex === 0 ? 'Все типы' : 'All Types',
-  GYM: langIndex === 0 ? 'Силовые' : 'Gym',
-  RUNNING: langIndex === 0 ? 'Бег' : 'Running',
-  CYCLING: langIndex === 0 ? 'Велосипед' : 'Cycling',
-  SWIMMING: langIndex === 0 ? 'Плавание' : 'Swimming',
-  OTHER: langIndex === 0 ? 'Другое' : 'Other'
-}), [langIndex]);
-
   // Уникальные типы тренировок из данных (для динамических фильтров)
   const availableTrainingTypes = useMemo(() => {
   const types = new Set(['all']);
@@ -326,7 +321,16 @@ const { allTrainings, sessionColorMap } = useMemo(() => {
       if (b.value === 'all') return 1;
       return a.label.localeCompare(b.label);
     });
-}, [AppData.trainingLog, langIndex]);
+}, [langIndex]);
+
+const isRu = langIndex === 0;
+const historyStats = useMemo(() => allTrainings.reduce((acc, item) => {
+  const session = item.session;
+  acc.total += 1;
+  if (session.completed) acc.done += 1;
+  acc.minutes += Math.max(0, Math.round((session.duration || 0) / 60000));
+  return acc;
+}, { total: 0, done: 0, minutes: 0 }), [allTrainings]);
 
 // --- FILTER DROPDOWNS COMPONENT ---
 const FilterDropdowns = ({expanded,setExpanded}) => {
@@ -358,7 +362,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
           {expanded ? <FaChevronUp size={12} style={{ marginLeft: '16px' }} /> : <FaChevronDown size={12} style={{ marginLeft: '16px' }} />}
         </div>
         {hasFilters && expanded && (
-          <motion.button
+          <Motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
@@ -368,7 +372,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
             style={styles(theme).clearFilterButton}
           >
             {langIndex === 0 ? 'Сбросить' : 'Clear'}
-          </motion.button>
+          </Motion.button>
         )}
       </div>
       
@@ -378,7 +382,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
           <div style={styles(theme).filterLabel}>
             {langIndex === 0 ? 'Год' : 'Year'}
           </div>
-          <motion.div
+          <Motion.div
             whileHover={{ scale: 1.01 }}
             style={styles(theme).dropdownContainer}
           >
@@ -406,7 +410,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
               color={Colors.get('subText', theme)}
               style={styles(theme).dropdownIcon}
             />
-          </motion.div>
+          </Motion.div>
         </div>
         
         {/* Month Dropdown - Only show if year is selected */}
@@ -415,7 +419,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
             <div style={styles(theme).filterLabel}>
               {langIndex === 0 ? 'Месяц' : 'Month'}
             </div>
-            <motion.div
+            <Motion.div
               whileHover={{ scale: 1.01 }}
               style={styles(theme).dropdownContainer}
             >
@@ -439,7 +443,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                 color={Colors.get('subText', theme)}
                 style={styles(theme).dropdownIcon}
               />
-            </motion.div>
+            </Motion.div>
           </div>
         )}
       </div>}
@@ -457,25 +461,54 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
 
   return (
     <div style={styles(theme).container}>
+      <div style={styles(theme).pageHeader}>
+        <div style={styles(theme).pageTitle}>UltyMyLife</div>
+        <div style={styles(theme).pageSubtitle}>
+          {isRu ? 'История тренировок без визуального шума' : 'Workout history without visual noise'}
+        </div>
+      </div>
+
+      <Motion.section
+        initial={{ opacity: 0, y: 14, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+        style={styles(theme).hero}
+      >
+        <div style={styles(theme).heroGlow} />
+        <div style={styles(theme).heroCopy}>
+          <div style={styles(theme).eyebrow}>{isRu ? 'АРХИВ' : 'ARCHIVE'}</div>
+          <h1 style={styles(theme).heroTitle}>{isRu ? 'Журнал' : 'Journal'}</h1>
+          <div style={styles(theme).heroSubtitle}>
+            {isRu ? 'Быстрый обзор всех силовых и кардио-сессий' : 'Fast overview of every strength and cardio session'}
+          </div>
+          <div style={styles(theme).heroStats}>
+            <HeroStat theme={theme} label={isRu ? 'найдено' : 'found'} value={historyStats.total} accent={TRAINING_ACCENT} />
+            <HeroStat theme={theme} label={isRu ? 'готово' : 'done'} value={historyStats.done} accent={TRAINING_GREEN} />
+            <HeroStat theme={theme} label={isRu ? 'минут' : 'minutes'} value={historyStats.minutes} accent={TRAINING_BLUE} />
+          </div>
+        </div>
+        <img style={styles(theme).heroImage} src="images/bro_training.png" alt="" />
+      </Motion.section>
+
       {/* === Фильтр по типу тренировки === */}
-      <div style={{...styles(theme).typeFilterContainer,marginTop:'25px'}}>
+      <div style={{...styles(theme).typeFilterContainer, marginTop:'14px'}}>
   <div style={styles(theme).typeToggleWrapper}>
     {availableTrainingTypes.map(({ value, label }) => {
       const isActive = trainingTypeFilter === value;
       return (
-        <motion.div
+        <Motion.div
           key={value}
           onClick={() => setTrainingTypeFilter(value)}
           whileTap={{ scale: 0.95 }}
           style={{
             ...styles(theme).typeTogglePill,
-            backgroundColor: isActive ? Colors.get('currentDateBorder', theme) : 'transparent',
+            backgroundColor: isActive ? TRAINING_ACCENT : 'transparent',
             color: isActive ? '#fff' : Colors.get('subText', theme),
             fontSize: fSize === 0 ? '13px' : '14px',
           }}
         >
           {label}
-        </motion.div>
+        </Motion.div>
       );
     })}
   </div>
@@ -488,19 +521,19 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
             {[{ key: 0, label: allLabel }, { key: 1, label: progLabel }, { key: 2, label: dayLabel }].map(({ key, label }) => {
               const isActive = filterMode === key;
               return (
-                <motion.div
+                <Motion.div
                   key={key}
                   onClick={() => setFilterMode(key)}
                   whileTap={{ scale: 0.95 }}
                   style={{
                     ...styles(theme).togglePill,
-                    backgroundColor: isActive ? Colors.get('currentDateBorder', theme) : 'transparent',
+                    backgroundColor: isActive ? TRAINING_ACCENT : 'transparent',
                     color: isActive ? '#fff' : Colors.get('subText', theme),
                     fontSize: fSize === 0 ? '13px' : '14px',
                   }}
                 >
                   {label}
-                </motion.div>
+                </Motion.div>
               );
             })}
           </div>
@@ -580,7 +613,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
               }
 
               return (
-                <motion.div
+                <Motion.div
                   key={sessionId}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -604,16 +637,16 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                       </div>
                     </div>
                     <div style={{ padding: '0 16px', display: 'flex', alignItems: 'center' }}>
-                      <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
+                      <Motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
                         <IoIosArrowDown size={18} color={Colors.get('subText', theme)} />
-                      </motion.div>
+                      </Motion.div>
                     </div>
                   </div>
 
                   {/* Expanded Details */}
                   <AnimatePresence>
                     {isExpanded && (
-                      <motion.div
+                      <Motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
@@ -641,7 +674,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
 
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {Object.entries(session.exercises || {})
-                                  .filter(([_, ex]) => ex?.sets?.length > 0)
+                                  .filter((entry) => entry[1]?.sets?.length > 0)
                                   .map(([exId, ex]) => {
                                     const exIdNum = parseInt(exId, 10);
                                     const exercise = AppData.exercises[exIdNum];
@@ -774,15 +807,15 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                             </>
                           )}
                         </div>
-                      </motion.div>
+                      </Motion.div>
                     )}
                   </AnimatePresence>
-                </motion.div>
+                </Motion.div>
               );
             })}
           </AnimatePresence>
         ) : (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             style={{
@@ -794,7 +827,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
             }}
           >
             {langIndex === 0 ? 'Тренировки не найдены' : 'No trainings found'}
-          </motion.div>
+          </Motion.div>
         )}
       </div>
       <div style={{marginBottom:'150px'}}></div>
@@ -802,305 +835,465 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
   );
 };
 
-const styles = (theme, fSize) => ({
-  container: {
-    backgroundColor: Colors.get('background', theme),
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    height: '89vh',
-    marginTop: '120px',
-    width: '100vw',
-    fontFamily: 'Segoe UI, Roboto, sans-serif',
-    overflowY: 'auto',
-    boxSizing: 'border-box',
-    padding: '0 10px',
-  },
-  // --- Type Filter Styles ---
-  typeFilterContainer: {
-    width: '100%',
-    maxWidth: '600px',
-    display: 'flex',
-    justifyContent: 'center',
-    marginBottom: '5px',
-    padding: '0 10px'
-  },
-  typeToggleWrapper: {
-    display: 'flex',
-    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
-    padding: '4px',
-    borderRadius: '25px',
-    width: '100%',
-    maxWidth: '500px',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: '4px'
-  },
-  typeTogglePill: {
-    flex: '1 1 auto',
-    textAlign: 'center',
-    padding: '5px 4px',
-    borderRadius: '20px',
-    cursor: 'pointer',
-    fontWeight: '500',
-    minWidth: '80px',
-    transition: 'all 0.2s ease',
-    whiteSpace: 'nowrap'
-  },
-  // --- Filter Styles ---
-  filterContainer: {
-    width: '100%',
-    maxWidth: '500px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '0 10px'
-  },
-  toggleWrapper: {
-    display: 'flex',
-    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
-    padding: '4px',
-    borderRadius: '25px',
-    width: '100%',
-    justifyContent: 'space-between'
-  },
-  togglePill: {
-    flex: 1,
-    textAlign: 'center',
-    padding: '5px 0',
-    borderRadius: '20px',
-    cursor: 'pointer',
-    fontWeight: '500',
-    transition: 'all 0.2s ease',
-  },
-  // --- Input Styles ---
-  selectWrapper: {
-    position: 'relative',
-    width: '100%',
-  },
-  select: {
-    width: '100%',
-    padding: '12px 16px',
-    borderRadius: '12px',
-    border: 'none',
-    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
-    color: Colors.get('mainText', theme),
-    fontSize: fSize === 0 ? '14px' : '16px',
-    appearance: 'none',
-    outline: 'none',
-    cursor: 'pointer'
-  },
-  selectIcon: {
-    position: 'absolute',
-    right: '15px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    color: Colors.get('subText', theme),
-    fontSize: '12px',
-    pointerEvents: 'none'
-  },
-  // --- Card Styles ---
-  card: {
-    width: '100%',
-    backgroundColor: theme === 'light' ? '#fff' : 'rgba(255,255,255,0.03)',
-    borderRadius: '16px',
-    marginBottom: '12px',
-    boxShadow: theme === 'light' ? '0 2px 10px rgba(0,0,0,0.05)' : 'none',
-    border: `1px solid ${theme === 'light' ? 'rgba(192, 192, 192, 0.05)' : 'rgba(255,255,255,0.05)'}`,
-    overflow: 'hidden',
-  },
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dateText: {
-    fontSize: fSize === 0 ? '16px' : '18px',
-    fontWeight: 'bold',
-    color: Colors.get('mainText', theme),
-    marginBottom: '4px'
-  },
-  programText: {
-    fontSize: fSize === 0 ? '13px' : '14px',
-    color: Colors.get('subText', theme),
-    fontWeight: '500'
-  },
-  // --- Expanded Content ---
-  expandedContent: {
-    padding: '0 16px 16px 16px',
-    borderTop: `1px solid ${Colors.get('border', theme)}`,
-    marginTop: '0px',
-    paddingTop: '12px',
-    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.01)' : 'rgba(0,0,0,0.1)'
-  },
-  statsRow: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px 12px',
-    marginBottom: '16px'
-  },
-  statRow: {
-    display: 'flex',
-    gap: '20px',
-    marginBottom: '12px',
-    padding: '8px 0'
-  },
-  statLabel: {
-    fontSize: '12px',
-    color: Colors.get('subText', theme),
-    marginBottom: '4px'
-  },
-  statValue: {
-    fontSize: fSize === 0 ? '16px' : '18px',
-    fontWeight: 'bold',
-    color: Colors.get('mainText', theme)
-  },
-  statBadge: {
-    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
-    padding: '4px 10px',
-    borderRadius: '8px',
-    fontSize: '12px',
-    color: Colors.get('mainText', theme),
-    fontWeight: '600',
-    whiteSpace: 'nowrap'
-  },
-  exerciseBlock: {
-    marginBottom: '8px',
-    paddingBottom: '8px',
-    borderBottom: `1px dashed ${Colors.get('border', theme)}`
-  },
-  exerciseTitle: {
-    color: Colors.get('mainText', theme),
-    fontWeight: '600',
-    fontSize: fSize === 0 ? '14px' : '16px',
-  },
-  tonnageSub: {
-    fontSize: '11px',
-    color: Colors.get('subText', theme),
-    fontWeight: 'bold'
-  },
-  setsGrid: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px',
-    marginTop: '4px'
-  },
-  setRow: {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '4px 8px',
-    borderRadius: '6px',
-    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)',
-  },
-  noteBlock: {
-    marginTop: '12px',
-    padding: '12px',
-    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
-    borderRadius: '10px',
-    borderLeft: `3px solid ${Colors.get('subText', theme)}`
-  },
-  noteLabel: {
-    fontSize: '12px',
-    color: Colors.get('subText', theme),
-    marginBottom: '4px',
-    fontWeight: '500'
-  },
-  noteText: {
-    fontSize:'11px',textAlign:'left',
-    color: Colors.get('mainText', theme),
-    lineHeight: 1.4
-  },
-  // --- Date Filter Styles ---
-dateFilterContainer: {
-  width: '96%',
-  maxWidth: '600px',
-  backgroundColor: theme === 'light' ? '#ffffff' : 'rgba(255,255,255,0.03)',
-  borderRadius: '16px',
-  padding: '6px',
-  marginBottom: '25px',
-  border: `1px solid ${theme === 'light' ? 'rgba(192, 192, 192, 0.2)' : 'rgba(255,255,255,0.1)'}`,
-  boxShadow: theme === 'light'
-    ? '0 3px 10px rgba(0, 0, 0, 0.03)'
-    : '0 4px 15px rgba(0, 0, 0, 0.2)',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '6px'
-},
-filterHeader: {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '12px'
-},
-filterTitle: {
-  fontSize: '15px',
-  fontWeight: '700',
-  color: Colors.get('mainText', theme),
-  display: 'flex',
-  alignItems: 'center'
-},
-clearFilterButton: {
-  padding: '4px 10px',
-  borderRadius: '8px',
-  fontSize: '12px',
-  fontWeight: '600',
-  backgroundColor: theme === 'light' ? '#fee2e2' : '#451616',
-  color: theme === 'light' ? '#ef4444' : '#fecaca',
-  border: 'none',
-  cursor: 'pointer',
-  transition: 'all 0.2s ease'
-},
-filterDropdowns: {
-  display: 'flex',
-  gap: '12px',
-  flexWrap: 'wrap'
-},
-filterDropdownWrapper: {
-  flex: 1,
-  minWidth: '150px'
-},
-filterLabel: {
-  fontSize: '11px',
-  color: Colors.get('subText', theme),
-  marginBottom: '6px',
-  fontWeight: '500'
-},
-dropdownContainer: {
-  position: 'relative',
-  backgroundColor: theme === 'light' ? '#ffffff' : 'rgba(255,255,255,0.08)',
-  borderRadius: '10px',
-  border: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'}`,
-  cursor: 'pointer'
-},
-dropdownSelect: {
-  width: '100%',
-  padding: '10px 30px 10px 12px',
-  fontSize: '14px',
-  fontWeight: '500',
-  color: Colors.get('mainText', theme),
-  backgroundColor: 'transparent',
-  border: 'none',
-  borderRadius: '10px',
-  appearance: 'none',
-  cursor: 'pointer',
-  outline: 'none'
-},
-dropdownIcon: {
-  position: 'absolute',
-  right: '10px',
-  top: '50%',
-  transform: 'translateY(-50%)'
-},
-activeFiltersBadge: {
-  marginTop: '12px',
-  padding: '8px 12px',
-  backgroundColor: theme === 'light' ? '#e3f2fd' : '#1e3a8a',
-  color: theme === 'light' ? '#1e40af' : '#60a5fa',
-  borderRadius: '8px',
-  fontSize: '13px',
-  fontWeight: '600'
-},
-});
+const HeroStat = ({ theme, label, value, accent }) => (
+  <div style={{ ...styles(theme).heroStat, borderColor: `${accent}33` }}>
+    <div style={{ ...styles(theme).heroStatValue, color: accent }}>{value}</div>
+    <div style={styles(theme).heroStatLabel}>{label}</div>
+  </div>
+);
+
+const styles = (theme, fSize = 0) => {
+  const isDark = theme === 'dark' || theme === 'specialdark';
+  const mainText = Colors.get('mainText', theme);
+  const subText = Colors.get('subText', theme);
+  const background = Colors.get('background', theme);
+  const border = Colors.get('border', theme);
+
+  return {
+    container: {
+      width: '100vw',
+      height: '100vh',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      boxSizing: 'border-box',
+      padding: '24px 4.5vw 150px',
+      background: isDark
+        ? `radial-gradient(circle at 18% 6%, rgba(53,194,255,0.12), transparent 28%),
+           radial-gradient(circle at 92% 28%, rgba(20,184,166,0.10), transparent 26%),
+           ${background}`
+        : background,
+      color: mainText,
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    },
+    pageHeader: {
+      width: '100%',
+      maxWidth: '600px',
+      textAlign: 'center',
+      padding: '8px 18px 16px',
+      boxSizing: 'border-box',
+    },
+    pageTitle: {
+      color: mainText,
+      fontFamily: 'Georgia, "Times New Roman", serif',
+      fontSize: fSize === 0 ? '25px' : '27px',
+      fontWeight: 700,
+      letterSpacing: 0,
+      lineHeight: 1.05,
+      opacity: 0.92,
+    },
+    pageSubtitle: {
+      marginTop: '6px',
+      color: subText,
+      fontSize: fSize === 0 ? '10px' : '11px',
+      fontWeight: 700,
+      letterSpacing: '0.18em',
+      lineHeight: 1.3,
+    },
+    hero: {
+      position: 'relative',
+      width: '100%',
+      maxWidth: '600px',
+      minHeight: '164px',
+      padding: '18px',
+      borderRadius: '30px',
+      overflow: 'hidden',
+      boxSizing: 'border-box',
+      background: isDark
+        ? 'linear-gradient(135deg, rgba(18,31,41,0.96), rgba(21,24,28,0.92) 52%, rgba(17,38,45,0.9))'
+        : 'linear-gradient(135deg, #ffffff, #edf8ff)',
+      border: `1px solid ${isDark ? 'rgba(53,194,255,0.25)' : 'rgba(53,194,255,0.20)'}`,
+      boxShadow: isDark
+        ? '0 24px 70px rgba(0,0,0,0.36), inset 0 1px 0 rgba(255,255,255,0.08)'
+        : '0 18px 44px rgba(15,23,42,0.08)',
+    },
+    heroGlow: {
+      position: 'absolute',
+      inset: 0,
+      background: 'radial-gradient(circle at 78% 22%, rgba(53,194,255,0.22), transparent 34%), radial-gradient(circle at 22% 110%, rgba(20,184,166,0.12), transparent 42%)',
+      pointerEvents: 'none',
+    },
+    heroCopy: {
+      position: 'relative',
+      zIndex: 1,
+      width: 'calc(100% - min(32vw, 150px))',
+      minWidth: '212px',
+    },
+    eyebrow: {
+      marginBottom: '5px',
+      color: TRAINING_ACCENT,
+      fontSize: fSize === 0 ? '11px' : '12px',
+      fontWeight: 900,
+      letterSpacing: '0.18em',
+    },
+    heroTitle: {
+      margin: 0,
+      color: mainText,
+      fontSize: fSize === 0 ? '30px' : '33px',
+      lineHeight: 1.04,
+      fontWeight: 900,
+      letterSpacing: 0,
+    },
+    heroSubtitle: {
+      margin: '8px 0 13px',
+      maxWidth: '350px',
+      color: subText,
+      fontSize: fSize === 0 ? '14px' : '15px',
+      lineHeight: 1.35,
+      fontWeight: 700,
+    },
+    heroStats: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      gap: '7px',
+      width: '100%',
+      maxWidth: '286px',
+    },
+    heroStat: {
+      minHeight: '44px',
+      padding: '7px 8px',
+      borderRadius: '15px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.74)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)'}`,
+      boxSizing: 'border-box',
+      minWidth: 0,
+    },
+    heroStatValue: {
+      color: mainText,
+      fontSize: '16px',
+      fontWeight: 900,
+      lineHeight: 1.05,
+      fontVariantNumeric: 'tabular-nums',
+    },
+    heroStatLabel: {
+      marginTop: '2px',
+      color: subText,
+      fontSize: '9px',
+      fontWeight: 800,
+      lineHeight: 1.05,
+      textTransform: 'uppercase',
+      letterSpacing: '0.03em',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    },
+    heroImage: {
+      position: 'absolute',
+      right: '-4px',
+      top: '50%',
+      transform: 'translateY(-43%)',
+      width: 'min(32vw, 150px)',
+      maxHeight: '156px',
+      objectFit: 'contain',
+      filter: 'drop-shadow(0 20px 32px rgba(0,0,0,0.45))',
+      opacity: isDark ? 0.96 : 0.9,
+      pointerEvents: 'none',
+    },
+    typeFilterContainer: {
+      width: '100%',
+      maxWidth: '600px',
+      display: 'flex',
+      justifyContent: 'center',
+      marginBottom: '8px',
+    },
+    typeToggleWrapper: {
+      display: 'flex',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.86)',
+      padding: '5px',
+      borderRadius: '22px',
+      width: '100%',
+      justifyContent: 'space-between',
+      flexWrap: 'wrap',
+      gap: '5px',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
+      boxShadow: isDark ? '0 12px 30px rgba(0,0,0,0.16)' : '0 10px 26px rgba(15,23,42,0.06)',
+    },
+    typeTogglePill: {
+      flex: '1 1 auto',
+      textAlign: 'center',
+      padding: '8px 8px',
+      borderRadius: '17px',
+      cursor: 'pointer',
+      fontWeight: 800,
+      minWidth: '82px',
+      transition: 'all 0.2s ease',
+      whiteSpace: 'nowrap',
+      boxSizing: 'border-box',
+    },
+    filterContainer: {
+      width: '100%',
+      maxWidth: '600px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '10px',
+      marginBottom: '8px',
+    },
+    toggleWrapper: {
+      display: 'flex',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.86)',
+      padding: '5px',
+      borderRadius: '22px',
+      width: '100%',
+      justifyContent: 'space-between',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
+      boxSizing: 'border-box',
+    },
+    togglePill: {
+      flex: 1,
+      textAlign: 'center',
+      padding: '8px 0',
+      borderRadius: '17px',
+      cursor: 'pointer',
+      fontWeight: 800,
+      transition: 'all 0.2s ease',
+    },
+    selectWrapper: {
+      position: 'relative',
+      width: '100%',
+    },
+    select: {
+      width: '100%',
+      padding: '13px 42px 13px 16px',
+      borderRadius: '16px',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.86)',
+      color: mainText,
+      fontSize: fSize === 0 ? '14px' : '16px',
+      fontWeight: 800,
+      appearance: 'none',
+      outline: 'none',
+      cursor: 'pointer',
+      boxSizing: 'border-box',
+    },
+    selectIcon: {
+      position: 'absolute',
+      right: '15px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      color: subText,
+      fontSize: '12px',
+      pointerEvents: 'none',
+    },
+    card: {
+      width: '100%',
+      background: isDark
+        ? 'linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025))'
+        : '#fff',
+      borderRadius: '22px',
+      marginBottom: '12px',
+      boxShadow: isDark ? '0 14px 34px rgba(0,0,0,0.18)' : '0 10px 26px rgba(15,23,42,0.07)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.075)' : 'rgba(15,23,42,0.07)'}`,
+      overflow: 'hidden',
+      boxSizing: 'border-box',
+    },
+    cardHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    dateText: {
+      fontSize: fSize === 0 ? '15px' : '17px',
+      fontWeight: 900,
+      color: mainText,
+      marginBottom: '5px',
+      letterSpacing: 0,
+    },
+    programText: {
+      fontSize: fSize === 0 ? '13px' : '14px',
+      color: subText,
+      fontWeight: 700,
+      lineHeight: 1.3,
+    },
+    expandedContent: {
+      padding: '13px 16px 16px',
+      borderTop: `1px solid ${border}`,
+      marginTop: '0px',
+      backgroundColor: isDark ? 'rgba(0,0,0,0.12)' : 'rgba(15,23,42,0.025)',
+    },
+    statsRow: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+      marginBottom: '14px',
+    },
+    statRow: {
+      display: 'flex',
+      gap: '20px',
+      marginBottom: '12px',
+      padding: '8px 0',
+    },
+    statLabel: {
+      fontSize: '12px',
+      color: subText,
+      marginBottom: '4px',
+      fontWeight: 700,
+    },
+    statValue: {
+      fontSize: fSize === 0 ? '16px' : '18px',
+      fontWeight: 900,
+      color: mainText,
+    },
+    statBadge: {
+      backgroundColor: isDark ? 'rgba(255,255,255,0.075)' : 'rgba(15,23,42,0.055)',
+      padding: '7px 10px',
+      borderRadius: '12px',
+      fontSize: '12px',
+      color: mainText,
+      fontWeight: 800,
+      whiteSpace: 'nowrap',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.06)'}`,
+    },
+    exerciseBlock: {
+      marginBottom: '10px',
+      padding: '10px',
+      borderRadius: '16px',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.035)' : 'rgba(15,23,42,0.03)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.06)'}`,
+    },
+    exerciseTitle: {
+      color: mainText,
+      fontWeight: 800,
+      fontSize: fSize === 0 ? '14px' : '16px',
+    },
+    tonnageSub: {
+      fontSize: '11px',
+      color: subText,
+      fontWeight: 800,
+    },
+    setsGrid: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+      marginTop: '4px',
+    },
+    setRow: {
+      display: 'flex',
+      alignItems: 'center',
+      padding: '5px 8px',
+      borderRadius: '10px',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.035)',
+    },
+    noteBlock: {
+      marginTop: '12px',
+      padding: '12px',
+      backgroundColor: isDark ? 'rgba(53,194,255,0.08)' : 'rgba(53,194,255,0.08)',
+      borderRadius: '14px',
+      borderLeft: `3px solid ${TRAINING_ACCENT}`,
+    },
+    noteLabel: {
+      fontSize: '12px',
+      color: subText,
+      marginBottom: '4px',
+      fontWeight: 800,
+    },
+    noteText: {
+      fontSize: '12px',
+      textAlign: 'left',
+      color: mainText,
+      lineHeight: 1.4,
+      fontWeight: 600,
+    },
+    dateFilterContainer: {
+      width: '100%',
+      maxWidth: '600px',
+      background: isDark
+        ? 'linear-gradient(135deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02))'
+        : 'rgba(255,255,255,0.88)',
+      borderRadius: '22px',
+      padding: '12px',
+      marginBottom: '18px',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
+      boxShadow: isDark ? '0 14px 34px rgba(0,0,0,0.18)' : '0 10px 26px rgba(15,23,42,0.07)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px',
+      boxSizing: 'border-box',
+    },
+    filterHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: '10px',
+    },
+    filterTitle: {
+      fontSize: '14px',
+      fontWeight: 900,
+      color: mainText,
+      display: 'flex',
+      alignItems: 'center',
+      cursor: 'pointer',
+    },
+    clearFilterButton: {
+      padding: '7px 10px',
+      borderRadius: '12px',
+      fontSize: '12px',
+      fontWeight: 800,
+      backgroundColor: isDark ? 'rgba(239,68,68,0.16)' : '#fee2e2',
+      color: isDark ? '#fecaca' : '#ef4444',
+      border: 'none',
+      cursor: 'pointer',
+      transition: 'all 0.2s ease',
+    },
+    filterDropdowns: {
+      display: 'flex',
+      gap: '12px',
+      flexWrap: 'wrap',
+      marginTop: '8px',
+    },
+    filterDropdownWrapper: {
+      flex: 1,
+      minWidth: '150px',
+    },
+    filterLabel: {
+      fontSize: '11px',
+      color: subText,
+      marginBottom: '6px',
+      fontWeight: 800,
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
+    },
+    dropdownContainer: {
+      position: 'relative',
+      backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.9)',
+      borderRadius: '14px',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
+      cursor: 'pointer',
+    },
+    dropdownSelect: {
+      width: '100%',
+      padding: '11px 34px 11px 12px',
+      fontSize: '14px',
+      fontWeight: 800,
+      color: mainText,
+      backgroundColor: 'transparent',
+      border: 'none',
+      borderRadius: '14px',
+      appearance: 'none',
+      cursor: 'pointer',
+      outline: 'none',
+    },
+    dropdownIcon: {
+      position: 'absolute',
+      right: '10px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+    },
+    activeFiltersBadge: {
+      marginTop: '8px',
+      padding: '8px 12px',
+      backgroundColor: isDark ? 'rgba(111,183,216,0.12)' : 'rgba(111,183,216,0.16)',
+      color: TRAINING_BLUE,
+      borderRadius: '12px',
+      fontSize: '13px',
+      fontWeight: 800,
+    },
+  };
+};
 
 export default TrainingList;

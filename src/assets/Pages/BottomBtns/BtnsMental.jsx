@@ -1,33 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 // Icons
 import Home from '@mui/icons-material/HomeRounded';
 import Back from '@mui/icons-material/ArrowBackIosNewRounded';
+import AutoAwesome from '@mui/icons-material/AutoAwesomeRounded';
 import { FaMedal } from 'react-icons/fa';
 
 import { 
     setPage, setAddPanel, setPage$, addPanel$, theme$, 
-    currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, notify$ 
+    currentBottomBtn$, setCurrentBottomBtn, setNotifyPanel, sectionAccent$
 } from '../../StaticClasses/HabitsBus';
 import Colors from '../../StaticClasses/Colors';
 import { saveData } from '../../StaticClasses/SaveHelper';
 import { playEffects } from '../../StaticClasses/Effects';
+import { AppData } from '../../StaticClasses/AppData.js';
+import { buildSectionAccent } from '../SectionAccentSettings.jsx';
 
 const switchSound = new Audio('Audio/Click.wav');
-const MENTAL_ACCENT = '#8A7CD6';
+const MENTAL_ACCENT = '#A66BFF';
 
 const BtnsMental = () => {
     const [theme, setthemeState] = useState('dark');
     const [page, setPageState] = useState('');
     const [addPanel, setAddPanelState] = useState('');
     const [currentBtn, setBtnState] = useState(0);
+    const [, setAccentVersion] = useState(0);
 
     useEffect(() => {
         const subs = [
             theme$.subscribe(setthemeState),
             setPage$.subscribe(setPageState),
             addPanel$.subscribe(setAddPanelState),
-            currentBottomBtn$.subscribe(setBtnState)
+            currentBottomBtn$.subscribe(setBtnState),
+            sectionAccent$.subscribe(() => setAccentVersion(version => version + 1))
         ];
         return () => subs.forEach(s => s.unsubscribe());
     }, []);
@@ -36,12 +41,13 @@ const BtnsMental = () => {
     useEffect(() => {
         if (currentBtn === 0 || currentBtn === -1) {
             if (page === 'MentalRecords') setCurrentBottomBtn(1);
+            else if (page === 'MentalInsight') setCurrentBottomBtn(2);
             else if (page === 'MentalMain' && addPanel === '') setCurrentBottomBtn(0);
         }
     }, [page, addPanel]);
 
     return (
-        <div style={containerStyle(theme)}>
+        <div style={containerStyle()}>
             <div style={glassOverlay(theme)} />
 
             {/* Back / Home Button */}
@@ -57,7 +63,6 @@ const BtnsMental = () => {
                 theme={theme}
             />
 
-            {/* Records / Medal Button */}
             <NavButton 
                 id={1}
                 current={currentBtn}
@@ -70,6 +75,20 @@ const BtnsMental = () => {
                 }}
                 theme={theme}
             />
+
+            <NavButton
+                id={2}
+                current={currentBtn}
+                icon={<AutoAwesome />}
+                onClick={() => {
+                    setCurrentBottomBtn(2);
+                    setPage('MentalInsight');
+                    setAddPanel('');
+                    playEffects(switchSound);
+                    setNotifyPanel(false);
+                }}
+                theme={theme}
+            />
         </div>
     );
 };
@@ -77,41 +96,42 @@ const BtnsMental = () => {
 // NavButton Component for micro-interactions
 const NavButton = ({ id, current, icon, onClick, theme }) => {
     const isActive = current === id;
+    const accent = buildSectionAccent(AppData.mentalAccentColor || MENTAL_ACCENT, MENTAL_ACCENT);
     return (
-        <motion.div 
+        <Motion.div 
             whileTap={{ scale: 0.9 }}
             onClick={onClick}
             style={navBtnWrapper}
         >
             <div style={{
-                width: 46,
-                height: 46,
-                borderRadius: 17,
-                color: isActive ? MENTAL_ACCENT : Colors.get('icons', theme),
-                background: isActive ? 'rgba(138,124,214,0.14)' : 'transparent',
-                border: `1px solid ${isActive ? 'rgba(138,124,214,0.28)' : 'transparent'}`,
-                fontSize: '25px',
+                width: 40,
+                height: 40,
+                borderRadius: 15,
+                color: isActive ? accent.hue : Colors.get('icons', theme),
+                background: isActive ? accent.soft : 'transparent',
+                border: `1px solid ${isActive ? accent.ring : 'transparent'}`,
+                fontSize: '22px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'color 0.3s ease',
-                filter: isActive ? `drop-shadow(0 0 10px rgba(138,124,214,0.32))` : 'none',
+                filter: isActive ? `drop-shadow(0 0 10px ${accent.glow})` : 'none',
                 boxSizing: 'border-box'
             }}>
                 {icon}
             </div>
             <AnimatePresence>
                 {isActive && (
-                    <motion.div 
+                    <Motion.div 
                         layoutId="mentalActiveTab"
                         initial={{ opacity: 0, y: 5 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 5 }}
-                        style={activeIndicator(theme)}
+                        style={activeIndicator()}
                     />
                 )}
             </AnimatePresence>
-        </motion.div>
+        </Motion.div>
     );
 };
 
@@ -128,22 +148,25 @@ async function onBack(page, addPanel) {
 }
 
 // Styles
-const containerStyle = (theme) => ({
+const containerStyle = () => ({
     position: 'fixed',
-    bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
+    bottom: 'max(18px, calc(24px + env(safe-area-inset-bottom, 0px)))',
     left: '50%',
     transform: 'translateX(-50%)',
-    width: 'min(70vw, 420px)',
-    height: '74px',
-    borderRadius: '30px',
+    width: 'calc(100vw - 40px)',
+    maxWidth: '420px',
+    height: '66px',
+    borderRadius: '999px',
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backdropFilter: 'blur(18px)',
-    WebkitBackdropFilter: 'blur(18px)',
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     zIndex: 1000,
     boxSizing: 'border-box',
-    padding: '0 28px'
+    padding: '10px 12px',
+    overflow: 'hidden',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)'
 });
 
 const glassOverlay = (theme) => ({
@@ -153,10 +176,10 @@ const glassOverlay = (theme) => ({
         ? 'linear-gradient(145deg, rgba(20,23,27,0.9), rgba(15,18,21,0.84))'
         : 'rgba(255,255,255,0.86)',
     opacity: 1,
-    backdropFilter: 'blur(15px)',
-    WebkitBackdropFilter: 'blur(15px)',
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.075)' : 'rgba(15,23,42,0.08)'}`,
-    borderRadius: '30px',
+    borderRadius: '999px',
     boxShadow: theme === 'dark'
         ? '0 1px 0 rgba(255,255,255,0.045) inset, 0 18px 42px -32px rgba(0,0,0,0.86)'
         : '0 14px 32px -26px rgba(0,0,0,0.2)',
@@ -170,18 +193,19 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '60px',
+    width: '44px',
+    borderRadius: '999px',
     cursor: 'pointer'
 };
 
-const activeIndicator = (theme) => ({
+const activeIndicator = () => ({
     position: 'absolute',
-    bottom: '7px',
+    bottom: '4px',
     width: '5px',
     height: '5px',
     borderRadius: '50%',
-    backgroundColor: MENTAL_ACCENT,
-    boxShadow: `0 0 10px rgba(138,124,214,0.75)`
+    backgroundColor: buildSectionAccent(AppData.mentalAccentColor || MENTAL_ACCENT, MENTAL_ACCENT).hue,
+    boxShadow: `0 0 10px ${buildSectionAccent(AppData.mentalAccentColor || MENTAL_ACCENT, MENTAL_ACCENT).glow}`
 });
 
 export default BtnsMental;

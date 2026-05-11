@@ -79,9 +79,9 @@ const HabitMetrics = () => {
         accentRing: selectedTone.ring,
         accentGlow: selectedTone.glow,
         orange: '#D8785E',
-        success: '#78B879',
-        successSoft: 'rgba(120,184,121,0.18)',
-        successRing: 'rgba(120,184,121,0.30)',
+        success: '#C4D3DE',
+        successSoft: 'rgba(196,211,222,0.14)',
+        successRing: 'rgba(196,211,222,0.24)',
         negative: NEGATIVE_TONE.hue,
         negativeSoft: NEGATIVE_TONE.soft,
         negativeRing: NEGATIVE_TONE.ring,
@@ -286,13 +286,13 @@ const HabitMetrics = () => {
                                         height: 54,
                                         borderRadius: 18,
                                         background: ui.accentSoft,
-                                        border: `1px solid ${ui.accentRing}`,
+                                        border: '1px solid transparent',
                                         color: ui.accent,
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         flexShrink: 0,
-                                        boxShadow: `0 0 26px ${ui.accent}20`
+                                        boxShadow: `0 12px 24px -22px ${ui.accent}`
                                     }}>
                                         <HabitOutlineIcon iconName={selectedHabit?.iconName} habitName={selectedHabit?.name} categoryKey={isSelectedNegative ? NEGATIVE_CATEGORY : categoryKey} size={26} />
                                     </div>
@@ -378,7 +378,7 @@ const HabitMetrics = () => {
                                             height: 28,
                                             borderRadius: 999,
                                             background: ui.accentSoft,
-                                            border: `1px solid ${ui.accentRing}`,
+                                            border: '1px solid transparent',
                                             color: ui.text,
                                             display: 'inline-flex',
                                             alignItems: 'center',
@@ -495,7 +495,7 @@ const HabitMetrics = () => {
                                             <div key={item.label} style={{
                                                 minHeight: 38,
                                                 borderRadius: 14,
-                                                border: `1px solid ${active ? ui.accentRing : ui.border}`,
+                                                border: '1px solid transparent',
                                                 background: active ? ui.accentSoft : (isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.03)'),
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -567,7 +567,7 @@ const HabitMetrics = () => {
                                 backdropFilter: 'blur(30px)',
                                 padding: 'calc(env(safe-area-inset-top, 0px) + 28px) 18px 28px',
                                 overflowY: 'auto',
-                                borderLeft: `1px solid ${ui.accentRing}`,
+                                borderLeft: '1px solid transparent',
                                 boxShadow: '-24px 0 80px rgba(0,0,0,0.36)',
                                 boxSizing: 'border-box'
                             }}
@@ -592,7 +592,7 @@ const HabitMetrics = () => {
                                             borderRadius: 18,
                                             marginBottom: 10,
                                             background: active ? tone.soft : (isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.035)'),
-                                            border: `1px solid ${active ? tone.ring : ui.border}`,
+                                            border: '1px solid transparent',
                                             color: ui.text,
                                             fontWeight: 800,
                                             display: 'flex',
@@ -606,7 +606,7 @@ const HabitMetrics = () => {
                                             height: 36,
                                             borderRadius: 12,
                                             background: tone.soft,
-                                            border: `1px solid ${tone.ring}`,
+                                            border: '1px solid transparent',
                                             color: tone.hue,
                                             display: 'flex',
                                             alignItems: 'center',
@@ -694,10 +694,10 @@ const selectorShell = (ui, isLight) => ({
     background: isLight
         ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${ui.accent}14)`
         : `radial-gradient(260px 170px at 88% 8%, ${ui.accent}1f 0%, transparent 66%), linear-gradient(145deg, rgba(23,27,31,0.96), rgba(23,27,31,0.82))`,
-    border: `1px solid ${ui.accentRing}`,
+    border: '1px solid transparent',
     boxShadow: isLight
-        ? `0 16px 38px -34px ${ui.accent}66, 0 1px 0 rgba(255,255,255,0.72) inset`
-        : `0 18px 40px -34px ${ui.accent}80, 0 1px 0 rgba(255,255,255,0.055) inset`,
+        ? `0 16px 38px -34px ${ui.accent}44, 0 1px 0 rgba(255,255,255,0.72) inset`
+        : `0 18px 40px -34px ${ui.accent}44, 0 1px 0 rgba(255,255,255,0.045) inset`,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
@@ -710,7 +710,7 @@ const selectorControlBar = (ui, isLight) => ({
     borderRadius: 16,
     padding: '5px 6px',
     background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.035)',
-    border: `1px solid ${isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)'}`,
+    border: '1px solid transparent',
     display: 'flex',
     alignItems: 'center',
     gap: 8,
@@ -721,7 +721,7 @@ const selectorArrowButton = (ui, isLight) => ({
     width: 34,
     height: 32,
     borderRadius: 12,
-    border: `1px solid ${ui.accentRing}`,
+    border: '1px solid transparent',
     background: isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.055)',
     color: ui.accent,
     display: 'flex',
@@ -740,7 +740,7 @@ const heroMiniChip = (ui, isLight) => ({
     borderRadius: 14,
     padding: '7px 8px',
     background: isLight ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.035)',
-    border: `1px solid ${ui.border}`,
+    border: '1px solid transparent',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
@@ -786,7 +786,7 @@ const statCard = (ui, isLight) => ({
     gap: 6,
     position: 'relative',
     overflow: 'hidden',
-    border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : ui.accentRing}`,
+    border: '1px solid transparent',
     boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.04) inset'
 });
 
@@ -804,7 +804,7 @@ const progressPanel = (ui, isLight) => ({
     alignItems: 'center',
     gap: 18,
     boxShadow: isLight ? '0 16px 38px -34px rgba(15,23,42,0.28)' : '0 18px 42px -34px rgba(0,0,0,0.75)',
-    border: `1px solid ${ui.border}`,
+    border: '1px solid transparent',
     boxSizing: 'border-box',
     position: 'relative',
     overflow: 'hidden'
@@ -816,7 +816,7 @@ const periodPill = (ui, isLight) => ({
     gap: 10,
     minHeight: 31,
     background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.055)',
-    border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)'}`,
+    border: '1px solid transparent',
     padding: '0 12px',
     borderRadius: 999
 });
@@ -830,7 +830,7 @@ const timelineWrap = (ui, isLight) => ({
     padding: 3,
     borderRadius: 999,
     background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
-    border: `1px solid ${ui.border}`,
+    border: '1px solid transparent',
     boxSizing: 'border-box'
 });
 
@@ -845,13 +845,13 @@ const actionCard = (ui, isLight) => ({
     justifyContent: 'center',
     gap: 8,
     cursor: 'pointer',
-    border: `1px solid ${ui.border}`,
+    border: '1px solid transparent',
     boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.7) inset' : '0 1px 0 rgba(255,255,255,0.04) inset',
     minWidth: 0
 });
 
 const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.58)', backdropFilter: 'blur(8px)', zIndex: 7000, display: 'flex' };
-const bottomSheetStyle = { width: '100%', borderRadius: '32px 32px 0 0', maxHeight: '80vh', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.08)' };
+const bottomSheetStyle = { width: '100%', borderRadius: '32px 32px 0 0', maxHeight: '80vh', overflowY: 'auto', border: '1px solid transparent' };
 const dragHandle = { width: '40px', height: '5px', backgroundColor: '#8E8E93', borderRadius: '3px', margin: '15px auto', opacity: 0.3 };
 const modalBtnStyle = { flex: 1, padding: '16px', borderRadius: '18px', border: 'none', fontWeight: '800', fontSize: '16px', backgroundColor: 'rgba(120,120,128,0.1)', cursor: 'pointer' };
 
@@ -868,9 +868,8 @@ function getHabitStatusElements(daysCount, habitsByDate, habitId, isLight, ui, i
         const isToday = dateStr === todayKey;
         const isDone = val > 0;
         const isMissed = val <= 0 && val !== undefined;
-        const doneColor = isNegative ? (ui?.negative || '#D8785E') : (ui?.success || '#78B879');
-        const doneSoft = isNegative ? (ui?.negativeSoft || 'rgba(216,120,94,0.18)') : (ui?.successSoft || 'rgba(120,184,121,0.18)');
-        const doneRing = isNegative ? (ui?.negativeRing || 'rgba(216,120,94,0.32)') : (ui?.successRing || 'rgba(120,184,121,0.30)');
+        const doneColor = isNegative ? (ui?.negative || '#D8785E') : (ui?.success || '#C4D3DE');
+        const doneSoft = isNegative ? (ui?.negativeSoft || 'rgba(216,120,94,0.18)') : (ui?.successSoft || 'rgba(196,211,222,0.14)');
         const statusColor = isDone ? doneColor : isMissed ? '#D8785E' : (isLight ? 'rgba(15,23,42,0.2)' : 'rgba(255,255,255,0.18)');
         const fill = isDone
             ? `linear-gradient(135deg, ${doneColor}, rgba(255,255,255,0.18))`
@@ -891,7 +890,7 @@ function getHabitStatusElements(daysCount, habitsByDate, habitId, isLight, ui, i
                     borderRadius: 999,
                     padding: 2,
                     background: isToday ? (isDone ? doneSoft : (ui?.accentSoft || HABITS_ACCENT.soft)) : (isLight ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.025)'),
-                    border: `1px solid ${isToday ? (isDone ? doneRing : (ui?.accentRing || HABITS_ACCENT.ring)) : 'transparent'}`,
+                    border: '1px solid transparent',
                     boxSizing: 'border-box',
                     overflow: 'hidden',
                     transformOrigin: 'center'
@@ -903,7 +902,7 @@ function getHabitStatusElements(daysCount, habitsByDate, habitId, isLight, ui, i
                     minHeight: 8,
                     borderRadius: 999,
                     background: fill,
-                    boxShadow: isDone || isMissed ? `0 0 12px ${statusColor}44` : 'none',
+                    boxShadow: isDone || isMissed ? `0 10px 18px -16px ${statusColor}` : 'none',
                     opacity: val === undefined ? 0.72 : 1
                 }} />
             </motion.div>

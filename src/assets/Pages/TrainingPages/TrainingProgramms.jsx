@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { motion as Motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
 import { theme$, lang$, fontSize$, addPanel$ } from '../../StaticClasses/HabitsBus.js'
@@ -12,6 +12,13 @@ import { FaCalendarDay, FaPlusSquare, FaTrash, FaPencilAlt, FaPlus, FaDumbbell,F
 import { MdBook, MdDone, MdClose } from 'react-icons/md'
 import TrainingExercise from './TrainingExercise.jsx'
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx' // Imported Component
+import {
+    getTrainingAccent,
+    getTrainingPageBackground,
+    getTrainingPanelBackground,
+    getTrainingPanelBorder,
+    getTrainingPanelShadow
+} from './TrainingVisuals.js'
 
 // --- HELPER ---
 const generateRange = (start, end) => {
@@ -52,7 +59,7 @@ const TrainingProgramm = () => {
     const repsList = useMemo(() => generateRange(1, 100), []);
     
     // Day State
-    const [dayIndex, setDayIndex] = useState(1);
+    const [, setDayIndex] = useState(1);
     const [dayName, setDayName] = useState(langIndex === 0 ? 'День 1' : 'Day 1');
 
     // Modals
@@ -65,13 +72,11 @@ const TrainingProgramm = () => {
 
     // --- SUBSCRIPTIONS ---
     useEffect(() => {
-        // Auto-adjust max if min exceeds it
-        if (currentRepMin > currentRepMax) setCurrentRepMax(currentRepMin);
+        setCurrentRepMax(prev => currentRepMin > prev ? currentRepMin : prev);
     }, [currentRepMin]);
     
-    // Ensure Max doesn't drop below min via picker
     useEffect(() => {
-         if (currentRepMax < currentRepMin) setCurrentRepMin(currentRepMax);
+         setCurrentRepMin(prev => currentRepMax < prev ? currentRepMax : prev);
     }, [currentRepMax])
 
     useEffect(() => {
@@ -183,19 +188,22 @@ const TrainingProgramm = () => {
                             const isExpanded = currentId === program.id;
                             
                             return (
-                                <motion.div
+                                <Motion.div
                                     key={program.id}
                                     layout
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     style={{
                                         ...styles(theme).card,
-                                        backgroundColor: isExpanded ? Colors.get('trainingGroupSelected', theme) : Colors.get('background', theme),
-                                        border: `1px solid ${isExpanded ? Colors.get('currentDateBorder', theme) : 'transparent'}`
+                                        background: isExpanded
+                                            ? `linear-gradient(145deg, rgba(${getTrainingAccent().rgb}, 0.04), rgba(${getTrainingAccent().rgb}, 0.015)), ${getTrainingPanelBackground(theme)}`
+                                            : getTrainingPanelBackground(theme),
+                                        border: `1px solid ${getTrainingPanelBorder(theme, getTrainingAccent(), isExpanded)}`,
+                                        boxShadow: getTrainingPanelShadow(theme, getTrainingAccent(), isExpanded)
                                     }}
                                 >
                                     {/* PROGRAM HEADER */}
-                                    <motion.div
+                                    <Motion.div
                                         onClick={() => {
                                             setCurrentId(isExpanded ? -1 : program.id);
                                             setCurrentDay(-1);
@@ -203,15 +211,15 @@ const TrainingProgramm = () => {
                                         style={styles(theme).groupHeader}
                                         whileTap={{ scale: 0.98 }}
                                     >
-                                        <div style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '15px' }}>
+                                        <div style={styles(theme).programHeaderLayout}>
                                             <div style={styles(theme).iconBox}>
-                                                <MdBook size={20} color={isExpanded ? '#fff' : Colors.get('icons', theme)} />
+                                                <MdBook size={20} color={getTrainingAccent().hue} />
                                             </div>
-                                            <div>
-                                                <p style={styles(theme, false, false, fSize).text}>
+                                            <div style={styles(theme).programHeaderContent}>
+                                                <p style={{...styles(theme, false, false, fSize).text, ...styles(theme).programTitle}}>
                                                     {Array.isArray(program.name) ? program.name[langIndex] : program.name}
                                                 </p>
-                                                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                                                <div style={styles(theme).programMetaRow}>
                                                     <span style={styles(theme).badge}>
                                                         {program.schedule.length} {langIndex === 0 ? 'дней' : 'days'}
                                                     </span>
@@ -219,15 +227,15 @@ const TrainingProgramm = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
+                                        <Motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
                                             <IoIosArrowDown style={styles(theme).icon} />
-                                        </motion.div>
-                                    </motion.div>
+                                        </Motion.div>
+                                    </Motion.div>
 
                                     {/* PROGRAM DETAILS (ACCORDION) */}
                                     <AnimatePresence>
                                         {isExpanded && (
-                                            <motion.div
+                                            <Motion.div
                                                 variants={accordionVariants}
                                                 initial="collapsed"
                                                 animate="expanded"
@@ -297,10 +305,10 @@ const TrainingProgramm = () => {
                                                         <MuscleView programmId={program.id} theme={theme} langIndex={langIndex} programs={programs} />
                                                     </div>
                                                 </div>
-                                            </motion.div>
+                                            </Motion.div>
                                         )}
                                     </AnimatePresence>
-                                </motion.div>
+                                </Motion.div>
                             )
                         })}
                 </div>
@@ -308,13 +316,13 @@ const TrainingProgramm = () => {
 
             {/* FLOATING ADD BUTTON */}
             {currentId === -1 && (
-                <motion.button
+                <Motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={() => { setNeedRedact(false); setShowAddPanel(true); }}
                     style={styles(theme).bigFab}
                 >
                     <FaPlus size={24} color="#FFF" />
-                </motion.button>
+                </Motion.button>
             )}
 
             {/* --- MODALS --- */}
@@ -363,8 +371,8 @@ const TrainingProgramm = () => {
                     <Modal onClose={() => setShowConfirmRemove(false)} theme={theme} title="⚠️">
                         <p style={{ ...styles(theme, false, false, fSize).text, textAlign: 'center', marginBottom: '25px' }}>{confirmMessage}</p>
                         <div style={{ display: 'flex', gap: '20px', width: '100%', justifyContent: 'center' }}>
-                            <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowConfirmRemove(false)} style={styles(theme).secondaryBtn}>{langIndex === 0 ? "Нет" : "Cancel"}</motion.button>
-                            <motion.button whileTap={{ scale: 0.95 }} onClick={remove} style={styles(theme).dangerBtn}>{langIndex === 0 ? "Удалить" : "Delete"}</motion.button>
+                            <Motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowConfirmRemove(false)} style={styles(theme).secondaryBtn}>{langIndex === 0 ? "Нет" : "Cancel"}</Motion.button>
+                            <Motion.button whileTap={{ scale: 0.95 }} onClick={remove} style={styles(theme).dangerBtn}>{langIndex === 0 ? "Удалить" : "Delete"}</Motion.button>
                         </div>
                     </Modal>
                 )}
@@ -415,9 +423,9 @@ const TrainingProgramm = () => {
             {showExercisesList && (
                 <div style={styles(theme).fullOverlay}>
                     <TrainingExercise needToAdd={true} setEx={(id) => { setCurrentExId(id); setShowExercisesList(false); setShowStarategyPanel(true); }} />
-                    <motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowExercisesList(false)} style={styles(theme).closeOverlayBtn}>
+                    <Motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowExercisesList(false)} style={styles(theme).closeOverlayBtn}>
                         <MdClose size={24} color="#FFF" />
-                    </motion.div>
+                    </Motion.div>
                 </div>
             )}
         </div>
@@ -432,7 +440,6 @@ const DayItem = ({
     active, 
     onClick, 
     theme, 
-    fSize, 
     langIndex, 
     onAddEx, 
     onRemove, 
@@ -442,7 +449,7 @@ const DayItem = ({
     onMoveExerciseUp,
     onMoveExerciseDown
 }) => (
-    <motion.div
+    <Motion.div
         layout
         style={{
             ...styles(theme).card,
@@ -454,14 +461,14 @@ const DayItem = ({
     >
         <div style={{ padding: '12px 15px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
             
-            <FaCalendarDay style={{ color: Colors.get('currentDateBorder', theme) }} size={16} />
+            <FaCalendarDay style={{ color: getTrainingAccent().hue }} size={16} />
             <span onClick={onClick} style={{ fontWeight: '600', color: Colors.get('mainText', theme), flex: 1, fontSize: '15px' }}>
                 {langIndex === 0 ? day.name[0] : day.name[1]}
             </span>
             
             {/* FIXED: Proper reorder controls with stopPropagation */}
             {!active && <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                <motion.div 
+                <Motion.div 
                     whileTap={{ scale: 0.9 }} 
                     onClick={(e) => { e.stopPropagation(); onMoveDayUp(); }}
                     style={{ 
@@ -471,9 +478,9 @@ const DayItem = ({
                     }}
                 
                 >
-                    <FaChevronUp size={12} color={index === 0 ? Colors.get('subText', theme) : '#5ca6ff'} />
-                </motion.div>
-                <motion.div 
+                    <FaChevronUp size={12} color={index === 0 ? Colors.get('subText', theme) : getTrainingAccent().hue} />
+                </Motion.div>
+                <Motion.div 
                     whileTap={{ scale: 0.9 }} 
                     onClick={(e) => { e.stopPropagation(); onMoveDayDown(); }}
                     style={{ 
@@ -483,21 +490,21 @@ const DayItem = ({
                     }}
                   
                 >
-                    <FaChevronUp size={12} style={{ transform: 'rotate(180deg)' }} color={index === day.scheduleLength - 1 ? Colors.get('subText', theme) : '#5ca6ff'} />
-                </motion.div>
+                    <FaChevronUp size={12} style={{ transform: 'rotate(180deg)' }} color={index === day.scheduleLength - 1 ? Colors.get('subText', theme) : getTrainingAccent().hue} />
+                </Motion.div>
             </div>}
             
             {active && (
                 <div style={{ display: 'flex', gap: '10px' }} onClick={e => e.stopPropagation()}>
-                    <motion.div whileTap={{ scale: 0.9 }} onClick={onAddEx} style={styles(theme).miniBtn}><FaPlus size={12} color="#fff" /></motion.div>
-                    <motion.div whileTap={{ scale: 0.9 }} onClick={onRemove} style={{ ...styles(theme).miniBtn, backgroundColor: 'rgba(255, 77, 77, 0.2)' }}><FaTrash size={12} color="#ff4d4d" /></motion.div>
+                    <Motion.div whileTap={{ scale: 0.9 }} onClick={onAddEx} style={styles(theme).miniBtn}><FaPlus size={12} color="#fff" /></Motion.div>
+                    <Motion.div whileTap={{ scale: 0.9 }} onClick={onRemove} style={{ ...styles(theme).miniBtn, backgroundColor: 'rgba(255, 77, 77, 0.2)' }}><FaTrash size={12} color="#ff4d4d" /></Motion.div>
                 </div>
             )}
         </div>
 
         <AnimatePresence>
             {active && (
-                <motion.div 
+                <Motion.div 
                     initial={{ height: 0, opacity: 0 }} 
                     animate={{ height: 'auto', opacity: 1 }} 
                     exit={{ height: 0, opacity: 0 }} 
@@ -522,7 +529,7 @@ const DayItem = ({
                                     
                                     {/* FIXED: Exercise reorder controls */}
                                     <div style={{ display: 'flex', gap: '4px' }}>
-                                        <motion.div 
+                                        <Motion.div 
                                             whileTap={{ scale: 0.9 }} 
                                             onClick={(e) => { 
                                                 e.stopPropagation(); 
@@ -536,11 +543,11 @@ const DayItem = ({
                                             title={langIndex === 0 ? "Выше" : "Up"}
                                         >
                                             <FaChevronUp 
-                                                color={exIndex === 0 ? Colors.get('subText', theme) : '#5ca6ff'} 
+                                                color={exIndex === 0 ? Colors.get('subText', theme) : getTrainingAccent().hue} 
                                                 size={14} 
                                             />
-                                        </motion.div>
-                                        <motion.div 
+                                        </Motion.div>
+                                        <Motion.div 
                                             whileTap={{ scale: 0.9 }} 
                                             onClick={(e) => { 
                                                 e.stopPropagation(); 
@@ -554,20 +561,20 @@ const DayItem = ({
                                             title={langIndex === 0 ? "Ниже" : "Down"}
                                         >
                                             <FaChevronUp 
-                                                color={exIndex === day.exercises.length - 1 ? Colors.get('subText', theme) : '#5ca6ff'} 
+                                                color={exIndex === day.exercises.length - 1 ? Colors.get('subText', theme) : getTrainingAccent().hue} 
                                                 size={14} 
                                                 style={{ transform: 'rotate(180deg)' }} 
                                             />
-                                        </motion.div>
+                                        </Motion.div>
                                     </div>
                                     
-                                    <motion.div 
+                                    <Motion.div 
                                         whileTap={{ scale: 0.9 }} 
                                         onClick={(e) => { e.stopPropagation(); onRemoveEx(exIndex); }} 
                                         style={{ padding: '8px', opacity: 0.6, cursor: 'pointer' }}
                                     >
                                         <FaTrash color="#ff4d4d" size={14} />
-                                    </motion.div>
+                                    </Motion.div>
                                 </div>
                             )
                         })}
@@ -577,14 +584,14 @@ const DayItem = ({
                             </div>
                         )}
                     </div>
-                </motion.div>
+                </Motion.div>
             )}
         </AnimatePresence>
-    </motion.div>
+    </Motion.div>
 );
 
 const ActionButton = ({ icon, onClick, theme, label, isDanger }) => (
-    <motion.div
+    <Motion.div
         whileTap={{ scale: 0.95 }} onClick={onClick}
         style={{
             flex: 1, padding: '8px 12px', borderRadius: '12px', minWidth: '80px',
@@ -595,12 +602,12 @@ const ActionButton = ({ icon, onClick, theme, label, isDanger }) => (
     >
         {icon}
         <span style={{ fontSize: '10px', fontWeight: '700', opacity: 0.8, textTransform: 'uppercase' }}>{label}</span>
-    </motion.div>
+    </Motion.div>
 );
 
 const Modal = ({ children, title, theme, onClose }) => (
     <div style={styles(theme).modalBackdrop} onClick={onClose}>
-        <motion.div
+        <Motion.div
             initial={{ opacity: 0, y: 50, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 50, scale: 0.95 }}
             style={styles(theme).modalContainer} onClick={e => e.stopPropagation()}
         >
@@ -610,49 +617,89 @@ const Modal = ({ children, title, theme, onClose }) => (
             <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 {children}
             </div>
-        </motion.div>
+        </Motion.div>
     </div>
 );
 
 const ModalActions = ({ onClose, onConfirm, theme }) => (
     <div style={styles(theme).modalActions}>
-        <motion.div whileTap={{ scale: 0.9 }} onClick={onClose} style={styles(theme).circleBtn}>
+        <Motion.div whileTap={{ scale: 0.9 }} onClick={onClose} style={styles(theme).circleBtn}>
             <MdClose style={{ fontSize: '24px', color: Colors.get('subText', theme) }} />
-        </motion.div>
-        <motion.div whileTap={{ scale: 0.9 }} onClick={onConfirm} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('done', theme) }}>
+        </Motion.div>
+        <Motion.div whileTap={{ scale: 0.9 }} onClick={onConfirm} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('done', theme) }}>
             <MdDone style={{ fontSize: '24px', color: '#fff' }} />
-        </motion.div>
+        </Motion.div>
     </div>
 );
 
 const capitalizeName = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
-const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
+const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
+    const accent = getTrainingAccent();
+    const isLight = theme === 'light' || theme === 'speciallight';
+
+    return {
     container: {
-        backgroundColor: Colors.get('background', theme),
+        background: getTrainingPageBackground(theme, accent),
         display: "flex", flexDirection: "column",
         overflowY: 'auto', alignItems: "center",
-        height: "90vh", paddingTop: '20px', width: "100vw",marginTop:'110px',
+        minHeight: "100dvh",
+        height: "auto",
+        padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 18px 116px',
+        width: "100vw",
         fontFamily: "Segoe UI, Roboto, sans-serif", boxSizing: 'border-box'
     },
     card: {
-        width: '100%', margin: '0 auto 12px auto',
-        borderRadius: '16px', overflow: 'hidden',
-        boxShadow: theme === 'light' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+        width: '100%', margin: '0 auto 14px auto',
+        borderRadius: '22px', overflow: 'hidden',
+        background: getTrainingPanelBackground(theme),
+        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+        boxShadow: getTrainingPanelShadow(theme, accent),
     },
     groupHeader: {
         display: 'flex', flexDirection: 'row',
-        padding: '15px', alignItems: "center", justifyContent: "space-between",
+        padding: '16px', alignItems: "center", justifyContent: "space-between",
+        gap: '12px',
         cursor: 'pointer'
     },
+    programHeaderLayout: {
+        display: 'grid',
+        gridTemplateColumns: '40px minmax(0, 1fr)',
+        alignItems: 'center',
+        flex: 1,
+        gap: '14px',
+        minWidth: 0,
+    },
+    programHeaderContent: {
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+    },
+    programTitle: {
+        width: '100%',
+        textAlign: 'left',
+        lineHeight: 1.28,
+        overflowWrap: 'anywhere',
+    },
+    programMetaRow: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '8px',
+        marginTop: '7px',
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+    },
     iconBox: {
-        width: '36px', height: '36px', borderRadius: '10px',
-        backgroundColor: Colors.get('currentDateBorder', theme),
+        width: '40px', height: '40px', borderRadius: '12px',
+        backgroundColor: accent.soft,
+        border: `1px solid ${accent.ring}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center'
     },
     badge: {
         fontSize: '10px', fontWeight: '700', padding: '2px 8px', borderRadius: '6px',
-        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
+        backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
         color: Colors.get('subText', theme), textTransform: 'uppercase'
     },
     text: {
@@ -669,8 +716,8 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     exerciseRow: {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px', borderRadius: '12px',
-        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
-        border: `1px solid ${Colors.get('border', theme)}`
+        backgroundColor: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
+        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`
     },
     exerciseIcon: {
         width: '32px', height: '32px', borderRadius: '50%',
@@ -681,13 +728,15 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     bigFab: {
         position: 'fixed', bottom: '110px', right: '30px',
         width: '56px', height: '56px', borderRadius: '28px',
-        backgroundColor: Colors.get('scrollFont', theme), border: 'none',
+        background: `linear-gradient(135deg, ${accent.hue}, rgba(${accent.rgb}, 0.72))`,
+        border: `1px solid ${accent.ring}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 8px 20px rgba(0,0,0,0.3)', cursor: 'pointer', zIndex: 100
+        boxShadow: `0 14px 34px rgba(${accent.rgb}, 0.26)`, cursor: 'pointer', zIndex: 100
     },
     miniBtn: {
         width: '24px', height: '24px', borderRadius: '8px',
-        backgroundColor: Colors.get('currentDateBorder', theme),
+	        backgroundColor: accent.soft,
+	        border: `1px solid ${accent.ring}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
     },
     circleBtn: {
@@ -743,7 +792,8 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
         width: '40px', height: '40px', borderRadius: '20px',
         backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
     }
-});
+    };
+};
 
 
 export default TrainingProgramm;

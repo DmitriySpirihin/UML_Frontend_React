@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 // Icons
 import Home from '@mui/icons-material/HomeRounded';
 import Back from '@mui/icons-material/ArrowBackIosNewRounded';
@@ -13,8 +13,10 @@ import {
     currentBottomBtn$, setCurrentBottomBtn 
 } from '../../StaticClasses/HabitsBus';
 import Colors from '../../StaticClasses/Colors';
+import { AppData } from '../../StaticClasses/AppData.js';
 import { saveData } from '../../StaticClasses/SaveHelper';
 import { playEffects } from '../../StaticClasses/Effects';
+import { buildSleepAccent } from '../SleepPages/SleepVisuals.js';
 
 const switchSound = new Audio('Audio/Click.wav');
 
@@ -23,6 +25,7 @@ const BtnsSleep = () => {
     const [page, setPageState] = useState('');
     const [addPanel, setAddPanelState] = useState('');
     const [currentBtn, setBtnState] = useState(0);
+    const accent = buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF');
 
     useEffect(() => {
         const subs = [
@@ -45,7 +48,7 @@ const BtnsSleep = () => {
     }, [page, addPanel]);
 
     return (
-        <div style={containerStyle(theme)}>
+        <div style={containerStyle()}>
             <div style={glassOverlay(theme)} />
             
             <NavButton
@@ -57,19 +60,7 @@ const BtnsSleep = () => {
                     setCurrentBottomBtn(0);
                 }}
                 theme={theme}
-            />
-
-            <NavButton
-                id={1}
-                current={currentBtn}
-                icon={<AutoAwesome />}
-                onClick={() => {
-                    setCurrentBottomBtn(1);
-                    setPage('SleepInsight');
-                    setAddPanel('');
-                    playEffects(switchSound);
-                }}
-                theme={theme}
+                accent={accent}
             />
 
             <AddButton 
@@ -83,6 +74,7 @@ const BtnsSleep = () => {
                     }
                 }}
                 theme={theme}
+                accent={accent}
             />
 
             <NavButton
@@ -96,6 +88,7 @@ const BtnsSleep = () => {
                     playEffects(switchSound);
                 }}
                 theme={theme}
+                accent={accent}
             />
 
             <NavButton 
@@ -109,23 +102,38 @@ const BtnsSleep = () => {
                     playEffects(switchSound);
                 }}
                 theme={theme}
+                accent={accent}
+            />
+
+            <NavButton
+                id={1}
+                current={currentBtn}
+                icon={<AutoAwesome />}
+                onClick={() => {
+                    setCurrentBottomBtn(1);
+                    setPage('SleepInsight');
+                    setAddPanel('');
+                    playEffects(switchSound);
+                }}
+                theme={theme}
+                accent={accent}
             />
         </div>
     );
 };
 
 // Sub-components for cleaner code
-const NavButton = ({ id, current, icon, onClick, theme, disabled = false }) => {
+const NavButton = ({ id, current, icon, onClick, theme, accent, disabled = false }) => {
     const isActive = current === id;
     return (
-        <motion.div 
+        <Motion.div 
             whileTap={!disabled ? { scale: 0.9 } : {}}
             onClick={onClick}
             style={{ ...navBtnWrapper, opacity: disabled ? 0.4 : 1 }}
         >
             <div style={{
-                color: isActive ? Colors.get('iconsHighlited', theme) : Colors.get('icons', theme),
-                fontSize: '26px',
+                color: isActive ? accent.hue : Colors.get('icons', theme),
+                fontSize: '24px',
                 display: 'flex',
                 transition: 'color 0.3s ease'
             }}>
@@ -133,31 +141,32 @@ const NavButton = ({ id, current, icon, onClick, theme, disabled = false }) => {
             </div>
             <AnimatePresence>
                 {isActive && (
-                    <motion.div 
+                    <Motion.div 
                         layoutId="sleepActiveTab"
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0 }}
-                        style={activeIndicator(theme)}
+                        style={activeIndicator(accent)}
                     />
                 )}
             </AnimatePresence>
-        </motion.div>
+        </Motion.div>
     );
 };
 
-const AddButton = ({ disabled, onClick, theme, active }) => (
-    <motion.div
+const AddButton = ({ disabled, onClick, theme, active, accent }) => (
+    <Motion.div
         whileTap={!disabled ? { scale: 0.9 } : {}}
         onClick={onClick}
         style={{
             ...addBtnStyle(theme),
             opacity: disabled ? 0.5 : 1,
-            background: active ? Colors.get('iconsHighlited', theme) : Colors.get('simplePanel', theme),
+            background: active ? accent.soft : Colors.get('simplePanel', theme),
+            border: active ? `1px solid ${accent.ring}` : `1px solid ${Colors.get('border', theme)}`,
         }}
     >
-        <Add style={{ fontSize: '30px', color: active ? '#fff' : Colors.get('icons', theme) }} />
-    </motion.div>
+        <Add style={{ fontSize: '28px', color: active ? accent.hue : Colors.get('icons', theme) }} />
+    </Motion.div>
 );
 
 const onBack = async (page, addPanel) => {
@@ -172,29 +181,36 @@ const onBack = async (page, addPanel) => {
 };
 
 // Styles
-const containerStyle = (theme) => ({
+const containerStyle = () => ({
     position: 'fixed',
-    bottom: '7vw',
-    left: '5vw',
-    width: '90vw',
-    height: '70px',
-    borderRadius: '25px',
+    bottom: 'max(18px, calc(24px + env(safe-area-inset-bottom, 0px)))',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: 'calc(100vw - 40px)',
+    maxWidth: '420px',
+    height: '66px',
+    borderRadius: '999px',
     display: 'flex',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backdropFilter: 'blur(6px)',
     zIndex: 1000,
+    boxSizing: 'border-box',
+    padding: '10px 12px',
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+    overflow: 'hidden',
+    boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)'
 });
 
 const glassOverlay = (theme) => ({
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
     backgroundColor: Colors.get('bottomPanel', theme),
-    opacity: 0.85,
-    backdropFilter: 'blur(15px)',
-    WebkitBackdropFilter: 'blur(15px)',
+    opacity: 0.9,
+    backdropFilter: 'blur(24px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     border: `1px solid ${Colors.get('border', theme)}`,
-    borderRadius: '25px',
+    borderRadius: '999px',
     zIndex: -1,
 });
 
@@ -205,28 +221,29 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '100%',
-    width: '50px',
+    width: '44px',
+    borderRadius: '999px',
     cursor: 'pointer'
 };
 
-const activeIndicator = (theme) => ({
+const activeIndicator = (accent) => ({
     position: 'absolute',
-    bottom: '8px',
+    bottom: '4px',
     width: '5px',
     height: '5px',
     borderRadius: '50%',
-    backgroundColor: Colors.get('iconsHighlited', theme),
-    boxShadow: `0 0 10px ${Colors.get('iconsHighlited', theme)}`
+    backgroundColor: accent.hue,
+    boxShadow: `0 0 10px ${accent.glow}`
 });
 
 const addBtnStyle = (theme) => ({
-    width: '50px',
-    height: '50px',
-    borderRadius: '18px',
+    width: '46px',
+    height: '46px',
+    borderRadius: '999px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: `0 8px 20px ${Colors.get('shadow', theme)}`,
+    boxShadow: `0 16px 30px -18px ${Colors.get('shadow', theme)}`,
     transition: 'background 0.3s ease',
 });
 

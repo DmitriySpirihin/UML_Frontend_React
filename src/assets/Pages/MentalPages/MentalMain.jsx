@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import {
     FaBrain,
     FaBullseye,
@@ -7,21 +7,24 @@ import {
     FaChevronRight,
     FaClock,
     FaFire,
+    FaPalette,
     FaMedal,
     FaPuzzlePiece,
     FaStar
 } from 'react-icons/fa';
 import { AppData, logSectionVisit } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { fontSize$, lang$, setPage, theme$ } from '../../StaticClasses/HabitsBus';
+import { emitSectionAccentChanged, fontSize$, lang$, setPage, theme$ } from '../../StaticClasses/HabitsBus';
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
+import SectionAccentSettings, { POSITIVE_ACCENT_PRESETS, buildSectionAccent } from '../SectionAccentSettings.jsx';
+import { saveData } from '../../StaticClasses/SaveHelper.js';
 
-const MENTAL_ACCENT = '#8A7CD6';
+const MENTAL_ACCENT = '#A66BFF';
 
 const MODE_TONES = [
     { hue: '#66D9E8', soft: 'rgba(102,217,232,0.14)', ring: 'rgba(102,217,232,0.28)' },
-    { hue: '#8A7CD6', soft: 'rgba(138,124,214,0.14)', ring: 'rgba(138,124,214,0.28)' },
-    { hue: '#7FC8B8', soft: 'rgba(127,200,184,0.13)', ring: 'rgba(127,200,184,0.26)' },
+    { hue: '#A66BFF', soft: 'rgba(166,107,255,0.18)', ring: 'rgba(166,107,255,0.38)' },
+    { hue: '#2FD6BD', soft: 'rgba(47,214,189,0.16)', ring: 'rgba(47,214,189,0.34)' },
     { hue: '#D49A5C', soft: 'rgba(212,154,92,0.13)', ring: 'rgba(212,154,92,0.26)' }
 ];
 
@@ -31,6 +34,9 @@ const MentalMain = () => {
     const [theme, setThemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setFSize] = useState(AppData.prefs[4]);
+    const [showAccentSettings, setShowAccentSettings] = useState(false);
+    const [accentColor, setAccentColor] = useState(buildSectionAccent(AppData.mentalAccentColor || MENTAL_ACCENT, MENTAL_ACCENT).hue);
+    const [, setAccentPresetVersion] = useState(0);
 
     useEffect(() => {
         const subs = [
@@ -45,6 +51,18 @@ const MentalMain = () => {
 
     const s = styles(theme, fSize);
     const summary = useMemo(() => buildMentalSummary(), []);
+    const activeAccent = accentColor;
+    const changeAccentColor = async (color) => {
+        const next = buildSectionAccent(color, MENTAL_ACCENT).hue;
+        AppData.mentalAccentColor = next;
+        setAccentColor(next);
+        await saveData();
+        emitSectionAccentChanged();
+    };
+    const saveAccentPreset = async () => {
+        await AppData.addAccentPreset('mental', accentColor, POSITIVE_ACCENT_PRESETS);
+        setAccentPresetVersion(version => version + 1);
+    };
 
     const menuItems = [
         {
@@ -93,9 +111,39 @@ const MentalMain = () => {
 
     return (
         <div style={s.container}>
-            <HoverInfoButton tab="MentalMain" variant="subtle" accent={MENTAL_ACCENT} />
+            <SectionAccentSettings
+                show={showAccentSettings}
+                onClose={() => setShowAccentSettings(false)}
+                theme={theme}
+                langIndex={langIndex}
+                title={langIndex === 0 ? 'Акцент ума' : 'Mind accent'}
+                subtitle={langIndex === 0 ? 'Цвет карточек, прогресса и нижнего меню' : 'Cards, progress, and bottom navigation color'}
+                accentColor={accentColor}
+                fallbackColor={MENTAL_ACCENT}
+                customPresets={AppData.mentalAccentPresets}
+                onAccentChange={changeAccentColor}
+                onSavePreset={saveAccentPreset}
+            />
+            <HoverInfoButton tab="MentalMain" variant="subtle" accent={activeAccent} />
             <div style={s.scrollView} className="no-scrollbar">
-                <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34 }} style={s.hero}>
+                <div style={s.pageHeader}>
+                    <div style={s.pageHeaderSpacer} />
+                    <div style={s.pageHeaderBrand}>
+                        <div style={s.pageTitle}>UltyMyLife</div>
+                        <div style={s.pageSubtitle}>{langIndex === 0 ? 'Тренируй разум как тело' : 'Train your mind like your body'}</div>
+                    </div>
+                    <Motion.button
+                        type="button"
+                        whileTap={{ scale: 0.96 }}
+                        onClick={() => setShowAccentSettings(true)}
+                        style={s.headerAccentButton}
+                    >
+                        <FaPalette size={12} />
+                        <span>{langIndex === 0 ? 'Акцент' : 'Accent'}</span>
+                        <span style={s.actionColorDot} />
+                    </Motion.button>
+                </div>
+                <Motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.34 }} style={s.hero}>
                     <div style={s.heroGlow} />
                     <div style={s.heroCopy}>
                         <div style={s.eyebrow}>{langIndex === 0 ? 'Тренировка ума' : 'Mind training'}</div>
@@ -110,9 +158,9 @@ const MentalMain = () => {
                         <MetricPill icon={<FaFire />} label={langIndex === 0 ? 'Лучшее' : 'Best'} value={formatScore(summary.bestScore)} styleObj={s} />
                     </div>
                     <img style={s.heroImage} src="images/bro_mind.png" alt="" />
-                </motion.section>
+                </Motion.section>
 
-                <motion.section variants={containerAnim} initial="hidden" animate="show" style={s.modeGrid}>
+                <Motion.section variants={containerAnim} initial="hidden" animate="show" style={s.modeGrid}>
                     {menuItems.map((item) => (
                         <MentalModeCard
                             key={item.id}
@@ -125,9 +173,9 @@ const MentalMain = () => {
                             variants={itemAnim}
                         />
                     ))}
-                </motion.section>
+                </Motion.section>
 
-                <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} style={s.progressPanel}>
+                <Motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} style={s.progressPanel}>
                     <div style={s.progressHeader}>
                         <div>
                             <div style={s.panelTitle}>{langIndex === 0 ? 'Общий прогресс' : 'Overall progress'}</div>
@@ -150,7 +198,7 @@ const MentalMain = () => {
                             />
                         ))}
                     </div>
-                </motion.section>
+                </Motion.section>
             </div>
         </div>
     );
@@ -161,7 +209,7 @@ function MentalModeCard({ item, tone, theme, fSize, langIndex, record, variants 
     const Icon = item.Icon;
 
     return (
-        <motion.button
+        <Motion.button
             type="button"
             variants={variants}
             whileTap={{ scale: 0.97 }}
@@ -179,14 +227,13 @@ function MentalModeCard({ item, tone, theme, fSize, langIndex, record, variants 
             </div>
             <div style={s.modeText}>
                 <div style={s.modeKicker(tone)}>{item.kicker}</div>
-                <div style={s.modeTitle}>{item.title}</div>
                 <div style={s.modeSub}>{item.subtitle}</div>
             </div>
             <div style={s.modeFooter}>
                 <span>{record > 0 ? (langIndex === 0 ? 'Рекорд' : 'Record') : (langIndex === 0 ? 'Новый' : 'New')}</span>
                 <FaChevronRight size={12} />
             </div>
-        </motion.button>
+        </Motion.button>
     );
 }
 
@@ -212,7 +259,7 @@ function ProgressRow({ label, value, max, tone, styleObj }) {
                 <span>{label}</span>
             </div>
             <div style={styleObj.progressTrack}>
-                <motion.div
+                <Motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${progress * 100}%` }}
                     transition={{ duration: 0.8, ease: EASE }}
@@ -244,33 +291,22 @@ const formatScore = (value) => {
     return `${Math.round(score)}`;
 };
 
-const hexToRgb = (hex) => {
-    const safe = (hex || MENTAL_ACCENT).replace('#', '');
-    return {
-        r: parseInt(safe.slice(0, 2), 16) || 138,
-        g: parseInt(safe.slice(2, 4), 16) || 124,
-        b: parseInt(safe.slice(4, 6), 16) || 214
-    };
-};
-
 const styles = (theme, fontSize = 0) => {
     const isLight = theme === 'light' || theme === 'speciallight';
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
-    const accentRgb = hexToRgb(MENTAL_ACCENT);
-    const accentText = `${accentRgb.r},${accentRgb.g},${accentRgb.b}`;
+    const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || MENTAL_ACCENT, MENTAL_ACCENT);
+    const accentText = mentalAccent.rgb;
     const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
     const panel = isLight ? 'rgba(255,255,255,0.86)' : 'rgba(255,255,255,0.045)';
-    const panelStrong = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(20,23,27,0.88)';
-
     return {
         container: {
             width: '100vw',
             height: '100vh',
             overflow: 'hidden',
             background: isLight
-                ? `radial-gradient(900px 440px at 82% -12%, rgba(${accentText},0.12), transparent 58%), radial-gradient(720px 360px at -12% 100%, rgba(102,217,232,0.1), transparent 58%), #F4F5F7`
-                : `radial-gradient(980px 500px at 82% -12%, rgba(${accentText},0.10), transparent 56%), radial-gradient(760px 380px at -10% 100%, rgba(102,217,232,0.065), transparent 56%), #0E1013`,
+                ? `radial-gradient(640px 420px at 86% -8%, rgba(${accentText},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${accentText},0.1), transparent 66%), #F4F5F7`
+                : `radial-gradient(640px 420px at 86% -8%, rgba(${accentText},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accentText},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
             color: text,
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
         },
@@ -278,8 +314,65 @@ const styles = (theme, fontSize = 0) => {
             height: '100%',
             width: '100%',
             overflowY: 'auto',
-            padding: 'calc(13vh + 14px) 0 calc(132px + env(safe-area-inset-bottom, 0px))',
+            padding: 'calc(env(safe-area-inset-top, 0px) + 10px) 0 calc(132px + env(safe-area-inset-bottom, 0px))',
             boxSizing: 'border-box'
+        },
+        pageHeader: {
+            width: 'calc(100% - 56px)',
+            maxWidth: 660,
+            margin: '0 auto 8px',
+            padding: '4px 0 8px',
+            boxSizing: 'border-box',
+            display: 'grid',
+            gridTemplateColumns: '96px minmax(0, 1fr) 96px',
+            alignItems: 'center',
+            gap: 12
+        },
+        pageHeaderSpacer: { width: 96, height: 38 },
+        pageHeaderBrand: { minWidth: 0, textAlign: 'center' },
+        headerAccentButton: {
+            minWidth: 0,
+            height: 38,
+            borderRadius: 999,
+            border: `1px solid rgba(${accentText},${isLight ? 0.2 : 0.28})`,
+            background: `rgba(${accentText},${isLight ? 0.11 : 0.13})`,
+            color: mentalAccent.hue,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            justifySelf: 'end',
+            gap: 6,
+            fontSize: 12,
+            fontWeight: 900,
+            fontFamily: 'inherit',
+            padding: '0 11px',
+            whiteSpace: 'nowrap',
+            cursor: 'pointer'
+        },
+        actionColorDot: {
+            width: 8,
+            height: 8,
+            borderRadius: 99,
+            background: mentalAccent.hue,
+            boxShadow: `0 0 12px ${mentalAccent.glow}`,
+            flexShrink: 0
+        },
+        pageTitle: {
+            color: text,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: fontSize === 0 ? 21 : 24,
+            fontWeight: 700,
+            letterSpacing: 0,
+            lineHeight: 1.05,
+            opacity: 0.86
+        },
+        pageSubtitle: {
+            marginTop: 5,
+            color: sub,
+            fontSize: fontSize === 0 ? 8 : 9,
+            fontWeight: 600,
+            letterSpacing: '0.14em',
+            opacity: 0.82
         },
         hero: {
             position: 'relative',
@@ -294,7 +387,7 @@ const styles = (theme, fontSize = 0) => {
             background: isLight
                 ? `linear-gradient(145deg, rgba(255,255,255,0.96), rgba(${accentText},0.1))`
                 : `linear-gradient(145deg, rgba(23,27,31,0.96), rgba(${accentText},0.12))`,
-            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(138,124,214,0.28)'}`,
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : mentalAccent.ring}`,
             boxShadow: isLight
                 ? '0 16px 38px -34px rgba(0,0,0,0.28), 0 1px 0 rgba(255,255,255,0.74) inset'
                 : '0 1px 0 rgba(255,255,255,0.055) inset, 0 18px 42px -34px rgba(0,0,0,0.78)',
@@ -356,7 +449,9 @@ const styles = (theme, fontSize = 0) => {
             zIndex: 1,
             opacity: isLight ? 0.92 : 0.9,
             filter: isLight ? 'drop-shadow(0 14px 26px rgba(15,23,42,0.16))' : 'drop-shadow(0 16px 28px rgba(0,0,0,0.5))',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            WebkitMaskImage: 'radial-gradient(circle at 50% 52%, #000 0 58%, transparent 76%)',
+            maskImage: 'radial-gradient(circle at 50% 52%, #000 0 58%, transparent 76%)'
         },
         metricPill: {
             minHeight: 42,
@@ -370,7 +465,7 @@ const styles = (theme, fontSize = 0) => {
             boxSizing: 'border-box',
             overflow: 'hidden'
         },
-        metricIcon: { color: MENTAL_ACCENT, display: 'flex', flexShrink: 0, fontSize: 11 },
+        metricIcon: { color: mentalAccent.hue, display: 'flex', flexShrink: 0, fontSize: 11 },
         metricText: {
             minWidth: 0,
             display: 'flex',
@@ -446,7 +541,6 @@ const styles = (theme, fontSize = 0) => {
         }),
         modeText: { minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3, marginTop: 11 },
         modeKicker: (tone) => ({ color: tone.hue, fontSize: 9, fontWeight: 950, textTransform: 'uppercase', letterSpacing: '0.12em' }),
-        modeTitle: { color: text, fontSize: fontSize === 0 ? 16 : 18, lineHeight: 1.1, fontWeight: 950, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
         modeSub: { color: sub, opacity: 0.92, fontSize: fontSize === 0 ? 11 : 12, lineHeight: 1.25, fontWeight: 720, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' },
         modeFooter: {
             marginTop: 12,
@@ -481,7 +575,7 @@ const styles = (theme, fontSize = 0) => {
             borderRadius: 999,
             border: `1px solid rgba(${accentText},0.28)`,
             background: `rgba(${accentText},0.13)`,
-            color: MENTAL_ACCENT,
+            color: mentalAccent.hue,
             display: 'flex',
             alignItems: 'center',
             gap: 7,

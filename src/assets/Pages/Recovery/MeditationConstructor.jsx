@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { MdClose, MdDone } from 'react-icons/md';
 import { FaMinus, FaPlus, FaSpa, FaBed, FaSyncAlt } from 'react-icons/fa';
 import { useLongPress } from '../../Helpers/LongPress.js';
 
-const MeditationConstructor = ({ theme, langIndex, fSize, setProtocol, show, setShow, showTimer }) => {
+const MeditationConstructor = ({ theme, langIndex, setProtocol, show, setShow, showTimer }) => {
     // === STATE ===
     const [meditateSeconds, setMeditateSeconds] = useState(300); // 5 min default
     const [restSeconds, setRestSeconds] = useState(0);         // no rest
     const [cycles, setCycles] = useState(1);
 
     // === LOGIC ===
-    const updateValue = (setter, change, min = 0, max = 3600, step = 30) => {
+    const updateValue = (setter, change, min = 0, max = 3600) => {
         setter(prev => {
             const next = prev + change;
             return Math.min(max, Math.max(min, next));
@@ -64,7 +64,7 @@ const MeditationConstructor = ({ theme, langIndex, fSize, setProtocol, show, set
         <AnimatePresence>
             {show && (
                 <div style={styles(theme).overlay}>
-                    <motion.div
+                    <Motion.div
                         initial="hidden"
                         animate="visible"
                         exit="exit"
@@ -128,7 +128,7 @@ const MeditationConstructor = ({ theme, langIndex, fSize, setProtocol, show, set
                             </button>
                         </div>
 
-                    </motion.div>
+                    </Motion.div>
                 </div>
             )}
         </AnimatePresence>
@@ -187,8 +187,8 @@ const styles = (theme) => ({
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0,0,0,0.4)',
-        backdropFilter: 'blur(5px)',
+        backgroundColor: 'rgba(2,6,10,0.66)',
+        backdropFilter: 'blur(14px)',
         zIndex: 2900,
         display: 'flex',
         justifyContent: 'center',
@@ -196,17 +196,20 @@ const styles = (theme) => ({
     },
     panel: {
         width: '100%',
-        maxWidth: '500px',
-        backgroundColor: Colors.get('background', theme),
-        borderTopLeftRadius: '24px',
-        borderTopRightRadius: '24px',
+        maxWidth: '560px',
+        background: `radial-gradient(420px 260px at 100% 0%, ${Colors.get('difficulty', theme)}1f 0%, transparent 62%), ${Colors.get('background', theme)}`,
+        border: `1px solid ${Colors.get('border', theme)}70`,
+        borderBottom: 'none',
+        borderTopLeftRadius: '28px',
+        borderTopRightRadius: '28px',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 -10px 30px rgba(0,0,0,0.2)',
-        paddingBottom: '20px'
+        boxShadow: '0 -28px 80px rgba(0,0,0,0.58)',
+        paddingBottom: 0,
+        overflow: 'hidden'
     },
     header: {
-        padding: '24px',
+        padding: '20px 20px 16px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -214,25 +217,27 @@ const styles = (theme) => ({
     },
     title: {
         margin: 0,
-        fontSize: '20px',
-        fontWeight: 'bold',
+        fontSize: '22px',
+        fontWeight: 900,
         color: Colors.get('mainText', theme),
     },
     listContainer: {
-        padding: '24px',
+        padding: '18px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
+        gap: '12px',
         overflowY: 'auto',
     },
     card: {
-        backgroundColor: Colors.get('simplePanel', theme),
-        borderRadius: '16px',
+        backgroundColor: 'rgba(255,255,255,0.04)',
+        border: `1px solid ${Colors.get('border', theme)}55`,
+        borderRadius: '18px',
         padding: '16px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+        gap: '12px',
+        boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset',
     },
     cardHeader: {
         display: 'flex',
@@ -257,16 +262,17 @@ const styles = (theme) => ({
         display: 'flex',
         alignItems: 'center',
         backgroundColor: Colors.get('background', theme),
-        borderRadius: '12px',
+        borderRadius: '14px',
         padding: '4px',
         border: `1px solid ${Colors.get('border', theme)}40`,
+        flexShrink: 0,
     },
     stepperBtn: {
         width: '40px',
         height: '40px',
         borderRadius: '10px',
         border: 'none',
-        backgroundColor: Colors.get('backgroundLight', theme),
+        backgroundColor: Colors.get('simplePanel', theme),
         color: Colors.get('icons', theme),
         display: 'flex',
         alignItems: 'center',
@@ -284,19 +290,20 @@ const styles = (theme) => ({
         userSelect: 'none',
     },
     footer: {
-        padding: '20px 24px',
+        padding: '16px 18px calc(18px + env(safe-area-inset-bottom, 0px))',
         borderTop: `1px solid ${Colors.get('border', theme)}40`,
         display: 'flex',
-        gap: '16px',
+        gap: '12px',
         marginTop: 'auto',
+        background: `linear-gradient(to top, ${Colors.get('background', theme)} 78%, transparent)`,
     },
     secondaryBtn: {
         width: '56px',
         height: '56px',
         borderRadius: '18px',
         border: 'none',
-        backgroundColor: Colors.get('skipped', theme),
-        color: Colors.get('mainText', theme),
+        backgroundColor: '#ef4444',
+        color: '#fff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -307,7 +314,7 @@ const styles = (theme) => ({
         height: '56px',
         borderRadius: '18px',
         border: 'none',
-        backgroundColor: Colors.get('maxValColor', theme),
+        background: `linear-gradient(135deg, ${Colors.get('done', theme)}, #245c32)`,
         color: '#fff',
         display: 'flex',
         alignItems: 'center',

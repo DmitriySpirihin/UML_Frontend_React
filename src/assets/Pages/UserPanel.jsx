@@ -17,6 +17,9 @@ import { IoIosArrowBack, IoIosArrowForward } from 'react-icons/io';
 import { MdEdit } from 'react-icons/md';
 import ScrollPicker from '../Helpers/ScrollPicker.jsx';
 import { buildSleepAccent } from './SleepPages/SleepVisuals.js';
+import { buildTodoAccent } from './ToDoPages/ToDoVisuals.js';
+import { buildHabitsAccent } from './HabitsPages/HabitVisuals.jsx';
+import { buildSectionAccent } from './SectionAccentSettings.jsx';
 
 // --- CONSTANTS ---
 const goalNames = [['Набор массы', 'Mass gain'], ['Сила', 'Strength'], ['Жиросжигание', 'Weight loss'], ['Здоровье', 'Health'], ['Выносливосить', 'Endurance']];
@@ -186,15 +189,20 @@ const UserPanel = () => {
 
     const selectedXpRuleBase = XP_RULES.find(rule => rule.key === selectedXpRule) || XP_RULES[0];
     const selectedXpRuleData = { ...selectedXpRuleBase, icon: XP_RULE_ICONS[selectedXpRuleBase.key] };
-    const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#6F8BD6');
+    const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF');
+    const habitsAccent = buildHabitsAccent(AppData.habitAccentColor || '#39D982');
+    const todoAccent = buildTodoAccent(AppData.todoAccentColor || '#5F8DFF');
+    const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || '#35C2FF', '#35C2FF');
+    const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || '#A66BFF', '#A66BFF');
+    const recoveryAccent = buildSectionAccent(AppData.recoveryAccentColor || '#2FD6BD', '#2FD6BD');
     const profileSections = useMemo(() => ([
-        { kind: 'habits', id: 'HabitsMain', icon: <IconHabits />, label: lang === 0 ? 'Привычки' : 'Habits', value: stats.counts.habits, unit: lang === 0 ? 'выбрано' : 'selected', color: '#7FC8B8' },
-        { kind: 'todo', id: 'ToDoMain', icon: <IconTodo />, label: lang === 0 ? 'Задачи' : 'Tasks', value: AppData.todoList?.length || 0, unit: lang === 0 ? 'активных' : 'active', color: '#D49A5C' },
-        { kind: 'training', id: 'TrainingMain', icon: <IconTraining />, label: lang === 0 ? 'Дневник' : 'Log', value: stats.counts.training, unit: lang === 0 ? 'дней' : 'days', color: '#D8785E' },
-        { kind: 'mental', id: 'MentalMain', icon: <IconBrain />, label: lang === 0 ? 'Ум' : 'Mind', value: stats.counts.mental, unit: lang === 0 ? 'дней' : 'days', color: '#8A7CD6' },
-        { kind: 'recovery', id: 'RecoveryMain', icon: <IconRecovery />, label: lang === 0 ? 'Антистресс' : 'Reset', value: stats.counts.recovery, unit: lang === 0 ? 'практик' : 'sessions', color: '#78B879' },
+        { kind: 'habits', id: 'HabitsMain', icon: <IconHabits />, label: lang === 0 ? 'Привычки' : 'Habits', value: stats.counts.habits, unit: lang === 0 ? 'выбрано' : 'selected', color: habitsAccent.hue },
+        { kind: 'todo', id: 'ToDoMain', icon: <IconTodo />, label: lang === 0 ? 'Задачи' : 'Tasks', value: AppData.todoList?.length || 0, unit: lang === 0 ? 'активных' : 'active', color: todoAccent.hue },
+        { kind: 'training', id: 'TrainingMain', icon: <IconTraining />, label: lang === 0 ? 'Дневник' : 'Log', value: stats.counts.training, unit: lang === 0 ? 'дней' : 'days', color: trainingAccent.hue },
+        { kind: 'mental', id: 'MentalMain', icon: <IconBrain />, label: lang === 0 ? 'Ум' : 'Mind', value: stats.counts.mental, unit: lang === 0 ? 'дней' : 'days', color: mentalAccent.hue },
+        { kind: 'recovery', id: 'RecoveryMain', icon: <IconRecovery />, label: lang === 0 ? 'Антистресс' : 'Reset', value: stats.counts.recovery, unit: lang === 0 ? 'практик' : 'sessions', color: recoveryAccent.hue },
         { kind: 'sleep', id: 'SleepMain', icon: <IconSleep />, label: lang === 0 ? 'Сон' : 'Sleep', value: stats.counts.sleep, unit: lang === 0 ? 'ночей' : 'nights', color: sleepAccent.hue }
-    ]), [lang, stats.counts, sleepAccent.hue]);
+    ]), [lang, stats.counts, habitsAccent.hue, todoAccent.hue, trainingAccent.hue, mentalAccent.hue, recoveryAccent.hue, sleepAccent.hue]);
 
     const goBack = () => {
         const prev = lastPage$.value;
@@ -1052,7 +1060,7 @@ const FriendsCompact = ({ friends, lang, theme, onInvite, onOpen }) => {
                     <div style={s.friendsAvatars}>
                         {topFriends.map((friend, index) => {
                             const name = friend.name || '?';
-                            const tones = ['#8A7CD6', '#7AA988', '#D49A5C'];
+                            const tones = ['#9A84C8', '#7AA988', '#D49A5C'];
                             const tone = friend.tone || tones[index % tones.length];
                             return (
                                 <span

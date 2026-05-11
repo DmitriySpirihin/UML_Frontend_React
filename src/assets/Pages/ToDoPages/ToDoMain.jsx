@@ -44,6 +44,12 @@ const doneSound = new Audio('Audio/IsDone.wav');
 const TODO_FOCUS_COLLAPSE_KEY = 'uml_todo_focus_collapsed_v1';
 const TODO_CATEGORY_COLLAPSE_KEY = 'uml_todo_category_collapsed_v1';
 
+const mergeAccentPresets = (defaults, custom = [], normalize) => {
+  const colors = [...defaults, ...(Array.isArray(custom) ? custom : [])]
+    .map(color => normalize(color).hue);
+  return colors.filter((color, index) => colors.indexOf(color) === index);
+};
+
 const PRIORITY_LABELS = [['Низкий', 'Low'], ['Обычный', 'Normal'], ['Важный', 'Important'], ['Высокий', 'High'], ['Критический', 'Critical']];
 const DIFFICULTY_LABELS = [['Очень легко', 'Very Easy'], ['Легко', 'Easy'], ['Средне', 'Medium'], ['Сложно', 'Hard'], ['Кошмар', 'Nightmare']];
 const URGENCY_LABELS = [['Не горит', 'Not urgent'], ['Обычная', 'Normal'], ['Срочно', 'Urgent'], ['Очень срочно', 'Very urgent'], ['ASAP', 'ASAP']];
@@ -163,7 +169,8 @@ const ToDoMain = () => {
   const [showSorts, setShowSorts] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showAccentSettings, setShowAccentSettings] = useState(false);
-  const [accentColor, setAccentColor] = useState(AppData.todoAccentColor || DEFAULT_TODO_ACCENT_COLOR);
+  const [, setAccentPresetVersion] = useState(0);
+  const [accentColor, setAccentColor] = useState(buildTodoAccent(AppData.todoAccentColor || DEFAULT_TODO_ACCENT_COLOR).hue);
   const [selectedDateKey, setSelectedDateKey] = useState(dateKey(new Date()));
   const [expandedTaskId, setExpandedTaskId] = useState(null);
   const searchInputRef = useRef(null);
@@ -343,6 +350,11 @@ const ToDoMain = () => {
     todoEvents$.next({ type: 'ACCENT_CHANGE' });
   };
 
+  const saveAccentPreset = async () => {
+    await AppData.addAccentPreset('todo', accentColor, TODO_ACCENT_PRESETS);
+    setAccentPresetVersion(version => version + 1);
+  };
+
   const hasQuery = searchQuery.trim().length > 0;
   const emptyText = hiddenTasksCount > 0 && !showHiddenTasks
     ? (langIndex === 0 ? 'Все найденные задачи скрыты' : 'All matching tasks are hidden')
@@ -360,6 +372,8 @@ const ToDoMain = () => {
         accent={accent}
         accentColor={accentColor}
         onAccentChange={changeAccentColor}
+        customPresets={AppData.todoAccentPresets}
+        onSavePreset={saveAccentPreset}
       />
       <div style={s.scroll} className="no-scrollbar">
         <ToDoPageHeader
@@ -519,6 +533,7 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
   return (
     <motion.section layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={s.hero}>
       <div style={s.heroGlow} />
+      <img style={s.heroImage} src="images/bro_task.png" alt="" />
       <div style={s.heroHeader}>
         <div style={s.heroTextBlock}>
           <div style={s.eyebrow}>{langIndex === 0 ? 'Сегодня' : 'Today'}</div>
@@ -757,10 +772,12 @@ const ToDoWeekStrip = ({ theme, accent, langIndex, tasks, selectedDateKey, onSel
   );
 };
 
-const TodoAccentModal = ({ show, onClose, theme, langIndex, accent, accentColor, onAccentChange }) => {
+const TodoAccentModal = ({ show, onClose, theme, langIndex, accent, accentColor, onAccentChange, customPresets, onSavePreset }) => {
   const isLight = theme === 'light' || theme === 'speciallight';
   const text = Colors.get('mainText', theme);
   const sub = Colors.get('subText', theme);
+  const presetColors = mergeAccentPresets(TODO_ACCENT_PRESETS, customPresets, buildTodoAccent);
+  const presetSaved = presetColors.some(color => color.toUpperCase() === accentColor.toUpperCase());
 
   return (
     <AnimatePresence>
@@ -806,11 +823,38 @@ const TodoAccentModal = ({ show, onClose, theme, langIndex, accent, accentColor,
                 <div style={{ color: text, fontSize: 14, fontWeight: 850 }}>{langIndex === 0 ? 'Основной цвет' : 'Main color'}</div>
                 <div style={{ color: sub, fontSize: 11, fontWeight: 650, marginTop: 2 }}>{accentColor}</div>
               </div>
-              <input type="color" value={accentColor} onChange={(event) => onAccentChange(event.target.value)} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${accent.ring}`, background: 'transparent', padding: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <motion.button
+                  type="button"
+                  whileTap={!presetSaved ? { scale: 0.94 } : {}}
+                  onClick={presetSaved ? undefined : onSavePreset}
+                  disabled={presetSaved}
+                  style={{
+                    minHeight: 38,
+                    borderRadius: 14,
+                    border: `1px solid ${presetSaved ? (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.09)') : accent.ring}`,
+                    background: presetSaved ? (isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)') : accent.soft,
+                    color: presetSaved ? sub : accent.hue,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    padding: '0 11px',
+                    fontSize: 11,
+                    fontWeight: 900,
+                    fontFamily: 'inherit',
+                    cursor: presetSaved ? 'default' : 'pointer'
+                  }}
+                >
+                  <FaPlus size={10} />
+                  <span>{presetSaved ? (langIndex === 0 ? 'В пресетах' : 'Saved') : (langIndex === 0 ? 'В пресет' : 'Save')}</span>
+                </motion.button>
+                <input type="color" value={accentColor} onChange={(event) => onAccentChange(event.target.value)} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${accent.ring}`, background: 'transparent', padding: 0 }} />
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 1fr))', gap: 8 }}>
-              {TODO_ACCENT_PRESETS.map((color) => {
+              {presetColors.map((color) => {
                 const active = accentColor.toUpperCase() === color.toUpperCase();
                 return (
                   <motion.button key={color} type="button" whileTap={{ scale: 0.92 }} onClick={() => onAccentChange(color)} aria-label={color} style={{
@@ -1095,7 +1139,7 @@ const ActionButton = ({ active, label, icon, onClick, theme, accent }) => {
 
 const MiniBadge = ({ icon, text, color, theme, expanded = false }) => {
   const isLight = theme === 'light' || theme === 'speciallight';
-  const hex = (color || '#8FA6C8').replace('#', '');
+  const hex = (color || '#5F8DFF').replace('#', '');
   const r = parseInt(hex.slice(0, 2), 16) || 143;
   const g = parseInt(hex.slice(2, 4), 16) || 166;
   const b = parseInt(hex.slice(4, 6), 16) || 200;
@@ -1148,8 +1192,8 @@ const styles = (theme, accent, fSize = 0) => {
       height: '100vh',
       overflow: 'hidden',
       background: isLight
-        ? `radial-gradient(900px 450px at 80% -10%, rgba(${accent.rgbText},0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7`
-        : `radial-gradient(1000px 500px at 80% -10%, rgba(${accent.rgbText},0.07), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013`,
+        ? `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${accent.rgbText},0.1), transparent 66%), #F4F5F7`
+        : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgbText},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
       color: text,
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
     },
@@ -1236,6 +1280,20 @@ const styles = (theme, accent, fSize = 0) => {
       borderRadius: '50%',
       background: `radial-gradient(circle, rgba(${accent.rgbText},0.22) 0%, transparent 62%)`,
       pointerEvents: 'none',
+      zIndex: 0
+    },
+    heroImage: {
+      position: 'absolute',
+      right: 4,
+      bottom: -6,
+      width: 'min(28vw, 118px)',
+      maxHeight: 120,
+      objectFit: 'contain',
+      pointerEvents: 'none',
+      opacity: isLight ? 0.78 : 0.82,
+      filter: isLight ? 'drop-shadow(0 16px 24px rgba(15,23,42,0.16))' : 'drop-shadow(0 18px 28px rgba(0,0,0,0.46))',
+      WebkitMaskImage: 'radial-gradient(ellipse at 52% 48%, #000 0 62%, rgba(0,0,0,0.72) 72%, transparent 88%)',
+      maskImage: 'radial-gradient(ellipse at 52% 48%, #000 0 62%, rgba(0,0,0,0.72) 72%, transparent 88%)',
       zIndex: 0
     },
     heroHeader: { position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, minWidth: 0 },

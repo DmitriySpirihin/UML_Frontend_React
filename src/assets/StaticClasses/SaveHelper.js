@@ -71,6 +71,12 @@ export function getTelegramContext() {
 
 let db = null;
 
+export function isNewUserPreviewMode() {
+  if (typeof window === 'undefined') return false;
+  const params = new URLSearchParams(window.location.search);
+  return ['newUser', 'freshUser', 'onboarding'].some((key) => params.get(key) === '1');
+}
+
 export async function initDBandCloud() {
   const dbName = 'UML_Data';
   try {
@@ -94,6 +100,10 @@ export async function initDBandCloud() {
  * Saves application data to local IndexedDB only
  */
 export async function saveData() {
+  if (isNewUserPreviewMode()) {
+    return { success: true, preview: true };
+  }
+
   const dataToSave = serializeData();
   if (!dataToSave) {
     console.error('No data to save');

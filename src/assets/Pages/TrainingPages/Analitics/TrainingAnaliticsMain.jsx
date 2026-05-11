@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AppData, UserData } from '../../../StaticClasses/AppData';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
+import { AppData } from '../../../StaticClasses/AppData';
 import Colors from '../../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, premium$ } from '../../../StaticClasses/HabitsBus';
-import LoadDonut from './LoadDonut';
+import { theme$, lang$, fontSize$ } from '../../../StaticClasses/HabitsBus';
 import { VolumeTabs } from '../../../Helpers/TrainingAnaliticsTabs';
 import TrainingAnaliticsMuscles from './TrainingAnaliticsMuscles';
 import TrainingAnaliticsRM from './TrainingAnaliticsRM';
-import { FaInfoCircle, FaLock, FaTrophy } from "react-icons/fa";
+import { FaBullseye, FaChartPie, FaDumbbell, FaInfoCircle, FaTrophy } from "react-icons/fa";
 import { MdClose } from 'react-icons/md';
+import {
+  getTrainingAccent,
+  getTrainingPageBackground,
+  getTrainingPanelBackground,
+  getTrainingPanelBorder,
+  getTrainingPanelShadow
+} from '../TrainingVisuals.js';
 
 const TrainingAnaliticsMain = () => {
   // --- STATE (Logic Intact) ---
@@ -16,7 +22,6 @@ const TrainingAnaliticsMain = () => {
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [tab, setTab] = React.useState('volume');
-  const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
   // eslint-disable-next-line no-unused-vars
   const [date, setDate] = useState(new Date()); 
   const [targetTonnage, setTargetTonnage] = useState(0);
@@ -31,9 +36,8 @@ const TrainingAnaliticsMain = () => {
     const sub1 = theme$.subscribe(setThemeState);
     const sub2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
     const sub3 = fontSize$.subscribe(setFSize);
-    const sub4 = premium$.subscribe(setHasPremium);
     return () => {
-      sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe();
+      sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe();
     };
   }, []);
 
@@ -60,9 +64,9 @@ const TrainingAnaliticsMain = () => {
   }, []);
 
   // --- RENDER HELPERS ---
-  const isLight = theme === 'light' || theme === 'speciallight';
-  const cardBg = isLight ? 'rgba(255,255,255,0.7)' : 'rgba(30,30,30,0.6)';
-  const borderColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)';
+  const accent = getTrainingAccent();
+  const cardBg = getTrainingPanelBackground(theme, accent);
+  const borderColor = getTrainingPanelBorder(theme, accent);
 
   return (
     <div style={styles(theme).container}>
@@ -73,71 +77,61 @@ const TrainingAnaliticsMain = () => {
           
           {/* === VOLUME TAB === */}
           {tab === 'volume' && (
-            <motion.div
+            <Motion.div
               key="volume"
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
               style={{ display: 'flex', flexDirection: 'column', gap: '15px', padding: '10px' }}
             >
-              {/* Card 1: Cycle Distribution */}
-              <div style={{ ...styles(theme).card, backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-                <div style={styles(theme).cardHeader}>
-                  <span style={styles(theme, fSize).headerTitle}>{langIndex === 0 ? 'Текущий цикл' : 'Current Cycle'}</span>
-                  <div style={styles(theme).badge}>{sessionCount} {langIndex === 0 ? 'сессий' : 'sessions'}</div>
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
-                  {Object.keys(AppData.trainingLog).length > 1 ? (
-                    <LoadDonut data={donutData} theme={theme} totalTonnage={totalTonnage} sessionCount={sessionCount} langIndex={langIndex} />
-                  ) : (
-                    <div style={{ padding: '40px', color: Colors.get('subText', theme), fontSize: '14px' }}>
-                      {langIndex === 0 ? 'Нет данных' : 'No data available'}
-                    </div>
-                  )}
-                </div>
-              </div>
+              <CycleOverview
+                theme={theme}
+                langIndex={langIndex}
+                fSize={fSize}
+                donutData={donutData}
+                totalTonnage={totalTonnage}
+                sessionCount={sessionCount}
+              />
 
-              {/* Card 2: Tonnage Target */}
-              <div style={{ ...styles(theme).card, backgroundColor: cardBg, border: `1px solid ${borderColor}` }}>
-                <Tonnage 
+              <div style={{ ...styles(theme).targetCard, background: cardBg, border: `1px solid ${borderColor}` }}>
+                <Tonnage
                   theme={theme} 
                   langIndex={langIndex} 
                   totalTonnage={totalTonnage} 
                   targetTonnage={targetTonnage} 
                   progressPercent={progressPercent} 
                 />
-                <div style={{ padding: '0 20px 20px 20px' }}>
+                <div style={{ padding: '0 18px 18px 18px' }}>
                    <InfoText theme={theme} langIndex={langIndex} />
                 </div>
               </div>
-            </motion.div>
+            </Motion.div>
           )}
 
           {/* === MUSCLES TAB === */}
           {tab === 'muscles' && (
-            <motion.div
+            <Motion.div
               key="muscles"
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
               style={{ padding: '10px' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '15px', padding: '0 10px' }}>
                 <span style={styles(theme, fSize).sectionTitle}>{langIndex === 0 ? 'Загрузка мышц' : 'Muscle Load'}</span>
-                <motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowInfo(true)} style={{ cursor: 'pointer', opacity: 0.7 }}>
+                <Motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowInfo(true)} style={{ cursor: 'pointer', opacity: 0.7 }}>
                   <FaInfoCircle size={18} color={Colors.get('mainText', theme)} />
-                </motion.div>
+                </Motion.div>
               </div>
               <TrainingAnaliticsMuscles />
-            </motion.div>
+            </Motion.div>
           )}
 
           {/* === EXERCISES TAB === */}
           {tab === 'exercises' && (
-            <motion.div
+            <Motion.div
               key="exercises"
               initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
               style={{ padding: '10px' }}
             >
               <TrainingAnaliticsRM />
-            </motion.div>
+            </Motion.div>
           )}
         </AnimatePresence>
       </div>
@@ -148,7 +142,7 @@ const TrainingAnaliticsMain = () => {
       <AnimatePresence>
         {showInfo && (
           <div style={styles(theme).modalBackdrop} onClick={() => setShowInfo(false)}>
-            <motion.div 
+            <Motion.div 
               initial={{ y: 50, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 50, opacity: 0, scale: 0.95 }}
               style={styles(theme).modalContainer} onClick={e => e.stopPropagation()}
             >
@@ -157,7 +151,7 @@ const TrainingAnaliticsMain = () => {
                 <MdClose size={24} color={Colors.get('subText', theme)} onClick={() => setShowInfo(false)} style={{ cursor: 'pointer' }} />
               </div>
               <div style={styles(theme, fSize).infoContent}>{infoText(langIndex)}</div>
-            </motion.div>
+            </Motion.div>
           </div>
         )}
       </AnimatePresence>
@@ -165,15 +159,101 @@ const TrainingAnaliticsMain = () => {
   );
 };
 
-// --- MODERN SUB-COMPONENT: TONNAGE STATS ---
-const Tonnage = ({ theme, langIndex, totalTonnage, targetTonnage, progressPercent }) => {
-  const isCompleted = progressPercent >= 100;
-  const accentColor = isCompleted ? '#4ADE80' : Colors.get('iconsHighlited', theme);
+const CycleOverview = ({ theme, langIndex, fSize, donutData, totalTonnage, sessionCount }) => {
+  const total = donutData.reduce((sum, item) => sum + (item.value || 0), 0);
+  const mix = [
+    { label: langIndex === 0 ? 'Лёгкая' : 'Light', value: donutData[0]?.value || 0, color: Colors.get('done', theme) },
+    { label: langIndex === 0 ? 'Средняя' : 'Medium', value: donutData[1]?.value || 0, color: Colors.get('medium', theme) },
+    { label: langIndex === 0 ? 'Тяжёлая' : 'Heavy', value: donutData[2]?.value || 0, color: Colors.get('skipped', theme) }
+  ];
+  const hasData = totalTonnage > 0 && sessionCount > 0;
 
   return (
-    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-      <div style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: Colors.get('subText', theme), letterSpacing: '1px', marginBottom: '10px' }}>
-        {langIndex === 0 ? 'Цель Цикла' : 'Cycle Target'}
+    <div style={styles(theme).cycleCard}>
+      <div style={styles(theme).cycleHeader}>
+        <div>
+          <div style={styles(theme).eyebrow}>{langIndex === 0 ? 'ТЕКУЩИЙ ЦИКЛ' : 'CURRENT CYCLE'}</div>
+          <div style={styles(theme, fSize).cycleTitle}>
+            {hasData
+              ? (langIndex === 0 ? 'Объём и интенсивность' : 'Volume and intensity')
+              : (langIndex === 0 ? 'Нет завершённых силовых' : 'No finished strength sessions')}
+          </div>
+        </div>
+        <div style={styles(theme).badge}>{sessionCount} {langIndex === 0 ? 'сесс.' : 'sess.'}</div>
+      </div>
+
+      <div style={styles(theme).cycleBody}>
+        <div style={styles(theme).cycleMainMetric}>
+          <div style={styles(theme).metricIcon}><FaDumbbell /></div>
+          <div>
+            <div style={styles(theme).cycleValue}>{(totalTonnage / 1000).toFixed(1)}</div>
+            <div style={styles(theme).cycleUnit}>{langIndex === 0 ? 'тонн за цикл' : 'tons in cycle'}</div>
+          </div>
+        </div>
+
+        <div style={styles(theme).donutFrame}>
+          {hasData ? (
+            <CycleRing data={donutData} theme={theme} totalTonnage={totalTonnage} langIndex={langIndex} />
+          ) : (
+            <div style={styles(theme).emptyDonut}>
+              <FaChartPie />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div style={styles(theme).loadMixGrid}>
+        {mix.map(item => {
+          const percent = total > 0 ? Math.round((item.value / total) * 100) : 0;
+          return (
+            <div key={item.label} style={styles(theme).loadMixItem}>
+              <div style={styles(theme).loadMixTop}>
+                <span style={{ ...styles(theme).loadDot, background: item.color }} />
+                <span>{item.label}</span>
+              </div>
+              <div style={styles(theme).loadMixValue}>{percent}%</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+const CycleRing = ({ data, theme, totalTonnage, langIndex }) => {
+  const total = data.reduce((sum, item) => sum + (item.value || 0), 0);
+  const light = total > 0 ? ((data[0]?.value || 0) / total) * 100 : 0;
+  const medium = total > 0 ? ((data[1]?.value || 0) / total) * 100 : 0;
+  const lightEnd = light;
+  const mediumEnd = light + medium;
+  const ring = total > 0
+    ? `conic-gradient(#4ADE80 0 ${lightEnd}%, #FACC15 ${lightEnd}% ${mediumEnd}%, #F87171 ${mediumEnd}% 100%)`
+    : 'rgba(148,163,184,0.18)';
+
+  return (
+    <div style={{ ...styles(theme).ringShell, background: ring }}>
+      <div style={styles(theme).ringInner}>
+        <div style={styles(theme).ringValue}>{(totalTonnage / 1000).toFixed(1)}</div>
+        <div style={styles(theme).ringLabel}>{langIndex === 0 ? 'тонн' : 'tons'}</div>
+      </div>
+    </div>
+  );
+};
+
+const Tonnage = ({ theme, langIndex, totalTonnage, targetTonnage, progressPercent }) => {
+  const isCompleted = progressPercent >= 100;
+  const accentColor = isCompleted ? '#4ADE80' : getTrainingAccent().hue;
+
+  return (
+    <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+      <div style={styles(theme).targetHeader}>
+        <div style={styles(theme).targetIcon}><FaBullseye /></div>
+        <div>
+          <div style={styles(theme).eyebrow}>{langIndex === 0 ? 'ЦЕЛЬ ЦИКЛА' : 'CYCLE TARGET'}</div>
+          <div style={styles(theme).targetSubhead}>
+            {langIndex === 0 ? 'Плановый объём относительно прошлого цикла' : 'Planned volume versus previous cycle'}
+          </div>
+        </div>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '5px' }}>
@@ -193,7 +273,7 @@ const Tonnage = ({ theme, langIndex, totalTonnage, targetTonnage, progressPercen
 
       {/* Progress Bar Container */}
       <div style={{ width: '100%', height: '8px', backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)', borderRadius: '4px', margin: '15px 0', overflow: 'hidden' }}>
-        <motion.div 
+        <Motion.div 
           initial={{ width: 0 }} 
           animate={{ width: `${Math.min(progressPercent, 100)}%` }} 
           transition={{ duration: 1, ease: 'easeOut' }}
@@ -233,8 +313,8 @@ const InfoText = ({ theme, langIndex }) => {
 
   return (
     <div style={{ 
-        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', 
-        borderRadius: '12px', padding: '12px', fontSize: '11px', color: Colors.get('subText', theme), 
+        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
+        borderRadius: '16px', padding: '12px', fontSize: '11px', color: Colors.get('subText', theme),
         lineHeight: '1.5', whiteSpace: 'pre-wrap', textAlign: 'left'
     }}>
       {textContent}
@@ -243,16 +323,230 @@ const InfoText = ({ theme, langIndex }) => {
 };
 
 // --- STYLES ---
-const styles = (theme, fSize) => ({
+const styles = (theme, fSize) => {
+  const accent = getTrainingAccent();
+  const isLight = theme === 'light' || theme === 'speciallight';
+
+  return {
   container: {
     display: 'flex', width: "100vw", flexDirection: 'column',
     overflowY: 'scroll', overflowX: 'hidden', justifyContent: "flex-start", alignItems: 'center',
-    backgroundColor: Colors.get('background', theme), height: "90vh",marginTop:'90px', top: '16vh', paddingTop: '10px'
+    background: getTrainingPageBackground(theme, accent),
+    minHeight: "100dvh",
+    height: "100dvh",
+    padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 18px 116px',
+    boxSizing: 'border-box'
   },
   card: {
     borderRadius: '24px', overflow: 'hidden',
-    boxShadow: theme === 'light' ? '0 4px 15px rgba(0,0,0,0.03)' : '0 10px 30px rgba(0,0,0,0.2)',
+    boxShadow: getTrainingPanelShadow(theme, accent),
+    background: getTrainingPanelBackground(theme, accent),
+    border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
     backdropFilter: 'blur(10px)', transition: 'all 0.3s ease'
+  },
+  cycleCard: {
+    borderRadius: '28px',
+    overflow: 'hidden',
+    boxShadow: getTrainingPanelShadow(theme, accent),
+    background: getTrainingPanelBackground(theme, accent),
+    border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+    backdropFilter: 'blur(16px)',
+  },
+  targetCard: {
+    borderRadius: '28px',
+    overflow: 'hidden',
+    boxShadow: getTrainingPanelShadow(theme, accent),
+    background: getTrainingPanelBackground(theme, accent),
+    backdropFilter: 'blur(16px)',
+  },
+  cycleHeader: {
+    padding: '18px 18px 14px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: '14px',
+    borderBottom: `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.06)'}`,
+  },
+  eyebrow: {
+    color: accent.hue,
+    fontSize: '11px',
+    fontWeight: 900,
+    letterSpacing: '0.16em',
+    marginBottom: '5px',
+  },
+  cycleTitle: {
+    fontSize: fSize === 0 ? '20px' : '22px',
+    lineHeight: 1.12,
+    fontWeight: 900,
+    color: Colors.get('mainText', theme),
+  },
+  cycleBody: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+    gap: '14px',
+    alignItems: 'center',
+    padding: '18px',
+  },
+  cycleMainMetric: {
+    minHeight: '132px',
+    borderRadius: '24px',
+    padding: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)',
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.06)'}`,
+    boxSizing: 'border-box',
+  },
+  metricIcon: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: accent.hue,
+    background: `rgba(${accent.rgb}, 0.12)`,
+    border: `1px solid ${accent.ring}`,
+    flexShrink: 0,
+  },
+  cycleValue: {
+    color: Colors.get('mainText', theme),
+    fontSize: '42px',
+    lineHeight: 0.95,
+    fontWeight: 950,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  cycleUnit: {
+    marginTop: '8px',
+    color: Colors.get('subText', theme),
+    fontSize: '12px',
+    lineHeight: 1.25,
+    fontWeight: 800,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+  },
+  donutFrame: {
+    minHeight: '190px',
+    borderRadius: '26px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: isLight ? 'rgba(255,255,255,0.58)' : 'rgba(0,0,0,0.12)',
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.06)'}`,
+    overflow: 'hidden',
+  },
+  emptyDonut: {
+    width: '96px',
+    height: '96px',
+    borderRadius: '999px',
+    color: Colors.get('subText', theme),
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '32px',
+    background: isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.05)',
+  },
+  ringShell: {
+    width: '172px',
+    height: '172px',
+    borderRadius: '999px',
+    padding: '18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxSizing: 'border-box',
+    boxShadow: isLight ? '0 18px 36px rgba(15,23,42,0.08)' : '0 18px 46px rgba(0,0,0,0.26)',
+  },
+  ringInner: {
+    width: '100%',
+    height: '100%',
+    borderRadius: '999px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: isLight ? '#fff' : 'rgba(16,18,22,0.94)',
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.07)'}`,
+  },
+  ringValue: {
+    color: Colors.get('mainText', theme),
+    fontSize: '34px',
+    lineHeight: 1,
+    fontWeight: 950,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  ringLabel: {
+    marginTop: '6px',
+    color: Colors.get('subText', theme),
+    fontSize: '11px',
+    fontWeight: 900,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+  },
+  loadMixGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: '8px',
+    padding: '0 18px 18px',
+  },
+  loadMixItem: {
+    minWidth: 0,
+    padding: '11px 10px',
+    borderRadius: '18px',
+    background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.042)',
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.055)'}`,
+    boxSizing: 'border-box',
+  },
+  loadMixTop: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    color: Colors.get('subText', theme),
+    fontSize: '11px',
+    fontWeight: 800,
+    lineHeight: 1.2,
+    minWidth: 0,
+  },
+  loadDot: {
+    width: '8px',
+    height: '8px',
+    borderRadius: '99px',
+    flexShrink: 0,
+  },
+  loadMixValue: {
+    marginTop: '7px',
+    color: Colors.get('mainText', theme),
+    fontSize: '18px',
+    fontWeight: 950,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  targetHeader: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: '12px',
+    textAlign: 'left',
+    marginBottom: '16px',
+  },
+  targetIcon: {
+    width: '42px',
+    height: '42px',
+    borderRadius: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    color: accent.hue,
+    background: `rgba(${accent.rgb}, 0.12)`,
+    border: `1px solid ${accent.ring}`,
+  },
+  targetSubhead: {
+    color: Colors.get('subText', theme),
+    fontSize: '12px',
+    fontWeight: 750,
+    lineHeight: 1.25,
   },
   cardHeader: {
     padding: '15px 20px', borderBottom: `1px solid ${Colors.get('border', theme)}`,
@@ -261,7 +555,7 @@ const styles = (theme, fSize) => ({
   headerTitle: { fontSize: fSize === 0 ? '15px' : '17px', fontWeight: '700', color: Colors.get('mainText', theme) },
   badge: {
     fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', borderRadius: '12px',
-    backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)',
+    backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
     color: Colors.get('subText', theme)
   },
   successBadge: {
@@ -296,7 +590,8 @@ const styles = (theme, fSize) => ({
     padding: '30px', borderRadius: '24px', border: `1px solid ${Colors.get('border', theme)}`,
     background: theme === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(20,20,20,0.9)'
   }
-});
+  };
+};
 
 // --- CORE LOGIC FUNCTIONS (Unchanged) ---
 function getLoadRange() {
@@ -358,6 +653,7 @@ function splitIntoCycles(sessions) {
   return { currentCycle: cycles[cycles.length - 1], lastFullCycle: cycles[cycles.length - 2] };
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function getCurrentCycleAnalysis() {
   const latestSessions = getLatestProgramSessions();
   const { currentCycle, lastFullCycle } = splitIntoCycles(latestSessions);

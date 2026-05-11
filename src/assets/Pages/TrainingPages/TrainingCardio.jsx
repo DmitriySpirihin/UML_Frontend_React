@@ -1,19 +1,16 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, setPage, setShowPopUpPanel } from '../../StaticClasses/HabitsBus';
+import { theme$, lang$, setPage, setShowPopUpPanel } from '../../StaticClasses/HabitsBus';
 import { addCardioSession, updateCardioSession, getCardioSession, deleteCardioSession } from '../../StaticClasses/TrainingLogHelper.js';
-import { motion, AnimatePresence } from 'framer-motion';
-import { BehaviorSubject } from 'rxjs';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 // Modern icons
 import { TbRoute, TbClock, TbMountain, TbHeartbeat, TbClockBolt, TbFlame, TbNotes } from "react-icons/tb";
 import { IoArrowBack, IoTrash } from "react-icons/io5";
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx';
 import Slider from '@mui/material/Slider';
-
-// RX Subjects - ONLY for receiving data FROM TrainingMain
-export const cardioType$ = new BehaviorSubject('RUNNING');
-export const trainInfo$ = new BehaviorSubject({ mode: 'new', dayKey: '', dInd: null });
+import { getTrainingAccent, getTrainingPageBackground } from './TrainingVisuals.js';
+import { cardioType$, trainInfo$ } from './TrainingCardioBus.js';
 
 const getSliderSx = (color, themeMode) => ({
   height: 28,
@@ -72,7 +69,6 @@ const TrainingCardio = () => {
   // States - NO type/date selection states
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-  const [fSize, setFSize] = useState(AppData.prefs[4]);
   
   // Critical: Type and date are MANAGED EXTERNALLY, not by this component
   const [selectedType, setSelectedType] = useState('RUNNING');
@@ -97,57 +93,17 @@ const TrainingCardio = () => {
   // Ref to track initial load
   const isInitialLoad = useRef(true);
 
-  // SUBSCRIPTIONS - ONLY listen to external commands
-  useEffect(() => {
-    const subs = [
-      theme$.subscribe(setThemeState),
-      lang$.subscribe(lang => setLangIndex(lang === 'ru' ? 0 : 1)),
-      fontSize$.subscribe(setFSize),
-      
-      // CRITICAL: Listen for navigation commands from TrainingMain
-      trainInfo$.subscribe((info) => {
-        if (info.mode === 'edit' && info.dayKey && info.dInd !== null && info.dInd !== undefined) {
-          // EDIT MODE: Load existing session
-          setMode('edit');
-          loadSessionData(info.dayKey, info.dInd);
-        } else if (info.mode === 'new' && info.dayKey) {
-          // NEW MODE with specific date from TrainingMain
-          setMode('new');
-          setSelectedDate(parseLocalDate(info.dayKey));
-          resetFormMetrics(); // Reset metrics but keep date/type
-        } else {
-          // Fallback: reset everything
-          setMode('new');
-          resetForm();
-        }
-      }),
-      
-      // Type is SET BY TRAININGMAIN ONLY
-      cardioType$.subscribe((type) => {
-        if (isInitialLoad.current) {
-          setSelectedType(type);
-          isInitialLoad.current = false;
-        }
-        // Always update type when commanded (even after initial load)
-        setSelectedType(type);
-      })
-    ];
-    
-    return () => subs.forEach(s => s.unsubscribe());
-  }, []);
-
   const parseLocalDate = (dateString) => {
-  // Разбираем строку "YYYY-MM-DD" и создаём дату в ЛОКАЛЬНОМ часовом поясе
-  const [year, month, day] = dateString.split('-').map(Number);
-  return new Date(year, month - 1, day + 1); // month 0-11 в JS
-};
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
 
   // Training types configuration (for display/icons only)
   const trainingTypes = useMemo(() => ({
-    RUNNING: { label: langIndex === 0 ? 'Бег' : 'Running', color: '#917237', gradient: 'linear-gradient(120deg, #8b5325, #a52c00)' },
-    CYCLING: { label: langIndex === 0 ? 'Велосипед' : 'Cycling', color: '#468932', gradient: 'linear-gradient(120deg, #368a36, #00842a)' },
-    SWIMMING: { label: langIndex === 0 ? 'Плавание' : 'Swimming', color: '#407a97', gradient: 'linear-gradient(120deg, #2f3d7d, #201c70)' },
-    GYM: { label: langIndex === 0 ? 'Силовая' : 'Strength', color: '#9D4EDD', gradient: 'linear-gradient(120deg, #9d4edd, #7209b7)' }
+    RUNNING: { label: langIndex === 0 ? 'Бег' : 'Running', color: '#F43F5E', gradient: 'linear-gradient(120deg, #F43F5E, #FB7185)' },
+    CYCLING: { label: langIndex === 0 ? 'Велосипед' : 'Cycling', color: '#22C55E', gradient: 'linear-gradient(120deg, #16A34A, #22C55E)' },
+    SWIMMING: { label: langIndex === 0 ? 'Плавание' : 'Swimming', color: '#38BDF8', gradient: 'linear-gradient(120deg, #0284C7, #38BDF8)' },
+    GYM: { label: langIndex === 0 ? 'Силовая' : 'Strength', color: '#35C2FF', gradient: 'linear-gradient(120deg, #35C2FF, #2F80ED)' }
   }), [langIndex]);
 
   const currentType = trainingTypes[selectedType] || trainingTypes.RUNNING;
@@ -203,6 +159,38 @@ const TrainingCardio = () => {
     setSelectedDate(parseLocalDate(new Date().toISOString().split('T')[0]));
     setSessionId(null);
   }, [resetFormMetrics]);
+
+  // SUBSCRIPTIONS - ONLY listen to external commands
+  useEffect(() => {
+    const subs = [
+      theme$.subscribe(setThemeState),
+      lang$.subscribe(lang => setLangIndex(lang === 'ru' ? 0 : 1)),
+
+      trainInfo$.subscribe((info) => {
+        if (info.mode === 'edit' && info.dayKey && info.dInd !== null && info.dInd !== undefined) {
+          setMode('edit');
+          loadSessionData(info.dayKey, info.dInd);
+        } else if (info.mode === 'new' && info.dayKey) {
+          setMode('new');
+          setSelectedDate(parseLocalDate(info.dayKey));
+          resetFormMetrics();
+        } else {
+          setMode('new');
+          resetForm();
+        }
+      }),
+
+      cardioType$.subscribe((type) => {
+        if (isInitialLoad.current) {
+          setSelectedType(type);
+          isInitialLoad.current = false;
+        }
+        setSelectedType(type);
+      })
+    ];
+
+    return () => subs.forEach(s => s.unsubscribe());
+  }, [loadSessionData, resetForm, resetFormMetrics]);
 
   // Handle save with proper date handling
   const handleSave = useCallback(() => {
@@ -270,37 +258,57 @@ const TrainingCardio = () => {
     }
   }, [mode, sessionId, langIndex, resetForm]);
 
+  const trainingAccent = getTrainingAccent();
+  const isLight = theme === 'light' || theme === 'speciallight';
+  const panelBg = isLight ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.055)';
+  const panelBorder = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.09)';
+  const mainText = Colors.get('mainText', theme);
+  const subText = Colors.get('subText', theme);
+
   return (
     <div style={{
-      backgroundColor:Colors.get('background', theme),
+      background: getTrainingPageBackground(theme, trainingAccent),
           display: "flex", flexDirection: "column", alignItems: "center",
-          height: "90vh",marginTop:'100px', width: "100vw", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-          overflowY:'scroll', paddingTop: '10px',overflowX:'hidden'
+          minHeight: "100dvh",
+          height: "100dvh",
+          width: "100vw", fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+          overflowY:'scroll',
+          padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 0 116px',
+          overflowX:'hidden',
+          boxSizing: 'border-box',
+          color: mainText
     }}>
       {/* Header with type badge and DATE CONTEXT from TrainingMain */}
-      <motion.header
+      <Motion.header
         style={{
-          background: currentType.gradient,
-          width:'100vw',
-          height:'15vh',
-          marginTop:'10px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.25)',
-          borderBottomLeftRadius: '32px',
-          borderBottomRightRadius: '32px'
+          width: 'calc(100% - 36px)',
+          maxWidth: '600px',
+          borderRadius: '30px',
+          padding: '18px',
+          boxSizing: 'border-box',
+          background: `radial-gradient(circle at 86% 12%, ${currentType.color}44, transparent 34%), linear-gradient(135deg, ${panelBg}, rgba(${trainingAccent.rgb}, 0.08))`,
+          boxShadow: `0 18px 44px rgba(${trainingAccent.rgb}, 0.18)`,
+          border: `1px solid ${panelBorder}`,
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)'
         }}
       >
-        <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           
        
      
           
-          <div style={{ flex: 1, textAlign: 'center' }}>
+          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
             
             <div style={{ 
-              fontSize: '15px', 
-              color: 'rgba(255,255,255,0.85)',
-              fontWeight: '500',
-              margin: '19px'
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '12px',
+              color: subText,
+              fontWeight: '800',
+              marginBottom: '10px',
+              lineHeight: 1.25
             }}>
               {selectedDate.toLocaleDateString(langIndex === 0 ? 'ru-RU' : 'en-US', { 
                 weekday: 'long', 
@@ -310,20 +318,36 @@ const TrainingCardio = () => {
               })}
             </div>
             <h1 style={{
-              fontSize: '18px',
-              fontWeight: '800',
-              color: '#fff',
-              margin: 15,
-              textShadow: '0 2px 6px rgba(0,0,0,0.3)'
+              fontSize: '22px',
+              fontWeight: '900',
+              color: mainText,
+              margin: 0,
+              lineHeight: 1.15,
+              letterSpacing: 0
             }}>
               {mode === 'edit' 
                 ? (langIndex === 0 ? 'Редактировать тренировку: '+ (currentType.label) : 'Edit Session: '+ (currentType.label))
                 : (langIndex === 0 ? 'Новая тренировка: '+ (currentType.label) : 'New Session: ' + (currentType.label))}
             </h1>
+            <div style={{
+              marginTop: '12px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '7px 11px',
+              borderRadius: '999px',
+              color: currentType.color,
+              background: `${currentType.color}1f`,
+              border: `1px solid ${currentType.color}32`,
+              fontSize: '12px',
+              fontWeight: 900,
+            }}>
+              {currentType.label}
+            </div>
           </div>
           
           {mode === 'edit' && (
-            <motion.button
+            <Motion.button
               whileTap={{ scale: 0.9 }}
               onClick={handleDelete}
               style={{
@@ -337,33 +361,41 @@ const TrainingCardio = () => {
               }}
             >
               <IoTrash size={26} color="#ff5252" />
-            </motion.button>
+            </Motion.button>
           )}
         </div>
-      </motion.header>
+      </Motion.header>
 
       {/* Content - ONLY METRICS SECTION (no type/date selectors) */}
       <div style={{ 
-        minWidth:'85vw',
+        width: 'calc(100% - 36px)',
         maxWidth: '600px', 
-        margin: '24px auto 0', 
-        padding: '0 24px',
+        margin: '16px auto 0', 
+        padding: '0',
         display: 'flex',
         flexDirection: 'column',
-        gap: '24px'
+        gap: '18px'
       }}>
         {/* Metrics Section - First and only section */}
-        <motion.section
+        <Motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }} // Adjusted delay since sections removed
+          style={{
+            background: panelBg,
+            border: `1px solid ${panelBorder}`,
+            borderRadius: '28px',
+            padding: '18px',
+            boxShadow: isLight ? '0 14px 34px rgba(15,23,42,0.08)' : '0 18px 46px rgba(0,0,0,0.24)',
+            boxSizing: 'border-box'
+          }}
         >
           <h2 style={{
             fontSize: '20px',
-            fontWeight: '800',
-            marginBottom: '24px',
-            color: theme === 'dark' ? '#e6e6ff' : '#1a1a2e',
-            textAlign: 'center'
+            fontWeight: '900',
+            margin: '0 0 22px',
+            color: mainText,
+            textAlign: 'left'
           }}>
             {langIndex === 0 ? 'Параметры тренировки' : 'Session Metrics'}
           </h2>
@@ -753,25 +785,27 @@ const TrainingCardio = () => {
                 ? "Как прошла тренировка? Погода, ощущения..." 
                 : "How was your session? Weather, feelings..."}
               style={{
-                width: '90%',
+                width: '100%',
                 minHeight: '90px',
                 padding: '16px',
                 borderRadius: '20px',
-                border: `2px solid ${theme === 'dark' ? 'rgba(100,100,150,0.4)' : 'rgba(0,0,0,0.08)'}`,
-                background: theme === 'dark' ? 'rgba(40,40,70,0.7)' : 'rgba(255,255,255,0.9)',
-                color: theme === 'dark' ? '#e6e6ff' : '#1a1a2e',
+                border: `1px solid ${panelBorder}`,
+                background: isLight ? 'rgba(255,255,255,0.82)' : 'rgba(255,255,255,0.045)',
+                color: mainText,
                 fontSize: '16px',
                 fontFamily: 'inherit',
                 resize: 'vertical',
-                transition: 'all 0.25s ease'
+                transition: 'all 0.25s ease',
+                boxSizing: 'border-box',
+                outline: 'none'
               }}
             />
           </div>
-        </motion.section>
+        </Motion.section>
       </div>
 
       {/* Save Button */}
-      <motion.footer
+      <Motion.footer
         style={{
           bottom: 0,
           width: '100%',
@@ -785,7 +819,7 @@ const TrainingCardio = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, delay: 0.2 }}
       >
-        <motion.button
+        <Motion.button
           whileTap={{ scale: 0.97 }}
           whileHover={{ scale: 1.02 }}
           onClick={handleSave}
@@ -822,13 +856,13 @@ const TrainingCardio = () => {
           {mode === 'edit'
             ? (langIndex === 0 ? 'Сохранить изменения' : 'Save Changes')
             : (langIndex === 0 ? 'Добавить тренировку' : 'Add Session')}
-        </motion.button>
-      </motion.footer>
+        </Motion.button>
+      </Motion.footer>
       <div style={{marginBottom:'150px'}}></div>
       {/* Loading overlay */}
       <AnimatePresence>
         {loading && (
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -854,7 +888,7 @@ const TrainingCardio = () => {
               borderRadius: '50%',
               animation: 'spin 0.9s linear infinite'
             }} />
-          </motion.div>
+          </Motion.div>
         )}
       </AnimatePresence>
     </div>

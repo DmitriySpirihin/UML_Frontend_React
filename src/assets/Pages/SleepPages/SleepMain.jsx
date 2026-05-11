@@ -4,6 +4,7 @@ import {
   FaBed,
   FaMoon,
   FaPalette,
+  FaPlus,
   FaRegClock,
   FaStar,
   FaStickyNote,
@@ -19,6 +20,12 @@ import { buildSleepAccent, SLEEP_ACCENT_PRESETS } from './SleepVisuals.js';
 
 const clickSound = new Audio('Audio/Click.wav');
 const MS_PER_HOUR = 60 * 60 * 1000;
+
+const mergeAccentPresets = (defaults, custom = []) => {
+  const colors = [...defaults, ...(Array.isArray(custom) ? custom : [])]
+    .map(color => buildSleepAccent(color).hue);
+  return colors.filter((color, index) => colors.indexOf(color) === index);
+};
 
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
 
@@ -81,7 +88,8 @@ const SleepMain = () => {
   const [date, setDate] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedSleepEntry, setSelectedSleepEntry] = useState(null);
-  const [accentColor, setAccentColor] = useState(AppData.sleepAccentColor || '#6F8BD6');
+  const [accentColor, setAccentColor] = useState(buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF').hue);
+  const [, setAccentPresetVersion] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
 
@@ -159,6 +167,11 @@ const SleepMain = () => {
     await saveData();
   };
 
+  const saveAccentPreset = async () => {
+    await AppData.addAccentPreset('sleep', accentColor, SLEEP_ACCENT_PRESETS);
+    setAccentPresetVersion(version => version + 1);
+  };
+
   return (
     <div style={s.container}>
       <AccentSettingsModal
@@ -169,6 +182,8 @@ const SleepMain = () => {
         accent={accent}
         accentColor={accentColor}
         onAccentChange={changeAccentColor}
+        customPresets={AppData.sleepAccentPresets}
+        onSavePreset={saveAccentPreset}
       />
 
       <div style={s.scroll}>
@@ -176,6 +191,7 @@ const SleepMain = () => {
           <div style={s.topSpacer} />
           <div style={s.brandBlock}>
             <div style={s.brand}>UltyMyLife</div>
+            <div style={s.brandSubtitle}>{langIndex === 0 ? 'Восстановление начинается ночью' : 'Recovery starts at night'}</div>
           </div>
           <motion.button type="button" whileTap={{ scale: 0.96 }} onClick={() => setShowSettings(true)} style={s.accentButton}>
             <span>{langIndex === 0 ? 'Акцент' : 'Accent'}</span>
@@ -183,6 +199,16 @@ const SleepMain = () => {
           </motion.button>
         </div>
         {syncMessage && <div style={s.syncPill}>{syncMessage}</div>}
+
+        <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={s.sleepHero}>
+          <div style={s.sleepHeroGlow} />
+          <div style={s.sleepHeroCopy}>
+            <div style={s.sleepHeroEyebrow}>{langIndex === 0 ? 'СОН' : 'SLEEP'}</div>
+            <h1 style={s.sleepHeroTitle}>{langIndex === 0 ? 'Качество сна' : 'Sleep quality'}</h1>
+            <div style={s.sleepHeroSubtitle}>{langIndex === 0 ? 'Режим, длительность и самочувствие' : 'Rhythm, duration, and recovery'}</div>
+          </div>
+          <img style={s.sleepHeroImage} src="images/bro_sleeping.png" alt="" />
+        </motion.section>
 
         <div style={s.summaryGrid}>
           <SummaryTile icon={<FaRegClock />} label={langIndex === 0 ? 'Среднее' : 'Average'} value={formatDuration(summary.avg, langIndex)} theme={theme} accent={accent} />
@@ -305,7 +331,7 @@ const SummaryTile = ({ icon, label, value, theme, accent }) => {
 };
 
 const MetricItem = ({ icon, label, value, theme, color }) => {
-  const s = styles(theme, buildSleepAccent(AppData.sleepAccentColor || '#6F8BD6'));
+  const s = styles(theme, buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF'));
   return (
     <div style={s.metricBox}>
       <div style={{ ...s.metricIcon, color }}>{icon}</div>
@@ -315,10 +341,12 @@ const MetricItem = ({ icon, label, value, theme, color }) => {
   );
 };
 
-function AccentSettingsModal({ show, onClose, theme, langIndex, accent, accentColor, onAccentChange }) {
+function AccentSettingsModal({ show, onClose, theme, langIndex, accent, accentColor, onAccentChange, customPresets, onSavePreset }) {
   const isLight = theme === 'light' || theme === 'speciallight';
   const text = Colors.get('mainText', theme);
   const sub = Colors.get('subText', theme);
+  const presetColors = mergeAccentPresets(SLEEP_ACCENT_PRESETS, customPresets);
+  const presetSaved = presetColors.some(color => color.toUpperCase() === accentColor.toUpperCase());
 
   return (
     <AnimatePresence>
@@ -364,11 +392,38 @@ function AccentSettingsModal({ show, onClose, theme, langIndex, accent, accentCo
                 <div style={{ color: text, fontSize: 14, fontWeight: 850 }}>{langIndex === 0 ? 'Основной цвет' : 'Main color'}</div>
                 <div style={{ color: sub, fontSize: 11, fontWeight: 650, marginTop: 2 }}>{accentColor}</div>
               </div>
-              <input type="color" value={accentColor} onChange={(event) => onAccentChange(event.target.value)} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${accent.ring}`, background: 'transparent', padding: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <motion.button
+                  type="button"
+                  whileTap={!presetSaved ? { scale: 0.94 } : {}}
+                  onClick={presetSaved ? undefined : onSavePreset}
+                  disabled={presetSaved}
+                  style={{
+                    minHeight: 38,
+                    borderRadius: 14,
+                    border: `1px solid ${presetSaved ? (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.09)') : accent.ring}`,
+                    background: presetSaved ? (isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)') : accent.soft,
+                    color: presetSaved ? sub : accent.hue,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    padding: '0 11px',
+                    fontSize: 11,
+                    fontWeight: 900,
+                    fontFamily: 'inherit',
+                    cursor: presetSaved ? 'default' : 'pointer'
+                  }}
+                >
+                  <FaPlus size={10} />
+                  <span>{presetSaved ? (langIndex === 0 ? 'В пресетах' : 'Saved') : (langIndex === 0 ? 'В пресет' : 'Save')}</span>
+                </motion.button>
+                <input type="color" value={accentColor} onChange={(event) => onAccentChange(event.target.value)} style={{ width: 44, height: 44, borderRadius: 14, border: `1px solid ${accent.ring}`, background: 'transparent', padding: 0 }} />
+              </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 1fr))', gap: 8 }}>
-              {SLEEP_ACCENT_PRESETS.map((color) => {
+              {presetColors.map((color) => {
                 const active = accentColor.toUpperCase() === color.toUpperCase();
                 return (
                   <motion.button key={color} type="button" whileTap={{ scale: 0.92 }} onClick={() => onAccentChange(color)} aria-label={color} style={{
@@ -402,8 +457,8 @@ const styles = (theme, accent) => {
       width: '100vw',
       height: '100vh',
       background: isLight
-        ? `linear-gradient(180deg, ${accent.faint} 0%, ${Colors.get('background', theme)} 38%)`
-        : `linear-gradient(180deg, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.12) 0%, ${Colors.get('background', theme)} 42%)`,
+        ? `radial-gradient(640px 420px at 86% -8%, ${accent.soft}, transparent 62%), radial-gradient(520px 380px at 6% 86%, ${accent.faint}, transparent 66%), ${Colors.get('background', theme)}`
+        : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
       fontFamily: 'Segoe UI, sans-serif',
       color: Colors.get('mainText', theme),
       overflow: 'hidden'
@@ -423,14 +478,23 @@ const styles = (theme, accent) => {
     },
     topSpacer: { width: 96, height: 38 },
     brandBlock: { minWidth: 0, textAlign: 'center' },
-    brand: {
+	    brand: {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: 24,
       fontWeight: 700,
       color: Colors.get('mainText', theme),
       opacity: 0.86,
       letterSpacing: 0,
-      lineHeight: 1.05
+	      lineHeight: 1.05
+	    },
+    brandSubtitle: {
+      marginTop: 6,
+      color: Colors.get('subText', theme),
+      fontSize: 10,
+      fontWeight: 800,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase',
+      lineHeight: 1.25
     },
     accentButton: {
       height: 38,
@@ -466,6 +530,68 @@ const styles = (theme, accent) => {
       fontSize: 11,
       fontWeight: 900,
       border: `1px solid ${accent.ring}`
+    },
+    sleepHero: {
+      position: 'relative',
+      minHeight: 132,
+      borderRadius: 26,
+      overflow: 'hidden',
+      padding: '18px 18px',
+      boxSizing: 'border-box',
+      background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${accent.faint})`
+        : `linear-gradient(145deg, rgba(23,27,31,0.96), rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.16))`,
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : accent.ring}`,
+      boxShadow: isLight ? '0 16px 34px -28px rgba(15,23,42,0.2)' : '0 18px 44px -32px rgba(0,0,0,0.74)',
+      isolation: 'isolate'
+    },
+    sleepHeroGlow: {
+      position: 'absolute',
+      inset: 0,
+      background: `radial-gradient(circle at 84% 22%, ${accent.soft} 0%, transparent 40%)`,
+      pointerEvents: 'none',
+      zIndex: 0
+    },
+    sleepHeroCopy: {
+      position: 'relative',
+      zIndex: 1,
+      width: 'calc(100% - min(31vw, 132px))',
+      minWidth: 0
+    },
+    sleepHeroEyebrow: {
+      color: accent.hue,
+      fontSize: 10,
+      fontWeight: 900,
+      letterSpacing: '0.18em',
+      textTransform: 'uppercase'
+    },
+    sleepHeroTitle: {
+      margin: '6px 0 4px',
+      color: Colors.get('mainText', theme),
+      fontSize: 28,
+      fontWeight: 950,
+      lineHeight: 1.04,
+      letterSpacing: 0
+    },
+    sleepHeroSubtitle: {
+      color: Colors.get('subText', theme),
+      fontSize: 12,
+      fontWeight: 800,
+      lineHeight: 1.25
+    },
+    sleepHeroImage: {
+      position: 'absolute',
+      right: -10,
+      bottom: -18,
+      width: 'min(31vw, 132px)',
+      maxHeight: 132,
+      objectFit: 'contain',
+      pointerEvents: 'none',
+      opacity: isLight ? 0.88 : 0.94,
+      filter: isLight ? 'drop-shadow(0 16px 24px rgba(15,23,42,0.16))' : 'drop-shadow(0 18px 28px rgba(0,0,0,0.46))',
+      WebkitMaskImage: 'radial-gradient(circle at 50% 52%, #000 0 58%, transparent 76%)',
+      maskImage: 'radial-gradient(circle at 50% 52%, #000 0 58%, transparent 76%)',
+      zIndex: 1
     },
     summaryGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, marginTop: 12 },
     panel: {

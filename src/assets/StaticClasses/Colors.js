@@ -2,44 +2,47 @@ import { skip } from "rxjs";
 
 export const THEME = {
   LIGHT: 'light',
-  DARK: 'dark'
+  DARK: 'dark',
+  COFFEE: 'coffee'
 };
 
 export class Colors {
   static theme =  THEME.DARK;
 
   static palette = {
-    // Core Backgrounds - Deep Obsidian
-    background: { light: "#e5e5e5", dark: "#15181c" }, 
-    mainText: { light: "#0F172A", dark: "#F1F5F9" },
-    subText: { light: "#64748B", dark: "#8E96A3" }, 
+    // Core backgrounds
+    background: { light: "#e5e5e5", dark: "#11171C", coffee: "#1A120E" }, 
+    mainText: { light: "#0F172A", dark: "#F1F5F9", coffee: "#FFF4E6" },
+    subText: { light: "#64748B", dark: "#8E96A3", coffee: "#C9AD96" }, 
     
-    // Panels - Layered Charcoal
-    simplePanel: { light: "#ffffff", dark: "#1a1d21" }, // Slightly lighter than background
-    metricsPanel: { light: "#F1F5F9", dark: "#101013" },
-    highlitedPanel: { light: "#E2E8F0", dark: "#21252B" },
+    // Panels
+    simplePanel: { light: "#ffffff", dark: "#172027", coffee: "#241914" },
+    metricsPanel: { light: "#F1F5F9", dark: "#141B21", coffee: "#20150F" },
+    highlitedPanel: { light: "#E2E8F0", dark: "#1E2A33", coffee: "#332319" },
     
     // Gradients
     panelGradient: { 
       light: "linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%)", 
-      dark: "linear-gradient(135deg, #1C1F26 0%, #121417 100%)" 
+      dark: "linear-gradient(135deg, #1E2A33 0%, #141B21 100%)",
+      coffee: "linear-gradient(135deg, #2C1E16 0%, #1B120D 100%)"
     },
     headGradient: { 
       light: "linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%)", 
-      dark: "linear-gradient(180deg, #0f0f11 0%, #111316 100%)" 
+      dark: "linear-gradient(180deg, #19242C 0%, #11171C 100%)",
+      coffee: "linear-gradient(180deg, #2A1B13 0%, #1A120E 100%)"
     },
 
     // Borders & Lines
-    border: { light: "#E2E8F0", dark: "#242830" }, 
-    currentDateBorder: { light: "#0763f7d4", dark: "#2362ce" }, 
-    linesColor: { light: "#CBD5E1", dark: "#1A1D23" },
+    border: { light: "#E2E8F0", dark: "#2A3944", coffee: "#493226" }, 
+    currentDateBorder: { light: "#0763f7d4", dark: "#2362ce", coffee: "#A46C3B" }, 
+    linesColor: { light: "#CBD5E1", dark: "#25333D", coffee: "#3A281D" },
 
     trainingIsolatedFont: { light: "#7c6b089b", dark: "#ffc85a" },
     trainingBaseFont: { light: "#4b0c0cce", dark: "#ff6b6b" },
 
     // Status Colors
-    categoryPositive: { light: "#DCFCE7", dark: "#064E3B" },
-    categoryNegative: { light: "#FEE2E2", dark: "#450A0A" },
+    categoryPositive: { light: "#DCFCE7", dark: "#064E3B", coffee: "#2B4A2F" },
+    categoryNegative: { light: "#FEE2E2", dark: "#450A0A", coffee: "#4A1F16" },
     done: { light: "#10B981", dark: "#10B981" }, 
     skipped: { light: "#EF4444", dark: "#EF4444" },
     scrollFont: { light: "#101377ab", dark: "#5d8bff" }, 
@@ -48,19 +51,19 @@ export class Colors {
     minValColor: { light: "#ef4444", dark: "#ef4444a1"  },
     
     // Cards
-    habitCard: { light: "#FFFFFF", dark: "#111317" },
-    habitCardDone: { light: "rgba(16, 185, 129, 0.1)", dark: "rgba(16, 185, 129, 0.12)" },
-    habitCardSkipped: { light: "rgba(239, 68, 68, 0.1)", dark: "rgba(239, 68, 68, 0.12)" },
-    progressBar: { light: "#E2E8F0", dark: "#1A1D23" },
+    habitCard: { light: "#FFFFFF", dark: "#151D23", coffee: "#211711" },
+    habitCardDone: { light: "rgba(16, 185, 129, 0.1)", dark: "rgba(16, 185, 129, 0.12)", coffee: "rgba(46, 180, 112, 0.12)" },
+    habitCardSkipped: { light: "rgba(239, 68, 68, 0.1)", dark: "rgba(239, 68, 68, 0.12)", coffee: "rgba(239, 96, 68, 0.13)" },
+    progressBar: { light: "#E2E8F0", dark: "#25333D", coffee: "#3A281D" },
 
     // Icons
-    icons: { light: "#475569", dark: "#717B8A" },
-    iconsDisabled: { light: "#CBD5E1", dark: "#333942" },
-    iconsHighlited: { light: "#0F172A", dark: "#FFFFFF" },
+    icons: { light: "#475569", dark: "#717B8A", coffee: "#A6846B" },
+    iconsDisabled: { light: "#CBD5E1", dark: "#333942", coffee: "#5A4031" },
+    iconsHighlited: { light: "#0F172A", dark: "#FFFFFF", coffee: "#FFF4E6" },
     
     // Inputs
-    inputField: { light: "#F1F5F9", dark: "#050506" },
-    inputSelected: { light: "#FFFFFF", dark: "#1C1F26" },
+    inputField: { light: "#F1F5F9", dark: "#050506", coffee: "#120C09" },
+    inputSelected: { light: "#FFFFFF", dark: "#1C1F26", coffee: "#2A1B13" },
     mathInput: { light: "rgba(59, 130, 246, 0.1)", dark: "rgba(255, 255, 255, 0.04)" },
 
     // Metrics & Charts
@@ -78,9 +81,9 @@ export class Colors {
     difficulty3: { light: "#f97416a5", dark: "#f97416" },
     difficulty5: { light: "#ef444494", dark: "#e74343" },
 
-    shadow: { light: "rgba(0,0,0,0.06)", dark: "rgba(0,0,0,0.6)" },
-    bottomPanel: { light: "#FFFFFF", dark: "#15181c" },
-    svgColor: { light: "rgba(0,0,0,0.03)", dark: "rgba(255,255,255,0.02)" },
+    shadow: { light: "rgba(0,0,0,0.06)", dark: "rgba(0,0,0,0.6)", coffee: "rgba(0,0,0,0.58)" },
+    bottomPanel: { light: "#FFFFFF", dark: "#10161B", coffee: "#17100C" },
+    svgColor: { light: "rgba(0,0,0,0.03)", dark: "rgba(255,255,255,0.02)", coffee: "rgba(255,224,190,0.025)" },
     
     veryBad: {
     dark: "#f53f3f", // насыщенный красный
@@ -105,28 +108,32 @@ export class Colors {
     
   };
 
+  static resolveTheme(theme) {
+    const next = theme ?? Colors.theme;
+    return Object.values(THEME).includes(next) ? next : THEME.DARK;
+  }
+
   static setTheme(theme) {
-    if (theme === THEME.LIGHT || theme === THEME.DARK) {
+    if (Object.values(THEME).includes(theme)) {
       Colors.theme = theme;
     }
   }
 
   static get(name, theme) {
-    const t = theme ?? Colors.theme;
+    const t = Colors.resolveTheme(theme);
     const entry = Colors.palette?.[name];
     if (!entry) return undefined;
-    return t === THEME.DARK ? entry.dark : entry.light;
+    return entry[t] ?? (t === THEME.LIGHT ? entry.light : entry.dark);
   }
 
   static all(theme) {
-    const t = theme ?? Colors.theme;
+    const t = Colors.resolveTheme(theme);
     return Object.fromEntries(
       Object.entries(Colors.palette).map(([k, v]) => [
         k, 
-        t === THEME.DARK ? v.dark : v.light
+        v[t] ?? (t === THEME.LIGHT ? v.light : v.dark)
       ])
     );
   }
 }
 export default Colors;
-

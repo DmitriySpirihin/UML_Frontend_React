@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import Colors from '../StaticClasses/Colors'
-import { theme$, lang$, devMessage$, isPasswordCorrect$, fontSize$, premium$, isValidation$, setPage, lastPage$, habitAccent$ } from '../StaticClasses/HabitsBus'
+import { theme$, lang$, devMessage$, isPasswordCorrect$, premium$, isValidation$, setPage, lastPage$, habitAccent$ } from '../StaticClasses/HabitsBus'
 import { AppData, UserData, getSectionStreak } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
@@ -12,11 +12,21 @@ import { sendReferalLink } from '../StaticClasses/PaymentService'
 import MainMenuRedesign from './MainMenuRedesign'
 import { playEffects } from '../StaticClasses/Effects'
 import { buildSleepAccent } from './SleepPages/SleepVisuals'
+import { buildTodoAccent } from './ToDoPages/ToDoVisuals.js'
+import { buildSectionAccent } from './SectionAccentSettings.jsx'
+
+const menuSectionMap = {
+    HabitsMain: 'habits',
+    ToDoMain: 'todo',
+    MentalMain: 'mental',
+    RecoveryMain: 'recovery',
+    TrainingMain: 'training',
+    SleepMain: 'sleep'
+};
 
 const MainMenu = () => {
     const [theme, setThemeState] = useState(AppData.prefs[1] === 0 ? 'dark' : 'light');
     const [lang, setLang] = useState(AppData.prefs[0]);
-    const [fSize, setFontSize] = useState(0);
     const [clickCount, setClickCount] = useState(0);
     const [clickCountUp, setClickCountUp] = useState(0);
     const [devConsolePanel, setDevConsolePanel] = useState(false);
@@ -60,15 +70,19 @@ const openGuide = () => {
 
     // --- STATE ДЛЯ УПРАВЛЕНИЯ СПИСКОМ ---
     const [itemsState, setItemsState] = useState(AppData.menuCardsStates || {});
-    const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#6F8BD6');
+    const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF');
+    const todoAccent = buildTodoAccent(AppData.todoAccentColor || '#5F8DFF');
+    const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || '#A66BFF', '#A66BFF');
+    const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || '#35C2FF', '#35C2FF');
+    const recoveryAccent = buildSectionAccent(AppData.recoveryAccentColor || '#2FD6BD', '#2FD6BD');
 
     const initialMenuItems = [
         { id: 'MainCard', icon: null, title: lang === 0 ? '' : '', subtitle: lang === 0 ? '' : '', color: '#00ff6600' },
-        { id: 'ToDoMain', icon: <FaListUl />, title: lang === 0 ? 'Задачи' : 'Tasks', subtitle: lang === 0 ? 'Планы и дела' : 'Plans and tasks', color: '#8FA6C8' },
+        { id: 'ToDoMain', icon: <FaListUl />, title: lang === 0 ? 'Задачи' : 'Tasks', subtitle: lang === 0 ? 'Планы и дела' : 'Plans and tasks', color: todoAccent.hue },
         { id: 'HabitsMain', icon: <FaMedal />, title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Ежедневные ритуалы' : 'Daily rituals', color: habitAccent.hue },
-        { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Тренировка ума' : 'Mind Training', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: '#8A7CD6' },
-        { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Дневник тренировок' : 'Training Log', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: '#D8785E'},
-        { id: 'RecoveryMain', icon: <MdOutlineSelfImprovement />, title: lang === 0 ? 'Антистресс' : 'Stress Reset', subtitle: lang === 0 ? 'Дыхание, медитации, холод' : 'Breathing, meditation, cold', color: '#78B879'},
+        { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Тренировка ума' : 'Mind Training', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: mentalAccent.hue },
+        { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Дневник тренировок' : 'Training Log', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: trainingAccent.hue},
+        { id: 'RecoveryMain', icon: <MdOutlineSelfImprovement />, title: lang === 0 ? 'Антистресс' : 'Stress Reset', subtitle: lang === 0 ? 'Дыхание, медитации, холод' : 'Breathing, meditation, cold', color: recoveryAccent.hue},
         { id: 'SleepMain', icon: <FaBed />, title: lang === 0 ? 'Качество сна' : 'Sleep Quality', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: sleepAccent.hue}
     ];
 
@@ -135,11 +149,9 @@ useEffect(() => {
         const langSubscription = lang$.subscribe((lang) => {
             setLang(lang === 'ru' ? 0 : 1);
         });
-        const fontSizeSubscription = fontSize$.subscribe(setFontSize);
         return () => {
             themeSubscription.unsubscribe();
             langSubscription.unsubscribe();
-            fontSizeSubscription.unsubscribe();
         };
     }, []);
 
@@ -216,10 +228,19 @@ useEffect(() => {
     const getVisibleItems = () => {
         let items = [...initialMenuItems];
         items = items.filter(item => !itemsState[item.id]?.hidden);
+        const originalIndex = new Map(items.map((item, index) => [item.id, index]));
         items.sort((a, b) => {
+            if (!a.icon || !b.icon) {
+                if (!a.icon && !b.icon) return (originalIndex.get(a.id) || 0) - (originalIndex.get(b.id) || 0);
+                return !a.icon ? -1 : 1;
+            }
             const aPinned = itemsState[a.id]?.pinned ? 1 : 0;
             const bPinned = itemsState[b.id]?.pinned ? 1 : 0;
-            return bPinned - aPinned; 
+            if (aPinned !== bPinned) return bPinned - aPinned;
+            const aOpenedAt = Number(AppData.sectionLastOpenedAt?.[menuSectionMap[a.id]]) || 0;
+            const bOpenedAt = Number(AppData.sectionLastOpenedAt?.[menuSectionMap[b.id]]) || 0;
+            if (aOpenedAt !== bOpenedAt) return bOpenedAt - aOpenedAt;
+            return (originalIndex.get(a.id) || 0) - (originalIndex.get(b.id) || 0);
         });
         return items;
     };
@@ -230,6 +251,14 @@ useEffect(() => {
 
     const openSection = (id) => {
         if (!id) return;
+        const sectionKey = menuSectionMap[id];
+        if (sectionKey) {
+            AppData.sectionLastOpenedAt = {
+                ...(AppData.sectionLastOpenedAt || {}),
+                [sectionKey]: Date.now()
+            };
+            saveData().catch(() => {});
+        }
         setPage(id);
         playEffects(null);
     };
@@ -239,11 +268,6 @@ useEffect(() => {
         if (!prev || prev === 'MainMenu') return;
         setPage(prev);
         playEffects(null);
-    };
-
-    const containerAnim = {
-        hidden: { opacity: 0 },
-        show: { opacity: 1, transition: { staggerChildren: 0.09 } }
     };
 
     return (
@@ -492,6 +516,7 @@ function buildMainMenuSummary(lang, visibleItems, heroWidgetIds = ['HabitsMain',
     const mentalTotal = Array.isArray(AppData.mentalRecords)
         ? AppData.mentalRecords.flat().reduce((sum, value) => sum + (Number(value) || 0), 0)
         : 0;
+    const mentalSessionsToday = getTodayMentalSessionCount();
     const todoCount = AppData.todoList?.length || 0;
     const sleepValue = getTodaySleepHours();
     const sleepEntry = AppData.sleepingLog?.[todayKey];
@@ -521,8 +546,8 @@ function buildMainMenuSummary(lang, visibleItems, heroWidgetIds = ['HabitsMain',
         MentalMain: {
             id: 'MentalMain',
             label: lang === 0 ? 'Ум' : 'Mind',
-            value: mentalTotal > 0 ? `${(mentalTotal / 1000).toFixed(1)}k` : '0',
-            progress: Math.min(1, mentalTotal / 5000)
+            value: mentalSessionsToday > 0 ? mentalSessionsToday.toString() : '0',
+            progress: Math.min(1, mentalSessionsToday / 4)
         },
         RecoveryMain: {
             id: 'RecoveryMain',
@@ -602,17 +627,21 @@ function buildMainMenuSummary(lang, visibleItems, heroWidgetIds = ['HabitsMain',
             streak: bestStreak,
             habitsValue: totalHabits > 0 ? `${doneHabits}/${totalHabits}` : '0/0',
             trainingValue: tonnageT > 0 ? `${tonnageT.toFixed(1)} ${lang === 0 ? 'т' : 't'}` : '—',
-            mentalValue: mentalTotal > 0 ? `${(mentalTotal / 1000).toFixed(1)}k` : '0',
+            mentalValue: mentalSessionsToday > 0 ? mentalSessionsToday.toString() : '0',
             stats: selectedStats,
             progressLabel: lang === 0 ? 'Сводка выбранных метрик' : 'Selected metrics',
             progressValue: summaryProgress,
             rings: {
                 habits: totalHabits > 0 ? doneHabits / totalHabits : 0,
                 training: Math.min(1, (trainingAnalysis.progressPercent || 0) / 100),
-                mental: Math.min(1, mentalTotal / 5000)
+                mental: Math.min(1, mentalSessionsToday / 4)
             }
         },
-        focus
+        metrics: metricMap,
+        focus: {
+            ...focus,
+            progress: summaryProgress
+        }
     };
 }
 
@@ -930,7 +959,7 @@ function getInfo(id) {
     else if (id === 'ToDoMain') return AppData.todoList.length > 0 ? AppData.todoList.length.toString() : '';
     else if (id === 'SleepMain') return getTodaySleepHours().toString();
     else if (id === 'RecoveryMain') return getTodaySessionCount().toString();
-    else if (id === 'MentalMain') return getMentalScoresSummary().toString();
+    else if (id === 'MentalMain') return getTodayMentalSessionCount().toString();
 
     return '';
 }
@@ -956,12 +985,9 @@ function getTodaySessionCount() {
 
   return totalSessions;
 }
-function getMentalScoresSummary() {
-  const mentalRecords = AppData.mentalRecords;
-  const total = mentalRecords.flat().reduce((sum, v) => sum + v, 0);
-  if (total <= 0) return '0';
-  const k = (total / 1000).toFixed(1); // переводим в «k» с одним знаком [cite:5]
-  return `${k}k`;
+function getTodayMentalSessionCount() {
+  const todayKey = new Date().toISOString().split('T')[0];
+  return Array.isArray(AppData.mentalLog?.[todayKey]) ? AppData.mentalLog[todayKey].length : 0;
 }
 export default MainMenu
 

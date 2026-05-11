@@ -51,6 +51,7 @@ const MainBtns = () => {
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setFSize] = useState(0);
     const [page, setLastPage] = useState('MainMenu');
+    const pageHasOwnHeader = page === 'MentalRecords' || page.startsWith('Recovery') || page.startsWith('Training');
 
     React.useEffect(() => {
         const subs = [
@@ -66,9 +67,11 @@ const MainBtns = () => {
         <>
             <PopUpPanel theme={theme} fSize={fSize} />
 
-            <div style={styles(theme, fSize).logoContainer}>
-                <UltyLogo theme={theme} page={page} langIndex={langIndex} />
-            </div>
+            {!pageHasOwnHeader && (
+                <div style={styles(theme, fSize).logoContainer}>
+                    <UltyLogo theme={theme} page={page} langIndex={langIndex} />
+                </div>
+            )}
 
             <KeyBoard />
         </>

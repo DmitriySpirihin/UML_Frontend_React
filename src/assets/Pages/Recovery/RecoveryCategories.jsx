@@ -1,428 +1,734 @@
-import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { AppData, UserData } from '../../StaticClasses/AppData.js'
-import Colors from '../../StaticClasses/Colors.js'
-import { theme$, lang$, fontSize$, recoveryType$, setPage, premium$ } from '../../StaticClasses/HabitsBus.js'
-import { FaMoon, FaSun, FaBolt, FaWind, FaPlay, FaFeatherAlt, FaCrown } from 'react-icons/fa'
-import { MdOutlineCreate } from 'react-icons/md'
-import { breathingProtocols, meditationProtocols, coldWaterProtocols } from '../../StaticClasses/RecoveryLogHelper.js'
-import BreathingTimer from './BreathingTimer.jsx'
-import MeditationTimer from './MeditationTimer.jsx'
-import HardeningTimer from './HardeningTimer.jsx'
-import BreathingConstructor from './BreathingConstructor.jsx'
-import MeditationConstructor from './MeditationConstructor.jsx'
-import HardeningConstructor from './HardeningConstructor.jsx'
+import React, { useEffect, useState } from 'react';
+import { motion as Motion } from 'framer-motion';
+import {
+    FaBolt,
+    FaCheckCircle,
+    FaChevronRight,
+    FaCrown,
+    FaFeatherAlt,
+    FaLock,
+    FaMoon,
+    FaSnowflake,
+    FaSpa,
+    FaSun,
+    FaWind,
+} from 'react-icons/fa';
+import { MdOutlineCreate } from 'react-icons/md';
+import { AppData, UserData } from '../../StaticClasses/AppData.js';
+import Colors from '../../StaticClasses/Colors.js';
+import { theme$, lang$, fontSize$, recoveryType$, setPage, premium$ } from '../../StaticClasses/HabitsBus.js';
+import { breathingProtocols, meditationProtocols, coldWaterProtocols } from '../../StaticClasses/RecoveryLogHelper.js';
+import BreathingTimer from './BreathingTimer.jsx';
+import MeditationTimer from './MeditationTimer.jsx';
+import HardeningTimer from './HardeningTimer.jsx';
+import BreathingConstructor from './BreathingConstructor.jsx';
+import MeditationConstructor from './MeditationConstructor.jsx';
+import HardeningConstructor from './HardeningConstructor.jsx';
 
-const BreathingMain = () => {
-    // states
-    const [theme, setthemeState] = React.useState('dark');
+const PAGE_META = [
+    {
+        Icon: FaWind,
+        accent: '#7ee6d2',
+        rgb: '126, 230, 210',
+        ru: { eyebrow: 'ДЫХАНИЕ', title: 'Дыхание', subtitle: 'Спокойный ритм и быстрый сброс' },
+        en: { eyebrow: 'BREATH', title: 'Breathing', subtitle: 'Calm rhythm and fast reset' },
+    },
+    {
+        Icon: FaSpa,
+        accent: '#8FA6C8',
+        rgb: '143, 166, 200',
+        ru: { eyebrow: 'ОСОЗНАННОСТЬ', title: 'Медитация', subtitle: 'Фокус, пауза и ровное внимание' },
+        en: { eyebrow: 'MINDFULNESS', title: 'Meditation', subtitle: 'Focus, pause, and steady attention' },
+    },
+    {
+        Icon: FaSnowflake,
+        accent: '#69d6f0',
+        rgb: '105, 214, 240',
+        ru: { eyebrow: 'ХОЛОД', title: 'Закаливание', subtitle: 'Мягкая адаптация и энергия' },
+        en: { eyebrow: 'COLD', title: 'Cold exposure', subtitle: 'Gentle adaptation and energy' },
+    },
+];
+
+const LEVEL_META = [
+    { ru: 'Легко', en: 'Easy', Icon: FaMoon, accent: '#50f08a', rgb: '80, 240, 138' },
+    { ru: 'Средне', en: 'Medium', Icon: FaFeatherAlt, accent: '#22d3ee', rgb: '34, 211, 238' },
+    { ru: 'Сложно', en: 'Hard', Icon: FaBolt, accent: '#9A84C8', rgb: '154, 132, 200' },
+    { ru: 'Про', en: 'Pro', Icon: FaSun, accent: '#f5d33f', rgb: '245, 211, 63' },
+    { ru: 'Свой', en: 'Custom', Icon: MdOutlineCreate, accent: '#7ee6d2', rgb: '126, 230, 210' },
+];
+
+const getStructure = (type) => {
+    if (type === 1) return meditationProtocols;
+    if (type === 2) return coldWaterProtocols;
+    return breathingProtocols;
+};
+
+const RecoveryCategories = () => {
+    const [theme, setThemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [fSize, setFSize] = useState(AppData.prefs[4]);
-    const [currentProtocol, setCurrentProtocol] = useState(breathingProtocols[0].protocols[0]);
+    const [recoveryType, setRecoveryTypeState] = useState(recoveryType$.value ?? 0);
+    const [structure, setStructure] = useState(getStructure(recoveryType$.value ?? 0));
+    const [currentProtocol, setCurrentProtocol] = useState(getStructure(recoveryType$.value ?? 0)[0]?.protocols?.[0]);
     const [protocolIndex, setProtocolIndex] = useState(0);
-    const [categorylIndex, setCategoryIndex] = useState(0);
+    const [categoryIndex, setCategoryIndex] = useState(0);
     const [showTimer, setShowTimer] = useState(false);
-    const [structure, setStructure] = useState(breathingProtocols);
     const [showBreathingConstructor, setShowBreathingConstructor] = useState(false);
     const [showMeditationConstructor, setShowMeditationConstructor] = useState(false);
     const [showHardeningConstructor, setShowHardeningConstructor] = useState(false);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
-    
+
     useEffect(() => {
-        const subscription = premium$.subscribe(setHasPremium);
-        return () => subscription.unsubscribe();
+        const subs = [
+            premium$.subscribe(setHasPremium),
+            theme$.subscribe(setThemeState),
+            lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1)),
+            fontSize$.subscribe(setFSize),
+            recoveryType$.subscribe((type) => {
+                const nextType = type ?? 0;
+                const nextStructure = getStructure(nextType);
+                setRecoveryTypeState(nextType);
+                setStructure(nextStructure);
+                setCurrentProtocol(nextStructure[0]?.protocols?.[0]);
+                setProtocolIndex(0);
+                setCategoryIndex(0);
+            }),
+        ];
+        return () => subs.forEach((sub) => sub.unsubscribe());
     }, []);
-    
-    // subscriptions
-    useEffect(() => {
-        const subscription = theme$.subscribe(setthemeState);
-        const subscription2 = lang$.subscribe((lang) => {
-            setLangIndex(lang === 'ru' ? 0 : 1);
-        });
-        const subscription3 = fontSize$.subscribe((fontSize) => {
-            setFSize(fontSize);
-        });
-        const subscription4 = recoveryType$.subscribe((type) => {
-            setStructure(type === 0 ? breathingProtocols : type === 1 ? meditationProtocols : coldWaterProtocols);
-        });
-        return () => {
-            subscription.unsubscribe();
-            subscription2.unsubscribe();
-            subscription3.unsubscribe();
-            subscription4.unsubscribe();
-        }
-    }, []);
+
+    const isRu = langIndex === 0;
+    const meta = PAGE_META[recoveryType] ?? PAGE_META[0];
+    const summary = getSummary(recoveryType);
+    const s = styles(theme, fSize, meta);
 
     const containerAnim = {
         hidden: { opacity: 0 },
-        show: { opacity: 1, transition: { staggerChildren: 0.05 } }
+        show: { opacity: 1, transition: { staggerChildren: 0.045 } },
     };
 
     const itemAnim = {
-        hidden: { opacity: 0, y: 10, scale: 0.98 },
-        show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 25 } }
+        hidden: { opacity: 0, y: 12, scale: 0.985 },
+        show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 330, damping: 28 } },
     };
 
-    const getPageTitle = () => {
-        if(recoveryType$.value === 0) return { emoji: '🌬️', ru: 'Дыхание', en: 'Breathing' };
-        if(recoveryType$.value === 1) return { emoji: '🧘', ru: 'Медитация', en: 'Meditation' };
-        return { emoji: '💧', ru: 'Закаливание', en: 'Cold Water' };
-    };
-
-    const pageInfo = getPageTitle();
+    const openConstructor =
+        recoveryType === 0 ? setShowBreathingConstructor : recoveryType === 1 ? setShowMeditationConstructor : setShowHardeningConstructor;
 
     return (
-        <div style={styles(theme).container}>
-            <div style={styles(theme).scrollView}>
-                <div style={{ height: '3vh' }} /> 
-                
-                {/* Заголовок (вернули системный цвет текста) */}
-                <div style={{ width: '92%', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '5px',marginTop:'20px' }}>
-                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '28px' }}>{pageInfo.emoji}</span>
-                        <h1 style={{ margin: 0, color: Colors.get('mainText', theme), fontSize: '26px', fontFamily: 'Segoe UI', fontWeight: '800' }}>
-                            {langIndex === 0 ? pageInfo.ru : pageInfo.en}
-                        </h1>
-                     </div>
-                     <span style={{ fontSize: '14px', color: Colors.get('subText', theme), opacity: 0.7, marginLeft: '4px' }}>
-                        {langIndex === 0 ? 'Выберите практику' : 'Choose your practice'}
-                     </span>
+        <div style={s.container}>
+            <div style={s.scrollView} className="no-scrollbar">
+                <PageHeader theme={theme} isRu={isRu} fSize={fSize} />
+
+                <Motion.section
+                    initial={{ opacity: 0, y: 16, scale: 0.985 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 270, damping: 28 }}
+                    style={s.hero}
+                >
+                    <div style={s.heroGlow} />
+                    <div style={s.heroIcon}>
+                        <meta.Icon />
+                    </div>
+                    <div style={s.heroCopy}>
+                        <div style={s.eyebrow}>{isRu ? meta.ru.eyebrow : meta.en.eyebrow}</div>
+                        <h1 style={s.heroTitle}>{isRu ? meta.ru.title : meta.en.title}</h1>
+                        <div style={s.heroSubtitle}>{isRu ? meta.ru.subtitle : meta.en.subtitle}</div>
+                    </div>
+                    <div style={s.heroStat}>
+                        <FaCheckCircle />
+                        <span>{summary.done}</span>
+                        <span style={s.heroStatMuted}>{isRu ? `из ${summary.total}` : `of ${summary.total}`}</span>
+                    </div>
+                </Motion.section>
+
+                <div style={s.sectionHeader}>
+                    <div>
+                        <div style={s.sectionKicker}>{isRu ? 'ПРАКТИКИ' : 'PRACTICES'}</div>
+                        <h2 style={s.sectionTitle}>{isRu ? 'Выбери ритм' : 'Choose rhythm'}</h2>
+                    </div>
                 </div>
 
-                <motion.div 
-                    variants={containerAnim}
-                    initial="hidden"
-                    animate="show"
-                    style={{ 
-                        width: '94%', 
-                        display: "grid", 
-                        gridTemplateColumns: '1fr 1fr', 
-                        gap: '12px', 
-                        paddingBottom: '30px'
-                    }}
-                >
-                    {structure.map((category, index) => {
-                        return (
-                            category.protocols.map((protocol, ind) => {
-                                return (
-                                    <PremiumCard 
-                                        key={`${index}-${ind}`}
-                                        variants={itemAnim}
-                                        ind={ind} 
-                                        difficulty={index} 
-                                        protocol={protocol} 
-                                        setTimer={setShowTimer}
-                                        theme={theme} 
-                                        lang={langIndex} 
-                                        fSize={fSize} 
-                                        onClick={() => { setCurrentProtocol(protocol); setProtocolIndex(ind); setCategoryIndex(index) }} 
-                                        hasPremium={hasPremium} 
-                                        needBlur={index > 1} 
-                                    />
-                                )
-                            })
-                        )
-                    })}
-                    
-                    {/* Конструктор */}
-                    <div style={{ gridColumn: '1 / -1', width: '100%' }}>
-                         <PremiumCard 
-                            difficulty={4}
-                            variants={itemAnim}
-                            ind={-1} 
-                            setTimer={recoveryType$.value === 0 ? setShowBreathingConstructor : recoveryType$.value === 1 ? setShowMeditationConstructor : setShowHardeningConstructor}
-                            theme={theme} 
-                            lang={langIndex} 
-                            fSize={fSize} 
-                            onClick={() => { setCategoryIndex(4) }} 
-                            protocol={undefined} 
-                            hasPremium={hasPremium} 
-                            needBlur={true} 
-                            isConstructor={true}
-                        />
-                    </div>
-                </motion.div>
+                <Motion.div variants={containerAnim} initial="hidden" animate="show" style={s.grid}>
+                    {structure.flatMap((category, difficulty) =>
+                        category.protocols.map((protocol, ind) => (
+                            <PracticeCard
+                                key={`${difficulty}-${ind}`}
+                                variants={itemAnim}
+                                protocol={protocol}
+                                difficulty={difficulty}
+                                index={ind}
+                                type={recoveryType}
+                                theme={theme}
+                                fSize={fSize}
+                                isRu={isRu}
+                                hasPremium={hasPremium}
+                                locked={!hasPremium && difficulty > 1}
+                                onClick={() => {
+                                    setCurrentProtocol(protocol);
+                                    setProtocolIndex(ind);
+                                    setCategoryIndex(difficulty);
+                                    setShowTimer(true);
+                                }}
+                            />
+                        ))
+                    )}
 
-                <div style={{marginBottom: '100px' }} > </div>
+                    <PracticeCard
+                        variants={itemAnim}
+                        protocol={undefined}
+                        difficulty={4}
+                        index={-1}
+                        type={recoveryType}
+                        theme={theme}
+                        fSize={fSize}
+                        isRu={isRu}
+                        hasPremium={hasPremium}
+                        locked={!hasPremium}
+                        isConstructor
+                        onClick={() => {
+                            setCategoryIndex(4);
+                            openConstructor(true);
+                        }}
+                    />
+                </Motion.div>
+
+                <div style={s.bottomSpace} />
             </div>
 
-            {/* Timers & Constructors */}
-            {recoveryType$.value === 0 && <BreathingTimer show={showTimer} isCustom={categorylIndex === 4} setShow={setShowTimer} protocol={currentProtocol} protocolIndex={protocolIndex} categoryIndex={categorylIndex} />}
-            {recoveryType$.value === 1 && <MeditationTimer show={showTimer} isCustom={categorylIndex === 4} setShow={setShowTimer} protocol={currentProtocol} protocolIndex={protocolIndex} categoryIndex={categorylIndex} />}
-            {recoveryType$.value === 2 && <HardeningTimer show={showTimer} isCustom={categorylIndex === 4} setShow={setShowTimer} protocol={currentProtocol} protocolIndex={protocolIndex} categoryIndex={categorylIndex} />}
-
-            <BreathingConstructor show={showBreathingConstructor} setShow={setShowBreathingConstructor} showTimer={setShowTimer} setProtocol={setCurrentProtocol} theme={theme} langIndex={langIndex} fSize={fSize} />
-            <MeditationConstructor show={showMeditationConstructor} setShow={setShowMeditationConstructor} showTimer={setShowTimer} setProtocol={setCurrentProtocol} theme={theme} langIndex={langIndex} fSize={fSize} />
-            <HardeningConstructor show={showHardeningConstructor} setShow={setShowHardeningConstructor} showTimer={setShowTimer} setProtocol={setCurrentProtocol} theme={theme} langIndex={langIndex} fSize={fSize} />
-        </div>
-    )
-}
-
-export default BreathingMain
-
-const styles = (theme, fSize) => ({
-    container: {
-        // ВЕРНУЛИ СТАНДАРТНЫЙ ФОН
-        backgroundColor: Colors.get('background', theme), 
-        display: "flex",
-        flexDirection: "column",
-        justifyItems: "center",
-        alignItems: "center",
-        height: "91vh",
-        marginTop:'120px',
-        width: "100vw",
-        fontFamily: "Segoe UI, sans-serif",
-        overflow: 'hidden'
-    },
-    scrollView: {
-        height: "100%",
-        width: '100%',
-        overflowY: "scroll",
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-    },
-    btn: {
-        padding: '8px 24px',
-        borderRadius: '12px',
-        fontSize: '13px',
-        color: Colors.get('mainText', theme),
-        border: 'none',
-        fontWeight: '600',
-        marginTop: '12px',
-        cursor: 'pointer',
-        backgroundColor: Colors.get('background', theme), // Кнопка под цвет фона
-        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-    }
-})
-
-
-// --- CARD LOGIC ---
-
-// Цвета для разных категорий (визуальное отличие)
-const getThemeColors = (difficulty) => {
-    switch (difficulty) {
-        case 0: // Relax
-            return {
-                accent: '#64D2FF', // Голубой
-                bgGlow: 'radial-gradient(circle at 100% 0%, rgba(100, 210, 255, 0.12) 0%, transparent 45%)',
-                icon: <FaMoon />,
-            };
-        case 1: // Focus
-            return {
-                accent: '#32D74B', // Зеленый
-                bgGlow: 'radial-gradient(circle at 100% 0%, rgba(50, 215, 75, 0.12) 0%, transparent 45%)',
-                icon: <FaFeatherAlt />,
-            };
-        case 2: // Energy
-            return {
-                accent: '#FF9F0A', // Оранжевый
-                bgGlow: 'radial-gradient(circle at 100% 0%, rgba(255, 159, 10, 0.12) 0%, transparent 45%)',
-                icon: <FaSun />,
-            };
-        case 3: // Extreme
-            return {
-                accent: '#BF5AF2', // Фиолетовый
-                bgGlow: 'radial-gradient(circle at 100% 0%, rgba(191, 90, 242, 0.12) 0%, transparent 45%)',
-                icon: <FaBolt />,
-            };
-        case 4: // Constructor
-            return {
-                accent: '#0A84FF', // Синий
-                bgGlow: 'radial-gradient(circle at 100% 0%, rgba(10, 132, 255, 0.12) 0%, transparent 45%)',
-                icon: <MdOutlineCreate />,
-            };
-        default:
-            return { accent: '#8E8E93', bgGlow: 'none', icon: <FaWind /> };
-    }
-}
-
-function PremiumCard({ protocol, difficulty, ind, setTimer, theme, lang, onClick, fSize, variants, hasPremium = false, needBlur = false, isConstructor = false }) {
-    
-    const isDark = theme === 'dark';
-    const isLocked = !hasPremium && needBlur;
-    const { accent, bgGlow, icon } = getThemeColors(difficulty);
-    const { done, all, percent } = getProgressData(difficulty, ind);
-
-    // Стили карточки
-    const cardStyle = {
-        position: 'relative',
-        width: '100%', 
-        height: isConstructor ? '120px' : '185px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        borderRadius: "22px", 
-        overflow: 'hidden',
-        cursor: 'pointer',
-        
-        // ВАЖНО: Используем системный цвет панели, но с прозрачностью для глубины
-        backgroundColor: Colors.get('simplePanel', theme), 
-        
-        // Легкая тень и обводка для контраста
-        boxShadow: isDark 
-            ? '0 4px 20px rgba(0,0,0,0.3)' 
-            : '0 4px 15px rgba(0,0,0,0.05)',
-        border: isDark 
-            ? '1px solid rgba(255,255,255,0.05)' 
-            : '1px solid rgba(0,0,0,0.02)',
-            
-        padding: '16px',
-        boxSizing: 'border-box'
-    }
-
-    const iconContainerStyle = {
-        width: '36px',
-        height: '36px',
-        borderRadius: '12px',
-        // Фон иконки чуть светлее панели
-        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: accent,
-        fontSize: '16px',
-    }
-
-    return (
-        <motion.div 
-            variants={variants}
-            whileTap={{ scale: 0.96 }}
-            whileHover={{ y: -2 }}
-            onClick={() => { if (!isLocked) { onClick(); setTimer(true); } }}
-            style={cardStyle}
-        >
-            {/* Ambient Glow (Визуальное отличие) */}
-            <div style={{
-                position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
-                background: bgGlow,
-                pointerEvents: 'none'
-            }} />
-
-            {/* Lock Overlay */}
-            {isLocked && (
-                <div onClick={(e) => { e.stopPropagation(); }}
-                    style={{
-                        position: 'absolute', inset: 0, zIndex: 10,
-                        display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-                        background: isDark ? 'rgba(10,10,14,0.82)' : 'rgba(248,248,250,0.88)',
-                        backdropFilter: 'blur(16px)',
-                    }}>
-                    <div style={{
-                        width: '44px', height: '44px',
-                        background: 'rgba(159,180,196,0.12)',
-                        borderRadius: '14px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        marginBottom: '8px',
-                        border: '1px solid rgba(159,180,196,0.22)',
-                    }}>
-                        <FaCrown size={20} color="#9FB4C4" />
-                    </div>
-                    <button onClick={() => setPage('premium')} style={{
-                        fontSize: '11px', fontWeight: '700', color: '#fff',
-                        background: '#9FB4C4',
-                        border: 'none', borderRadius: '11px',
-                        padding: '8px 0', marginBottom: '7px', cursor: 'pointer',
-                        boxShadow: '0 3px 12px rgba(159,180,196,0.35)',
-                        width: '130px',
-                    }}>
-                        {lang === 0 ? 'Купить подписку' : 'Buy subscription'}
-                    </button>
-                    <button onClick={() => setPage('MainMenu')} style={{
-                        fontSize: '11px', fontWeight: '500',
-                        color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
-                        background: 'transparent', border: 'none',
-                        padding: '4px 10px', cursor: 'pointer',
-                    }}>
-                        {lang === 0 ? '← На главную' : '← Home'}
-                    </button>
-                </div>
+            {recoveryType === 0 && (
+                <BreathingTimer
+                    show={showTimer}
+                    isCustom={categoryIndex === 4}
+                    setShow={setShowTimer}
+                    protocol={currentProtocol}
+                    protocolIndex={protocolIndex}
+                    categoryIndex={categoryIndex}
+                />
+            )}
+            {recoveryType === 1 && (
+                <MeditationTimer
+                    show={showTimer}
+                    isCustom={categoryIndex === 4}
+                    setShow={setShowTimer}
+                    protocol={currentProtocol}
+                    protocolIndex={protocolIndex}
+                    categoryIndex={categoryIndex}
+                />
+            )}
+            {recoveryType === 2 && (
+                <HardeningTimer
+                    show={showTimer}
+                    isCustom={categoryIndex === 4}
+                    setShow={setShowTimer}
+                    protocol={currentProtocol}
+                    protocolIndex={protocolIndex}
+                    categoryIndex={categoryIndex}
+                />
             )}
 
-            {/* Header Content */}
-            <div style={{ zIndex: 2 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <div style={iconContainerStyle}>
-                        {icon}
-                    </div>
-                    
-                    {/* Level Label */}
-                    {!isConstructor && (
-                        <div style={{
-                            fontSize: '10px', 
-                            fontWeight: '700', 
-                            color: accent, // Цвет текста соответствует категории
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            marginTop: '4px'
-                        }}>
-                             {difficulty === 0 ? 'Relax' : difficulty === 1 ? 'Focus' : difficulty === 2 ? 'Energy' : 'Pro'}
-                        </div>
-                    )}
-                </div>
+            <BreathingConstructor
+                show={showBreathingConstructor}
+                setShow={setShowBreathingConstructor}
+                showTimer={setShowTimer}
+                setProtocol={setCurrentProtocol}
+                theme={theme}
+                langIndex={langIndex}
+                fSize={fSize}
+            />
+            <MeditationConstructor
+                show={showMeditationConstructor}
+                setShow={setShowMeditationConstructor}
+                showTimer={setShowTimer}
+                setProtocol={setCurrentProtocol}
+                theme={theme}
+                langIndex={langIndex}
+                fSize={fSize}
+            />
+            <HardeningConstructor
+                show={showHardeningConstructor}
+                setShow={setShowHardeningConstructor}
+                showTimer={setShowTimer}
+                setProtocol={setCurrentProtocol}
+                theme={theme}
+                langIndex={langIndex}
+                fSize={fSize}
+            />
+        </div>
+    );
+};
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                    <div style={{ 
-                        fontSize: isConstructor ? '17px' : (fSize === 0 ? "16px" : "18px"), 
-                        fontWeight: "700", 
-                        color: Colors.get('mainText', theme), 
-                        lineHeight: '1.2'
-                    }}>
-                         {protocol === undefined ? (lang === 0 ? 'Конструктор' : 'Custom') : Array.isArray(protocol.name) ? protocol.name[lang] : protocol.name}
-                    </div>
-                    
-                    <div style={{ 
-                        fontSize: "12px", 
-                        color: Colors.get('subText', theme), 
-                        opacity: 0.8,
-                        lineHeight: '1.3'
-                    }}>
-                         {protocol === undefined ? (lang === 0 ? 'Свой режим' : 'Your mode') : Array.isArray(protocol.aim) ? protocol.aim[lang] : protocol.aim}
-                    </div>
+function PageHeader({ theme, isRu, fSize }) {
+    const text = styles(theme, fSize, PAGE_META[0]);
+    return (
+        <div style={text.pageHeader}>
+            <div style={text.pageTitle}>UltyMyLife</div>
+            <div style={text.pageSubtitle}>{isRu ? 'Восстановление — часть роста' : 'Recovery is where growth happens'}</div>
+        </div>
+    );
+}
+
+function PracticeCard({
+    protocol,
+    difficulty,
+    index,
+    type,
+    theme,
+    fSize,
+    isRu,
+    locked,
+    isConstructor = false,
+    onClick,
+    variants,
+}) {
+    const level = LEVEL_META[difficulty] ?? LEVEL_META[0];
+    const progress = getProgressData(type, difficulty, index);
+    const name = isConstructor ? (isRu ? 'Свой режим' : 'Custom mode') : getLocalized(protocol?.name, isRu);
+    const aim = isConstructor ? (isRu ? 'Собери короткий личный протокол' : 'Build a short personal protocol') : getLocalized(protocol?.aim, isRu);
+    const s = cardStyles(theme, fSize, level, isConstructor);
+    const Icon = level.Icon;
+
+    return (
+        <Motion.button
+            type="button"
+            variants={variants}
+            whileTap={{ scale: locked ? 1 : 0.985 }}
+            onClick={() => {
+                if (!locked) onClick();
+            }}
+            style={s.card}
+        >
+            <div style={s.topRow}>
+                <div style={s.iconTile}>
+                    <Icon />
                 </div>
+                <div style={s.levelBadge}>{isRu ? level.ru : level.en}</div>
             </div>
 
-            {/* Progress Bar */}
-            {!isLocked && !isConstructor && (
-                <div style={{ zIndex: 2, marginTop: 'auto' }}>
-                     <div style={{ width: '100%', height: '4px', background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', borderRadius: '2px', marginTop: '10px' }}>
-                        <div style={{ 
-                            width: `${percent}%`, 
-                            height: '100%', 
-                            background: accent, 
-                            borderRadius: '2px', 
-                            boxShadow: `0 0 8px ${accent}40` // Легкое свечение полоски
-                        }} />
-                     </div>
-                     <div style={{ textAlign: 'right', fontSize: '10px', color: Colors.get('subText', theme), marginTop: '4px', opacity: 0.6 }}>
-                        {done}/{all}
-                     </div>
+            <div style={s.body}>
+                <h3 style={s.title}>{name}</h3>
+                <div style={s.subtitle}>{aim}</div>
+            </div>
+
+            {!isConstructor && (
+                <div style={s.progressRow}>
+                    <div style={s.track}>
+                        <div style={{ ...s.fill, width: `${progress.percent}%` }} />
+                    </div>
+                    <div style={s.count}>
+                        <span>{isRu ? `${progress.done} из ${progress.all}` : `${progress.done} of ${progress.all}`}</span>
+                    </div>
                 </div>
             )}
 
             {isConstructor && (
-                 <div style={{ zIndex: 2, marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <FaPlay size={10} color={accent} />
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: Colors.get('mainText', theme) }}>
-                        {lang === 0 ? 'Начать' : 'Start'}
-                    </span>
-                 </div>
+                <div style={s.constructorRow}>
+                    <span>{isRu ? 'Открыть' : 'Open'}</span>
+                    <FaChevronRight />
+                </div>
             )}
-        </motion.div>
-    )
+
+            {locked && <LockedOverlay theme={theme} isRu={isRu} />}
+        </Motion.button>
+    );
 }
 
-const getProgressData = (difficulty, ind) => {
-    if (difficulty === 4 || !AppData.recoveryProtocols[recoveryType$.value] || !AppData.recoveryProtocols[recoveryType$.value][difficulty][ind]) {
-        return { done: 0, all: 0, percent: 0 };
-    }
-    const data = AppData.recoveryProtocols[recoveryType$.value][difficulty][ind];
-    let all = 0;
-    let done = 0;
-    for (let j = 0; j < data.length; j++) {
-        all++;
-        if (data[j]) done++;
-    }
-    const percent = all > 0 ? (done / all) * 100 : 0;
-    return { done, all, percent };
+function LockedOverlay({ theme, isRu }) {
+    const isDark = theme === 'dark' || theme === 'specialdark';
+    return (
+        <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 5,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: isDark ? 'rgba(10, 12, 15, 0.76)' : 'rgba(255,255,255,0.8)',
+                backdropFilter: 'blur(12px)',
+            }}
+        >
+            <div
+                style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '15px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#f5d33f',
+                    background: 'rgba(245, 211, 63, 0.13)',
+                    border: '1px solid rgba(245, 211, 63, 0.26)',
+                }}
+            >
+                <FaLock />
+            </div>
+            <button
+                type="button"
+                onClick={() => setPage('premium')}
+                style={{
+                    border: 0,
+                    borderRadius: '13px',
+                    padding: '9px 15px',
+                    cursor: 'pointer',
+                    color: '#111417',
+                    background: '#f5d33f',
+                    fontSize: '12px',
+                    fontWeight: 900,
+                }}
+            >
+                <FaCrown style={{ marginRight: '6px' }} />
+                {isRu ? 'Премиум' : 'Premium'}
+            </button>
+        </div>
+    );
 }
+
+const getLocalized = (value, isRu) => {
+    if (Array.isArray(value)) return value[isRu ? 0 : 1] ?? value[0] ?? '';
+    return value ?? '';
+};
+
+const getProgressData = (type, difficulty, ind) => {
+    if (difficulty === 4 || ind < 0) return { done: 0, all: 0, percent: 0 };
+    const data = AppData.recoveryProtocols?.[type]?.[difficulty]?.[ind];
+    if (!Array.isArray(data)) return { done: 0, all: 0, percent: 0 };
+
+    const all = data.length;
+    const done = data.filter(Boolean).length;
+    return { done, all, percent: all > 0 ? Math.round((done / all) * 100) : 0 };
+};
+
+const getSummary = (type) => {
+    const data = AppData.recoveryProtocols?.[type];
+    let done = 0;
+    let total = 0;
+    data?.forEach((category) => {
+        category?.forEach((protocol) => {
+            protocol?.forEach((session) => {
+                total += 1;
+                if (session) done += 1;
+            });
+        });
+    });
+    return { done, total, percent: total > 0 ? Math.round((done / total) * 100) : 0 };
+};
+
+const styles = (theme, fSize = 0, meta = PAGE_META[0]) => {
+    const isDark = theme === 'dark' || theme === 'specialdark';
+    const mainText = Colors.get('mainText', theme);
+    const subText = Colors.get('subText', theme);
+    const background = Colors.get('background', theme);
+
+    return {
+        container: {
+            width: '100vw',
+            height: '100vh',
+            overflow: 'hidden',
+            background: isDark
+                ? `radial-gradient(circle at 9% 13%, rgba(${meta.rgb}, 0.08), transparent 30%),
+                   radial-gradient(circle at 88% 24%, rgba(159, 140, 255, 0.1), transparent 28%),
+                   ${background}`
+                : background,
+            color: mainText,
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        },
+        scrollView: {
+            width: '100vw',
+            height: '100vh',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '24px 4.5vw 132px',
+            boxSizing: 'border-box',
+        },
+        pageHeader: {
+            width: '100%',
+            maxWidth: '560px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '8px 18px 17px',
+            boxSizing: 'border-box',
+            textAlign: 'center',
+        },
+        pageTitle: {
+            color: mainText,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: fSize === 0 ? '25px' : '27px',
+            fontWeight: 700,
+            lineHeight: 1.05,
+            opacity: 0.9,
+        },
+        pageSubtitle: {
+            marginTop: '6px',
+            color: subText,
+            fontSize: fSize === 0 ? '10px' : '11px',
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            lineHeight: 1.3,
+        },
+        hero: {
+            position: 'relative',
+            width: '100%',
+            maxWidth: '560px',
+            minHeight: '118px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            padding: '15px 16px',
+            borderRadius: '28px',
+            overflow: 'hidden',
+            boxSizing: 'border-box',
+            background: isDark
+                ? `linear-gradient(135deg, rgba(${meta.rgb}, 0.14), rgba(20, 23, 28, 0.92) 48%, rgba(29, 30, 42, 0.9))`
+                : `linear-gradient(135deg, rgba(${meta.rgb}, 0.2), rgba(255,255,255,0.95))`,
+            border: `1px solid rgba(${meta.rgb}, ${isDark ? 0.28 : 0.34})`,
+            boxShadow: isDark ? '0 22px 58px rgba(0,0,0,0.3)' : '0 16px 34px rgba(15,23,42,0.08)',
+        },
+        heroGlow: {
+            position: 'absolute',
+            inset: 0,
+            background: `radial-gradient(circle at 82% 20%, rgba(${meta.rgb}, 0.24), transparent 38%)`,
+            pointerEvents: 'none',
+        },
+        heroIcon: {
+            position: 'relative',
+            zIndex: 1,
+            width: '56px',
+            height: '56px',
+            borderRadius: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            color: meta.accent,
+            fontSize: '25px',
+            background: `rgba(${meta.rgb}, 0.13)`,
+            border: `1px solid rgba(${meta.rgb}, 0.28)`,
+        },
+        heroCopy: {
+            position: 'relative',
+            zIndex: 1,
+            minWidth: 0,
+            flex: 1,
+        },
+        eyebrow: {
+            color: meta.accent,
+            fontSize: '10px',
+            fontWeight: 900,
+            letterSpacing: '0.18em',
+            lineHeight: 1.1,
+        },
+        heroTitle: {
+            margin: '4px 0 3px',
+            color: mainText,
+            fontSize: fSize === 0 ? '27px' : '29px',
+            fontWeight: 900,
+            lineHeight: 1.02,
+            letterSpacing: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+        },
+        heroSubtitle: {
+            color: subText,
+            fontSize: fSize === 0 ? '12px' : '13px',
+            fontWeight: 800,
+            lineHeight: 1.25,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+        },
+        heroStat: {
+            position: 'relative',
+            zIndex: 1,
+            minWidth: '86px',
+            height: '42px',
+            borderRadius: '17px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            color: meta.accent,
+            fontWeight: 900,
+            fontSize: '16px',
+            background: `rgba(${meta.rgb}, 0.1)`,
+            border: `1px solid rgba(${meta.rgb}, 0.24)`,
+        },
+        heroStatMuted: {
+            color: subText,
+            fontSize: '12px',
+            marginLeft: '-1px',
+        },
+        sectionHeader: {
+            width: '100%',
+            maxWidth: '560px',
+            margin: '16px 0 10px',
+        },
+        sectionKicker: {
+            color: subText,
+            fontSize: '11px',
+            fontWeight: 900,
+            letterSpacing: '0.22em',
+            lineHeight: 1.2,
+        },
+        sectionTitle: {
+            margin: '4px 0 0',
+            color: mainText,
+            fontSize: fSize === 0 ? '23px' : '25px',
+            fontWeight: 900,
+            lineHeight: 1.1,
+        },
+        grid: {
+            width: '100%',
+            maxWidth: '560px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '11px',
+        },
+        bottomSpace: {
+            height: '16px',
+        },
+    };
+};
+
+const cardStyles = (theme, fSize = 0, level = LEVEL_META[0], isConstructor = false) => {
+    const isDark = theme === 'dark' || theme === 'specialdark';
+    const mainText = Colors.get('mainText', theme);
+    const subText = Colors.get('subText', theme);
+
+    return {
+        card: {
+            position: 'relative',
+            minHeight: isConstructor ? '106px' : '142px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: '11px',
+            padding: '14px',
+            borderRadius: '24px',
+            border: `1px solid rgba(${level.rgb}, ${isDark ? 0.25 : 0.34})`,
+            background: isDark
+                ? `linear-gradient(135deg, rgba(${level.rgb}, 0.11), rgba(20, 23, 28, 0.94) 44%, rgba(14, 16, 20, 0.94))`
+                : `linear-gradient(135deg, rgba(${level.rgb}, 0.18), rgba(255,255,255,0.96))`,
+            boxShadow: isDark ? '0 18px 44px rgba(0,0,0,0.26)' : '0 12px 26px rgba(15,23,42,0.08)',
+            color: mainText,
+            cursor: 'pointer',
+            appearance: 'none',
+            outline: 'none',
+            textAlign: 'left',
+            overflow: 'hidden',
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        },
+        topRow: {
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: '10px',
+        },
+        iconTile: {
+            width: '46px',
+            height: '46px',
+            borderRadius: '17px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            color: level.accent,
+            fontSize: '22px',
+            background: `rgba(${level.rgb}, 0.12)`,
+            border: `1px solid rgba(${level.rgb}, ${isDark ? 0.28 : 0.38})`,
+            boxShadow: `0 0 24px rgba(${level.rgb}, 0.08)`,
+        },
+        levelBadge: {
+            color: level.accent,
+            fontSize: '11px',
+            fontWeight: 900,
+            letterSpacing: '0.09em',
+            lineHeight: 1.15,
+            textTransform: 'uppercase',
+            maxWidth: '112px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+        },
+        body: {
+            minWidth: 0,
+        },
+        title: {
+            margin: 0,
+            color: mainText,
+            fontSize: fSize === 0 ? '18px' : '20px',
+            fontWeight: 900,
+            lineHeight: 1.12,
+            letterSpacing: 0,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+        },
+        subtitle: {
+            marginTop: '5px',
+            color: subText,
+            fontSize: fSize === 0 ? '12px' : '13px',
+            fontWeight: 700,
+            lineHeight: 1.25,
+            display: '-webkit-box',
+            WebkitLineClamp: 1,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+        },
+        progressRow: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+        },
+        track: {
+            position: 'relative',
+            height: '7px',
+            flex: 1,
+            overflow: 'hidden',
+            borderRadius: '999px',
+            background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.09)',
+        },
+        fill: {
+            position: 'absolute',
+            inset: '0 auto 0 0',
+            minWidth: '8px',
+            borderRadius: '999px',
+            background: `linear-gradient(90deg, ${level.accent}, rgba(${level.rgb}, 0.58))`,
+            boxShadow: `0 0 18px rgba(${level.rgb}, 0.25)`,
+        },
+        count: {
+            minWidth: '76px',
+            height: '28px',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: level.accent,
+            fontSize: '12px',
+            fontWeight: 900,
+            background: `rgba(${level.rgb}, 0.1)`,
+            border: `1px solid rgba(${level.rgb}, 0.22)`,
+            whiteSpace: 'nowrap',
+        },
+        constructorRow: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            color: level.accent,
+            fontSize: '13px',
+            fontWeight: 900,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+        },
+    };
+};
+
+export default RecoveryCategories;

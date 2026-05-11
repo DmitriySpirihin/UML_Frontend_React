@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import { AppData } from '../../../StaticClasses/AppData.js';
 import Colors from '../../../StaticClasses/Colors.js';
 import { theme$, lang$, fontSize$ } from '../../../StaticClasses/HabitsBus.js';
@@ -36,10 +36,15 @@ const TrainingMetrics = ({ id, closePanel }) => {
   const panelBg = isLight ? '#eef2f7' : '#09090b'; 
   const textColor = isLight ? '#1a1a1a' : '#ffffff';
   const accentColor = '#00BBFF'; // Neon blue accent for UI elements
+  const firstPoint = data[0] || null;
+  const lastPoint = data[data.length - 1] || null;
+  const totalTonnage = data.reduce((sum, item) => sum + item.tonnage * 10, 0);
+  const bestRm = data.reduce((max, item) => Math.max(max, item.oneRepMax || 0), 0);
+  const rmChange = firstPoint && lastPoint ? lastPoint.oneRepMax - firstPoint.oneRepMax : 0;
 
   return (
     <div style={styles(theme).backdrop} onClick={() => closePanel(false)}>
-      <motion.div
+      <Motion.div
         initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: "100%", opacity: 0 }}
         transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
         style={{ ...styles(theme).panel, backgroundColor: panelBg }}
@@ -69,23 +74,49 @@ const TrainingMetrics = ({ id, closePanel }) => {
                     >
                         {label[langIndex]}
                         {/* Active tab bottom glow indicator */}
-                        {isActive && <motion.div layoutId="tabGlow" style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: '3px', borderRadius:'2px', backgroundColor: accentColor, boxShadow: `0 -1px 8px ${accentColor}` }} />}
+                        {isActive && <Motion.div layoutId="tabGlow" style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: '3px', borderRadius:'2px', backgroundColor: accentColor, boxShadow: `0 -1px 8px ${accentColor}` }} />}
                     </div>
                 )
             })}
         </div>
 
-        {/* --- Main Content Area --- */}
-        <div style={{ width: '100%', flex: 1, overflowY: 'auto', padding: '20px 0' }}>
-             {/* Chart Section */}
-             <div style={{ width: '100%', marginBottom: '30px' }}>
-                <MyBChart 
-                    theme={theme} langIndex={langIndex} data={data} height={260}
+        <div style={{ width: '100%', flex: 1, overflowY: 'auto', padding: '18px 0 28px' }}>
+            {data.length > 0 && (
+              <div style={styles(theme).summaryGrid}>
+                <MetricSummaryCard
+                  label={langIndex === 0 ? 'Тоннаж' : 'Volume'}
+                  value={`${Math.round(totalTonnage).toLocaleString('ru-RU')}`}
+                  unit="kg"
+                  color="#10B981"
+                  theme={theme}
                 />
-            </div>
+                <MetricSummaryCard
+                  label="1RM"
+                  value={bestRm}
+                  unit="kg"
+                  color="#60A5FA"
+                  theme={theme}
+                />
+                <MetricSummaryCard
+                  label={langIndex === 0 ? 'Динамика' : 'Trend'}
+                  value={`${rmChange > 0 ? '+' : ''}${rmChange}`}
+                  unit="kg"
+                  color={rmChange >= 0 ? '#10B981' : '#EF4444'}
+                  theme={theme}
+                />
+              </div>
+            )}
+
+             {data.length > 0 && <div style={styles(theme).chartShell}>
+                <div style={styles(theme).chartHeader}>
+                  <span>{langIndex === 0 ? 'Нагрузка по датам' : 'Load by date'}</span>
+                  <span>{labels[period][langIndex]}</span>
+                </div>
+                <MyBChart theme={theme} langIndex={langIndex} data={data} height={230} />
+             </div>}
 
             {/* Cards Section */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '25px', width: '100%', paddingBottom: '40px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px', width: '100%', paddingBottom: '34px' }}>
                 {data.length > 0 ? (
                     <>
                         {/* Progress Circle Card - Now with a colored glow background */}
@@ -118,7 +149,7 @@ const TrainingMetrics = ({ id, closePanel }) => {
                 )}
             </div>
         </div>
-      </motion.div>
+      </Motion.div>
     </div>
   );
 };
@@ -150,6 +181,16 @@ const emptyStateStyle = (isLight) => ({
     padding: '60px 20px', color: isLight ? '#999' : '#666', fontSize: '15px', fontWeight: '500',
     fontStyle: 'italic', background: isLight ? '#f9f9f9' : '#ffffff05', borderRadius: '20px', width: '90%', textAlign: 'center'
 });
+
+const MetricSummaryCard = ({ label, value, unit, color, theme }) => (
+  <div style={styles(theme).summaryCard(color)}>
+    <div style={styles(theme).summaryLabel}>{label}</div>
+    <div style={styles(theme).summaryValue}>
+      {value}
+      <span>{unit}</span>
+    </div>
+  </div>
+);
 
 
 const styles = (theme) => ({
@@ -186,6 +227,60 @@ const styles = (theme) => ({
     padding: '4px', borderRadius: '20px', width: '90%', maxWidth: '380px',
     boxShadow: theme === 'light' ? 'inset 0 2px 4px rgba(0,0,0,0.05)' : 'inset 0 2px 4px rgba(0,0,0,0.2)',
     marginBottom: '10px'
+  },
+  summaryGrid: {
+    width: '90%',
+    maxWidth: '440px',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+    gap: '10px',
+    margin: '0 auto 16px',
+  },
+  summaryCard: (color) => ({
+    minHeight: '76px',
+    borderRadius: '18px',
+    padding: '12px',
+    boxSizing: 'border-box',
+    background: theme === 'light' ? '#ffffff' : 'rgba(255,255,255,0.045)',
+    border: `1px solid ${theme === 'light' ? 'rgba(15,23,42,0.07)' : 'rgba(148,163,184,0.10)'}`,
+    boxShadow: theme === 'light' ? '0 12px 26px rgba(15,23,42,0.07)' : '0 16px 34px rgba(0,0,0,0.22)',
+    borderTop: `3px solid ${color}`,
+  }),
+  summaryLabel: {
+    fontSize: '10px',
+    fontWeight: 800,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    color: theme === 'light' ? '#64748B' : '#94A3B8',
+    marginBottom: '8px',
+  },
+  summaryValue: {
+    color: theme === 'light' ? '#0F172A' : '#E2E8F0',
+    fontSize: '20px',
+    fontWeight: 850,
+    lineHeight: 1,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  chartShell: {
+    width: '92%',
+    maxWidth: '500px',
+    margin: '0 auto 18px',
+    borderRadius: '26px',
+    padding: '14px 12px 16px',
+    boxSizing: 'border-box',
+    background: theme === 'light' ? '#ffffff' : 'rgba(255,255,255,0.045)',
+    border: `1px solid ${theme === 'light' ? 'rgba(15,23,42,0.07)' : 'rgba(148,163,184,0.10)'}`,
+    boxShadow: theme === 'light' ? '0 16px 34px rgba(15,23,42,0.08)' : '0 20px 46px rgba(0,0,0,0.26)',
+  },
+  chartHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0 8px 8px',
+    color: theme === 'light' ? '#64748B' : '#94A3B8',
+    fontSize: '12px',
+    fontWeight: 800,
+    letterSpacing: '0.04em',
   },
 });
 

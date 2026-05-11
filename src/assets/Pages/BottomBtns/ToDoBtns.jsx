@@ -3,7 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Home from '@mui/icons-material/HomeRounded';
 import Back from '@mui/icons-material/ArrowBackIosNewRounded';
 import Add from '@mui/icons-material/AddRounded';
-import { FaChartLine, FaMagic, FaUsers } from 'react-icons/fa';
+import AutoAwesome from '@mui/icons-material/AutoAwesomeRounded';
+import { FaChartLine, FaUsers } from 'react-icons/fa';
 import {
   addPanel$,
   currentBottomBtn$,
@@ -17,7 +18,7 @@ import Colors from '../../StaticClasses/Colors';
 import { AppData } from '../../StaticClasses/AppData.js';
 import { saveData } from '../../StaticClasses/SaveHelper';
 import { playEffects } from '../../StaticClasses/Effects';
-import { buildTodoAccent } from '../ToDoPages/ToDoVisuals.js';
+import { buildTodoAccent, DEFAULT_TODO_ACCENT_COLOR } from '../ToDoPages/ToDoVisuals.js';
 import { todoEvents$ } from '../ToDoPages/ToDoHelper.js';
 
 const switchSound = new Audio('Audio/Click.wav');
@@ -28,7 +29,7 @@ const BtnsToDo = () => {
   const [addPanel, setAddPanelState] = useState('');
   const [currentBtn, setBtnState] = useState(0);
   const [, setAccentVersion] = useState(0);
-  const accent = buildTodoAccent(AppData.todoAccentColor || '#8FA6C8');
+  const accent = buildTodoAccent(AppData.todoAccentColor || DEFAULT_TODO_ACCENT_COLOR);
 
   useEffect(() => {
     const subs = [
@@ -53,73 +54,79 @@ const BtnsToDo = () => {
   return (
     <div style={containerStyle(theme)}>
       <div style={glassOverlay(theme)} />
-      <NavButton
-        id={0}
-        current={currentBtn}
-        icon={page === 'ToDoMain' && addPanel === '' ? <Home /> : <Back />}
-        onClick={() => {
-          onBack(page, addPanel);
-          setCurrentBottomBtn(0);
-        }}
-        theme={theme}
-        accent={accent}
-      />
+      <div style={dockSide('left')}>
+        <NavButton
+          id={0}
+          current={currentBtn}
+          icon={page === 'ToDoMain' && addPanel === '' ? <Home /> : <Back />}
+          onClick={() => {
+            onBack(page, addPanel);
+            setCurrentBottomBtn(0);
+          }}
+          theme={theme}
+          accent={accent}
+        />
 
-      <NavButton
-        id={1}
-        current={currentBtn}
-        icon={<FaMagic />}
-        onClick={() => {
-          setCurrentBottomBtn(1);
-          setPage('ToDoInsight');
-          setAddPanel('');
-          playEffects(switchSound);
-        }}
-        theme={theme}
-        accent={accent}
-      />
+        <NavButton
+          id={4}
+          current={currentBtn}
+          icon={<FaChartLine />}
+          onClick={() => {
+            setCurrentBottomBtn(4);
+            setPage('ToDoMetrics');
+            setAddPanel('');
+            playEffects(switchSound);
+          }}
+          theme={theme}
+          accent={accent}
+        />
+      </div>
 
-      <motion.button
-        type="button"
-        whileTap={page === 'ToDoMain' ? { scale: 0.92 } : {}}
-        onClick={() => {
-          if (page !== 'ToDoMain') return;
-          setCurrentBottomBtn(2);
-          setPage('ToDoNew');
-          playEffects(switchSound);
-        }}
-        style={addButtonStyle(theme, accent, page !== 'ToDoMain', currentBtn === 2 && page === 'ToDoMain')}
-      >
-        <Add style={{ fontSize: 32 }} />
-      </motion.button>
+      <div style={addButtonShell}>
+        <motion.button
+          type="button"
+          whileTap={page === 'ToDoMain' ? { scale: 0.92 } : {}}
+          onClick={() => {
+            if (page !== 'ToDoMain') return;
+            setCurrentBottomBtn(2);
+            setPage('ToDoNew');
+            playEffects(switchSound);
+          }}
+          style={addButtonStyle(theme, accent, page !== 'ToDoMain', currentBtn === 2 && page === 'ToDoMain')}
+        >
+          <Add style={{ fontSize: 28 }} />
+        </motion.button>
+      </div>
 
-      <NavButton
-        id={3}
-        current={currentBtn}
-        icon={<FaUsers />}
-        onClick={() => {
-          setCurrentBottomBtn(3);
-          setPage('ToDoCollab');
-          setAddPanel('');
-          playEffects(switchSound);
-        }}
-        theme={theme}
-        accent={accent}
-      />
+      <div style={dockSide('right')}>
+        <NavButton
+          id={3}
+          current={currentBtn}
+          icon={<FaUsers />}
+          onClick={() => {
+            setCurrentBottomBtn(3);
+            setPage('ToDoCollab');
+            setAddPanel('');
+            playEffects(switchSound);
+          }}
+          theme={theme}
+          accent={accent}
+        />
 
-      <NavButton
-        id={4}
-        current={currentBtn}
-        icon={<FaChartLine />}
-        onClick={() => {
-          setCurrentBottomBtn(4);
-          setPage('ToDoMetrics');
-          setAddPanel('');
-          playEffects(switchSound);
-        }}
-        theme={theme}
-        accent={accent}
-      />
+        <NavButton
+          id={1}
+          current={currentBtn}
+          icon={<AutoAwesome />}
+          onClick={() => {
+            setCurrentBottomBtn(1);
+            setPage('ToDoInsight');
+            setAddPanel('');
+            playEffects(switchSound);
+          }}
+          theme={theme}
+          accent={accent}
+        />
+      </div>
     </div>
   );
 };
@@ -152,23 +159,35 @@ const onBack = async (page, addPanel) => {
 
 const containerStyle = (theme) => ({
   position: 'fixed',
-  bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
+  bottom: 'max(18px, calc(24px + env(safe-area-inset-bottom, 0px)))',
   left: '50%',
   transform: 'translateX(-50%)',
   width: 'calc(100vw - 40px)',
-  maxWidth: '360px',
+  maxWidth: '420px',
   height: '66px',
   borderRadius: '999px',
   display: 'flex',
-  justifyContent: 'space-around',
+  justifyContent: 'center',
   alignItems: 'center',
   zIndex: 1000,
   boxSizing: 'border-box',
-  padding: '10px 14px',
+  padding: '10px 12px',
   backdropFilter: 'blur(24px) saturate(180%)',
   WebkitBackdropFilter: 'blur(24px) saturate(180%)',
   overflow: 'hidden',
   boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)'
+});
+
+const dockSide = (side) => ({
+  position: 'absolute',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  [side]: '16px',
+  zIndex: 1,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: side === 'left' ? 'flex-start' : 'flex-end',
+  gap: '4px'
 });
 
 const glassOverlay = (theme) => ({
@@ -190,8 +209,8 @@ const navButtonStyle = (theme, active) => {
   const isLight = theme === 'light' || theme === 'speciallight';
   return {
     position: 'relative',
-    width: 46,
-    height: 46,
+    width: 44,
+    height: 44,
     borderRadius: 999,
     border: 'none',
     background: 'transparent',
@@ -210,10 +229,20 @@ const navButtonStyle = (theme, active) => {
   };
 };
 
+const addButtonShell = {
+  position: 'absolute',
+  left: '50%',
+  top: '50%',
+  transform: 'translate(-50%, -50%)',
+  zIndex: 2,
+  width: 46,
+  height: 46
+};
+
 const addButtonStyle = (theme, accent, disabled, active) => {
   return {
-    width: 50,
-    height: 50,
+    width: 46,
+    height: 46,
     borderRadius: 999,
     border: active ? `1px solid ${accent.ring}` : `1px solid ${Colors.get('border', theme)}`,
     background: active ? accent.soft : Colors.get('simplePanel', theme),

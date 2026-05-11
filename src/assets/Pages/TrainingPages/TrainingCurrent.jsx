@@ -1,12 +1,11 @@
-import React, {useState,useEffect,useRef, useMemo} from 'react'
+import React, {useState,useEffect,useRef} from 'react'
 import { AppData,UserData } from '../../StaticClasses/AppData.js'
-import { playEffects } from '../../StaticClasses/Effects.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$ ,lang$,fontSize$,trainInfo$,setPage} from '../../StaticClasses/HabitsBus'
 import {addExerciseToSchedule} from '../../Classes/TrainingData.jsx'
 import {findPreviousSimilarExercise, finishSession, addExerciseToSession,
-   removeExerciseFromSession, addSet, finishExercise, redactSet,getAllReps,getTonnage,getMaxOneRep,getAllSets,redactRPEandNote} from '../../StaticClasses/TrainingLogHelper'
-import {FaTrash,FaPencilAlt,FaFlagCheckered,FaFlag,FaInfo,FaPlusCircle,FaDumbbell,FaCrown} from 'react-icons/fa'
+   removeExerciseFromSession, addSet, finishExercise, redactSet,getAllReps,getTonnage,getAllSets,redactRPEandNote} from '../../StaticClasses/TrainingLogHelper'
+import {FaTrash,FaPencilAlt,FaFlag,FaPlusCircle,FaDumbbell,FaCrown} from 'react-icons/fa'
 import {FaRegCircleCheck,FaRegCircle,FaPlus,FaMinus,FaStopwatch,FaCalculator,FaClock, FaListCheck} from 'react-icons/fa6'
 import {MdClose,MdDone,MdFitnessCenter, MdOutlineHistory} from 'react-icons/md'
 import Stopwatch from '../../Helpers/StopWatch'
@@ -18,6 +17,7 @@ import TimerIcon from '@mui/icons-material/TimerTwoTone';
 import TimerOffIcon from '@mui/icons-material/TimerOffTwoTone';
 import Slider from '@mui/material/Slider';
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx'
+import { getTrainingAccent } from './TrainingVisuals.js'
 
 const timerSound = new Audio('Audio/Timer.wav');
 
@@ -80,7 +80,6 @@ const [showRPEPanel, setShowRPEPanel] = useState(false);
     const [maxTimer,setMaxTimer] = useState(120000);
     const [currTimer,setCurrTimer] = useState(0);
     const [time,setTime] = useState(Date.now());
-    const [progress,setProgress] = useState(0);
     const [duration,setDuration] = useState(0);
     // subscriptions
     useEffect(() => {
@@ -93,9 +92,11 @@ const [showRPEPanel, setShowRPEPanel] = useState(false);
       });
       const subscription4 = trainInfo$.subscribe((value) => {
         const session = AppData.trainingLog?.[value.dayKey]?.[value.dInd] || null;
-        setProgram(AppData.programs[session.programId] || null);
-        setDayIndex(session.dayIndex);
-        setTonnage(session.tonnage);
+        if (!session) return;
+        setProgram(session.programId != null ? AppData.programs[session.programId] || null : null);
+        setDayIndex(session.dayIndex ?? null);
+        setTonnage(session.tonnage || 0);
+        setAllReps(getAllReps(value.dayKey, value.dInd));
         setSession(session); 
         setTrainInfo(value);
         setIsCompleted(session.completed);
@@ -115,11 +116,11 @@ const [showRPEPanel, setShowRPEPanel] = useState(false);
 
     // Sync Min/Max Reps for Strategy
     useEffect(() => {
-       if (currentRepMin > currentRepMax) setCurrentRepMax(currentRepMin);
+       setCurrentRepMax(prev => currentRepMin > prev ? currentRepMin : prev);
     }, [currentRepMin]);
     
     useEffect(() => {
-         if (currentRepMax < currentRepMin) setCurrentRepMin(currentRepMax);
+         setCurrentRepMin(prev => currentRepMax < prev ? currentRepMax : prev);
     }, [currentRepMax])
 
     //timers
@@ -130,7 +131,7 @@ useEffect(() => {
   }, 500);
 
   return () => clearInterval(interval);
-}, [time]);
+}, [isCompleted, time]);
 useEffect(() => {
   if (!timer || isCompleted) return;
   const startTime = Date.now() - currTimer; // restore actual start time of rest
@@ -138,12 +139,10 @@ useEffect(() => {
   const elapsed = Date.now() - startTime;
   const newTimerValue = Math.min(elapsed, maxTimer);
   setCurrTimer(newTimerValue);
-  setProgress((newTimerValue / maxTimer) * 100);
     if (newTimerValue >= maxTimer) {
       setTimer(false);
       timerSound.play();
       setCurrTimer(0);
-      setProgress(0);
     }
   }, 50);
 
@@ -194,9 +193,9 @@ const onFinishSession = () => {
     setShowRPEPanel(true); // Show RPE/Notes modal first
 };
 
-const saveSessionWithRPE = async () => { // ✅ Add 'async'
+const saveSessionWithRPE = async () => {
   try {
-    const records = await finishSession( // ✅ Add 'await'
+    const records = await finishSession(
       trainInfo.dayKey, 
       trainInfo.dInd, 
       sessionRPE, 
@@ -205,14 +204,20 @@ const saveSessionWithRPE = async () => { // ✅ Add 'async'
     
     setShowRPEPanel(false);
     setIsCompleted(true);
-    setNewRmRecords(records); // ✅ Now 'records' is the actual array
+    setNewRmRecords(records);
     setShowFinishPanel(true);
   } catch (error) {
     console.error("Failed to finish session:", error);
     // Optional: Show user-friendly error message
   }
 };
-const addExercise = (exId) => {
+const addExercise = async (exId) => {
+  if (session?.isFree || session?.programId == null) {
+    await addExerciseToSession(trainInfo.dayKey, trainInfo.dInd, exId);
+    setShowExerciseList(false);
+    setSession({...AppData.trainingLog[trainInfo.dayKey][trainInfo.dInd]});
+    return;
+  }
   setAddExId(exId);
   setShowSuggestionToAdd(true);
   setShowExerciseList(false);
@@ -225,93 +230,174 @@ const removeexercise = () =>
 {
   removeExerciseFromSession(trainInfo.dayKey, trainInfo.dInd, exerciseToRemove);
   setShowConfirmExercisePanel(false);
+  setSession({...AppData.trainingLog[trainInfo.dayKey][trainInfo.dInd]});
 }
 function onAddExercise(needToAdd){
   addExerciseToSession(trainInfo.dayKey, trainInfo.dInd, addExId);
     setShowConfirmExercisePanel(false);
     setShowSuggestionToAdd(false);
+    setSession({...AppData.trainingLog[trainInfo.dayKey][trainInfo.dInd]});
     if(!needToAdd){
       return null;
     }
+      if(session?.isFree || session?.programId == null || session?.dayIndex == null){
+        setShowStarategyPanel(false);
+        return null;
+      }
       let currentStrategy = langIndex === 0 ? 'время' : 'time' ;
       if(strategy === 0)currentStrategy = sets + 'x' + currentRepMin + '-' + currentRepMax;
-      addExerciseToSchedule(session.programId,trainInfo.dInd,addExId,currentStrategy);
+      addExerciseToSchedule(session.programId,session.dayIndex,addExId,currentStrategy);
       setShowStarategyPanel(false);
       setShowConfirmExercisePanel(false);
       setShowSuggestionToAdd(false);
     }
+const isFreeSession = session?.isFree || session?.programId == null;
+const sessionTitle = isFreeSession
+  ? (langIndex === 0 ? 'Свободная тренировка' : 'Free workout')
+  : (Array.isArray(program?.name) ? program?.name[langIndex] : program?.name);
+const sessionSubtitle = isFreeSession
+  ? (langIndex === 0 ? 'Добавляйте упражнения по ходу тренировки' : 'Add exercises as you go')
+  : (program?.schedule?.[dayIndex]?.name?.[langIndex] || (langIndex === 0 ? 'Тренировка по программе' : 'Program workout'));
+const exerciseEntries = Array.isArray(session?.exerciseOrder)
+  ? session.exerciseOrder
+      .map(exId => ({ exId, exercise: session.exercises?.[exId], exerciseObj: AppData.exercises?.[exId] }))
+      .filter(({ exercise, exerciseObj }) => exercise && exerciseObj)
+  : [];
+const totalSetsLogged = exerciseEntries.reduce((sum, { exercise }) => sum + (exercise.sets?.length || 0), 0);
+const completedExerciseCount = exerciseEntries.filter(({ exercise }) => exercise.completed).length;
+const sessionProgress = exerciseEntries.length > 0
+  ? Math.round((completedExerciseCount / exerciseEntries.length) * 100)
+  : 0;
+const currentDurationLabel = isCompleted ? formatDurationMs(session.duration) : formatDurationMs(duration);
+const sessionStateLabel = isCompleted
+  ? (langIndex === 0 ? 'Завершена' : 'Done')
+  : (langIndex === 0 ? 'В процессе' : 'Active');
 // render    
 return (
       <div style={styles(theme).container}>
         <div style={styles(theme).panel}>
-            {/* --- DASHBOARD HEADER --- */}
             <div style={styles(theme).headerCard}>
-                
-                {/* Title & Status */}
-                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', width:'100%', marginBottom:'10px'}}>
-                    <div style={{display:'flex', flexDirection:'column'}}>
-                         <div style={{...styles(theme,fSize).text, fontWeight:'bold', fontSize:'18px', marginBottom:0}}>
-                            {Array.isArray(program?.name) ? program?.name[langIndex] : program?.name}
+                <div style={styles(theme).heroTopRow}>
+                    <div style={styles(theme).heroTitleBlock}>
+                         <div style={styles(theme).sessionKicker}>
+                            <span style={styles(theme).statusDot} />
+                            {sessionStateLabel}
                          </div>
-                         <div style={{...styles(theme,fSize).subtext, opacity:0.7, marginTop:'4px'}}>
-                            {(trainInfo.mode === 'new' ? '⏳ ' : '✅ ') + (program?.schedule[dayIndex].name[langIndex])}
+                         <div style={styles(theme,fSize).sessionTitle}>
+                            {sessionTitle}
+                         </div>
+                         <div style={styles(theme,fSize).sessionSubtitle}>
+                            {sessionSubtitle}
                          </div>
                     </div>
-                    {/* Main Session Timer */}
-                    <div style={{backgroundColor:'rgba(0,0,0,0.2)', padding:'5px 12px', borderRadius:'20px'}}>
-                        <div style={{...styles(theme,fSize).subtext, fontSize:'16px', fontWeight:'600', color:Colors.get('mainText', theme)}}>
-                            {isCompleted ? formatDurationMs(session.duration) : formatDurationMs(duration)}
+                    <div style={styles(theme).durationBadge}>
+                        <div style={styles(theme).durationLabel}>
+                          {langIndex === 0 ? 'Время' : 'Time'}
+                        </div>
+                        <div style={styles(theme).durationValue}>
+                            {currentDurationLabel}
                         </div>
                     </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div style={{ width: '100%', height: '6px', position: 'relative', borderRadius:'3px', overflow:'hidden', backgroundColor:'rgba(255,255,255,0.1)', marginBottom:'12px' }}>
-                     <div style={{ width: `${progress}%`, height: '100%', backgroundColor: Colors.get('skipped', theme), transition:'width 0.5s linear' }} />
+                <div style={styles(theme).sessionProgressArea}>
+                  <div style={styles(theme).progressLabelRow}>
+                    <span>{langIndex === 0 ? 'Прогресс упражнений' : 'Exercise progress'}</span>
+                    <strong>{sessionProgress}%</strong>
+                  </div>
+                  <div style={styles(theme).progressTrack}>
+                    <div style={{...styles(theme).progressFill, width: `${sessionProgress}%`}} />
+                  </div>
                 </div>
 
-                {/* Stats & Tools Row */}
-                <div style={{display:'flex', width:'100%', justifyContent:'space-between', alignItems:'center'}}>
-                    <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
-                        <MdFitnessCenter style={{color:Colors.get('icons', theme)}}/>
-                        <div style={{...styles(theme,fSize).subtext, fontWeight:'bold', fontSize:'14px'}}>
-                            {(tonnage * 0.001).toFixed(2) + (langIndex === 0 ? ' т' : ' t')}
-                        </div>
-                    </div>
+                <div style={styles(theme).statGrid}>
+                    <MetricTile theme={theme} label={langIndex === 0 ? 'Упражнения' : 'Exercises'} value={`${completedExerciseCount}/${exerciseEntries.length}`} />
+                    <MetricTile theme={theme} label={langIndex === 0 ? 'Сеты' : 'Sets'} value={totalSetsLogged} />
+                    <MetricTile theme={theme} label={langIndex === 0 ? 'Повторы' : 'Reps'} value={allReps} />
+                    <MetricTile theme={theme} label={langIndex === 0 ? 'Тоннаж' : 'Volume'} value={`${(tonnage * 0.001).toFixed(2)}${langIndex === 0 ? ' т' : ' t'}`} />
+                </div>
 
-                    {!isCompleted && (
-                        <div style={{display:'flex', alignItems:'center', gap:'16px'}}>
+                {!isCompleted && (
+                    <div style={styles(theme).sessionToolbar}>
+                        <div style={styles(theme).restTimerPill}>
                              <ParsedTime time={currTimer} maxTime={maxTimer} theme={theme}/>
-                             
-                             <div style={styles(theme).toolIconWrapper} onClick={() => {timer ? (setTimer(false), setCurrTimer(0), setProgress(0)) : setTimer(true)}}>
-                                {timer ? <TimerIcon style={styles(theme).headerIcon}/> : <TimerOffIcon style={styles(theme).headerIcon}/>}
-                             </div>
-
-                             <div style={styles(theme).toolIconWrapper} onClick={() => {setStopWatchPanel(true)}}>
-                                <FaStopwatch style={styles(theme).headerIcon}/>
-                             </div>
-
-                             <div style={styles(theme).toolIconWrapper} onClick={() => {setShowPlatesCalculator(true)}}>
-                                <FaCalculator style={styles(theme).headerIcon}/>
-                             </div>
-
-                             <div style={{...styles(theme).toolIconWrapper, backgroundColor:Colors.get('done', theme)}} onClick={() => {setShowConfirmPanel(true)}}>
-                                <FaFlagCheckered style={{fontSize:'18px', color:'#fff'}}/>
-                             </div>
                         </div>
-                    )}
-                </div>
+                        <button type="button" style={styles(theme).toolIconWrapper} onClick={() => {timer ? (setTimer(false), setCurrTimer(0)) : setTimer(true)}}>
+                            {timer ? <TimerIcon style={styles(theme).headerIcon}/> : <TimerOffIcon style={styles(theme).headerIcon}/>}
+                        </button>
+                        <button type="button" style={styles(theme).toolIconWrapper} onClick={() => {setStopWatchPanel(true)}}>
+                            <FaStopwatch style={styles(theme).headerIcon}/>
+                        </button>
+                        <button type="button" style={styles(theme).toolIconWrapper} onClick={() => {setShowPlatesCalculator(true)}}>
+                            <FaCalculator style={styles(theme).headerIcon}/>
+                        </button>
+                        <button type="button" style={styles(theme).finishWorkoutBtn} onClick={() => {setShowConfirmPanel(true)}}>
+                            <MdDone style={{fontSize:'18px'}}/>
+                            {langIndex === 0 ? 'Завершить' : 'Finish'}
+                        </button>
+                    </div>
+                )}
             </div> 
 
-            {/* --- EXERCISE LIST (SCROLLVIEW) --- */}
             <div style={styles(theme).scrollView}>
-               {session?.exercises && session.exerciseOrder?.length > 0 &&
-               <div style={{ display: 'flex', flexDirection: 'column', width:'97%', gap:'12px', paddingBottom:'20px'}}>
-               {session.exerciseOrder.map(exId => {
-                const exercise = session.exercises[exId];
-                const exerciseObj = AppData.exercises[exId];
-                if (!exerciseObj || !exercise) return null;
+               {exerciseEntries.length > 0 ? (
+               <div style={styles(theme).exerciseList}>
+               {isCompleted &&  
+              <div style={styles(theme).completionCard}>
+                <div style={styles(theme).completionHeader}>
+                  <div>
+                    <div style={styles(theme).completionKicker}>{langIndex === 0 ? 'Итог' : 'Summary'}</div>
+                    <div style={styles(theme,fSize).completionTitle}>
+                      {langIndex === 0 ? 'Оценка тренировки' : 'Workout review'}
+                    </div>
+                  </div>
+                  <div style={styles(theme).rpeBadge}>{sessionRPE}/10</div>
+                </div>
+                <div style={styles(theme).reviewSection}>
+                  <div style={styles(theme).reviewLabel}>{langIndex === 0 ? "Уровень нагрузки (RPE)" : "Effort level (RPE)"}</div>
+                  <Slider
+                    style={styles(theme).rpeSlider}
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={sessionRPE}
+                    valueLabelDisplay="off"
+                    onChange={(_, newValue) => setSessionRPE(newValue)}
+                  />
+                  <div style={styles(theme).rpeLabels}>
+                    <span>{langIndex === 0 ? "Легко" : "Easy"}</span>
+                    <span>{langIndex === 0 ? "Умеренно" : "Moderate"}</span>
+                    <span>{langIndex === 0 ? "Тяжело" : "Hard"}</span>
+                    <span>{langIndex === 0 ? "Максимум" : "Max"}</span>
+                  </div>
+                </div>
+                <div style={styles(theme).reviewSection}>
+                  <div style={styles(theme).reviewLabel}>{langIndex === 0 ? "Заметки о тренировке" : "Training notes"}</div>
+                  <textarea
+                    value={sessionNote}
+                    onChange={(e) => setSessionNote(e.target.value)}
+                    placeholder={langIndex === 0
+                        ? "Как прошла тренировка? Что удалось, что стоит изменить?"
+                        : "How was the session? What worked, what should change?"}
+                    style={styles(theme).notesTextarea}
+                  />
+                </div>
+                <button
+                    type="button"
+                    onClick={() => redactRPEandNote(trainInfo.dayKey,trainInfo.dInd,sessionRPE,sessionNote)}
+                    style={styles(theme).saveReviewBtn}
+                >
+                    <MdDone style={{ fontSize: '18px' }} />
+                    {langIndex === 0 ? "Сохранить оценку" : "Save review"}
+                </button>
+              </div>}
+               {exerciseEntries.map(({ exId, exercise, exerciseObj }) => {
                 const exerciseName = exerciseObj.name[langIndex];
+                const isSelected = currentExId === exId;
+                const setCount = exercise.sets?.length || 0;
+                const exerciseReps = getExerciseReps(exercise);
+                const topWeight = getExerciseTopWeight(exercise);
+                const exerciseVolume = getExerciseVolume(exercise);
                 let plannedSets = '';
                 const program = AppData.programs[session.programId];
                  if (program && session.dayIndex != null) {
@@ -324,49 +410,57 @@ return (
                   }
                  }
                 
-                // EXERCISE CARD
                 return (
-                 <div key={exId} style={{ 
-                     display: 'flex', 
-                     flexDirection: 'column', 
-                     backgroundColor: Colors.get('bottomPanel', theme),
-                     borderRadius: '16px',
-                     padding: '12px',
-                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                     border: currentExId === exId ? `1px solid ${Colors.get('iconsHighlited', theme)}` : 'none'
+                 <div key={exId} style={{
+                     ...styles(theme).exerciseCard,
+                     border: isSelected ? `1px solid ${getTrainingAccent().hue}` : styles(theme).exerciseCard.border,
+                     boxShadow: isSelected ? `0 18px 45px rgba(${getTrainingAccent().rgb}, 0.14)` : styles(theme).exerciseCard.boxShadow
                  }}>
-                 
-                 {/* Card Header */}
-                 <div onClick={() => {setCurrentExId(prev => prev === exId ? -1 : exId)}} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px', borderBottom:`1px solid ${Colors.get('border', theme)}`, paddingBottom:'8px' }}>
-                    <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
-                        <div style={{...styles(theme, fSize).text, fontWeight:'bold', fontSize:'16px', marginBottom:0, color: currentExId === exId ? Colors.get('iconsHighlited', theme) : Colors.get('mainText', theme)}}>
-                            {exerciseName}
+                 <div onClick={() => {setCurrentExId(prev => prev === exId ? -1 : exId)}} style={styles(theme).exerciseHeader}>
+                    <div style={styles(theme).exerciseTitleGroup}>
+                        <div style={{
+                          ...styles(theme).exerciseStatusIcon,
+                          background: exercise.completed ? getTrainingAccent().hue : (theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'),
+                          color: exercise.completed ? '#fff' : Colors.get('subText', theme)
+                        }}>
+                          {exercise.completed ? <MdDone /> : setCount}
                         </div>
-                        <span style={{fontSize:'12px'}}>{exercise.completed ? '✅' : ''}</span>
+                        <div style={styles(theme).exerciseTitleBlock}>
+                          <div style={{
+                            ...styles(theme, fSize).exerciseTitle,
+                            color: isSelected ? getTrainingAccent().hue : Colors.get('mainText', theme)
+                          }}>
+                            {exerciseName}
+                          </div>
+                          <div style={styles(theme).exerciseMetaRow}>
+                            <span>{setCount} {langIndex === 0 ? 'сетов' : 'sets'}</span>
+                            <span>{exerciseReps} {langIndex === 0 ? 'повт.' : 'reps'}</span>
+                            {topWeight > 0 && <span>{topWeight} {langIndex === 0 ? 'кг' : 'kg'}</span>}
+                            {plannedSets && <span>{plannedSets}</span>}
+                          </div>
+                        </div>
                     </div>
-                    <div style={{...styles(theme,fSize).subtext, backgroundColor:'rgba(0,0,0,0.1)', padding:'2px 8px', borderRadius:'8px'}}>
-                        {plannedSets}
+                    <div style={styles(theme).exerciseRightSide}>
+                      {exerciseVolume > 0 && (
+                        <div style={styles(theme).exerciseVolumePill}>
+                          {(exerciseVolume * 0.001).toFixed(2)} {langIndex === 0 ? 'т' : 't'}
+                        </div>
+                      )}
+                      {isSelected ? <IoIosArrowUp style={styles(theme).icon} /> : <IoIosArrowDown style={styles(theme).icon} />}
                     </div>
                  </div>
 
-                 {/* Table Header */}
-                  {currentExId === exId && <div style={{display: 'flex', marginBottom:'6px', paddingLeft:'4px', opacity:0.6}}>
-                      <div style={{...styles(theme,fSize).subtext, width:'10%'}}>#</div>
-                      <div style={{...styles(theme,fSize).subtext, width:'25%'}}>{langIndex === 0 ? 'Повт' : 'Reps'}</div>
-                      <div style={{...styles(theme,fSize).subtext, width:'25%'}}>{langIndex === 0 ? 'Вес' : 'Kg'}</div>
-                      <div style={{...styles(theme,fSize).subtext, width:'25%'}}>{langIndex === 0 ? 'Время' : 'Time'}</div>
+                  {isSelected && <div style={styles(theme).setTableHeader}>
+                      <div style={{...styles(theme,fSize).setHeaderText, width:'10%'}}>#</div>
+                      <div style={styles(theme,fSize).setHeaderText}>{langIndex === 0 ? 'Повт.' : 'Reps'}</div>
+                      <div style={styles(theme,fSize).setHeaderText}>{langIndex === 0 ? 'Вес' : 'Kg'}</div>
+                      <div style={styles(theme,fSize).setHeaderText}>{langIndex === 0 ? 'Время' : 'Time'}</div>
+                      <div style={{width:'38px'}} />
                   </div>}
 
-                 {/* Sets Rows */}
-                 {currentExId === exId && <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                 {isSelected && <div style={styles(theme).setsList}>
                    { exercise.sets.map((set, setIndex) => (
-                  <div key={setIndex} style={{
-                      display: 'flex', 
-                      alignItems:'center', 
-                      padding:'8px', 
-                      backgroundColor: setIndex % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent', 
-                      borderRadius:'8px'
-                  }}>
+                  <div key={setIndex} style={styles(theme).setRow}>
                       <div style={{...numStyle(theme,set.type), width:'10%', border: 'none'}}>{setIndex + 1}</div>
                       
                       <div style={{...numStyle(theme,set.type), border: 'none'}}>
@@ -385,35 +479,31 @@ return (
                       </div>
                       
                       <div style={{marginLeft:'auto'}}>
-                         <div onClick={() => {onRedactSet(exId,setIndex)}} style={{padding:'6px', borderRadius:'50%', backgroundColor:'rgba(255,255,255,0.05)'}}>
+                         <button type="button" onClick={() => {onRedactSet(exId,setIndex)}} style={styles(theme).setEditBtn}>
                             <FaPencilAlt style={{fontSize:'12px', color:Colors.get('icons', theme)}} />
-                         </div>
+                         </button>
                       </div>
                    </div> 
                 ))}
 
-                {/* Prev Reference Row */}
                 {usePrev &&  
-                   <div style={{display: 'flex', alignItems:'center', padding:'8px', borderTop:`1px dashed ${Colors.get('border', theme)}`, opacity:0.7}}>
+                   <div style={styles(theme).prevSetRow}>
                       <div style={{...numStylePrev(theme), width:'10%', border:'none'}}>{exercise.sets.length + 1}</div>
                       <div style={{...numStylePrev(theme), border:'none'}}>{prevResult(exId,exercise.sets.length,new Date(trainInfo.dayKey),true)}</div>
                       <div style={{...numStylePrev(theme), border:'none'}}>{prevResult(exId,exercise.sets.length,new Date(trainInfo.dayKey),false)}</div>
                       <div style={{...numStylePrev(theme), border:'none'}}>{prevResult(exId,exercise.sets.length,new Date(trainInfo.dayKey),false,true)}</div>
                    </div>
                 }
-                
-                {/* Action Bar (Only on selected) */}
-                 
-                  <div style={{display: 'flex', marginTop:'12px', paddingTop:'8px', borderTop:`1px solid ${Colors.get('border', theme)}`, justifyContent: 'space-around'}}>
-                     <button style={styles(theme).actionBtnSmall} onClick={() => {onRemoveExercise(exId)}}>
-                        <FaTrash style={{fontSize:'14px', color:Colors.get('skipped', theme)}}/>
+                  <div style={styles(theme).exerciseActionBar}>
+                     <button type="button" style={styles(theme).actionBtnSmall('danger')} onClick={() => {onRemoveExercise(exId)}} aria-label={langIndex === 0 ? 'Удалить упражнение' : 'Remove exercise'}>
+                        <FaTrash style={{fontSize:'14px'}}/>
                      </button>
-                     <button style={{...styles(theme).actionBtnSmall, width:'40%', backgroundColor:Colors.get('iconsHighlited', theme)}} onClick={() => {onNewset(exId,exercise.sets.length)}}>
-                        <FaPlus style={{fontSize:'16px', color:Colors.get('background', theme)}}/> <span style={{marginLeft:'5px', color:Colors.get('background', theme), fontWeight:'bold'}}>{langIndex===0? 'Сет':'Set'}</span>
+                     <button type="button" style={styles(theme).addSetBtn} onClick={() => {onNewset(exId,exercise.sets.length)}}>
+                        <FaPlus style={{fontSize:'13px'}}/> {langIndex===0? 'Добавить сет':'Add set'}
                      </button>
                      {!isCompleted && !exercise.completed && 
-                     <button style={styles(theme).actionBtnSmall} onClick={() => {onFinishExercise(exId)}}>
-                        <FaFlag style={{fontSize:'14px', color:Colors.get('done', theme)}}/>
+                     <button type="button" style={styles(theme).actionBtnSmall('success')} onClick={() => {onFinishExercise(exId)}} aria-label={langIndex === 0 ? 'Завершить упражнение' : 'Finish exercise'}>
+                        <FaFlag style={{fontSize:'14px'}}/>
                      </button>}
                   </div>
                 
@@ -422,152 +512,28 @@ return (
               );
              })}
 
-             {isCompleted &&  
-              <div style={{
-             backgroundColor: Colors.get('background', theme),
-            borderRadius: '24px',
-               padding: '20px',
-             display: 'flex',
-              flexDirection: 'column',
-                alignItems: 'center',
-              justifyContent: 'center',
-               boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
-        }}>
-            
-
-            {/* RPE Slider Section */}
-            <div style={{
-                ...styles(theme).inputCard,
-                width:'80vw',
-                height: 'auto',
-                padding: '20px',
-                marginBottom: '15px'
-            }}>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '15px'
-                }}>
-                    <div style={{
-                        ...styles(theme, fSize).subtext,
-                        fontSize: '14px',
-                        fontWeight: 'bold'
-                    }}>
-                        {langIndex === 0 ? "Уровень нагрузки (RPE)" : "Effort Level (RPE)"}
-                    </div>
-                    <div style={{
-                        ...styles(theme, fSize).text,
-                        fontSize: '24px',
-                        fontWeight: 'bold',
-                        color: Colors.get('iconsHighlited', theme)
-                    }}>
-                        {sessionRPE}/10
-                    </div>
-                </div>
-
-                <Slider
-                    style={{
-                        width: '100%',
-                        alignSelf: 'center',
-                        color: Colors.get('difficulty', theme)
-                    }}
-                    min={1}
-                    max={10}
-                    step={1}
-                    value={sessionRPE}
-                    valueLabelDisplay="off"
-                    onChange={(_, newValue) => setSessionRPE(newValue)}
-                />
-
-                {/* RPE Scale Labels */}
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    marginTop: '8px',
-                    fontSize: '11px',
-                    color: Colors.get('subText', theme)
-                }}>
-                    <span>{langIndex === 0 ? "Легко" : "Easy"}</span>
-                    <span>{langIndex === 0 ? "Умеренно" : "Moderate"}</span>
-                    <span>{langIndex === 0 ? "Тяжело" : "Hard"}</span>
-                    <span>{langIndex === 0 ? "Максимум" : "Max"}</span>
-                </div>
-            </div>
-
-            {/* Notes Textarea */}
-            <div style={{
-                ...styles(theme).inputCard,
-                 width:'80vw',
-                height: 'auto',
-                padding: '15px',
-                marginBottom: '20px'
-            }}>
-                <div style={{
-                    ...styles(theme, fSize).subtext,
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    marginBottom: '10px'
-                }}>
-                    {langIndex === 0 ? "Заметки о тренировке" : "Training Notes"}
-                </div>
-                <textarea
-                    value={sessionNote}
-                    onChange={(e) => setSessionNote(e.target.value)}
-                    placeholder={langIndex === 0 
-                        ? "Как прошла тренировка? Что удалось/не удалось? Погода, самочувствие..." 
-                        : "How was the session? What worked/didn't work? Weather, mood..."}
-                    style={{
-                        width: '100%',
-                        height: '100px',
-                        backgroundColor: 'rgba(0,0,0,0.2)',
-                        border: `1px solid ${Colors.get('border', theme)}`,
-                        borderRadius: '12px',
-                        padding: '12px',
-                        color: Colors.get('mainText', theme),
-                        fontSize: '14px',
-                        fontFamily: 'Segoe UI',
-                        resize: 'none',
-                        outline: 'none'
-                    }}
-                />
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{
-                display: 'flex',
-                gap: '15px',
-                width: '100%'
-            }}>
-                <button
-                    onClick={() => redactRPEandNote(trainInfo.dayKey,trainInfo.dInd,sessionRPE,sessionNote)}
-                    style={{
-                        ...styles(theme).primaryBtn,
-                        flex: 2,
-                        padding: '14px'
-                    }}
-                >
-                    <MdDone style={{ fontSize: '24px', marginRight: '8px' }} />
-                    {langIndex === 0 ? "Сохранить" : "Save"}
-                </button>
-            </div>
-        </div>}
-
-            <div style={styles(theme).floatingMenu}>
-             <div onClick={() => {setShowInfoPanel(true);}} style={styles(theme).menuIconBtn}>
-                <FaInfo style={{fontSize:'20px', color:Colors.get('icons', theme)}}/>
              </div>
-             
+               ) : (
+                <div style={styles(theme).emptySessionState}>
+                  <div style={styles(theme).emptySessionIcon}><FaDumbbell /></div>
+                  <div style={{...styles(theme, fSize).text, fontWeight: 800, marginBottom: '6px'}}>
+                    {langIndex === 0 ? 'Начните с упражнения' : 'Start with an exercise'}
+                  </div>
+                  <div style={{...styles(theme, fSize).subtext, textAlign: 'center', maxWidth: '280px'}}>
+                    {langIndex === 0
+                      ? 'Эта тренировка не привязана к программе. Добавьте первое упражнение и ведите сет за сетом.'
+                      : 'This workout is not tied to a program. Add the first exercise and log it set by set.'}
+                  </div>
+                </div>
+               )}
+            {!isCompleted && <div style={styles(theme).floatingMenu}>
              <div onClick={() => {setShowExerciseList(true)}} style={styles(theme).menuPillBtn}>
                <FaPlus style={{fontSize:'14px', marginRight:'6px'}}/>
                {langIndex === 0 ? 'Упражнение' : 'Exercise'}
              </div>
 
-             
-
-           
-             {!isCompleted &&  <div onClick={() => {needPrev(prev => !prev)}} 
-                  style={{...styles(theme).menuPillBtn, 
+             {!isCompleted && !isFreeSession &&  <div onClick={() => {needPrev(prev => !prev)}}
+                  style={{...styles(theme).menuPillBtn,
                           backgroundColor: usePrev ? Colors.get('barsColorMeasures', theme) : theme === 'dark' ? 'rgba(28, 28, 28, 0.85)' : 'rgba(235, 235, 235, 0.46)',
                           color: usePrev ? Colors.get('background', theme) : Colors.get('subText', theme),
                           border: usePrev ? 'none' : `1px solid ${Colors.get('border', theme)}`
@@ -575,9 +541,7 @@ return (
                <MdOutlineHistory style={{fontSize:'16px', marginRight:'6px'}}/>
                {langIndex === 0 ? 'История' : 'History'}
              </div>}
-        </div>
-            <div style={{width:'100vw',height:'20vh'}}/>
-             </div>}
+        </div>}
         </div>
         </div>
 
@@ -1233,260 +1197,799 @@ const spanStyle = (theme,isMore) =>
  color:isMore ? Colors.get('done', theme) : Colors.get('skipped', theme)
 })
 
-const styles = (theme,fSize) =>
-({
-    container :
-   {
-     backgroundColor:Colors.get('background', theme),
-     display: "flex",
-     position:'absolute',
-     flexDirection: "column",
-     overflowY:'scroll',
-     justifyContent: "start",
-     alignItems: "center",
-     height: "92vh",
-     top:'10vh',
-     width: "100vw",
-     fontFamily: "Segoe UI",
-  },
- panel :
-      {
-    display:'flex',
-    flexDirection:'column',
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "start",
-  },
- headerCard: {
-      width: '95%',
-      backgroundColor: Colors.get('bottomPanel', theme), // Or a slightly lighter shade
-      borderRadius: '20px',
-      padding: '15px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      marginBottom: '15px',
-      marginTop: '10px'
- },
- headerIcon: {
-      fontSize: '20px',
-      color: Colors.get('icons', theme)
- },
- toolIconWrapper: {
-      width:'36px', 
-      height:'36px', 
-      borderRadius:'12px', 
-      backgroundColor:'rgba(255,255,255,0.05)', 
-      display:'flex', 
-      alignItems:'center', 
-      justifyContent:'center',
-      cursor: 'pointer'
- },
- scrollView:
- {
-   display:'flex',
-   flexDirection:'column',
-   alignItems:'center',
-   overflowY:'scroll',
-   width:'100%',
-   overflowX:'hidden',
-   height:'66vh',
- },
- text :
- {
-   textAlign: "left",
-   fontSize: fSize === 0 ? '13px' : '15px',
-   color: Colors.get('mainText', theme),
-   marginBottom:'5px'
- },
- subtext :
- {
-   fontSize: fSize === 0 ? '11px' : '13px',
-   color: Colors.get('subText', theme)
- },
- icon:
- {
-     fontSize:'18px',
-     color:Colors.get('icons', theme),
-     cursor: 'pointer'
- },
-   confirmContainer: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
-    backdropFilter: 'blur(5px)',
-    display: 'flex',
-    alignItems: 'center', // Center vertically for confirmations
-    justifyContent: 'center',
-    zIndex: 2900,
-  },
- bottomSheet: {
-      width: '90%',
-      height:'60%',
+const styles = (theme,fSize) => {
+  const accent = getTrainingAccent();
+  const isLight = theme === 'light' || theme === 'speciallight';
+  const fontStack = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif';
+  const pageBg = isLight
+    ? `radial-gradient(circle at 50% -15%, rgba(${accent.rgb}, 0.14), transparent 38%), #F5F7FA`
+    : `radial-gradient(circle at 50% -12%, rgba(${accent.rgb}, 0.18), transparent 42%), #0B0F14`;
+  const panelBg = isLight
+    ? 'rgba(255,255,255,0.86)'
+    : 'rgba(17, 22, 29, 0.92)';
+  const cardBg = isLight
+    ? 'rgba(255,255,255,0.92)'
+    : 'linear-gradient(145deg, rgba(23, 30, 39, 0.98), rgba(14, 19, 25, 0.96))';
+  const border = isLight ? 'rgba(15,23,42,0.09)' : 'rgba(148,163,184,0.13)';
+  const muted = Colors.get('subText', theme);
+
+  return ({
+    container: {
+      background: pageBg,
+      display: 'flex',
       position: 'absolute',
-      bottom: 0,
-      backgroundColor: Colors.get('background', theme),
-      borderTopLeftRadius: '25px',
-      borderTopRightRadius: '25px',
-      padding: '15px 20px 30px 20px',
-      display: 'flex',
       flexDirection: 'column',
-      boxShadow: '0 -5px 20px rgba(0,0,0,0.3)'
- },
- modalCard: {
-      width: '80%',
-      backgroundColor: Colors.get('background', theme),
-      borderRadius: '24px',
-      padding: '20px',
-      display: 'flex',
-      flexDirection: 'column',
+      overflowY: 'auto',
+      overflowX: 'hidden',
+      justifyContent: 'flex-start',
       alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
- },
- inputCard: {
-      flex: 1,
-      height:'80px',
-      backgroundColor: 'rgba(255,255,255,0.05)',
-      borderRadius: '16px',
-      fontSize:'16px',
-      padding: '10px',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center'
- },
- circleBtn: {
-      fontSize:'24px', 
-      color:Colors.get('icons', theme), 
-      padding:'8px', 
-      borderRadius:'50%', 
-      backgroundColor:'rgba(255,255,255,0.05)',
-      cursor: 'pointer'
- },
- circleBtnSmall: {
-      fontSize:'18px', 
-      color:Colors.get('icons', theme), 
-      padding:'8px', 
-      borderRadius:'50%', 
-      backgroundColor:'rgba(255,255,255,0.05)',
-      cursor: 'pointer'
- },
- primaryBtn: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: Colors.get('done', theme),
-      color: '#fff',
-      border: 'none',
-      borderRadius: '15px',
-      padding: '12px 20px',
-      fontSize: '16px',
-      fontWeight: 'bold',
-      boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
- },
- secondaryBtn: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor:  Colors.get('skipped', theme),
+      minHeight: '100dvh',
+      top: 0,
+      width: '100vw',
+      boxSizing: 'border-box',
+      padding: '20px 0 132px',
+      fontFamily: fontStack,
       color: Colors.get('mainText', theme),
-      border: 'none',
-      borderRadius: '15px',
-      padding: '12px 20px',
-      fontSize: '16px'
- },
- segmentBtn: {
+    },
+    panel: {
+      display:'flex',
+      flexDirection:'column',
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      gap: '18px',
+      boxSizing: 'border-box',
+    },
+    headerCard: {
+      width: 'min(92vw, 760px)',
+      background: isLight
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(241,245,249,0.92))'
+        : 'linear-gradient(145deg, rgba(17,24,39,0.96), rgba(3,7,18,0.92))',
+      borderRadius: '30px',
+      padding: '24px',
+      boxSizing: 'border-box',
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(148,163,184,0.14)'}`,
+      boxShadow: isLight ? '0 20px 45px rgba(15,23,42,0.08)' : '0 28px 70px rgba(0,0,0,0.42)',
+      marginTop: '0',
+    },
+    heroTopRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: '16px',
+      width: '100%',
+    },
+    heroTitleBlock: {
+      minWidth: 0,
       flex: 1,
-      textAlign: 'center',
-      padding: '8px',
-      borderRadius: '10px',
-      fontSize: '14px',
-      fontWeight: '600',
-      transition: 'all 0.2s'
- },
- slider:
- {
-   width:'90%',
-   alignSelf:'center',
-   color:Colors.get('difficulty', theme),
- },
- actionBtnSmall: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '8px',
+    },
+    sessionKicker: {
+      width: 'fit-content',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '7px',
+      padding: '7px 10px',
+      borderRadius: '999px',
+      background: isLight ? 'rgba(14,165,233,0.12)' : 'rgba(56,189,248,0.12)',
+      color: '#38BDF8',
+      fontSize: '12px',
+      fontWeight: 800,
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em',
+    },
+    statusDot: {
+      width: '7px',
+      height: '7px',
+      borderRadius: '99px',
+      background: '#38BDF8',
+      boxShadow: '0 0 12px rgba(56,189,248,0.55)',
+      flexShrink: 0,
+    },
+    sessionTitle: {
+      fontSize: fSize === 0 ? '25px' : '29px',
+      lineHeight: 1.08,
+      fontWeight: 850,
+      color: Colors.get('mainText', theme),
+      margin: 0,
+      letterSpacing: 0,
+      textAlign: 'left',
+    },
+    sessionSubtitle: {
+      fontSize: fSize === 0 ? '13px' : '15px',
+      lineHeight: 1.35,
+      color: muted,
+      maxWidth: '440px',
+      textAlign: 'left',
+    },
+    durationBadge: {
+      minWidth: '96px',
+      borderRadius: '22px',
+      padding: '12px 14px',
+      background: isLight ? 'rgba(15,23,42,0.05)' : 'rgba(0,0,0,0.26)',
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(148,163,184,0.08)'}`,
+      textAlign: 'right',
+      boxSizing: 'border-box',
+    },
+    durationLabel: {
+      fontSize: '10px',
+      color: muted,
+      fontWeight: 800,
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: '4px',
+    },
+    durationValue: {
+      color: Colors.get('mainText', theme),
+      fontSize: '24px',
+      fontWeight: 850,
+      lineHeight: 1,
+      fontVariantNumeric: 'tabular-nums',
+    },
+    sessionProgressArea: {
+      marginTop: '22px',
+    },
+    progressLabelRow: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      color: muted,
+      fontSize: '12px',
+      fontWeight: 750,
+      marginBottom: '9px',
+    },
+    progressTrack: {
+      height: '8px',
+      borderRadius: '999px',
+      overflow: 'hidden',
+      background: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)',
+    },
+    progressFill: {
+      height: '100%',
+      borderRadius: '999px',
+      background: 'linear-gradient(90deg, #14B8A6, #38BDF8)',
+      transition: 'width 0.25s ease',
+    },
+    statGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(118px, 1fr))',
+      gap: '10px',
+      marginTop: '16px',
+    },
+    metricTile: {
+      minHeight: '68px',
+      borderRadius: '18px',
+      padding: '12px',
+      background: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)',
+      border: `1px solid ${border}`,
+      boxSizing: 'border-box',
+    },
+    metricLabel: {
+      fontSize: '11px',
+      color: muted,
+      fontWeight: 800,
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em',
+      marginBottom: '7px',
+    },
+    metricValue: {
+      color: Colors.get('mainText', theme),
+      fontSize: '21px',
+      fontWeight: 850,
+      lineHeight: 1,
+      fontVariantNumeric: 'tabular-nums',
+    },
+    sessionToolbar: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '10px',
+      flexWrap: 'wrap',
+      marginTop: '16px',
+      padding: '10px',
+      borderRadius: '20px',
+      background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(148,163,184,0.10)'}`,
+    },
+    restTimerPill: {
+      minWidth: '38px',
+      minHeight: '38px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    headerIcon: {
+      fontSize: '19px',
+      color: Colors.get('icons', theme),
+    },
+    toolIconWrapper: {
+      width:'42px',
+      height:'42px',
+      borderRadius:'15px',
+      background: isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.055)',
+      border: `1px solid ${border}`,
+      display:'flex',
+      alignItems:'center',
+      justifyContent:'center',
+      cursor: 'pointer',
+      padding: 0,
+      flexShrink: 0,
+    },
+    finishWorkoutBtn: {
+      minHeight: '42px',
       border: 'none',
-      backgroundColor: 'rgba(255,255,255,0.05)',
-      borderRadius: '8px',
-      padding: '8px 16px',
-      cursor: 'pointer'
- },
- floatingMenu: {
-      width: '88%',
-      maxWidth: '400px',
+      borderRadius: '15px',
+      background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+      color: '#fff',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      padding: '0 16px',
+      fontSize: '13px',
+      fontWeight: 850,
+      cursor: 'pointer',
+      boxShadow: '0 12px 28px rgba(239,68,68,0.26)',
+    },
+    scrollView: {
+      display:'flex',
+      flexDirection:'column',
+      alignItems:'center',
+      width:'100%',
+      overflow: 'visible',
+    },
+    exerciseList: {
+      display: 'flex',
+      flexDirection: 'column',
+      width: 'min(92vw, 760px)',
+      gap: '12px',
+      paddingBottom: '96px',
+      boxSizing: 'border-box',
+    },
+    exerciseCard: {
+      display: 'flex',
+      flexDirection: 'column',
+      background: panelBg,
+      borderRadius: '22px',
+      padding: '14px',
+      border: `1px solid ${border}`,
+      boxShadow: isLight ? '0 14px 34px rgba(15,23,42,0.06)' : '0 18px 42px rgba(0,0,0,0.22)',
+      boxSizing: 'border-box',
+    },
+    exerciseHeader: {
+      display:'flex',
+      justifyContent:'space-between',
+      alignItems:'center',
+      gap: '14px',
+      cursor: 'pointer',
+      minHeight: '58px',
+    },
+    exerciseTitleGroup: {
+      display:'flex',
+      alignItems:'center',
+      gap:'12px',
+      minWidth: 0,
+      flex: 1,
+    },
+    exerciseStatusIcon: {
+      width: '40px',
       height: '40px',
-      backgroundColor: theme === 'dark' ? 'rgba(15, 15, 15, 0.57)' : 'rgba(219, 219, 219, 0.46)', // Dark glass
-      backdropFilter: 'blur(10px)',
-      borderRadius: '30px',
+      borderRadius: '14px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '18px',
+      fontWeight: 850,
+      flexShrink: 0,
+    },
+    exerciseTitleBlock: {
+      minWidth: 0,
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '6px',
+    },
+    exerciseTitle: {
+      fontSize: fSize === 0 ? '16px' : '18px',
+      lineHeight: 1.18,
+      fontWeight: 850,
+      margin: 0,
+      letterSpacing: 0,
+      textAlign: 'left',
+    },
+    exerciseMetaRow: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '6px',
+      color: muted,
+      fontSize: '12px',
+      fontWeight: 700,
+    },
+    exerciseRightSide: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      flexShrink: 0,
+    },
+    exerciseVolumePill: {
+      borderRadius: '999px',
+      padding: '7px 9px',
+      background: `rgba(${accent.rgb}, ${isLight ? 0.11 : 0.16})`,
+      color: accent.hue,
+      fontSize: '12px',
+      fontWeight: 850,
+      whiteSpace: 'nowrap',
+    },
+    setTableHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      margin: '14px 0 6px',
+      padding: '0 8px',
+      gap: '8px',
+    },
+    setHeaderText: {
+      width: '25%',
+      fontSize: '11px',
+      color: muted,
+      fontWeight: 800,
+      textTransform: 'uppercase',
+      letterSpacing: '0.05em',
+    },
+    setsList: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '7px',
+    },
+    setRow: {
+      display: 'flex',
+      alignItems:'center',
+      gap: '8px',
+      minHeight: '42px',
+      padding:'8px',
+      background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)',
+      borderRadius:'13px',
+      boxSizing: 'border-box',
+    },
+    setEditBtn: {
+      width: '32px',
+      height: '32px',
+      border: 'none',
+      borderRadius: '11px',
+      background: isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.06)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 0,
+      cursor: 'pointer',
+    },
+    prevSetRow: {
+      display: 'flex',
+      alignItems:'center',
+      padding:'10px 8px',
+      borderTop:`1px dashed ${border}`,
+      opacity:0.72,
+    },
+    exerciseActionBar: {
+      display: 'flex',
+      marginTop:'12px',
+      paddingTop:'12px',
+      borderTop:`1px solid ${border}`,
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: '10px',
+      background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(0,0,0,0.16)',
+      borderRadius: '18px',
+      padding: '12px',
+    },
+    addSetBtn: {
+      flex: 1,
+      minHeight: '44px',
+      border: 'none',
+      borderRadius: '15px',
+      background: `linear-gradient(135deg, ${accent.hue}, #2F80ED)`,
+      color: '#fff',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      fontSize: '13px',
+      fontWeight: 850,
+      cursor: 'pointer',
+      boxShadow: `0 12px 28px rgba(${accent.rgb}, 0.22)`,
+    },
+    completionCard: {
+      width: '100%',
+      borderRadius: '26px',
+      padding: '18px',
+      background: isLight ? 'rgba(255,255,255,0.94)' : 'rgba(17,22,29,0.94)',
+      border: `1px solid ${border}`,
+      boxShadow: isLight ? '0 18px 40px rgba(15,23,42,0.07)' : '0 20px 48px rgba(0,0,0,0.25)',
+      boxSizing: 'border-box',
+    },
+    completionHeader: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '0 10px',
-      boxShadow: '0 10px 25px rgba(0,0,0,0.4)',
-      border: `1px solid ${Colors.get('border', theme)}`
- },
- menuPillBtn: {
+      gap: '12px',
+      marginBottom: '16px',
+    },
+    completionKicker: {
+      color: accent.hue,
+      fontSize: '11px',
+      fontWeight: 850,
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em',
+      marginBottom: '5px',
+    },
+    completionTitle: {
+      color: Colors.get('mainText', theme),
+      fontSize: fSize === 0 ? '18px' : '21px',
+      fontWeight: 850,
+      lineHeight: 1.15,
+    },
+    rpeBadge: {
+      minWidth: '76px',
+      height: '48px',
+      borderRadius: '17px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '8px 16px',
+      background: `rgba(${accent.rgb}, ${isLight ? 0.12 : 0.18})`,
+      color: accent.hue,
+      fontSize: '22px',
+      fontWeight: 900,
+      fontVariantNumeric: 'tabular-nums',
+    },
+    reviewSection: {
       borderRadius: '20px',
-      backgroundColor: theme === 'dark' ? 'rgba(28, 28, 28, 0.85)' : 'rgba(235, 235, 235, 0.46)',
+      padding: '14px',
+      background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)',
+      border: `1px solid ${border}`,
+      marginBottom: '12px',
+      boxSizing: 'border-box',
+    },
+    reviewLabel: {
+      fontSize: '12px',
+      fontWeight: 850,
+      color: muted,
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em',
+      marginBottom: '10px',
+    },
+    rpeSlider: {
+      width: '100%',
+      alignSelf: 'center',
+      color: accent.hue,
+    },
+    rpeLabels: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+      gap: '6px',
+      marginTop: '6px',
+      fontSize: '11px',
+      color: muted,
+      fontWeight: 700,
+      textAlign: 'center',
+    },
+    notesTextarea: {
+      width: '100%',
+      minHeight: '116px',
+      background: isLight ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.18)',
+      border: `1px solid ${border}`,
+      borderRadius: '16px',
+      padding: '13px',
       color: Colors.get('mainText', theme),
-      fontSize: '14px',
-      fontWeight: '600',
-      cursor: 'pointer',
-      height: '20px'
- },
- menuIconBtn: {
-      width: '40px', 
-      height: '40px', 
-      borderRadius: '50%', 
-      display: 'flex', 
-      alignItems: 'center', 
+      fontSize: '15px',
+      lineHeight: 1.45,
+      fontFamily: fontStack,
+      resize: 'vertical',
+      outline: 'none',
+      boxSizing: 'border-box',
+    },
+    saveReviewBtn: {
+      width: '100%',
+      minHeight: '46px',
+      border: 'none',
+      borderRadius: '16px',
+      background: `linear-gradient(135deg, ${accent.hue}, #2F80ED)`,
+      color: '#fff',
+      display: 'flex',
+      alignItems: 'center',
       justifyContent: 'center',
-      cursor: 'pointer'
- },
- statBox: {
+      gap: '8px',
+      fontSize: '14px',
+      fontWeight: 850,
+      cursor: 'pointer',
+      boxShadow: `0 14px 28px rgba(${accent.rgb}, 0.24)`,
+    },
+    emptySessionState: {
+      width: 'min(92vw, 760px)',
+      minHeight: '240px',
+      borderRadius: '26px',
+      border: `1px dashed ${border}`,
+      background: panelBg,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '28px',
+      boxSizing: 'border-box',
+      textAlign: 'center',
+    },
+    emptySessionIcon: {
+      width: '62px',
+      height: '62px',
+      borderRadius: '22px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: '14px',
+      color: accent.hue,
+      background: `rgba(${accent.rgb}, ${isLight ? 0.12 : 0.16})`,
+      fontSize: '24px',
+    },
+    text: {
+      textAlign: 'left',
+      fontSize: fSize === 0 ? '13px' : '15px',
+      color: Colors.get('mainText', theme),
+      marginBottom:'5px',
+      fontFamily: fontStack,
+    },
+    mainText: {
+      color: Colors.get('mainText', theme),
+      fontSize: fSize === 0 ? '14px' : '16px',
+      fontWeight: 800,
+      fontFamily: fontStack,
+    },
+    subtext: {
+      fontSize: fSize === 0 ? '11px' : '13px',
+      color: muted,
+      fontFamily: fontStack,
+    },
+    icon: {
+      fontSize:'18px',
+      color:Colors.get('icons', theme),
+      cursor: 'pointer',
+      flexShrink: 0,
+    },
+    confirmContainer: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.65)',
+      backdropFilter: 'blur(14px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2900,
+      fontFamily: fontStack,
+    },
+    bottomSheet: {
+      width: 'min(92vw, 520px)',
+      maxHeight:'86dvh',
+      position: 'absolute',
+      bottom: 0,
+      background: cardBg,
+      borderTopLeftRadius: '28px',
+      borderTopRightRadius: '28px',
+      padding: '16px 20px 30px',
+      display: 'flex',
+      flexDirection: 'column',
+      boxShadow: '0 -18px 45px rgba(0,0,0,0.32)',
+      boxSizing: 'border-box',
+    },
+    modalCard: {
+      width: 'min(90vw, 480px)',
+      background: cardBg,
+      borderRadius: '26px',
+      padding: '22px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 24px 64px rgba(0,0,0,0.34)',
+      border: `1px solid ${border}`,
+      boxSizing: 'border-box',
+    },
+    inputCard: {
+      flex: 1,
+      minHeight:'80px',
+      background: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.05)',
+      borderRadius: '18px',
+      fontSize:'16px',
+      padding: '12px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      border: `1px solid ${border}`,
+      boxSizing: 'border-box',
+    },
+    circleBtn: {
+      fontSize:'24px',
+      color:Colors.get('icons', theme),
+      padding:'8px',
+      borderRadius:'50%',
+      backgroundColor:'rgba(255,255,255,0.05)',
+      cursor: 'pointer',
+    },
+    circleBtnSmall: {
+      fontSize:'18px',
+      color:Colors.get('icons', theme),
+      padding:'8px',
+      borderRadius:'50%',
+      backgroundColor:'rgba(255,255,255,0.05)',
+      cursor: 'pointer',
+    },
+    primaryBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: `linear-gradient(135deg, ${accent.hue}, #2F80ED)`,
+      color: '#fff',
+      border: 'none',
+      borderRadius: '16px',
+      padding: '12px 20px',
+      fontSize: '16px',
+      fontWeight: 850,
+      boxShadow: `0 12px 25px rgba(${accent.rgb}, 0.24)`,
+      cursor: 'pointer',
+    },
+    secondaryBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)',
+      color: Colors.get('mainText', theme),
+      border: `1px solid ${border}`,
+      borderRadius: '16px',
+      padding: '12px 20px',
+      fontSize: '16px',
+      cursor: 'pointer',
+    },
+    segmentBtn: {
+      flex: 1,
+      textAlign: 'center',
+      padding: '8px',
+      borderRadius: '12px',
+      fontSize: '14px',
+      fontWeight: 750,
+      transition: 'all 0.2s',
+      cursor: 'pointer',
+    },
+    slider: {
+      width:'90%',
+      alignSelf:'center',
+      color: accent.hue,
+    },
+    actionBtnSmall: (tone = 'neutral') => {
+      const toneMap = {
+        danger: { color: '#FB7185', bg: isLight ? 'rgba(239,68,68,0.10)' : 'rgba(251,113,133,0.12)', border: 'rgba(251,113,133,0.28)' },
+        success: { color: '#34D399', bg: isLight ? 'rgba(16,185,129,0.10)' : 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.28)' },
+        neutral: { color: Colors.get('icons', theme), bg: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.05)', border }
+      };
+      const current = toneMap[tone] || toneMap.neutral;
+      return ({
+      width: '46px',
+      height: '44px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      border: `1px solid ${current.border}`,
+      background: current.bg,
+      color: current.color,
+      borderRadius: '15px',
+      padding: 0,
+      cursor: 'pointer',
+      flexShrink: 0,
+      });
+    },
+    floatingMenu: {
+      position: 'fixed',
+      left: '50%',
+      bottom: '92px',
+      transform: 'translateX(-50%)',
+      width: 'min(88vw, 420px)',
+      minHeight: '50px',
+      background: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(14, 19, 25, 0.82)',
+      backdropFilter: 'blur(18px)',
+      borderRadius: '999px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '8px',
+      padding: '6px 8px',
+      boxShadow: '0 18px 45px rgba(0,0,0,0.32)',
+      border: `1px solid ${border}`,
+      zIndex: 1100,
+      boxSizing: 'border-box',
+    },
+    menuPillBtn: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0 16px',
+      borderRadius: '999px',
+      background: `linear-gradient(135deg, ${accent.hue}, #2F80ED)`,
+      color: '#fff',
+      fontSize: '14px',
+      fontWeight: 850,
+      cursor: 'pointer',
+      minHeight: '38px',
+      flex: 1,
+      maxWidth: '100%',
+      whiteSpace: 'nowrap',
+    },
+    menuIconBtn: {
+      width: '40px',
+      height: '40px',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: 'pointer',
+      background: isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.06)',
+      flexShrink: 0,
+    },
+    statBox: {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       backgroundColor: 'rgba(255,255,255,0.03)',
       borderRadius: '12px',
-      padding: '10px'
- },
- topSection: {
-          width: '85%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          background: 'rgba(0,0,0,0.05)', // Subtle backing for slider area
-          borderRadius: '16px',
-          padding: '15px',
-          marginTop: '10px'
-      },
-      label: {
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          color: Colors.get('mainText', theme),
-          marginBottom: '10px',
-          fontFamily: 'sans-serif', // Ensure clean font
-      }
-})
+      padding: '10px',
+    },
+    topSection: {
+      width: '85%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      background: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.05)',
+      borderRadius: '18px',
+      padding: '15px',
+      marginTop: '10px',
+    },
+    label: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      color: Colors.get('mainText', theme),
+      marginBottom: '10px',
+      fontFamily: fontStack,
+    },
+  });
+}
+
+function MetricTile({ theme, label, value }) {
+  return (
+    <div style={styles(theme).metricTile}>
+      <div style={styles(theme).metricLabel}>{label}</div>
+      <div style={styles(theme).metricValue}>{value}</div>
+    </div>
+  );
+}
+
+function getExerciseReps(exercise) {
+  return (exercise?.sets || []).reduce((sum, set) => sum + (Number(set.reps) || 0), 0);
+}
+
+function getExerciseTopWeight(exercise) {
+  const top = (exercise?.sets || []).reduce((max, set) => Math.max(max, Number(set.weight) || 0), 0);
+  return Number.isInteger(top) ? top : top.toFixed(2);
+}
+
+function getExerciseVolume(exercise) {
+  return (exercise?.sets || []).reduce((sum, set) => {
+    const reps = Number(set.reps) || 0;
+    const weight = Number(set.weight) || 0;
+    return sum + reps * weight;
+  }, 0);
+}
 
 function Difference({ exId, setIndex, beforeDate, value, isReps, theme, isTime = false }) {
-  const exIdStr = String(exId); // ✅ Critical: ensure string key
+  const exIdStr = String(exId);
   const previousSet = findPreviousSimilarExercise(exIdStr, setIndex, beforeDate, AppData.trainingLog);
   
   let diffString = '';
@@ -1525,7 +2028,7 @@ function Difference({ exId, setIndex, beforeDate, value, isReps, theme, isTime =
   );
 }
 function prevResult(exId, setIndex, beforeDate, isReps, isTime = false) {
-  const exIdStr = exId.toString(); // ✅ Ensure string key
+  const exIdStr = exId.toString();
   const previousSet = findPreviousSimilarExercise(exIdStr, setIndex, beforeDate, AppData.trainingLog);
   if (!previousSet) return '-';
   if (isTime) return formatDurationMs(previousSet.time);
@@ -1587,19 +2090,19 @@ function formatDurationMs(duration) {
 function howToUse(langIndex) {
   if (langIndex === 0) {
     return 'КАК ИСПОЛЬЗОВАТЬ:\n' +
-           '1️⃣ ВЫБЕРИТЕ ДЕНЬ: Нажмите на дату в календаре.\n' +
-           '2️⃣ СОЗДАЙТЕ ТРЕНИРОВКУ: Нажмите на значок открытой книги 📖, чтобы начать новую сессию.\n' +
-           '3️⃣ ДОБАВЬТЕ УПРАЖНЕНИЯ: Используйте ➕, чтобы добавить упражнение из программы.\n' +
-           '4️⃣ ЗАПОЛНИТЕ ПОДХОДЫ: Укажите повторения и вес. Тоннаж считается автоматически.\n' +
-           '5️⃣ РЕДАКТИРУЙТЕ: Нажмите ✏️, чтобы изменить упражнение или подход.\n' +
-           '6️⃣ ЗАВЕРШИТЕ: Нажмите 🏁, чтобы сохранить тренировку. Данные сохраняются мгновенно!';
+           '1. ВЫБЕРИТЕ ДЕНЬ: Нажмите на дату в календаре.\n' +
+           '2. СОЗДАЙТЕ ТРЕНИРОВКУ: Нажмите на кнопку добавления, чтобы начать новую сессию.\n' +
+           '3. ДОБАВЬТЕ УПРАЖНЕНИЯ: Используйте кнопку добавления упражнения.\n' +
+           '4. ЗАПОЛНИТЕ ПОДХОДЫ: Укажите повторения и вес. Тоннаж считается автоматически.\n' +
+           '5. РЕДАКТИРУЙТЕ: Откройте нужный подход и измените данные.\n' +
+           '6. ЗАВЕРШИТЕ: Сохраните тренировку через кнопку завершения.';
   }
   
   return 'HOW TO USE:\n' +
-         '1️⃣ SELECT A DAY: Tap a date in the calendar.\n' +
-         '2️⃣ START TRAINING: Tap the open book icon 📖 to begin a new session.\n' +
-         '3️⃣ ADD EXERCISES: Use ➕ to add exercises from your program.\n' +
-         '4️⃣ LOG SETS: Enter reps and weight. Tonnage is calculated automatically.\n' +
-         '5️⃣ EDIT: Tap ✏️ to modify an exercise or set.\n' +
-         '6️⃣ FINISH: Tap 🏁 to complete and save your workout instantly!';
+         '1. SELECT A DAY: Tap a date in the calendar.\n' +
+         '2. START TRAINING: Tap the add button to begin a new session.\n' +
+         '3. ADD EXERCISES: Use the add exercise button.\n' +
+         '4. LOG SETS: Enter reps and weight. Tonnage is calculated automatically.\n' +
+         '5. EDIT: Open a set and change its data.\n' +
+         '6. FINISH: Save the workout with the finish button.';
 }

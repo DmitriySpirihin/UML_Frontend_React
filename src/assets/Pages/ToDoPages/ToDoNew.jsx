@@ -85,7 +85,7 @@ const ToDoNew = () => {
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState(CUSTOM_ICON_OPTIONS[0].id);
   const [visibility, setVisibility] = useState({ difficulty: true, urgency: true, startDate: true, deadLine: true, ...(AppData.todoFieldsVisibility || {}) });
-  const [accentColor] = useState(AppData.todoAccentColor || '#8FA6C8');
+  const [accentColor] = useState(buildTodoAccent(AppData.todoAccentColor || '#5F8DFF').hue);
 
   const CATEGORIES = useMemo(() => [...BASE_CATEGORIES, ...customCats], [customCats]);
   const currentCat = CATEGORIES[selectedCatIndex] || CATEGORIES[0];

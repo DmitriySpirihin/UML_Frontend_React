@@ -21,6 +21,7 @@ export const bottomBtnPanel$ = new BehaviorSubject('');
 export const notifyPanel$ = new BehaviorSubject(false);
 export const notify$ = new BehaviorSubject([{enabled:false,cron:''},{enabled:false,cron:''},{enabled:false,cron:''}]);
 export const habitsChanged$ = new Subject();
+export const sectionAccent$ = new Subject();
 export const daysToFormAHabit$ = new BehaviorSubject(66);
 export const currentBottomBtn$ = new BehaviorSubject(0);
 export const keyboardVisible$ = new BehaviorSubject(false);
@@ -52,7 +53,7 @@ export const setTheme = (theme) => {
   theme$.next(theme);
   Colors.setTheme(theme);
   console.log(theme);
-  globalTheme$.next(theme === THEME.DARK ? 'dark' : 'light');
+  globalTheme$.next(theme === THEME.LIGHT ? 'light' : 'dark');
 };
 export const setLang = (lang) => lang$.next(lang);
 export const setFontSize = (fontSize) => {
@@ -78,6 +79,7 @@ export const setPage = (page) => {
   }
   setPage$.next(page);
   if(page.startsWith('Habit')) bottomBtnPanel$.next('BtnsHabits');
+  else if(page.startsWith('Habits')) bottomBtnPanel$.next('BtnsHabits');
   else if(page.startsWith('Training')) bottomBtnPanel$.next('BtnsTraining');
   else if(page.startsWith('Recovery')) bottomBtnPanel$.next('BtnsRecovery');
   else if(page.startsWith('Mental')) bottomBtnPanel$.next('BtnsMental');
@@ -89,6 +91,7 @@ export const setPage = (page) => {
 }
 export const setAddPanel = (state) => addPanel$.next(state);
 export const emitHabitsChanged = () => habitsChanged$.next(Date.now());
+export const emitSectionAccentChanged = () => sectionAccent$.next(Date.now());
 export const setDaysToFormAHabit = (days) => {daysToFormAHabit$.next(days);AppData.daysToFormAHabit = days;};
 export const setSoundAndVibro = (s,v) => {sound$.next(s);vibro$.next(v);}
 export const setCurrentBottomBtn = (btn) => currentBottomBtn$.next(btn);

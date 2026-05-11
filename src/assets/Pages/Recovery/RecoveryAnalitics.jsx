@@ -1,438 +1,655 @@
-import { useState, useEffect, useMemo } from 'react';
-import MyAreaChart from "../../Helpers/MyAreaChart";
-import { AppData,UserData } from '../../StaticClasses/AppData.js';
-import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$ ,premium$, setPage} from '../../StaticClasses/HabitsBus';
-import { motion } from 'framer-motion';
-import { FaHistory, FaCalendarAlt, FaClock, FaFire, FaWind, FaSpa, FaSnowflake, FaCrown } from 'react-icons/fa';
+import { useEffect, useMemo, useState } from 'react';
+import MyAreaChart from '../../Helpers/MyAreaChart.jsx';
+import { AppData, UserData } from '../../StaticClasses/AppData.js';
+import Colors from '../../StaticClasses/Colors.js';
+import { fontSize$, lang$, premium$, setPage, theme$ } from '../../StaticClasses/HabitsBus.js';
+import { motion as Motion } from 'framer-motion';
+import { FaCalendarAlt, FaClock, FaCrown, FaFire, FaSnowflake, FaSpa, FaWind } from 'react-icons/fa';
 
-// === Labels & Icons ===
-const metricConfig = [
-  { ru: 'Дыхание', en: 'Breathing', icon: <FaWind />, colorKey: 'out', fallback: '#32D74B' },
-  { ru: 'Медитация', en: 'Meditation', icon: <FaSpa />, colorKey: 'meditate', fallback: '#BF5AF2' },
-  { ru: 'Закалка', en: 'Hardening', icon: <FaSnowflake />, colorKey: 'cold', fallback: '#0A84FF' }
+const METRICS = [
+    { key: 'breath', ru: 'Дыхание', en: 'Breath', Icon: FaWind, colorKey: 'out', fallback: '#7ee6d2' },
+    { key: 'meditation', ru: 'Медитация', en: 'Meditation', Icon: FaSpa, colorKey: 'meditate', fallback: '#8FA6C8' },
+    { key: 'cold', ru: 'Закалка', en: 'Cold', Icon: FaSnowflake, colorKey: 'cold', fallback: '#69d6f0' },
 ];
 
-const periodLabels = [
-  ['Месяц', 'Month'],
-  ['Полгода', '6 Months'],
-  ['Год', 'Year']
+const PERIODS = [
+    { ru: 'Месяц', en: 'Month', days: 28 },
+    { ru: 'Полгода', en: '6 months', days: 180 },
+    { ru: 'Год', en: 'Year', days: 360 },
 ];
 
-const PERIOD_DAYS = [28, 180, 360];
-
-// === Helpers ===
-const formatDuration = (ms) => {
-  const totalSec = Math.floor(ms / 1000);
-  const min = Math.floor(totalSec / 60);
-  const sec = totalSec % 60;
-  return `${min}m ${sec}s`;
+const formatDuration = (ms, isRu = true) => {
+    const totalSec = Math.max(0, Math.floor(ms / 1000));
+    const hours = Math.floor(totalSec / 3600);
+    const min = Math.floor((totalSec % 3600) / 60);
+    const sec = totalSec % 60;
+    if (hours > 0) return `${hours}${isRu ? 'ч' : 'h'} ${min}${isRu ? 'м' : 'm'}`;
+    return `${min}${isRu ? 'м' : 'm'} ${sec}${isRu ? 'с' : 's'}`;
 };
 
-const formatDate = (iso, langIndex) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString(langIndex === 0 ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' });
+const formatDate = (iso, isRu) => {
+    const date = new Date(iso);
+    return date.toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' });
 };
 
-// Получение цвета
-const getMetricColor = (index, theme) => {
-    const config = metricConfig[index];
-    return Colors.get(config.colorKey, theme) || config.fallback;
-};
+const getMetricColor = (metric, theme) => Colors.get(metric.colorKey, theme) || metric.fallback;
 
-// === COMPONENT: Segmented Control (Tabs) ===
-const SegmentedControl = ({ items, selectedIndex, onChange, theme, langIndex, fSize, activeColor }) => {
+function SegmentTabs({ items, activeIndex, onChange, theme, isRu, accent, compact = false }) {
+    const s = sharedStyles(theme, accent);
     return (
-        <div style={{
-            display: 'flex',
-            backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.05)',
-            borderRadius: '14px',
-            padding: '4px',
-            marginBottom: '20px',
-            width: '92%',
-            position: 'relative',
-            backdropFilter: 'blur(10px)'
-        }}>
-            {items.map((item, idx) => {
-                const isActive = selectedIndex === idx;
+        <div style={compact ? s.periodTabs : s.metricTabs}>
+            {items.map((item, index) => {
+                const active = activeIndex === index;
+                const Icon = item.Icon;
                 return (
-                    <div
-                        key={idx}
-                        onClick={() => onChange(idx)}
-                        style={{
-                            flex: 1,
-                            position: 'relative',
-                            padding: '10px 0',
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            zIndex: 1,
-                            fontSize: fSize === 0 ? '13px' : '15px',
-                            fontWeight: isActive ? '700' : '500',
-                            color: isActive 
-                                ? '#FFF' 
-                                : Colors.get('subText', theme),
-                            transition: 'color 0.3s ease',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px'
-                        }}
+                    <Motion.button
+                        key={item.key ?? item.ru}
+                        type="button"
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => onChange(index)}
+                        style={compact ? s.periodTab(active) : s.metricTab(active)}
                     >
-                        {isActive && (
-                            <motion.div
-                                layoutId="activeTab"
-                                style={{
-                                    position: 'absolute',
-                                    top: 0, left: 0, right: 0, bottom: 0,
-                                    backgroundColor: activeColor,
-                                    borderRadius: '12px',
-                                    zIndex: -1,
-                                    boxShadow: `0 4px 12px ${activeColor}60`
-                                }}
-                                transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                            />
-                        )}
-                        <span style={{ fontSize: '14px' }}>{item.icon}</span>
-                        <span>{item[langIndex === 0 ? 'ru' : 'en']}</span>
-                    </div>
+                        {Icon && <Icon />}
+                        <span>{isRu ? item.ru : item.en}</span>
+                    </Motion.button>
                 );
             })}
         </div>
     );
-};
+}
 
-// === COMPONENT: Period Selector ===
-const PeriodSelector = ({ items, selectedIndex, onChange, theme, langIndex, activeColor }) => {
+function PageHeader({ theme, isRu, fSize }) {
+    const s = sharedStyles(theme);
     return (
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', width: '92%', justifyContent: 'center' }}>
-            {items.map((item, idx) => {
-                const isActive = selectedIndex === idx;
-                return (
-                    <div
-                        key={idx}
-                        onClick={() => onChange(idx)}
-                        style={{
-                            padding: '6px 16px',
-                            borderRadius: '20px',
-                            fontSize: '12px',
-                            fontWeight: isActive ? '700' : '500',
-                            cursor: 'pointer',
-                            backgroundColor: isActive ? `${activeColor}20` : 'transparent', // Прозрачный фон активного цвета
-                            color: isActive ? activeColor : Colors.get('subText', theme),
-                            border: isActive ? `1px solid ${activeColor}` : `1px solid ${Colors.get('border', theme)}`,
-                            transition: 'all 0.2s ease',
-                            minWidth: '60px',
-                            textAlign: 'center'
-                        }}
-                    >
-                        {item[langIndex]}
-                    </div>
-                );
-            })}
+        <div style={s.pageHeader}>
+            <div style={{ ...s.pageTitle, fontSize: fSize === 0 ? '25px' : '27px' }}>UltyMyLife</div>
+            <div style={s.pageSubtitle}>{isRu ? 'Восстановление — часть роста' : 'Recovery is where growth happens'}</div>
         </div>
     );
-};
+}
 
-// === Main Component ===
 const RecoveryAnalytics = () => {
-  const [theme, setThemeState] = useState('dark');
-  const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-  const [fSize, setFSize] = useState(AppData.prefs[4]);
-  const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
-  const [metricIndex, setMetricIndex] = useState(0);
-  const [periodIndex, setPeriodIndex] = useState(0);
+    const [theme, setThemeState] = useState('dark');
+    const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
+    const [fSize, setFSize] = useState(AppData.prefs[4]);
+    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
+    const [metricIndex, setMetricIndex] = useState(0);
+    const [periodIndex, setPeriodIndex] = useState(0);
 
-  useEffect(() => {
-      const sub1 = theme$.subscribe(setThemeState);
-      const sub2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
-      const sub3 = fontSize$.subscribe(setFSize);
-      const sub4 = premium$.subscribe(setHasPremium);
-      return () => { sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe();sub4.unsubscribe(); };
-  }, []);
+    useEffect(() => {
+        const subs = [
+            theme$.subscribe(setThemeState),
+            lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1)),
+            fontSize$.subscribe(setFSize),
+            premium$.subscribe(setHasPremium),
+        ];
+        return () => subs.forEach((sub) => sub.unsubscribe());
+    }, []);
 
-  // --- Data Logic (Сохранена из старого файла) ---
-  const logs = [AppData.breathingLog, AppData.meditationLog, AppData.hardeningLog];
-  const allData = useMemo(() => {
-    const log = logs[metricIndex] || {};
-    const dailyMap = {};
-    for (const [date, sessions] of Object.entries(log)) {
-      let totalDuration = 0;
-      let totalMaxHold = 0;
-      let totalTimeInCold = 0;
-      for (const session of sessions) {
-        const duration = session.endTime - session.startTime;
-        totalDuration += duration;
-        if (metricIndex === 0 && session.maxHold) totalMaxHold += session.maxHold;
-        if (metricIndex === 2 && session.timeInColdWater) totalTimeInCold += session.timeInColdWater;
-      }
-      dailyMap[date] = { date, totalDuration, totalMaxHold, totalTimeInCold };
-    }
-    return Object.values(dailyMap).sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [metricIndex]);
+    const isRu = langIndex === 0;
+    const metric = METRICS[metricIndex];
+    const activeColor = getMetricColor(metric, theme);
+    const s = styles(theme, activeColor, fSize);
 
-  const filteredData = useMemo(() => {
-    if (allData.length === 0) return [];
-    const now = new Date();
-    const cutoff = new Date(now);
-    cutoff.setDate(now.getDate() - PERIOD_DAYS[periodIndex]);
-    return allData.filter(item => new Date(item.date) >= cutoff);
-  }, [allData, periodIndex]);
+    const logs = [AppData.breathingLog, AppData.meditationLog, AppData.hardeningLog];
 
-  const chartData = useMemo(() => {
-    return filteredData.map(item => ({
-      date: item.date.split('-').slice(1).reverse().join('.'), // DD.MM
-      weight: Math.round(item.totalDuration / 1000)
-    })).reverse();
-  }, [filteredData]);
+    const allData = useMemo(() => {
+        const log = logs[metricIndex] || {};
+        return Object.entries(log)
+            .map(([date, sessions = []]) => {
+                const totals = sessions.reduce(
+                    (acc, session) => {
+                        const duration = Math.max(0, (session.endTime || 0) - (session.startTime || 0));
+                        acc.totalDuration += duration;
+                        if (metricIndex === 0 && session.maxHold) acc.totalMaxHold += session.maxHold;
+                        if (metricIndex === 2 && session.timeInColdWater) acc.totalTimeInCold += session.timeInColdWater;
+                        return acc;
+                    },
+                    { date, totalDuration: 0, totalMaxHold: 0, totalTimeInCold: 0 }
+                );
+                return totals;
+            })
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+    }, [metricIndex]);
 
-  // Вычисление итогового времени за период
-  const totalPeriodTime = useMemo(() => {
-      return filteredData.reduce((acc, curr) => acc + curr.totalDuration, 0);
-  }, [filteredData]);
+    const filteredData = useMemo(() => {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - PERIODS[periodIndex].days);
+        return allData.filter((item) => new Date(item.date) >= cutoff);
+    }, [allData, periodIndex]);
 
-  const activeColor = getMetricColor(metricIndex, theme);
-  const isDark = theme === 'dark' || theme === 'specialdark';
+    const chartData = useMemo(
+        () =>
+            filteredData.map((item) => ({
+                date: item.date.split('-').slice(1).reverse().join('.'),
+                weight: Math.round(item.totalDuration / 1000),
+            })),
+        [filteredData]
+    );
 
-  return (
-    <div style={styles(theme).container}>
-      
-      {/* 1. Header & Title */}
-      <h2 style={{ 
-          margin: '0 0 15px 0', 
-          fontSize: '24px', 
-          fontWeight: '800', 
-          color: Colors.get('mainText', theme),
-          fontFamily: 'Segoe UI',
-          letterSpacing: '0.5px'
-      }}>
-          {langIndex === 0 ? 'Ваш прогресс' : 'Your Progress'}
-      </h2>
+    const totalPeriodTime = filteredData.reduce((acc, item) => acc + item.totalDuration, 0);
+    const MetricIcon = metric.Icon;
 
-      {/* 2. Main Metric Tabs */}
-      <SegmentedControl 
-          items={metricConfig} 
-          selectedIndex={metricIndex} 
-          onChange={setMetricIndex} 
-          theme={theme} 
-          langIndex={langIndex} 
-          fSize={fSize} 
-          activeColor={activeColor}
-      />
+    return (
+        <div style={s.container}>
+            <div style={s.scrollView} className="no-scrollbar">
+                <PageHeader theme={theme} isRu={isRu} fSize={fSize} />
 
-      {/* 3. The "Hero" Card with Chart */}
-      <div style={{
-          width: '92%',
-          background: isDark 
-            ? `linear-gradient(160deg, #1C1C1E 0%, #101010 100%)` 
-            : '#FFFFFF',
-          borderRadius: '24px',
-          padding: '20px 0px 10px 0px',
-          marginBottom: '20px',
-          boxShadow: isDark 
-            ? `0 10px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)` 
-            : '0 10px 30px -10px rgba(0,0,0,0.1)',
-          border: isDark ? `1px solid ${activeColor}30` : 'none', // Цветная обводка
-          position: 'relative',
-          overflow: 'hidden'
-      }}>
-          {/* Total Time Display */}
-          <div style={{ paddingLeft: '24px', marginBottom: '15px' }}>
-               <div style={{ fontSize: '13px', color: Colors.get('subText', theme), fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                   {langIndex === 0 ? 'Всего за период' : 'Total Time'}
-               </div>
-               <div style={{ 
-                   fontSize: '32px', 
-                   fontWeight: '800', 
-                   color: activeColor, 
-                   textShadow: `0 0 20px ${activeColor}50` 
-               }}>
-                   {totalPeriodTime > 0 ? formatDuration(totalPeriodTime) : '0m 0s'}
-               </div>
-          </div>
-
-          {/* Chart */}
-          <div style={{ width: '100%', height: '160px', paddingRight: '10px' }}>
-            <MyAreaChart
-              data={chartData}
-              fillColor={activeColor}
-              textColor={Colors.get('subText', theme)}
-              linesColor={isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}
-              backgroundColor={'transparent'}
-            />
-          </div>
-          
-          {/* Bottom Glow */}
-          <div style={{
-              position: 'absolute', bottom: 0, left: 0, width: '100%', height: '40%',
-              background: `linear-gradient(to top, ${activeColor}20, transparent)`,
-              pointerEvents: 'none'
-          }} />
-      </div>
-
-      {/* 4. Period Selection */}
-      <PeriodSelector 
-          items={periodLabels} 
-          selectedIndex={periodIndex} 
-          onChange={setPeriodIndex} 
-          theme={theme} 
-          langIndex={langIndex} 
-          activeColor={activeColor}
-      />
-
-      {/* 5. History Header */}
-      <div style={{ width: '90%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FaHistory color={Colors.get('subText', theme)} size={14} />
-            <span style={{ fontSize: '14px', fontWeight: '700', color: Colors.get('mainText', theme) }}>
-                {langIndex === 0 ? 'История сессий' : 'History'}
-            </span>
-          </div>
-          <span style={{ fontSize: '12px', color: Colors.get('subText', theme), opacity: 0.7 }}>
-             {filteredData.length} {langIndex === 0 ? 'записей' : 'records'}
-          </span>
-      </div>
-
-      {/* 6. History List */}
-      <div style={{
-        width: '100%',
-        flex: 1,
-        overflowY: 'auto',
-        padding: '0 5% 50px 5%',
-        boxSizing: 'border-box'
-      }} className="no-scrollbar">
-        {filteredData.length === 0 ? (
-          <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '40px', opacity: 0.5
-          }}>
-            <FaClock size={40} color={Colors.get('subText', theme)} style={{ marginBottom: '10px' }} />
-            <div style={{ color: Colors.get('subText', theme), fontSize: '14px' }}>
-               {langIndex === 0 ? 'Нет тренировок за этот период' : 'No sessions in this period'}
-            </div>
-          </div>
-        ) : (
-          filteredData
-            .slice()
-            .reverse()
-            .map((item, idx) => (
-              <motion.div
-                key={`${item.date}-${idx}`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '16px',
-                  marginBottom: '10px',
-                  // Более "плоский" и чистый стиль для списка
-                  backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#FFF',
-                  borderRadius: '18px',
-                  borderLeft: `4px solid ${activeColor}`, // Цветной индикатор слева
-                  boxShadow: isDark ? 'none' : '0 2px 10px rgba(0,0,0,0.03)'
-                }}
-              >
-                {/* Date Side */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{
-                        width: '36px', height: '36px', borderRadius: '10px',
-                        backgroundColor: `${activeColor}15`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: activeColor
-                    }}>
-                        <FaCalendarAlt size={14} />
+                <Motion.section
+                    initial={{ opacity: 0, y: 16, scale: 0.985 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 270, damping: 28 }}
+                    style={s.hero}
+                >
+                    <div style={s.heroIcon}>
+                        <MetricIcon />
                     </div>
-                    <span style={{
-                      color: Colors.get('mainText', theme),
-                      fontSize: '15px',
-                      fontWeight: '600'
-                    }}>
-                      {formatDate(item.date, langIndex)}
-                    </span>
+                    <div style={s.heroCopy}>
+                        <div style={s.eyebrow}>{isRu ? 'ПРОГРЕСС' : 'PROGRESS'}</div>
+                        <h1 style={s.heroTitle}>{isRu ? 'Статистика' : 'Stats'}</h1>
+                    </div>
+                    <div style={s.totalPill}>{formatDuration(totalPeriodTime, isRu)}</div>
+                </Motion.section>
+
+                <SegmentTabs
+                    items={METRICS}
+                    activeIndex={metricIndex}
+                    onChange={setMetricIndex}
+                    theme={theme}
+                    isRu={isRu}
+                    accent={activeColor}
+                />
+
+                <Motion.section
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.04 }}
+                    style={s.chartCard}
+                >
+                    <div style={s.chartHeader}>
+                        <div>
+                            <div style={s.kicker}>{isRu ? 'ЗА ПЕРИОД' : 'PERIOD'}</div>
+                            <div style={s.bigTotal}>{formatDuration(totalPeriodTime, isRu)}</div>
+                        </div>
+                        <SegmentTabs
+                            items={PERIODS}
+                            activeIndex={periodIndex}
+                            onChange={setPeriodIndex}
+                            theme={theme}
+                            isRu={isRu}
+                            accent={activeColor}
+                            compact
+                        />
+                    </div>
+
+                    <div style={s.chartArea}>
+                        {chartData.length > 0 ? (
+                            <MyAreaChart
+                                data={chartData}
+                                fillColor={activeColor}
+                                textColor={Colors.get('subText', theme)}
+                                linesColor={theme === 'dark' || theme === 'specialdark' ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}
+                                backgroundColor="rgba(12, 14, 18, 0.92)"
+                            />
+                        ) : (
+                            <div style={s.emptyChart}>
+                                <FaClock />
+                                <span>{isRu ? 'Пока нет сессий' : 'No sessions yet'}</span>
+                            </div>
+                        )}
+                    </div>
+                </Motion.section>
+
+                <div style={s.historyHeader}>
+                    <div>
+                        <h2 style={s.historyTitle}>{isRu ? 'История' : 'History'}</h2>
+                        <div style={s.historyMeta}>
+                            {filteredData.length} {isRu ? 'записей' : 'records'}
+                        </div>
+                    </div>
                 </div>
-                
-                {/* Stats Side */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <span style={{
-                      color: Colors.get('mainText', theme),
-                      fontSize: '15px',
-                      fontWeight: '700',
-                    }}>
-                      {formatDuration(item.totalDuration)}
-                    </span>
-                    
-                    {/* Extra Info (Small) */}
+
+                <div style={s.historyList}>
+                    {filteredData.length === 0 ? (
+                        <div style={s.emptyHistory}>{isRu ? 'Здесь появятся завершенные практики.' : 'Completed practices will appear here.'}</div>
+                    ) : (
+                        filteredData
+                            .slice()
+                            .reverse()
+                            .map((item) => (
+                                <HistoryRow key={item.date} item={item} metricIndex={metricIndex} theme={theme} activeColor={activeColor} isRu={isRu} />
+                            ))
+                    )}
+                </div>
+
+                <div style={s.bottomSpace} />
+            </div>
+
+            {!hasPremium && <PremiumOverlay theme={theme} isRu={isRu} />}
+        </div>
+    );
+};
+
+function HistoryRow({ item, metricIndex, theme, activeColor, isRu }) {
+    const s = sharedStyles(theme, activeColor);
+    return (
+        <Motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={s.historyRow}>
+            <div style={s.dateBadge}>
+                <FaCalendarAlt />
+            </div>
+            <div style={s.rowCopy}>
+                <div style={s.rowDate}>{formatDate(item.date, isRu)}</div>
+                <div style={s.rowMeta}>
                     {metricIndex === 0 && item.totalMaxHold > 0 && (
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: Colors.get('subText', theme) }}>
-                            <FaFire size={8} /> {langIndex === 0 ? 'Задержка: ' : 'Hold: '} {formatDuration(item.totalMaxHold)}
-                         </div>
+                        <>
+                            <FaFire /> {formatDuration(item.totalMaxHold, isRu)}
+                        </>
                     )}
                     {metricIndex === 2 && item.totalTimeInCold > 0 && (
-                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: Colors.get('subText', theme) }}>
-                            <FaSnowflake size={8} /> {langIndex === 0 ? 'Холод: ' : 'Cold: '} {formatDuration(item.totalTimeInCold)}
-                         </div>
+                        <>
+                            <FaSnowflake /> {formatDuration(item.totalTimeInCold, isRu)}
+                        </>
                     )}
                 </div>
-              </motion.div>
-            ))
-        )}
-      </div>
-      {!hasPremium && (
-          <div onClick={(e) => e.stopPropagation()}
-              style={{
-                  position: 'fixed', inset: 0, zIndex: 2555,
-                  display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-                  background: theme === 'dark' ? 'rgba(10,10,14,0.82)' : 'rgba(248,248,250,0.88)',
-                  backdropFilter: 'blur(20px)', textAlign: 'center'
-              }}>
-              <div style={{
-                  width: '72px', height: '72px', background: 'rgba(159,180,196,0.12)',
-                  borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '16px', border: '1px solid rgba(159,180,196,0.22)',
-              }}>
-                  <FaCrown size={30} color="#9FB4C4" />
-              </div>
-              <div style={{
-                  fontSize: '13px', lineHeight: '1.6',
-                  color: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)',
-                  marginBottom: '24px', maxWidth: '210px',
-              }}>
-                  {langIndex === 0 ? 'Откройте полный доступ ко всей статистике' : 'Unlock full access to all statistics'}
-              </div>
-              <button onClick={() => setPage('premium')} style={{
-                  fontSize: '15px', fontWeight: '700', color: '#fff', background: '#9FB4C4',
-                  border: 'none', borderRadius: '14px', padding: '13px 0', marginBottom: '10px',
-                  cursor: 'pointer', boxShadow: '0 4px 16px rgba(159,180,196,0.35)', width: '220px',
-              }}>
-                  {langIndex === 0 ? 'Купить подписку' : 'Buy subscription'}
-              </button>
-              <button onClick={() => setPage('MainMenu')} style={{
-                  fontSize: '13px', fontWeight: '500',
-                  color: theme === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
-                  background: 'transparent', border: 'none', padding: '8px 20px', cursor: 'pointer',
-              }}>
-                  {langIndex === 0 ? '← На главную' : '← Home'}
-              </button>
-          </div>
-      )}
-    </div>
-  );
+            </div>
+            <div style={s.rowValue}>{formatDuration(item.totalDuration, isRu)}</div>
+        </Motion.div>
+    );
+}
+
+function PremiumOverlay({ theme, isRu }) {
+    const isDark = theme === 'dark' || theme === 'specialdark';
+    return (
+        <div
+            onClick={(event) => event.stopPropagation()}
+            style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 2555,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                background: isDark ? 'rgba(10,10,14,0.82)' : 'rgba(248,248,250,0.88)',
+                backdropFilter: 'blur(20px)',
+                textAlign: 'center',
+            }}
+        >
+            <div
+                style={{
+                    width: '72px',
+                    height: '72px',
+                    background: 'rgba(159,180,196,0.12)',
+                    borderRadius: '22px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: '16px',
+                    border: '1px solid rgba(159,180,196,0.22)',
+                }}
+            >
+                <FaCrown size={30} color="#9FB4C4" />
+            </div>
+            <div
+                style={{
+                    fontSize: '13px',
+                    lineHeight: 1.6,
+                    color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)',
+                    marginBottom: '24px',
+                    maxWidth: '210px',
+                }}
+            >
+                {isRu ? 'Откройте полный доступ ко всей статистике' : 'Unlock full access to all statistics'}
+            </div>
+            <button
+                onClick={() => setPage('premium')}
+                style={{
+                    fontSize: '15px',
+                    fontWeight: 800,
+                    color: '#fff',
+                    background: '#9FB4C4',
+                    border: 'none',
+                    borderRadius: '14px',
+                    padding: '13px 0',
+                    marginBottom: '10px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 16px rgba(159,180,196,0.35)',
+                    width: '220px',
+                }}
+            >
+                {isRu ? 'Купить подписку' : 'Buy subscription'}
+            </button>
+            <button
+                onClick={() => setPage('RecoveryMain')}
+                style={{
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '8px 20px',
+                    cursor: 'pointer',
+                }}
+            >
+                {isRu ? 'Назад' : 'Back'}
+            </button>
+        </div>
+    );
+}
+
+const styles = (theme, accent = '#7ee6d2', fSize = 0) => {
+    const base = sharedStyles(theme, accent);
+    const isDark = theme === 'dark' || theme === 'specialdark';
+    const background = Colors.get('background', theme);
+    const mainText = Colors.get('mainText', theme);
+    const subText = Colors.get('subText', theme);
+
+    return {
+        ...base,
+        container: {
+            width: '100vw',
+            height: '100vh',
+            overflow: 'hidden',
+            background: isDark
+                ? `radial-gradient(circle at 12% 14%, ${accent}18, transparent 28%),
+                   radial-gradient(circle at 88% 22%, rgba(159, 140, 255, 0.1), transparent 26%),
+                   ${background}`
+                : background,
+            color: mainText,
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        },
+        scrollView: {
+            width: '100vw',
+            height: '100vh',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '24px 4.5vw 132px',
+            boxSizing: 'border-box',
+        },
+        hero: {
+            width: '100%',
+            maxWidth: '560px',
+            minHeight: '104px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '14px',
+            padding: '15px 16px',
+            boxSizing: 'border-box',
+            borderRadius: '28px',
+            background: isDark
+                ? `linear-gradient(135deg, ${accent}1f, rgba(20, 23, 28, 0.94) 50%, rgba(28, 29, 42, 0.92))`
+                : '#fff',
+            border: `1px solid ${accent}40`,
+            boxShadow: isDark ? '0 22px 58px rgba(0,0,0,0.3)' : '0 16px 34px rgba(15,23,42,0.08)',
+        },
+        heroIcon: {
+            width: '54px',
+            height: '54px',
+            borderRadius: '19px',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: accent,
+            background: `${accent}1f`,
+            border: `1px solid ${accent}40`,
+            fontSize: '24px',
+        },
+        heroCopy: {
+            flex: 1,
+            minWidth: 0,
+        },
+        eyebrow: {
+            color: accent,
+            fontSize: '10px',
+            fontWeight: 900,
+            letterSpacing: '0.18em',
+        },
+        heroTitle: {
+            margin: '4px 0 0',
+            color: mainText,
+            fontSize: fSize === 0 ? '28px' : '30px',
+            fontWeight: 900,
+            lineHeight: 1.05,
+        },
+        totalPill: {
+            minWidth: '88px',
+            height: '42px',
+            padding: '0 12px',
+            borderRadius: '17px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: accent,
+            fontSize: '15px',
+            fontWeight: 900,
+            background: `${accent}18`,
+            border: `1px solid ${accent}36`,
+            whiteSpace: 'nowrap',
+        },
+        chartCard: {
+            width: '100%',
+            maxWidth: '560px',
+            marginTop: '12px',
+            padding: '16px',
+            borderRadius: '28px',
+            boxSizing: 'border-box',
+            background: isDark
+                ? `linear-gradient(145deg, rgba(255,255,255,0.045), rgba(18,21,26,0.94))`
+                : '#fff',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
+            boxShadow: isDark ? '0 18px 48px rgba(0,0,0,0.24)' : '0 14px 30px rgba(15,23,42,0.08)',
+        },
+        chartHeader: {
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: '12px',
+            marginBottom: '10px',
+        },
+        kicker: {
+            color: subText,
+            fontSize: '10px',
+            fontWeight: 900,
+            letterSpacing: '0.16em',
+        },
+        bigTotal: {
+            marginTop: '3px',
+            color: accent,
+            fontSize: '28px',
+            fontWeight: 900,
+            lineHeight: 1,
+            textShadow: `0 0 20px ${accent}38`,
+        },
+        chartArea: {
+            height: '166px',
+            width: '100%',
+        },
+        emptyChart: {
+            height: '100%',
+            borderRadius: '22px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            color: subText,
+            background: isDark ? 'rgba(255,255,255,0.025)' : 'rgba(15,23,42,0.04)',
+            fontSize: '13px',
+            fontWeight: 800,
+        },
+        historyHeader: {
+            width: '100%',
+            maxWidth: '560px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            margin: '16px 0 9px',
+        },
+        historyTitle: {
+            margin: 0,
+            color: mainText,
+            fontSize: fSize === 0 ? '21px' : '23px',
+            fontWeight: 900,
+            lineHeight: 1.05,
+        },
+        historyMeta: {
+            marginTop: '3px',
+            color: subText,
+            fontSize: '12px',
+            fontWeight: 800,
+        },
+        historyList: {
+            width: '100%',
+            maxWidth: '560px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '9px',
+        },
+        emptyHistory: {
+            minHeight: '84px',
+            borderRadius: '22px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: subText,
+            background: isDark ? 'rgba(255,255,255,0.035)' : 'rgba(15,23,42,0.04)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.07)'}`,
+            fontSize: '13px',
+            fontWeight: 800,
+        },
+        bottomSpace: {
+            height: '16px',
+        },
+    };
 };
 
-const styles = (theme) => ({
-    container: {
-        backgroundColor: Colors.get('background', theme),
-        display: "flex",
-        position: 'absolute',
-        flexDirection: "column",
-        justifyContent: "start",
-        alignItems: "center",
-        height: "88vh", 
-        top: '12vh',    
-        width: "100vw",
-        fontFamily: "Segoe UI",
-        overflow: 'hidden'
-    },
-});
+const sharedStyles = (theme, accent = '#7ee6d2') => {
+    const isDark = theme === 'dark' || theme === 'specialdark';
+    const mainText = Colors.get('mainText', theme);
+    const subText = Colors.get('subText', theme);
+
+    return {
+        pageHeader: {
+            width: '100%',
+            maxWidth: '560px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '8px 18px 17px',
+            boxSizing: 'border-box',
+            textAlign: 'center',
+        },
+        pageTitle: {
+            color: mainText,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontWeight: 700,
+            lineHeight: 1.05,
+            opacity: 0.9,
+        },
+        pageSubtitle: {
+            marginTop: '6px',
+            color: subText,
+            fontSize: '10px',
+            fontWeight: 700,
+            letterSpacing: '0.18em',
+            lineHeight: 1.3,
+        },
+        metricTabs: {
+            width: '100%',
+            maxWidth: '560px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: '8px',
+            marginTop: '11px',
+        },
+        metricTab: (active) => ({
+            minHeight: '42px',
+            borderRadius: '17px',
+            border: `1px solid ${active ? `${accent}44` : isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}`,
+            background: active ? `${accent}24` : isDark ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.78)',
+            color: active ? accent : subText,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '7px',
+            fontSize: '12px',
+            fontWeight: 900,
+            cursor: 'pointer',
+            outline: 'none',
+            fontFamily: 'inherit',
+        }),
+        periodTabs: {
+            display: 'flex',
+            gap: '6px',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+        },
+        periodTab: (active) => ({
+            minHeight: '30px',
+            padding: '0 11px',
+            borderRadius: '14px',
+            border: `1px solid ${active ? `${accent}4d` : isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}`,
+            background: active ? `${accent}24` : 'transparent',
+            color: active ? accent : subText,
+            fontSize: '11px',
+            fontWeight: 900,
+            cursor: 'pointer',
+            outline: 'none',
+            fontFamily: 'inherit',
+        }),
+        historyRow: {
+            minHeight: '64px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '11px',
+            padding: '10px 12px',
+            boxSizing: 'border-box',
+            borderRadius: '22px',
+            background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.9)',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}`,
+        },
+        dateBadge: {
+            width: '40px',
+            height: '40px',
+            borderRadius: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: accent,
+            background: `${accent}18`,
+            border: `1px solid ${accent}32`,
+            flexShrink: 0,
+        },
+        rowCopy: {
+            minWidth: 0,
+            flex: 1,
+        },
+        rowDate: {
+            color: mainText,
+            fontSize: '15px',
+            fontWeight: 900,
+            lineHeight: 1.15,
+        },
+        rowMeta: {
+            minHeight: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            color: subText,
+            fontSize: '11px',
+            fontWeight: 800,
+            marginTop: '3px',
+        },
+        rowValue: {
+            color: accent,
+            fontSize: '15px',
+            fontWeight: 900,
+            whiteSpace: 'nowrap',
+        },
+    };
+};
 
 export default RecoveryAnalytics;

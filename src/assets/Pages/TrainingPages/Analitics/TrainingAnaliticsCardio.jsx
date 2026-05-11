@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence, AnimateSharedLayout } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { AppData } from '../../../StaticClasses/AppData';
 import Colors from '../../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$ } from '../../../StaticClasses/HabitsBus';
@@ -25,9 +25,15 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
-  Legend 
+  Tooltip
 } from 'recharts';
+import {
+  getTrainingAccent,
+  getTrainingPageBackground,
+  getTrainingPanelBackground,
+  getTrainingPanelBorder,
+  getTrainingPanelShadow
+} from '../TrainingVisuals.js';
 
 
 
@@ -54,14 +60,6 @@ const paceToDecimal = (paceStr) => {
   if (!paceStr || paceStr === '0:00') return 0;
   const [mins, secs] = paceStr.split(':').map(Number);
   return mins + (secs / 60);
-};
-
-// Convert decimal minutes to mm:ss string
-const decimalToPace = (decimal) => {
-  if (!decimal || decimal <= 0) return '0:00';
-  const mins = Math.floor(decimal);
-  const secs = Math.round((decimal - mins) * 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
 // Custom tooltip for chart
@@ -137,7 +135,7 @@ const TrainingAnaliticsCardio = () => {
   // --- STATE ---
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-  const [fSize, setFSize] = useState(AppData.prefs[4]);
+  const [, setFSize] = useState(AppData.prefs[4]);
   const [tab, setTab] = useState('running');
   const [selectedMetric, setSelectedMetric] = useState('distance');
   const [isLoading, setIsLoading] = useState(true);
@@ -229,9 +227,9 @@ const TrainingAnaliticsCardio = () => {
   const cardioTypes = useMemo(() => ({
     running: { 
       icon: FaRunning, 
-      color: '#a86030',
+      color: '#F43F5E',
       label: langIndex === 0 ? 'Бег' : 'Running',
-      gradient: 'linear-gradient(90deg, #ff9f6b, #ee5a24)'
+      gradient: 'linear-gradient(90deg, #F43F5E, #FB7185)'
     },
     cycling: { 
       icon: FaBicycle, 
@@ -276,7 +274,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
           {expanded ? <FaChevronUp size={12} style={{ marginLeft: '16px' }} /> : <FaChevronDown size={12} style={{ marginLeft: '16px' }} />}
         </div>
         {hasFilters && expanded && (
-          <motion.button
+          <Motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
@@ -286,7 +284,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
             style={styles(theme).clearFilterButton}
           >
             {langIndex === 0 ? 'Сбросить' : 'Clear'}
-          </motion.button>
+          </Motion.button>
         )}
       </div>
       
@@ -296,7 +294,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
           <div style={styles(theme).filterLabel}>
             {langIndex === 0 ? 'Год' : 'Year'}
           </div>
-          <motion.div
+          <Motion.div
             whileHover={{ scale: 1.01 }}
             style={styles(theme).dropdownContainer}
           >
@@ -324,7 +322,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
               color={Colors.get('subText', theme)}
               style={styles(theme).dropdownIcon}
             />
-          </motion.div>
+          </Motion.div>
         </div>
         
         {/* Month Dropdown - Only show if year is selected */}
@@ -333,7 +331,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
             <div style={styles(theme).filterLabel}>
               {langIndex === 0 ? 'Месяц' : 'Month'}
             </div>
-            <motion.div
+            <Motion.div
               whileHover={{ scale: 1.01 }}
               style={styles(theme).dropdownContainer}
             >
@@ -357,7 +355,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                 color={Colors.get('subText', theme)}
                 style={styles(theme).dropdownIcon}
               />
-            </motion.div>
+            </Motion.div>
           </div>
         )}
       </div>}
@@ -442,32 +440,27 @@ const filteredSessions = useMemo(() => {
     const activityColor = cardioTypes[tab]?.color || '#4ECDC4';
     
     return processedSessions?.map(session => {
-      let value, label, unit;
+      let value, unit;
       
       switch(selectedMetric) {
         case 'speed':
           value = parseFloat(session.speed);
-          label = langIndex === 0 ? 'Скорость' : 'Speed';
           unit = 'km/h';
           break;
         case 'pace':
           value = paceToDecimal(session.pace); // Use decimal for charting
-          label = langIndex === 0 ? 'Темп' : 'Pace';
           unit = langIndex === 0 ? 'мин/км' : 'min/km';
           break;
         case 'elevation':
           value = session.elevationGain || 0;
-          label = langIndex === 0 ? 'Набор высоты' : 'Elevation Gain';
           unit = 'm';
           break;
         case 'heartRate':
           value = session.avgHeartRate || 0;
-          label = langIndex === 0 ? 'Средний пульс' : 'Avg Heart Rate';
           unit = 'bpm';
           break;
         default: // distance
           value = parseFloat(session.distanceKm);
-          label = langIndex === 0 ? 'Дистанция' : 'Distance';
           unit = 'km';
       }
       
@@ -487,7 +480,7 @@ const filteredSessions = useMemo(() => {
 
   // --- METRIC CARDS ---
   const MetricCard = ({ icon: Icon, label, value, subValue, color, isLoading = false }) => (
-    <motion.div 
+    <Motion.div 
       whileHover={{ y: -3 }}
       style={{
         ...styles(theme).metricCard,
@@ -504,7 +497,7 @@ const filteredSessions = useMemo(() => {
           backgroundColor: `${color}15`,
           display: 'flex', alignItems: 'center', justifyContent: 'center'
         }}>
-          <Icon size={16} color={color} />
+          {React.createElement(Icon, { size: 16, color })}
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ 
@@ -544,7 +537,7 @@ const filteredSessions = useMemo(() => {
           </div>
         </div>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 
   // --- SESSION CARD ---
@@ -557,7 +550,7 @@ const filteredSessions = useMemo(() => {
     };
 
     return (
-      <motion.div
+      <Motion.div
         layout
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -628,19 +621,19 @@ const filteredSessions = useMemo(() => {
                 {session.pace} <span style={{ fontSize: '10px' }}>{langIndex === 0 ? 'мин/км' : 'min/km'}</span>
               </div>
             </div>
-            <motion.div
+            <Motion.div
               animate={{ rotate: isExpanded ? 180 : 0 }}
               transition={{ duration: 0.2 }}
             >
               <FaChevronDown size={16} color={Colors.get('subText', theme)} />
-            </motion.div>
+            </Motion.div>
           </div>
         </div>
 
         {/* Expanded View - Additional Info */}
         <AnimatePresence>
           {isExpanded && (
-            <motion.div
+            <Motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -738,7 +731,7 @@ const filteredSessions = useMemo(() => {
                     {langIndex === 0 ? 'Интенсивность тренировки' : 'Training Intensity'}
                   </div>
                   <div style={{ height: '8px', borderRadius: '4px', overflow: 'hidden', backgroundColor: theme === 'light' ? '#eee' : '#333' }}>
-                    <motion.div 
+                    <Motion.div 
                       initial={{ width: 0 }}
                       animate={{ width: `${session.intensity}%` }}
                       transition={{ duration: 0.5 }}
@@ -762,10 +755,10 @@ const filteredSessions = useMemo(() => {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </Motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </Motion.div>
     );
   };
 
@@ -830,7 +823,7 @@ const filteredSessions = useMemo(() => {
           {Object.entries(cardioTypes).map(([key, activity]) => {
             const isActive = tab === key;
             return (
-              <motion.button
+              <Motion.button
                 key={key}
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
@@ -840,24 +833,22 @@ const filteredSessions = useMemo(() => {
                 }}
                 style={{
                   ...styles(theme).typeButton,
-                  backgroundColor: isActive 
-                    ? activity.color
-                    : (theme === 'light' ? '#033668a3' : 'rgba(57, 182, 255, 0.08)'),
+                  background: isActive
+                    ? `linear-gradient(135deg, ${activity.color}, ${activity.color}bb)`
+                    : `${activity.color}12`,
                   color: isActive 
                     ? '#ffffff' 
                     : (theme === 'light' ? '#475569' : '#cbd5e1'),
-                  border: isActive 
-                    ? 'none' 
-                    : `1px solid ${Colors.get('border', theme)}`,
+                  border: `1px solid ${isActive ? `${activity.color}66` : getTrainingPanelBorder(theme, getTrainingAccent())}`,
                   boxShadow: isActive 
-                    ? '0 4px 12px rgba(0,0,0,0.15)' 
+                    ? `0 10px 24px ${activity.color}33`
                     : 'none'
                 }}
               >
                 <activity.icon size={18} style={{ marginRight: '6px' }} />
                 {activity.label}
                 {isActive && (
-                  <motion.div
+                  <Motion.div
                     layoutId="activeTypeIndicator"
                     style={{
                       position: 'absolute',
@@ -870,7 +861,7 @@ const filteredSessions = useMemo(() => {
                     }}
                   />
                 )}
-              </motion.button>
+              </Motion.button>
             );
           })}
         </div>
@@ -913,22 +904,6 @@ const filteredSessions = useMemo(() => {
             color="#9C89B8"
             isLoading={isLoading}
           />
-          <MetricCard 
-            icon={FaMountain}
-            label={langIndex === 0 ? 'Набор высоты' : 'Elevation'}
-            value={summaryMetrics.totalElevation}
-            subValue="m"
-            color="#FFA502"
-            isLoading={isLoading}
-          />
-          <MetricCard 
-            icon={FaHeartbeat}
-            label={langIndex === 0 ? 'Средний пульс' : 'Avg HR'}
-            value={summaryMetrics.avgHeartRate}
-            subValue="bpm"
-            color="#EF5350"
-            isLoading={isLoading}
-          />
         </div>
         {/* Date Filters */}
        
@@ -936,7 +911,7 @@ const filteredSessions = useMemo(() => {
         <div style={styles(theme).chartCard}>
           <div style={styles(theme).chartHeader}>
             <div>
-              <div style={styles(theme).chartTitle}>
+              <div style={{...styles(theme).chartTitle, background: `linear-gradient(90deg, ${chartColor}, ${Colors.get('mainText', theme)})`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
                 {langIndex === 0 ? 'Прогресс тренировок' : 'Training Progress'}
               </div>
               <div style={styles(theme).chartSubtitle}>
@@ -949,21 +924,19 @@ const filteredSessions = useMemo(() => {
               {['distance', 'speed', 'pace', 'elevation', 'heartRate'].map(metric => {
                 const isActive = selectedMetric === metric;
                 return (
-                  <motion.button
+                  <Motion.button
                     key={metric}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedMetric(metric)}
                     style={{
                       ...styles(theme).metricButton,
-                      backgroundColor: isActive 
-                        ? (theme === 'light' ? '#e3f2fd' : '#1e3a8a')
-                        : 'transparent',
+                      backgroundColor: isActive ? `${chartColor}18` : 'transparent',
                       color: isActive 
-                        ? (theme === 'light' ? '#1e40af' : '#60a5fa')
+                        ? chartColor
                         : Colors.get('subText', theme),
                       border: `1px solid ${isActive 
-                        ? (theme === 'light' ? '#1e40af' : '#3b82f6') 
+                        ? `${chartColor}66`
                         : Colors.get('border', theme)
                       }`,
                       padding: '6px 12px',
@@ -992,7 +965,7 @@ const filteredSessions = useMemo(() => {
                         {langIndex === 0 ? '↓лучше' : '↓better'}
                       </span>
                     )}
-                  </motion.button>
+                  </Motion.button>
                 );
               })}
             </div>
@@ -1084,7 +1057,7 @@ const filteredSessions = useMemo(() => {
                 padding: '20px'
               }}>
                 <div>
-                  <div style={{ fontSize: '42px', marginBottom: '8px' }}>📊</div>
+                  <FaChartLine size={38} color={chartColor} style={{ marginBottom: '10px', opacity: 0.85 }} />
                   {langIndex === 0 
                     ? `Нет данных для ${cardioTypes[tab]?.label.toLowerCase()}` 
                     : `No ${cardioTypes[tab]?.label.toLowerCase()} sessions`}
@@ -1128,7 +1101,7 @@ const filteredSessions = useMemo(() => {
                   <SessionCard key={session.id} session={session} />
                 ))
               ) : (
-                <motion.div
+                <Motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   style={{
@@ -1144,11 +1117,15 @@ const filteredSessions = useMemo(() => {
                       : 'rgba(30, 60, 100, 0.15)'
                   }}
                 >
-                  <div style={{ fontSize: '42px', marginBottom: '10px' }}>✨</div>
+                  {React.createElement(cardioTypes[tab]?.icon || FaRunning, {
+                    size: 40,
+                    color: cardioTypes[tab]?.color,
+                    style: { marginBottom: '12px', opacity: 0.85 }
+                  })}
                   {langIndex === 0 
                     ? `Добавьте первую тренировку ${cardioTypes[tab]?.label.toLowerCase()}!` 
                     : `Record your first ${cardioTypes[tab]?.label.toLowerCase()} session!`}
-                </motion.div>
+                </Motion.div>
               )}
             </AnimatePresence>
           )}
@@ -1160,7 +1137,11 @@ const filteredSessions = useMemo(() => {
 };
 
 // --- ENHANCED STYLES ---
-const styles = (theme) => ({
+const styles = (theme) => {
+  const accent = getTrainingAccent();
+  const isLight = theme === 'light' || theme === 'speciallight';
+
+  return {
   container: {
     display: 'flex', 
     width: "100%", 
@@ -1170,11 +1151,10 @@ const styles = (theme) => ({
     overflowX: 'hidden', 
     justifyContent: "flex-start", 
     alignItems: 'center',
-    backgroundColor: Colors.get('background', theme), 
-    height: "90vh",
-    marginTop: '120px',
-    paddingTop: '10px',
-    paddingBottom: '30px',
+    background: getTrainingPageBackground(theme, accent),
+    minHeight: "100dvh",
+    height: "100dvh",
+    padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 10px 116px',
     boxSizing: 'border-box'
   },
   typeSwitcher: {
@@ -1182,9 +1162,9 @@ const styles = (theme) => ({
     gap: '8px',
     marginBottom: '15px',
     padding: '4px',
-    backgroundColor: theme === 'light' ? '#f1f5f9' : 'rgba(255, 255, 255, 0.08)',
+    background: isLight ? 'rgba(255,255,255,0.56)' : 'rgba(255,255,255,0.055)',
     borderRadius: '14px',
-    border: `1px solid ${Colors.get('border', theme)}`
+    border: `1px solid ${getTrainingPanelBorder(theme, accent)}`
   },
   typeButton: {
     flex: 1,
@@ -1203,13 +1183,11 @@ const styles = (theme) => ({
     overflow: 'hidden'
   },
   chartCard: {
-    backgroundColor: Colors.get('cardBackground', theme),
+    background: getTrainingPanelBackground(theme, accent),
     borderRadius: '20px',
     width: '100%',
-    boxShadow: theme === 'light' 
-      ? '0 6px 25px rgba(0, 0, 0, 0.05)'
-      : '0 8px 35px rgba(0, 0, 0, 0.3)',
-    border: `1px solid ${Colors.get('border', theme)}`,
+    boxShadow: getTrainingPanelShadow(theme, accent),
+    border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
     overflow: 'hidden',
     backdropFilter: 'blur(10px)'
   },
@@ -1225,9 +1203,7 @@ const styles = (theme) => ({
   chartTitle: {
     fontSize: '18px', 
     fontWeight: '800', 
-    background: theme === 'light'
-      ? 'linear-gradient(90deg, #1e40af, #0c4a6e)'
-      : 'linear-gradient(90deg, #60a5fa, #3b82f6)',
+    background: `linear-gradient(90deg, ${accent.hue}, ${Colors.get('mainText', theme)})`,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     marginBottom: '3px'
@@ -1387,7 +1363,8 @@ activeFiltersBadge: {
   fontSize: '13px',
   fontWeight: '600'
 }
-});
+  };
+};
 
 // Add keyframes for loading spinner
 if (typeof document !== 'undefined') {

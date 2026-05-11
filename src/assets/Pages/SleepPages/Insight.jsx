@@ -4,6 +4,8 @@ import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus.js';
 import { getInsight, INSIGHT_TYPES } from './InsightHelper.js';
 import { buildHabitsAccent } from '../HabitsPages/HabitVisuals.jsx';
 import { buildSleepAccent } from './SleepVisuals.js';
+import { buildTodoAccent } from '../ToDoPages/ToDoVisuals.js';
+import { buildSectionAccent } from '../SectionAccentSettings.jsx';
 import {
     MdFitnessCenter, MdBed, MdOutlineBarChart, MdOutlineBolt, MdOutlineCheckCircle, MdOutlineFlag,
     MdOutlineLightbulb, MdOutlineReportProblem, MdOutlineShowChart,
@@ -148,12 +150,12 @@ const Insight = ({
     if (!AppData.insightCache) AppData.insightCache = {};
 
     const allButtons = useMemo(() => ([
-        { type: INSIGHT_TYPES.TIME_MANAGEMENT, label: langIndex === 0 ? 'Задачи' : 'Tasks', icon: <FaListUl />, accent: buildSleepAccent('#8FA6C8') },
-        { type: INSIGHT_TYPES.HABITS, label: langIndex === 0 ? 'Привычки' : 'Habits', icon: <FaMedal />, accent: buildHabitsAccent(AppData.habitAccentColor || '#7FC8B8') },
-        { type: INSIGHT_TYPES.FOCUS_MINDSET, label: langIndex === 0 ? 'Ум' : 'Mind', icon: <FaBrain />, accent: buildSleepAccent('#8A7CD6') },
-        { type: INSIGHT_TYPES.PROGRESS_ANALYSE, label: langIndex === 0 ? 'Тренировки' : 'Training', icon: <MdFitnessCenter />, accent: buildSleepAccent('#D8785E') },
-        { type: INSIGHT_TYPES.RECOVERY_RATE, label: langIndex === 0 ? 'Антистресс' : 'Reset', icon: <MdOutlineSelfImprovement />, accent: buildSleepAccent('#78B879') },
-        { type: INSIGHT_TYPES.SLEEP, label: langIndex === 0 ? 'Сон' : 'Sleep', icon: <MdBed />, accent: buildSleepAccent(AppData.sleepAccentColor || '#6F8BD6') },
+        { type: INSIGHT_TYPES.TIME_MANAGEMENT, label: langIndex === 0 ? 'Задачи' : 'Tasks', icon: <FaListUl />, accent: buildTodoAccent(AppData.todoAccentColor || '#5F8DFF') },
+        { type: INSIGHT_TYPES.HABITS, label: langIndex === 0 ? 'Привычки' : 'Habits', icon: <FaMedal />, accent: buildHabitsAccent(AppData.habitAccentColor || '#39D982') },
+        { type: INSIGHT_TYPES.FOCUS_MINDSET, label: langIndex === 0 ? 'Ум' : 'Mind', icon: <FaBrain />, accent: buildSectionAccent(AppData.mentalAccentColor || '#A66BFF', '#A66BFF') },
+        { type: INSIGHT_TYPES.PROGRESS_ANALYSE, label: langIndex === 0 ? 'Тренировки' : 'Training', icon: <MdFitnessCenter />, accent: buildSectionAccent(AppData.trainingAccentColor || '#35C2FF', '#35C2FF') },
+        { type: INSIGHT_TYPES.RECOVERY_RATE, label: langIndex === 0 ? 'Антистресс' : 'Reset', icon: <MdOutlineSelfImprovement />, accent: buildSectionAccent(AppData.recoveryAccentColor || '#2FD6BD', '#2FD6BD') },
+        { type: INSIGHT_TYPES.SLEEP, label: langIndex === 0 ? 'Сон' : 'Sleep', icon: <MdBed />, accent: buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF') },
     ]), [langIndex]);
 
     const buttons = useMemo(() => {
@@ -425,11 +427,13 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             height: `calc(100dvh - ${bottomInset + 24}px)`,
             minHeight: 0,
             maxHeight: 780,
-            borderRadius: 26,
-            background: p.panel,
-            border: `1px solid ${p.border}`,
+            borderRadius: 30,
+            background: theme === 'dark'
+                ? `radial-gradient(360px 220px at 12% -8%, ${p.accentSoft}, transparent 72%), linear-gradient(180deg, rgba(24,27,31,0.96), rgba(15,18,21,0.98))`
+                : `radial-gradient(360px 220px at 12% -8%, ${p.accentSoft}, transparent 72%), rgba(255,255,255,0.96)`,
+            border: `1px solid ${p.accentRing}`,
             boxShadow: theme === 'dark'
-                ? '0 22px 60px rgba(0,0,0,0.46)'
+                ? '0 26px 72px rgba(0,0,0,0.52), inset 0 1px 0 rgba(255,255,255,0.05)'
                 : '0 22px 50px rgba(15,23,42,0.13)',
             overflow: 'hidden',
             color: p.text,
@@ -437,18 +441,18 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
         },
         header: {
             display: 'grid',
-            gridTemplateColumns: '84px minmax(0, 1fr)',
-            gap: 14,
+            gridTemplateColumns: '72px minmax(0, 1fr)',
+            gap: 13,
             alignItems: 'center',
-            padding: '16px 16px 12px',
+            padding: '16px 16px 14px',
             borderBottom: `1px solid ${p.border}`,
             background: theme === 'dark'
-                ? 'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.015))'
+                ? `linear-gradient(135deg, ${p.accentSoft}, rgba(255,255,255,0.018))`
                 : 'linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.55))'
         },
         botFrame: {
-            width: 84,
-            height: 84,
+            width: 72,
+            height: 72,
             borderRadius: 22,
             background: p.accentSoft,
             border: `1px solid ${p.accentRing}`,
@@ -459,8 +463,8 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             boxShadow: `0 0 24px ${p.accentSoft}`
         },
         mascot: {
-            width: 82,
-            height: 82,
+            width: 72,
+            height: 72,
             objectFit: 'contain',
             filter: theme === 'dark' ? 'drop-shadow(0 8px 14px rgba(0,0,0,0.38))' : 'none'
         },
@@ -479,7 +483,7 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
         title: {
             margin: 0,
             color: p.text,
-            fontSize: fSize === 0 ? 22 : 25,
+            fontSize: fSize === 0 ? 21 : 24,
             lineHeight: 1.05,
             fontWeight: 900,
             letterSpacing: 0
@@ -506,19 +510,19 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
         typeRail: {
             display: 'flex',
             gap: 8,
-            padding: '12px 14px',
+            padding: '12px 14px 10px',
             overflowX: 'auto',
             scrollbarWidth: 'none',
             borderBottom: `1px solid ${p.border}`,
             WebkitOverflowScrolling: 'touch'
         },
         typeChip: {
-            minHeight: 36,
+            minHeight: 34,
             display: 'inline-flex',
             alignItems: 'center',
             gap: 7,
-            padding: '8px 12px',
-            borderRadius: 999,
+            padding: '7px 11px',
+            borderRadius: 14,
             border: `1px solid ${isActive ? p.accentRing : p.border}`,
             background: isActive ? p.accentSoft : p.panelSoft,
             color: isActive ? p.text : p.sub,
@@ -559,10 +563,12 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             animation: 'insightFade 0.32s ease-out'
         },
         insightCard: {
-            borderRadius: 18,
-            background: p.panelStrong,
+            borderRadius: 20,
+            background: theme === 'dark'
+                ? `linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))`
+                : p.panelStrong,
             border: `1px solid ${p.border}`,
-            padding: '13px 14px',
+            padding: '14px 14px',
             textAlign: 'left'
         },
         sectionHeader: {
@@ -654,22 +660,24 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            gap: 10
+            gap: 10,
+            textAlign: 'center'
         },
         loadingMascotWrap: {
-            width: 118,
-            height: 118,
-            borderRadius: 30,
+            width: 106,
+            height: 106,
+            borderRadius: 28,
             margin: '0 auto 4px',
-            background: p.accentSoft,
+            background: `radial-gradient(circle at 50% 36%, ${p.accentSoft}, rgba(255,255,255,0.025))`,
             border: `1px solid ${p.accentRing}`,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            boxShadow: `0 0 34px ${p.accentSoft}`
         },
         loadingIcon: {
-            width: 104,
-            height: 104,
+            width: 92,
+            height: 92,
             objectFit: 'contain'
         },
         loadingText: {

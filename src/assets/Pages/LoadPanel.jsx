@@ -4,7 +4,7 @@ import { AppData, UserData, fillEmptyDays } from '../StaticClasses/AppData';
 import { theme$, lang$, setPage, setTheme } from '../StaticClasses/HabitsBus';
 import Colors from '../StaticClasses/Colors';
 import { setAllHabits } from '../Classes/Habit';
-import { initDBandCloud, loadData } from '../StaticClasses/SaveHelper';
+import { initDBandCloud, isNewUserPreviewMode, loadData } from '../StaticClasses/SaveHelper';
 import { initializeTelegramSDK, getTelegramContext } from '../StaticClasses/SaveHelper';
 import { isUserHasPremium ,sendXp,getFriendsList} from '../StaticClasses/NotificationsManager';
 import { applyLocalTestPremium } from '../StaticClasses/PremiumTestHelper';
@@ -12,6 +12,7 @@ import { calculateStats } from '../Helpers/UserStats.js';
 
 const MotionDiv = motion.div;
 const MotionImg = motion.img;
+const LOAD_ACCENT = '#8FA6C8';
 
 function LoadPanel() {
   const [theme, setThemeState] = useState('dark');
@@ -23,6 +24,7 @@ function LoadPanel() {
 useEffect(() => {
   async function initializeApp() {
     try {
+      const newUserPreview = isNewUserPreviewMode();
       await initDBandCloud();
       const outsideTelegram = typeof window !== 'undefined' ? !window.Telegram?.WebApp : true;
       await initializeTelegramSDK({ mock: outsideTelegram });
@@ -61,7 +63,16 @@ useEffect(() => {
         setUserPhoto('images/Ui/Guest.jpg');
       }
 
-      await loadData();
+      if (!newUserPreview) {
+        await loadData();
+      } else {
+        AppData.pData = { filled: false, age: 20, gender: 0, height: 180, weight: 70, goal: 1, activityLevel: 1 };
+        AppData.profileOnboardingShown = false;
+        AppData.profileNicknameMode = 'telegram';
+        AppData.profileCustomNickname = '';
+        AppData.profileDiscoverySource = '';
+        AppData.profilePreferredSections = [];
+      }
       if (AppData.profileNicknameMode === 'custom' && AppData.profileCustomNickname?.trim()) {
         UserData.name = AppData.profileCustomNickname.trim();
         setUserName(UserData.name);
@@ -84,13 +95,13 @@ useEffect(() => {
       }
 
       setLoading(false);
-      const nextPage = !AppData.pData?.filled && !AppData.profileOnboardingShown ? 'ProfileOnboarding' : 'MainMenu';
+      const nextPage = newUserPreview || (!AppData.pData?.filled && !AppData.profileOnboardingShown) ? 'ProfileOnboarding' : 'MainMenu';
       setTimeout(() => setPage(nextPage), 1200);
 
     } catch (error) {
       console.error('Initialization error:', error);
       setLoading(false);
-      const nextPage = !AppData.pData?.filled && !AppData.profileOnboardingShown ? 'ProfileOnboarding' : 'MainMenu';
+      const nextPage = isNewUserPreviewMode() || (!AppData.pData?.filled && !AppData.profileOnboardingShown) ? 'ProfileOnboarding' : 'MainMenu';
       setTimeout(() => setPage(nextPage), 1200);
     }
   }
@@ -180,9 +191,9 @@ useEffect(() => {
       {/* Modern Spinner CSS */}
       <style>{`
         @keyframes custom-pulse {
-          0% { transform: scale(0.95); box-shadow: 0 0 0 0 ${Colors.get('currentDateBorder', theme)}44; }
-          70% { transform: scale(1); box-shadow: 0 0 0 20px ${Colors.get('currentDateBorder', theme)}00; }
-          100% { transform: scale(0.95); box-shadow: 0 0 0 0 ${Colors.get('currentDateBorder', theme)}00; }
+	          0% { transform: scale(0.95); box-shadow: 0 0 0 0 ${LOAD_ACCENT}22; }
+	          70% { transform: scale(1); box-shadow: 0 0 0 18px ${LOAD_ACCENT}00; }
+	          100% { transform: scale(0.95); box-shadow: 0 0 0 0 ${LOAD_ACCENT}00; }
         }
       `}</style>
     </div>
@@ -206,9 +217,9 @@ const styles = (theme) => ({
     position: "absolute",
     inset: 0,
     background: theme === 'dark' 
-      ? "radial-gradient(circle at 50% 50%, #373e4b 0%, #0c0c10 100%)"
-      : "radial-gradient(circle at 50% 50%, #fff 0%, #6f6f6f 100%)",
-    opacity: 0.6,
+	      ? "radial-gradient(circle at 50% 44%, rgba(143,166,200,0.18) 0%, rgba(18,21,25,0.92) 48%, #0c0c10 100%)"
+	      : "radial-gradient(circle at 50% 44%, rgba(143,166,200,0.16) 0%, #fff 52%, #e6e8ec 100%)",
+	    opacity: 0.72,
     zIndex: 1
   },
   content: {
@@ -244,7 +255,7 @@ const styles = (theme) => ({
     width: "100%",
     height: "100%",
     borderRadius: "50%",
-    border: `2px solid ${Colors.get('currentDateBorder', theme)}`,
+	    border: `2px solid ${LOAD_ACCENT}`,
     animation: "custom-pulse 2s infinite ease-in-out"
   },
   loadingPhoto: {
@@ -258,7 +269,7 @@ const styles = (theme) => ({
     position: "relative"
   },
   userPhoto: {
-    border: `3px solid ${Colors.get('currentDateBorder', theme)}`,
+	    border: `3px solid ${LOAD_ACCENT}`,
     width: "90px",
     height: "90px",
     borderRadius: "50%",
@@ -288,7 +299,7 @@ const styles = (theme) => ({
   },
   progressFill: {
     height: "100%",
-    backgroundColor: Colors.get('currentDateBorder', theme),
+	    backgroundColor: LOAD_ACCENT,
     borderRadius: "10px",
   }
 });

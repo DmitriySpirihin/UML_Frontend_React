@@ -3,8 +3,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData } from '../../../StaticClasses/AppData';
 import Colors from '../../../StaticClasses/Colors';
 import { theme$, lang$, fontSize$, premium$ ,setPage} from '../../../StaticClasses/HabitsBus';
-import { FaRunning,FaBicycle,FaSwimmer, FaCrown } from 'react-icons/fa';
+import { FaRunning, FaCrown } from 'react-icons/fa';
 import { MdFitnessCenter } from 'react-icons/md';
+import {
+  getTrainingAccent,
+  getTrainingPageBackground,
+  getTrainingPanelBackground,
+  getTrainingPanelBorder,
+  getTrainingPanelShadow
+} from '../TrainingVisuals.js';
 
 // Training type configuration with localized content and icons
 const TRAINING_TYPES = [
@@ -14,8 +21,7 @@ const TRAINING_TYPES = [
     descriptions: { 
       ru: 'Силовые тренировки с отягощениями', 
       en: 'Strength training with weights' 
-    },
-    gradient: 'linear-gradient(135deg, #f65c5c 0%, #b40f0f 100%)'
+    }
   },
   {
     id: 'RUNNING',
@@ -23,8 +29,7 @@ const TRAINING_TYPES = [
     descriptions: { 
       ru: 'Бег, велотренировки и плавание', 
       en: 'Running , cycling and swimming' 
-    },
-    gradient: 'linear-gradient(135deg, #efb344 0%, #aa7518 100%)'
+    }
   }
 ];
 
@@ -130,6 +135,7 @@ const TrainingAnaliticsTypes = () => {
           <AnimatePresence mode="wait">
             {TRAINING_TYPES.map((type,index) => {
               const isSelected = selectedType === type.id;
+              const accent = getTrainingAccent();
               return (
                 <motion.div
                   key={type.id}
@@ -146,20 +152,20 @@ const TrainingAnaliticsTypes = () => {
                   style={{
                     ...styles(theme, fSize).trainingTypeCard,
                     border: isSelected 
-                      ? `2px solid ${type.gradient.split(' ')[0].replace('linear-gradient(135deg,', '').trim()}`
-                      : `1px solid ${Colors.get('border', theme)}`,
+                      ? `1px solid ${accent.ring}`
+                      : styles(theme, fSize).trainingTypeCard.border,
                     background: isSelected 
-                      ? `linear-gradient(145deg, ${Colors.get('cardBackground', theme)} 0%, ${Colors.get('background', theme)} 100%)`
-                      : `linear-gradient(145deg, ${Colors.get('cardBackground', theme)} 0%, ${Colors.get('background', theme)} 100%)`,
+                      ? `linear-gradient(145deg, rgba(${accent.rgb}, 0.18), rgba(${accent.rgb}, 0.06)), ${getTrainingPanelBackground(theme)}`
+                      : styles(theme, fSize).trainingTypeCard.background,
                     boxShadow: isSelected
-                      ? `0 8px 25px ${type.gradient.split(' ')[0].replace('linear-gradient(135deg,', '').trim()}40`
+                      ? getTrainingPanelShadow(theme, accent, true)
                       : styles(theme, fSize).trainingTypeCard.boxShadow,
                     cursor: isAnimating ? 'wait' : 'pointer'
                   }}
                 >
                   <div style={{
                     ...styles(theme, fSize).trainingTypeIcon,
-                    background: type.gradient,
+                    background: `linear-gradient(135deg, ${accent.hue}, rgba(${accent.rgb}, ${index === 0 ? 0.72 : 0.58}))`,
                     WebkitMaskImage: 'radial-gradient(circle, white 70%, transparent 75%)',
                     maskImage: 'radial-gradient(circle, white 70%, transparent 75%)'
                   }}>
@@ -168,7 +174,7 @@ const TrainingAnaliticsTypes = () => {
                   
                   <motion.div 
                     style={styles(theme, fSize).trainingTypeName}
-                    animate={{ color: isSelected ? type.gradient.split(' ')[0].replace('linear-gradient(135deg,', '').trim() : Colors.get('mainText', theme) }}
+                    animate={{ color: isSelected ? accent.hue : Colors.get('mainText', theme) }}
                   >
                     {type.names[langIndex === 0 ? 'ru' : 'en']}
                   </motion.div>
@@ -201,8 +207,9 @@ const TrainingAnaliticsTypes = () => {
 
 // --- STYLES (Updated to accept fSize parameter) ---
 const styles = (theme, fSize) => {
-  const isLight = theme === 'light';
+  const isLight = theme === 'light' || theme === 'speciallight';
   const baseFontSize = fSize === 0 ? 14 : 16;
+  const accent = getTrainingAccent();
   
   return {
     container: {
@@ -213,29 +220,27 @@ const styles = (theme, fSize) => {
       overflowX: 'hidden', 
       justifyContent: "flex-start", 
       alignItems: 'center',
-      backgroundColor: Colors.get('background', theme), 
-      height: "90vh",
-      marginTop: '80px',
-      paddingTop: '10px',
-      paddingBottom: '30px',
+      background: getTrainingPageBackground(theme, accent),
+      minHeight: "100dvh",
+      height: "auto",
+      paddingTop: 'calc(env(safe-area-inset-top, 0px) + 26px)',
+      paddingBottom: '116px',
       boxSizing: 'border-box',
       position: 'relative'
     },
     headerSection: {
       width: '100%',
       maxWidth: '800px',
-      padding: '0 20px 25px',
+      padding: '0 20px 22px',
       textAlign: 'center',
-      marginTop:'50px'
+      marginTop: '0'
     },
     sectionTitle: {
       fontSize: `${baseFontSize + 4}px`,
       fontWeight: '800',
       color: Colors.get('mainText', theme),
       marginBottom: '8px',
-      background: isLight 
-        ? 'linear-gradient(90deg, #1e293b 0%, #475569 100%)'
-        : 'linear-gradient(90deg, #f8fafc 0%, #cbd5e1 100%)',
+      background: `linear-gradient(90deg, ${accent.hue} 0%, ${Colors.get('mainText', theme)} 100%)`,
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
       backgroundClip: 'text'
@@ -249,25 +254,24 @@ const styles = (theme, fSize) => {
     trainingTypeGrid: {
       display: 'flex',
       flexDirection:'column',
-      gap: '24px',
+      gap: '18px',
       padding: '0 20px',
       width: '100%',
-      maxWidth: '1000px',
+      maxWidth: '720px',
       alignItems:'center',
-      marginTop: '10px'
+      marginTop: '0'
     },
     trainingTypeCard: {
-      backgroundColor: Colors.get('cardBackground', theme),
-      borderRadius: '28px',
+      background: getTrainingPanelBackground(theme),
+      borderRadius: '24px',
       padding: '28px 24px',
       textAlign: 'center',
-      boxShadow: isLight 
-        ? '0 10px 30px -5px rgba(0, 0, 0, 0.08), 0 5px 15px -5px rgba(0, 0, 0, 0.05)'
-        : '0 10px 35px -5px rgba(0, 0, 0, 0.35), 0 5px 15px -5px rgba(0, 0, 0, 0.25)',
-      border: `1px solid ${Colors.get('border', theme)}`,
+      boxShadow: getTrainingPanelShadow(theme, accent),
+      border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
       transition: 'all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1)',
       position: 'relative',
-      width:'80vw',
+      width: '100%',
+      maxWidth: '620px',
       overflow: 'hidden'
     },
     trainingTypeIcon: {
@@ -280,7 +284,7 @@ const styles = (theme, fSize) => {
       margin: '0 auto 20px',
       color: 'white',
       fontWeight: 'bold',
-      boxShadow: '0 8px 25px rgba(0, 0, 0, 0.25)',
+      boxShadow: `0 10px 28px rgba(${accent.rgb}, 0.26)`,
       position: 'relative',
       zIndex: 2
     },
@@ -313,14 +317,14 @@ const styles = (theme, fSize) => {
       display: 'flex',
       alignItems: 'center',
       gap: '6px',
-      backgroundColor: isLight ? 'rgba(74, 222, 128, 0.15)' : 'rgba(74, 222, 128, 0.25)',
-      color: '#4ADE80',
+      backgroundColor: accent.soft,
+      color: accent.hue,
       fontSize: `${baseFontSize - 3}px`,
       fontWeight: 'bold',
       padding: '4px 10px',
       borderRadius: '20px',
-      border: `1px solid ${isLight ? 'rgba(74, 222, 128, 0.3)' : 'rgba(74, 222, 128, 0.4)'}`,
-      boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)'
+      border: `1px solid ${accent.ring}`,
+      boxShadow: `0 4px 14px rgba(${accent.rgb}, 0.18)`
     },
     
     // PREMIUM STYLES (FIXED LOGIC)

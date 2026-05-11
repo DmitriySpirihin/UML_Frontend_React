@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
 import { theme$, lang$, fontSize$, setPage, setCurrentTrainingMuscle } from '../../StaticClasses/HabitsBus.js'
 import { playEffects } from '../../StaticClasses/Effects.js'
-import { IoIosArrowDown, IoIosArrowUp, IoIosSearch } from 'react-icons/io'
+import { IoIosArrowDown, IoIosSearch } from 'react-icons/io'
 import { MuscleIcon, removeExercise, updateExercise } from '../../Classes/TrainingData.jsx'
 import { FaTrash, FaPencilAlt, FaPlus } from 'react-icons/fa';
 import { TbDotsVertical } from 'react-icons/tb'
 import { MdDone, MdClose } from 'react-icons/md'
+import {
+    getTrainingAccent,
+    getTrainingPageBackground,
+    getTrainingPanelBackground,
+    getTrainingPanelBorder,
+    getTrainingPanelShadow
+} from './TrainingVisuals.js'
 
 const TrainingExercise = ({ needToAdd, setEx }) => {
     // states
@@ -147,13 +154,13 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                 )}
             </div>
 
-            <div style={{ width: '100%', maxWidth: '600px', paddingBottom: '80px', flex: 1, overflowY: 'auto' }}>
+            <div className="no-scrollbar" style={{ width: '100%', maxWidth: '600px', paddingBottom: '142px', flex: 1, overflowY: 'auto', overflowX: 'hidden', scrollbarWidth: 'none' }}>
                 {Object.keys(MuscleIcon.muscleIconsSrc[0]).map((keyStr) => {
                     const key = Number(keyStr);
                     
                     // Filter exercises for this group based on search
                     const groupExercises = Object.entries(AppData.exercises)
-                        .filter(([id, ex]) => {
+                        .filter(([, ex]) => {
                             const matchesGroup = ex.mgId === key;
                             const matchesSearch = ex.name[langIndex].toLowerCase().includes(searchTerm.toLowerCase());
                             return matchesGroup && ex.show && matchesSearch;
@@ -166,35 +173,38 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                     const isSelected = currentMuscleGroupId === key;
 
                     return (
-                        <motion.div
+                        <Motion.div
                             key={key}
                             layout
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             style={{
                                 ...styles(theme).card,
-                                backgroundColor: isSelected ? Colors.get('trainingGroupSelected', theme) : Colors.get('background', theme),
-                                border: `1px solid ${isSelected ? Colors.get('currentDateBorder', theme) : 'transparent'}`
+                                background: isSelected
+                                    ? `linear-gradient(145deg, rgba(${getTrainingAccent().rgb}, 0.04), rgba(${getTrainingAccent().rgb}, 0.015)), ${getTrainingPanelBackground(theme)}`
+                                    : getTrainingPanelBackground(theme),
+                                border: `1px solid ${getTrainingPanelBorder(theme, getTrainingAccent(), isSelected)}`,
+                                boxShadow: getTrainingPanelShadow(theme, getTrainingAccent(), isSelected)
                             }}
                         >
                             {/* Muscle Group Header */}
-                            <motion.div
-                                onClick={() => setMuscleGroup(prev => prev === key ? -1 : key)}
+                            <Motion.div
+                                onClick={() => setMuscleGroup(key)}
                                 style={styles(theme).groupHeader}
                                 whileTap={{ scale: 0.98 }}
                             >
-                                <div style={{ flex: 1 }}>
+                                <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
                                     {MuscleIcon.get(key, langIndex, theme, true, '100%')}
                                 </div>
-                                <motion.div animate={{ rotate: isSelected ? 180 : 0 }}>
+                                <Motion.div animate={{ rotate: isSelected ? 180 : 0 }}>
                                     <IoIosArrowDown style={styles(theme).icon} />
-                                </motion.div>
-                            </motion.div>
+                                </Motion.div>
+                            </Motion.div>
 
                             {/* Exercises List Accordion */}
                             <AnimatePresence>
                                 {isSelected && (
-                                    <motion.div
+                                    <Motion.div
                                         variants={accordionVariants}
                                         initial="collapsed"
                                         animate="expanded"
@@ -208,88 +218,83 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                                                     const isBaseEx = exercise.isBase;
 
                                                     return (
-                                                        <motion.div key={exId} layout style={{ marginBottom: '8px' }}>
+                                                        <Motion.div key={exId} layout style={{ marginBottom: '8px' }}>
                                                             {/* Exercise Row */}
-                                                            <motion.div
-                                                                onClick={() => setExercise(prev => prev === exId ? -1 : exId)}
+                                                            <Motion.div
+                                                                onClick={() => setExercise(exId)}
                                                                 style={{
                                                                     ...styles(theme).exerciseRow,
                                                                     backgroundColor: isExSelected ? (theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)') : 'transparent'
                                                                 }}
                                                                 whileTap={{ backgroundColor: Colors.get('trainingGroup', theme) }}
                                                             >
-                                                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                    <p style={{...styles(theme, false, false, fSize).text,textAlign : 'left'}}>{exercise.name[langIndex]}</p>
+                                                                <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                    <p style={{...styles(theme, false, false, fSize).text, ...styles(theme).exerciseName}}>{exercise.name[langIndex]}</p>
                                                                     
                                                                     {/* BADGE */}
-                                                                    <div style={{
-                                                                        fontSize: '9px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px',
-                                                                        textTransform: 'uppercase', letterSpacing: '0.5px',marginLeft:'auto',
-                                                                        color: !isBaseEx ? Colors.get('difficulty2', theme) : Colors.get('difficulty5', theme),
-                                                                        opacity: 0.8
-                                                                    }}>
+                                                                    <div style={styles(theme).exerciseBadge(isBaseEx)}>
                                                                         {isBaseEx ? (langIndex===0 ? 'База' : 'Base') : (langIndex===0 ? 'Изол' : 'Iso')}
                                                                     </div>
                                                                 </div>
 
                                                                 {needToAdd && (
-                                                                    <motion.div whileTap={{ scale: 0.8 }} onClick={(e) => { e.stopPropagation(); setEx(exId); }} style={{ padding: '8px' }}>
+                                                                    <Motion.div whileTap={{ scale: 0.8 }} onClick={(e) => { e.stopPropagation(); setEx(exId); }} style={{ padding: '8px' }}>
                                                                         <FaPlus style={{ color: Colors.get('currentDateBorder', theme), fontSize: '18px' }} />
-                                                                    </motion.div>
+                                                                    </Motion.div>
                                                                 )}
                                                                 
-                                                                <motion.div animate={{ rotate: isExSelected ? 180 : 0 }}>
+                                                                <Motion.div animate={{ rotate: isExSelected ? 180 : 0 }}>
                                                                     <IoIosArrowDown style={{ ...styles(theme).icon, fontSize: '14px' }} />
-                                                                </motion.div>
-                                                            </motion.div>
+                                                                </Motion.div>
+                                                            </Motion.div>
 
                                                             {/* Exercise Description / Actions */}
                                                             <AnimatePresence>
                                                                 {isExSelected && (
-                                                                    <motion.div
+                                                                    <Motion.div
                                                                         initial={{ height: 0, opacity: 0 }}
                                                                         animate={{ height: 'auto', opacity: 1 }}
                                                                         exit={{ height: 0, opacity: 0 }}
-                                                                        style={{ padding: '0 20px 10px 20px' }}
+                                                                        style={{ padding: '2px 22px 16px 22px' }}
                                                                     >
-                                                                        <p style={styles(theme, false, false, fSize).subtext}>{exercise.description[langIndex]}</p>
+                                                                        <ExerciseGuide exercise={exercise} langIndex={langIndex} theme={theme} fSize={fSize} />
                                                                         
                                                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px', gap: '15px' }}>
                                                                             <AnimatePresence>
                                                                                 {showAddOptions && (
-                                                                                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} style={{ display: 'flex', gap: '15px' }}>
+                                                                                    <Motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} style={{ display: 'flex', gap: '15px' }}>
                                                                                         <FaPencilAlt onClick={(e) => { e.stopPropagation(); setCurrentExerciseName(exercise.name[langIndex]); onRedaktStart(); }} style={{ color: Colors.get('subText', theme), fontSize: '16px' }} />
                                                                                         <FaTrash onClick={(e) => { e.stopPropagation(); setCurrentExerciseName(exercise.name[langIndex]); setShowConfirmRemove(true); }} style={{ color: '#ff4d4d', fontSize: '16px' }} />
-                                                                                    </motion.div>
+                                                                                    </Motion.div>
                                                                                 )}
                                                                             </AnimatePresence>
                                                                             <TbDotsVertical onClick={(e) => { e.stopPropagation(); setShowAddOptions(!showAddOptions); }} style={{ color: Colors.get('icons', theme), fontSize: '20px' }} />
                                                                         </div>
-                                                                    </motion.div>
+                                                                    </Motion.div>
                                                                 )}
                                                             </AnimatePresence>
-                                                        </motion.div>
+                                                        </Motion.div>
                                                     );
                                                 })}
                                             
                                             {/* Add Button inside Muscle Group (Only show if no search term for clean UX, or keep it) */}
                                             {!searchTerm && (
                                                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '15px' }}>
-                                                    <motion.button
+                                                    <Motion.button
                                                         whileTap={{ scale: 0.95 }}
                                                         onClick={() => { playEffects(null); setCurrentTrainingMuscle(key); setPage('AddExercisePanel'); }}
                                                         style={styles(theme).fab}
                                                     >
                                                         <FaPlus style={{ fontSize: '14px', color: '#fff' }} />
                                                         <span style={{ fontSize: '13px', fontWeight: '600' }}>{langIndex === 0 ? 'Создать' : 'Create'}</span>
-                                                    </motion.button>
+                                                    </Motion.button>
                                                 </div>
                                             )}
                                         </div>
-                                    </motion.div>
+                                    </Motion.div>
                                 )}
                             </AnimatePresence>
-                        </motion.div>
+                        </Motion.div>
                     );
                 })}
             </div>
@@ -298,7 +303,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
             <AnimatePresence>
                 {showRedakt && (
                     <div style={styles(theme).modalBackdrop}>
-                        <motion.div
+                        <Motion.div
                             variants={modalVariants}
                             initial="hidden" animate="visible" exit="exit"
                             style={styles(theme).modalContainer}
@@ -343,7 +348,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                                         {MuscleIcon.names[langIndex].map((name, index) => {
                                             if (formMainMuscle === index) return null;
                                             return (
-                                                <motion.div
+                                                <Motion.div
                                                     key={index}
                                                     whileTap={{ scale: 0.95 }}
                                                     onClick={() => setMGroups(prev => prev.map((val, i) => i === index ? !val : val))}
@@ -355,7 +360,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                                                     }}
                                                 >
                                                     {name}
-                                                </motion.div>
+                                                </Motion.div>
                                             )
                                         })}
                                     </div>
@@ -364,29 +369,29 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
 
                             {/* Modal Actions */}
                             <div style={styles(theme).modalActions}>
-                                <motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowRedakt(false)} style={styles(theme).circleBtn}>
+                                <Motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowRedakt(false)} style={styles(theme).circleBtn}>
                                     <MdClose style={{ fontSize: '24px', color: Colors.get('subText', theme) }} />
-                                </motion.div>
-                                <motion.div whileTap={{ scale: 0.9 }} onClick={onRedakt} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('done', theme) }}>
+                                </Motion.div>
+                                <Motion.div whileTap={{ scale: 0.9 }} onClick={onRedakt} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('done', theme) }}>
                                     <MdDone style={{ fontSize: '24px', color: '#fff' }} />
-                                </motion.div>
+                                </Motion.div>
                             </div>
-                        </motion.div>
+                        </Motion.div>
                     </div>
                 )}
 
                 {/* Confirm Remove Modal */}
                 {showConfirmRemove && (
                     <div style={styles(theme).modalBackdrop}>
-                        <motion.div variants={modalVariants} initial="hidden" animate="visible" exit="exit" style={{ ...styles(theme).modalContainer, height: 'auto', padding: '25px', maxHeight:'300px' }}>
+                        <Motion.div variants={modalVariants} initial="hidden" animate="visible" exit="exit" style={{ ...styles(theme).modalContainer, height: 'auto', padding: '25px', maxHeight:'300px' }}>
                             <p style={{ ...styles(theme, false, false, fSize).text, textAlign: 'center', marginBottom: '25px' }}>
                                 {langIndex === 0 ? `Удалить ${currentExerciseName}?` : `Delete ${currentExerciseName}?`}
                             </p>
                             <div style={{ display: 'flex', gap: '20px' }}>
-                                <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowConfirmRemove(false)} style={styles(theme).secondaryBtn}>{langIndex === 0 ? "Нет" : "Cancel"}</motion.button>
-                                <motion.button whileTap={{ scale: 0.95 }} onClick={() => onRemove()} style={styles(theme).dangerBtn}>{langIndex === 0 ? "Удалить" : "Delete"}</motion.button>
+                                <Motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowConfirmRemove(false)} style={styles(theme).secondaryBtn}>{langIndex === 0 ? "Нет" : "Cancel"}</Motion.button>
+                                <Motion.button whileTap={{ scale: 0.95 }} onClick={() => onRemove()} style={styles(theme).dangerBtn}>{langIndex === 0 ? "Удалить" : "Delete"}</Motion.button>
                             </div>
-                        </motion.div>
+                        </Motion.div>
                     </div>
                 )}
             </AnimatePresence>
@@ -396,20 +401,70 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
 
 export default TrainingExercise
 
-const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
+const ExerciseGuide = ({ exercise, langIndex, theme, fSize }) => {
+    const description = exercise.description?.[langIndex] || '';
+    const steps = splitExerciseSteps(description);
+    const mainMuscle = MuscleIcon.names?.[langIndex]?.[exercise.mgId] || '';
+    const secondary = (exercise.addMgIds || [])
+        .map(id => MuscleIcon.names?.[langIndex]?.[id])
+        .filter(Boolean)
+        .slice(0, 3);
+
+    return (
+        <div style={styles(theme).guideCard}>
+            <div style={styles(theme).guideContent}>
+                <div style={styles(theme).guideTitleRow}>
+                    <span>{langIndex === 0 ? 'Как выполнять' : 'How to perform'}</span>
+                </div>
+                <div style={styles(theme).guideSteps}>
+                    {steps.map((step, index) => (
+                        <div key={`${step}-${index}`} style={styles(theme).guideStep}>
+                            <span style={styles(theme).guideStepNumber}>{index + 1}</span>
+                            <span style={styles(theme, false, false, fSize).subtext}>{step}</span>
+                        </div>
+                    ))}
+                </div>
+                <div style={styles(theme).muscleTags}>
+                    {mainMuscle && <span style={styles(theme).mainMuscleTag}>{mainMuscle}</span>}
+                    {secondary.map(item => <span key={item} style={styles(theme).secondaryMuscleTag}>{item}</span>)}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const splitExerciseSteps = (description) => {
+    const steps = description
+        .split(/[.!?]+/)
+        .map(step => step.trim())
+        .filter(Boolean)
+        .slice(0, 4);
+    return steps.length > 0 ? steps : ['Сохраняйте контроль движения', 'Работайте в комфортной амплитуде'];
+};
+
+const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
+    const accent = getTrainingAccent();
+    const isLight = theme === 'light' || theme === 'speciallight';
+
+    return {
     container: {
-        backgroundColor: Colors.get('background', theme),
+        background: getTrainingPageBackground(theme, accent),
         display: "flex", flexDirection: "column",
         overflow: 'hidden', alignItems: "center",
-        height: "100vh", paddingTop: '120px', width: "100vw",
+        minHeight: "100dvh",
+        height: "100dvh",
+        padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 18px 116px',
+        width: "100vw",
         fontFamily: "Segoe UI, Roboto, sans-serif", boxSizing: 'border-box'
     },
     // SEARCH
-    searchContainer: {
-        width: '94%', maxWidth: '600px',marginTop:'25px',
-        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
-        borderRadius: '12px', display: 'flex', alignItems: 'center',
-        padding: '8px 0', marginBottom: '10px'
+	    searchContainer: {
+	        width: '100%', maxWidth: '600px',
+        background: getTrainingPanelBackground(theme),
+        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+        boxShadow: getTrainingPanelShadow(theme, accent),
+        borderRadius: '20px', display: 'flex', alignItems: 'center',
+	        padding: '12px 0', marginBottom: '16px', boxSizing: 'border-box'
     },
     searchInput: {
         flex: 1, border: 'none', background: 'transparent',
@@ -417,27 +472,126 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
         marginLeft: '8px', outline: 'none'
     },
     // CARDS
-    card: {
-        width: '94%', margin: '0 auto 12px auto',
-        borderRadius: '16px', overflow: 'hidden',
-        boxShadow: theme === 'light' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-    },
+	    card: {
+	        width: '100%', margin: '0 auto 16px auto',
+	        borderRadius: '24px', overflow: 'hidden',
+	        background: getTrainingPanelBackground(theme),
+	        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+	        boxShadow: getTrainingPanelShadow(theme, accent),
+	        boxSizing: 'border-box'
+	    },
     groupHeader: {
         display: 'flex', flexDirection: 'row',
-        padding: '12px 10px', alignItems: "center", justifyContent: "space-between",
+        padding: '16px 14px', alignItems: "center", justifyContent: "space-between",
         cursor: 'pointer'
     },
     exerciseRow: {
-        display: 'flex', flexDirection: 'row',width:'92%',
-        padding: '12px 20px', alignItems: "center", justifyContent: "space-between",
-        cursor: 'pointer', borderRadius: '12px', margin: '0 10px'
-    },
+	        display: 'flex', flexDirection: 'row',
+	        padding: '17px 18px', alignItems: "center", justifyContent: "space-between",
+	        cursor: 'pointer', borderRadius: '16px', margin: '0 14px 10px', boxSizing: 'border-box',
+	        minHeight: '64px',
+	        backgroundColor: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)'
+	    },
     icon: {
         fontSize: "20px", color: Colors.get('icons', theme), marginRight: '10px'
     },
     text: {
         fontSize: fSize === 0 ? "15px" : '17px',
         color: Colors.get('mainText', theme), fontWeight: '500', margin: 0
+    },
+    exerciseName: {
+        flex: 1,
+        minWidth: 0,
+        textAlign: 'left',
+        lineHeight: 1.34,
+        overflowWrap: 'anywhere',
+    },
+    exerciseBadge: (isBaseEx) => ({
+        flexShrink: 0,
+        fontSize: '10px',
+        fontWeight: 900,
+        padding: '4px 8px',
+        borderRadius: '999px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+        color: !isBaseEx ? Colors.get('difficulty2', theme) : Colors.get('difficulty5', theme),
+        backgroundColor: !isBaseEx ? `${Colors.get('difficulty2', theme)}18` : `${Colors.get('difficulty5', theme)}18`,
+        border: `1px solid ${!isBaseEx ? Colors.get('difficulty2', theme) : Colors.get('difficulty5', theme)}30`,
+    }),
+    guideCard: {
+        display: 'block',
+        padding: '16px',
+        borderRadius: '22px',
+        background: isLight
+            ? 'linear-gradient(135deg, rgba(15,23,42,0.04), rgba(15,23,42,0.015))'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025))',
+        border: `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.07)'}`,
+        boxSizing: 'border-box',
+    },
+    guideContent: {
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+    },
+    guideTitleRow: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        color: accent.hue,
+        fontSize: '12px',
+        fontWeight: 900,
+        letterSpacing: '0.08em',
+        textTransform: 'uppercase',
+    },
+    guideSteps: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+    },
+    guideStep: {
+        display: 'grid',
+        gridTemplateColumns: '22px minmax(0, 1fr)',
+        gap: '8px',
+        alignItems: 'start',
+    },
+    guideStepNumber: {
+        width: '22px',
+        height: '22px',
+        borderRadius: '9px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: accent.hue,
+        background: `rgba(${accent.rgb}, 0.12)`,
+        border: `1px solid ${accent.ring}`,
+        fontSize: '11px',
+        fontWeight: 900,
+        flexShrink: 0,
+    },
+    muscleTags: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: '6px',
+        marginTop: '2px',
+    },
+    mainMuscleTag: {
+        borderRadius: '999px',
+        padding: '5px 8px',
+        color: accent.hue,
+        background: `rgba(${accent.rgb}, 0.12)`,
+        border: `1px solid ${accent.ring}`,
+        fontSize: '10px',
+        fontWeight: 900,
+    },
+    secondaryMuscleTag: {
+        borderRadius: '999px',
+        padding: '5px 8px',
+        color: Colors.get('subText', theme),
+        background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.045)',
+        border: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.055)'}`,
+        fontSize: '10px',
+        fontWeight: 850,
     },
     subtext: {
         fontSize: fSize === 0 ? "13px" : '15px',
@@ -475,7 +629,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
     },
     // COMPONENTS
     segmentedControl: {
-        display: 'flex', width: '98%', backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
+        display: 'flex', width: '98%', backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
         borderRadius: '12px', padding: '4px', margin: '10px 0'
     },
     segment: {
@@ -503,10 +657,10 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
     },
     fab: {
-        backgroundColor: Colors.get('difficulty', theme),
-        border: 'none', borderRadius: '20px', padding: '8px 20px',
+        background: `linear-gradient(135deg, ${accent.hue}, rgba(${accent.rgb}, 0.72))`,
+        border: `1px solid ${accent.ring}`, borderRadius: '20px', padding: '8px 20px',
         display: 'flex', alignItems: 'center', gap: '8px',
-        color: '#fff', cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+        color: '#fff', cursor: 'pointer', boxShadow: `0 10px 24px rgba(${accent.rgb}, 0.24)`
     },
     secondaryBtn: {
         padding: '10px 20px', borderRadius: '12px', border: 'none',
@@ -517,7 +671,8 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => ({
         padding: '10px 20px', borderRadius: '12px', border: 'none',
         backgroundColor: '#ff4d4d', color: '#fff', fontSize: '16px', cursor: 'pointer'
     }
-})
+    };
+};
 
 const capitalizeName = (str) => {
     if (!str) return str;

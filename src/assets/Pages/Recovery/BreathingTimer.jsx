@@ -1,20 +1,38 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
 import { AppData } from '../../StaticClasses/AppData'
 import Colors from "../../StaticClasses/Colors"
-import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
+import { theme$, lang$ } from '../../StaticClasses/HabitsBus';
 import { IoPlay, IoClose, IoPause, IoVolumeMute, IoVolumeHigh, IoCheckmark } from "react-icons/io5"
-import { FaMinus, FaPlus, FaInfoCircle } from "react-icons/fa"
+import { FaInfoCircle } from "react-icons/fa"
 import BreathAudio from "../../Helpers/BreathAudio"
 import { saveBreathingSession } from '../../StaticClasses/RecoveryLogHelper';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion as Motion, AnimatePresence } from 'framer-motion';
 
 // Фоновый эмбиент
 const AMBIENT_SOUND_URL = 'Audio/Ambient.wav';
 const ambientAudio = new Audio(AMBIENT_SOUND_URL);
 ambientAudio.loop = true;
-ambientAudio.volume = 0.4;
+ambientAudio.volume = 0.18;
 
 const startTimerDuration = 3000;
+
+const stepperButtonStyle = (accent) => ({
+  width: '34px',
+  height: '34px',
+  borderRadius: '13px',
+  border: `1px solid ${accent}40`,
+  cursor: 'pointer',
+  background: `${accent}1f`,
+  color: accent,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  outline: 'none',
+  fontSize: '22px',
+  fontWeight: 900,
+  lineHeight: 1,
+  fontFamily: 'inherit'
+});
 
 const buildStepsFromPhases = (p) => {
   const s = [];
@@ -28,40 +46,45 @@ const buildStepsFromPhases = (p) => {
 function PhaseStepper({ theme, label, value, min = 0, max = 20, step = 1, onChange, wide = false }) {
   const textMain = Colors.get('mainText', theme);
   const textSub = Colors.get('subText', theme);
+  const isDark = theme === 'dark' || theme === 'specialdark';
   const dec = () => onChange(Math.max(min, value - step));
   const inc = () => onChange(Math.min(max, value + step));
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.03)', borderRadius: '14px', padding: '10px 12px',
-      display: 'flex', flexDirection: 'column', gap: '6px',
-      border: '1px solid rgba(255,255,255,0.05)'
+      background: isDark ? 'rgba(255,255,255,0.035)' : 'rgba(15,23,42,0.045)',
+      borderRadius: '16px',
+      padding: wide ? '10px 12px' : '10px 9px',
+      minHeight: wide ? '58px' : '76px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '7px',
+      border: '1px solid rgba(126,230,210,0.14)'
     }}>
-      <div style={{ fontSize: '10px', color: textSub, textTransform: 'uppercase', letterSpacing: '1px' }}>
+      <div style={{ width: '100%', minWidth: 0, textAlign: 'center', fontSize: '10px', color: textSub, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 900, lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {label}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <motion.button whileTap={{ scale: 0.9 }} onClick={dec}
-          style={{
-            width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer',
-            background: 'rgba(255,255,255,0.08)', color: textMain,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none'
-          }}>
-          <FaMinus size={10} />
-        </motion.button>
-        <span style={{
-          fontSize: wide ? '22px' : '18px', fontWeight: 600, color: textMain,
-          fontVariantNumeric: 'tabular-nums', minWidth: wide ? '60px' : '30px', textAlign: 'center'
-        }}>
-          {value}
-        </span>
-        <motion.button whileTap={{ scale: 0.9 }} onClick={inc}
-          style={{
-            width: 30, height: 30, borderRadius: '50%', border: 'none', cursor: 'pointer',
-            background: 'rgba(255,255,255,0.08)', color: textMain,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', outline: 'none'
-          }}>
-          <FaPlus size={10} />
-        </motion.button>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: wide ? '34px 48px 34px' : '34px 44px 34px',
+        alignItems: 'center',
+        justifyItems: 'center',
+        gap: '8px',
+        width: wide ? 'min(148px, 100%)' : 'min(136px, 100%)',
+        margin: '0 auto'
+      }}>
+        <Motion.button whileTap={{ scale: 0.92 }} onClick={dec} style={stepperButtonStyle('#7ee6d2')}>−</Motion.button>
+        <div style={{
+          marginTop: '5px',
+          fontSize: wide ? '25px' : '24px',
+          fontWeight: 900,
+          color: textMain,
+          fontVariantNumeric: 'tabular-nums',
+          lineHeight: 1,
+          textAlign: 'center'
+        }}>{value}</div>
+        <Motion.button whileTap={{ scale: 0.92 }} onClick={inc} style={stepperButtonStyle('#7ee6d2')}>+</Motion.button>
       </div>
     </div>
   );
@@ -76,7 +99,6 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
   const [limitCycles, setLimitCycles] = useState(10);
   const [theme, setthemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-  const [fSize, setFSize] = useState(AppData.prefs[4]); 
   const [audioEnabled, setAudioEnabled] = useState(false);
   
   const { initAudio, playInhale, playExhale, playHold, playRest } = BreathAudio(audioEnabled);
@@ -110,8 +132,7 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
   useEffect(() => {
     const s1 = theme$.subscribe(setthemeState); 
     const s2 = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1)); 
-    const s3 = fontSize$.subscribe(setFSize);
-    return () => { s1.unsubscribe(); s2.unsubscribe(); s3.unsubscribe(); }
+    return () => { s1.unsubscribe(); s2.unsubscribe(); }
   }, []);
 
 
@@ -204,7 +225,7 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
   };
 
   const timeRemaining = duration * (1 - phaseProgress);
-  const displayTime = (timeRemaining / 1000).toFixed(1);
+  const displayTime = Math.max(0, Math.ceil(timeRemaining / 1000));
 
   // --- ANIMATION LOOP ---
   useEffect(() => {
@@ -273,6 +294,14 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
     }
   }, [currentStepIndex, isRunning, phaseProgress, audioEnabled]);
 
+  useEffect(() => {
+    if (audioEnabled && isStart && isRunning && !isFinished && !isPaused) {
+      ambientAudio.play().catch(() => {});
+    } else {
+      ambientAudio.pause();
+    }
+  }, [audioEnabled, isStart, isRunning, isFinished, isPaused]);
+
   const resetSession = () => {
     setCurrentStepIndex(0); setPhaseProgress(0); setIsRunning(false);
     setIsStart(false); setIsPaused(false); startTimeRef.current = 0;
@@ -284,6 +313,12 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
 
   // --- HANDLERS ---
   const handleStart = () => {
+    setCurrentStepIndex(0);
+    setPhaseProgress(0);
+    setRenderScale(1);
+    currentVisualScaleRef.current = 1;
+    phaseStartScaleRef.current = 1;
+    startTimeRef.current = 0;
     let maxHoldValue = 0;
     effectiveLevelData.steps.forEach(step => {
         if (step.hold !== undefined && step.hold > maxHoldValue) maxHoldValue = step.hold;
@@ -308,7 +343,6 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
   };
 
   // Styles
-  const isDark = theme === 'dark' || theme === 'specialdark';
   const textMain = Colors.get('mainText', theme);
   const textSub = Colors.get('subText', theme);
   const accent = phaseColor || Colors.get('in', theme);
@@ -317,7 +351,7 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
     <div style={styles(theme, show).container}>
       
       {/* BACKGROUND EFFECTS */}
-      <motion.div 
+      <Motion.div 
         animate={{ 
             background: isStart && !isFinished 
                 ? `radial-gradient(circle at 50% 50%, ${phaseColor}20 0%, ${secondaryColor}10 40%, ${Colors.get('background', theme)} 100%)`
@@ -333,55 +367,52 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
       
       {/* === MENU (PRE-START) === */}
       {!isFinished && !isStart && !showStartTimer && (
-        <motion.div 
+        <Motion.div 
             key="menu"
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
             style={{ 
                 display: 'flex', flexDirection: 'column', alignItems: 'center', 
                 width: '100%', height: '100%', 
-                padding: '40px 20px', boxSizing: 'border-box', zIndex: 10,
+                padding: '24px 4.5vw 18px', boxSizing: 'border-box', zIndex: 10,
                 position: 'relative'
             }}
         >
-            {/* Header (Shrinkable) */}
-            <div style={{ textAlign: 'center', width: '100%', flexShrink: 0, marginBottom: '20px' }}>
-                <div style={{ fontSize: '11px', color: textSub, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>
+            {/* Header */}
+            <div style={{ textAlign: 'center', width: '100%', flexShrink: 0, marginBottom: '16px' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minHeight: '30px', padding: '0 12px', borderRadius: '999px', color: Colors.get('in', theme), background: 'rgba(126,230,210,0.08)', border: '1px solid rgba(126,230,210,0.16)', fontSize: '10px', letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 900 }}>
                     {langIndex === 0 ? 'Дыхание' : 'Breathwork'}
                 </div>
-                <h2 style={{ fontSize: '28px', color: textMain, margin: 0, fontWeight: '300', fontFamily: 'Segoe UI Light' }}>
+                <h2 style={{ fontSize: 'clamp(24px, 7vw, 32px)', color: textMain, margin: '10px auto 0', maxWidth: '560px', fontWeight: 900, fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", lineHeight: 1.04, letterSpacing: 0 }}>
                     {protocol?.name?.[langIndex] ?? (langIndex === 0 ? 'Дыхание' : 'Breathwork')}
                 </h2>
             </div>
 
             {/* Scrollable Content Area (Flex 1) */}
             <div style={{ 
-                flex: 1, width: '100%', maxWidth: '360px', overflowY: 'auto',
+                flex: 1, width: '100%', maxWidth: '560px', overflowY: 'auto',
                 display: 'flex', flexDirection: 'column',
                 scrollbarWidth: 'none' // Hide scrollbar
             }}>
                 <div style={{ 
-                    background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255,255,255,0.08)', borderRadius: '30px', 
-                    padding: '25px', display: 'flex', flexDirection: 'column', gap: '20px',
+                    background: 'linear-gradient(135deg, rgba(126,230,210,0.085), rgba(18,21,26,0.94))', backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(126,230,210,0.2)', borderRadius: '26px', 
+                    padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px',
                     boxShadow: '0 20px 50px -20px rgba(0,0,0,0.3)',
                     marginBottom: '20px' // Space for scroll
                 }}>
                     {/* Goal */}
-                    <div style={{ paddingBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ fontSize: '11px', color: textSub, marginBottom: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                            {langIndex === 0 ? 'Цель' : 'Goal'}
-                        </div>
-                        <div style={{ fontSize: '15px', color: textMain, lineHeight: '1.4' }}>
+                    <div style={{ padding: '10px 12px', borderRadius: '16px', background: 'rgba(126,230,210,0.07)', border: '1px solid rgba(126,230,210,0.12)' }}>
+                        <div style={{ fontSize: '13px', color: textSub, lineHeight: '1.35', fontWeight: 800, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {protocol?.aim?.[langIndex] ?? (langIndex === 0 ? 'Осознанное дыхание для восстановления и фокуса.' : 'Conscious breathing for recovery and focus.')}
                         </div>
                     </div>
 
                     {/* Phases editor */}
                     <div>
-                        <div style={{ fontSize: '11px', color: textSub, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '10px', color: textSub, fontWeight: 900, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.1em' }}>
                             {langIndex === 0 ? 'Фазы (сек)' : 'Phases (sec)'}
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
                             {[
                                 { key: 'in',    ru: 'Вдох',     en: 'Inhale' },
                                 { key: 'hold1', ru: 'Задержка', en: 'Hold' },
@@ -397,7 +428,7 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
 
                     {/* Mode toggle */}
                     <div>
-                        <div style={{ fontSize: '11px', color: textSub, fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '10px' }}>
+                        <div style={{ fontSize: '10px', color: textSub, fontWeight: 900, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.1em' }}>
                             {langIndex === 0 ? 'Режим' : 'Mode'}
                         </div>
                         <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: '14px', padding: '4px', gap: '4px' }}>
@@ -407,7 +438,7 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
                             ].map(m => {
                                 const active = mode === m.key;
                                 return (
-                                    <motion.button key={m.key} whileTap={{ scale: 0.97 }} onClick={() => setMode(m.key)}
+                                    <Motion.button key={m.key} whileTap={{ scale: 0.97 }} onClick={() => setMode(m.key)}
                                         style={{
                                             flex: 1, padding: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer',
                                             background: active ? Colors.get('in', theme) : 'transparent',
@@ -415,7 +446,7 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
                                             fontSize: '13px', fontWeight: active ? 700 : 500, outline: 'none'
                                         }}>
                                         {langIndex === 0 ? m.ru : m.en}
-                                    </motion.button>
+                                    </Motion.button>
                                 );
                             })}
                         </div>
@@ -431,97 +462,126 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
                         wide
                         onChange={v => mode === 'time' ? setLimitMinutes(v) : setLimitCycles(v)} />
 
-                    {/* Instruction */}
-                    <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '15px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: textSub, marginBottom: '6px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                            <FaInfoCircle /> {langIndex === 0 ? 'Инструкция' : 'Instruction'}
-                        </div>
-                        <div style={{ fontSize: '13px', color: textMain, lineHeight: '1.4' }}>
-                            {protocol?.instructions?.[langIndex] ?? (langIndex === 0 ? 'Следуйте ритму: вдох — задержка — выдох.' : 'Follow the rhythm: inhale — hold — exhale.')}
-                        </div>
-                    </div>
+                    <BreathingTipPanel
+                        theme={theme}
+                        accent={Colors.get('in', theme)}
+                        phases={customPhases}
+                        langIndex={langIndex}
+                    />
 
                     {/* Disclaimer */}
-                    <p style={{ fontSize: '9px', color: textSub, textAlign: 'center', opacity: 0.5, lineHeight: '1.3', margin: 0 }}>
-                        {disclaimer(langIndex)}
+                    <p style={{ fontSize: '10px', color: textSub, textAlign: 'center', opacity: 0.45, lineHeight: '1.3', margin: '-2px 0 0' }}>
+                        {langIndex === 0 ? 'При дискомфорте остановитесь.' : 'Stop if you feel uncomfortable.'}
                     </p>
                 </div>
             </div>
 
-            {/* Footer Buttons (Fixed) */}
-            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', flexShrink: 0 }}>
-                <motion.div whileTap={{ scale: 0.9 }} onClick={() => setShow(false)} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: textSub, cursor: 'pointer' }}>
-                    <IoClose size={24} />
-                    <span style={{ fontSize: '14px' }}>{langIndex === 0 ? 'Закрыть' : 'Close'}</span>
-                </motion.div>
+            {/* Footer Buttons */}
+            <div style={{ width: '100%', maxWidth: '560px', display: 'grid', gridTemplateColumns: '56px minmax(0, 1fr)', alignItems: 'center', gap: '12px', padding: '10px 0 0', flexShrink: 0 }}>
+                <Motion.button whileTap={{ scale: 0.92 }} onClick={() => setShow(false)} aria-label={langIndex === 0 ? 'Закрыть' : 'Close'} style={{
+                    height: '56px',
+                    borderRadius: '18px',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'rgba(255,255,255,0.045)',
+                    color: textSub,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    outline: 'none'
+                }}>
+                    <IoClose size={25} />
+                </Motion.button>
 
-                <motion.button 
+                <Motion.button 
                     whileTap={{ scale: 0.95 }}
                     onClick={() => { setSeconds(Math.ceil(startTimerDuration / 1000)); setShowStartTimer(true); }}
                     style={{ 
-                        padding: '15px 45px', borderRadius: '50px', border: 'none',
-                        background: Colors.get('in', theme), color: '#fff', fontSize: '16px', fontWeight: 'bold',
-                        boxShadow: `0 10px 40px -10px ${Colors.get('in', theme)}60`
+                        height: '56px', borderRadius: '18px', border: '1px solid rgba(126,230,210,0.28)',
+                        background: 'linear-gradient(135deg, #7ee6d2, #19c9a8)', color: '#07100f', fontSize: '15px', fontWeight: 900,
+                        boxShadow: `0 16px 42px -16px ${Colors.get('in', theme)}80`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                        cursor: 'pointer',
+                        outline: 'none'
                     }}
                 >
+                    <IoPlay />
                     {langIndex === 0 ? 'Начать' : 'Start'}
-                </motion.button>
+                </Motion.button>
             </div>
-        </motion.div>
+        </Motion.div>
       )}
 
       {/* ... (Rest of the Timer & Controls logic remains the same) ... */}
       
       {/* === COUNTDOWN === */}
       {!isFinished && showStartTimer && (
-        <motion.div 
-            key="countdown"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', zIndex: 10 }}
-        >
-            <div style={{ position: 'relative', width: '200px', height: '170px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <AnimatePresence mode="wait">
-                <motion.div
-                    key={seconds}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1, transition: { duration: 0.2 } }}
-                    exit={{ scale: 1.3, opacity: 0, transition: { duration: 0.15 } }}
-                    style={{ fontSize: '140px', fontWeight: '200', color: textMain, fontFamily: 'Segoe UI Light', position: 'absolute' }}
-                >
-                    {seconds}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-            <div style={{ marginTop: '20px', fontSize: '16px', color: textSub, letterSpacing: '1px' }}>
-                {langIndex === 0 ? 'ПРИГОТОВЬТЕСЬ...' : 'GET READY...'}
-            </div>
-        </motion.div>
+        <CountdownStage seconds={seconds} theme={theme} accent={accent} isRu={langIndex === 0} />
       )}
 
       {/* === ACTIVE TIMER (THE SPHERE) === */}
       {!isFinished && isStart && (
-        <motion.div 
+        <Motion.div 
             key="active"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', zIndex: 10, position: 'relative' }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', zIndex: 10, position: 'relative', padding: '88px 20px 132px', boxSizing: 'border-box' }}
         >
-            <div style={{ position: 'absolute', top: '10%', textAlign: 'center', width: '85%', color: textMain, opacity: 0.8, fontSize: '16px', lineHeight: '1.4' }}>
-                {protocol?.instructions?.[langIndex]}
+            <div style={{
+                position: 'absolute',
+                top: 'calc(26px + env(safe-area-inset-top, 0px))',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 'min(86vw, 430px)',
+                minHeight: '48px',
+                borderRadius: '18px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                padding: '0 14px',
+                boxSizing: 'border-box',
+                color: textMain,
+                background: 'rgba(18,21,24,0.58)',
+                border: `1px solid ${phaseColor}24`,
+                backdropFilter: 'blur(18px)'
+            }}>
+                <span style={{ color: textSub, fontSize: '11px', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+                    {langIndex === 0 ? 'Следуй кругу' : 'Follow the circle'}
+                </span>
+                <span style={{ color: phaseColor, fontSize: '12px', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                    {phaseName}
+                </span>
             </div>
 
-            <div style={{ position: 'relative', width: '340px', height: '340px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ position: 'relative', width: 'min(66vw, 310px)', aspectRatio: '1 / 1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: '50%',
+                    background: `radial-gradient(circle, ${phaseColor}16 0%, ${phaseColor}0f 42%, transparent 70%)`,
+                    boxShadow: `0 0 58px ${phaseColor}18`
+                }} />
+                <div style={{
+                    position: 'absolute',
+                    inset: '8px',
+                    borderRadius: '50%',
+                    background: `linear-gradient(145deg, rgba(255,255,255,0.045), rgba(18,21,24,0.9))`,
+                    border: `1px solid ${phaseColor}2b`,
+                    boxShadow: `0 0 42px ${phaseColor}12 inset`
+                }} />
                 {/* Lungs Visual */}
-                <motion.div 
+                <Motion.div 
                     style={{ 
-                        width: '200px', height: '200px', borderRadius: '50%',
-                        border: `2px solid ${phaseColor}`, position: 'absolute',
+                        width: '70%', height: '70%', borderRadius: '50%',
+                        border: `2px solid ${phaseColor}80`, position: 'absolute',
+                        boxShadow: `0 0 32px ${phaseColor}18, 0 0 42px ${phaseColor}10 inset`,
                         transform: `scale(${renderScale})`
                     }}
                 />
-                <motion.div 
+                <Motion.div 
                     style={{ 
-                        width: '180px', height: '180px', borderRadius: '50%',
-                        background: phaseColor, position: 'absolute', opacity: 0.2, filter: 'blur(30px)',
+                        width: '50%', height: '50%', borderRadius: '50%',
+                        background: phaseColor, position: 'absolute', opacity: 0.12, filter: 'blur(34px)',
                         transform: `scale(${renderScale})`
                     }}
                 />
@@ -529,37 +589,37 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
                 {/* Text */}
                 <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 5 }}>
                     <div style={{ 
-                        fontSize: '72px', fontWeight: '200', color: textMain, 
-                        fontFamily: 'Segoe UI Light', fontVariantNumeric: 'tabular-nums',
+                        fontSize: '72px', fontWeight: 900, color: textMain, 
+                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", fontVariantNumeric: 'tabular-nums',
                         textShadow: `0 0 30px ${phaseColor}40`
                     }}>
                         {displayTime}
                     </div>
-                    <motion.div 
+                    <Motion.div 
                         key={phaseType}
                         initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                        style={{ fontSize: '18px', color: phaseColor, textTransform: 'uppercase', letterSpacing: '3px', fontWeight: '600' }}
+                        style={{ marginTop: '8px', padding: '7px 12px', borderRadius: '999px', background: `${phaseColor}14`, border: `1px solid ${phaseColor}26`, fontSize: '13px', color: phaseColor, textTransform: 'uppercase', letterSpacing: '0.16em', fontWeight: 900 }}
                     >
                         {phaseName}
-                    </motion.div>
+                    </Motion.div>
                 </div>
             </div>
 
-            <div style={{ marginTop: '50px', fontSize: '14px', color: textSub, letterSpacing: '1px' }}>
+            <div style={{ marginTop: '20px', padding: '8px 14px', borderRadius: '999px', background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.07)', fontSize: '13px', color: textSub, letterSpacing: '0.03em', fontWeight: 800 }}>
                 {langIndex === 0 ? 'Цикл' : 'Cycle'} {cycleInfo()}
             </div>
 
             {/* CONTROLS */}
-            <div style={{ position: 'absolute', bottom: '50px', display: 'flex', gap: '30px', alignItems: 'center' }}>
-                <CircleButton onClick={() => setAudioEnabled(!audioEnabled)} icon={audioEnabled ? <IoVolumeHigh size={20}/> : <IoVolumeMute size={20}/>} theme={theme} size={50} />
-                <CircleButton onClick={isRunning ? handlePause : handleResume} icon={isRunning ? <IoPause size={30}/> : <IoPlay size={30} style={{marginLeft:'4px'}}/>} theme={theme} size={80} accent={phaseColor} />
-                <CircleButton onClick={handlePause} icon={<IoClose size={24}/>} theme={theme} size={50} />
+            <div style={{ position: 'absolute', bottom: 'calc(42px + env(safe-area-inset-bottom, 0px))', display: 'flex', gap: '22px', alignItems: 'center' }}>
+                <CircleButton onClick={() => setAudioEnabled(!audioEnabled)} icon={audioEnabled ? <IoVolumeHigh size={18}/> : <IoVolumeMute size={18}/>} theme={theme} size={48} />
+                <CircleButton onClick={isRunning ? handlePause : handleResume} icon={isRunning ? <IoPause size={28}/> : <IoPlay size={28} style={{marginLeft:'4px'}}/>} theme={theme} size={72} accent={phaseColor} />
+                <CircleButton onClick={handlePause} icon={<IoClose size={22}/>} theme={theme} size={48} />
             </div>
 
             {/* PAUSE OVERLAY */}
             <AnimatePresence>
                 {isPaused && (
-                    <motion.div 
+                    <Motion.div 
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         style={{ 
                             position: 'absolute', inset: 0, 
@@ -575,21 +635,21 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
                             <ControlButton onClick={handleResume} icon={<IoPlay size={32} style={{marginLeft:'4px'}}/>} label={langIndex === 0 ? 'Продолжить' : 'Resume'} theme={theme} type="primary" accent={accent} size={70} />
                             <ControlButton onClick={onSaveSession} icon={<IoCheckmark size={22}/>} label={langIndex === 0 ? 'Финиш' : 'Finish'} theme={theme} />
                         </div>
-                    </motion.div>
+                    </Motion.div>
                 )}
             </AnimatePresence>
-        </motion.div>
+        </Motion.div>
       )}
 
       {/* === FINISH === */}
       {isFinished && (
-        <motion.div 
+        <Motion.div 
             key="finish"
             initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '40px', zIndex: 10 }}
         >
             <div style={{ position: 'relative' }}>
-                <motion.div 
+                <Motion.div 
                     animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
                     style={{ width: '150px', height: '150px', borderRadius: '50%', border: `1px dashed ${Colors.get('in', theme)}`, position: 'absolute', top: -15, left: -15 }}
                 />
@@ -603,7 +663,7 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
                     {finishMessage}
                 </p>
             </div>
-            <motion.button 
+            <Motion.button 
                 whileTap={{ scale: 0.95 }}
                 onClick={() => { setIsFinished(false); setShow(false); }}
                 style={{ 
@@ -613,8 +673,8 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
                 }}
             >
                 {langIndex === 0 ? 'В меню' : 'Done'}
-            </motion.button>
-        </motion.div>
+            </Motion.button>
+        </Motion.div>
       )}
 
       </AnimatePresence>
@@ -626,8 +686,81 @@ export default BreathingTimer;
 
 // === HELPERS & STYLES ===
 
+function CountdownStage({ seconds, theme, accent, isRu }) {
+  const textMain = Colors.get('mainText', theme);
+  const textSub = Colors.get('subText', theme);
+  return (
+    <Motion.div
+      key="countdown"
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.02 }}
+      style={{ position: 'relative', height: '100%', width: '100%', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+    >
+      <Motion.div animate={{ scale: [1, 1.08, 1], opacity: [0.42, 0.68, 0.42] }} transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }} style={{ position: 'absolute', width: '260px', height: '260px', borderRadius: '50%', background: `radial-gradient(circle, ${accent}38 0%, transparent 68%)`, filter: 'blur(16px)' }} />
+      <div style={{ position: 'relative', width: '220px', height: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: `1px solid ${accent}3d`, background: `${accent}0f`, boxShadow: `0 0 48px ${accent}1f inset` }} />
+        <AnimatePresence mode="wait">
+          <Motion.div key={seconds} initial={{ scale: 0.82, opacity: 0, y: 12 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 1.18, opacity: 0, y: -10 }} transition={{ duration: 0.24 }} style={{ color: textMain, fontSize: '112px', fontWeight: 900, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+            {seconds}
+          </Motion.div>
+        </AnimatePresence>
+      </div>
+      <div style={{ marginTop: '24px', color: accent, fontSize: '12px', fontWeight: 900, letterSpacing: '0.22em', textTransform: 'uppercase' }}>{isRu ? 'Старт через' : 'Starting in'}</div>
+      <div style={{ marginTop: '8px', color: textSub, fontSize: '14px', fontWeight: 700 }}>{isRu ? 'Настройтесь на спокойный ритм' : 'Settle into a calm rhythm'}</div>
+    </Motion.div>
+  );
+}
+
+function BreathingTipPanel({ theme, accent, phases, langIndex }) {
+  const textMain = Colors.get('mainText', theme);
+  const textSub = Colors.get('subText', theme);
+  const isRu = langIndex === 0;
+  const steps = [
+    { label: isRu ? 'Вдох' : 'In', value: phases.in },
+    { label: isRu ? 'Пауза' : 'Hold', value: phases.hold1 },
+    { label: isRu ? 'Выдох' : 'Out', value: phases.out },
+    { label: isRu ? 'Пауза' : 'Hold', value: phases.hold2 },
+  ].filter((step) => step.value > 0);
+
+  return (
+    <div style={{
+      borderRadius: '16px',
+      padding: '10px',
+      background: `linear-gradient(135deg, ${accent}12, rgba(255,255,255,0.03))`,
+      border: `1px solid ${accent}22`,
+      textAlign: 'center'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', color: accent, fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+        <FaInfoCircle />
+        {isRu ? 'Схема дыхания' : 'Breathing pattern'}
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '5px' }}>
+        {steps.map((step, index) => (
+          <div key={`${step.label}-${index}`} style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            minHeight: '25px',
+            padding: '0 8px',
+            borderRadius: '999px',
+            color: textMain,
+            background: 'rgba(0,0,0,0.18)',
+            border: `1px solid ${accent}20`,
+            fontSize: '10px',
+            fontWeight: 800
+          }}>
+            <span style={{ color: textSub }}>{step.label}</span>
+            <span style={{ color: accent }}>{step.value}s</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const CircleButton = ({ onClick, icon, theme, size = 45, accent }) => (
-    <motion.button 
+    <Motion.button 
         whileTap={{ scale: 0.9 }} onClick={onClick}
         style={{
             width: size, height: size, borderRadius: '50%',
@@ -639,14 +772,14 @@ const CircleButton = ({ onClick, icon, theme, size = 45, accent }) => (
         }}
     >
         {icon}
-    </motion.button>
+    </Motion.button>
 );
 
 const ControlButton = ({ onClick, icon, label, theme, type = 'secondary', accent, size = 55 }) => {
     const isPrimary = type === 'primary';
     return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-            <motion.button 
+            <Motion.button 
                 whileTap={{ scale: 0.92 }} onClick={onClick}
                 style={{
                     width: size, height: size, borderRadius: '50%',
@@ -659,7 +792,7 @@ const ControlButton = ({ onClick, icon, label, theme, type = 'secondary', accent
                 }}
             >
                 {icon}
-            </motion.button>
+            </Motion.button>
             {label && <span style={{ fontSize: '12px', color: Colors.get('subText', theme), fontWeight: '600' }}>{label}</span>}
         </div>
     );
@@ -669,23 +802,18 @@ const styles = (theme, show) => ({
   container: {
     backgroundColor: Colors.get('background', theme),
     position: 'fixed',
-    height: '86vh',
+    height: '100vh',
     transform: show ? 'translateY(0)' : 'translateY(100%)',
     bottom: '0',
     transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
     width: '100vw',
     fontFamily: 'Segoe UI',
-    borderTop: `1px solid ${Colors.get('border', theme)}`,
-    borderTopLeftRadius: '32px', borderTopRightRadius: '32px',
+    borderTop: 'none',
+    borderTopLeftRadius: 0, borderTopRightRadius: 0,
     zIndex: 2000, overflow: 'hidden', 
-    boxShadow: '0 -20px 60px rgba(0,0,0,0.5)'
+    boxShadow: 'none'
   }
 });
-
-const disclaimer = (langIndex) => {
-  if (langIndex === 0) return "Внимание: Дыхательные практики — это инструмент поддержки. При головокружении остановитесь."; 
-  return "Notice: Breathing exercises are a support tool. Stop if you feel dizzy."; 
-};
 
 const congratulations = (langIndex) => {
   const messages = {
@@ -695,4 +823,3 @@ const congratulations = (langIndex) => {
   const list = langIndex === 0 ? messages.ru : messages.en;
   return list[Math.floor(Math.random() * list.length)];
 };
-

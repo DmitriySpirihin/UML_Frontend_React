@@ -5,10 +5,11 @@ import Colors from "../../StaticClasses/Colors";
 import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
 import { getProblem, getPoints, hasStreak, getPrecision, getExplanation } from './MathProblems';
 import BreathAudio from "../../Helpers/BreathAudio";
-import { FaStar, FaFire, FaMedal, FaStopwatch, FaTimes, FaPlay, FaRedo } from 'react-icons/fa';
+import { FaStar, FaMedal, FaStopwatch, FaTimes, FaPlay, FaRedo } from 'react-icons/fa';
 import { IoArrowBackCircle } from "react-icons/io5";
 import MentalInput from './MentalInput';
 import { quickMathCategories, saveSessionDuration } from './MentalHelper';
+import { MentalResultScreen, StreakBadge } from './MentalHudParts';
 
 const startTimerDuration = 3000;
 
@@ -340,33 +341,36 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
                             <motion.div key="wrong-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).gameContainer}>
                                 <div style={styles(theme).gameHeader}>
                                     <div style={{ width: 28 }} />
-                                    <div style={styles(theme).gameStat}><FaStopwatch style={{ marginRight: 6 }} /> {getParsedTime(time)}</div>
-                                    <div style={{...styles(theme).gameStat, color: Colors.get('maxValColor', theme)}}><FaStar style={{ marginRight: 6 }} /> {scores}</div>
+                                    <div style={styles(theme).timerStat}><FaStopwatch /> {getParsedTime(time)}</div>
+                                    <div style={styles(theme).scoreStat}><ScoreGlyph theme={theme} /> {scores}</div>
                                 </div>
                                 <div style={styles(theme).subStatsBar}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: Colors.get('minValColor', theme) }}><FaFire /> {streakLength}</div>
-                                    <div style={{ color: Colors.get('difficulty', theme), fontWeight: 'bold' }}>
-                                        {difficulty > 3 ? `${langIndex === 0 ? 'Этап' : 'Stage'} ${stage}` : `${stage} / 20`}
+                                    <StreakBadge theme={theme} langIndex={langIndex} streakLength={streakLength} />
+                                    <div style={styles(theme).roundStat}>
+                                        <span style={styles(theme).miniLabel}>{difficulty > 3 ? (langIndex === 0 ? 'Этап' : 'Stage') : (langIndex === 0 ? 'Раунд' : 'Round')}</span>
+                                        <span style={styles(theme).miniValue}>{difficulty > 3 ? stage : `${stage}/20`}</span>
                                     </div>
                                 </div>
-                                <div style={{ width: '90%', backgroundColor: isDark ? 'rgba(220,50,50,0.12)' : 'rgba(220,50,50,0.07)', border: '2px solid rgba(220,50,50,0.35)', borderRadius: '24px', padding: '24px', marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                                <div style={styles(theme).wrongCard}>
                                     <div style={{ fontSize: '38px', fontWeight: 'bold', color: Colors.get('mainText', theme), textAlign: 'center' }}>
                                         {wrongData.problem}
                                     </div>
-                                    <div style={{ fontSize: '17px', color: Colors.get('minValColor', theme), fontWeight: 'bold' }}>
-                                        {langIndex === 0 ? `Правильно: ${wrongData.correctAnswer}` : `Correct: ${wrongData.correctAnswer}`}
+                                    <div style={styles(theme).feedbackAnswer}>
+                                        <span style={styles(theme).feedbackLabel}>{langIndex === 0 ? 'Правильный ответ' : 'Correct answer'}</span>
+                                        <span style={styles(theme).feedbackValue}>{wrongData.correctAnswer}</span>
                                     </div>
                                     {wrongData.explanation ? (
-                                        <div style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', borderRadius: '14px', padding: '12px 14px', display: 'flex', gap: '8px', alignItems: 'flex-start', width: '100%', boxSizing: 'border-box' }}>
-                                            <span style={{ fontSize: '16px', flexShrink: 0 }}>💡</span>
-                                            <span style={{ fontSize: '13px', color: Colors.get('subText', theme), lineHeight: '1.5' }}>{wrongData.explanation}</span>
+                                        <div style={styles(theme).feedbackTip}>
+                                            <span style={styles(theme).feedbackTipIcon}>i</span>
+                                            <span style={styles(theme).feedbackTipText}>{wrongData.explanation}</span>
                                         </div>
                                     ) : null}
                                 </div>
-                                <div style={{ marginTop: 'auto', paddingBottom: '50px', paddingTop: '24px' }}>
+                                <div style={styles(theme).ackButtonWrap}>
                                     <motion.button whileTap={{ scale: 0.95 }} onClick={handleAcknowledgeWrong}
-                                        style={{ backgroundColor: Colors.get('barsColorMeasures', theme), color: '#fff', border: 'none', borderRadius: '16px', padding: '16px 40px', fontSize: '17px', fontWeight: 'bold', cursor: 'pointer' }}>
-                                        {langIndex === 0 ? 'Понял → Дальше' : 'Got it → Next'}
+                                        style={styles(theme).ackButton}>
+                                        <span>{langIndex === 0 ? 'Дальше' : 'Next'}</span>
+                                        <span style={styles(theme).ackButtonIcon}>→</span>
                                     </motion.button>
                                 </div>
                             </motion.div>
@@ -379,21 +383,20 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
                                 <div style={styles(theme).gameHeader}>
                                     <IoArrowBackCircle onClick={() => onFinishSession()} style={styles(theme).iconButtonSmall} />
                                     
-                                    <div style={styles(theme).gameStat}>
-                                        <FaStopwatch style={{ marginRight: 6 }} /> {getParsedTime(time)}
+                                    <div style={styles(theme).timerStat}>
+                                        <FaStopwatch /> {getParsedTime(time)}
                                     </div>
-                                    <div style={{...styles(theme).gameStat, color: Colors.get('maxValColor', theme)}}>
-                                        <FaStar style={{ marginRight: 6 }} /> {scores}
+                                    <div style={styles(theme).scoreStat}>
+                                        <ScoreGlyph theme={theme} /> {scores}
                                     </div>
                                 </div>
 
                                 {/* Stats Bar */}
                                 <div style={styles(theme).subStatsBar}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: Colors.get('minValColor', theme) }}>
-                                        <FaFire /> {streakLength}
-                                    </div>
-                                    <div style={{ color: Colors.get('difficulty', theme), fontWeight: 'bold' }}>
-                                        {difficulty > 3 ? `${langIndex === 0 ? 'Этап' : 'Stage'} ${stage}` : `${stage} / 20`}
+                                    <StreakBadge theme={theme} langIndex={langIndex} streakLength={streakLength} />
+                                    <div style={styles(theme).roundStat}>
+                                        <span style={styles(theme).miniLabel}>{difficulty > 3 ? (langIndex === 0 ? 'Этап' : 'Stage') : (langIndex === 0 ? 'Раунд' : 'Round')}</span>
+                                        <span style={styles(theme).miniValue}>{difficulty > 3 ? stage : `${stage}/20`}</span>
                                     </div>
                                 </div>
 
@@ -415,7 +418,7 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
                                 <motion.div
                                     style={{
                                         ...styles(theme).problemCard,
-                                        backgroundColor: delayTimer ? (statusColor || Colors.get('simplePanel', theme)) : Colors.get('simplePanel', theme),
+                                        background: delayTimer ? (statusColor || Colors.get('simplePanel', theme)) : styles(theme).problemCard.background,
                                         borderColor: delayTimer ? statusColor : 'transparent'
                                     }}
                                     animate={delayTimer ? { scale: [1, 1.05, 1] } : { scale: 1 }}
@@ -448,44 +451,19 @@ const MentalGamePanelMath = ({ show, type, difficulty, maxTimer, setShow }) => {
 
                         {/* 4. RESULT SCREEN */}
                         {isFinished && (
-                            <motion.div key="result-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).contentWrapper}>
-                                <div style={styles(theme).header}>
-                                    <div />
-                                    <h2 style={styles(theme, fSize).title}>{langIndex === 0 ? 'Результат' : 'Result'}</h2>
-                                    <div />
-                                </div>
-
-                                <div style={{ ...styles(theme).card, alignItems: 'center', gap: 20, paddingTop: 30 }}>
-                                    <FaStar size={60} color={Colors.get('maxValColor', theme)} />
-                                    <div style={{ fontSize: '48px', fontWeight: 'bold', color: Colors.get('mainText', theme) }}>{scores}</div>
-                                    
-                                    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                        <ResultRow theme={theme} label={langIndex === 0 ? 'Время' : 'Time'} value={getParsedTime(time)} />
-                                        <ResultRow theme={theme} label={langIndex === 0 ? 'Правильно' : 'Correct'} value={difficulty < 4 ? `${rightAnswers} / 20` : rightAnswers} />
-                                        
-                                        {scores > record ? (
-                                            <div style={styles(theme).recordBox}>
-                                                <FaMedal color="#FFD700" /> {langIndex === 0 ? 'Новый рекорд!' : 'New Record!'}
-                                            </div>
-                                        ) : (
-                                            <ResultRow theme={theme} label={langIndex === 0 ? 'Лучший' : 'Best'} value={record} />
-                                        )}
-                                    </div>
-
-                                    <p style={{ textAlign: 'center', fontSize: '14px', color: Colors.get('subText', theme), marginTop: 10 }}>{message}</p>
-                                </div>
-                                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{width: '54px', height: '154px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',marginTop: '25px'}}>
-                                            <img style={{ width: '14vh' }} src={'images/Congrat.png'} alt="logo" />
-                                        </motion.div>
-                                <div style={styles(theme).controlsRow}>
-                                    <motion.button whileTap={{ scale: 0.9 }} onClick={() =>{handleReload();setScores(0)}} style={styles(theme).secondaryButton}>
-                                        <FaRedo size={20} />
-                                    </motion.button>
-                                    <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setShow(false); setIsFinished(false);setScores(0);setRightAnswers(0); }} style={styles(theme).primaryButton}>
-                                        {langIndex === 0 ? 'Завершить' : 'Finish'}
-                                    </motion.button>
-                                </div>
-                            </motion.div>
+                            <MentalResultScreen
+                                theme={theme}
+                                langIndex={langIndex}
+                                fSize={fSize}
+                                score={scores}
+                                timeValue={getParsedTime(time)}
+                                correctValue={difficulty < 4 ? `${rightAnswers}/20` : rightAnswers}
+                                bestValue={record}
+                                isRecord={scores > record}
+                                message={message}
+                                onRetry={() => { handleReload(); setScores(0); }}
+                                onFinish={() => { setShow(false); setIsFinished(false); setScores(0); setRightAnswers(0); }}
+                            />
                         )}
 
                     </AnimatePresence>
@@ -510,16 +488,16 @@ const MathInstructionsBlock = ({ theme, langIndex }) => {
     ];
     return (
         <div style={{
-            backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-            borderRadius: '14px',
-            padding: '12px 14px',
-            marginTop: '10px',
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`,
+            background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.62)',
+            borderRadius: '18px',
+            padding: '14px',
+            marginTop: '12px',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.09)' : 'rgba(20,24,32,0.08)'}`,
         }}>
             {items.map((item, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: i < items.length - 1 ? '8px' : 0 }}>
-                    <span style={{ fontSize: '15px', flexShrink: 0, lineHeight: '1.4' }}>{item.icon}</span>
-                    <span style={{ fontSize: '13px', color: Colors.get('subText', theme), lineHeight: '1.4' }}>{item.text}</span>
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: i < items.length - 1 ? '9px' : 0 }}>
+                    <span style={{ fontSize: '14px', flexShrink: 0, lineHeight: '1.35' }}>{item.icon}</span>
+                    <span style={{ fontSize: '12px', color: Colors.get('subText', theme), lineHeight: '1.35', fontWeight: 700 }}>{item.text}</span>
                 </div>
             ))}
         </div>
@@ -530,16 +508,19 @@ export default MentalGamePanelMath;
 
 const StatItem = ({ theme, label, value, fullWidth }) => (
     <div style={{ 
-        backgroundColor: Colors.get('background', theme), 
-        padding: '10px', 
-        borderRadius: '12px', 
+        background: theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.7)',
+        padding: '11px 10px',
+        borderRadius: '16px',
         display: 'flex', 
         flexDirection: 'column', 
         alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '58px',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(20,24,32,0.06)'}`,
         gridColumn: fullWidth ? 'span 2' : 'auto'
     }}>
-        <span style={{ fontSize: '12px', color: Colors.get('subText', theme) }}>{label}</span>
-        <span style={{ fontSize: '16px', fontWeight: 'bold', color: Colors.get('mainText', theme) }}>{value}</span>
+        <span style={{ fontSize: '10px', color: Colors.get('subText', theme), fontWeight: 800, letterSpacing: '0.02em' }}>{label}</span>
+        <span style={{ fontSize: '16px', fontWeight: 900, color: Colors.get('mainText', theme), marginTop: '3px' }}>{value}</span>
     </div>
 );
 
@@ -550,11 +531,19 @@ const ResultRow = ({ theme, label, value }) => (
     </div>
 );
 
+const ScoreGlyph = ({ theme }) => (
+    <span style={styles(theme).scoreGlyph} aria-hidden="true">
+        <span style={styles(theme).scoreGlyphInner} />
+    </span>
+);
+
 // === STYLES ===
 
 const styles = (theme, fSize = 14) => ({
     container: {
-        backgroundColor: Colors.get('background', theme),
+        background: theme === 'dark'
+            ? 'radial-gradient(circle at 50% -10%, rgba(102,217,232,0.13), transparent 32%), radial-gradient(circle at 96% 12%, rgba(138,124,214,0.12), transparent 30%), #0E1013'
+            : 'radial-gradient(circle at 50% -10%, rgba(102,217,232,0.18), transparent 32%), radial-gradient(circle at 96% 12%, rgba(138,124,214,0.16), transparent 30%), #F4F5F7',
         position: 'fixed',
         top: 0,
         left: 0,
@@ -563,16 +552,19 @@ const styles = (theme, fSize = 14) => ({
         zIndex: 2000,
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: 'Segoe UI',
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        color: Colors.get('mainText', theme),
     },
     contentWrapper: {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '20px',
+        gap: '12px',
+        padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 20px calc(34px + env(safe-area-inset-bottom, 0px))',
         width: '100%',
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        overflowY: 'auto',
     },
     centeredFull: {
         flex: 1,
@@ -583,44 +575,52 @@ const styles = (theme, fSize = 14) => ({
         width: '100%'
     },
     header: {
-        width: '90%',
-        marginTop:'65px',
-        display: 'flex',
-        justifyContent: 'space-between',
+        width: '100%',
+        maxWidth: '660px',
+        display: 'grid',
+        gridTemplateColumns: '44px minmax(0, 1fr) 44px',
+        justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: '20px'
+        marginBottom: '4px'
     },
     title: {
-        fontSize: '20px',
-        fontWeight: 'bold',
+        fontSize: `${Math.max(21, fSize + 7)}px`,
+        fontWeight: 900,
         color: Colors.get('mainText', theme),
         margin: 0,
+        textAlign: 'center',
+        textTransform: 'capitalize',
+        lineHeight: 1.1,
     },
     card: {
         width: '100%',
-        maxWidth: '400px',
-        backgroundColor: Colors.get('simplePanel', theme) + '80', // Glass
-        backdropFilter: 'blur(10px)',
+        maxWidth: '660px',
+        background: theme === 'dark'
+            ? 'linear-gradient(145deg, rgba(25,33,37,0.94), rgba(16,19,23,0.98))'
+            : 'linear-gradient(145deg, rgba(255,255,255,0.92), rgba(235,242,245,0.94))',
+        backdropFilter: 'blur(18px)',
         borderRadius: '24px',
-        padding: '20px',
+        padding: '18px',
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
-        border: `1px solid ${Colors.get('border', theme)}40`
+        border: `1px solid ${theme === 'dark' ? 'rgba(102,217,232,0.14)' : 'rgba(37,87,96,0.14)'}`,
+        boxShadow: theme === 'dark' ? '0 24px 56px rgba(0,0,0,0.34)' : '0 18px 40px rgba(24,36,44,0.12)',
     },
     description: {
-        fontSize: '15px',
+        fontSize: '13px',
         color: Colors.get('subText', theme),
         textAlign: 'center',
-        marginBottom: '20px',
-        lineHeight: 1.4
+        margin: '0 0 14px',
+        lineHeight: 1.35,
+        fontWeight: 750,
     },
     statsGrid: {
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
-        gap: '10px',
+        gap: '8px',
         width: '100%',
-        marginBottom: '20px'
+        marginBottom: '0'
     },
     disclaimer: {
         fontSize: '12px',
@@ -629,34 +629,37 @@ const styles = (theme, fSize = 14) => ({
         opacity: 0.7
     },
     iconButton: {
-        fontSize: '32px',
-        color: Colors.get('skipped', theme),
-        cursor: 'pointer'
+        fontSize: '34px',
+        color: Colors.get('subText', theme),
+        cursor: 'pointer',
+        filter: theme === 'dark' ? 'drop-shadow(0 10px 18px rgba(0,0,0,0.35))' : 'drop-shadow(0 8px 16px rgba(20,24,32,0.12))',
     },
     iconButtonSmall: {
-        fontSize: '28px',
-        color: Colors.get('skipped', theme),
-        cursor: 'pointer'
+        fontSize: '30px',
+        color: Colors.get('subText', theme),
+        cursor: 'pointer',
+        filter: theme === 'dark' ? 'drop-shadow(0 8px 14px rgba(0,0,0,0.3))' : 'drop-shadow(0 8px 14px rgba(24,36,44,0.12))',
     },
     playButtonContainer: {
-        marginTop: 'auto',
+        marginTop: '6px',
         width: '100%',
         display: 'flex',
         justifyContent: 'center',
-        paddingBottom: '40px'
+        paddingBottom: '0'
     },
     playButton: {
-        backgroundColor: Colors.get('barsColorMeasures', theme),
-        color: '#fff',
+        background: 'linear-gradient(135deg, #66D9E8 0%, #8A7CD6 100%)',
+        color: '#0E1013',
         border: 'none',
-        borderRadius: '16px',
-        padding: '16px 40px',
-        fontSize: '18px',
-        fontWeight: 'bold',
+        borderRadius: '20px',
+        minHeight: '58px',
+        padding: '0 34px',
+        fontSize: '17px',
+        fontWeight: 900,
         display: 'flex',
         alignItems: 'center',
         cursor: 'pointer',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.2)'
+        boxShadow: '0 18px 34px rgba(102,217,232,0.18)'
     },
     // Game Screen Styles
     gameContainer: {
@@ -664,37 +667,163 @@ const styles = (theme, fSize = 14) => ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        width: '100%'
+        width: '100%',
+        boxSizing: 'border-box',
+        padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 0 38vh',
     },
     gameHeader: {
-        width: '90%',
-        display: 'flex',
-        marginTop:'75px',
-        justifyContent: 'space-between',
+        width: 'calc(100% - 40px)',
+        maxWidth: '680px',
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
         alignItems: 'center',
-        padding: '15px 0'
+        gap: '10px',
+        padding: '10px',
+        marginTop: '0',
+        borderRadius: '24px',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.68)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(20,24,32,0.08)'}`,
+        boxShadow: theme === 'dark' ? '0 18px 38px rgba(0,0,0,0.22)' : '0 14px 28px rgba(24,36,44,0.1)',
+        backdropFilter: 'blur(18px)',
     },
     gameStat: {
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'center',
+        gap: '6px',
+        minWidth: '92px',
+        minHeight: '42px',
+        padding: '0 12px',
+        borderRadius: '18px',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.76)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(20,24,32,0.06)'}`,
         fontSize: '18px',
-        fontWeight: 'bold',
-        color: Colors.get('mainText', theme)
+        fontWeight: 900,
+        color: Colors.get('mainText', theme),
+    },
+    timerStat: {
+        justifySelf: 'center',
+        minWidth: '126px',
+        minHeight: '46px',
+        padding: '0 18px',
+        borderRadius: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '10px',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.78)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(20,24,32,0.07)'}`,
+        color: Colors.get('mainText', theme),
+        fontSize: '20px',
+        fontWeight: 900,
+        boxShadow: theme === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,0.06)' : '0 10px 20px rgba(24,36,44,0.08)',
+    },
+    scoreStat: {
+        justifySelf: 'end',
+        minWidth: '98px',
+        minHeight: '46px',
+        padding: '0 16px',
+        borderRadius: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '9px',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.72)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.075)' : 'rgba(20,24,32,0.065)'}`,
+        color: theme === 'dark' ? '#C9D6E8' : '#3E5666',
+        fontSize: '18px',
+        fontWeight: 900,
+    },
+    scoreGlyph: {
+        width: '28px',
+        height: '28px',
+        borderRadius: '10px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: theme === 'dark'
+            ? 'linear-gradient(145deg, rgba(102,217,232,0.18), rgba(138,124,214,0.14))'
+            : 'linear-gradient(145deg, rgba(102,217,232,0.22), rgba(138,124,214,0.14))',
+        border: `1px solid ${theme === 'dark' ? 'rgba(102,217,232,0.28)' : 'rgba(37,87,96,0.16)'}`,
+        boxShadow: theme === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 0 18px rgba(102,217,232,0.16)' : 'inset 0 1px 0 rgba(255,255,255,0.78)',
+    },
+    scoreGlyphInner: {
+        width: '10px',
+        height: '10px',
+        borderRadius: '4px',
+        transform: 'rotate(45deg)',
+        background: theme === 'dark' ? '#BDEFF5' : '#226877',
+        boxShadow: theme === 'dark' ? '0 0 16px rgba(102,217,232,0.42)' : 'none',
     },
     subStatsBar: {
-        width: '90%',
+        width: 'calc(100% - 40px)',
+        maxWidth: '680px',
         display: 'flex',
         justifyContent: 'space-between',
-        marginBottom: '15px'
+        alignItems: 'center',
+        marginTop: '10px',
+        marginBottom: '14px',
+        padding: '0 4px',
+        boxSizing: 'border-box',
+        fontSize: '16px',
+        fontWeight: 900,
+    },
+    miniStat: {
+        minHeight: '36px',
+        padding: '0 12px',
+        borderRadius: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '7px',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.72)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(20,24,32,0.06)'}`,
+        boxShadow: theme === 'dark' ? '0 10px 24px rgba(0,0,0,0.16)' : '0 8px 18px rgba(24,36,44,0.08)',
+    },
+    streakStat: {
+        minHeight: '34px',
+        padding: '0 12px',
+        borderRadius: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.7)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.065)' : 'rgba(20,24,32,0.06)'}`,
+        color: theme === 'dark' ? '#C9D6E8' : '#4C6472',
+    },
+    roundStat: {
+        minHeight: '34px',
+        padding: '0 12px',
+        borderRadius: '16px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        background: theme === 'dark' ? 'rgba(102,217,232,0.08)' : 'rgba(102,217,232,0.16)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(102,217,232,0.16)' : 'rgba(37,87,96,0.1)'}`,
+        color: theme === 'dark' ? '#8FE6F1' : '#226877',
+    },
+    miniLabel: {
+        fontSize: '10px',
+        fontWeight: 850,
+        opacity: 0.72,
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+    },
+    miniValue: {
+        fontSize: '15px',
+        fontWeight: 950,
+        letterSpacing: '0',
     },
     progressBarContainer: {
-        width: '90%',
-        height: '10px',
-        marginTop:'50px',
-        backgroundColor: Colors.get('bottomPanel', theme),
-        borderRadius: '10px',
+        width: 'calc(100% - 40px)',
+        maxWidth: '680px',
+        height: '12px',
+        marginTop: '16px',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.045)' : 'rgba(20,24,32,0.07)',
+        borderRadius: '999px',
         position: 'relative',
-        marginBottom: '30px'
+        marginBottom: '22px',
+        overflow: 'visible',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
     },
     timerText: {
         position: 'absolute',
@@ -704,25 +833,144 @@ const styles = (theme, fSize = 14) => ({
         color: Colors.get('subText', theme)
     },
     problemCard: {
-        width: '90%',
-        height: '140px',
-        borderRadius: '24px',
+        width: 'calc(100% - 40px)',
+        maxWidth: '680px',
+        minHeight: '150px',
+        borderRadius: '26px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-        marginBottom: '20px',
-        marginTop: '50px',
-        border: '2px solid transparent'
+        background: theme === 'dark'
+            ? 'linear-gradient(145deg, rgba(28,34,39,0.96), rgba(16,19,23,0.98))'
+            : 'linear-gradient(145deg, rgba(255,255,255,0.92), rgba(235,242,245,0.94))',
+        boxShadow: theme === 'dark' ? '0 24px 52px rgba(0,0,0,0.32)' : '0 18px 40px rgba(24,36,44,0.12)',
+        marginBottom: '18px',
+        marginTop: '34px',
+        border: `1px solid ${theme === 'dark' ? 'rgba(102,217,232,0.12)' : 'rgba(37,87,96,0.12)'}`,
+        boxSizing: 'border-box',
     },
     inputDisplay: {
-        fontSize: '48px',
-        fontWeight: 'bold',
+        minWidth: '96px',
+        minHeight: '44px',
+        padding: '0 22px',
+        borderRadius: '18px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.74)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(20,24,32,0.07)'}`,
+        fontSize: '34px',
+        fontWeight: 900,
         color: Colors.get('mainText', theme),
-        height: '60px',
-        marginBottom: '20px',
+        marginBottom: '18px',
         fontFamily: 'monospace',
-        letterSpacing: '2px'
+        letterSpacing: '2px',
+    },
+    wrongCard: {
+        width: 'calc(100% - 40px)',
+        maxWidth: '680px',
+        marginTop: '20px',
+        padding: '28px 24px',
+        borderRadius: '28px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '16px',
+        boxSizing: 'border-box',
+        background: theme === 'dark'
+            ? 'linear-gradient(145deg, rgba(48,24,28,0.86), rgba(18,20,24,0.98))'
+            : 'linear-gradient(145deg, rgba(255,246,246,0.94), rgba(255,255,255,0.9))',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,90,98,0.26)' : 'rgba(190,65,70,0.18)'}`,
+        boxShadow: theme === 'dark' ? '0 24px 58px rgba(0,0,0,0.32)' : '0 18px 40px rgba(24,36,44,0.12)',
+    },
+    feedbackAnswer: {
+        minHeight: '42px',
+        padding: '0 14px',
+        borderRadius: '16px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '10px',
+        background: theme === 'dark' ? 'rgba(255,90,98,0.12)' : 'rgba(255,90,98,0.11)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,90,98,0.2)' : 'rgba(190,65,70,0.16)'}`,
+    },
+    feedbackLabel: {
+        color: theme === 'dark' ? '#FF8F96' : '#C94149',
+        fontSize: '11px',
+        fontWeight: 850,
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+        opacity: 0.78,
+    },
+    feedbackValue: {
+        color: Colors.get('mainText', theme),
+        fontSize: '20px',
+        fontWeight: 950,
+    },
+    feedbackTip: {
+        width: '100%',
+        boxSizing: 'border-box',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '14px 16px',
+        borderRadius: '18px',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.72)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(20,24,32,0.07)'}`,
+    },
+    feedbackTipIcon: {
+        width: '26px',
+        height: '26px',
+        borderRadius: '10px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        background: theme === 'dark' ? 'rgba(102,217,232,0.18)' : 'rgba(102,217,232,0.2)',
+        color: theme === 'dark' ? '#BDEFF5' : '#226877',
+        fontSize: '13px',
+        fontWeight: 950,
+        fontStyle: 'italic',
+    },
+    feedbackTipText: {
+        color: Colors.get('subText', theme),
+        fontSize: '13px',
+        lineHeight: 1.45,
+        fontWeight: 750,
+    },
+    ackButtonWrap: {
+        marginTop: '28px',
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        paddingBottom: 'calc(34px + env(safe-area-inset-bottom, 0px))',
+    },
+    ackButton: {
+        minWidth: '230px',
+        minHeight: '58px',
+        padding: '0 24px',
+        border: 'none',
+        borderRadius: '22px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px',
+        cursor: 'pointer',
+        background: 'linear-gradient(135deg, #66D9E8 0%, #8A7CD6 100%)',
+        color: '#0E1013',
+        fontSize: '17px',
+        fontWeight: 950,
+        boxShadow: '0 18px 38px rgba(102,217,232,0.22)',
+    },
+    ackButtonIcon: {
+        width: '30px',
+        height: '30px',
+        borderRadius: '12px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(14,16,19,0.14)',
+        fontSize: '18px',
+        lineHeight: 1,
     },
     // Result Screen Styles
     recordBox: {
