@@ -153,10 +153,10 @@ const mergeAccentPresets = (defaults, custom = []) => {
     return colors.filter((color, index) => colors.indexOf(color) === index);
 };
 const HABITS_SUCCESS = {
-    hue: '#39D982',
-    soft: 'rgba(57,217,130,0.14)',
-    ring: 'rgba(57,217,130,0.26)',
-    glow: 'rgba(57,217,130,0.16)'
+    hue: '#22C55E',
+    soft: 'rgba(34,197,94,0.14)',
+    ring: 'rgba(34,197,94,0.26)',
+    glow: 'rgba(34,197,94,0.16)'
 };
 
 const HABITS_CATEGORY_TONES = {
@@ -718,7 +718,7 @@ const HabitsMain = () => {
     }, []);
 
     useEffect(() => {
-        const normalized = buildHabitsAccent(AppData.habitAccentColor || '#39D982').hue;
+        const normalized = buildHabitsAccent(AppData.habitAccentColor || '#22C55E').hue;
         if (AppData.habitAccentColor !== normalized) {
             AppData.habitAccentColor = setHabitAccent(normalized).hue;
         }

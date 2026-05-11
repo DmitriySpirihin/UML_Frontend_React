@@ -8,7 +8,7 @@ import { INSIGHT_TYPES } from './InsightHelper';
 
 const SleepInsight = () => {
   const [theme, setTheme] = useState(theme$.value);
-  const accent = buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF');
+  const accent = buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF');
   const isLight = theme === 'light' || theme === 'speciallight';
 
   useEffect(() => {

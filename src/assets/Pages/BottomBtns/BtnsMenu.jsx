@@ -94,12 +94,16 @@ const containerStyle = () => ({
 const glassOverlay = (theme) => ({
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: Colors.get('bottomPanel', theme),
-    opacity: 0.85,
-    backdropFilter: 'blur(15px)',
-    WebkitBackdropFilter: 'blur(15px)',
-    border: `1px solid ${Colors.get('border', theme)}`,
+    background: theme === 'light' || theme === 'speciallight'
+        ? 'linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42))'
+        : 'linear-gradient(135deg, rgba(19,29,36,0.64), rgba(8,13,17,0.50))',
+    backdropFilter: 'blur(30px) saturate(190%)',
+    WebkitBackdropFilter: 'blur(30px) saturate(190%)',
+    border: `1px solid ${theme === 'light' || theme === 'speciallight' ? 'rgba(148,163,184,0.28)' : 'rgba(190,220,235,0.14)'}`,
     borderRadius: '25px',
+    boxShadow: theme === 'light' || theme === 'speciallight'
+        ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 20px 44px -30px rgba(15,23,42,0.28)'
+        : '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px -20px rgba(0,0,0,0.76)',
     zIndex: -1,
 });
 

@@ -77,14 +77,14 @@ import {
     TbYoga
 } from 'react-icons/tb';
 
-export const DEFAULT_HABITS_ACCENT_COLOR = '#39D982';
+export const DEFAULT_HABITS_ACCENT_COLOR = '#22C55E';
 
 export const HABIT_ACCENT_PRESETS = [
-    '#39D982',
-    '#5F8DFF',
+    '#22C55E',
+    '#149DFF',
     '#8D94B8',
     '#2FD6BD',
-    '#6F7DFF',
+    '#7C6CFF',
     '#A66BFF',
     '#B48BC8',
     '#C29AD6',

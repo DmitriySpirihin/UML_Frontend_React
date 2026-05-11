@@ -11,7 +11,7 @@ const ToDoCollab = () => {
   const [lang, setLang] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [copied, setCopied] = useState(false);
-  const accent = useMemo(() => buildTodoAccent(AppData.todoAccentColor || '#5F8DFF'), []);
+  const accent = useMemo(() => buildTodoAccent(AppData.todoAccentColor || '#149DFF'), []);
   const s = styles(theme, accent, fSize);
 
   useEffect(() => {

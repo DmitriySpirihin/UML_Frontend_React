@@ -91,7 +91,7 @@ const SleepNew = () => {
   const [wakeTime, setWakeTime] = useState(7 * HOUR_MS);
   const [note, setNote] = useState('');
 
-  const accent = useMemo(() => buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF'), []);
+  const accent = useMemo(() => buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF'), []);
   const duration = getDurationFromTimes(bedTime, wakeTime);
   const s = styles(theme, accent, fSize);
 

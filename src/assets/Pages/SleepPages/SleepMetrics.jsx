@@ -266,7 +266,7 @@ const SleepMetrics = () => {
     };
   }, []);
 
-  const accent = useMemo(() => buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF'), []);
+  const accent = useMemo(() => buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF'), []);
   const s = styles(theme, accent, fSize);
 
   const sleepData = useMemo(() => Object.entries(AppData.sleepingLog || {})

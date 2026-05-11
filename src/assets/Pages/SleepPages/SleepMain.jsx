@@ -88,7 +88,7 @@ const SleepMain = () => {
   const [date, setDate] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedSleepEntry, setSelectedSleepEntry] = useState(null);
-  const [accentColor, setAccentColor] = useState(buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF').hue);
+  const [accentColor, setAccentColor] = useState(buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF').hue);
   const [, setAccentPresetVersion] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
@@ -331,7 +331,7 @@ const SummaryTile = ({ icon, label, value, theme, accent }) => {
 };
 
 const MetricItem = ({ icon, label, value, theme, color }) => {
-  const s = styles(theme, buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF'));
+  const s = styles(theme, buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF'));
   return (
     <div style={s.metricBox}>
       <div style={{ ...s.metricIcon, color }}>{icon}</div>

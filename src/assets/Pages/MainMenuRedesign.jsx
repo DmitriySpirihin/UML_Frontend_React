@@ -3,6 +3,8 @@ import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { FaCog, FaThumbtack, FaTrashRestore } from 'react-icons/fa';
 import { buildHabitsAccent } from './HabitsPages/HabitVisuals.jsx';
 import { buildSleepAccent } from './SleepPages/SleepVisuals.js';
+import { buildTodoAccent } from './ToDoPages/ToDoVisuals.js';
+import { buildSectionAccent } from './SectionAccentSettings.jsx';
 
 const EASE = [0.2, 0.8, 0.2, 1];
 
@@ -49,12 +51,12 @@ const tokens = {
   },
   accents: {
     profile: { hue: '#AEBCC8', soft: 'rgba(174,188,200,0.14)', ring: 'rgba(174,188,200,0.24)', rgb: '174,188,200' },
-    HabitsMain: { hue: '#24C875', soft: 'rgba(36,200,117,0.14)', ring: 'rgba(36,200,117,0.28)' },
-    TrainingMain: { hue: '#21B6EF', soft: 'rgba(33,182,239,0.12)', ring: 'rgba(33,182,239,0.24)' },
-    MentalMain: { hue: '#8F65E8', soft: 'rgba(143,101,232,0.14)', ring: 'rgba(143,101,232,0.28)' },
-    RecoveryMain: { hue: '#25C6B2', soft: 'rgba(37,198,178,0.14)', ring: 'rgba(37,198,178,0.26)' },
-    SleepMain: { hue: '#5B69E8', soft: 'rgba(91,105,232,0.14)', ring: 'rgba(91,105,232,0.28)' },
-    ToDoMain: { hue: '#4D7BEF', soft: 'rgba(77,123,239,0.14)', ring: 'rgba(77,123,239,0.28)' },
+    HabitsMain: { hue: '#22C55E', soft: 'rgba(34,197,94,0.16)', ring: 'rgba(34,197,94,0.32)' },
+    TrainingMain: { hue: '#35C2FF', soft: 'rgba(53,194,255,0.14)', ring: 'rgba(53,194,255,0.28)' },
+    MentalMain: { hue: '#A66BFF', soft: 'rgba(166,107,255,0.15)', ring: 'rgba(166,107,255,0.30)' },
+    RecoveryMain: { hue: '#2FD6BD', soft: 'rgba(47,214,189,0.15)', ring: 'rgba(47,214,189,0.30)' },
+    SleepMain: { hue: '#7C6CFF', soft: 'rgba(124,108,255,0.16)', ring: 'rgba(124,108,255,0.32)' },
+    ToDoMain: { hue: '#149DFF', soft: 'rgba(20,157,255,0.16)', ring: 'rgba(20,157,255,0.32)' },
     RobotMain: { hue: '#66D9E8', soft: 'rgba(102,217,232,0.14)', ring: 'rgba(102,217,232,0.28)' },
     premium: { hue: '#C4D3DE', soft: 'rgba(196,211,222,0.16)', ring: 'rgba(196,211,222,0.34)' }
   }
@@ -424,15 +426,15 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         { id: 'MentalMain', label: lang === 0 ? 'Ум' : 'Mind', value: data.mentalValue }
       ];
   const heroBackground = palette.isLight
-    ? `linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(${heroAccent.rgb},0.08) 58%, rgba(235,242,246,0.96) 100%)`
+    ? `linear-gradient(145deg, rgba(255,255,255,0.74) 0%, rgba(${heroAccent.rgb},0.11) 48%, rgba(235,242,246,0.72) 100%)`
     : palette.isCoffee
-      ? `linear-gradient(145deg, rgba(67,44,31,0.32) 0%, rgba(39,26,19,0.96) 44%, rgba(22,14,10,0.96) 100%)`
-      : `linear-gradient(145deg, rgba(${heroAccent.rgb},0.16) 0%, rgba(22,31,38,0.96) 42%, rgba(14,20,25,0.96) 100%)`;
+      ? `linear-gradient(145deg, rgba(92,61,42,0.36) 0%, rgba(38,25,18,0.70) 44%, rgba(18,12,9,0.66) 100%)`
+      : `linear-gradient(145deg, rgba(${heroAccent.rgb},0.24) 0%, rgba(22,31,38,0.64) 42%, rgba(14,20,25,0.58) 100%)`;
   const heroShadow = palette.isLight
-    ? `0 18px 40px -30px rgba(15,23,42,0.28), 0 1px 0 rgba(255,255,255,0.86) inset`
+    ? `0 22px 50px -34px rgba(15,23,42,0.30), 0 1px 0 rgba(255,255,255,0.88) inset, 0 0 0 1px rgba(255,255,255,0.32) inset`
     : palette.isCoffee
-      ? `0 18px 40px -34px rgba(0,0,0,0.72), 0 1px 0 rgba(255,226,196,0.055) inset`
-      : `0 18px 40px -34px rgba(${heroAccent.rgb},0.38), 0 1px 0 rgba(255,255,255,0.045) inset`;
+      ? `0 24px 58px -34px rgba(0,0,0,0.76), 0 1px 0 rgba(255,226,196,0.10) inset, 0 0 0 1px rgba(255,226,196,0.045) inset`
+      : `0 24px 58px -36px rgba(${heroAccent.rgb},0.50), 0 1px 0 rgba(255,255,255,0.12) inset, 0 0 0 1px rgba(255,255,255,0.035) inset`;
 
   return (
     <Motion.div
@@ -444,12 +446,26 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         padding: 17,
         borderRadius: 32,
         background: heroBackground,
-        border: `1px solid ${palette.isLight ? 'rgba(148,163,184,0.16)' : palette.border}`,
+        border: `1px solid ${palette.isLight ? 'rgba(148,163,184,0.18)' : 'rgba(180,210,225,0.16)'}`,
         boxShadow: heroShadow,
         position: 'relative',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        backdropFilter: 'blur(28px) saturate(170%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(170%)'
       }}
     >
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 1,
+          borderRadius: 31,
+          background: palette.isLight
+            ? 'linear-gradient(180deg, rgba(255,255,255,0.64), rgba(255,255,255,0.10) 44%, rgba(255,255,255,0.36))'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.018) 44%, rgba(255,255,255,0.045))',
+          pointerEvents: 'none'
+        }}
+      />
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, position: 'relative' }}>
         <Motion.button
           type="button"
@@ -513,14 +529,57 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
 
       <div style={{
         marginTop: 18,
-        textAlign: 'center',
-        position: 'relative'
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
       }}>
-        <div style={{ fontSize: 11, color: heroAccent.hue, fontWeight: 850, letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: 6 }}>
-          {lang === 0 ? 'Сегодня' : 'Today'}
-        </div>
-        <div style={{ fontSize: 15, fontWeight: 820, color: palette.text, lineHeight: 1.18 }}>
-          {data.progressLabel}
+        <div style={{
+          minWidth: 0,
+          width: '100%',
+          padding: '9px 12px',
+          borderRadius: 18,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          background: palette.isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.055)',
+          border: `1px solid rgba(${heroAccent.rgb},${palette.isLight ? 0.16 : 0.22})`,
+          boxShadow: `0 1px 0 rgba(255,255,255,0.08) inset, 0 12px 22px -20px rgba(${heroAccent.rgb},0.58)`
+        }}>
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 7,
+            height: 24,
+            padding: '0 10px',
+            borderRadius: 999,
+            background: `rgba(${heroAccent.rgb},0.14)`,
+            border: `1px solid rgba(${heroAccent.rgb},0.24)`,
+            color: heroAccent.hue,
+            fontSize: 10,
+            fontWeight: 900,
+            letterSpacing: '0.07em',
+            textTransform: 'uppercase',
+            flexShrink: 0
+          }}>
+            <span style={{ width: 5, height: 5, borderRadius: 999, background: heroAccent.hue, boxShadow: `0 0 10px rgba(${heroAccent.rgb},0.8)` }} />
+            {lang === 0 ? 'Сегодня' : 'Today'}
+          </div>
+          <div style={{
+            minWidth: 0,
+            flex: 1,
+            color: palette.text,
+            fontSize: 14,
+            fontWeight: 900,
+            lineHeight: 1.16,
+            textAlign: 'right',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}>
+            {data.progressLabel}
+          </div>
         </div>
       </div>
 
@@ -624,15 +683,15 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
     : accent;
   const rowBackground = palette.isLight
     ? metricParts.isZero
-      ? `radial-gradient(190px 90px at 14% 50%, rgba(${accent.rgb},0.20), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.16) 0%, rgba(255,255,255,0.88) 54%, rgba(238,244,247,0.94) 100%)`
-      : `radial-gradient(220px 102px at 14% 50%, rgba(${accent.rgb},0.28), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.22) 0%, rgba(255,255,255,0.86) 56%, rgba(232,239,243,0.94) 100%)`
+      ? `radial-gradient(190px 90px at 14% 50%, rgba(${accent.rgb},0.18), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.14) 0%, rgba(255,255,255,0.88) 54%, rgba(238,244,247,0.94) 100%)`
+      : `radial-gradient(220px 102px at 14% 50%, rgba(${accent.rgb},0.25), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.20) 0%, rgba(255,255,255,0.86) 56%, rgba(232,239,243,0.94) 100%)`
     : palette.isCoffee
       ? metricParts.isZero
         ? `radial-gradient(180px 90px at 12% 50%, rgba(${accent.rgb},0.19), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.13) 0%, rgba(45,29,20,0.93) 100%)`
         : `radial-gradient(210px 100px at 12% 50%, rgba(${accent.rgb},0.28), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.18) 0%, rgba(45,29,20,0.93) 100%)`
       : metricParts.isZero
-        ? `radial-gradient(180px 90px at 12% 50%, rgba(${accent.rgb},0.24), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.16) 0%, rgba(18,28,35,0.92) 100%)`
-        : `radial-gradient(210px 100px at 12% 50%, rgba(${accent.rgb},0.36), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.24) 0%, rgba(18,28,35,0.92) 100%)`;
+        ? `radial-gradient(180px 90px at 12% 50%, rgba(${accent.rgb},0.20), transparent 74%), linear-gradient(135deg, rgba(${accent.rgb},0.13) 0%, rgba(18,28,35,0.92) 100%)`
+        : `radial-gradient(210px 100px at 12% 50%, rgba(${accent.rgb},0.30), transparent 76%), linear-gradient(135deg, rgba(${accent.rgb},0.19) 0%, rgba(18,28,35,0.92) 100%)`;
   const rowBorder = palette.isLight
     ? `1px solid rgba(${accent.rgb},0.22)`
     : palette.isCoffee
@@ -721,16 +780,19 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
         height: 42,
         borderRadius: 20,
         flexShrink: 0,
-        background: iconTone.soft,
-        color: iconTone.hue,
-        border: `1px solid ${iconTone.ring}`,
+        background: palette.isLight
+          ? `linear-gradient(135deg, rgba(${accent.rgb},0.18), rgba(${accent.rgb},0.08))`
+          : `linear-gradient(135deg, rgba(${accent.rgb},0.56), rgba(${accent.rgb},0.22) 58%, rgba(255,255,255,0.06))`,
+        color: palette.isLight ? iconTone.hue : '#F8FBFF',
+        border: `1px solid rgba(${accent.rgb},${palette.isLight ? 0.30 : 0.48})`,
+        boxShadow: `0 1px 0 rgba(255,255,255,0.12) inset, 0 12px 22px -18px rgba(${accent.rgb},0.92)`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
         zIndex: 1
       }}>
-        <IconComponent size={19} />
+        <IconComponent size={20} stroke={2.1} />
       </div>
       <div style={{ flex: 1, minWidth: 0, textAlign: 'left', position: 'relative', zIndex: 1 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -975,12 +1037,30 @@ function Dock({ palette, onBack, onOpenUser, onOpenSettings }) {
       padding: '10px 14px',
       boxSizing: 'border-box',
       borderRadius: 999,
-      background: palette.panelStrong,
-      border: `1px solid ${palette.border}`,
-      boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)',
-      backdropFilter: 'blur(24px) saturate(180%)',
-      WebkitBackdropFilter: 'blur(24px) saturate(180%)'
+      background: palette.isLight
+        ? 'linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42))'
+        : 'linear-gradient(135deg, rgba(19,29,36,0.64), rgba(8,13,17,0.50))',
+      border: `1px solid ${palette.isLight ? 'rgba(148,163,184,0.28)' : 'rgba(190,220,235,0.14)'}`,
+      boxShadow: palette.isLight
+        ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 24px 48px -28px rgba(15,23,42,0.28)'
+        : '0 1px 0 rgba(255,255,255,0.13) inset, 0 24px 48px -20px rgba(0,0,0,0.74), 0 0 32px rgba(80,160,220,0.08)',
+      backdropFilter: 'blur(30px) saturate(190%)',
+      WebkitBackdropFilter: 'blur(30px) saturate(190%)',
+      overflow: 'hidden'
     }}>
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: 1,
+          borderRadius: 999,
+          background: palette.isLight
+            ? 'linear-gradient(180deg, rgba(255,255,255,0.62), rgba(255,255,255,0.12))'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.025))',
+          pointerEvents: 'none',
+          zIndex: -1
+        }}
+      />
       <DockBtn Icon={DockBackIcon} onClick={onBack} palette={palette} />
       <DockBtn Icon={DockUserIcon} onClick={onOpenUser} palette={palette} />
       <DockBtn Icon={ReactSettingsIcon} onClick={onOpenSettings} palette={palette} />
@@ -1043,10 +1123,12 @@ export default function MainMenuRedesign({
   const palette = isCoffee ? tokens.coffee : isLight ? tokens.light : tokens.dark;
   const actionItemVisible = visibleItems.some((item) => item.id === 'MainCard');
   const sectionItems = visibleItems.filter((item) => item.icon);
-  tokens.accents.HabitsMain = buildHabitsAccent(visibleItems.find((item) => item.id === 'HabitsMain')?.color);
-  tokens.accents.ToDoMain = buildHabitsAccent(visibleItems.find((item) => item.id === 'ToDoMain')?.color || tokens.accents.ToDoMain.hue);
-  tokens.accents.RecoveryMain = buildHabitsAccent(visibleItems.find((item) => item.id === 'RecoveryMain')?.color || tokens.accents.RecoveryMain.hue);
-  tokens.accents.SleepMain = toMenuAccent(buildSleepAccent(visibleItems.find((item) => item.id === 'SleepMain')?.color));
+  tokens.accents.HabitsMain = toMenuAccent(buildHabitsAccent(visibleItems.find((item) => item.id === 'HabitsMain')?.color || '#22C55E'));
+  tokens.accents.ToDoMain = toMenuAccent(buildTodoAccent(visibleItems.find((item) => item.id === 'ToDoMain')?.color || '#149DFF'));
+  tokens.accents.MentalMain = toMenuAccent(buildSectionAccent(visibleItems.find((item) => item.id === 'MentalMain')?.color || '#A66BFF', '#A66BFF'));
+  tokens.accents.TrainingMain = toMenuAccent(buildSectionAccent(visibleItems.find((item) => item.id === 'TrainingMain')?.color || '#35C2FF', '#35C2FF'));
+  tokens.accents.RecoveryMain = toMenuAccent(buildSectionAccent(visibleItems.find((item) => item.id === 'RecoveryMain')?.color || '#2FD6BD', '#2FD6BD'));
+  tokens.accents.SleepMain = toMenuAccent(buildSleepAccent(visibleItems.find((item) => item.id === 'SleepMain')?.color || '#7C6CFF'));
   const habitsAccent = tokens.accents.HabitsMain;
   const sleepAccent = tokens.accents.SleepMain;
   const pageBackground = palette.isLight

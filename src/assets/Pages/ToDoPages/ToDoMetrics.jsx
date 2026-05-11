@@ -27,7 +27,7 @@ const ToDoMetrics = () => {
   const [lang, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [periodDays, setPeriodDays] = useState(30);
-  const accent = useMemo(() => buildTodoAccent(AppData.todoAccentColor || '#5F8DFF'), []);
+  const accent = useMemo(() => buildTodoAccent(AppData.todoAccentColor || '#149DFF'), []);
   const s = styles(theme, accent, fSize);
 
   useEffect(() => {
@@ -284,7 +284,7 @@ const FocusRow = ({ icon, label, value, theme, accent }) => {
 };
 
 const ToDoMetricsPageHeader = ({ theme, fSize, langIndex }) => {
-  const s = styles(theme, buildTodoAccent(AppData.todoAccentColor || '#5F8DFF'), fSize);
+  const s = styles(theme, buildTodoAccent(AppData.todoAccentColor || '#149DFF'), fSize);
   return (
     <motion.div
       initial={{ opacity: 0, y: -6 }}

@@ -15,12 +15,12 @@ const DEFAULT_HABIT_CATEGORIES = [
   { key: 'relationships', icon: 'people', label: ['Отношения и отдых', 'Relationships & recreation'], isNegative: false },
   { key: 'bad_habits', icon: 'ban', label: ['Отказ от вредного', 'Bad habits to quit'], isNegative: true }
 ];
-const DEFAULT_HABITS_ACCENT_COLOR = '#39D982';
-const LEGACY_HABITS_ACCENT_COLORS = ['#8FAE9B', '#9A92C8', '#8FA6C8', '#7FC8B8', '#68C08F', '#B48BC8', '#D48AB6', '#DC8FA6', '#E4A7C3', '#D8DEE7', '#D6E2F2', '#CFE6FF', '#50D4E5', '#8A7CD6', '#7D92D6'];
-const DEFAULT_SLEEP_ACCENT_COLOR = '#6F7DFF';
-const LEGACY_SLEEP_ACCENT_COLORS = ['#7A86D9', '#6772A6', '#6F8BD6', '#7FC8B8', '#56C7B5'];
-const DEFAULT_TODO_ACCENT_COLOR = '#5F8DFF';
-const LEGACY_TODO_ACCENT_COLORS = ['#8FA6C8', '#C65F9D', '#7FC8B8', '#C29AD6', '#DE8F9A', '#EAA6B4', '#C8D2DE', '#AFC7E8', '#9FCBFF', '#5DADEC'];
+const DEFAULT_HABITS_ACCENT_COLOR = '#22C55E';
+const LEGACY_HABITS_ACCENT_COLORS = ['#8FAE9B', '#9A92C8', '#8FA6C8', '#7FC8B8', '#68C08F', '#B48BC8', '#D48AB6', '#DC8FA6', '#E4A7C3', '#D8DEE7', '#D6E2F2', '#CFE6FF', '#50D4E5', '#8A7CD6', '#7D92D6', '#39D982'];
+const DEFAULT_SLEEP_ACCENT_COLOR = '#7C6CFF';
+const LEGACY_SLEEP_ACCENT_COLORS = ['#7A86D9', '#6772A6', '#6F8BD6', '#7FC8B8', '#56C7B5', '#6F7DFF'];
+const DEFAULT_TODO_ACCENT_COLOR = '#149DFF';
+const LEGACY_TODO_ACCENT_COLORS = ['#8FA6C8', '#C65F9D', '#7FC8B8', '#C29AD6', '#DE8F9A', '#EAA6B4', '#C8D2DE', '#AFC7E8', '#9FCBFF', '#5DADEC', '#5F8DFF'];
 const DEFAULT_MENTAL_ACCENT_COLOR = '#A66BFF';
 const LEGACY_MENTAL_ACCENT_COLORS = ['#9A84C8', '#8A7CD6', '#B66DFF'];
 const DEFAULT_RECOVERY_ACCENT_COLOR = '#2FD6BD';

@@ -61,7 +61,7 @@ const ToDoPage = () => {
 
     const [editingSubGoalIndex, setEditingSubGoalIndex] = useState(null);
     const [editingSubGoalText, setEditingSubGoalText] = useState('');
-    const [accentColor] = useState(buildTodoAccent(AppData.todoAccentColor || '#5F8DFF').hue);
+    const [accentColor] = useState(buildTodoAccent(AppData.todoAccentColor || '#149DFF').hue);
     const [fieldsVisibility, setFieldsVisibility] = useState({ difficulty: true, urgency: true, startDate: true, deadLine: true, ...(AppData.todoFieldsVisibility || {}) });
 
     const resultInputRef = useRef(null);
@@ -1150,7 +1150,7 @@ function formatDateForDisplay(value, fallback) {
 
 // --- STYLES ---
 const styles = (theme, fSize, rawAccentColor) => {
-    const accent = buildTodoAccent(rawAccentColor || AppData.todoAccentColor || '#5F8DFF');
+    const accent = buildTodoAccent(rawAccentColor || AppData.todoAccentColor || '#149DFF');
     const accentColor = accent.hue;
     const isLight = theme === 'light' || theme === 'speciallight';
     const bg = Colors.get('background', theme);

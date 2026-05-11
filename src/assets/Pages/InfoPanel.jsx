@@ -31,9 +31,9 @@ const InfoPanel = () => {
     return () => s.unsubscribe();
   }, []);
 
-  const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || "#6F7DFF");
-  const todoAccent = buildTodoAccent(AppData.todoAccentColor || "#5F8DFF");
-  const habitsAccent = buildHabitsAccent(AppData.habitAccentColor || "#39D982");
+  const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || "#7C6CFF");
+  const todoAccent = buildTodoAccent(AppData.todoAccentColor || "#149DFF");
+  const habitsAccent = buildHabitsAccent(AppData.habitAccentColor || "#22C55E");
   const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || "#A66BFF", "#A66BFF");
   const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || "#35C2FF", "#35C2FF");
   const recoveryAccent = buildSectionAccent(AppData.recoveryAccentColor || "#2FD6BD", "#2FD6BD");

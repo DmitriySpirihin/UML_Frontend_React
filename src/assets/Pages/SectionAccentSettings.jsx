@@ -4,11 +4,11 @@ import { FaPalette, FaPlus, FaTimes } from 'react-icons/fa';
 import Colors from '../StaticClasses/Colors';
 
 export const POSITIVE_ACCENT_PRESETS = [
-  '#39D982',
-  '#5F8DFF',
+  '#22C55E',
+  '#149DFF',
   '#A66BFF',
   '#2FD6BD',
-  '#6F7DFF',
+  '#7C6CFF',
   '#35C2FF',
   '#B48BC8',
   '#C29AD6',

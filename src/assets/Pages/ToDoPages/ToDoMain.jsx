@@ -1139,7 +1139,7 @@ const ActionButton = ({ active, label, icon, onClick, theme, accent }) => {
 
 const MiniBadge = ({ icon, text, color, theme, expanded = false }) => {
   const isLight = theme === 'light' || theme === 'speciallight';
-  const hex = (color || '#5F8DFF').replace('#', '');
+  const hex = (color || '#149DFF').replace('#', '');
   const r = parseInt(hex.slice(0, 2), 16) || 143;
   const g = parseInt(hex.slice(2, 4), 16) || 166;
   const b = parseInt(hex.slice(4, 6), 16) || 200;

@@ -70,8 +70,8 @@ const openGuide = () => {
 
     // --- STATE ДЛЯ УПРАВЛЕНИЯ СПИСКОМ ---
     const [itemsState, setItemsState] = useState(AppData.menuCardsStates || {});
-    const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#6F7DFF');
-    const todoAccent = buildTodoAccent(AppData.todoAccentColor || '#5F8DFF');
+    const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF');
+    const todoAccent = buildTodoAccent(AppData.todoAccentColor || '#149DFF');
     const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || '#A66BFF', '#A66BFF');
     const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || '#35C2FF', '#35C2FF');
     const recoveryAccent = buildSectionAccent(AppData.recoveryAccentColor || '#2FD6BD', '#2FD6BD');

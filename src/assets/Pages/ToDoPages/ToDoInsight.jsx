@@ -8,7 +8,7 @@ import { buildTodoAccent } from './ToDoVisuals.js';
 
 const ToDoInsight = () => {
   const [theme, setTheme] = useState(theme$.value);
-  const accent = buildTodoAccent(AppData.todoAccentColor || '#5F8DFF');
+  const accent = buildTodoAccent(AppData.todoAccentColor || '#149DFF');
   const isLight = theme === 'light' || theme === 'speciallight';
 
   useEffect(() => {

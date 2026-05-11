@@ -1,10 +1,10 @@
-export const DEFAULT_SLEEP_ACCENT_COLOR = '#6F7DFF';
+export const DEFAULT_SLEEP_ACCENT_COLOR = '#7C6CFF';
 
 export const SLEEP_ACCENT_PRESETS = [
-  '#6F7DFF',
+  '#7C6CFF',
   '#2FD6BD',
-  '#39D982',
-  '#5F8DFF',
+  '#22C55E',
+  '#149DFF',
   '#6772A6',
   '#B48BC8',
   '#A66BFF',
