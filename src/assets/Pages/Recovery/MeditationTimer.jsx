@@ -64,7 +64,13 @@ function PhaseStepper({ theme, label, value, min = 0, max = 60, step = 1, onChan
   );
 }
 
-const MeditationTimer = ({ show, setShow, protocol }) => {
+const getSessionMeta = (protocol, categoryIndex, protocolIndex) => ({
+  categoryIndex,
+  protocolIndex,
+  protocolName: protocol?.name?.[0] || protocol?.name?.[1] || '',
+});
+
+const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIndex = 0 }) => {
   // --- STATE ---
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
@@ -193,10 +199,10 @@ const MeditationTimer = ({ show, setShow, protocol }) => {
   const handleResume = () => { setIsRunning(true); setIsPaused(false); };
   const handleReload = () => { setCurrentStepIndex(0); setElapsed(0); setIsRunning(false); setIsStart(false); setIsPaused(false); setIsFinished(false); };
   const onFinishSession = async () => {
-    await saveMeditationSession(startTime, Date.now());
+    await saveMeditationSession(startTime, Date.now(), getSessionMeta(protocol, categoryIndex, protocolIndex));
     setFinishMessage(congratulations(langIndex)); setIsFinished(true);
   };
-  const onSaveSession = async () => { await saveMeditationSession(startTime, endTime); handleReload(); setShow(false); };
+  const onSaveSession = async () => { await saveMeditationSession(startTime, endTime, getSessionMeta(protocol, categoryIndex, protocolIndex)); handleReload(); setShow(false); };
 
   // --- RENDER VARS ---
   const accent = Colors.get('meditate', theme);

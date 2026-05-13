@@ -485,7 +485,27 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
           pointerEvents: 'none'
         }}
       />
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, position: 'relative' }}>
+      <Motion.div
+        aria-hidden="true"
+        animate={{ opacity: [0.12, 0.2, 0.13], scale: [0.98, 1.025, 1] }}
+        transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
+        style={{
+          position: 'absolute',
+          right: 14,
+          bottom: -22,
+          width: 122,
+          height: 122,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          filter: 'drop-shadow(0 18px 24px rgba(255,122,61,0.22))',
+          zIndex: 0
+        }}
+      >
+        <StreakFlame size={112} />
+      </Motion.div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, position: 'relative', zIndex: 1 }}>
         <Motion.button
           type="button"
           whileHover={{ y: -1, scale: 1.005 }}
@@ -493,10 +513,11 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
           onClick={onOpenUser}
           style={{
             minWidth: 0,
-            flex: 1,
-            padding: '8px 12px',
+            flex: '0 1 68%',
+            maxWidth: 390,
+            padding: '7px 11px',
             border: `1px solid rgba(${heroAccent.rgb},0.14)`,
-            borderRadius: 23,
+            borderRadius: 21,
             background: `linear-gradient(135deg, rgba(${heroAccent.rgb},0.09), rgba(255,255,255,0.018))`,
             textAlign: 'left',
             fontFamily: 'inherit',
@@ -511,7 +532,7 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
           <div style={{ fontSize: 10, color: palette.muted, fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 6 }}>
             {data.greeting}
           </div>
-          <div style={{ fontSize: 19, fontWeight: 820, lineHeight: 1.08, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: 18, fontWeight: 820, lineHeight: 1.08, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {data.name}
           </div>
         </Motion.button>
@@ -546,95 +567,51 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         </div>
       </div>
 
-      <Motion.button
-        type="button"
-        whileTap={{ scale: 0.985 }}
-        onClick={toggleSummary}
-        aria-expanded={!summaryCollapsed}
-        aria-label={summaryCollapsed ? (lang === 0 ? 'Раскрыть сводку метрик' : 'Expand metrics summary') : (lang === 0 ? 'Скрыть сводку метрик' : 'Hide metrics summary')}
+      <div
         style={{
-          marginTop: 18,
+          marginTop: 14,
           minWidth: 0,
           width: '100%',
-          minHeight: 50,
-          padding: '8px 10px 8px 13px',
-          borderRadius: 18,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
-          background: palette.isLight
-            ? 'linear-gradient(135deg, rgba(255,255,255,0.56), rgba(255,255,255,0.30))'
-            : 'linear-gradient(135deg, rgba(255,255,255,0.075), rgba(255,255,255,0.032))',
-          border: `1px solid rgba(${heroAccent.rgb},${palette.isLight ? 0.15 : 0.18})`,
-          boxShadow: '0 1px 0 rgba(255,255,255,0.09) inset',
-          backdropFilter: 'blur(18px) saturate(160%)',
-          WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+          justifyContent: 'flex-end',
           fontFamily: 'inherit',
-          cursor: 'pointer',
-          outline: 'none',
-          appearance: 'none',
-          WebkitAppearance: 'none',
-          WebkitTapHighlightColor: 'transparent'
+          cursor: 'default',
+          position: 'relative',
+          zIndex: 1
         }}>
-          <div style={{
-            minWidth: 0,
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            gap: 3
-          }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 7,
-              minWidth: 0,
-              color: palette.sub,
-              fontSize: 9,
-              fontWeight: 900,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              whiteSpace: 'nowrap'
-            }}>
-              <span style={{ width: 5, height: 5, borderRadius: 999, background: heroAccent.hue, opacity: 0.86 }} />
-              <span>{lang === 0 ? 'Сегодня' : 'Today'}</span>
-              <span style={{ color: palette.muted, letterSpacing: 0 }}>·</span>
-              <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {lang === 0 ? 'выбранные метрики' : 'selected metrics'}
-              </span>
-            </div>
-            <div style={{
-              minWidth: 0,
-              color: palette.text,
-              fontSize: 16,
-              fontWeight: 950,
-              lineHeight: 1.05,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
-              {lang === 0 ? 'Обзор дня' : 'Day overview'}
-            </div>
-          </div>
-          <div style={{
+          <Motion.button
+            type="button"
+            whileTap={{ scale: 0.94 }}
+            onClick={toggleSummary}
+            aria-expanded={!summaryCollapsed}
+            aria-label={summaryCollapsed ? (lang === 0 ? 'Раскрыть сводку метрик' : 'Expand metrics summary') : (lang === 0 ? 'Скрыть сводку метрик' : 'Hide metrics summary')}
+            style={{
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: 8,
-            flexShrink: 0
+            flexShrink: 0,
+            minHeight: 34,
+            padding: '0 9px 0 11px',
+            borderRadius: 999,
+            border: `1px solid rgba(${heroAccent.rgb},0.20)`,
+            background: `linear-gradient(135deg, rgba(${heroAccent.rgb},0.14), rgba(255,255,255,0.04))`,
+            color: heroAccent.hue,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            outline: 'none',
+            appearance: 'none',
+            WebkitAppearance: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            boxShadow: `0 1px 0 rgba(255,255,255,0.08) inset, 0 10px 22px -18px rgba(${heroAccent.rgb},0.72)`
           }}>
             <span style={{
-              height: 26,
-              minWidth: 28,
-              padding: '0 8px',
-              borderRadius: 999,
+              minWidth: 14,
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: heroAccent.hue,
-              background: `rgba(${heroAccent.rgb},0.10)`,
-              border: `1px solid rgba(${heroAccent.rgb},0.16)`,
               fontSize: 11,
               fontWeight: 950,
               fontVariantNumeric: 'tabular-nums'
@@ -648,8 +625,8 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
             >
               <IconChevron size={16} stroke={2.2} />
             </Motion.span>
-          </div>
-        </Motion.button>
+          </Motion.button>
+        </div>
 
       <AnimatePresence initial={false}>
         {!summaryCollapsed && (

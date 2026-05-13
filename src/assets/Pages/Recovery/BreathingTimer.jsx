@@ -90,7 +90,13 @@ function PhaseStepper({ theme, label, value, min = 0, max = 20, step = 1, onChan
   );
 }
 
-const BreathingTimer = ({ show, setShow, protocol }) => {
+const getSessionMeta = (protocol, categoryIndex, protocolIndex) => ({
+  categoryIndex,
+  protocolIndex,
+  protocolName: protocol?.name?.[0] || protocol?.name?.[1] || '',
+});
+
+const BreathingTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIndex = 0 }) => {
 
   // --- STATE ---
   const [customPhases, setCustomPhases] = useState({ in: 4, hold1: 4, out: 4, hold2: 4 });
@@ -335,11 +341,11 @@ const BreathingTimer = ({ show, setShow, protocol }) => {
   const handleResume = () => { setIsRunning(true); setIsPaused(false); };
   const handleReload = () => { resetSession(); };
   const onFinishSession = async() => {
-      await saveBreathingSession(startTime, Date.now(), maxHoldRef.current);
+      await saveBreathingSession(startTime, Date.now(), maxHoldRef.current, getSessionMeta(protocol, categoryIndex, protocolIndex));
       setFinishMessage(congratulations(langIndex)); setIsFinished(true);
   };
   const onSaveSession = async() => {
-      await saveBreathingSession(startTime, endTime); resetSession(); setShow(false);
+      await saveBreathingSession(startTime, endTime, maxHoldRef.current, getSessionMeta(protocol, categoryIndex, protocolIndex)); resetSession(); setShow(false);
   };
 
   // Styles

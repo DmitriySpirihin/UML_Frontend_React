@@ -31,7 +31,83 @@ const formatDate = (timestamp) => {
   return date.toISOString().split('T')[0];
 };
 
-export const saveMeditationSession = async(start, end) => {
+const RECOVERY_LOG_KEYS = ['breathingLog', 'meditationLog', 'hardeningLog'];
+
+const cleanSessionMeta = (meta = {}) => {
+  const result = {};
+  if (Number.isInteger(meta.categoryIndex)) result.categoryIndex = meta.categoryIndex;
+  if (Number.isInteger(meta.protocolIndex)) result.protocolIndex = meta.protocolIndex;
+  if (typeof meta.protocolName === 'string' && meta.protocolName.trim()) result.protocolName = meta.protocolName.trim();
+  return result;
+};
+
+const sessionDateKey = (fallbackKey, session) => {
+  if (session?.startTime) return formatDate(session.startTime);
+  return fallbackKey;
+};
+
+const dateKeyFromDate = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().split('T')[0];
+};
+
+const addDays = (date, amount) => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+};
+
+const getCurrentStreak = (dateKeys) => {
+  if (!dateKeys.size) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let cursor = today;
+  if (!dateKeys.has(dateKeyFromDate(cursor))) {
+    const yesterday = addDays(today, -1);
+    if (!dateKeys.has(dateKeyFromDate(yesterday))) return 0;
+    cursor = yesterday;
+  }
+
+  let streak = 0;
+  while (dateKeys.has(dateKeyFromDate(cursor))) {
+    streak += 1;
+    cursor = addDays(cursor, -1);
+  }
+  return streak;
+};
+
+export const recoverySessionMatches = (session, categoryIndex, protocolIndex) => (
+  Number(session?.categoryIndex) === categoryIndex && Number(session?.protocolIndex) === protocolIndex
+);
+
+export const getRecoverySessionStats = (type = null, filter = null) => {
+  const keys = type === null ? RECOVERY_LOG_KEYS : [RECOVERY_LOG_KEYS[type]];
+  const sessions = [];
+  const dateKeys = new Set();
+
+  keys.forEach((key) => {
+    const log = AppData[key] || {};
+    Object.entries(log).forEach(([dateKey, items]) => {
+      if (!Array.isArray(items)) return;
+      items.forEach((session) => {
+        if (!session || typeof session !== 'object') return;
+        if (typeof filter === 'function' && !filter(session)) return;
+        sessions.push(session);
+        dateKeys.add(sessionDateKey(dateKey, session));
+      });
+    });
+  });
+
+  return {
+    total: sessions.length,
+    streak: getCurrentStreak(dateKeys),
+    days: dateKeys.size,
+  };
+};
+
+export const saveMeditationSession = async(start, end, meta = {}) => {
   const dateKey = formatDate(start);
   if (!AppData.meditationLog[dateKey]) {
     AppData.meditationLog[dateKey] = [];
@@ -39,11 +115,12 @@ export const saveMeditationSession = async(start, end) => {
   AppData.meditationLog[dateKey].push({
     startTime: start,
     endTime: end,
+    ...cleanSessionMeta(meta),
   });
   await saveData();
 };
 
-export const saveBreathingSession = async(start, end, maxHold) => {
+export const saveBreathingSession = async(start, end, maxHold, meta = {}) => {
   const dateKey = formatDate(start);
   if (!AppData.breathingLog[dateKey]) {
     AppData.breathingLog[dateKey] = [];
@@ -52,11 +129,12 @@ export const saveBreathingSession = async(start, end, maxHold) => {
     startTime: start,
     endTime: end,
     maxHold: maxHold,
+    ...cleanSessionMeta(meta),
   });
   await saveData();
 };
 
-export const saveHardeningSession = async(start, end, coldTime) => {
+export const saveHardeningSession = async(start, end, coldTime, meta = {}) => {
   const dateKey = formatDate(start);
   if (!AppData.hardeningLog[dateKey]) {
     AppData.hardeningLog[dateKey] = [];
@@ -65,6 +143,7 @@ export const saveHardeningSession = async(start, end, coldTime) => {
     startTime: start,
     endTime: end,
     timeInColdWater: coldTime,
+    ...cleanSessionMeta(meta),
   });
   await saveData();
 };
@@ -1068,4 +1147,3 @@ export const markSessionAsDone = (type,categoryIndex, protocolIndex, levelIndex)
   AppData.recoveryProtocols[type][categoryIndex][protocolIndex][levelIndex] = true;
   
 };
-

@@ -86,6 +86,8 @@ const ToDoNew = () => {
   const [newCatIcon, setNewCatIcon] = useState(CUSTOM_ICON_OPTIONS[0].id);
   const [visibility, setVisibility] = useState({ difficulty: true, urgency: true, startDate: true, deadLine: true, ...(AppData.todoFieldsVisibility || {}) });
   const [accentColor] = useState(buildTodoAccent(AppData.todoAccentColor || '#149DFF').hue);
+  const categoryStripRef = useRef(null);
+  const categoryDragRef = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
 
   const CATEGORIES = useMemo(() => [...BASE_CATEGORIES, ...customCats], [customCats]);
   const currentCat = CATEGORIES[selectedCatIndex] || CATEGORIES[0];
@@ -190,6 +192,46 @@ const ToDoNew = () => {
   const closePanel = () => {
     setPage(lastPage$.value || 'ToDoMain');
     resetFormSoon();
+  };
+
+  const handleCategoryPointerDown = (event) => {
+    const strip = categoryStripRef.current;
+    if (!strip) return;
+    categoryDragRef.current = {
+      active: true,
+      startX: event.clientX,
+      scrollLeft: strip.scrollLeft,
+      moved: false
+    };
+    strip.setPointerCapture?.(event.pointerId);
+  };
+
+  const handleCategoryPointerMove = (event) => {
+    const strip = categoryStripRef.current;
+    const drag = categoryDragRef.current;
+    if (!strip || !drag.active) return;
+
+    const delta = event.clientX - drag.startX;
+    if (Math.abs(delta) > 4) {
+      drag.moved = true;
+      strip.scrollLeft = drag.scrollLeft - delta;
+      event.preventDefault();
+    }
+  };
+
+  const handleCategoryPointerEnd = (event) => {
+    categoryStripRef.current?.releasePointerCapture?.(event.pointerId);
+    categoryDragRef.current.active = false;
+    window.setTimeout(() => {
+      categoryDragRef.current.moved = false;
+    }, 80);
+  };
+
+  const ignoreCategoryTapAfterDrag = (event) => {
+    if (!categoryDragRef.current.moved) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
   };
 
   const resetFormSoon = () => {
@@ -320,7 +362,16 @@ const ToDoNew = () => {
           <FaTag size={11} style={{ marginRight: 7 }} />
           {lang === 0 ? 'КАТЕГОРИЯ' : 'CATEGORY'}
         </div>
-        <div className="no-scrollbar" style={categoryStrip()}>
+        <div
+          ref={categoryStripRef}
+          className="no-scrollbar"
+          onPointerDown={handleCategoryPointerDown}
+          onPointerMove={handleCategoryPointerMove}
+          onPointerUp={handleCategoryPointerEnd}
+          onPointerCancel={handleCategoryPointerEnd}
+          onPointerLeave={handleCategoryPointerEnd}
+          style={categoryStrip()}
+        >
           {CATEGORIES.map((cat, index) => {
             const active = index === selectedCatIndex;
             const isCustom = index >= BASE_CATEGORIES.length;
@@ -330,7 +381,10 @@ const ToDoNew = () => {
               <motion.div
                 key={`${cat.label[0]}-${index}`}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => setSelectedCatIndex(index)}
+                onClick={(event) => {
+                  if (ignoreCategoryTapAfterDrag(event)) return;
+                  setSelectedCatIndex(index);
+                }}
                 style={categoryChip(active, tone, ui)}
               >
                 <span style={categoryChipIcon(active, tone)}>
@@ -339,7 +393,11 @@ const ToDoNew = () => {
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.label[lang]}</span>
                 {active && isCustom && (
                   <span
-                    onClick={(e) => { e.stopPropagation(); handleRemoveCustomCat(index - BASE_CATEGORIES.length); }}
+                    onClick={(e) => {
+                      if (ignoreCategoryTapAfterDrag(e)) return;
+                      e.stopPropagation();
+                      handleRemoveCustomCat(index - BASE_CATEGORIES.length);
+                    }}
                     style={categoryActionBtn(ui, true)}
                   >
                     <FaTrashAlt size={10} />
@@ -348,7 +406,14 @@ const ToDoNew = () => {
               </motion.div>
             );
           })}
-          <motion.div whileTap={{ scale: 0.97 }} onClick={() => setShowCatModal(true)} style={addCategoryChip(ui, accent)}>
+          <motion.div
+            whileTap={{ scale: 0.97 }}
+            onClick={(event) => {
+              if (ignoreCategoryTapAfterDrag(event)) return;
+              setShowCatModal(true);
+            }}
+            style={addCategoryChip(ui, accent)}
+          >
             <FaPlus size={11} />
             {lang === 0 ? 'Своя' : 'Custom'}
           </motion.div>
@@ -836,7 +901,8 @@ const sectionLabel = (ui) => ({ display: 'flex', alignItems: 'center', color: ui
 const categoryStrip = () => ({
   width: '100%', overflowX: 'auto', overflowY: 'visible', display: 'flex', gap: 8,
   marginBottom: 16, padding: '6px 36px 12px 2px', scrollbarWidth: 'none', flexWrap: 'nowrap',
-  boxSizing: 'border-box', WebkitOverflowScrolling: 'touch', minHeight: 56
+  boxSizing: 'border-box', WebkitOverflowScrolling: 'touch', minHeight: 56,
+  touchAction: 'pan-x', overscrollBehaviorX: 'contain', cursor: 'grab', userSelect: 'none'
 });
 const categoryChip = (active, tone, ui) => ({
   minHeight: 40, padding: active ? '8px 8px 8px 10px' : '8px 12px', borderRadius: 14,
@@ -845,11 +911,11 @@ const categoryChip = (active, tone, ui) => ({
   border: `1px solid ${active ? tone.ring : ui.border}`,
   color: active ? tone.hue : ui.text, fontSize: 13, fontWeight: 850,
   boxShadow: active ? `0 0 18px ${tone.soft}` : 'none',
-  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, boxSizing: 'border-box'
+  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, boxSizing: 'border-box', userSelect: 'none'
 });
 const categoryChipIcon = (active, tone) => ({ width: 24, height: 24, borderRadius: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: tone.hue, background: active ? tone.soft : 'rgba(255,255,255,0.045)', border: `1px solid ${active ? tone.ring : 'rgba(255,255,255,0.06)'}`, flexShrink: 0 });
 const categoryActionBtn = (ui, danger = false) => ({ width: 22, height: 22, borderRadius: 8, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: danger ? 'rgba(216,120,94,0.1)' : 'rgba(255,255,255,0.055)', border: `1px solid ${danger ? 'rgba(216,120,94,0.18)' : ui.border}`, color: danger ? '#D8785E' : ui.sub, cursor: 'pointer', flexShrink: 0, marginLeft: 2 });
-const addCategoryChip = (ui, accent) => ({ minHeight: 40, padding: '8px 14px', borderRadius: 14, whiteSpace: 'nowrap', background: ui.cardSoft, color: accent.hue, border: `1px dashed ${accent.ring}`, fontSize: 13, fontWeight: 850, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flexShrink: 0, boxSizing: 'border-box' });
+const addCategoryChip = (ui, accent) => ({ minHeight: 40, padding: '8px 14px', borderRadius: 14, whiteSpace: 'nowrap', background: ui.cardSoft, color: accent.hue, border: `1px dashed ${accent.ring}`, fontSize: 13, fontWeight: 850, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flexShrink: 0, boxSizing: 'border-box', userSelect: 'none' });
 
 const configCard = (ui) => ({ background: `linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`, borderRadius: 22, padding: 16, border: `1px solid ${ui.border}`, boxShadow: ui.shadow, boxSizing: 'border-box', backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' });
 const cardLabel = (ui) => ({ color: ui.sub, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10, marginTop: 0 });

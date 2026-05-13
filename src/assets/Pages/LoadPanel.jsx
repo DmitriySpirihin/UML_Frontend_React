@@ -30,12 +30,12 @@ useEffect(() => {
       await initializeTelegramSDK({ mock: outsideTelegram });
 
       const tgContext = getTelegramContext(); 
-      const { user, colorScheme, start_param } = tgContext;
+      const { user, start_param } = tgContext;
 
       if (user) {
         if (AppData.isFirstStart) {
          // AppData.prefs[0] = languageCode.startsWith 'ru' ? 0 : 1;
-          AppData.prefs[1] = colorScheme === 'dark' ? 0 : 1;
+          AppData.prefs[1] = 0;
           setTheme('dark');
         }
         UserData.Init(user.id, user.username, user.photo_url || 'images/Ui/Guest.jpg');

@@ -7,7 +7,6 @@ import {
   FaClock,
   FaFire,
   FaLayerGroup,
-  FaListUl,
   FaRegCircle
 } from 'react-icons/fa';
 import { AppData } from '../../StaticClasses/AppData.js';
@@ -22,22 +21,48 @@ const PERIODS = [
   { key: 0, label: ['Всё', 'All'] }
 ];
 
+const makeMetricTone = (hue) => {
+  const safe = hue.replace('#', '');
+  const r = Number.parseInt(safe.slice(0, 2), 16);
+  const g = Number.parseInt(safe.slice(2, 4), 16);
+  const b = Number.parseInt(safe.slice(4, 6), 16);
+  const rgbText = `${r}, ${g}, ${b}`;
+  return {
+    hue,
+    rgbText,
+    soft: `rgba(${rgbText}, 0.18)`,
+    faint: `rgba(${rgbText}, 0.10)`,
+    ring: `rgba(${rgbText}, 0.42)`,
+    glow: `rgba(${rgbText}, 0.36)`
+  };
+};
+
+const DONE_TONE = makeMetricTone('#22C55E');
+const WARNING_TONE = makeMetricTone('#F2C14D');
+const DANGER_TONE = makeMetricTone('#FF5C5C');
+const ACTIVE_TONE = makeMetricTone('#FF7247');
+
 const getCompletionTone = (rate) => {
-  if (rate >= 80) return buildTodoAccent('#22C55E');
+  if (rate >= 80) return DONE_TONE;
   if (rate >= 50) return buildTodoAccent('#73D597');
-  if (rate >= 20) return buildTodoAccent('#F2C14D');
+  if (rate >= 20) return WARNING_TONE;
   return buildTodoAccent('#E88C65');
 };
 
 const getOverdueTone = (overdue) => {
-  if (overdue === 0) return buildTodoAccent('#22C55E');
-  if (overdue <= 2) return buildTodoAccent('#F2C14D');
-  return buildTodoAccent('#E95F5F');
+  if (overdue === 0) return DONE_TONE;
+  if (overdue <= 2) return WARNING_TONE;
+  return DANGER_TONE;
+};
+
+const getActiveTone = (active) => {
+  if (active === 0) return DONE_TONE;
+  return ACTIVE_TONE;
 };
 
 const getAverageTone = (avgDays) => {
   if (avgDays === null || avgDays === undefined) return buildTodoAccent('#7AA8FF');
-  if (avgDays <= 1) return buildTodoAccent('#22C55E');
+  if (avgDays <= 1) return DONE_TONE;
   if (avgDays <= 3) return buildTodoAccent('#149DFF');
   if (avgDays <= 7) return buildTodoAccent('#F2C14D');
   return buildTodoAccent('#E88C65');
@@ -150,7 +175,10 @@ const ToDoMetrics = () => {
   const itemV = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } };
   const completionTone = getCompletionTone(stats.completionRate);
   const overdueTone = getOverdueTone(stats.overdue);
+  const activeTone = getActiveTone(stats.active);
   const averageTone = getAverageTone(stats.avgDays);
+  const weekCreatedTotal = stats.week.reduce((sum, day) => sum + day.created, 0);
+  const weekDoneTotal = stats.week.reduce((sum, day) => sum + day.done, 0);
 
   return (
     <div style={s.container}>
@@ -162,6 +190,26 @@ const ToDoMetrics = () => {
         variants={{ show: { transition: { staggerChildren: 0.055 } } }}
       >
         <ToDoMetricsPageHeader theme={theme} fSize={fSize} langIndex={lang} />
+
+        <motion.section variants={itemV} style={s.hero}>
+          <div style={s.heroTop}>
+            <div style={s.heroIcon}><FaChartBar /></div>
+            <div style={{ minWidth: 0 }}>
+              <div style={s.eyebrow}>{lang === 0 ? 'АНАЛИТИКА' : 'ANALYTICS'}</div>
+              <h1 style={s.title}>{lang === 0 ? 'Задачи' : 'Tasks'}</h1>
+            </div>
+          </div>
+          <div style={s.periodRow}>
+            {PERIODS.map(period => {
+              const active = period.key === periodDays;
+              return (
+                <button key={period.key} type="button" onClick={() => setPeriodDays(period.key)} style={s.periodChip(active)}>
+                  {period.label[lang]}
+                </button>
+              );
+            })}
+          </div>
+        </motion.section>
 
         <motion.section variants={itemV} style={s.deadlinePanel}>
           <div style={s.panelHeader}>
@@ -185,30 +233,10 @@ const ToDoMetrics = () => {
           )}
         </motion.section>
 
-        <motion.section variants={itemV} style={s.hero}>
-          <div style={s.heroTop}>
-            <div style={s.heroIcon}><FaChartBar /></div>
-            <div style={{ minWidth: 0 }}>
-              <div style={s.eyebrow}>{lang === 0 ? 'АНАЛИТИКА' : 'ANALYTICS'}</div>
-              <h1 style={s.title}>{lang === 0 ? 'Задачи' : 'Tasks'}</h1>
-            </div>
-          </div>
-          <div style={s.periodRow}>
-            {PERIODS.map(period => {
-              const active = period.key === periodDays;
-              return (
-                <button key={period.key} type="button" onClick={() => setPeriodDays(period.key)} style={s.periodChip(active)}>
-                  {period.label[lang]}
-                </button>
-              );
-            })}
-          </div>
-        </motion.section>
-
         <motion.section variants={itemV} style={s.summaryGrid}>
           <MetricCard icon={<FaCheckDouble />} label={lang === 0 ? 'Выполнено' : 'Completed'} value={`${stats.completionRate}%`} sub={`${stats.completed}/${Math.max(stats.created, stats.completed)}`} theme={theme} accent={accent} tone={completionTone} />
           <MetricCard icon={<FaFire />} label={lang === 0 ? 'Просрочено' : 'Overdue'} value={stats.overdue} sub={lang === 0 ? 'требуют внимания' : 'need focus'} theme={theme} accent={accent} tone={overdueTone} />
-          <MetricCard icon={<FaListUl />} label={lang === 0 ? 'В работе' : 'Active'} value={stats.active} sub={lang === 0 ? 'активных' : 'active'} theme={theme} accent={accent} />
+          <MetricCard icon={<FaFire />} label={lang === 0 ? 'В работе' : 'Active'} value={stats.active} sub={lang === 0 ? 'активных' : 'active'} theme={theme} accent={accent} tone={activeTone} />
           <MetricCard icon={<FaClock />} label={lang === 0 ? 'Средний срок' : 'Avg time'} value={formatAvg(stats.avgDays, lang)} sub={lang === 0 ? 'до выполнения' : 'to complete'} theme={theme} accent={accent} tone={averageTone} />
         </motion.section>
 
@@ -228,8 +256,18 @@ const ToDoMetrics = () => {
         <motion.section variants={itemV} style={s.chartPanel}>
           <div style={s.panelHeader}>
             <div>
-              <div style={s.panelTitle}>{lang === 0 ? 'Динамика недели' : 'Weekly flow'}</div>
-              <div style={s.panelSub}>{lang === 0 ? 'Создано по старту, выполнено по закрытию' : 'Created by start date, done by completion date'}</div>
+              <div style={s.panelTitle}>{lang === 0 ? 'Задачи за неделю' : 'Weekly tasks'}</div>
+              <div style={s.panelSub}>{lang === 0 ? 'Сколько появилось и сколько закрыто по дням' : 'Created and closed by day'}</div>
+            </div>
+          </div>
+          <div style={s.weekSummaryRow}>
+            <div style={s.weekSummaryChip(accent)}>
+              <span>{lang === 0 ? 'Создано' : 'Created'}</span>
+              <b>{weekCreatedTotal}</b>
+            </div>
+            <div style={s.weekSummaryChip(DONE_TONE)}>
+              <span>{lang === 0 ? 'Закрыто' : 'Closed'}</span>
+              <b>{weekDoneTotal}</b>
             </div>
           </div>
           <div style={s.weekChart}>
@@ -244,7 +282,7 @@ const ToDoMetrics = () => {
             ))}
           </div>
           <div style={s.legend}>
-            <span><i style={{ background: accent.hue }} />{lang === 0 ? 'Выполнено' : 'Done'}</span>
+            <span><i style={{ background: DONE_TONE.hue, boxShadow: `0 0 12px ${DONE_TONE.glow}` }} />{lang === 0 ? 'Закрыто' : 'Closed'}</span>
             <span><i style={{ background: accent.soft, border: `1px solid ${accent.ring}` }} />{lang === 0 ? 'Создано' : 'Created'}</span>
           </div>
           <div style={s.panelHint}>
@@ -430,11 +468,27 @@ const styles = (theme, accent, fSize = 0) => {
     focusLabel: { color: text, fontSize: 14, fontWeight: 850, minWidth: 0 },
     focusValue: { color: accent.hue, fontSize: 17, fontWeight: 950, textAlign: 'right' },
     chartPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: `radial-gradient(260px 160px at 0% 0%, ${accent.faint}, transparent 72%), ${panel}`, border: `1px solid ${accent.ring}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
+    weekSummaryRow: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginBottom: 12 },
+    weekSummaryChip: (tone = accent) => ({
+      minHeight: 42,
+      borderRadius: 16,
+      padding: '7px 10px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+      background: tone.soft,
+      border: `1px solid ${tone.ring}`,
+      color: tone.hue,
+      boxShadow: `0 1px 0 rgba(255,255,255,0.06) inset, 0 12px 24px -22px ${tone.glow}`,
+      boxSizing: 'border-box'
+    }),
+    weekSummaryChipText: { color: sub, fontSize: 10, fontWeight: 850 },
     weekChart: { height: 170, display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 9, alignItems: 'end', paddingTop: 8 },
     weekColumn: { height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', alignItems: 'center', gap: 8 },
     barStack: { position: 'relative', width: '100%', maxWidth: 30, height: 126, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.055)', overflow: 'hidden' },
     createdBar: { position: 'absolute', left: 0, right: 0, bottom: 0, borderRadius: 999, background: accent.soft, border: `1px solid ${accent.ring}`, boxSizing: 'border-box' },
-    doneBar: { position: 'absolute', left: 4, right: 4, bottom: 0, borderRadius: 999, background: accent.hue, boxShadow: `0 0 18px ${accent.glow}` },
+    doneBar: { position: 'absolute', left: 4, right: 4, bottom: 0, borderRadius: 999, background: DONE_TONE.hue, boxShadow: `0 0 18px ${DONE_TONE.glow}` },
     weekLabel: { color: sub, fontSize: 10, fontWeight: 900, textTransform: 'uppercase' },
     legend: { display: 'flex', gap: 12, marginTop: 12, color: sub, fontSize: 11, fontWeight: 800 },
     panelHint: { marginTop: 10, color: sub, fontSize: 11, fontWeight: 750, lineHeight: 1.35 },
@@ -452,7 +506,22 @@ const styles = (theme, accent, fSize = 0) => {
     deadlineDot: (danger) => ({ width: 8, height: 8, borderRadius: 999, background: danger ? '#E95F5F' : accent.hue }),
     deadlineName: { color: text, fontSize: 13, fontWeight: 850, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
     deadlineValue: { color: sub, fontSize: 11, fontWeight: 850 },
-    empty: { minHeight: 78, display: 'flex', alignItems: 'center', justifyContent: 'center', color: sub, fontSize: 13, fontWeight: 800, textAlign: 'center' }
+    empty: {
+      minHeight: 96,
+      borderRadius: 22,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: sub,
+      fontSize: 13,
+      fontWeight: 800,
+      textAlign: 'center',
+      background: `radial-gradient(220px 120px at 50% 0%, ${accent.soft}, transparent 72%), ${panelStrong}`,
+      border: `1px solid ${border}`,
+      boxShadow: glassShadow,
+      backdropFilter: 'blur(22px) saturate(160%)',
+      WebkitBackdropFilter: 'blur(22px) saturate(160%)'
+    }
   };
 };
 

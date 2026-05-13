@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   FaCalendarDay,
-  FaCheck,
   FaCheckCircle,
   FaChevronDown,
   FaClock,
@@ -23,11 +22,13 @@ import {
   FaTimes,
   FaThumbtack
 } from 'react-icons/fa';
+import { FaCheck } from 'react-icons/fa6';
 import { AppData, logSectionVisit } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { playEffects } from '../../StaticClasses/Effects.js';
 import { saveData } from '../../StaticClasses/SaveHelper';
 import { fontSize$, lang$, selectedTodo$, setAddPanel, setPage, theme$ } from '../../StaticClasses/HabitsBus';
+import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 import { addSubGoal, todoEvents$, toggleGoal, toggleHidden, togglePending, togglePinned, toggleSubGoal } from './ToDoHelper.js';
 import {
   buildTodoAccent,
@@ -58,6 +59,22 @@ const URGENCY_LABELS = [['Не горит', 'Not urgent'], ['Обычная', 'N
 const PRIORITY_COLORS = ['#9AA6B2', '#58B7E6', '#F4C84A', '#EF9950', '#E95F5F'];
 const DIFFICULTY_COLORS = ['#66C88A', '#93CB63', '#F2C14D', '#EB835F', '#D85A5A'];
 const URGENCY_COLORS = ['#72BE84', '#6EA8E8', '#EFCB55', '#E88C65', '#E66E78'];
+
+const makeTodoTone = (hue) => {
+  const safe = hue.replace('#', '');
+  const r = Number.parseInt(safe.slice(0, 2), 16);
+  const g = Number.parseInt(safe.slice(2, 4), 16);
+  const b = Number.parseInt(safe.slice(4, 6), 16);
+  const rgbText = `${r}, ${g}, ${b}`;
+  return {
+    hue,
+    rgbText,
+    soft: `rgba(${rgbText}, 0.18)`,
+    faint: `rgba(${rgbText}, 0.10)`,
+    ring: `rgba(${rgbText}, 0.38)`,
+    glow: `rgba(${rgbText}, 0.34)`
+  };
+};
 
 const FILTERS = [
   { id: 0, label: ['Все', 'All'] },
@@ -147,10 +164,12 @@ function isTaskActiveOnDate(task, targetDateKey) {
 
 function buildTodoWeekSummary(tasks, langIndex) {
   const visibleTasks = (tasks || []).filter(task => !task.isHidden);
+  const today = dateKey(new Date());
   return [-6, -5, -4, -3, -2, -1, 0].map(offset => {
     const key = getDateKeyWithOffset(offset);
     const dayTasks = visibleTasks.filter(task => isTaskActiveOnDate(task, key));
     const done = dayTasks.filter(task => task.isDone).length;
+    const hasOverdue = key < today && dayTasks.some(task => !task.isDone && isDeadlinePassed(task.deadLine));
 
     return {
       key,
@@ -158,7 +177,8 @@ function buildTodoWeekSummary(tasks, langIndex) {
       isToday: offset === 0,
       done,
       total: dayTasks.length,
-      progress: dayTasks.length ? done / dayTasks.length : 0
+      progress: dayTasks.length ? done / dayTasks.length : 0,
+      hasOverdue
     };
   });
 }
@@ -239,7 +259,7 @@ const ToDoMain = () => {
 
     switch (filterParams) {
       case 1:
-        processedList = processedList.filter(task => !task.isDone && isTodayTask(task));
+        processedList = processedList.filter(task => isTaskVisibleInMainList(task) && isTodayTask(task));
         break;
       case 2:
         processedList = processedList.filter(task => !task.isDone && !task.isPending);
@@ -248,10 +268,10 @@ const ToDoMain = () => {
         processedList = processedList.filter(task => !task.isDone && task.isPending);
         break;
       case 4:
-        processedList = processedList.filter(task => task.isDone);
+        processedList = processedList.filter(task => isTaskCompletedBeforeToday(task));
         break;
       default:
-        processedList = processedList.filter(task => !task.isDone);
+        processedList = processedList.filter(task => isTaskVisibleInMainList(task));
         break;
     }
 
@@ -293,7 +313,7 @@ const ToDoMain = () => {
   }, [refreshTrigger, filterParams, showHiddenTasks]);
 
   const archiveTasksCount = useMemo(
-    () => (AppData.todoList || []).filter(task => task.isDone).length,
+    () => (AppData.todoList || []).filter(task => isTaskCompletedBeforeToday(task)).length,
     [refreshTrigger]
   );
 
@@ -392,6 +412,7 @@ const ToDoMain = () => {
         customPresets={AppData.todoAccentPresets}
         onSavePreset={saveAccentPreset}
       />
+      <HoverInfoButton tab="ToDoMain" variant="subtle" accent={accent.hue} />
       <div style={s.scroll} className="no-scrollbar">
         <ToDoPageHeader
           theme={theme}
@@ -569,6 +590,12 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
   const [isOpen, setIsOpen] = useState(() => !isTodoFocusCollapsed());
   const s = styles(theme, accent, fSize);
   const doneProgress = stats.total ? stats.done / stats.total : 0;
+  const isAllDone = stats.total > 0 && stats.done === stats.total;
+  const doneTone = isAllDone ? TODO_SUCCESS : accent;
+  const activeTone = makeTodoTone('#5AB2FF');
+  const todayTone = makeTodoTone('#36D399');
+  const pendingTone = makeTodoTone('#F28C61');
+  const overdueTone = makeTodoTone('#FF6B5E');
   const {
     showFilters,
     setShowFilters,
@@ -743,31 +770,26 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
             transition={{ duration: 0.18, ease: [0.2, 0, 0.2, 1] }}
             style={s.heroCollapsible}
           >
-            <div style={s.heroSummaryCard}>
+            <div style={s.heroSummaryCard(isAllDone, doneTone)}>
               <div style={s.heroSummaryTop}>
                 <span>{langIndex === 0 ? 'Готово' : 'Done'}</span>
-                <strong style={s.heroSummaryValue}>{stats.done}<small style={s.heroSummarySmall}> / {stats.total}</small></strong>
+                <strong style={s.heroSummaryValue(isAllDone, doneTone)}>{stats.done}<small style={s.heroSummarySmall}> / {stats.total}</small></strong>
               </div>
-              <div style={s.progressTrackHero}>
+              <div style={s.progressTrackHero(isAllDone, doneTone)}>
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.round(doneProgress * 100)}%` }}
                   transition={{ duration: 0.72 }}
-                  style={s.heroProgressFill}
+                  style={s.heroProgressFill(doneTone)}
                 />
               </div>
             </div>
             <div style={s.heroMetricGrid}>
-              <HeroMetric label={langIndex === 0 ? 'В работе' : 'Active'} value={stats.active} tone={accent} stylesObj={s} />
-              <HeroMetric label={langIndex === 0 ? 'Сегодня' : 'Today'} value={stats.today} tone={accent} stylesObj={s} />
-              <HeroMetric label={langIndex === 0 ? 'Отложено' : 'Pending'} value={stats.pending} tone={accent} stylesObj={s} wide />
+              <HeroMetric label={langIndex === 0 ? 'В работе' : 'Active'} value={stats.active} tone={activeTone} stylesObj={s} />
+              <HeroMetric label={langIndex === 0 ? 'Сегодня' : 'Today'} value={stats.today} tone={todayTone} stylesObj={s} />
+              <HeroMetric label={langIndex === 0 ? 'Отложено' : 'Pending'} value={stats.pending} tone={pendingTone} stylesObj={s} />
+              <HeroMetric label={langIndex === 0 ? 'Просрочено' : 'Overdue'} value={stats.overdue} tone={overdueTone} stylesObj={s} icon={<FaFire size={10} />} />
             </div>
-            {stats.overdue > 0 && (
-              <div style={s.warningPill}>
-                <FaFire size={11} />
-                {langIndex === 0 ? `${stats.overdue} просрочено` : `${stats.overdue} overdue`}
-              </div>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -775,10 +797,10 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
   );
 };
 
-const HeroMetric = ({ label, value, tone, stylesObj, wide = false }) => (
+const HeroMetric = ({ label, value, tone, stylesObj, wide = false, icon = null }) => (
   <div style={stylesObj.heroMetric(wide)}>
     <span style={stylesObj.heroMetricLabel(tone)}>
-      <span style={stylesObj.heroMetricDot(tone)} />
+      {icon ? <span style={stylesObj.heroMetricIcon(tone)}>{icon}</span> : <span style={stylesObj.heroMetricDot(tone)} />}
       <span>{label}</span>
     </span>
     <strong style={stylesObj.heroMetricValue}>{value}</strong>
@@ -794,11 +816,15 @@ const ToDoWeekStrip = ({ theme, accent, langIndex, tasks, selectedDateKey, onSel
       {week.map(day => {
         const active = day.key === selectedDateKey;
         const full = day.total > 0 && day.done === day.total;
+        const overdue = day.hasOverdue;
+        const overdueColor = '#E95F5F';
         const strokeColor = active
-          ? accent.hue
+          ? (overdue ? overdueColor : accent.hue)
           : full
             ? Colors.get('done', theme)
-            : s.weekRingColor(day);
+            : overdue
+              ? overdueColor
+              : s.weekRingColor(day);
 
         return (
           <motion.div
@@ -808,25 +834,40 @@ const ToDoWeekStrip = ({ theme, accent, langIndex, tasks, selectedDateKey, onSel
               onSelectDate(day.key);
               playEffects(clickSound);
             }}
-            style={s.weekDay(active)}
+            style={s.weekDay(active, overdue)}
           >
-            <div style={s.weekLabel(active)}>{day.label}</div>
+            <div style={s.weekLabel(active, overdue)}>{day.label}</div>
             <svg width="24" height="24" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="9" stroke={s.weekRingBg} strokeWidth="2.4" fill="none" />
-              <circle
+              <motion.circle
                 cx="12"
                 cy="12"
                 r="9"
-                stroke={strokeColor}
                 strokeWidth="2.4"
                 fill="none"
                 strokeLinecap="round"
                 strokeDasharray={s.weekRingLength}
-                strokeDashoffset={s.weekRingLength - s.weekRingLength * day.progress}
+                initial={false}
+                animate={{
+                  stroke: strokeColor,
+                  strokeDashoffset: s.weekRingLength - s.weekRingLength * day.progress
+                }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                 transform="rotate(-90 12 12)"
               />
             </svg>
-            <div style={s.weekCount}>{day.done}/{day.total}</div>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={`${day.key}-${day.done}-${day.total}-${overdue}`}
+                initial={{ opacity: 0, y: -3 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 3 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
+                style={s.weekCount(overdue)}
+              >
+                {day.done}/{day.total}
+              </motion.div>
+            </AnimatePresence>
           </motion.div>
         );
       })}
@@ -995,6 +1036,7 @@ const CategoryPanel = ({ title, categoryKey, count, doneCount, todayCount, child
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             style={s.categoryBody}
           >
             {children}
@@ -1030,7 +1072,10 @@ const TaskCard = ({
   const isOverdue = isDeadlinePassed(item.deadLine) && !item.isDone;
   const categoryTone = getTodoCategoryTone(item.category, accent);
   const cardAccent = categoryTone;
+  const glyphTone = item.isDone ? TODO_SUCCESS : cardAccent;
   const progressTone = item.isDone ? TODO_SUCCESS : cardAccent;
+  const completedBadgeColor = theme === 'light' || theme === 'speciallight' ? '#7D8794' : '#8E98A6';
+  const badgeColor = (color) => item.isDone ? completedBadgeColor : color;
   const TaskIcon = cardAccent.icon;
   const submitSubDraft = (event) => {
     event.preventDefault();
@@ -1043,159 +1088,152 @@ const TaskCard = ({
 
   return (
     <motion.article
-      layout
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ type: 'spring', stiffness: 118, damping: 27, mass: 0.92 }}
+      transition={{ opacity: { duration: 0.18 }, y: { duration: 0.24, ease: [0.22, 1, 0.36, 1] } }}
       whileTap={{ scale: 0.985 }}
       onClick={onOpen}
       style={s.taskCard(item.isDone, isOverdue, item.isPinned, cardAccent, expanded)}
     >
       <div style={s.taskMainRow}>
-        <div style={{ ...s.taskGlyph, color: cardAccent.hue, background: cardAccent.soft, borderColor: cardAccent.ring }}>
+        <div style={{ ...s.taskGlyph, color: glyphTone.hue, background: glyphTone.soft, borderColor: glyphTone.ring }}>
           <TaskIcon size={18} />
         </div>
 
         <div style={s.taskContent}>
           <div style={s.taskHeaderLine}>
-            <div style={s.taskName(item.isDone)}>{item.name}</div>
+            <div style={s.taskName(item.isDone, expanded)}>{item.name}</div>
             {item.isPinned && <FaThumbtack size={11} color={accent.hue} />}
           </div>
-          {item.description && <div style={s.description}>{item.description}</div>}
           <div style={s.metaRow}>
             {(fieldVisibility.difficulty ?? true) && item.difficulty != null && (
-              <MiniBadge icon={<FaLayerGroup />} text={DIFFICULTY_LABELS[item.difficulty]?.[lang]} color={DIFFICULTY_COLORS[item.difficulty] || DIFFICULTY_COLORS[0]} accent={accent} theme={theme} expanded />
+              <MiniBadge icon={<FaLayerGroup />} text={DIFFICULTY_LABELS[item.difficulty]?.[lang]} color={badgeColor(DIFFICULTY_COLORS[item.difficulty] || DIFFICULTY_COLORS[0])} theme={theme} expanded muted={item.isDone} />
             )}
             {(fieldVisibility.urgency ?? true) && item.urgency != null && (
-              <MiniBadge icon={<FaFlag />} text={URGENCY_LABELS[item.urgency]?.[lang]} color={URGENCY_COLORS[item.urgency] || URGENCY_COLORS[0]} accent={accent} theme={theme} expanded />
+              <MiniBadge icon={<FaFlag />} text={URGENCY_LABELS[item.urgency]?.[lang]} color={badgeColor(URGENCY_COLORS[item.urgency] || URGENCY_COLORS[0])} theme={theme} expanded muted={item.isDone} />
             )}
             <MiniBadge
               icon={isOverdue ? <FaFire /> : <FaCalendarDay />}
               text={item.deadLine ? getDeadlineText(item.deadLine, lang) : (lang === 0 ? 'Без срока' : 'No deadline')}
-              color={isOverdue ? '#E95F5F' : accent.hue}
-              accent={accent}
+              color={badgeColor(isOverdue ? '#E95F5F' : accent.hue)}
               theme={theme}
               expanded
+              muted={item.isDone}
             />
             {totalGoals > 0 && (
-              <MiniBadge icon={<FaListUl />} text={`${doneGoals}/${totalGoals}`} color={cardAccent.hue} accent={accent} theme={theme} expanded />
+              <MiniBadge icon={<FaListUl />} text={`${doneGoals}/${totalGoals}`} color={badgeColor(cardAccent.hue)} theme={theme} expanded muted={item.isDone} />
             )}
           </div>
         </div>
 
         <button type="button" onClick={onCheck} style={s.checkButton(item.isDone)}>
-          {item.isDone ? <FaCheck size={12} /> : <span />}
+          {item.isDone && <FaCheck size={14} />}
         </button>
       </div>
 
-      {(totalGoals > 0 || item.isDone) && (
-        <div style={s.progressTrack}>
-          <div style={{ ...s.progressFill(progressTone.hue), width: `${progress}%` }} />
-        </div>
-      )}
-
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
-            layout
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.16, ease: [0.2, 0, 0.2, 1] }}
-            style={s.taskExpanded}
+            initial={{ opacity: 0, maxHeight: 0, y: -4 }}
+            animate={{ opacity: 1, maxHeight: 640, y: 0 }}
+            exit={{ opacity: 0, maxHeight: 0, y: -4 }}
+            transition={{
+              maxHeight: { duration: 0.46, ease: [0.16, 1, 0.3, 1] },
+              opacity: { duration: 0.22, ease: 'linear' },
+              y: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
+            }}
+            style={s.taskExpandedShell}
             onClick={(event) => event.stopPropagation()}
           >
-            {item.description && <div style={s.expandedDescription}>{item.description}</div>}
-
-            <div style={s.expandedInfoGrid}>
-              <div style={s.expandedInfo}>
-                <FaCalendarDay size={10} />
-                <span>{formatTaskDate(item.startDate, lang) || (lang === 0 ? 'Без старта' : 'No start')}</span>
-              </div>
-              <div style={s.expandedInfo}>
-                <FaClock size={10} />
-                <span>{item.deadLine ? formatTaskDate(item.deadLine, lang) : (lang === 0 ? 'Без дедлайна' : 'No deadline')}</span>
-              </div>
-            </div>
-
-            <div style={s.expandedChecklist}>
-              <div style={s.expandedTitle}>
-                <FaListUl size={11} />
-                <span>{lang === 0 ? 'Чек-лист' : 'Checklist'}</span>
-                <b>{doneGoals}/{totalGoals}</b>
-              </div>
-              {totalGoals > 0 ? (
-                <div style={s.expandedGoals}>
-                  {item.goals.slice(0, 4).map((goal, index) => (
-                    <button
-                      key={`${goal.text}-${index}`}
-                      type="button"
-                      onClick={(event) => onSubCheck(event, index)}
-                      style={s.expandedGoal(goal.isDone)}
-                    >
-                      <span style={s.expandedGoalText(goal.isDone)}>{goal.text}</span>
-                      <span style={s.expandedGoalDot(goal.isDone)}>
-                        {goal.isDone && <FaCheck size={12} />}
-                      </span>
-                    </button>
-                  ))}
-                  {totalGoals > 4 && <div style={s.moreGoals}>+{totalGoals - 4}</div>}
+            <div style={s.taskExpanded}>
+              {(totalGoals > 0 || item.isDone) && (
+                <div style={s.progressTrack}>
+                  <div style={{ ...s.progressFill(progressTone.hue), width: `${progress}%` }} />
                 </div>
-              ) : (
-                <div style={s.emptyChecklist}>{lang === 0 ? 'Шаги не добавлены' : 'No steps added'}</div>
               )}
-              <form style={s.checklistAddRow} onSubmit={submitSubDraft} onClick={(event) => event.stopPropagation()}>
-                <FaPlus size={10} />
-                <input
-                  type="text"
-                  value={subDraft}
-                  onChange={(event) => setSubDraft(event.target.value)}
-                  placeholder={lang === 0 ? 'Добавить шаг...' : 'Add step...'}
-                  style={s.checklistAddInput}
-                />
-                <button
-                  type="submit"
-                  disabled={!subDraft.trim()}
-                  style={s.checklistAddButton(Boolean(subDraft.trim()))}
-                >
-                  <FaCheck size={9} />
+
+              {item.description && <div style={s.expandedDescription}>{item.description}</div>}
+
+              <div style={s.expandedInfoGrid}>
+                <div style={s.expandedInfo}>
+                  <FaCalendarDay size={10} />
+                  <span>{formatTaskDate(item.startDate, lang) || (lang === 0 ? 'Без старта' : 'No start')}</span>
+                </div>
+                <div style={s.expandedInfo}>
+                  <FaClock size={10} />
+                  <span>{item.deadLine ? formatTaskDate(item.deadLine, lang) : (lang === 0 ? 'Без дедлайна' : 'No deadline')}</span>
+                </div>
+              </div>
+
+              <div style={s.expandedChecklist}>
+                <div style={s.expandedTitle}>
+                  <FaListUl size={11} />
+                  <span>{lang === 0 ? 'Чек-лист' : 'Checklist'}</span>
+                  <b>{doneGoals}/{totalGoals}</b>
+                </div>
+                {totalGoals > 0 ? (
+                  <div style={s.expandedGoals}>
+                    {item.goals.slice(0, 4).map((goal, index) => (
+                      <button
+                        key={`${goal.text}-${index}`}
+                        type="button"
+                        onClick={(event) => onSubCheck(event, index)}
+                        style={s.expandedGoal(goal.isDone)}
+                      >
+                        <span style={s.expandedGoalText(goal.isDone)}>{goal.text}</span>
+                        <span style={s.expandedGoalDot(goal.isDone)}>
+                          {goal.isDone && <FaCheck size={12} />}
+                        </span>
+                      </button>
+                    ))}
+                    {totalGoals > 4 && <div style={s.moreGoals}>+{totalGoals - 4}</div>}
+                  </div>
+                ) : (
+                  <div style={s.emptyChecklist}>{lang === 0 ? 'Шаги не добавлены' : 'No steps added'}</div>
+                )}
+                <form style={s.checklistAddRow} onSubmit={submitSubDraft} onClick={(event) => event.stopPropagation()}>
+                  <FaPlus size={10} />
+                  <input
+                    type="text"
+                    value={subDraft}
+                    onChange={(event) => setSubDraft(event.target.value)}
+                    placeholder={lang === 0 ? 'Добавить шаг...' : 'Add step...'}
+                    style={s.checklistAddInput}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!subDraft.trim()}
+                    style={s.checklistAddButton(Boolean(subDraft.trim()))}
+                  >
+                    <FaCheck size={9} />
+                  </button>
+                </form>
+              </div>
+
+              <div style={s.expandedActions}>
+                <button type="button" onClick={onCheck} style={s.completeTaskButton(item.isDone)}>
+                  <FaCheckCircle size={13} />
+                  <span>{item.isDone ? (lang === 0 ? 'Вернуть в работу' : 'Reopen') : (lang === 0 ? 'Выполнено' : 'Complete')}</span>
                 </button>
-              </form>
-            </div>
+                <button type="button" onClick={onEdit} style={s.editTaskButton}>
+                  <FaPen size={12} />
+                  <span>{lang === 0 ? 'Редактировать' : 'Edit'}</span>
+                </button>
+              </div>
 
-            <div style={s.expandedActions}>
-              <button type="button" onClick={onCheck} style={s.completeTaskButton(item.isDone)}>
-                <FaCheckCircle size={13} />
-                <span>{item.isDone ? (lang === 0 ? 'Вернуть в работу' : 'Reopen') : (lang === 0 ? 'Выполнено' : 'Complete')}</span>
-              </button>
-              <button type="button" onClick={onEdit} style={s.editTaskButton}>
-                <FaPen size={12} />
-                <span>{lang === 0 ? 'Редактировать' : 'Edit'}</span>
-              </button>
+              <div style={s.actionRow}>
+                <ActionButton active={item.isPinned} label={lang === 0 ? 'Закрепить' : 'Pin'} icon={<FaThumbtack />} onClick={(event) => { event.stopPropagation(); onPinned(item.id); }} theme={theme} accent={accent} />
+                <ActionButton active={item.isPending} label={lang === 0 ? 'Позже' : 'Later'} icon={<FaClock />} onClick={(event) => { event.stopPropagation(); onPending(item.id); }} theme={theme} accent={accent} />
+                <ActionButton active={item.isHidden} label={lang === 0 ? 'Скрыть' : 'Hide'} icon={<FaRegEyeSlash />} onClick={(event) => { event.stopPropagation(); onHidden(item.id); }} theme={theme} accent={accent} />
+                {item.isDone && (
+                  <span style={s.donePill}>
+                    <FaCheckCircle size={11} />
+                    {lang === 0 ? 'Готово' : 'Done'}
+                  </span>
+                )}
+              </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.14 }}
-            style={s.actionRow(expanded)}
-          >
-            <ActionButton active={item.isPinned} label={lang === 0 ? 'Закрепить' : 'Pin'} icon={<FaThumbtack />} onClick={(event) => { event.stopPropagation(); onPinned(item.id); }} theme={theme} accent={accent} />
-            <ActionButton active={item.isPending} label={lang === 0 ? 'Позже' : 'Later'} icon={<FaClock />} onClick={(event) => { event.stopPropagation(); onPending(item.id); }} theme={theme} accent={accent} />
-            <ActionButton active={item.isHidden} label={lang === 0 ? 'Скрыть' : 'Hide'} icon={<FaRegEyeSlash />} onClick={(event) => { event.stopPropagation(); onHidden(item.id); }} theme={theme} accent={accent} />
-            {item.isDone && (
-              <span style={s.donePill}>
-                <FaCheckCircle size={11} />
-                {lang === 0 ? 'Готово' : 'Done'}
-              </span>
-            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1213,14 +1251,18 @@ const ActionButton = ({ active, label, icon, onClick, theme, accent }) => {
   );
 };
 
-const MiniBadge = ({ icon, text, color, theme, expanded = false }) => {
+const MiniBadge = ({ icon, text, color, theme, expanded = false, muted = false }) => {
   const isLight = theme === 'light' || theme === 'speciallight';
   const hex = (color || '#149DFF').replace('#', '');
   const r = parseInt(hex.slice(0, 2), 16) || 143;
   const g = parseInt(hex.slice(2, 4), 16) || 166;
   const b = parseInt(hex.slice(4, 6), 16) || 200;
-  const tintBg = `rgba(${r},${g},${b},${isLight ? 0.045 : 0.055})`;
-  const tintBorder = `rgba(${r},${g},${b},${isLight ? 0.11 : 0.13})`;
+  const tintBg = muted
+    ? (isLight ? 'rgba(125,135,148,0.08)' : 'rgba(142,152,166,0.08)')
+    : `rgba(${r},${g},${b},${isLight ? 0.045 : 0.055})`;
+  const tintBorder = muted
+    ? (isLight ? 'rgba(125,135,148,0.15)' : 'rgba(142,152,166,0.16)')
+    : `rgba(${r},${g},${b},${isLight ? 0.11 : 0.13})`;
 
   return (
     <span
@@ -1245,7 +1287,7 @@ const MiniBadge = ({ icon, text, color, theme, expanded = false }) => {
         lineHeight: 1,
         flexShrink: 0,
         overflow: 'hidden',
-        opacity: 0.76
+        opacity: muted ? 0.64 : 0.76
       }}
     >
       {React.cloneElement(icon, { size: expanded ? 7 : 9, color })}
@@ -1463,14 +1505,18 @@ const styles = (theme, accent, fSize = 0) => {
       transform: 'rotate(45deg)',
       transformOrigin: 'left center'
     }),
-    heroSummaryCard: {
+    heroSummaryCard: (complete = false, tone = accent) => ({
       borderRadius: 14,
-      border: `1px solid ${border}`,
-      background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.038)',
+      border: `1px solid ${complete ? tone.ring : border}`,
+      background: complete
+        ? (isLight
+          ? `linear-gradient(135deg, rgba(255,255,255,0.72), ${tone.soft})`
+          : `radial-gradient(180px 90px at 85% 10%, ${tone.soft}, transparent 72%), rgba(255,255,255,0.042)`)
+        : (isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.038)'),
       padding: '10px 11px',
       boxSizing: 'border-box',
-      boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
-    },
+      boxShadow: complete ? `0 1px 0 rgba(255,255,255,0.055) inset, 0 0 22px ${tone.glow}` : '0 1px 0 rgba(255,255,255,0.04) inset'
+    }),
     heroSummaryTop: {
       display: 'flex',
       alignItems: 'center',
@@ -1483,10 +1529,10 @@ const styles = (theme, accent, fSize = 0) => {
       letterSpacing: '0.1em',
       textTransform: 'uppercase'
     },
-    heroSummaryValue: { color: text, fontSize: 13, fontWeight: 950, fontVariantNumeric: 'tabular-nums', letterSpacing: 0 },
+    heroSummaryValue: (complete = false, tone = accent) => ({ color: complete ? tone.hue : text, fontSize: 13, fontWeight: 950, fontVariantNumeric: 'tabular-nums', letterSpacing: 0 }),
     heroSummarySmall: { color: sub, fontSize: 10, fontWeight: 850 },
-    progressTrackHero: { height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.07)', overflow: 'hidden' },
-    heroProgressFill: { height: '100%', borderRadius: 999, background: accent.hue, boxShadow: `0 0 16px ${accent.glow}` },
+    progressTrackHero: (complete = false, tone = accent) => ({ height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.07)', overflow: 'hidden', boxShadow: complete ? `0 0 14px ${tone.glow}` : 'none' }),
+    heroProgressFill: (tone = accent) => ({ height: '100%', borderRadius: 999, background: tone.hue, boxShadow: `0 0 16px ${tone.glow}` }),
     heroMetricGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginTop: 10 },
     heroMetric: (wide = false) => ({
       display: 'flex',
@@ -1514,7 +1560,8 @@ const styles = (theme, accent, fSize = 0) => {
       minWidth: 0,
       flex: 1
     }),
-    heroMetricDot: (tone) => ({ width: 5, height: 5, borderRadius: 99, background: tone.hue, flexShrink: 0 }),
+    heroMetricDot: (tone) => ({ width: 6, height: 6, borderRadius: 99, background: tone.hue, boxShadow: `0 0 10px ${tone.glow}`, flexShrink: 0 }),
+    heroMetricIcon: (tone) => ({ width: 14, height: 14, borderRadius: 7, color: tone.hue, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', filter: `drop-shadow(0 0 8px ${tone.glow})`, flexShrink: 0 }),
     heroMetricValue: { color: text, fontSize: 12, fontWeight: 950, fontVariantNumeric: 'tabular-nums', flexShrink: 0 },
 	    actionColorDot: {
 	      width: 8,
@@ -1705,23 +1752,32 @@ const styles = (theme, accent, fSize = 0) => {
       gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
       gap: 6
     },
-    weekDay: (active) => ({
+    weekDay: (active, overdue = false) => ({
       minHeight: 70,
       borderRadius: 16,
-      border: active ? `1px solid ${accent.ring}` : '1px solid transparent',
-      background: active ? accent.soft : 'transparent',
+      border: active
+        ? `1px solid ${overdue ? 'rgba(233,95,95,0.48)' : accent.ring}`
+        : overdue
+          ? '1px solid rgba(233,95,95,0.28)'
+          : '1px solid transparent',
+      background: active
+        ? (overdue ? 'rgba(233,95,95,0.12)' : accent.soft)
+        : overdue
+          ? 'rgba(233,95,95,0.055)'
+          : 'transparent',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 6,
-      cursor: 'pointer'
+      cursor: 'pointer',
+      transition: 'background 0.45s ease, border-color 0.45s ease'
     }),
-    weekLabel: (active) => ({ color: active ? accent.hue : sub, fontSize: 9, fontWeight: 900, letterSpacing: '0.06em' }),
+    weekLabel: (active, overdue = false) => ({ color: overdue ? '#E95F5F' : active ? accent.hue : sub, fontSize: 9, fontWeight: 900, letterSpacing: '0.06em' }),
     weekRingBg: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)',
     weekRingLength: 2 * Math.PI * 9,
     weekRingColor: (day) => day.total > 0 && day.done === day.total ? Colors.get('done', theme) : (isLight ? 'rgba(15,23,42,0.32)' : 'rgba(255,255,255,0.24)'),
-    weekCount: { color: sub, fontSize: 10, fontWeight: 850, fontVariantNumeric: 'tabular-nums' },
+    weekCount: (overdue = false) => ({ color: overdue ? '#E95F5F' : sub, fontSize: 10, fontWeight: 850, fontVariantNumeric: 'tabular-nums' }),
 	    listWrap: {
 	      width: 'calc(100% - 56px)',
 	      maxWidth: 660,
@@ -1733,9 +1789,12 @@ const styles = (theme, accent, fSize = 0) => {
 	    },
     emptyState: {
       minHeight: 210,
-      borderRadius: 26,
-      background: panel,
-      border: `1px solid ${border}`,
+      borderRadius: 30,
+      background: `radial-gradient(260px 160px at 50% 0%, ${accent.soft}, transparent 72%), ${panel}`,
+      border: `1px solid ${accent.ring}`,
+      boxShadow: `${glassShadow}, 0 18px 42px -30px ${accent.glow}`,
+      backdropFilter: 'blur(26px) saturate(170%)',
+      WebkitBackdropFilter: 'blur(26px) saturate(170%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -1805,9 +1864,10 @@ const styles = (theme, accent, fSize = 0) => {
     taskCard: (done, overdue, pinned, tone = accent, expanded = false) => ({
       position: 'relative',
       borderRadius: 28,
-      padding: '14px 16px 13px',
-      minHeight: expanded ? 'auto' : 108,
+      padding: '9px 12px',
+      minHeight: expanded ? 'auto' : 82,
       overflow: 'hidden',
+      boxSizing: 'border-box',
       background: done
         ? (isLight
           ? `linear-gradient(145deg, rgba(255,255,255,0.95), ${TODO_SUCCESS.soft})`
@@ -1828,7 +1888,7 @@ const styles = (theme, accent, fSize = 0) => {
       clipPath: 'inset(0 round 28px)',
       transition: 'background 0.42s ease, border-color 0.42s ease, box-shadow 0.42s ease'
     }),
-    taskMainRow: { display: 'flex', alignItems: 'center', gap: 14, minHeight: 58 },
+    taskMainRow: { display: 'flex', alignItems: 'center', gap: 12, minHeight: 48 },
     taskGlyph: {
       width: 46,
       height: 46,
@@ -1841,31 +1901,45 @@ const styles = (theme, accent, fSize = 0) => {
     },
 	    taskContent: { minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' },
     taskHeaderLine: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, minWidth: 0, flexWrap: 'nowrap' },
-    taskName: (done) => ({
+    taskName: (done, expanded = false) => ({
       color: done ? sub : text,
       fontSize: fSize === 0 ? 16 : 17,
       fontWeight: 950,
       lineHeight: 1.2,
       minWidth: 0,
-      flex: '0 1 auto',
+      width: '100%',
+      flex: '1 1 auto',
       overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
+      display: '-webkit-box',
+      WebkitLineClamp: expanded ? 2 : 2,
+      WebkitBoxOrient: 'vertical',
+      whiteSpace: 'normal',
       textDecoration: done ? 'line-through' : 'none',
       textAlign: 'center'
     }),
-    description: { width: '100%', marginTop: 4, color: sub, fontSize: 12, fontWeight: 700, lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', textAlign: 'center' },
     checkButton: (done) => ({
       width: 40,
       height: 30,
       borderRadius: 12,
-      border: `1px solid ${done ? TODO_SUCCESS.ring : (isLight ? 'rgba(15,23,42,0.1)' : 'rgba(255,255,255,0.095)')}`,
-      background: done ? TODO_SUCCESS.hue : 'transparent',
-      color: '#fff',
+      border: `1px solid ${done ? TODO_SUCCESS.ring : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)')}`,
+      background: done
+        ? TODO_SUCCESS.soft
+        : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)'),
+      color: done ? TODO_SUCCESS.hue : sub,
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'flex-start',
-      flexShrink: 0
+      justifyContent: 'center',
+      flexShrink: 0,
+      cursor: 'pointer',
+      boxSizing: 'border-box',
+      padding: 0,
+      appearance: 'none',
+      WebkitAppearance: 'none',
+      outline: 'none',
+      boxShadow: done
+        ? `0 1px 0 rgba(255,255,255,0.08) inset, 0 0 16px ${TODO_SUCCESS.glow}`
+        : '0 1px 0 rgba(255,255,255,0.035) inset',
+      transition: 'background 0.45s ease, border-color 0.45s ease, color 0.45s ease, box-shadow 0.45s ease'
     }),
     metaRow: {
       display: 'flex',
@@ -1873,7 +1947,9 @@ const styles = (theme, accent, fSize = 0) => {
       justifyContent: 'center',
       alignItems: 'center',
       gap: 4,
-      marginTop: 6,
+      marginTop: 4,
+      paddingTop: 4,
+      borderTop: `1px solid ${isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.045)'}`,
       paddingLeft: 0,
       paddingRight: 0,
       boxSizing: 'border-box',
@@ -1881,29 +1957,30 @@ const styles = (theme, accent, fSize = 0) => {
       width: '100%',
       maxWidth: '100%'
     },
-    progressTrack: { height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)', overflow: 'hidden', marginTop: 10 },
+    progressTrack: { height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)', overflow: 'hidden', marginTop: 15, marginBottom: 8 },
     progressFill: (color) => ({ height: '100%', borderRadius: 999, background: color, boxShadow: `0 0 18px ${color}66` }),
-    taskExpanded: { overflow: 'hidden', marginTop: 10, borderTop: `1px solid ${border}`, paddingTop: 10, willChange: 'opacity, transform' },
-    expandedInfoGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 7, marginTop: 8 },
+    taskExpandedShell: { overflow: 'hidden', willChange: 'max-height, opacity, transform' },
+    taskExpanded: { marginTop: 12, borderTop: `1px solid ${border}`, paddingTop: 12, paddingBottom: 3 },
+    expandedInfoGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12, marginTop: 14 },
     expandedInfo: {
-      minHeight: 32,
-      borderRadius: 12,
+      minHeight: 42,
+      borderRadius: 15,
       background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
       border: `1px solid ${border}`,
       color: sub,
       display: 'flex',
       alignItems: 'center',
-      gap: 7,
-      padding: '0 10px',
-      fontSize: 11,
+      gap: 9,
+      padding: '0 13px',
+      fontSize: 11.5,
       fontWeight: 850,
       minWidth: 0,
       overflow: 'hidden'
     },
-    expandedDescription: { color: text, fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, opacity: 0.86, textAlign: 'center' },
-    expandedChecklist: { marginTop: 9, borderRadius: 14, background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.028)', border: `1px solid ${border}`, padding: 10 },
-    expandedTitle: { display: 'flex', alignItems: 'center', gap: 7, color: sub, fontSize: 11, fontWeight: 900, marginBottom: 8 },
-    expandedGoals: { display: 'flex', flexDirection: 'column', gap: 8 },
+    expandedDescription: { color: text, fontSize: 12.5, fontWeight: 700, lineHeight: 1.45, opacity: 0.86, textAlign: 'center', marginTop: 2 },
+    expandedChecklist: { marginTop: 16, borderRadius: 18, background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.032)', border: `1px solid ${border}`, padding: '14px 14px 15px' },
+    expandedTitle: { display: 'flex', alignItems: 'center', gap: 8, color: sub, fontSize: 11.5, fontWeight: 900, marginBottom: 13 },
+    expandedGoals: { display: 'flex', flexDirection: 'column', gap: 12 },
     expandedGoal: (done) => ({
       width: '100%',
       border: `1px solid ${done ? TODO_SUCCESS.ring : border}`,
@@ -1913,26 +1990,26 @@ const styles = (theme, accent, fSize = 0) => {
       boxShadow: done ? `0 1px 0 rgba(255,255,255,0.055) inset, 0 12px 22px -24px ${TODO_SUCCESS.hue}` : '0 1px 0 rgba(255,255,255,0.035) inset',
       display: 'flex',
       alignItems: 'center',
-      gap: 10,
-      minHeight: 48,
+      gap: 12,
+      minHeight: 58,
       fontFamily: 'inherit',
       textAlign: 'left',
-      padding: '10px 12px',
+      padding: '12px 14px',
       cursor: 'pointer',
-      borderRadius: 15
+      borderRadius: 17
     }),
     expandedGoalText: (done) => ({ flex: 1, minWidth: 0, color: done ? TODO_SUCCESS.hue : text, fontSize: 13, fontWeight: done ? 800 : 650, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
-    expandedGoalDot: (done) => ({ width: 25, height: 25, borderRadius: 9, border: `1px solid ${done ? TODO_SUCCESS.ring : (isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)')}`, background: done ? TODO_SUCCESS.hue : 'transparent', color: isLight ? '#FFFFFF' : '#0E1512', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: done ? `0 8px 16px -12px ${TODO_SUCCESS.hue}` : 'none' }),
+    expandedGoalDot: (done) => ({ width: 30, height: 30, borderRadius: 11, border: `1px solid ${done ? TODO_SUCCESS.ring : (isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)')}`, background: done ? TODO_SUCCESS.hue : 'transparent', color: isLight ? '#FFFFFF' : '#0E1512', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: done ? `0 8px 16px -12px ${TODO_SUCCESS.hue}` : 'none' }),
     moreGoals: { color: sub, fontSize: 11, fontWeight: 850 },
     emptyChecklist: { color: sub, fontSize: 12, fontWeight: 750, minHeight: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' },
     checklistAddRow: {
       display: 'flex',
       alignItems: 'center',
-      gap: 8,
-      minHeight: 38,
-      marginTop: 8,
-      padding: '0 8px',
-      borderRadius: 12,
+      gap: 9,
+      minHeight: 44,
+      marginTop: 12,
+      padding: '0 12px',
+      borderRadius: 15,
       border: `1px dashed ${accent.ring}`,
       background: accent.faint,
       color: accent.hue,
@@ -1950,9 +2027,9 @@ const styles = (theme, accent, fSize = 0) => {
       fontFamily: 'inherit'
     },
     checklistAddButton: (enabled) => ({
-      width: 26,
-      height: 26,
-      borderRadius: 9,
+      width: 30,
+      height: 30,
+      borderRadius: 11,
       border: `1px solid ${enabled ? accent.ring : border}`,
       background: enabled ? accent.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)'),
       color: enabled ? accent.hue : sub,
@@ -1963,10 +2040,10 @@ const styles = (theme, accent, fSize = 0) => {
       opacity: enabled ? 1 : 0.46,
       cursor: enabled ? 'pointer' : 'default'
     }),
-    expandedActions: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 8, marginTop: 9 },
+    expandedActions: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12, marginTop: 14 },
     completeTaskButton: (done) => ({
-      minHeight: 38,
-      borderRadius: 14,
+      minHeight: 44,
+      borderRadius: 16,
       border: `1px solid ${done ? 'rgba(159,180,196,0.18)' : 'rgba(16,185,129,0.28)'}`,
       background: done ? (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)') : 'rgba(16,185,129,0.16)',
       color: done ? sub : Colors.get('done', theme),
@@ -1979,8 +2056,8 @@ const styles = (theme, accent, fSize = 0) => {
       fontFamily: 'inherit'
     }),
     editTaskButton: {
-      minHeight: 38,
-      borderRadius: 14,
+      minHeight: 44,
+      borderRadius: 16,
       border: `1px solid ${accent.ring}`,
       background: accent.soft,
       color: accent.hue,
@@ -1992,24 +2069,27 @@ const styles = (theme, accent, fSize = 0) => {
       fontWeight: 950,
       fontFamily: 'inherit'
     },
-    actionRow: (expanded = false) => ({
+    actionRow: {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 5,
-      marginTop: expanded ? 10 : 7,
+      gap: 8,
+      width: '100%',
+      marginTop: 14,
       paddingLeft: 0,
       paddingRight: 0,
+      paddingTop: 10,
+      borderTop: `1px solid ${isLight ? 'rgba(15,23,42,0.09)' : 'rgba(159,180,196,0.14)'}`,
       boxSizing: 'border-box',
       flexWrap: 'wrap'
-    }),
+    },
     actionButton: (active) => ({
       border: `1px solid ${active ? accent.ring : border}`,
       background: active ? accent.soft : isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.025)',
       color: active ? accent.hue : sub,
       borderRadius: 999,
-      minHeight: 20,
-      padding: '0 6px',
+      minHeight: 24,
+      padding: '0 9px',
       display: 'flex',
       alignItems: 'center',
       gap: 3,
@@ -2035,6 +2115,7 @@ const styles = (theme, accent, fSize = 0) => {
 
 function parseDate(dateStr) {
   if (!dateStr) return null;
+  if (dateStr instanceof Date) return isNaN(dateStr) ? null : dateStr;
   if (dateStr.includes('-')) return new Date(dateStr);
   if (dateStr.includes('.')) {
     const parts = dateStr.split('.');
@@ -2069,6 +2150,17 @@ function isTodayTask(task) {
   const deadline = parseDate(task.deadLine);
   const start = parseDate(task.startDate);
   return dateKey(deadline) === today || dateKey(start) === today;
+}
+
+function isTaskCompletedBeforeToday(task) {
+  if (!task?.isDone) return false;
+  const completedKey = dateKey(parseDate(task.completedAt || task.startDate));
+  const today = dateKey(new Date());
+  return Boolean(completedKey && completedKey < today);
+}
+
+function isTaskVisibleInMainList(task) {
+  return !task?.isDone || !isTaskCompletedBeforeToday(task);
 }
 
 function getDeadlineText(dateStr, lang) {

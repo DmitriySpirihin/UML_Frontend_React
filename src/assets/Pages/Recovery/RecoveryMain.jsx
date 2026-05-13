@@ -6,7 +6,7 @@ import {
     FaSpa,
     FaSnowflake,
     FaLeaf,
-    FaCheckCircle,
+    FaFire,
     FaChartLine,
     FaPalette,
 } from 'react-icons/fa';
@@ -16,6 +16,7 @@ import { theme$, lang$, fontSize$, setPage, setRecoveryType, emitSectionAccentCh
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 import SectionAccentSettings, { POSITIVE_ACCENT_PRESETS, buildSectionAccent } from '../SectionAccentSettings.jsx';
 import { saveData } from '../../StaticClasses/SaveHelper.js';
+import { getRecoverySessionStats } from '../../StaticClasses/RecoveryLogHelper.js';
 
 const RECOVERY_ACCENT = '#2FD6BD';
 
@@ -97,8 +98,8 @@ const RecoveryMain = () => {
         logSectionVisit('recovery');
     }, []);
 
-    const progressByType = RECOVERY_ITEMS.map((item) => getRecoveryProgress(item.id));
-    const summary = getRecoverySummary(progressByType);
+    const progressByType = RECOVERY_ITEMS.map((item) => getRecoverySessionStats(item.id));
+    const summary = getRecoverySessionStats();
     const isRu = langIndex === 0;
     const s = styles(theme, fSize);
     const activeAccent = accentColor;
@@ -187,15 +188,15 @@ const RecoveryMain = () => {
                             />
                             <HeroStat
                                 theme={theme}
-                                icon={<FaCheckCircle />}
-                                label={isRu ? 'готово' : 'done'}
-                                value={summary.done}
+                                icon={<FaFire />}
+                                label={isRu ? 'серия' : 'streak'}
+                                value={summary.streak}
                             />
                             <HeroStat
                                 theme={theme}
                                 icon={<FaChartLine />}
-                                label={isRu ? 'прогресс' : 'progress'}
-                                value={`${summary.percent}%`}
+                                label={isRu ? 'сессий' : 'sessions'}
+                                value={summary.total}
                             />
                         </div>
                     </div>
@@ -208,8 +209,9 @@ const RecoveryMain = () => {
                         <h2 style={s.sectionTitle}>{isRu ? 'Практики' : 'Practices'}</h2>
                     </div>
                     <div style={s.summaryPill}>
-                        <span>{summary.done}</span>
-                        <span style={s.summaryMuted}>/ {summary.total}</span>
+                        <FaFire size={12} />
+                        <span>{summary.streak}</span>
+                        <span style={s.summaryMuted}>{isRu ? 'серия' : 'streak'}</span>
                     </div>
                 </div>
 
@@ -271,14 +273,17 @@ function RecoveryCard({ item, theme, fSize, isRu, variants, progress }) {
                         <h3 style={s.cardTitle}>{text.title}</h3>
                     </div>
                     <div style={s.cardProgressPill}>
-                        <span>{progress.done}</span>
-                        <span style={s.cardProgressMuted}>/ {progress.total}</span>
+                        <FaFire size={11} />
+                        <span>{progress.streak}</span>
+                        <span style={s.cardProgressMuted}>{isRu ? 'серия' : 'streak'}</span>
                     </div>
                 </div>
 
                 <div style={s.cardBottom}>
-                    <div style={s.progressTrack}>
-                        <div style={{ ...s.progressFill, width: `${Math.round(progress.ratio * 100)}%` }} />
+                    <div style={s.sessionPill}>
+                        <FaChartLine size={11} />
+                        <span>{isRu ? 'Всего сессий' : 'Total sessions'}</span>
+                        <b>{progress.total}</b>
                     </div>
                 </div>
             </div>
@@ -287,41 +292,6 @@ function RecoveryCard({ item, theme, fSize, isRu, variants, progress }) {
         </Motion.button>
     );
 }
-
-const getRecoveryProgress = (index) => {
-    const data = AppData.recoveryProtocols?.[index];
-    let total = 0;
-    let done = 0;
-
-    if (!Array.isArray(data)) {
-        return { done, total, ratio: 0 };
-    }
-
-    data.forEach((category) => {
-        category?.forEach((protocol) => {
-            protocol?.forEach((session) => {
-                total += 1;
-                if (session === true) done += 1;
-            });
-        });
-    });
-
-    return {
-        done,
-        total,
-        ratio: total > 0 ? done / total : 0,
-    };
-};
-
-const getRecoverySummary = (items) => {
-    const done = items.reduce((sum, item) => sum + item.done, 0);
-    const total = items.reduce((sum, item) => sum + item.total, 0);
-    return {
-        done,
-        total,
-        percent: total > 0 ? Math.round((done / total) * 100) : 0,
-    };
-};
 
 const styles = (theme, fontSize = 0, item = null) => {
     const isDark = theme === 'dark';
@@ -554,23 +524,25 @@ const styles = (theme, fontSize = 0, item = null) => {
             letterSpacing: 0,
         },
         summaryPill: {
-            minWidth: '76px',
+            minWidth: '104px',
             minHeight: '36px',
             padding: '0 12px',
             borderRadius: '16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: '5px',
             color: recoveryAccent.hue,
-            fontSize: '16px',
+            fontSize: '14px',
             fontWeight: 900,
             backgroundColor: recoveryAccent.soft,
             border: `1px solid ${recoveryAccent.ring}`,
         },
         summaryMuted: {
             color: subText,
-            marginLeft: '4px',
-            fontSize: '13px',
+            fontSize: '10px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
         },
         grid: {
             width: '100%',
@@ -671,46 +643,46 @@ const styles = (theme, fontSize = 0, item = null) => {
             overflow: 'hidden',
         },
         cardProgressPill: {
-            minWidth: '62px',
+            minWidth: '92px',
             minHeight: '32px',
             padding: '0 10px',
             borderRadius: '16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: '4px',
             color: tone,
-            fontSize: '14px',
+            fontSize: '12px',
             fontWeight: 900,
             backgroundColor: isDark ? `rgba(${rgb}, 0.1)` : `rgba(${rgb}, 0.18)`,
             border: `1px solid rgba(${rgb}, ${isDark ? 0.23 : 0.36})`,
             flexShrink: 0,
         },
         cardProgressMuted: {
-            marginLeft: '2px',
             color: subText,
-            fontSize: '12px',
+            fontSize: '9px',
             fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.03em',
         },
         cardBottom: {
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
         },
-        progressTrack: {
-            position: 'relative',
-            height: '7px',
-            flex: 1,
-            overflow: 'hidden',
-            borderRadius: '999px',
-            backgroundColor: isDark ? 'rgba(255,255,255,0.075)' : 'rgba(15,23,42,0.09)',
-        },
-        progressFill: {
-            position: 'absolute',
-            inset: '0 auto 0 0',
-            minWidth: '8px',
-            borderRadius: '999px',
-            background: `linear-gradient(90deg, ${tone}, rgba(${rgb}, 0.56))`,
-            boxShadow: `0 0 18px rgba(${rgb}, 0.32)`,
+        sessionPill: {
+            minHeight: '26px',
+            width: '100%',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '5px',
+            color: tone,
+            fontSize: '11px',
+            fontWeight: 850,
+            backgroundColor: isDark ? 'rgba(255,255,255,0.035)' : 'rgba(15,23,42,0.035)',
+            border: `1px solid rgba(${rgb}, ${isDark ? 0.13 : 0.2})`,
         },
         cardCta: {
             color: subText,

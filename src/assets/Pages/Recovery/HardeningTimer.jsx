@@ -63,7 +63,13 @@ function PhaseStepper({ theme, label, value, min = 0, max = 60, step = 1, onChan
   );
 }
 
-const HardeningTimer = ({ show, setShow, protocol }) => {
+const getSessionMeta = (protocol, categoryIndex, protocolIndex) => ({
+  categoryIndex,
+  protocolIndex,
+  protocolName: protocol?.name?.[0] || protocol?.name?.[1] || '',
+});
+
+const HardeningTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIndex = 0 }) => {
   // --- STATE ---
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
@@ -194,10 +200,10 @@ const HardeningTimer = ({ show, setShow, protocol }) => {
   const handleResume = () => { setIsRunning(true); setIsPaused(false); };
   const handleReload = () => { setCurrentStepIndex(0); setPhaseProgress(0); setIsRunning(false); setIsStart(false); setIsPaused(false); setIsFinished(false); coldTimeRef.current = 0; startTimeRef.current = 0; audio.pause(); audio.currentTime = 0; };
   const onFinishSession = async () => {
-    await saveHardeningSession(startTime, Date.now(), coldTimeRef.current);
+    await saveHardeningSession(startTime, Date.now(), coldTimeRef.current, getSessionMeta(protocol, categoryIndex, protocolIndex));
     setFinishMessage(congratulations(langIndex)); setIsFinished(true);
   };
-  const onSaveSession = async () => { await saveHardeningSession(startTime, endTime, coldTimeRef.current); handleReload(); setShow(false); };
+  const onSaveSession = async () => { await saveHardeningSession(startTime, endTime, coldTimeRef.current, getSessionMeta(protocol, categoryIndex, protocolIndex)); handleReload(); setShow(false); };
 
   // --- RENDER ---
   const textMain = Colors.get('mainText', theme);

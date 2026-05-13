@@ -17,6 +17,7 @@ import { saveData } from '../../StaticClasses/SaveHelper';
 import { playEffects } from '../../StaticClasses/Effects.js';
 import { syncAutoSleepIntegrations } from '../../StaticClasses/SleepIntegrationService.js';
 import { buildSleepAccent, SLEEP_ACCENT_PRESETS } from './SleepVisuals.js';
+import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 
 const clickSound = new Audio('Audio/Click.wav');
 const MS_PER_HOUR = 60 * 60 * 1000;
@@ -185,6 +186,7 @@ const SleepMain = () => {
         customPresets={AppData.sleepAccentPresets}
         onSavePreset={saveAccentPreset}
       />
+      <HoverInfoButton tab="SleepMain" variant="subtle" accent={accent.hue} />
 
       <div style={s.scroll}>
         <div style={s.topBar}>

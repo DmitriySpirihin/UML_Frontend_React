@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { motion as Motion } from 'framer-motion';
 import {
     FaBolt,
-    FaCheckCircle,
     FaChevronRight,
     FaCrown,
     FaFeatherAlt,
+    FaFire,
     FaLock,
     FaMoon,
     FaSnowflake,
@@ -17,7 +17,13 @@ import { MdOutlineCreate } from 'react-icons/md';
 import { AppData, UserData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors.js';
 import { theme$, lang$, fontSize$, recoveryType$, setPage, premium$ } from '../../StaticClasses/HabitsBus.js';
-import { breathingProtocols, meditationProtocols, coldWaterProtocols } from '../../StaticClasses/RecoveryLogHelper.js';
+import {
+    breathingProtocols,
+    meditationProtocols,
+    coldWaterProtocols,
+    getRecoverySessionStats,
+    recoverySessionMatches,
+} from '../../StaticClasses/RecoveryLogHelper.js';
 import BreathingTimer from './BreathingTimer.jsx';
 import MeditationTimer from './MeditationTimer.jsx';
 import HardeningTimer from './HardeningTimer.jsx';
@@ -99,7 +105,7 @@ const RecoveryCategories = () => {
 
     const isRu = langIndex === 0;
     const meta = PAGE_META[recoveryType] ?? PAGE_META[0];
-    const summary = getSummary(recoveryType);
+    const summary = getRecoverySessionStats(recoveryType);
     const s = styles(theme, fSize, meta);
 
     const containerAnim = {
@@ -135,10 +141,17 @@ const RecoveryCategories = () => {
                         <h1 style={s.heroTitle}>{isRu ? meta.ru.title : meta.en.title}</h1>
                         <div style={s.heroSubtitle}>{isRu ? meta.ru.subtitle : meta.en.subtitle}</div>
                     </div>
-                    <div style={s.heroStat}>
-                        <FaCheckCircle />
-                        <span>{summary.done}</span>
-                        <span style={s.heroStatMuted}>{isRu ? `из ${summary.total}` : `of ${summary.total}`}</span>
+                    <div style={s.heroStats}>
+                        <div style={s.heroMiniStat}>
+                            <FaFire />
+                            <span>{summary.streak}</span>
+                            <span style={s.heroStatMuted}>{isRu ? 'серия' : 'streak'}</span>
+                        </div>
+                        <div style={s.heroMiniStat}>
+                            <FaBolt />
+                            <span>{summary.total}</span>
+                            <span style={s.heroStatMuted}>{isRu ? 'всего' : 'total'}</span>
+                        </div>
                     </div>
                 </Motion.section>
 
@@ -282,7 +295,7 @@ function PracticeCard({
     variants,
 }) {
     const level = LEVEL_META[difficulty] ?? LEVEL_META[0];
-    const progress = getProgressData(type, difficulty, index);
+    const stats = getPracticeStats(type, difficulty, index);
     const name = isConstructor ? (isRu ? 'Свой режим' : 'Custom mode') : getLocalized(protocol?.name, isRu);
     const aim = isConstructor ? (isRu ? 'Собери короткий личный протокол' : 'Build a short personal protocol') : getLocalized(protocol?.aim, isRu);
     const s = cardStyles(theme, fSize, level, isConstructor);
@@ -311,12 +324,16 @@ function PracticeCard({
             </div>
 
             {!isConstructor && (
-                <div style={s.progressRow}>
-                    <div style={s.track}>
-                        <div style={{ ...s.fill, width: `${progress.percent}%` }} />
+                <div style={s.practiceStats}>
+                    <div style={s.practiceStatPill}>
+                        <FaFire size={10} />
+                        <span>{isRu ? 'Серия' : 'Streak'}</span>
+                        <b>{stats.streak}</b>
                     </div>
-                    <div style={s.count}>
-                        <span>{isRu ? `${progress.done} из ${progress.all}` : `${progress.done} of ${progress.all}`}</span>
+                    <div style={s.practiceStatPill}>
+                        <FaBolt size={10} />
+                        <span>{isRu ? 'Всего' : 'Total'}</span>
+                        <b>{stats.total}</b>
                     </div>
                 </div>
             )}
@@ -392,29 +409,9 @@ const getLocalized = (value, isRu) => {
     return value ?? '';
 };
 
-const getProgressData = (type, difficulty, ind) => {
-    if (difficulty === 4 || ind < 0) return { done: 0, all: 0, percent: 0 };
-    const data = AppData.recoveryProtocols?.[type]?.[difficulty]?.[ind];
-    if (!Array.isArray(data)) return { done: 0, all: 0, percent: 0 };
-
-    const all = data.length;
-    const done = data.filter(Boolean).length;
-    return { done, all, percent: all > 0 ? Math.round((done / all) * 100) : 0 };
-};
-
-const getSummary = (type) => {
-    const data = AppData.recoveryProtocols?.[type];
-    let done = 0;
-    let total = 0;
-    data?.forEach((category) => {
-        category?.forEach((protocol) => {
-            protocol?.forEach((session) => {
-                total += 1;
-                if (session) done += 1;
-            });
-        });
-    });
-    return { done, total, percent: total > 0 ? Math.round((done / total) * 100) : 0 };
+const getPracticeStats = (type, difficulty, ind) => {
+    if (difficulty === 4 || ind < 0) return { streak: 0, total: 0, days: 0 };
+    return getRecoverySessionStats(type, (session) => recoverySessionMatches(session, difficulty, ind));
 };
 
 const styles = (theme, fSize = 0, meta = PAGE_META[0]) => {
@@ -544,26 +541,35 @@ const styles = (theme, fSize = 0, meta = PAGE_META[0]) => {
             overflow: 'hidden',
             textOverflow: 'ellipsis',
         },
-        heroStat: {
+        heroStats: {
             position: 'relative',
             zIndex: 1,
-            minWidth: '86px',
-            height: '42px',
+            minWidth: '112px',
+            display: 'grid',
+            gridTemplateColumns: '1fr',
+            gap: '6px',
+            flexShrink: 0,
+        },
+        heroMiniStat: {
+            height: '32px',
             borderRadius: '17px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '6px',
+            gap: '5px',
             color: meta.accent,
             fontWeight: 900,
-            fontSize: '16px',
+            fontSize: '14px',
             background: `rgba(${meta.rgb}, 0.1)`,
             border: `1px solid rgba(${meta.rgb}, 0.24)`,
         },
         heroStatMuted: {
             color: subText,
-            fontSize: '12px',
+            fontSize: '10px',
+            fontWeight: 850,
             marginLeft: '-1px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
         },
         sectionHeader: {
             width: '100%',
@@ -683,36 +689,21 @@ const cardStyles = (theme, fSize = 0, level = LEVEL_META[0], isConstructor = fal
             WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
         },
-        progressRow: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
+        practiceStats: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: '8px',
         },
-        track: {
-            position: 'relative',
-            height: '7px',
-            flex: 1,
-            overflow: 'hidden',
-            borderRadius: '999px',
-            background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.09)',
-        },
-        fill: {
-            position: 'absolute',
-            inset: '0 auto 0 0',
-            minWidth: '8px',
-            borderRadius: '999px',
-            background: `linear-gradient(90deg, ${level.accent}, rgba(${level.rgb}, 0.58))`,
-            boxShadow: `0 0 18px rgba(${level.rgb}, 0.25)`,
-        },
-        count: {
-            minWidth: '76px',
-            height: '28px',
-            borderRadius: '14px',
+        practiceStatPill: {
+            minWidth: 0,
+            minHeight: '30px',
+            borderRadius: '13px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: '4px',
             color: level.accent,
-            fontSize: '12px',
+            fontSize: '10px',
             fontWeight: 900,
             background: `rgba(${level.rgb}, 0.1)`,
             border: `1px solid rgba(${level.rgb}, 0.22)`,

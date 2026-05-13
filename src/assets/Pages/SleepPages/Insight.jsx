@@ -230,7 +230,9 @@ const Insight = ({
         <section style={sx().panel}>
             <div style={sx().header}>
                 <div style={sx().botFrame}>
+                    <span style={sx().mascotHalo} />
                     <img src="images/Couch.png" style={sx().mascot} alt="UltyMyBro" />
+                    <span style={sx().mascotShadow} />
                 </div>
 
                 <div style={sx().headerCopy}>
@@ -308,8 +310,17 @@ const Insight = ({
                     50% { opacity: 1; }
                 }
                 @keyframes insightMascotFloat {
-                    0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg); }
-                    50% { transform: translate3d(0, -5px, 0) rotate(1deg); }
+                    0%, 100% { transform: translate3d(0, 0, 0) rotate(-1deg) scale(1); }
+                    38% { transform: translate3d(1px, 0, 0) rotate(1.4deg) scale(1.025); }
+                    68% { transform: translate3d(-1px, 0, 0) rotate(-0.4deg) scale(1.01); }
+                }
+                @keyframes insightMascotGlow {
+                    0%, 100% { opacity: .38; transform: scale(.94); }
+                    50% { opacity: .7; transform: scale(1.06); }
+                }
+                @keyframes insightMascotGround {
+                    0%, 100% { opacity: .34; transform: translateX(-50%) scaleX(.88); }
+                    50% { opacity: .5; transform: translateX(-50%) scaleX(1); }
                 }
                 .insightScroll::-webkit-scrollbar { width: 0; }
             `}</style>
@@ -459,6 +470,7 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             WebkitBackdropFilter: 'blur(18px) saturate(160%)'
         },
         botFrame: {
+            position: 'relative',
             width: 72,
             height: 72,
             borderRadius: 22,
@@ -474,12 +486,39 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
                 ? `0 1px 0 rgba(255,255,255,0.11) inset, 0 0 24px ${p.accentSoft}`
                 : '0 1px 0 rgba(255,255,255,0.82) inset, 0 16px 28px -24px rgba(15,23,42,0.22)'
         },
+        mascotHalo: {
+            position: 'absolute',
+            inset: 8,
+            zIndex: 0,
+            borderRadius: 18,
+            background: `radial-gradient(circle at 48% 42%, ${p.accentSoft}, transparent 68%)`,
+            filter: 'blur(1px)',
+            animation: 'insightMascotGlow 4.8s ease-in-out infinite',
+            pointerEvents: 'none'
+        },
         mascot: {
+            position: 'relative',
+            zIndex: 2,
             width: 72,
             height: 72,
             objectFit: 'contain',
             filter: theme === 'dark' ? 'drop-shadow(0 8px 14px rgba(0,0,0,0.38))' : 'none',
-            animation: 'insightMascotFloat 4.2s ease-in-out infinite'
+            transformOrigin: '50% 92%',
+            animation: 'insightMascotFloat 5.2s ease-in-out infinite'
+        },
+        mascotShadow: {
+            position: 'absolute',
+            left: '50%',
+            bottom: 5,
+            zIndex: 1,
+            width: 38,
+            height: 8,
+            borderRadius: '50%',
+            background: theme === 'dark' ? 'rgba(0,0,0,0.34)' : 'rgba(15,23,42,0.12)',
+            filter: 'blur(5px)',
+            transform: 'translateX(-50%)',
+            animation: 'insightMascotGround 5.2s ease-in-out infinite',
+            pointerEvents: 'none'
         },
         headerCopy: {
             minWidth: 0,
