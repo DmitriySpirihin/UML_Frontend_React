@@ -103,14 +103,14 @@ const NavButton = ({ id, current, icon, onClick, theme }) => {
                 height: 40,
                 borderRadius: 999,
                 color: isActive ? accent.hue : Colors.get('icons', theme),
-                background: isActive ? accent.soft : 'transparent',
-                border: `1px solid ${isActive ? accent.ring : 'transparent'}`,
+                background: 'transparent',
+                border: '1px solid transparent',
                 fontSize: '24px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'color 0.3s ease, background 0.3s ease, border-color 0.3s ease',
-                filter: isActive ? `drop-shadow(0 0 10px ${accent.glow})` : 'none',
+                filter: 'none',
                 boxSizing: 'border-box'
             }}>
                 {React.cloneElement(icon, { fontSize: 'inherit' })}

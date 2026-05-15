@@ -106,7 +106,7 @@ const colors = [
   "#ff758c", "#ff7eb3", "#4facfe", "#00f2fe"
 ];
 
-const TRAINING_ACCENT = '#35C2FF';
+const TRAINING_ACCENT = '#579BC8';
 const TRAINING_BLUE = '#8FA6C8';
 const TRAINING_GREEN = '#14B8A6';
 

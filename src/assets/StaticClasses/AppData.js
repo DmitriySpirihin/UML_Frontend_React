@@ -15,19 +15,19 @@ const DEFAULT_HABIT_CATEGORIES = [
   { key: 'relationships', icon: 'people', label: ['Отношения и отдых', 'Relationships & recreation'], isNegative: false },
   { key: 'bad_habits', icon: 'ban', label: ['Отказ от вредного', 'Bad habits to quit'], isNegative: true }
 ];
-const DEFAULT_HABITS_ACCENT_COLOR = '#149DFF';
-const PREVIOUS_DEFAULT_HABITS_ACCENT_COLOR = '#22C55E';
+const DEFAULT_HABITS_ACCENT_COLOR = '#55DDEB';
+const PREVIOUS_DEFAULT_HABITS_ACCENT_COLORS = ['#22C55E', '#149DFF', '#36D7D2'];
 const LEGACY_HABITS_ACCENT_COLORS = ['#8FAE9B', '#9A92C8', '#8FA6C8', '#7FC8B8', '#68C08F', '#B48BC8', '#D48AB6', '#DC8FA6', '#E4A7C3', '#D8DEE7', '#D6E2F2', '#CFE6FF', '#50D4E5', '#8A7CD6', '#7D92D6', '#39D982'];
 const DEFAULT_SLEEP_ACCENT_COLOR = '#7C6CFF';
 const LEGACY_SLEEP_ACCENT_COLORS = ['#7A86D9', '#6772A6', '#6F8BD6', '#7FC8B8', '#56C7B5', '#6F7DFF'];
-const DEFAULT_TODO_ACCENT_COLOR = '#149DFF';
-const LEGACY_TODO_ACCENT_COLORS = ['#8FA6C8', '#C65F9D', '#7FC8B8', '#C29AD6', '#DE8F9A', '#EAA6B4', '#C8D2DE', '#AFC7E8', '#9FCBFF', '#5DADEC', '#5F8DFF'];
+const DEFAULT_TODO_ACCENT_COLOR = '#2E9DFF';
+const LEGACY_TODO_ACCENT_COLORS = ['#149DFF', '#8FA6C8', '#C65F9D', '#7FC8B8', '#C29AD6', '#DE8F9A', '#EAA6B4', '#C8D2DE', '#AFC7E8', '#9FCBFF', '#5DADEC', '#5F8DFF'];
 const DEFAULT_MENTAL_ACCENT_COLOR = '#A66BFF';
 const LEGACY_MENTAL_ACCENT_COLORS = ['#9A84C8', '#8A7CD6', '#B66DFF'];
 const DEFAULT_RECOVERY_ACCENT_COLOR = '#2FD6BD';
 const LEGACY_RECOVERY_ACCENT_COLORS = ['#74B8AF', '#68C08F', '#78B879', '#5ED28F'];
-const DEFAULT_TRAINING_ACCENT_COLOR = '#35C2FF';
-const LEGACY_TRAINING_ACCENT_COLORS = ['#FC5200', '#FF7A1A', '#9A8580', '#B87963', '#D8785E', '#7D92D6', '#8F7CFF'];
+const DEFAULT_TRAINING_ACCENT_COLOR = '#579BC8';
+const LEGACY_TRAINING_ACCENT_COLORS = ['#5FB6C6', '#FC5200', '#FF7A1A', '#9A8580', '#B87963', '#D8785E', '#7D92D6', '#8F7CFF', '#8A7CD6', '#9A84C8', '#A66BFF', '#BF5AF2'];
 const DEFAULT_SECTION_VISITS = { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
 const DEFAULT_SECTION_LAST_OPENED_AT = { habits: 0, todo: 0, mental: 0, recovery: 0, training: 0, sleep: 0 };
 const COFFEE_SECTION_ACCENT_COLORS = ['#B86A37', '#B87963', '#D8785E', '#D49A5C', '#C8A46F', '#A57926', '#A46C3B', '#A6846B', '#8F6A4A', '#9A8580'];
@@ -79,7 +79,9 @@ const isLegacyTrainingAccentColor = (color) => {
   const r = (int >> 16) & 255;
   const g = (int >> 8) & 255;
   const b = int & 255;
-  return r > 150 && g >= 45 && g < 145 && b < 120;
+  const isOldOrangeBrown = r > 150 && g >= 45 && g < 145 && b < 120;
+  const isPurpleLeaning = b >= 175 && r >= 105 && g <= 170;
+  return isOldOrangeBrown || isPurpleLeaning;
 };
 
 export class AppData{
@@ -218,8 +220,9 @@ static habitCardWidgets = {
         : [...DEFAULT_PREFS];
     }
     else this.isFirstStart = false;
+    this.prefs[1] = 0;
     setLang(this.prefs[0] === 0 ? 'ru' : 'en');
-    setTheme(this.prefs[1] === 1 ? THEME.LIGHT : this.prefs[1] === 2 ? THEME.COFFEE : THEME.DARK);
+    setTheme(THEME.DARK);
     setSoundAndVibro(this.prefs[2],this.prefs[3]);
     setFontSize(this.prefs[4]);
     this.choosenHabitsStartDates = [...data.choosenHabitsStartDates];
@@ -289,7 +292,7 @@ static habitCardWidgets = {
     this.habitCustomCategories = Array.isArray(data.habitCustomCategories) ? data.habitCustomCategories : [];
     this.habitCategoryOverrides = data.habitCategoryOverrides && typeof data.habitCategoryOverrides === 'object' ? data.habitCategoryOverrides : {};
     this.deletedDefaultHabitCategories = Array.isArray(data.deletedDefaultHabitCategories) ? data.deletedDefaultHabitCategories : [];
-    this.habitAccentColor = setHabitAccent(typeof data.habitAccentColor === 'string' && !isCoffeeSectionAccent(data.habitAccentColor) && normalizeAccentHex(data.habitAccentColor, DEFAULT_HABITS_ACCENT_COLOR) !== PREVIOUS_DEFAULT_HABITS_ACCENT_COLOR
+    this.habitAccentColor = setHabitAccent(typeof data.habitAccentColor === 'string' && !isCoffeeSectionAccent(data.habitAccentColor) && !PREVIOUS_DEFAULT_HABITS_ACCENT_COLORS.includes(normalizeAccentHex(data.habitAccentColor, DEFAULT_HABITS_ACCENT_COLOR))
       ? normalizeAccentHex(data.habitAccentColor, DEFAULT_HABITS_ACCENT_COLOR)
       : DEFAULT_HABITS_ACCENT_COLOR).hue;
     this.habitAccentPresets = normalizeAccentPresetList(data.habitAccentPresets);
@@ -357,6 +360,7 @@ static habitCardWidgets = {
     };
   } 
   static async setPrefs(ind,value){
+    if (ind === 1) value = 0;
     this.prefs[ind] = value;
     if (ind === 2 || ind === 3) setSoundAndVibro(this.prefs[2], this.prefs[3]);
     if (ind === 4) setFontSize(value);

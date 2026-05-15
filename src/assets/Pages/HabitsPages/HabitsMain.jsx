@@ -382,8 +382,7 @@ function getCategoryTone(categoryKey) {
 
 function getCategoryIcon(categoryKey, theme) {
     const tone = getCategoryTone(categoryKey);
-    const isNegativeCategory = getCategory(categoryKey)[0] === NEGATIVE_CATEGORY || tone.icon === 'negative';
-    return <span style={{ color: isNegativeCategory ? tone.hue : HABITS_ACCENT.hue, display: 'flex' }}><HabitOutlineIcon iconName={tone.icon} categoryKey={categoryKey} size={16} /></span>;
+    return <span style={{ color: tone.hue, display: 'flex' }}><HabitOutlineIcon iconName={tone.icon} categoryKey={categoryKey} size={16} /></span>;
 }
 
 function getDateKeyWithOffset(offset) {
@@ -1686,7 +1685,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     const categoryTone = categoryBaseTone?.hue ? categoryBaseTone : { ...HABITS_ACCENT, icon: categoryBaseTone.icon };
     const negativeTone = getCategoryTone(NEGATIVE_CATEGORY);
     const statusValue = status ?? 0;
-    const habitColor = isNegative ? negativeTone.hue : HABITS_ACCENT.hue;
+    const habitColor = isNegative ? negativeTone.hue : categoryTone.hue;
     const isLight = theme === 'light' || theme === 'speciallight';
     const widgets = normalizeHabitCardWidgets(habitCardWidgets);
     const showStatsRow = widgets.days || widgets.skips || widgets.streak || widgets.timer;
@@ -2290,7 +2289,7 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
     const isLight = theme === 'light' || theme === 'speciallight';
     const categoryBaseTone = getCategoryTone(categoryKey);
     const isNegativeCategory = getCategory(categoryKey)[0] === NEGATIVE_CATEGORY || categoryBaseTone.icon === 'negative';
-    const tone = isNegativeCategory ? categoryBaseTone : { ...HABITS_ACCENT, icon: categoryBaseTone.icon };
+    const tone = categoryBaseTone;
     const textColor = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
 
@@ -2387,9 +2386,9 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                        style={{ overflowY: 'hidden', overflowX: 'visible', padding: '0 1px', boxSizing: 'border-box' }}
+                        style={{ overflowY: 'hidden', overflowX: 'visible', padding: '4px 1px 2px', boxSizing: 'border-box' }}
                     >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 10 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
                             {children}
                         </div>
                     </motion.div>

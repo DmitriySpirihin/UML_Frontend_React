@@ -8,7 +8,7 @@ import { buildSectionAccent } from '../SectionAccentSettings.jsx';
 
 const TrainingInsight = () => {
   const [theme, setTheme] = useState(theme$.value);
-  const accent = buildSectionAccent(AppData.trainingAccentColor || '#35C2FF', '#35C2FF');
+  const accent = buildSectionAccent(AppData.trainingAccentColor || '#579BC8', '#579BC8');
   const isLight = theme === 'light' || theme === 'speciallight';
 
   useEffect(() => {

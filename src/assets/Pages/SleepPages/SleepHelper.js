@@ -10,12 +10,13 @@ import { AppData } from "../../StaticClasses/AppData";
 }
 */
 
-export const addDayToSleepingLog = (dateString, duration, bedTime, mood, note) => {
+export const addDayToSleepingLog = (dateString, duration, bedTime, mood, note, sleepType = 'night') => {
   const entry = {
     bedtime: bedTime,
     duration: duration,
     mood: mood,
-    note: note ?? ''
+    note: note ?? '',
+    type: sleepType === 'day' ? 'day' : 'night'
   };
 
   // This will add a new entry or replace an existing one for the same dateString

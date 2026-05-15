@@ -87,7 +87,7 @@ const ToDoNew = () => {
   const [visibility, setVisibility] = useState({ difficulty: true, urgency: true, startDate: true, deadLine: true, ...(AppData.todoFieldsVisibility || {}) });
   const [accentColor] = useState(buildTodoAccent(AppData.todoAccentColor || '#149DFF').hue);
   const categoryStripRef = useRef(null);
-  const categoryDragRef = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
+  const categoryDragRef = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false, suppressClickUntil: 0 });
 
   const CATEGORIES = useMemo(() => [...BASE_CATEGORIES, ...customCats], [customCats]);
   const currentCat = CATEGORIES[selectedCatIndex] || CATEGORIES[0];
@@ -201,9 +201,9 @@ const ToDoNew = () => {
       active: true,
       startX: event.clientX,
       scrollLeft: strip.scrollLeft,
-      moved: false
+      moved: false,
+      suppressClickUntil: categoryDragRef.current.suppressClickUntil || 0
     };
-    strip.setPointerCapture?.(event.pointerId);
   };
 
   const handleCategoryPointerMove = (event) => {
@@ -212,7 +212,7 @@ const ToDoNew = () => {
     if (!strip || !drag.active) return;
 
     const delta = event.clientX - drag.startX;
-    if (Math.abs(delta) > 4) {
+    if (Math.abs(delta) > 10) {
       drag.moved = true;
       strip.scrollLeft = drag.scrollLeft - delta;
       event.preventDefault();
@@ -220,15 +220,14 @@ const ToDoNew = () => {
   };
 
   const handleCategoryPointerEnd = (event) => {
-    categoryStripRef.current?.releasePointerCapture?.(event.pointerId);
+    const wasDragging = categoryDragRef.current.moved;
     categoryDragRef.current.active = false;
-    window.setTimeout(() => {
-      categoryDragRef.current.moved = false;
-    }, 80);
+    categoryDragRef.current.moved = false;
+    if (wasDragging) categoryDragRef.current.suppressClickUntil = performance.now() + 180;
   };
 
   const ignoreCategoryTapAfterDrag = (event) => {
-    if (!categoryDragRef.current.moved) return false;
+    if (performance.now() > (categoryDragRef.current.suppressClickUntil || 0)) return false;
     event.preventDefault();
     event.stopPropagation();
     return true;

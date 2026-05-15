@@ -101,12 +101,12 @@ import {
     TbYoga
 } from 'react-icons/tb';
 
-export const DEFAULT_HABITS_ACCENT_COLOR = '#149DFF';
+export const DEFAULT_HABITS_ACCENT_COLOR = '#55DDEB';
 
 export const HABIT_ACCENT_PRESETS = [
-    '#149DFF',
+    '#55DDEB',
+    '#2FC7D7',
     '#66D9E8',
-    '#22C55E',
     '#8D94B8',
     '#2FD6BD',
     '#7C6CFF',

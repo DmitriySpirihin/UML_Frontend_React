@@ -17,7 +17,9 @@ import {
     getTrainingPageBackground,
     getTrainingPanelBackground,
     getTrainingPanelBorder,
-    getTrainingPanelShadow
+    getTrainingPanelShadow,
+    getTrainingGlassSurface,
+    getTrainingPressMotion
 } from './TrainingVisuals.js'
 
 // --- HELPER ---
@@ -37,7 +39,7 @@ const TrainingProgramm = () => {
 
     const [theme, setthemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-    const [fSize, setFSize] = useState(AppData.prefs[1]);
+    const [fSize, setFSize] = useState(AppData.prefs[4]);
 
     const [showAddPanel, setShowAddPanel] = useState(false);
     const [needRedact, setNeedRedact] = useState(false);
@@ -193,8 +195,10 @@ const TrainingProgramm = () => {
                                     layout
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
+                                    {...getTrainingPressMotion(1.006, 0.988)}
                                     style={{
                                         ...styles(theme).card,
+                                        ...getTrainingGlassSurface(theme, getTrainingAccent(), isExpanded),
                                         background: isExpanded
                                             ? `linear-gradient(145deg, rgba(${getTrainingAccent().rgb}, 0.04), rgba(${getTrainingAccent().rgb}, 0.015)), ${getTrainingPanelBackground(theme)}`
                                             : getTrainingPanelBackground(theme),
@@ -451,12 +455,16 @@ const DayItem = ({
 }) => (
     <Motion.div
         layout
+        {...getTrainingPressMotion(1.004, 0.99)}
         style={{
             ...styles(theme).card,
-            backgroundColor: active ? (theme === 'light' ? '#fff' : 'rgba(255,255,255,0.05)') : 'transparent',
-            border: active ? `1px solid ${Colors.get('border', theme)}` : '1px solid transparent',
+            ...getTrainingGlassSurface(theme, getTrainingAccent(), active),
+            background: active
+                ? `linear-gradient(145deg, rgba(${getTrainingAccent().rgb},0.12), rgba(255,255,255,0.05))`
+                : (theme === 'light' ? 'rgba(255,255,255,0.54)' : 'rgba(255,255,255,0.035)'),
+            border: active ? `1px solid ${getTrainingPanelBorder(theme, getTrainingAccent(), true)}` : `1px solid ${getTrainingPanelBorder(theme, getTrainingAccent())}`,
             marginBottom: '0',
-            boxShadow: active ? (theme === 'light' ? '0 4px 12px rgba(0,0,0,0.05)' : 'none') : 'none'
+            boxShadow: active ? getTrainingPanelShadow(theme, getTrainingAccent(), true) : 'none'
         }}
     >
         <div style={{ padding: '12px 15px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
@@ -592,12 +600,21 @@ const DayItem = ({
 
 const ActionButton = ({ icon, onClick, theme, label, isDanger }) => (
     <Motion.div
-        whileTap={{ scale: 0.95 }} onClick={onClick}
+        whileHover={{ y: -2, scale: 1.02 }}
+        whileTap={{ scale: 0.95, y: 1 }}
+        transition={{ type: 'spring', stiffness: 430, damping: 30 }}
+        onClick={onClick}
         style={{
             flex: 1, padding: '8px 12px', borderRadius: '12px', minWidth: '80px',
-            backgroundColor: isDanger ? 'rgba(255, 77, 77, 0.1)' : (theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)'),
+            background: isDanger ? 'rgba(255, 77, 77, 0.12)' : getTrainingPanelBackground(theme),
+            border: `1px solid ${isDanger ? 'rgba(255,77,77,0.26)' : getTrainingPanelBorder(theme, getTrainingAccent())}`,
+            boxShadow: isDanger ? 'none' : getTrainingPanelShadow(theme, getTrainingAccent()),
+            backdropFilter: 'blur(16px) saturate(1.12)',
+            WebkitBackdropFilter: 'blur(16px) saturate(1.12)',
             color: isDanger ? '#ff4d4d' : Colors.get('subText', theme),
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer'
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer',
+            WebkitTapHighlightColor: 'transparent',
+            userSelect: 'none'
         }}
     >
         {icon}
@@ -652,15 +669,16 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
     card: {
         width: '100%', margin: '0 auto 14px auto',
         borderRadius: '22px', overflow: 'hidden',
-        background: getTrainingPanelBackground(theme),
-        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
-        boxShadow: getTrainingPanelShadow(theme, accent),
+        ...getTrainingGlassSurface(theme, accent),
     },
     groupHeader: {
         display: 'flex', flexDirection: 'row',
         padding: '16px', alignItems: "center", justifyContent: "space-between",
         gap: '12px',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        userSelect: 'none',
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation'
     },
     programHeaderLayout: {
         display: 'grid',
@@ -716,8 +734,10 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
     exerciseRow: {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '10px', borderRadius: '12px',
-        backgroundColor: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
-        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`
+        background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.055)',
+        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)'
     },
     exerciseIcon: {
         width: '32px', height: '32px', borderRadius: '50%',

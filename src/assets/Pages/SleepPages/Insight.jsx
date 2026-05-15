@@ -153,7 +153,7 @@ const Insight = ({
         { type: INSIGHT_TYPES.TIME_MANAGEMENT, label: langIndex === 0 ? 'Задачи' : 'Tasks', icon: <FaListUl />, accent: buildTodoAccent(AppData.todoAccentColor || '#149DFF') },
         { type: INSIGHT_TYPES.HABITS, label: langIndex === 0 ? 'Привычки' : 'Habits', icon: <FaMedal />, accent: buildHabitsAccent(AppData.habitAccentColor || '#22C55E') },
         { type: INSIGHT_TYPES.FOCUS_MINDSET, label: langIndex === 0 ? 'Ум' : 'Mind', icon: <FaBrain />, accent: buildSectionAccent(AppData.mentalAccentColor || '#A66BFF', '#A66BFF') },
-        { type: INSIGHT_TYPES.PROGRESS_ANALYSE, label: langIndex === 0 ? 'Тренировки' : 'Training', icon: <MdFitnessCenter />, accent: buildSectionAccent(AppData.trainingAccentColor || '#35C2FF', '#35C2FF') },
+        { type: INSIGHT_TYPES.PROGRESS_ANALYSE, label: langIndex === 0 ? 'Тренировки' : 'Training', icon: <MdFitnessCenter />, accent: buildSectionAccent(AppData.trainingAccentColor || '#579BC8', '#579BC8') },
         { type: INSIGHT_TYPES.RECOVERY_RATE, label: langIndex === 0 ? 'Антистресс' : 'Reset', icon: <MdOutlineSelfImprovement />, accent: buildSectionAccent(AppData.recoveryAccentColor || '#2FD6BD', '#2FD6BD') },
         { type: INSIGHT_TYPES.SLEEP, label: langIndex === 0 ? 'Сон' : 'Sleep', icon: <MdBed />, accent: buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF') },
     ]), [langIndex]);

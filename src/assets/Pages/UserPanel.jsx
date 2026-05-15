@@ -192,7 +192,7 @@ const UserPanel = () => {
     const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF');
     const habitsAccent = buildHabitsAccent(AppData.habitAccentColor || '#22C55E');
     const todoAccent = buildTodoAccent(AppData.todoAccentColor || '#149DFF');
-    const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || '#35C2FF', '#35C2FF');
+    const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || '#579BC8', '#579BC8');
     const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || '#A66BFF', '#A66BFF');
     const recoveryAccent = buildSectionAccent(AppData.recoveryAccentColor || '#2FD6BD', '#2FD6BD');
     const profileSections = useMemo(() => ([
@@ -229,9 +229,10 @@ const UserPanel = () => {
         setPage(pageId);
     };
 
+    const heroAccent = '#B7F3FF';
+    const heroAccentRgb = '183,243,255';
     const s = styles(theme);
-    const accent = hasPremium ? '#9FB4C4' : Colors.get('accent', theme);
-    const heroAccent = hasPremium ? '#9FB4C4' : '#5fb6c6';
+    const accent = heroAccent;
 
     return (
         <MotionDiv
@@ -266,14 +267,14 @@ const UserPanel = () => {
                 <div style={{
                     ...s.heroSection,
                     background: s.isLight
-                        ? `linear-gradient(145deg, rgba(255,255,255,0.96) 0%, ${heroAccent}12 58%, rgba(127,200,184,0.08) 100%)`
-                        : `linear-gradient(145deg, rgba(23,27,31,0.96) 0%, ${heroAccent}14 54%, rgba(127,200,184,0.08) 100%)`,
-                    borderColor: `${heroAccent}22`,
+                        ? `linear-gradient(145deg, rgba(255,255,255,0.76) 0%, rgba(${heroAccentRgb},0.105) 48%, rgba(235,242,246,0.72) 100%)`
+                        : `linear-gradient(145deg, rgba(${heroAccentRgb},0.17) 0%, rgba(22,31,38,0.68) 42%, rgba(14,20,25,0.62) 100%)`,
+                    borderColor: s.isLight ? `rgba(${heroAccentRgb},0.16)` : `rgba(${heroAccentRgb},0.15)`,
                     boxShadow: s.isLight
-                        ? `0 16px 38px -34px ${heroAccent}45, 0 1px 0 rgba(255,255,255,0.72) inset`
-                        : `0 18px 40px -34px ${heroAccent}50, 0 1px 0 rgba(255,255,255,0.055) inset`
+                        ? '0 22px 50px -34px rgba(15,23,42,0.30), 0 1px 0 rgba(255,255,255,0.88) inset, 0 0 0 1px rgba(255,255,255,0.32) inset'
+                        : '0 24px 58px -38px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.11) inset, 0 0 0 1px rgba(255,255,255,0.035) inset'
                 }}>
-                    <div style={{ ...s.heroColorWash, background: `radial-gradient(circle, ${heroAccent}22 0%, transparent 62%)` }} />
+                    <div style={{ ...s.heroColorWash, background: `radial-gradient(circle, rgba(${heroAccentRgb},0.24) 0%, transparent 62%)` }} />
                     <div style={s.heroTopRow}>
                         <div style={{ ...s.avatarWrapper, borderColor: accent }}>
                             {UserData.photo ? (
@@ -295,9 +296,9 @@ const UserPanel = () => {
                                 {stats.body.gender !== undefined && (
                                     <div style={{
                                         ...s.genderBadge,
-                                        backgroundColor: stats.body.gender === 0 ? 'rgba(95, 182, 198, 0.14)' : 'rgba(198, 95, 157, 0.14)',
-                                        color: stats.body.gender === 0 ? '#5fb6c6' : '#c65f9d',
-                                        borderColor: stats.body.gender === 0 ? 'rgba(95, 182, 198, 0.32)' : 'rgba(198, 95, 157, 0.32)'
+                                        backgroundColor: stats.body.gender === 0 ? 'rgba(183, 243, 255, 0.13)' : 'rgba(198, 95, 157, 0.14)',
+                                        color: stats.body.gender === 0 ? heroAccent : '#c65f9d',
+                                        borderColor: stats.body.gender === 0 ? 'rgba(183, 243, 255, 0.30)' : 'rgba(198, 95, 157, 0.32)'
                                     }}>
                                         {stats.body.gender === 0 ? <IoMdMale size={14}/> : <IoMdFemale size={14}/>}
                                     </div>
@@ -976,17 +977,21 @@ const InviteFriendCard = ({ lang, theme, onClick, empty }) => {
 const MetricChip = ({ icon, label, value, unit, color, series, theme, onClick }) => (
     <MotionButton
         type="button"
-        whileTap={{ scale: 0.97 }}
+        whileHover={{ y: -3, scale: 1.01 }}
+        whileTap={{ scale: 0.97, y: 1 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 30 }}
         onClick={onClick}
         style={{
             ...styles(theme).metricChip,
             background: styles(theme).isLight
-                ? `linear-gradient(145deg, rgba(255,255,255,0.95) 0%, ${color}12 100%)`
-                : `linear-gradient(145deg, rgba(22,25,28,0.96) 0%, rgba(18,20,23,0.92) 56%, ${color}14 100%)`,
-            borderColor: `${color}14`,
+                ? `radial-gradient(180px 120px at 18% 12%, ${color}1c, transparent 70%), linear-gradient(145deg, rgba(255,255,255,0.70), rgba(255,255,255,0.40) 55%, ${color}10)`
+                : `radial-gradient(190px 130px at 18% 12%, ${color}24, transparent 72%), linear-gradient(145deg, rgba(31,44,54,0.54), rgba(16,23,29,0.46) 54%, rgba(8,12,16,0.54))`,
+            borderColor: `${color}28`,
             boxShadow: styles(theme).isLight
-                ? `0 18px 36px -30px ${color}40`
-                : `0 22px 42px -34px ${color}52`
+                ? `0 1px 0 rgba(255,255,255,0.90) inset, 0 20px 42px -32px ${color}55`
+                : `0 1px 0 rgba(255,255,255,0.09) inset, 0 24px 50px -32px rgba(0,0,0,0.78), 0 0 32px ${color}18`,
+            backdropFilter: 'blur(24px) saturate(165%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(165%)'
         }}
     >
         <div style={{ ...styles(theme).metricAccent, background: `linear-gradient(90deg, ${color}, transparent)` }} />
@@ -1018,7 +1023,14 @@ const BodyPills = ({ body, lang, theme, onEdit }) => {
     ];
 
     return (
-        <MotionButton type="button" whileTap={{ scale: 0.98 }} onClick={onEdit} style={s.bodyPillsCard}>
+        <MotionButton
+            type="button"
+            whileHover={{ y: -2, scale: 1.004 }}
+            whileTap={{ scale: 0.98, y: 1 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+            onClick={onEdit}
+            style={s.bodyPillsCard}
+        >
             <div style={s.bodyPillsTop}>
                 <span style={s.bodyPillsTitle}>{lang === 0 ? 'Личные данные' : 'Personal data'}</span>
                 <span style={s.bodyPillsEdit}><MdEdit size={15} /></span>
@@ -1148,7 +1160,9 @@ const styles = (theme) => {
             borderRadius: '24px',
             border: '1px solid',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            backdropFilter: 'blur(28px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(28px) saturate(170%)'
         },
         heroColorWash: {
             position: 'absolute',
@@ -1163,20 +1177,26 @@ const styles = (theme) => {
         profileDock: {
             position: 'fixed',
             left: '50%',
-            bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
+            bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
             transform: 'translateX(-50%)',
             zIndex: 40,
-            width: '230px',
-            height: '64px',
-            display: 'flex',
+            width: 'calc(100vw - 72px)',
+            maxWidth: '360px',
+            height: '58px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            justifyItems: 'center',
             alignItems: 'center',
-            justifyContent: 'space-around',
-            padding: '10px 14px',
+            padding: '7px 10px',
             boxSizing: 'border-box',
             borderRadius: '999px',
-            background: panelStrong,
-            border: `1px solid ${border}`,
-            boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)',
+            background: isLight
+                ? 'linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42))'
+                : 'linear-gradient(135deg, rgba(19,29,36,0.64), rgba(8,13,17,0.50))',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.28)' : 'rgba(190,220,235,0.14)'}`,
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 20px 44px -30px rgba(15,23,42,0.28)'
+                : '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px -20px rgba(0,0,0,0.76), 0 0 28px rgba(183,243,255,0.08)',
             backdropFilter: 'blur(24px) saturate(180%)',
             WebkitBackdropFilter: 'blur(24px) saturate(180%)'
         },
@@ -1187,7 +1207,7 @@ const styles = (theme) => {
             border: '1px solid transparent',
             cursor: 'pointer',
             background: 'transparent',
-            color: sub,
+            color: '#B7F3FF',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1197,7 +1217,8 @@ const styles = (theme) => {
             outline: 'none',
             appearance: 'none',
             WebkitAppearance: 'none',
-            WebkitTapHighlightColor: 'transparent'
+            WebkitTapHighlightColor: 'transparent',
+            boxShadow: 'none'
         },
         heroIdentity: { flex: 1, minWidth: 0, textAlign: 'left' },
         heroEyebrow: {
@@ -1374,7 +1395,8 @@ const styles = (theme) => {
             color: text,
             textAlign: 'left',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            WebkitTapHighlightColor: 'transparent'
         },
         metricAccent: {
             position: 'absolute',
@@ -1419,12 +1441,12 @@ const styles = (theme) => {
             padding: '14px 14px 10px',
             margin: '0 0 26px',
             background: isLight
-                ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(247,249,252,0.88))'
-                : 'linear-gradient(145deg, rgba(24,27,31,0.98), rgba(16,18,21,0.94))',
-            border: `1px solid ${border}`,
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.70), rgba(255,255,255,0.40) 52%, rgba(237,246,250,0.58))'
+                : 'linear-gradient(145deg, rgba(32,45,55,0.56), rgba(18,26,32,0.46) 52%, rgba(10,15,20,0.52))',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.22)' : 'rgba(190,220,235,0.13)'}`,
             boxShadow: isLight
-                ? '0 1px 0 rgba(255,255,255,0.92) inset, 0 18px 34px -30px rgba(15,23,42,0.32)'
-                : '0 1px 0 rgba(255,255,255,0.055) inset, 0 18px 38px -30px rgba(0,0,0,0.88)',
+                ? '0 1px 0 rgba(255,255,255,0.90) inset, 0 20px 42px -32px rgba(15,23,42,0.28)'
+                : '0 1px 0 rgba(255,255,255,0.10) inset, 0 24px 50px -32px rgba(0,0,0,0.78), 0 0 36px rgba(183,243,255,0.05)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'stretch',
@@ -1433,7 +1455,10 @@ const styles = (theme) => {
             fontFamily: 'inherit',
             cursor: 'pointer',
             minWidth: 0,
-            textAlign: 'left'
+            textAlign: 'left',
+            backdropFilter: 'blur(26px) saturate(165%)',
+            WebkitBackdropFilter: 'blur(26px) saturate(165%)',
+            overflow: 'hidden'
         },
         bodyPillsTop: {
             display: 'flex',

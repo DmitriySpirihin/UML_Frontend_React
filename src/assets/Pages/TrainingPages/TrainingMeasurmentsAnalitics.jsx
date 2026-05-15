@@ -8,7 +8,7 @@ import {
   getTrainingAccent,
   getTrainingPanelBackground,
   getTrainingPanelBorder,
-  getTrainingPanelShadow
+  getTrainingGlassSurface
 } from './TrainingVisuals.js';
 
 const metricLabels = [
@@ -72,8 +72,8 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
       {/* --- CHART CARD --- */}
       <div style={{ 
           width: '100%', minHeight: '310px', 
+          ...getTrainingGlassSurface(theme, accent),
           background: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`,
-          boxShadow: getTrainingPanelShadow(theme, accent),
           padding: '15px', boxSizing: 'border-box',
           display: 'flex', flexDirection: 'column', alignItems: 'center'
       }}>
@@ -110,7 +110,9 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
                     <Motion.div
                         key={idx}
                         onClick={() => setMetricIndex(idx)}
+                        whileHover={{ y: -1, scale: 1.025 }}
                         whileTap={{ scale: 0.95 }}
+                        transition={{ type: 'spring', stiffness: 430, damping: 30 }}
                         style={{
                             padding: '6px 14px', borderRadius: '20px',
 	                            background: isActive ? accent.soft : (isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)'),
@@ -153,7 +155,14 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
             {periodLabels.map((label, idx) => {
                 const isActive = periodIndex === idx;
                 return (
-                    <div key={idx} onClick={() => setPeriodIndex(idx)} style={{ flex: 1, position: 'relative', cursor: 'pointer', textAlign: 'center', padding: '8px 0' }}>
+                    <Motion.div
+                      key={idx}
+                      onClick={() => setPeriodIndex(idx)}
+                      whileHover={{ y: -1 }}
+                      whileTap={{ scale: 0.96 }}
+                      transition={{ type: 'spring', stiffness: 430, damping: 30 }}
+                      style={{ flex: 1, position: 'relative', cursor: 'pointer', textAlign: 'center', padding: '8px 0', WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
+                    >
                         {isActive && (
                             <Motion.div
                                 layoutId="periodTab"
@@ -167,15 +176,15 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
 	                        <span style={{ position: 'relative', zIndex: 1, fontSize: '13px', fontWeight: isActive ? '800' : '600', color: isActive ? Colors.get('mainText', theme) : Colors.get('subText', theme) }}>
                             {label[langIndex]}
                         </span>
-                    </div>
+                    </Motion.div>
                 )
             })}
         </div>
 
         <div style={{ 
             padding: '18px', borderRadius: '30px', 
+              ...getTrainingGlassSurface(theme, accent),
 	            background: cardBg, border: `1px solid ${borderColor}`,
-              boxShadow: getTrainingPanelShadow(theme, accent),
 	            display: 'grid',
               gridTemplateColumns: 'minmax(0, 1fr) 210px',
               gap: '16px',

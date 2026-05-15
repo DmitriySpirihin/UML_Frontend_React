@@ -50,11 +50,11 @@ export const setIsServerAvailable = (state) => isServerAvailable$.next(state);
 
 export const setConfirmationPanel = (state) => confirmationPanel$.next(state);
 export const setConfirmationAction = (action) => confirmationAction$.next(action);
-export const setTheme = (theme) => {
-  theme$.next(theme);
-  Colors.setTheme(theme);
-  console.log(theme);
-  globalTheme$.next(theme === THEME.LIGHT ? 'light' : 'dark');
+export const setTheme = () => {
+  const lockedTheme = THEME.DARK;
+  theme$.next(lockedTheme);
+  Colors.setTheme(lockedTheme);
+  globalTheme$.next('dark');
 };
 export const setLang = (lang) => lang$.next(lang);
 export const setFontSize = (fontSize) => {

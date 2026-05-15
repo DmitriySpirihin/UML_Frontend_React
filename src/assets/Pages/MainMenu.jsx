@@ -5,11 +5,10 @@ import { theme$, lang$, devMessage$, isPasswordCorrect$, premium$, isValidation$
 import { AppData, UserData, getSectionStreak } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
-import { FaRunning, FaBrain, FaBed, FaListUl, FaRobot,FaStar, FaMedal, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift , FaTelegramPlane, FaSlidersH, FaCheck } from "react-icons/fa";
-import { MdOutlineSelfImprovement } from "react-icons/md";
+import { FaRobot, FaStar, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift, FaTelegramPlane, FaSlidersH, FaCheck } from "react-icons/fa";
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 import { sendReferalLink } from '../StaticClasses/PaymentService'
-import MainMenuRedesign from './MainMenuRedesign'
+import MainMenuRedesign, { MENU_ICON_MAP } from './MainMenuRedesign'
 import { playEffects } from '../StaticClasses/Effects'
 import { buildSleepAccent } from './SleepPages/SleepVisuals'
 import { buildTodoAccent } from './ToDoPages/ToDoVisuals.js'
@@ -22,6 +21,11 @@ const menuSectionMap = {
     RecoveryMain: 'recovery',
     TrainingMain: 'training',
     SleepMain: 'sleep'
+};
+
+const menuIcon = (id) => {
+    const Icon = MENU_ICON_MAP[id];
+    return Icon ? <Icon /> : null;
 };
 
 const MainMenu = () => {
@@ -73,17 +77,17 @@ const openGuide = () => {
     const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF');
     const todoAccent = buildTodoAccent(AppData.todoAccentColor || '#149DFF');
     const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || '#A66BFF', '#A66BFF');
-    const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || '#35C2FF', '#35C2FF');
+    const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || '#579BC8', '#579BC8');
     const recoveryAccent = buildSectionAccent(AppData.recoveryAccentColor || '#2FD6BD', '#2FD6BD');
 
     const initialMenuItems = [
         { id: 'MainCard', icon: null, title: lang === 0 ? '' : '', subtitle: lang === 0 ? '' : '', color: '#00ff6600' },
-        { id: 'ToDoMain', icon: <FaListUl />, title: lang === 0 ? 'Задачи' : 'Tasks', subtitle: lang === 0 ? 'Планы и дела' : 'Plans and tasks', color: todoAccent.hue },
-        { id: 'HabitsMain', icon: <FaMedal />, title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Ежедневные ритуалы' : 'Daily rituals', color: habitAccent.hue },
-        { id: 'MentalMain', icon: <FaBrain />, title: lang === 0 ? 'Тренировка ума' : 'Mind Training', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: mentalAccent.hue },
-        { id: 'TrainingMain', icon: <FaRunning />, title: lang === 0 ? 'Дневник тренировок' : 'Training Log', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: trainingAccent.hue},
-        { id: 'RecoveryMain', icon: <MdOutlineSelfImprovement />, title: lang === 0 ? 'Антистресс' : 'Stress Reset', subtitle: lang === 0 ? 'Дыхание, медитации, холод' : 'Breathing, meditation, cold', color: recoveryAccent.hue},
-        { id: 'SleepMain', icon: <FaBed />, title: lang === 0 ? 'Качество сна' : 'Sleep Quality', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: sleepAccent.hue}
+        { id: 'ToDoMain', icon: menuIcon('ToDoMain'), title: lang === 0 ? 'Задачи' : 'Tasks', subtitle: lang === 0 ? 'Планы и дела' : 'Plans and tasks', color: todoAccent.hue },
+        { id: 'HabitsMain', icon: menuIcon('HabitsMain'), title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Ежедневные ритуалы' : 'Daily rituals', color: habitAccent.hue },
+        { id: 'MentalMain', icon: menuIcon('MentalMain'), title: lang === 0 ? 'Тренировка ума' : 'Mind Training', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: mentalAccent.hue },
+        { id: 'TrainingMain', icon: menuIcon('TrainingMain'), title: lang === 0 ? 'Дневник тренировок' : 'Training Log', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: trainingAccent.hue},
+        { id: 'RecoveryMain', icon: menuIcon('RecoveryMain'), title: lang === 0 ? 'Антистресс' : 'Stress Reset', subtitle: lang === 0 ? 'Дыхание, медитации, холод' : 'Breathing, meditation, cold', color: recoveryAccent.hue},
+        { id: 'SleepMain', icon: menuIcon('SleepMain'), title: lang === 0 ? 'Качество сна' : 'Sleep Quality', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: sleepAccent.hue}
     ];
 
     useEffect(() => {
@@ -953,8 +957,8 @@ function getInfo(id) {
     if (streak > 0) return `${streak}🔥`;
     if (id === 'HabitsMain') return AppData.choosenHabits.length > 0 ? AppData.choosenHabits.length.toString() : '';
     else if (id === 'TrainingMain') {
-        const tonnage = getCurrentCycleAnalysis().currentTonnage;
-        return tonnage > 0 ? (tonnage / 1000).toFixed(1) + (AppData.prefs[0] === 0 ? 'т' : 't') : '';
+        const sessions = getCurrentCycleAnalysis().currentCycle?.length || 0;
+        return sessions > 0 ? sessions.toString() : '';
     }
     else if (id === 'ToDoMain') return AppData.todoList.length > 0 ? AppData.todoList.length.toString() : '';
     else if (id === 'SleepMain') return getTodaySleepHours().toString();
@@ -993,7 +997,6 @@ export default MainMenu
 
 const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues, onToggleHeroWidget, onToggleSectionVisibility, theme, lang }) => {
     const isDark = theme === 'dark';
-    const bg = Colors.get('simplePanel', theme);
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
     const selectedHeroIds = Array.isArray(heroValues) && heroValues.length > 0 ? heroValues : ['HabitsMain', 'TrainingMain', 'MentalMain'];
@@ -1001,6 +1004,20 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
     const visibleSectionsCount = items.filter(item => !sectionStates[item.id]?.hidden).length;
     const modalAccent = '#8FA6C8';
     const alpha = (color, opacity) => `${color}${opacity}`;
+    const glassPanel = isDark
+        ? `linear-gradient(145deg, ${alpha(modalAccent, '16')}, rgba(255,255,255,0.035) 46%, rgba(7,11,15,0.34))`
+        : `linear-gradient(145deg, rgba(255,255,255,0.72), ${alpha(modalAccent, '10')} 48%, rgba(239,246,249,0.62))`;
+    const glassButton = (enabled, color = modalAccent) => ({
+        border: `1px solid ${enabled ? alpha(color, '46') : (isDark ? 'rgba(190,220,235,0.10)' : 'rgba(15,23,42,0.08)')}`,
+        background: enabled
+            ? (isDark ? `linear-gradient(135deg, ${alpha(color, '1f')}, rgba(255,255,255,0.035))` : `linear-gradient(135deg, ${alpha(color, '1a')}, rgba(255,255,255,0.55))`)
+            : (isDark ? 'linear-gradient(135deg, rgba(255,255,255,0.045), rgba(255,255,255,0.018))' : 'linear-gradient(135deg, rgba(255,255,255,0.52), rgba(15,23,42,0.018))'),
+        boxShadow: enabled
+            ? `0 1px 0 rgba(255,255,255,0.08) inset, 0 16px 28px -24px ${alpha(color, '88')}`
+            : '0 1px 0 rgba(255,255,255,0.04) inset',
+        backdropFilter: 'blur(18px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(18px) saturate(150%)'
+    });
 
     return (
         <AnimatePresence>
@@ -1128,8 +1145,13 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                 <div style={{
                                     padding: '10px',
                                     borderRadius: 18,
-                                    background: isDark ? 'rgba(255,255,255,0.026)' : 'rgba(15,23,42,0.026)',
-                                    border: `1px solid ${Colors.get('border', theme)}55`
+                                    background: glassPanel,
+                                    border: `1px solid ${isDark ? 'rgba(190,220,235,0.13)' : 'rgba(148,163,184,0.18)'}`,
+                                    boxShadow: isDark
+                                        ? '0 1px 0 rgba(255,255,255,0.08) inset, 0 18px 38px -28px rgba(0,0,0,0.72)'
+                                        : '0 1px 0 rgba(255,255,255,0.88) inset, 0 18px 38px -30px rgba(15,23,42,0.24)',
+                                    backdropFilter: 'blur(22px) saturate(160%)',
+                                    WebkitBackdropFilter: 'blur(22px) saturate(160%)'
                                 }}>
                                     <div style={{
                                         color: sub,
@@ -1151,8 +1173,7 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                                 style={{
                                                     minHeight: 34,
                                                     borderRadius: 13,
-                                                    border: `1px solid ${selectedItem ? alpha(modalAccent, '38') : Colors.get('border', theme)}`,
-                                                    background: selectedItem ? alpha(modalAccent, '0f') : bg,
+                                                    ...glassButton(Boolean(selectedItem), selectedItem?.color || modalAccent),
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
@@ -1181,13 +1202,14 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                         <Motion.button
                                             key={`hero-${item.id}`}
                                             type="button"
+                                            whileHover={disabledByLimit ? undefined : { y: -1, scale: 1.006 }}
                                             whileTap={disabledByLimit ? undefined : { scale: 0.985 }}
+                                            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
                                             onClick={() => { if (!disabledByLimit) onToggleHeroWidget(item.id); }}
                                             style={{
                                                 minHeight: 56,
                                                 borderRadius: 18,
-                                                border: `1px solid ${enabled ? alpha(modalAccent, '42') : Colors.get('border', theme)}`,
-                                                background: enabled ? alpha(modalAccent, '0f') : (isDark ? 'rgba(255,255,255,0.026)' : 'rgba(15,23,42,0.022)'),
+                                                ...glassButton(enabled, item.color || modalAccent),
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: 13,
@@ -1199,7 +1221,7 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                             appearance: 'none',
                                             WebkitAppearance: 'none',
                                             WebkitTapHighlightColor: 'transparent',
-                                            boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset'
+                                            boxShadow: disabledByLimit ? '0 1px 0 rgba(255,255,255,0.035) inset' : glassButton(enabled, item.color || modalAccent).boxShadow
                                             }}
                                         >
                                             <div style={{ color: item.color, width: 25, display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
@@ -1238,13 +1260,14 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                         <Motion.button
                                             key={item.id}
                                             type="button"
-                                            whileTap={{ scale: 0.985 }}
+                                            whileHover={{ y: -1, scale: 1.006 }}
+                                            whileTap={{ scale: 0.985, y: 1 }}
+                                            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
                                             onClick={() => onToggleSectionVisibility(item.id)}
                                             style={{
                                                 minHeight: 56,
                                                 borderRadius: 18,
-                                                border: `1px solid ${enabled ? alpha(modalAccent, '42') : Colors.get('border', theme)}`,
-                                                background: enabled ? alpha(modalAccent, '0f') : (isDark ? 'rgba(255,255,255,0.026)' : 'rgba(15,23,42,0.022)'),
+                                                ...glassButton(enabled, item.color || modalAccent),
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: 13,

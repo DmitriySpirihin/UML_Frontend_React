@@ -187,6 +187,8 @@ const AddHabitPanel = () => {
     const [iconSearchQuery, setIconSearchQuery] = useState('');
     const [categoriesVersion, setCategoriesVersion] = useState(0);
     const [showDeletedCategories, setShowDeletedCategories] = useState(false);
+    const categoryStripRef = useRef(null);
+    const categoryDragRef = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false, suppressClickUntil: 0 });
     const allCategories = useMemo(() => AppData.GetAllHabitCategories(langIndex, true), [langIndex, categoriesVersion]);
     const activeCategories = useMemo(() => allCategories.map((cat, idx) => ({ ...cat, _idx: idx })).filter(cat => !cat.isDeleted), [allCategories]);
     const deletedCategories = useMemo(() => allCategories.map((cat, idx) => ({ ...cat, _idx: idx })).filter(cat => cat.isDeleted), [allCategories]);
@@ -513,8 +515,55 @@ const AddHabitPanel = () => {
 
     const removeGoal = (i) => setGoals(prev => prev.filter((_, idx) => idx !== i));
 
+    const handleCategoryPointerDown = (event) => {
+        const strip = categoryStripRef.current;
+        if (!strip) return;
+        categoryDragRef.current = {
+            active: true,
+            startX: event.clientX,
+            scrollLeft: strip.scrollLeft,
+            moved: false,
+            suppressClickUntil: categoryDragRef.current.suppressClickUntil || 0
+        };
+    };
+
+    const handleCategoryPointerMove = (event) => {
+        const strip = categoryStripRef.current;
+        const drag = categoryDragRef.current;
+        if (!strip || !drag.active) return;
+
+        const delta = event.clientX - drag.startX;
+        if (Math.abs(delta) > 10) {
+            drag.moved = true;
+            strip.scrollLeft = drag.scrollLeft - delta;
+            event.preventDefault();
+        }
+    };
+
+    const handleCategoryPointerEnd = (event) => {
+        const wasDragging = categoryDragRef.current.moved;
+        categoryDragRef.current.active = false;
+        categoryDragRef.current.moved = false;
+        if (wasDragging) categoryDragRef.current.suppressClickUntil = performance.now() + 180;
+    };
+
+    const ignoreCategoryTapAfterDrag = (event) => {
+        if (performance.now() > (categoryDragRef.current.suppressClickUntil || 0)) return false;
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+    };
+
     const renderCategoryStrip = () => (
-        <div style={categoryStrip()}>
+        <div
+            ref={categoryStripRef}
+            style={categoryStrip()}
+            onPointerDown={handleCategoryPointerDown}
+            onPointerMove={handleCategoryPointerMove}
+            onPointerUp={handleCategoryPointerEnd}
+            onPointerCancel={handleCategoryPointerEnd}
+            onPointerLeave={handleCategoryPointerEnd}
+        >
             {activeCategories.map((cat) => {
                 const active = filterCategory === cat.label[langIndex];
                 const tone = getHabitCategoryTone(cat.label[0]);
@@ -523,7 +572,10 @@ const AddHabitPanel = () => {
                     <motion.div
                         key={cat._idx}
                         whileTap={{ scale: 0.97 }}
-                        onClick={() => selectCategory(cat)}
+                        onClick={(event) => {
+                            if (ignoreCategoryTapAfterDrag(event)) return;
+                            selectCategory(cat);
+                        }}
                         style={categoryChip(active, tone, ui)}
                     >
                         <span style={categoryChipIcon(active, tone)}>
@@ -531,10 +583,10 @@ const AddHabitPanel = () => {
                         </span>
                         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{cat.label[langIndex]}</span>
                         <span style={categoryChipActions(active, ui)}>
-                            <span onClick={(e) => { e.stopPropagation(); openEditCategory(cat._idx); }} style={categoryActionBtn(ui)}>
+                            <span onClick={(e) => { if (ignoreCategoryTapAfterDrag(e)) return; e.stopPropagation(); openEditCategory(cat._idx); }} style={categoryActionBtn(ui)}>
                                 <FaPencilAlt size={10} />
                             </span>
-                            <span onClick={(e) => { e.stopPropagation(); requestDeleteCategory(cat._idx); }} style={categoryActionBtn(ui, true)}>
+                            <span onClick={(e) => { if (ignoreCategoryTapAfterDrag(e)) return; e.stopPropagation(); requestDeleteCategory(cat._idx); }} style={categoryActionBtn(ui, true)}>
                                 <FaTrashAlt size={10} />
                             </span>
                         </span>
@@ -542,7 +594,14 @@ const AddHabitPanel = () => {
                 );
             })}
             {langIndex === 0 && (
-                <motion.div whileTap={{ scale: 0.97 }} onClick={() => setSelectCategoryPanel(true)} style={addCategoryChip(ui)}>
+                <motion.div
+                    whileTap={{ scale: 0.97 }}
+                    onClick={(event) => {
+                        if (ignoreCategoryTapAfterDrag(event)) return;
+                        setSelectCategoryPanel(true);
+                    }}
+                    style={addCategoryChip(ui)}
+                >
                     <FaPlus size={11} />
                     Добавить
                 </motion.div>
@@ -1220,7 +1279,10 @@ const categoryStrip = () => ({
     boxSizing: 'border-box',
     WebkitOverflowScrolling: 'touch',
     touchAction: 'pan-x',
-    overscrollBehaviorX: 'contain'
+    overscrollBehaviorX: 'contain',
+    cursor: 'grab',
+    userSelect: 'none',
+    WebkitUserSelect: 'none'
 });
 const categoryChip = (active, tone, ui) => ({
     minHeight: 42,

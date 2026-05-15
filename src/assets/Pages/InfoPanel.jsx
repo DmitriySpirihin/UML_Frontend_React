@@ -35,7 +35,7 @@ const InfoPanel = () => {
   const todoAccent = buildTodoAccent(AppData.todoAccentColor || "#149DFF");
   const habitsAccent = buildHabitsAccent(AppData.habitAccentColor || "#22C55E");
   const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || "#A66BFF", "#A66BFF");
-  const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || "#35C2FF", "#35C2FF");
+  const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || "#579BC8", "#579BC8");
   const recoveryAccent = buildSectionAccent(AppData.recoveryAccentColor || "#2FD6BD", "#2FD6BD");
   const menuItems = useMemo(
     () => [

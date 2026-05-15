@@ -46,7 +46,7 @@ const goalMeta = [
 
 const sectionOptions = [
     { key: 'habits', label: ['Привычки', 'Habits'], icon: <MdCheckCircle />, color: '#22C55E' },
-    { key: 'training', label: ['Тренировки', 'Training'], icon: <FaDumbbell />, color: '#35C2FF' },
+    { key: 'training', label: ['Тренировки', 'Training'], icon: <FaDumbbell />, color: '#579BC8' },
     { key: 'mental', label: ['Ментал', 'Mental'], icon: <MdOutlinePsychology />, color: '#A66BFF' },
     { key: 'recovery', label: ['Восстановление', 'Recovery'], icon: <MdSelfImprovement />, color: '#2FD6BD' },
     { key: 'sleep', label: ['Сон', 'Sleep'], icon: <MdBedtime />, color: '#7C6CFF' },

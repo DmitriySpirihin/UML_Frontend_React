@@ -129,11 +129,20 @@ const NavButton = ({ id, current, icon, onClick, theme, accent }) => {
   const isMui = React.isValidElement(icon) && icon.type?.muiName;
   return (
     <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={onClick} style={navButtonStyle(theme, active)}>
-      <span style={{ display: 'flex', color: active ? accent.hue : Colors.get('icons', theme), fontSize: 26 }}>
+      <span style={navIconStyle(theme, active, accent)}>
         {isMui ? React.cloneElement(icon, { fontSize: 'inherit' }) : icon}
       </span>
       <AnimatePresence>
-        {active && <motion.span layoutId="todoDockDot" style={activeDot(accent)} />}
+        {active && (
+          <motion.span
+            layoutId="todoDockDot"
+            initial={{ opacity: 0, y: 4, scale: 0.45 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.45 }}
+            transition={{ type: 'spring', stiffness: 460, damping: 28, mass: 0.55 }}
+            style={activeDot(accent)}
+          />
+        )}
       </AnimatePresence>
     </motion.button>
   );
@@ -176,7 +185,7 @@ const containerStyle = (theme, itemCount) => ({
   alignItems: 'center',
   zIndex: 1000,
   boxSizing: 'border-box',
-  padding: '7px 10px',
+  padding: '6px 10px 9px',
   backdropFilter: 'blur(24px) saturate(180%)',
   WebkitBackdropFilter: 'blur(24px) saturate(180%)',
   overflow: 'hidden',
@@ -206,8 +215,8 @@ const navButtonStyle = (theme, active) => {
   const isLight = theme === 'light' || theme === 'speciallight';
   return {
     position: 'relative',
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 46,
     borderRadius: 999,
     border: 'none',
     background: 'transparent',
@@ -226,19 +235,29 @@ const navButtonStyle = (theme, active) => {
   };
 };
 
+const navIconStyle = (theme, active, accent) => ({
+  display: 'flex',
+  color: active ? accent.hue : Colors.get('icons', theme),
+  fontSize: 26,
+  transform: active ? 'translateY(-4px) scale(1.03)' : 'translateY(0) scale(1)',
+  transition: 'color 0.22s ease, transform 0.22s ease, filter 0.22s ease',
+  filter: active ? `drop-shadow(0 0 9px ${accent.glow})` : 'none',
+  willChange: 'transform',
+});
+
 const addButtonStyle = (theme, accent, disabled, active) => {
   return {
     width: 42,
     height: 42,
     borderRadius: 999,
-    border: active ? `1px solid ${accent.ring}` : `1px solid ${Colors.get('border', theme)}`,
-    background: active ? accent.soft : Colors.get('simplePanel', theme),
-    color: active ? accent.hue : Colors.get('icons', theme),
+    border: `1px solid ${accent.ring}`,
+    background: active ? accent.soft : `linear-gradient(135deg, rgba(${accent.rgbText},0.13), rgba(255,255,255,0.035))`,
+    color: accent.hue,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     opacity: disabled ? 0.45 : 1,
-    boxShadow: `0 16px 30px -18px ${Colors.get('shadow', theme)}`,
+    boxShadow: `0 16px 30px -18px ${Colors.get('shadow', theme)}, 0 0 16px -12px ${accent.glow}`,
     padding: 0,
     cursor: disabled ? 'default' : 'pointer',
     outline: 'none',
@@ -250,12 +269,14 @@ const addButtonStyle = (theme, accent, disabled, active) => {
 
 const activeDot = (accent) => ({
   position: 'absolute',
-  bottom: 4,
-  width: 5,
-  height: 5,
+  bottom: 1,
+  width: 7,
+  height: 7,
   borderRadius: 999,
   background: accent.hue,
-  boxShadow: `0 0 12px ${accent.glow}`
+  border: '1px solid rgba(255,255,255,0.42)',
+  boxShadow: `0 0 12px ${accent.glow}, 0 2px 8px rgba(0,0,0,0.42)`,
+  transformOrigin: 'center',
 });
 
 export default BtnsToDo;

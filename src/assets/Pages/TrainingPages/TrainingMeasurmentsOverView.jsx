@@ -7,6 +7,12 @@ import { getWeeklyTrainingAmount } from '../../StaticClasses/TrainingLogHelper.j
 import { FaWeight, FaRulerVertical, FaInfoCircle, FaFire, FaBullseye, FaHeartbeat } from 'react-icons/fa'
 import { IoBody, IoAccessibility } from 'react-icons/io5'
 import { MdClose } from 'react-icons/md'
+import {
+    getTrainingAccent,
+    getTrainingGlassSurface,
+    getTrainingPanelBorder,
+    getTrainingPanelShadow
+} from './TrainingVisuals.js'
 
 // --- CONSTANTS (Kept Intact) ---
 const icons = [
@@ -29,8 +35,10 @@ const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, hei
 
     // Helper Styles
     const isLight = theme === 'light' || theme === 'speciallight';
-    const cardBg = isLight ? 'rgba(255,255,255,0.7)' : 'rgba(30,30,30,0.6)';
-    const borderColor = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)';
+    const accent = getTrainingAccent();
+    const glass = getTrainingGlassSurface(theme, accent);
+    const cardBg = glass.background;
+    const borderColor = getTrainingPanelBorder(theme, accent);
     const textColor = Colors.get('mainText', theme);
     const subTextColor = Colors.get('subText', theme);
 
@@ -55,8 +63,11 @@ const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, hei
             <div style={{ display: 'flex', gap: '15px', height: '220px' }}>
                 {/* Body Visual Card */}
                 <div style={{
+                    ...glass,
                     flex: '0 0 35%',
-                    backgroundColor: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`,
+                    background: `radial-gradient(circle at 48% 12%, rgba(${accent.rgb},0.18), transparent 52%), ${cardBg}`,
+                    borderRadius: '24px',
+                    border: `1px solid ${borderColor}`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                     position: 'relative'
                 }}>
@@ -72,8 +83,12 @@ const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, hei
 
                 {/* Primary Stats Card */}
                 <div style={{
+                    ...glass,
                     flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                    backgroundColor: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`, padding: '20px'
+                    background: cardBg,
+                    borderRadius: '24px',
+                    border: `1px solid ${borderColor}`,
+                    padding: '20px'
                 }}>
                     <div>
                         <div style={{ fontSize: '12px', color: subTextColor, textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>
@@ -124,7 +139,7 @@ const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, hei
             </div>
 
             {/* --- DETAILS & CALCULATIONS --- */}
-            <div style={{ backgroundColor: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`, padding: '20px' }}>
+            <div style={{ ...glass, background: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`, padding: '20px' }}>
                 <SectionHeader title={langIndex === 0 ? 'Анализ Тела' : 'Body Analysis'} theme={theme} />
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginTop: '15px' }}>
@@ -142,7 +157,7 @@ const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, hei
             </div>
 
             {/* --- MEASUREMENTS LIST --- */}
-            <div style={{ backgroundColor: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`, padding: '20px' }}>
+            <div style={{ ...glass, background: cardBg, borderRadius: '24px', border: `1px solid ${borderColor}`, padding: '20px' }}>
                 <SectionHeader title={langIndex === 0 ? 'Обхваты' : 'Measurements'} theme={theme} />
                 <div style={{ marginTop: '15px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
                     <MeasurementBox label={langIndex === 0 ? 'Талия' : 'Waist'} value={measurmentString(data, 1, langIndex)} theme={theme} />
@@ -200,8 +215,15 @@ const StatRow = ({ icon, label, value, theme, highlight }) => (
 
 const MetricCard = ({ title, value, icon, color, theme }) => (
     <div style={{
-        backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.7)' : 'rgba(30,30,30,0.6)',
-        borderRadius: '20px', padding: '15px', border: `1px solid ${theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)'}`,
+        background: theme === 'light'
+            ? `linear-gradient(145deg, rgba(255,255,255,0.64), ${color}10)`
+            : `linear-gradient(145deg, rgba(255,255,255,0.06), ${color}12)`,
+        borderRadius: '20px',
+        padding: '15px',
+        border: `1px solid ${theme === 'light' ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.08)'}`,
+        boxShadow: getTrainingPanelShadow(theme, getTrainingAccent()),
+        backdropFilter: 'blur(18px) saturate(1.14)',
+        WebkitBackdropFilter: 'blur(18px) saturate(1.14)',
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '100px'
     }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -230,7 +252,15 @@ const SectionHeader = ({ title, theme }) => (
 )
 
 const MeasurementBox = ({ label, value, theme }) => (
-    <div style={{ backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)', borderRadius: '14px', padding: '10px', textAlign: 'center' }}>
+    <div style={{
+        background: theme === 'light' ? 'rgba(255,255,255,0.44)' : 'rgba(255,255,255,0.055)',
+        border: `1px solid ${theme === 'light' ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.065)'}`,
+        borderRadius: '14px',
+        padding: '10px',
+        textAlign: 'center',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)'
+    }}>
         <div style={{ fontSize: '11px', color: Colors.get('subText', theme), marginBottom: '4px' }}>{label}</div>
         <div style={{ fontSize: '15px', fontWeight: '700', color: Colors.get('mainText', theme) }}>{value}</div>
     </div>

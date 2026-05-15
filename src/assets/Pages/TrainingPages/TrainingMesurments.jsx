@@ -18,7 +18,8 @@ import {
     getTrainingPageBackground,
     getTrainingPanelBackground,
     getTrainingPanelBorder,
-    getTrainingPanelShadow
+    getTrainingGlassSurface,
+    getTrainingPressMotion
 } from './TrainingVisuals.js'
 
 // --- SCROLL PICKER COMPONENT ---
@@ -193,7 +194,7 @@ const TrainingMesurments = () => {
                 <div style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '100px' }}>
                     
                     {/* --- PERSONAL DATA (BENTO GRID) --- */}
-                    <Motion.div layout style={{ ...styles(theme).card, background: cardBg, border: `1px solid ${borderColor}` }}>
+                    <Motion.div layout {...getTrainingPressMotion(1.004, 0.988)} style={{ ...styles(theme).card, ...getTrainingGlassSurface(theme, accent, currentType === -1), background: cardBg, border: `1px solid ${borderColor}` }}>
                         <div style={styles(theme).cardHeader} onClick={() => setCurrentType(p => p === -1 ? -2 : -1)}>
                             <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
                                 <div style={styles(theme).iconBox}><IoPerson size={18} color={accent.hue} /></div>
@@ -220,7 +221,7 @@ const TrainingMesurments = () => {
 
                     {/* --- MEASUREMENTS LIST --- */}
                     {data.map((el, ind) => (
-                        <Motion.div key={ind} layout style={{ ...styles(theme).card, background: cardBg, border: `1px solid ${borderColor}` }}>
+                        <Motion.div key={ind} layout {...getTrainingPressMotion(1.004, 0.988)} style={{ ...styles(theme).card, ...getTrainingGlassSurface(theme, accent, currentType === ind), background: cardBg, border: `1px solid ${borderColor}` }}>
                             <div style={styles(theme).cardHeader} onClick={() => setCurrentType(p => p === ind ? -2 : ind)}>
                                 <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
                                     <div style={styles(theme).iconBox}>
@@ -459,8 +460,11 @@ const TrainingMesurments = () => {
 
 const StatCard = ({ label, value, sub, theme, icon, isWide }) => (
     <div style={{
-        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
+        background: theme === 'light' ? 'rgba(255,255,255,0.46)' : 'rgba(255,255,255,0.055)',
+        border: `1px solid ${theme === 'light' ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.07)'}`,
         borderRadius: '16px', padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
         gridColumn: isWide ? 'span 2' : 'span 1'
     }}>
         <div style={{fontSize:'11px', color:Colors.get('subText', theme), textTransform:'uppercase', fontWeight:'700', marginBottom:'4px'}}>{label}</div>
@@ -549,12 +553,18 @@ const styles = (theme, fSize) => {
         margin: '0 auto',
         overflow: 'hidden',
         transition: 'all 0.3s',
-        background: getTrainingPanelBackground(theme),
-        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
-        boxShadow: getTrainingPanelShadow(theme, accent)
+        ...getTrainingGlassSurface(theme, accent),
+        WebkitTapHighlightColor: 'transparent',
+        userSelect: 'none'
     },
     cardHeader: {
-        padding: '15px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer'
+        padding: '15px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        cursor: 'pointer',
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation'
     },
     headerText: { fontSize: fSize===0?'16px':'18px', fontWeight:'700', color:Colors.get('mainText', theme) },
     iconBox: {
@@ -565,7 +575,8 @@ const styles = (theme, fSize) => {
     },
     valueBadge: {
         fontSize:'14px', fontWeight:'700', padding:'4px 10px', borderRadius:'8px',
-        backgroundColor: isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.08)',
+        background: isLight ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.09)',
+        border: `1px solid ${isLight ? 'rgba(15,23,42,0.05)' : 'rgba(255,255,255,0.06)'}`,
         color:Colors.get('mainText', theme)
     },
     addBtn: {
@@ -576,8 +587,13 @@ const styles = (theme, fSize) => {
     },
     historyRow: {
         display:'flex', justifyContent:'space-between', alignItems:'center',
-        padding:'12px', backgroundColor: theme==='light'?'rgba(0,0,0,0.02)':'rgba(255,255,255,0.03)',
-        borderRadius:'12px', marginBottom:'4px'
+        padding:'12px',
+        background: theme==='light'?'rgba(255,255,255,0.42)':'rgba(255,255,255,0.045)',
+        border: `1px solid ${theme === 'light' ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.055)'}`,
+        borderRadius:'12px',
+        marginBottom:'4px',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)'
     },
     // BOTTOM SHEET
     backdrop: {

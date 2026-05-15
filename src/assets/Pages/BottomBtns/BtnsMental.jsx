@@ -4,7 +4,7 @@ import { motion as Motion, AnimatePresence } from 'framer-motion';
 import Home from '@mui/icons-material/HomeRounded';
 import Back from '@mui/icons-material/ArrowBackIosNewRounded';
 import AutoAwesome from '@mui/icons-material/AutoAwesomeRounded';
-import { FaMedal } from 'react-icons/fa';
+import { FaChartLine, FaMedal } from 'react-icons/fa';
 
 import { 
     setPage, setAddPanel, setPage$, addPanel$, theme$, 
@@ -42,6 +42,7 @@ const BtnsMental = () => {
         if (currentBtn === 0 || currentBtn === -1) {
             if (page === 'MentalRecords') setCurrentBottomBtn(1);
             else if (page === 'MentalInsight') setCurrentBottomBtn(2);
+            else if (page === 'MentalProgress') setCurrentBottomBtn(3);
             else if (page === 'MentalMain' && addPanel === '') setCurrentBottomBtn(0);
         }
     }, [page, addPanel]);
@@ -77,6 +78,20 @@ const BtnsMental = () => {
             />
 
             <NavButton
+                id={3}
+                current={currentBtn}
+                icon={<FaChartLine />}
+                onClick={() => {
+                    setCurrentBottomBtn(3);
+                    setPage('MentalProgress');
+                    setAddPanel('');
+                    playEffects(switchSound);
+                    setNotifyPanel(false);
+                }}
+                theme={theme}
+            />
+
+            <NavButton
                 id={2}
                 current={currentBtn}
                 icon={<AutoAwesome />}
@@ -104,18 +119,20 @@ const NavButton = ({ id, current, icon, onClick, theme }) => {
             style={navBtnWrapper}
         >
             <div style={{
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 borderRadius: 15,
                 color: isActive ? accent.hue : Colors.get('icons', theme),
-                background: isActive ? accent.soft : 'transparent',
-                border: `1px solid ${isActive ? accent.ring : 'transparent'}`,
+                background: 'transparent',
+                border: '1px solid transparent',
                 fontSize: '22px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                transition: 'color 0.3s ease',
-                filter: isActive ? `drop-shadow(0 0 10px ${accent.glow})` : 'none',
+                transform: isActive ? 'translateY(-4px) scale(1.05)' : 'translateY(0) scale(1)',
+                transition: 'color 0.22s ease, transform 0.22s ease, filter 0.22s ease',
+                filter: isActive ? `drop-shadow(0 0 9px ${accent.glow})` : 'none',
+                willChange: 'transform',
                 boxSizing: 'border-box'
             }}>
                 {icon}
@@ -123,10 +140,11 @@ const NavButton = ({ id, current, icon, onClick, theme }) => {
             <AnimatePresence>
                 {isActive && (
                     <Motion.div 
-                        layoutId="mentalActiveTab"
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 5 }}
+                        layoutId="mentalActiveDot"
+                        initial={{ opacity: 0, y: 4, scale: 0.45 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 4, scale: 0.45 }}
+                        transition={{ type: 'spring', stiffness: 460, damping: 28, mass: 0.55 }}
                         style={activeIndicator()}
                     />
                 )}
@@ -164,7 +182,7 @@ const containerStyle = () => ({
     WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     zIndex: 1000,
     boxSizing: 'border-box',
-    padding: '7px 10px',
+    padding: '6px 12px 9px',
     overflow: 'hidden',
     boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)'
 });
@@ -191,20 +209,23 @@ const navBtnWrapper = {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    height: '100%',
-    width: '40px',
+    height: '46px',
+    width: '48px',
     borderRadius: '999px',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent'
 };
 
 const activeIndicator = () => ({
     position: 'absolute',
-    bottom: '4px',
-    width: '5px',
-    height: '5px',
-    borderRadius: '50%',
+    bottom: 1,
+    width: '7px',
+    height: '7px',
+    borderRadius: '999px',
     backgroundColor: buildSectionAccent(AppData.mentalAccentColor || MENTAL_ACCENT, MENTAL_ACCENT).hue,
-    boxShadow: `0 0 10px ${buildSectionAccent(AppData.mentalAccentColor || MENTAL_ACCENT, MENTAL_ACCENT).glow}`
+    border: '1px solid rgba(255,255,255,0.42)',
+    boxShadow: `0 0 12px ${buildSectionAccent(AppData.mentalAccentColor || MENTAL_ACCENT, MENTAL_ACCENT).glow}, 0 2px 8px rgba(0,0,0,0.42)`,
+    transformOrigin: 'center',
 });
 
 export default BtnsMental;

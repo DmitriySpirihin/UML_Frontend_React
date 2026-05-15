@@ -89,6 +89,7 @@ const SleepNew = () => {
   const [mood, setMood] = useState(4);
   const [bedTime, setBedTime] = useState(23 * HOUR_MS);
   const [wakeTime, setWakeTime] = useState(7 * HOUR_MS);
+  const [sleepType, setSleepType] = useState('night');
   const [note, setNote] = useState('');
 
   const accent = useMemo(() => buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF'), []);
@@ -114,7 +115,7 @@ const SleepNew = () => {
 
   const handleSave = async () => {
     playEffects(clickSound);
-    addDayToSleepingLog(dateString, duration, bedTime, mood, note.trim());
+    addDayToSleepingLog(dateString, duration, bedTime, mood, note.trim(), sleepType);
     await saveData();
     closePanel();
   };
@@ -154,6 +155,37 @@ const SleepNew = () => {
               <span style={s.timelineLine} />
               <span style={s.timelineDot} />
             </div>
+          </section>
+
+          <section style={s.typeSwitch}>
+            {[
+              { id: 'night', icon: <MdNightsStay />, label: langIndex === 0 ? 'Ночной сон' : 'Night sleep' },
+              { id: 'day', icon: <FaSun />, label: langIndex === 0 ? 'Дневной сон' : 'Nap' }
+            ].map(option => {
+              const active = sleepType === option.id;
+              return (
+                <motion.button
+                  key={option.id}
+                  type="button"
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => {
+                    playEffects(clickSound);
+                    setSleepType(option.id);
+                    if (option.id === 'day') {
+                      setBedTime(13 * HOUR_MS);
+                      setWakeTime(14 * HOUR_MS + 30 * 60 * 1000);
+                    } else {
+                      setBedTime(23 * HOUR_MS);
+                      setWakeTime(7 * HOUR_MS);
+                    }
+                  }}
+                  style={s.typeOption(active)}
+                >
+                  <span style={s.typeIcon(active)}>{option.icon}</span>
+                  <span>{option.label}</span>
+                </motion.button>
+              );
+            })}
           </section>
 
           <TimeControl
@@ -309,9 +341,18 @@ const styles = (theme, accent, fSize = 0) => {
   const bg = Colors.get('background', theme);
   const text = Colors.get('mainText', theme);
   const sub = Colors.get('subText', theme);
-  const panel = isLight ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.045)';
-  const panelStrong = isLight ? '#fff' : 'rgba(24,27,32,0.92)';
-  const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
+  const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(190,210,230,0.13)';
+  const glassPanel = {
+    background: isLight
+      ? `radial-gradient(220px 120px at 18% 0%, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.10), transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.74), rgba(255,255,255,0.46))`
+      : `radial-gradient(260px 150px at 18% 0%, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.20), transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.078), rgba(255,255,255,0.030))`,
+    border: `1px solid ${border}`,
+    boxShadow: isLight
+      ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 42px -32px rgba(15,23,42,0.24)'
+      : '0 1px 0 rgba(255,255,255,0.10) inset, 0 18px 46px -28px rgba(0,0,0,0.58)',
+    backdropFilter: 'blur(28px) saturate(175%)',
+    WebkitBackdropFilter: 'blur(28px) saturate(175%)'
+  };
 
   return {
     page: {
@@ -349,7 +390,7 @@ const styles = (theme, accent, fSize = 0) => {
       height: 46,
       borderRadius: 16,
       border: `1px solid ${border}`,
-      background: panel,
+      background: isLight ? 'rgba(255,255,255,0.66)' : 'rgba(255,255,255,0.065)',
       color: text,
       display: 'flex',
       alignItems: 'center',
@@ -402,9 +443,7 @@ const styles = (theme, accent, fSize = 0) => {
     summaryCard: {
       borderRadius: 24,
       padding: 14,
-      background: `linear-gradient(135deg, ${panelStrong}, ${accent.faint})`,
-      border: `1px solid ${accent.ring}`,
-      boxShadow: isLight ? `0 20px 50px -38px ${accent.hue}` : '0 20px 60px rgba(0,0,0,0.24)'
+      ...glassPanel
     },
     summaryTop: {
       display: 'grid',
@@ -420,11 +459,41 @@ const styles = (theme, accent, fSize = 0) => {
     },
     timelineDot: { width: 10, height: 10, borderRadius: 999, background: accent.hue, boxShadow: `0 0 18px ${accent.hue}66` },
     timelineLine: { height: 3, borderRadius: 999, background: `linear-gradient(90deg, ${accent.hue}, ${accent.soft})` },
+    typeSwitch: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gap: 9,
+      padding: 8,
+      borderRadius: 22,
+      ...glassPanel
+    },
+    typeOption: (active) => ({
+      minHeight: 46,
+      borderRadius: 17,
+      border: `1px solid ${active ? accent.ring : 'transparent'}`,
+      background: active
+        ? `linear-gradient(135deg, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.24), rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.10))`
+        : 'transparent',
+      color: active ? text : sub,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      fontSize: 13,
+      fontWeight: 900,
+      fontFamily: 'inherit',
+      padding: '0 10px',
+      boxShadow: active ? `0 12px 26px -22px ${accent.hue}` : 'none'
+    }),
+    typeIcon: (active) => ({
+      color: active ? accent.hue : sub,
+      display: 'inline-flex',
+      fontSize: 15
+    }),
     card: {
       borderRadius: 22,
       padding: 15,
-      background: panel,
-      border: `1px solid ${border}`,
+      ...glassPanel,
       boxSizing: 'border-box'
     },
     controlHeader: {
@@ -502,8 +571,7 @@ const styles = (theme, accent, fSize = 0) => {
       borderRadius: 22,
       padding: 15,
       minHeight: 148,
-      background: panel,
-      border: `1px solid ${border}`,
+      ...glassPanel,
       boxSizing: 'border-box'
     },
     noteTitleRow: {
@@ -535,10 +603,12 @@ const styles = (theme, accent, fSize = 0) => {
       padding: 12,
       boxSizing: 'border-box',
       borderRadius: 24,
-      background: isLight ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.055)',
+      background: isLight
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.44))'
+        : 'linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.034))',
       backdropFilter: 'blur(22px)',
       WebkitBackdropFilter: 'blur(22px)',
-      border: `1px solid ${isLight ? 'rgba(255,255,255,0.72)' : 'rgba(255,255,255,0.105)'}`,
+      border: `1px solid ${isLight ? 'rgba(255,255,255,0.72)' : 'rgba(190,210,230,0.13)'}`,
       boxShadow: isLight ? '0 18px 46px rgba(15,23,42,0.11)' : '0 18px 50px rgba(0,0,0,0.28)'
     },
     cancelButton: {

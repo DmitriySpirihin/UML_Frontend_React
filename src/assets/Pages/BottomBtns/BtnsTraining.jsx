@@ -22,7 +22,7 @@ import { AppData } from '../../StaticClasses/AppData.js';
 import { buildSectionAccent } from '../SectionAccentSettings.jsx';
 
 const switchSound = new Audio('Audio/Click.wav');
-const TRAINING_ACCENT = '#35C2FF';
+const TRAINING_ACCENT = '#579BC8';
 
 const BtnsTraining = () => {
     const [theme, setthemeState] = useState('dark');
@@ -175,17 +175,21 @@ const NavButton = ({ id, current, icon, onClick, theme }) => {
                 color: isActive ? accent.hue : Colors.get('icons', theme),
                 fontSize: '24px',
                 display: 'flex',
-                transition: 'color 0.3s ease'
+                transform: isActive ? 'translateY(-4px) scale(1.04)' : 'translateY(0) scale(1)',
+                transition: 'color 0.22s ease, transform 0.22s ease, filter 0.22s ease',
+                filter: isActive ? `drop-shadow(0 0 9px ${accent.glow})` : 'none',
+                willChange: 'transform'
             }}>
                 {React.cloneElement(icon, { fontSize: 'inherit' })}
             </div>
             <AnimatePresence>
                 {isActive && (
                     <Motion.div
-                        layoutId="trainActiveTab"
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0 }}
+                        layoutId="trainActiveDot"
+                        initial={{ opacity: 0, y: 4, scale: 0.45 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 4, scale: 0.45 }}
+                        transition={{ type: 'spring', stiffness: 460, damping: 28, mass: 0.55 }}
                         style={activeIndicator()}
                     />
                 )}
@@ -241,7 +245,7 @@ const containerStyle = () => ({
     alignItems: 'center',
     zIndex: 2200,
     boxSizing: 'border-box',
-    padding: '7px 10px',
+    padding: '6px 10px 9px',
     backdropFilter: 'blur(24px) saturate(180%)',
     WebkitBackdropFilter: 'blur(24px) saturate(180%)',
     overflow: 'hidden',
@@ -283,20 +287,23 @@ const navBtnWrapper = {
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    height: '100%',
-    width: '40px',
+    height: '46px',
+    width: '42px',
     borderRadius: '999px',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent'
 };
 
 const activeIndicator = () => ({
     position: 'absolute',
-    bottom: '4px',
-    width: '5px',
-    height: '5px',
-    borderRadius: '50%',
+    bottom: 1,
+    width: '7px',
+    height: '7px',
+    borderRadius: '999px',
     backgroundColor: buildSectionAccent(AppData.trainingAccentColor || TRAINING_ACCENT, TRAINING_ACCENT).hue,
-    boxShadow: `0 0 10px ${buildSectionAccent(AppData.trainingAccentColor || TRAINING_ACCENT, TRAINING_ACCENT).glow}`
+    border: '1px solid rgba(255,255,255,0.42)',
+    boxShadow: `0 0 12px ${buildSectionAccent(AppData.trainingAccentColor || TRAINING_ACCENT, TRAINING_ACCENT).glow}, 0 2px 8px rgba(0,0,0,0.42)`,
+    transformOrigin: 'center',
 });
 
 const addBtnShell = {

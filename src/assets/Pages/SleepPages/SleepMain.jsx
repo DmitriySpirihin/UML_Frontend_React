@@ -45,6 +45,17 @@ const formatMsToHhMm = (ms) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
 
+const formatClockTime = (ms) => {
+  if (typeof ms !== 'number' || ms < 0) return '--:--';
+  if (ms >= 24 * MS_PER_HOUR) {
+    const date = new Date(ms);
+    if (!Number.isNaN(date.getTime())) {
+      return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+  }
+  return formatMsToHhMm(ms % (24 * MS_PER_HOUR));
+};
+
 const formatDuration = (ms, langIndex) => {
   if (!ms) return langIndex === 0 ? '0 ч' : '0h';
   const totalMinutes = Math.floor(ms / 60000);
@@ -64,13 +75,10 @@ const moodColors = (theme, index) => {
   return cols[index] || Colors.get('accent', theme);
 };
 
-const getFillPercentFromMs = (durationMs) => {
-  if (typeof durationMs !== 'number' || durationMs < 0) return 0;
-  const minMs = 4 * MS_PER_HOUR;
-  const maxMs = 10 * MS_PER_HOUR;
-  if (durationMs <= minMs) return 15;
-  if (durationMs >= maxMs) return 100;
-  return 15 + Math.round(((durationMs - minMs) / (maxMs - minMs)) * 85);
+const getSleepMoodPercent = (mood) => {
+  const rating = Number(mood);
+  if (!Number.isFinite(rating) || rating <= 0) return 0;
+  return Math.max(20, Math.min(100, Math.round(rating * 20)));
 };
 
 const daysOfWeek = [
@@ -144,11 +152,12 @@ const SleepMain = () => {
   }, [sleepData]);
 
   const summary = useMemo(() => {
-    const source = sevenDays.length ? sevenDays : sleepData.slice(0, 7);
+    const isRecentWindow = sevenDays.length > 0;
+    const source = isRecentWindow ? sevenDays : sleepData.slice(0, 7);
     const avg = source.length ? source.reduce((sum, item) => sum + (item.duration || 0), 0) / source.length : 0;
     const best = source.length ? Math.max(...source.map(item => item.duration || 0)) : 0;
     const mood = source.length ? source.reduce((sum, item) => sum + (item.mood || 0), 0) / source.length : 0;
-    return { avg, best, mood, count: source.length };
+    return { avg, best, mood, count: source.length, isRecentWindow };
   }, [sevenDays, sleepData]);
 
   const prevMonth = () => {
@@ -186,7 +195,7 @@ const SleepMain = () => {
         customPresets={AppData.sleepAccentPresets}
         onSavePreset={saveAccentPreset}
       />
-      <HoverInfoButton tab="SleepMain" variant="subtle" accent={accent.hue} />
+      <HoverInfoButton tab="SleepMain" variant="subtle" accent={accent.hue} styleOverride={{ top: '106px', right: '22px' }} />
 
       <div style={s.scroll}>
         <div style={s.topBar}>
@@ -212,6 +221,11 @@ const SleepMain = () => {
           <img style={s.sleepHeroImage} src="images/bro_sleeping.png" alt="" />
         </motion.section>
 
+        <div style={s.summaryRange}>
+          {summary.isRecentWindow
+            ? (langIndex === 0 ? `Последние 7 дней · ${summary.count} записей` : `Last 7 days · ${summary.count} records`)
+            : (langIndex === 0 ? `Последние записи · ${summary.count}` : `Latest records · ${summary.count}`)}
+        </div>
         <div style={s.summaryGrid}>
           <SummaryTile icon={<FaRegClock />} label={langIndex === 0 ? 'Среднее' : 'Average'} value={formatDuration(summary.avg, langIndex)} theme={theme} accent={accent} />
           <SummaryTile icon={<FaBed />} label={langIndex === 0 ? 'Лучшее' : 'Best'} value={formatDuration(summary.best, langIndex)} theme={theme} accent={accent} />
@@ -248,8 +262,7 @@ const SleepMain = () => {
               const entry = AppData.sleepingLog?.[dayKey];
               const isSelected = dayKey === formatDateKey(currentDate);
               const isToday = dayKey === formatDateKey(new Date());
-              const moodColor = entry ? moodColors(theme, entry.mood - 1) : accent.hue;
-              const fillHeight = entry ? getFillPercentFromMs(entry.duration) : 0;
+              const moodPercent = entry ? getSleepMoodPercent(entry.mood) : 0;
 
               return (
                 <motion.button
@@ -260,9 +273,9 @@ const SleepMain = () => {
                     setCurrentDate(cellDate);
                     playEffects(clickSound);
                   }}
-                  style={s.dayCell(isSelected, isToday)}
+                  style={s.dayCell(isSelected, isToday, Boolean(entry))}
                 >
-                  {entry && <motion.span initial={{ height: 0 }} animate={{ height: `${fillHeight}%` }} style={{ ...s.dayFill, background: moodColor }} />}
+                  {entry && <motion.span initial={{ height: 0 }} animate={{ height: `${moodPercent}%` }} style={s.dayMoodFill(entry.type)} />}
                   <span style={s.dayNumber}>{day}</span>
                   {isSelected && <span style={s.selectedDot} />}
                 </motion.button>
@@ -280,9 +293,14 @@ const SleepMain = () => {
             {selectedSleepEntry ? (
               <motion.div key="entry" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} style={s.entryCard}>
                 <div style={s.entryGlow(moodColors(theme, selectedSleepEntry.mood - 1))} />
+                <div style={s.entryTypePill}>
+                  {selectedSleepEntry.type === 'day'
+                    ? (langIndex === 0 ? 'Дневной сон' : 'Nap')
+                    : (langIndex === 0 ? 'Ночной сон' : 'Night sleep')}
+                </div>
                 <div style={s.metricsGrid}>
-                  <MetricItem icon={<FaMoon />} label={langIndex === 0 ? 'Отбой' : 'Bedtime'} value={formatMsToHhMm(selectedSleepEntry.bedtime)} color={accent.hue} theme={theme} />
-                  <MetricItem icon={<FaRegClock />} label={langIndex === 0 ? 'Сон' : 'Duration'} value={formatMsToHhMm(selectedSleepEntry.duration)} color={moodColors(theme, selectedSleepEntry.mood - 1)} theme={theme} />
+                  <MetricItem icon={<FaMoon />} label={langIndex === 0 ? 'Отбой' : 'Bedtime'} value={formatClockTime(selectedSleepEntry.bedtime)} color={accent.hue} theme={theme} />
+                  <MetricItem icon={<FaRegClock />} label={langIndex === 0 ? 'Сон' : 'Duration'} value={formatDuration(selectedSleepEntry.duration, langIndex)} color={moodColors(theme, selectedSleepEntry.mood - 1)} theme={theme} />
                   <div style={s.metricBox}>
                     <div style={{ ...s.metricIcon, color: Colors.get('difficulty3', theme) }}><FaStar /></div>
                     <div style={s.metricLabel}>{langIndex === 0 ? 'Оценка' : 'Mood'}</div>
@@ -564,7 +582,7 @@ const styles = (theme, accent) => {
     sleepHeroCopy: {
       position: 'relative',
       zIndex: 1,
-      width: 'calc(100% - min(31vw, 132px))',
+      width: 'calc(100% - min(34vw, 146px))',
       minWidth: 0
     },
     sleepHeroEyebrow: {
@@ -590,17 +608,25 @@ const styles = (theme, accent) => {
     },
     sleepHeroImage: {
       position: 'absolute',
-      right: -10,
-      bottom: -18,
-      width: 'min(31vw, 132px)',
-      maxHeight: 132,
+      right: -5,
+      bottom: -14,
+      width: 'min(35vw, 148px)',
+      maxHeight: 146,
       objectFit: 'contain',
       pointerEvents: 'none',
       opacity: isLight ? 0.88 : 0.94,
       filter: isLight ? 'drop-shadow(0 16px 24px rgba(15,23,42,0.16))' : 'drop-shadow(0 18px 28px rgba(0,0,0,0.46))',
       WebkitMaskImage: 'radial-gradient(circle at 50% 52%, #000 0 58%, transparent 76%)',
       maskImage: 'radial-gradient(circle at 50% 52%, #000 0 58%, transparent 76%)',
-      zIndex: 1
+      zIndex: 2
+    },
+    summaryRange: {
+      margin: '13px 2px 0',
+      color: Colors.get('subText', theme),
+      fontSize: 10,
+      fontWeight: 900,
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase'
     },
     summaryGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10, marginTop: 12 },
     panel: {
@@ -621,13 +647,17 @@ const styles = (theme, accent) => {
     weekRow: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 8, textAlign: 'center' },
     weekDay: { fontSize: 10, fontWeight: 900, textTransform: 'uppercase' },
     daysGrid: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 },
-    dayCell: (selected, today) => ({
+    dayCell: (selected, today, filled) => ({
       position: 'relative',
       aspectRatio: '1 / 1',
       borderRadius: 13,
       overflow: 'hidden',
-      border: `1px solid ${border}`,
-      background: selected ? accent.soft : isLight ? 'rgba(255,255,255,0.74)' : 'rgba(255,255,255,0.025)',
+      border: `1px solid ${filled ? `rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.34)` : border}`,
+      background: selected
+        ? `linear-gradient(145deg, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.20), rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.08))`
+        : filled
+          ? `linear-gradient(145deg, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.13), rgba(255,255,255,0.035))`
+          : isLight ? 'rgba(255,255,255,0.74)' : 'rgba(255,255,255,0.025)',
       color: Colors.get('mainText', theme),
       fontSize: 14,
       fontWeight: selected || today ? 950 : 750,
@@ -635,15 +665,43 @@ const styles = (theme, accent) => {
       alignItems: 'center',
       justifyContent: 'center',
       padding: 0,
-      boxShadow: selected ? `inset 0 0 0 1px ${isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)'}` : 'none'
+      boxShadow: selected
+        ? `inset 0 0 0 1px ${isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)'}, 0 12px 26px -22px ${accent.hue}`
+        : filled ? `0 10px 22px -20px ${accent.hue}` : 'none'
     }),
-    dayFill: { position: 'absolute', left: 0, right: 0, bottom: 0, opacity: isLight ? 0.22 : 0.28 },
+    dayMoodFill: (type = 'night') => ({
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      opacity: isLight ? 0.76 : 0.58,
+      background: type === 'day'
+        ? 'linear-gradient(180deg, rgba(255,211,106,0.30), rgba(255,159,61,0.70))'
+        : `linear-gradient(180deg, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.32), rgba(139,117,255,0.78))`,
+      boxShadow: type === 'day'
+        ? '0 -8px 18px rgba(255,168,61,0.15)'
+        : `0 -8px 18px rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.16)`
+    }),
     dayNumber: { position: 'relative', zIndex: 1 },
     selectedDot: { position: 'absolute', left: '50%', bottom: 6, width: 5, height: 5, borderRadius: 999, background: accent.hue, transform: 'translateX(-50%)', zIndex: 2 },
     details: { marginTop: 14 },
     dateLabel: { color: Colors.get('subText', theme), fontSize: 13, fontWeight: 900, padding: '0 4px 8px' },
     entryCard: { position: 'relative', overflow: 'hidden', borderRadius: 22, padding: 14, background: panel, border: `1px solid ${border}`, boxShadow: glassShadow, backdropFilter: 'blur(22px) saturate(165%)', WebkitBackdropFilter: 'blur(22px) saturate(165%)' },
     entryGlow: (color) => ({ position: 'absolute', right: -70, top: -90, width: 200, height: 200, borderRadius: '50%', background: `${color}25`, filter: 'blur(32px)' }),
+    entryTypePill: {
+      position: 'relative',
+      zIndex: 1,
+      display: 'inline-flex',
+      alignItems: 'center',
+      marginBottom: 10,
+      padding: '6px 10px',
+      borderRadius: 999,
+      background: accent.soft,
+      border: `1px solid ${accent.ring}`,
+      color: accent.hue,
+      fontSize: 11,
+      fontWeight: 900
+    },
     metricsGrid: { position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 9, zIndex: 1 },
     metricBox: { minWidth: 0, minHeight: 78, borderRadius: 16, background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.038)', border: `1px solid ${border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 8, boxSizing: 'border-box' },
     metricIcon: { fontSize: 17, marginBottom: 6 },

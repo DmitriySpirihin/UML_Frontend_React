@@ -103,7 +103,7 @@ const TrainingCardio = () => {
     RUNNING: { label: langIndex === 0 ? 'Бег' : 'Running', color: '#F43F5E', gradient: 'linear-gradient(120deg, #F43F5E, #FB7185)' },
     CYCLING: { label: langIndex === 0 ? 'Велосипед' : 'Cycling', color: '#22C55E', gradient: 'linear-gradient(120deg, #16A34A, #22C55E)' },
     SWIMMING: { label: langIndex === 0 ? 'Плавание' : 'Swimming', color: '#38BDF8', gradient: 'linear-gradient(120deg, #0284C7, #38BDF8)' },
-    GYM: { label: langIndex === 0 ? 'Силовая' : 'Strength', color: '#35C2FF', gradient: 'linear-gradient(120deg, #35C2FF, #2F80ED)' }
+    GYM: { label: langIndex === 0 ? 'Силовая' : 'Strength', color: '#579BC8', gradient: 'linear-gradient(120deg, #579BC8, #2F80ED)' }
   }), [langIndex]);
 
   const currentType = trainingTypes[selectedType] || trainingTypes.RUNNING;

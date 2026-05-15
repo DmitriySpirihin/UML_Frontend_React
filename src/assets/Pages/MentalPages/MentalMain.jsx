@@ -4,6 +4,7 @@ import {
     FaBrain,
     FaBullseye,
     FaCalculator,
+    FaChartLine,
     FaChevronRight,
     FaClock,
     FaFire,
@@ -175,30 +176,27 @@ const MentalMain = () => {
                     ))}
                 </Motion.section>
 
-                <Motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} style={s.progressPanel}>
-                    <div style={s.progressHeader}>
-                        <div>
-                            <div style={s.panelTitle}>{langIndex === 0 ? 'Общий прогресс' : 'Overall progress'}</div>
-                            <div style={s.panelSub}>{langIndex === 0 ? 'Сумма рекордов по режимам' : 'Combined records across modes'}</div>
-                        </div>
-                        <div style={s.totalBadge}>
-                            <FaMedal size={12} />
-                            <span>{formatScore(summary.totalScore)}</span>
-                        </div>
-                    </div>
-                    <div style={s.progressRows}>
-                        {menuItems.map((item) => (
-                            <ProgressRow
-                                key={item.id}
-                                label={item.title}
-                                value={summary.categoryScores[item.id] || 0}
-                                max={summary.maxCategoryScore}
-                                tone={MODE_TONES[item.id]}
-                                styleObj={s}
-                            />
-                        ))}
-                    </div>
-                </Motion.section>
+                <Motion.button
+                    type="button"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.28, ease: EASE, delay: 0.08 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => setPage('MentalProgress')}
+                    style={s.progressLink}
+                >
+                    <span style={s.progressLinkIcon}>
+                        <FaChartLine size={15} />
+                    </span>
+                    <span style={s.progressLinkCopy}>
+                        <strong>{langIndex === 0 ? 'Общий прогресс' : 'Overall progress'}</strong>
+                        <span>{langIndex === 0 ? 'Отдельная страница с рекордами по режимам' : 'Separate page with mode records'}</span>
+                    </span>
+                    <span style={s.totalBadge}>
+                        <FaMedal size={12} />
+                        <span>{formatScore(summary.totalScore)}</span>
+                    </span>
+                </Motion.button>
             </div>
         </div>
     );
@@ -249,14 +247,17 @@ function MetricPill({ icon, label, value, styleObj }) {
     );
 }
 
-function ProgressRow({ label, value, max, tone, styleObj }) {
+function ProgressRow({ Icon, label, value, max, tone, styleObj }) {
     const progress = max > 0 ? Math.max(0.04, Math.min(1, value / max)) : 0.04;
 
     return (
-        <div style={styleObj.progressRow}>
-            <div style={styleObj.progressName}>
-                <span style={{ ...styleObj.progressDot, background: tone.hue }} />
-                <span>{label}</span>
+        <div style={styleObj.progressCard(tone)}>
+            <div style={styleObj.progressCardTop}>
+                <span style={styleObj.progressIcon(tone)}>
+                    <Icon size={13} />
+                </span>
+                <span style={styleObj.progressName}>{label}</span>
+                <strong style={styleObj.progressValue}>{formatScore(value)}</strong>
             </div>
             <div style={styleObj.progressTrack}>
                 <Motion.div
@@ -266,7 +267,6 @@ function ProgressRow({ label, value, max, tone, styleObj }) {
                     style={{ ...styleObj.progressFill, background: tone.hue, boxShadow: `0 0 16px ${tone.hue}55` }}
                 />
             </div>
-            <strong style={styleObj.progressValue}>{formatScore(value)}</strong>
         </div>
     );
 }
@@ -298,9 +298,6 @@ const styles = (theme, fontSize = 0) => {
     const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || MENTAL_ACCENT, MENTAL_ACCENT);
     const accentText = mentalAccent.rgb;
     const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)';
-    const panel = isLight
-        ? 'linear-gradient(135deg, rgba(255,255,255,0.68), rgba(255,255,255,0.40))'
-        : 'linear-gradient(135deg, rgba(255,255,255,0.070), rgba(255,255,255,0.026))';
     return {
         container: {
             width: '100vw',
@@ -310,7 +307,7 @@ const styles = (theme, fontSize = 0) => {
                 ? `radial-gradient(640px 420px at 86% -8%, rgba(${accentText},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${accentText},0.1), transparent 66%), #F4F5F7`
                 : `radial-gradient(640px 420px at 86% -8%, rgba(${accentText},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accentText},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
             color: text,
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+            fontFamily: "'SF Pro Rounded', 'Nunito Sans', Nunito, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Inter, 'Segoe UI', system-ui, sans-serif"
         },
         scrollView: {
             height: '100%',
@@ -361,7 +358,7 @@ const styles = (theme, fontSize = 0) => {
         },
         pageTitle: {
             color: text,
-            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontFamily: '"SF Pro Rounded", "Nunito Sans", Nunito, "SF Pro Display", -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", system-ui, sans-serif',
             fontSize: fontSize === 0 ? 21 : 24,
             fontWeight: 700,
             letterSpacing: 0,
@@ -561,15 +558,67 @@ const styles = (theme, fontSize = 0) => {
             width: 'calc(100% - 56px)',
             maxWidth: 660,
             margin: '14px auto 0',
-            borderRadius: 22,
-            padding: 14,
-            background: panel,
-            border: `1px solid ${border}`,
+            borderRadius: 24,
+            padding: 15,
+            background: isLight
+                ? `radial-gradient(260px 160px at 6% 0%, rgba(${accentText},0.12), transparent 68%), linear-gradient(135deg, rgba(255,255,255,0.78), rgba(255,255,255,0.46))`
+                : `radial-gradient(300px 180px at 8% 0%, rgba(${accentText},0.16), transparent 70%), linear-gradient(135deg, rgba(30,35,43,0.72), rgba(17,20,25,0.64))`,
+            border: `1px solid rgba(${accentText},${isLight ? 0.16 : 0.20})`,
             boxSizing: 'border-box',
-            boxShadow: isLight ? '0 12px 28px -26px rgba(0,0,0,0.18)' : '0 1px 0 rgba(255,255,255,0.035) inset',
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.82) inset, 0 16px 34px -28px rgba(15,23,42,0.20)'
+                : `0 1px 0 rgba(255,255,255,0.07) inset, 0 22px 44px -32px rgba(0,0,0,0.72), 0 12px 34px -30px rgba(${accentText},0.72)`,
             backdropFilter: 'blur(22px) saturate(165%)',
             WebkitBackdropFilter: 'blur(22px) saturate(165%)'
         },
+        progressLink: {
+            width: 'calc(100% - 56px)',
+            maxWidth: 660,
+            minHeight: 68,
+            margin: '14px auto 0',
+            borderRadius: 22,
+            border: `1px solid rgba(${accentText},${isLight ? 0.16 : 0.22})`,
+            background: isLight
+                ? `linear-gradient(135deg, rgba(255,255,255,0.78), rgba(${accentText},0.08))`
+                : `linear-gradient(135deg, rgba(30,35,43,0.68), rgba(${accentText},0.10))`,
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 14px 30px -26px rgba(15,23,42,0.18)'
+                : `0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 38px -30px rgba(0,0,0,0.72)`,
+            color: text,
+            fontFamily: 'inherit',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px 14px',
+            boxSizing: 'border-box',
+            cursor: 'pointer',
+            outline: 'none',
+            appearance: 'none',
+            WebkitAppearance: 'none',
+            WebkitTapHighlightColor: 'transparent'
+        },
+        progressLinkIcon: {
+            width: 38,
+            height: 38,
+            borderRadius: 14,
+            color: mentalAccent.hue,
+            background: `rgba(${accentText},0.13)`,
+            border: `1px solid rgba(${accentText},0.24)`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+        },
+        progressLinkCopy: {
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: 3,
+            textAlign: 'left'
+        },
+        progressLinkCopyStrong: {},
         progressHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
         panelTitle: { color: text, fontSize: 14, fontWeight: 950, lineHeight: 1.15 },
         panelSub: { color: sub, fontSize: 10.5, fontWeight: 720, marginTop: 3 },
@@ -588,10 +637,38 @@ const styles = (theme, fontSize = 0) => {
             fontVariantNumeric: 'tabular-nums',
             flexShrink: 0
         },
-        progressRows: { display: 'flex', flexDirection: 'column', gap: 9 },
-        progressRow: { display: 'grid', gridTemplateColumns: '82px minmax(0, 1fr) 38px', alignItems: 'center', gap: 8 },
-        progressName: { display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, color: sub, fontSize: 10.5, fontWeight: 850, overflow: 'hidden' },
-        progressDot: { width: 6, height: 6, borderRadius: 99, flexShrink: 0 },
+        progressRows: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 9 },
+        progressCard: (tone) => ({
+            minHeight: 68,
+            borderRadius: 18,
+            padding: '10px 11px',
+            boxSizing: 'border-box',
+            background: isLight
+                ? `linear-gradient(145deg, rgba(255,255,255,0.62), ${tone.soft})`
+                : `linear-gradient(145deg, rgba(255,255,255,0.046), ${tone.soft})`,
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.07)' : tone.ring}`,
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.72) inset, 0 12px 22px -20px rgba(15,23,42,0.18)'
+                : `0 1px 0 rgba(255,255,255,0.055) inset, 0 12px 26px -24px ${tone.hue}`,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            gap: 9,
+            overflow: 'hidden'
+        }),
+        progressCardTop: { display: 'grid', gridTemplateColumns: '24px minmax(0, 1fr) auto', alignItems: 'center', gap: 7 },
+        progressIcon: (tone) => ({
+            width: 24,
+            height: 24,
+            borderRadius: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: tone.hue,
+            background: tone.soft,
+            border: `1px solid ${tone.ring}`
+        }),
+        progressName: { minWidth: 0, color: text, fontSize: 11, fontWeight: 900, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
         progressTrack: { height: 6, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)', overflow: 'hidden' },
         progressFill: { height: '100%', borderRadius: 999 },
         progressValue: { color: text, fontSize: 11, fontWeight: 950, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }

@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { AppData, UserData } from '../StaticClasses/AppData'
 import { motion, AnimatePresence } from 'framer-motion'
-import Colors, { THEME } from "../StaticClasses/Colors";
+import Colors from "../StaticClasses/Colors";
 import { sendBugreport } from '../StaticClasses/NotificationsManager'
-import { FaAddressCard, FaLanguage, FaHighlighter, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight, FaHome, FaUser, FaCog, FaPaperPlane, FaTelegramPlane, FaTimes, FaCloudUploadAlt, FaCloudDownloadAlt, FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa'
+import { FaAddressCard, FaLanguage, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight, FaHome, FaUser, FaCog, FaPaperPlane, FaTelegramPlane, FaTimes, FaCloudUploadAlt, FaCloudDownloadAlt, FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa'
 import { LuVibrate, LuVibrateOff } from 'react-icons/lu'
 import { RiFontSize2 } from 'react-icons/ri'
 import { clearAllSaves } from '../StaticClasses/SaveHelper';
 import { MdBackup, MdInfoOutline } from 'react-icons/md'
 import { IoIosArrowBack } from 'react-icons/io'
-import { setTheme as setGlobalTheme, theme$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, lastPage$ } from '../StaticClasses/HabitsBus';
+import { theme$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, lastPage$ } from '../StaticClasses/HabitsBus';
 import { cloudBackup, cloudRestore, deleteCloudBackup } from '../StaticClasses/NotificationsManager';
 import { playEffects } from '../StaticClasses/Effects';
 
@@ -81,7 +81,6 @@ const Settings = () => {
                         </div>
                     </div>
                     <div style={styles.heroQuickRow}>
-                        <span style={styles.heroQuickChip}>{getThemeShortName(langIndex, theme)}</span>
                         <span style={styles.heroQuickChip}>{langIndex === 0 ? 'Русский' : 'English'}</span>
                         <span style={styles.heroQuickChip}>{sound === 0 ? (langIndex === 0 ? 'Звук вкл' : 'Sound on') : (langIndex === 0 ? 'Без звука' : 'Muted')}</span>
                     </div>
@@ -90,8 +89,6 @@ const Settings = () => {
                 <SettingsSection title={langIndex === 0 ? 'Приложение' : 'App'} theme={theme} fSize={fSize}>
                     <SettingsItem theme={theme} fSize={fSize} icon={<FaLanguage />} label={langIndex === 0 ? 'Язык' : 'Language'} value={langIndex === 0 ? 'Русский' : 'English'} color="#66D9E8"
                         onClick={() => { changeSettings(0); const n = langIndex === 0 ? 1 : 0; setLang(n === 0 ? 'ru' : 'en'); AppData.setPrefs(0, n); }} />
-                    <SettingsItem theme={theme} fSize={fSize} icon={<FaHighlighter />} label={langIndex === 0 ? 'Тема' : 'Theme'} value={getThemeShortName(langIndex, theme)} color="#8A7CD6"
-                        onClick={() => { changeSettings(1); playEffects(null); }} />
                     <FontSizeControl
                         theme={theme}
                         fSize={fSize}
@@ -187,7 +184,14 @@ const PremiumSettingsCard = ({ theme, langIndex, onClick }) => {
 };
 
 const SettingsItem = ({ theme, fSize, icon, label, value, onClick, color, isActive = true }) => (
-    <motion.button type="button" style={s(theme, fSize).listEl} whileTap={{ scale: 0.98 }} onClick={onClick}>
+    <motion.button
+        type="button"
+        style={s(theme, fSize).listEl}
+        whileHover={{ y: -1, scale: 1.006 }}
+        whileTap={{ scale: 0.975, y: 1 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+        onClick={onClick}
+    >
         <div style={s(theme, fSize).itemLeft}>
             <div style={{ ...s(theme).iconBox, color: isActive ? color : Colors.get('subText', theme), backgroundColor: isActive ? (color + '20') : s(theme).faint, border: `1px solid ${isActive ? (color + '44') : 'transparent'}` }}>
                 {React.cloneElement(icon, { size: 18 })}
@@ -211,7 +215,9 @@ const FontSizeControl = ({ theme, fSize, langIndex, onChange }) => {
         <motion.button
             type="button"
             style={styles.listEl}
+            whileHover={{ y: -1, scale: 1.006 }}
             whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
             onClick={() => onChange(fSize === 0 ? 1 : 0)}
         >
             <div style={styles.itemLeft}>
@@ -418,7 +424,14 @@ const ContactLink = ({ theme, href, name, label, accent }) => {
 };
 
 const ActionButton = ({ icon, text, onClick, theme, color }) => (
-    <motion.button type="button" whileTap={{ scale: 0.96 }} onClick={onClick} style={s(theme).actionButton(color)}>
+    <motion.button
+        type="button"
+        whileHover={{ y: -1, scale: 1.01 }}
+        whileTap={{ scale: 0.96, y: 1 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+        onClick={onClick}
+        style={s(theme).actionButton(color)}
+    >
         {icon && <span style={s(theme).actionButtonIcon(color)}>{icon}</span>}
         <span>{text}</span>
     </motion.button>
@@ -434,6 +447,14 @@ const s = (theme, fSize = 0) => {
     const panelStrong = isLight ? 'rgba(255,255,255,0.96)' : isCoffee ? 'rgba(29,19,14,0.92)' : 'rgba(20,23,25,0.92)';
     const faint = isLight ? 'rgba(15,23,42,0.04)' : isCoffee ? 'rgba(255,215,178,0.045)' : 'rgba(255,255,255,0.04)';
     const heroAccent = isCoffee ? '#C8874A' : '#5fb6c6';
+    const glassPanel = isLight
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.70), rgba(255,255,255,0.42) 48%, rgba(239,246,249,0.58))'
+        : isCoffee
+            ? 'linear-gradient(145deg, rgba(57,38,27,0.62), rgba(30,21,16,0.50) 48%, rgba(17,12,9,0.52))'
+            : 'linear-gradient(145deg, rgba(32,45,55,0.56), rgba(18,26,32,0.46) 48%, rgba(10,15,20,0.52))';
+    const rowGlass = isLight
+        ? 'linear-gradient(135deg, rgba(255,255,255,0.52), rgba(255,255,255,0.16))'
+        : 'linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))';
 
     return {
         faint,
@@ -617,10 +638,14 @@ const s = (theme, fSize = 0) => {
         },
         sectionCard: {
             borderRadius: '22px',
-            background: panel,
-            border: `1px solid ${border}`,
-            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset',
-            overflow: 'hidden'
+            background: glassPanel,
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.22)' : isCoffee ? 'rgba(226,173,118,0.16)' : 'rgba(190,220,235,0.13)'}`,
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 18px 42px -32px rgba(15,23,42,0.26)'
+                : '0 1px 0 rgba(255,255,255,0.10) inset, 0 22px 48px -30px rgba(0,0,0,0.72), 0 0 34px rgba(183,243,255,0.045)',
+            overflow: 'hidden',
+            backdropFilter: 'blur(24px) saturate(165%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(165%)'
         },
         listEl: {
             width: '100%',
@@ -631,13 +656,17 @@ const s = (theme, fSize = 0) => {
             justifyContent: 'space-between',
             gap: '12px',
             padding: fSize === 0 ? '12px 14px' : '14px 15px',
-            background: 'transparent',
+            background: rowGlass,
             border: 'none',
             borderBottom: `1px solid ${border}`,
             color: text,
             cursor: 'pointer',
             fontFamily: 'inherit',
-            textAlign: 'left'
+            textAlign: 'left',
+            position: 'relative',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.035) inset',
+            transition: 'background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease',
+            WebkitTapHighlightColor: 'transparent'
         },
         itemLeft: { display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 },
         iconBox: { width: '36px', height: '36px', borderRadius: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
@@ -689,20 +718,26 @@ const s = (theme, fSize = 0) => {
         settingsDock: {
             position: 'fixed',
             left: '50%',
-            bottom: 'calc(30px + env(safe-area-inset-bottom, 0px))',
+            bottom: 'max(14px, calc(20px + env(safe-area-inset-bottom, 0px)))',
             transform: 'translateX(-50%)',
             zIndex: 40,
-            width: '230px',
-            height: '64px',
-            display: 'flex',
+            width: 'calc(100vw - 72px)',
+            maxWidth: '360px',
+            height: '58px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            justifyItems: 'center',
             alignItems: 'center',
-            justifyContent: 'space-around',
-            padding: '10px 14px',
+            padding: '7px 10px',
             boxSizing: 'border-box',
             borderRadius: '999px',
-            background: panelStrong,
-            border: `1px solid ${border}`,
-            boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -20px rgba(0,0,0,0.72)',
+            background: isLight
+                ? 'linear-gradient(135deg, rgba(255,255,255,0.72), rgba(255,255,255,0.42))'
+                : 'linear-gradient(135deg, rgba(19,29,36,0.64), rgba(8,13,17,0.50))',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.28)' : 'rgba(190,220,235,0.14)'}`,
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 20px 44px -30px rgba(15,23,42,0.28)'
+                : '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px -20px rgba(0,0,0,0.76), 0 0 28px rgba(183,243,255,0.08)',
             backdropFilter: 'blur(24px) saturate(180%)',
             WebkitBackdropFilter: 'blur(24px) saturate(180%)'
         },
@@ -713,13 +748,18 @@ const s = (theme, fSize = 0) => {
             border: '1px solid transparent',
             cursor: 'pointer',
             background: 'transparent',
-            color: sub,
+            color: '#B7F3FF',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             lineHeight: 1,
             padding: 0,
-            fontFamily: 'inherit'
+            fontFamily: 'inherit',
+            outline: 'none',
+            appearance: 'none',
+            WebkitAppearance: 'none',
+            WebkitTapHighlightColor: 'transparent',
+            boxShadow: 'none'
         },
         panelScreen: {
             position: 'fixed',
@@ -1028,7 +1068,9 @@ const s = (theme, fSize = 0) => {
             width: '100%',
             borderRadius: '18px',
             border: `1px solid ${color}44`,
-            background: isLight ? `${color}13` : `${color}16`,
+            background: isLight
+                ? `linear-gradient(135deg, ${color}1f, rgba(255,255,255,0.44))`
+                : `linear-gradient(135deg, ${color}24, rgba(255,255,255,0.035))`,
             color: text,
             display: 'flex',
             alignItems: 'center',
@@ -1038,9 +1080,11 @@ const s = (theme, fSize = 0) => {
             fontSize: fSize === 0 ? '13px' : '15px',
             fontWeight: 900,
             cursor: 'pointer',
-            boxShadow: `0 16px 28px -24px ${color}88`,
+            boxShadow: `0 1px 0 rgba(255,255,255,0.08) inset, 0 16px 28px -24px ${color}88`,
             padding: '0 12px',
-            boxSizing: 'border-box'
+            boxSizing: 'border-box',
+            backdropFilter: 'blur(18px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(150%)'
         }),
         actionButtonIcon: (color) => ({
             color,
@@ -1073,7 +1117,7 @@ function getThemeShortName(langIndex, theme) {
 function changeSettings(prefIndex, size) {
     switch (prefIndex) {
         case 0: setLang(AppData.prefs[0] == 0 ? 'en' : 'ru'); AppData.prefs[0] == 0 ? AppData.setPrefs(0, 1) : AppData.setPrefs(0, 0); break;
-        case 1: toggleTheme(); break;
+        case 1: break;
         case 2: AppData.prefs[2] == 0 ? AppData.setPrefs(2, 1) : AppData.setPrefs(2, 0); break;
         case 3: AppData.prefs[3] == 0 ? AppData.setPrefs(3, 1) : AppData.setPrefs(3, 0); break;
         case 4: {
@@ -1084,13 +1128,5 @@ function changeSettings(prefIndex, size) {
         }
     }
 }
-
-const toggleTheme = () => {
-    let next; let themeNum = 0;
-    if (Colors.theme === THEME.DARK) { themeNum = 1; next = THEME.LIGHT; }
-    else if (Colors.theme === THEME.LIGHT) { themeNum = 2; next = THEME.COFFEE; }
-    else { themeNum = 0; next = THEME.DARK; }
-    AppData.setPrefs(1, themeNum); Colors.setTheme(next); setGlobalTheme(next);
-};
 
 export default Settings;

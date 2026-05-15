@@ -10,7 +10,9 @@ import {
   getTrainingPageBackground,
   getTrainingPanelBackground,
   getTrainingPanelBorder,
-  getTrainingPanelShadow
+  getTrainingPanelShadow,
+  getTrainingGlassSurface,
+  getTrainingPressMotion
 } from '../TrainingVisuals.js';
 
 // Training type configuration with localized content and icons
@@ -146,11 +148,11 @@ const TrainingAnaliticsTypes = () => {
                     scale: isSelected ? 1.05 : 1,
                     transition: { type: "spring", damping: 15, stiffness: 300 }
                   }}
-                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                  whileTap={{ scale: 0.97 }}
+                  {...getTrainingPressMotion(1.018, 0.972)}
                   onClick={() => setPage(type.id === 'GYM' ? 'TrainingAnaliticsMain' :  'TrainingAnaliticsCardio')}
                   style={{
                     ...styles(theme, fSize).trainingTypeCard,
+                    ...getTrainingGlassSurface(theme, accent, isSelected),
                     border: isSelected 
                       ? `1px solid ${accent.ring}`
                       : styles(theme, fSize).trainingTypeCard.border,
@@ -272,7 +274,11 @@ const styles = (theme, fSize) => {
       position: 'relative',
       width: '100%',
       maxWidth: '620px',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      backdropFilter: 'blur(22px) saturate(1.16)',
+      WebkitBackdropFilter: 'blur(22px) saturate(1.16)',
+      userSelect: 'none',
+      WebkitTapHighlightColor: 'transparent'
     },
     trainingTypeIcon: {
       width: '72px',

@@ -1033,10 +1033,10 @@ const CategoryPanel = ({ title, categoryKey, count, doneCount, todayCount, child
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }}
+            initial={false}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ type: 'spring', stiffness: 200, damping: 25 }}
             style={s.categoryBody}
           >
             {children}
@@ -1072,8 +1072,9 @@ const TaskCard = ({
   const isOverdue = isDeadlinePassed(item.deadLine) && !item.isDone;
   const categoryTone = getTodoCategoryTone(item.category, accent);
   const cardAccent = categoryTone;
-  const glyphTone = item.isDone ? TODO_SUCCESS : cardAccent;
-  const progressTone = item.isDone ? TODO_SUCCESS : cardAccent;
+  const overdueTone = makeTodoTone('#E95F5F');
+  const glyphTone = item.isDone ? TODO_SUCCESS : (isOverdue ? overdueTone : cardAccent);
+  const progressTone = item.isDone ? TODO_SUCCESS : (isOverdue ? overdueTone : cardAccent);
   const completedBadgeColor = theme === 'light' || theme === 'speciallight' ? '#7D8794' : '#8E98A6';
   const badgeColor = (color) => item.isDone ? completedBadgeColor : color;
   const TaskIcon = cardAccent.icon;
@@ -1088,13 +1089,17 @@ const TaskCard = ({
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 12 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
-      transition={{ opacity: { duration: 0.18 }, y: { duration: 0.24, ease: [0.22, 1, 0.36, 1] } }}
+      transition={{
+        opacity: { duration: 0.18 },
+        y: { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
+      }}
+      whileHover={{ y: -2, scale: 1.004 }}
       whileTap={{ scale: 0.985 }}
       onClick={onOpen}
-      style={s.taskCard(item.isDone, isOverdue, item.isPinned, cardAccent, expanded)}
+      style={s.taskCard(item.isDone, isOverdue, item.isPinned, cardAccent)}
     >
       <div style={s.taskMainRow}>
         <div style={{ ...s.taskGlyph, color: glyphTone.hue, background: glyphTone.soft, borderColor: glyphTone.ring }}>
@@ -1127,22 +1132,18 @@ const TaskCard = ({
           </div>
         </div>
 
-        <button type="button" onClick={onCheck} style={s.checkButton(item.isDone)}>
+        <motion.button type="button" whileHover={{ scale: 1.035 }} whileTap={{ scale: 0.9 }} onClick={onCheck} style={s.checkButton(item.isDone)}>
           {item.isDone && <FaCheck size={14} />}
-        </button>
+        </motion.button>
       </div>
 
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
-            initial={{ opacity: 0, maxHeight: 0, y: -4 }}
-            animate={{ opacity: 1, maxHeight: 640, y: 0 }}
-            exit={{ opacity: 0, maxHeight: 0, y: -4 }}
-            transition={{
-              maxHeight: { duration: 0.46, ease: [0.16, 1, 0.3, 1] },
-              opacity: { duration: 0.22, ease: 'linear' },
-              y: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
-            }}
+            initial={{ height: 0, opacity: 0, y: -6 }}
+            animate={{ height: 'auto', opacity: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, y: -6 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 25 }}
             style={s.taskExpandedShell}
             onClick={(event) => event.stopPropagation()}
           >
@@ -1244,10 +1245,10 @@ const TaskCard = ({
 const ActionButton = ({ active, label, icon, onClick, theme, accent }) => {
   const s = styles(theme, accent);
   return (
-    <button type="button" onClick={onClick} style={s.actionButton(active)}>
+    <motion.button type="button" whileTap={{ scale: 0.94, y: 1 }} onClick={onClick} style={s.actionButton(active)}>
       {icon}
-      <span>{label}</span>
-    </button>
+      <span style={s.actionButtonLabel}>{label}</span>
+    </motion.button>
   );
 };
 
@@ -1318,7 +1319,7 @@ const styles = (theme, accent, fSize = 0) => {
         ? `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${accent.rgbText},0.1), transparent 66%), #F4F5F7`
         : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgbText},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
       color: text,
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+      fontFamily: "'SF Pro Rounded', 'Nunito Sans', Nunito, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', Inter, 'Segoe UI', system-ui, sans-serif"
     },
     scroll: {
       height: '100%',
@@ -1860,39 +1861,51 @@ const styles = (theme, accent, fSize = 0) => {
       fontVariantNumeric: 'tabular-nums'
     }),
     chevron: { color: sub, display: 'flex' },
-    categoryBody: { overflowY: 'hidden', overflowX: 'visible', display: 'flex', flexDirection: 'column', gap: 10, padding: '0 1px', boxSizing: 'border-box' },
-    taskCard: (done, overdue, pinned, tone = accent, expanded = false) => ({
+    categoryBody: { overflowY: 'hidden', overflowX: 'visible', display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 1px 2px', boxSizing: 'border-box' },
+    taskCard: (done, overdue, pinned, tone = accent) => ({
       position: 'relative',
-      borderRadius: 28,
-      padding: '9px 12px',
-      minHeight: expanded ? 'auto' : 82,
+      borderRadius: 34,
+      padding: '12px 14px',
+      minHeight: 94,
       overflow: 'hidden',
       boxSizing: 'border-box',
       background: done
         ? (isLight
           ? `linear-gradient(145deg, rgba(255,255,255,0.95), ${TODO_SUCCESS.soft})`
           : `radial-gradient(240px 128px at 6% 8%, ${TODO_SUCCESS.soft}, transparent 72%), linear-gradient(145deg, rgba(22,34,27,0.82), rgba(15,21,18,0.76))`)
-        : (pinned
+        : (overdue
+          ? (isLight
+            ? 'linear-gradient(145deg, rgba(255,255,255,0.94), rgba(233,95,95,0.14))'
+            : 'radial-gradient(250px 130px at 6% 8%, rgba(233,95,95,0.20), transparent 72%), linear-gradient(145deg, rgba(44,25,27,0.84), rgba(24,17,20,0.78))')
+          : (pinned
           ? (isLight
             ? `linear-gradient(145deg, rgba(255,255,255,0.90), ${tone.soft})`
             : `radial-gradient(230px 115px at 4% 8%, ${tone.soft}, transparent 72%), linear-gradient(145deg, rgba(24,28,31,0.86), rgba(20,23,25,0.82))`)
           : (isLight
             ? 'linear-gradient(145deg, rgba(255,255,255,0.82), rgba(244,246,248,0.56))'
-            : 'linear-gradient(145deg, rgba(42,49,55,0.52), rgba(17,22,26,0.66))')),
-      border: `1px solid ${done ? TODO_SUCCESS.ring : overdue ? 'rgba(233,95,95,0.34)' : pinned ? tone.ring : border}`,
-      boxShadow: done ? `0 1px 0 rgba(255,255,255,0.06) inset, 0 16px 38px -28px ${TODO_SUCCESS.glow}` : pinned ? `0 14px 36px -24px ${tone.hue}` : isLight ? '0 12px 28px -24px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.72) inset' : '0 1px 0 rgba(255,255,255,0.04) inset, 0 14px 34px -28px rgba(0,0,0,0.72)',
+            : 'linear-gradient(145deg, rgba(42,49,55,0.52), rgba(17,22,26,0.66))'))),
+      border: `1px solid ${done ? TODO_SUCCESS.ring : overdue ? 'rgba(233,95,95,0.42)' : pinned ? tone.ring : border}`,
+      boxShadow: done
+        ? `0 1px 0 rgba(255,255,255,0.06) inset, 0 16px 38px -28px ${TODO_SUCCESS.glow}`
+        : overdue
+          ? '0 1px 0 rgba(255,255,255,0.055) inset, 0 16px 40px -28px rgba(233,95,95,0.58)'
+          : pinned
+            ? `0 14px 36px -24px ${tone.hue}`
+            : isLight ? '0 12px 28px -24px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.72) inset' : '0 1px 0 rgba(255,255,255,0.04) inset, 0 14px 34px -28px rgba(0,0,0,0.72)',
       opacity: 1,
       cursor: 'pointer',
       backdropFilter: 'blur(24px) saturate(160%)',
       WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-      clipPath: 'inset(0 round 28px)',
+      clipPath: 'inset(0 round 34px)',
+      contain: 'layout paint',
+      transform: 'translateZ(0)',
       transition: 'background 0.42s ease, border-color 0.42s ease, box-shadow 0.42s ease'
     }),
-    taskMainRow: { display: 'flex', alignItems: 'center', gap: 12, minHeight: 48 },
+    taskMainRow: { display: 'flex', alignItems: 'center', gap: 14, minHeight: 60 },
     taskGlyph: {
       width: 46,
       height: 46,
-      borderRadius: 15,
+      borderRadius: 18,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -1920,7 +1933,7 @@ const styles = (theme, accent, fSize = 0) => {
     checkButton: (done) => ({
       width: 40,
       height: 30,
-      borderRadius: 12,
+      borderRadius: 15,
       border: `1px solid ${done ? TODO_SUCCESS.ring : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)')}`,
       background: done
         ? TODO_SUCCESS.soft
@@ -1946,9 +1959,9 @@ const styles = (theme, accent, fSize = 0) => {
       flexWrap: 'wrap',
       justifyContent: 'center',
       alignItems: 'center',
-      gap: 4,
-      marginTop: 4,
-      paddingTop: 4,
+      gap: 5,
+      marginTop: 8,
+      paddingTop: 7,
       borderTop: `1px solid ${isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.045)'}`,
       paddingLeft: 0,
       paddingRight: 0,
@@ -1959,7 +1972,10 @@ const styles = (theme, accent, fSize = 0) => {
     },
     progressTrack: { height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)', overflow: 'hidden', marginTop: 15, marginBottom: 8 },
     progressFill: (color) => ({ height: '100%', borderRadius: 999, background: color, boxShadow: `0 0 18px ${color}66` }),
-    taskExpandedShell: { overflow: 'hidden', willChange: 'max-height, opacity, transform' },
+    taskExpandedShell: {
+      overflow: 'hidden',
+      willChange: 'height, opacity, transform'
+    },
     taskExpanded: { marginTop: 12, borderTop: `1px solid ${border}`, paddingTop: 12, paddingBottom: 3 },
     expandedInfoGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12, marginTop: 14 },
     expandedInfo: {
@@ -2070,7 +2086,8 @@ const styles = (theme, accent, fSize = 0) => {
       fontFamily: 'inherit'
     },
     actionRow: {
-      display: 'flex',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
       alignItems: 'center',
       justifyContent: 'center',
       gap: 8,
@@ -2081,29 +2098,42 @@ const styles = (theme, accent, fSize = 0) => {
       paddingTop: 10,
       borderTop: `1px solid ${isLight ? 'rgba(15,23,42,0.09)' : 'rgba(159,180,196,0.14)'}`,
       boxSizing: 'border-box',
-      flexWrap: 'wrap'
+      overflow: 'hidden'
     },
     actionButton: (active) => ({
       border: `1px solid ${active ? accent.ring : border}`,
       background: active ? accent.soft : isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.025)',
       color: active ? accent.hue : sub,
       borderRadius: 999,
-      minHeight: 24,
-      padding: '0 9px',
+      width: '100%',
+      minWidth: 0,
+      height: 24,
+      padding: '0 7px',
       display: 'flex',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: 3,
       fontSize: 8.5,
       fontWeight: 900,
-      fontFamily: 'inherit'
+      fontFamily: 'inherit',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden'
     }),
+    actionButtonLabel: {
+      minWidth: 0,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
     donePill: {
       minHeight: 22,
       padding: '0 8px',
       borderRadius: 999,
       display: 'flex',
       alignItems: 'center',
+      justifyContent: 'center',
       gap: 4,
+      gridColumn: '1 / -1',
       color: Colors.get('done', theme),
       background: 'rgba(16,185,129,0.13)',
       border: '1px solid rgba(16,185,129,0.24)',

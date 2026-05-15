@@ -14,14 +14,16 @@ import {
     getTrainingPageBackground,
     getTrainingPanelBackground,
     getTrainingPanelBorder,
-    getTrainingPanelShadow
+    getTrainingPanelShadow,
+    getTrainingGlassSurface,
+    getTrainingPressMotion
 } from './TrainingVisuals.js'
 
 const TrainingExercise = ({ needToAdd, setEx }) => {
     // states
     const [theme, setthemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
-    const [fSize, setFSize] = useState(AppData.prefs[1]);
+    const [fSize, setFSize] = useState(AppData.prefs[4]);
     const [currentMuscleGroupId, setCurrentMuscleGroupId] = useState(-1);
     const [currentExerciseId, setCurrentExerciseId] = useState(-1);
     const [currentExerciseName, setCurrentExerciseName] = useState('');
@@ -178,8 +180,10 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                             layout
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
+                            {...getTrainingPressMotion(1.006, 0.988)}
                             style={{
                                 ...styles(theme).card,
+                                ...getTrainingGlassSurface(theme, getTrainingAccent(), isSelected),
                                 background: isSelected
                                     ? `linear-gradient(145deg, rgba(${getTrainingAccent().rgb}, 0.04), rgba(${getTrainingAccent().rgb}, 0.015)), ${getTrainingPanelBackground(theme)}`
                                     : getTrainingPanelBackground(theme),
@@ -222,11 +226,15 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                                                             {/* Exercise Row */}
                                                             <Motion.div
                                                                 onClick={() => setExercise(exId)}
+                                                                whileHover={{ y: -1, scale: 1.006 }}
+                                                                whileTap={{ scale: 0.985, y: 1 }}
+                                                                transition={{ type: 'spring', stiffness: 430, damping: 32 }}
                                                                 style={{
                                                                     ...styles(theme).exerciseRow,
-                                                                    backgroundColor: isExSelected ? (theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)') : 'transparent'
+                                                                    background: isExSelected
+                                                                        ? `linear-gradient(135deg, rgba(${getTrainingAccent().rgb},0.14), rgba(255,255,255,0.05))`
+                                                                        : styles(theme).exerciseRow.background
                                                                 }}
-                                                                whileTap={{ backgroundColor: Colors.get('trainingGroup', theme) }}
                                                             >
                                                                 <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                                     <p style={{...styles(theme, false, false, fSize).text, ...styles(theme).exerciseName}}>{exercise.name[langIndex]}</p>
@@ -460,9 +468,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
     // SEARCH
 	    searchContainer: {
 	        width: '100%', maxWidth: '600px',
-        background: getTrainingPanelBackground(theme),
-        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
-        boxShadow: getTrainingPanelShadow(theme, accent),
+        ...getTrainingGlassSurface(theme, accent),
         borderRadius: '20px', display: 'flex', alignItems: 'center',
 	        padding: '12px 0', marginBottom: '16px', boxSizing: 'border-box'
     },
@@ -475,9 +481,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
 	    card: {
 	        width: '100%', margin: '0 auto 16px auto',
 	        borderRadius: '24px', overflow: 'hidden',
-	        background: getTrainingPanelBackground(theme),
-	        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
-	        boxShadow: getTrainingPanelShadow(theme, accent),
+	        ...getTrainingGlassSurface(theme, accent),
 	        boxSizing: 'border-box'
 	    },
     groupHeader: {
@@ -485,12 +489,18 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
         padding: '16px 14px', alignItems: "center", justifyContent: "space-between",
         cursor: 'pointer'
     },
-    exerciseRow: {
+	    exerciseRow: {
 	        display: 'flex', flexDirection: 'row',
 	        padding: '17px 18px', alignItems: "center", justifyContent: "space-between",
 	        cursor: 'pointer', borderRadius: '16px', margin: '0 14px 10px', boxSizing: 'border-box',
 	        minHeight: '64px',
-	        backgroundColor: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)'
+	        background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.045)',
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.06)'}`,
+            boxShadow: isLight ? '0 8px 18px rgba(20,30,38,0.05)' : '0 8px 18px rgba(0,0,0,0.12)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            userSelect: 'none',
+            WebkitTapHighlightColor: 'transparent'
 	    },
     icon: {
         fontSize: "20px", color: Colors.get('icons', theme), marginRight: '10px'
@@ -523,9 +533,11 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
         padding: '16px',
         borderRadius: '22px',
         background: isLight
-            ? 'linear-gradient(135deg, rgba(15,23,42,0.04), rgba(15,23,42,0.015))'
-            : 'linear-gradient(135deg, rgba(255,255,255,0.055), rgba(255,255,255,0.025))',
+            ? 'linear-gradient(135deg, rgba(255,255,255,0.56), rgba(15,23,42,0.025))'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.075), rgba(255,255,255,0.028))',
         border: `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.07)'}`,
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
         boxSizing: 'border-box',
     },
     guideContent: {

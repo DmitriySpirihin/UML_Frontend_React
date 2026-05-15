@@ -6,7 +6,7 @@ import { saveData } from '../StaticClasses/SaveHelper.js';
 import { theme$, lang$, fontSize$, setPage, setActiveTab } from '../StaticClasses/HabitsBus'
 import { FaQuestion } from "react-icons/fa6"; // Using FaQuestion usually fits "Help" better, or keep FaInfo
 
-const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007AFF' }) => {
+const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007AFF', styleOverride = {} }) => {
     // eslint-disable-next-line no-unused-vars
     const [theme, setthemeState] = React.useState('dark');
     // eslint-disable-next-line no-unused-vars
@@ -14,6 +14,7 @@ const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007
     // eslint-disable-next-line no-unused-vars
     const [fSize, setFontSize] = useState(0);
     const [needToShow, setNeedToShow] = useState(AppData.infoMiniPanel[tab] || false);
+    const dismissingByDrag = React.useRef(false);
 
     useEffect(() => {
         const subs = [
@@ -24,60 +25,69 @@ const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007
         return () => subs.forEach(s => s.unsubscribe());
     }, []);
 
-    const onConfirm = async () => {
-        setPage('InfoPanel');
+    const hideButton = async () => {
         setNeedToShow(false);
-        setActiveTab(tab);
         AppData.infoMiniPanel[tab] = false;
         await saveData();
+    }
+
+    const onConfirm = async () => {
+        if (dismissingByDrag.current) {
+            dismissingByDrag.current = false;
+            return;
+        }
+        setPage('InfoPanel');
+        setActiveTab(tab);
+        await hideButton();
+    }
+
+    const onDragEnd = async (_event, info) => {
+        const distance = Math.hypot(info.offset.x, info.offset.y);
+        if (distance < 52) return;
+        dismissingByDrag.current = true;
+        window.setTimeout(() => {
+            dismissingByDrag.current = false;
+        }, 250);
+        await hideButton();
     }
 
     if (!needToShow) return null;
     const isSubtle = variant === 'subtle';
     const isDark = theme === 'dark' || theme === 'specialdark';
-    const buttonStyle = isSubtle ? {
-        position: "fixed",
-        top: "calc(13vh + 16px)",
-        right: "28px",
-        width: "48px",
-        height: "48px",
-        borderRadius: "19px",
+    const glassButton = {
+        width: "52px",
+        height: "52px",
+        borderRadius: "20px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         background: isDark
-            ? `radial-gradient(circle at 30% 20%, rgba(255,255,255,0.22), rgba(255,255,255,0.075) 48%, ${accent}1f 100%)`
-            : `radial-gradient(circle at 30% 20%, rgba(255,255,255,0.9), rgba(255,255,255,0.52) 48%, ${accent}14 100%)`,
+            ? `radial-gradient(circle at 32% 22%, rgba(255,255,255,0.34), rgba(120,155,170,0.18) 45%, ${accent}24 100%)`
+            : `radial-gradient(circle at 32% 22%, rgba(255,255,255,0.95), rgba(255,255,255,0.58) 48%, ${accent}18 100%)`,
         boxShadow: isDark
-            ? `0 1px 0 rgba(255,255,255,0.16) inset, 0 18px 36px -26px rgba(0,0,0,0.78), 0 0 26px ${accent}20`
-            : `0 1px 0 rgba(255,255,255,0.9) inset, 0 16px 32px -24px rgba(15,23,42,0.2), 0 0 20px ${accent}14`,
-        border: `1px solid ${isDark ? 'rgba(225,240,255,0.22)' : 'rgba(255,255,255,0.64)'}`,
+            ? `0 1px 0 rgba(255,255,255,0.22) inset, 0 18px 36px -26px rgba(0,0,0,0.8), 0 0 28px ${accent}24`
+            : `0 1px 0 rgba(255,255,255,0.9) inset, 0 16px 32px -24px rgba(15,23,42,0.22), 0 0 22px ${accent}18`,
+        border: `1px solid ${isDark ? 'rgba(225,240,255,0.25)' : 'rgba(255,255,255,0.66)'}`,
         color: accent,
         backdropFilter: "blur(24px) saturate(175%)",
         WebkitBackdropFilter: "blur(24px) saturate(175%)",
+        cursor: "pointer",
+        boxSizing: "border-box"
+    };
+    const buttonStyle = isSubtle ? {
+        ...glassButton,
+        position: "fixed",
+        top: "calc(13vh + 16px)",
+        right: "28px",
         zIndex: 1001,
-        cursor: "pointer"
+        ...styleOverride
     } : {
+        ...glassButton,
         position: "absolute",
         top: "12%",
         right: "9%",
-        width: "48px",
-        height: "48px",
-        borderRadius: "19px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: isDark
-            ? `radial-gradient(circle at 30% 20%, rgba(255,255,255,0.32), rgba(255,255,255,0.11) 42%, ${accent}22 100%)`
-            : `radial-gradient(circle at 30% 20%, rgba(255,255,255,0.92), rgba(255,255,255,0.56) 46%, ${accent}16 100%)`,
-        boxShadow: isDark
-            ? `0 1px 0 rgba(255,255,255,0.2) inset, 0 18px 36px -26px rgba(0,0,0,0.78), 0 0 28px ${accent}22`
-            : `0 1px 0 rgba(255,255,255,0.88) inset, 0 16px 34px -26px rgba(15,23,42,0.22), 0 0 22px ${accent}16`,
-        border: isDark ? "1px solid rgba(225,240,255,0.26)" : "1px solid rgba(255,255,255,0.62)",
-        backdropFilter: "blur(24px) saturate(175%)",
-        WebkitBackdropFilter: "blur(24px) saturate(175%)",
         zIndex: 1000,
-        cursor: "pointer"
+        ...styleOverride
     };
 
     return (
@@ -95,8 +105,13 @@ const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007
             
             whileTap={{ scale: 0.9 }}
             whileHover={{ scale: 1.1 }}
+            drag
+            dragElastic={0.42}
+            dragMomentum={false}
+            dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+            onDragEnd={onDragEnd}
             onClick={onConfirm}
-            style={buttonStyle}
+            style={{ ...buttonStyle, touchAction: 'none' }}
         >
             {/* 3. Subtle Pulse Animation (Ripple) */}
             {!isSubtle && <motion.div
@@ -114,11 +129,11 @@ const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007
                 style={{
                     position: "absolute",
                     top: 0, left: 0, right: 0, bottom: 0,
-                    borderRadius: "19px",
+                    borderRadius: "20px",
                 }}
             />}
             
-            <FaQuestion size={isSubtle ? 18 : 20} color={isSubtle ? accent : (isDark ? '#EAF3FF' : accent)} style={{filter: isSubtle ? `drop-shadow(0 2px 5px ${accent}30)` : 'drop-shadow(0 2px 5px rgba(0,0,0,0.28))'}}/>
+            <FaQuestion size={20} color={accent} style={{filter: `drop-shadow(0 2px 5px ${accent}44)`}}/>
         </motion.div>
     );
 }

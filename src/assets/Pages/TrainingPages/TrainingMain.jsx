@@ -25,7 +25,7 @@ const formatDateKey = (d) => {
 };
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
 const clickSound = new Audio('Audio/Click.wav');
-const TRAINING_ACCENT = '#35C2FF';
+const TRAINING_ACCENT = '#579BC8';
 
 // Range Helpers (only needed for GYM time pickers)
 const hoursRange = Array.from({ length: 24 }, (_, i) => i);
@@ -488,7 +488,8 @@ const TrainingMain = () => {
                         const cellYear = date.getFullYear();
                         const isChoosen = day === currentDate.getDate() && cellMonth === currentDate.getMonth() && cellYear === currentDate.getFullYear();
                         const dayKey = formatDateKey(new Date(cellYear,cellMonth,day));
-                        const trAmount = dayKey in AppData.trainingLog ? AppData.trainingLog[dayKey].length : 0;
+                        const sessionsForDay = dayKey in AppData.trainingLog ? AppData.trainingLog[dayKey] : [];
+                        const trAmount = sessionsForDay.length;
                         let cellBg = 'transparent';
                         let cellColor = Colors.get('mainText', theme);
                         if (isChoosen) { cellBg = activeAccent; cellColor = '#ffffff'; }
@@ -503,41 +504,41 @@ const TrainingMain = () => {
                                 boxShadow: isChoosen ? `0 12px 28px rgba(${buildSectionAccent(activeAccent).rgb}, 0.22)` : 'none',
                               }}
                               onClick={() => {setCurrentDate(new Date(Date.UTC(cellYear, cellMonth, day)));playEffects(clickSound);}} >
-                                <span style={styles(theme).cellDayNumber}>{day}</span>
+                                <span style={styles(theme).cellDayNumber(trAmount > 0)}>{day}</span>
                                 {/* ICONS FOR DIFFERENT TYPES */}
                                 {trAmount > 0 &&  (
                                   <div style={styles(theme).cellIconRail}>
                                     {/* GYM sessions */}
-                                    {AppData.trainingLog[dayKey].filter(tr => tr.type === 'GYM' || tr.type === undefined).length > 0 && (
+                                    {sessionsForDay.filter(tr => tr.type === 'GYM' || tr.type === undefined).length > 0 && (
                                       <div
-                                        title={`${langIndex === 0 ? 'Силовая' : 'Strength'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'GYM').length}`}
+                                        title={`${langIndex === 0 ? 'Силовая' : 'Strength'}: ${sessionsForDay.filter(tr => tr.type === 'GYM' || tr.type === undefined).length}`}
                                       >
                                         <MdFitnessCenter size={9} color={getTrainingIconColor('GYM')}/>
                                       </div>
                                     )}
                                     {/* RUNNING sessions */}
-                                    {AppData.trainingLog[dayKey].filter(tr => tr.type === 'RUNNING').length > 0 && (
+                                    {sessionsForDay.filter(tr => tr.type === 'RUNNING').length > 0 && (
                                       <div
                                        
-                                        title={`${langIndex === 0 ? 'Бег' : 'Running'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'RUNNING').length}`}
+                                        title={`${langIndex === 0 ? 'Бег' : 'Running'}: ${sessionsForDay.filter(tr => tr.type === 'RUNNING').length}`}
                                       >
                                         <FaRunning size={9} color={getTrainingIconColor('RUNNING')}/>
                                       </div>
                                     )}
                                     {/* CYCLING sessions */}
-                                    {AppData.trainingLog[dayKey].filter(tr => tr.type === 'CYCLING').length > 0 && (
+                                    {sessionsForDay.filter(tr => tr.type === 'CYCLING').length > 0 && (
                                       <div
                                         
-                                        title={`${langIndex === 0 ? 'Велосипед' : 'Cycling'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'CYCLING').length}`}
+                                        title={`${langIndex === 0 ? 'Велосипед' : 'Cycling'}: ${sessionsForDay.filter(tr => tr.type === 'CYCLING').length}`}
                                       >
                                         <FaBicycle size={9} color={getTrainingIconColor('CYCLING')} />
                                       </div>
                                     )}
                                     {/* SWIMMING sessions */}
-                                    {AppData.trainingLog[dayKey].filter(tr => tr.type === 'SWIMMING').length > 0 && (
+                                    {sessionsForDay.filter(tr => tr.type === 'SWIMMING').length > 0 && (
                                       <div
                                         
-                                        title={`${langIndex === 0 ? 'Плавание' : 'Swimming'}: ${AppData.trainingLog[dayKey].filter(tr => tr.type === 'SWIMMING').length}`}
+                                        title={`${langIndex === 0 ? 'Плавание' : 'Swimming'}: ${sessionsForDay.filter(tr => tr.type === 'SWIMMING').length}`}
                                       >
                                         <FaSwimmer size={9} color={getTrainingIconColor('SWIMMING')} />
                                       </div>
@@ -561,7 +562,7 @@ const TrainingMain = () => {
       
       {/* --- JOURNAL LIST SECTION --- */}
 <div style={styles(theme).journalPanel}>
-  <div style={{ flex: 1, overflowY: 'hidden', display: 'flex', flexDirection: 'column' }}>
+  <div style={{ flex: '0 0 auto', minHeight: 0, overflowY: 'hidden', display: 'flex', flexDirection: 'column' }}>
     <div style={styles(theme).dayHeader}>
       <div>
       <div style={styles(theme).dayKicker}>{isRu ? 'Выбранный день' : 'Selected day'}</div>
@@ -1569,27 +1570,41 @@ const styles = (theme, fSize = 0) => {
         ? 'linear-gradient(180deg, rgba(255,255,255,0.052), rgba(255,255,255,0.018))'
         : 'linear-gradient(180deg, rgba(255,255,255,0.84), rgba(15,23,42,0.035))',
       boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.045)' : 'inset 0 1px 0 rgba(255,255,255,0.86)',
+      overflow: 'hidden',
     },
-    cellDayNumber: {
+    cellDayNumber: (hasMarkers = false) => ({
       display: 'block',
+      position: 'absolute',
+      left: '50%',
+      top: hasMarkers ? '7px' : '50%',
+      transform: hasMarkers ? 'translateX(-50%)' : 'translate(-50%, -50%)',
+      height: '14px',
       lineHeight: 1,
       fontVariantNumeric: 'tabular-nums',
-    },
+      fontSize: hasMarkers ? '13px' : '14px',
+      zIndex: 2,
+    }),
     cellIconRail: {
       position: 'absolute',
       left: '50%',
-      bottom: '6px',
-      transform: 'translateX(-50%)',
+      bottom: '2px',
+      transform: 'translateX(-50%) scale(0.86)',
+      transformOrigin: 'center bottom',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: '2px',
-      minHeight: '10px',
-      padding: '1px 4px',
+      gap: '1px',
+      minHeight: '12px',
+      maxWidth: '82%',
+      padding: '1px 5px',
       borderRadius: '999px',
-      background: isDark ? 'rgba(0,0,0,0.18)' : 'rgba(255,255,255,0.68)',
-      border: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.05)'}`,
+      background: isDark ? 'rgba(5,14,20,0.42)' : 'rgba(255,255,255,0.76)',
+      border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)'}`,
+      boxShadow: isDark ? '0 6px 14px rgba(0,0,0,0.20)' : '0 5px 12px rgba(15,23,42,0.08)',
+      backdropFilter: 'blur(8px)',
+      WebkitBackdropFilter: 'blur(8px)',
       boxSizing: 'border-box',
+      zIndex: 2,
     },
     cellCountPill: {
       position: 'absolute',
@@ -1614,17 +1629,22 @@ const styles = (theme, fSize = 0) => {
       maxWidth: '600px',
       display: 'flex',
       flexDirection: 'column',
+      flexShrink: 0,
       marginTop: '12px',
-      padding: '10px',
+      padding: '12px',
       borderRadius: '28px',
       boxSizing: 'border-box',
       background: isDark
-        ? 'linear-gradient(135deg, rgba(31,35,39,0.88), rgba(18,20,23,0.92))'
-        : 'rgba(255,255,255,0.88)',
-      border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
-      boxShadow: isDark ? '0 18px 48px rgba(0,0,0,0.22)' : '0 14px 36px rgba(15,23,42,0.08)',
-      backdropFilter: 'blur(18px)',
-      WebkitBackdropFilter: 'blur(18px)',
+        ? `radial-gradient(280px 190px at 12% 0%, rgba(${trainingAccent.rgb},0.20), transparent 68%), linear-gradient(145deg, rgba(36,48,60,0.50), rgba(10,15,20,0.54))`
+        : `radial-gradient(260px 180px at 12% 0%, rgba(${trainingAccent.rgb},0.14), transparent 70%), linear-gradient(145deg, rgba(255,255,255,0.62), rgba(255,255,255,0.34))`,
+      border: `1px solid ${isDark ? `rgba(${trainingAccent.rgb},0.28)` : `rgba(${trainingAccent.rgb},0.18)`}`,
+      boxShadow: isDark
+        ? `0 1px 0 rgba(255,255,255,0.10) inset, 0 24px 56px rgba(0,0,0,0.28), 0 0 34px rgba(${trainingAccent.rgb},0.10)`
+        : '0 1px 0 rgba(255,255,255,0.92) inset, 0 20px 42px rgba(15,23,42,0.10)',
+      backdropFilter: 'blur(30px) saturate(175%)',
+      WebkitBackdropFilter: 'blur(30px) saturate(175%)',
+      position: 'relative',
+      overflow: 'hidden',
     },
     journalBtn: {
       alignSelf: 'flex-end',
@@ -1705,7 +1725,7 @@ const styles = (theme, fSize = 0) => {
       background: isDark
         ? `linear-gradient(135deg, rgba(${trainingAccent.rgb},0.105), rgba(255,255,255,0.038) 48%, rgba(255,255,255,0.024))`
         : 'linear-gradient(135deg, #fff, rgba(248,250,252,0.92))',
-      borderRadius: '22px',
+      borderRadius: '30px',
       padding: '14px',
       marginBottom: '10px',
       boxShadow: isDark ? `0 16px 36px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.04)` : '0 8px 22px rgba(15,23,42,0.06)',

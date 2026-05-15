@@ -41,6 +41,7 @@ const BtnsSleep = () => {
     useEffect(() => {
         if (currentBtn === 0 || currentBtn === -1) {
             if (page === 'SleepInsight') setCurrentBottomBtn(1);
+            else if (page === 'SleepNew') setCurrentBottomBtn(2);
             else if (page === 'SleepDevices') setCurrentBottomBtn(3);
             else if (page === 'SleepMetrics') setCurrentBottomBtn(4);
             else if (page === 'SleepMain' && addPanel === '') setCurrentBottomBtn(0);
@@ -63,12 +64,26 @@ const BtnsSleep = () => {
                 accent={accent}
             />
 
+            <NavButton
+                id={4}
+                current={currentBtn}
+                icon={<FaChartLine />}
+                onClick={() => {
+                    setCurrentBottomBtn(4);
+                    setPage('SleepMetrics');
+                    setAddPanel('');
+                    playEffects(switchSound);
+                }}
+                theme={theme}
+                accent={accent}
+            />
+
             <AddButton 
-                active={addPanel === 'SleepMain'}
+                active={page === 'SleepNew'}
                 disabled={page !== 'SleepMain'}
                 onClick={() => {
                     if (page === 'SleepMain') {
-                        setCurrentBottomBtn(3);
+                        setCurrentBottomBtn(2);
                         setPage('SleepNew');
                         playEffects(switchSound);
                     }
@@ -84,20 +99,6 @@ const BtnsSleep = () => {
                 onClick={() => {
                     setCurrentBottomBtn(3);
                     setPage('SleepDevices');
-                    setAddPanel('');
-                    playEffects(switchSound);
-                }}
-                theme={theme}
-                accent={accent}
-            />
-
-            <NavButton 
-                id={4}
-                current={currentBtn}
-                icon={<FaChartLine />}
-                onClick={() => {
-                    setCurrentBottomBtn(4);
-                    setPage('SleepMetrics');
                     setAddPanel('');
                     playEffects(switchSound);
                 }}

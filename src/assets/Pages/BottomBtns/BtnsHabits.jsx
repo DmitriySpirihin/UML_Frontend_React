@@ -170,11 +170,11 @@ const AddButton = ({ disabled, onClick, theme, active }) => (
         style={{
             ...addBtnStyle(theme),
             opacity: disabled ? 0.42 : 1,
-            background: active ? HABITS_ACCENT.soft : 'rgba(255,255,255,0.045)',
-            border: '1px solid transparent',
+            background: (active || !disabled) ? HABITS_ACCENT.soft : 'rgba(255,255,255,0.045)',
+            border: (active || !disabled) ? `1px solid ${HABITS_ACCENT.ring}` : `1px solid ${Colors.get('border', theme)}`,
         }}
     >
-        <Add style={{ fontSize: '26px', color: active ? HABITS_ACCENT.hue : Colors.get('icons', theme) }} />
+        <Add style={{ fontSize: '26px', color: (active || !disabled) ? HABITS_ACCENT.hue : Colors.get('icons', theme) }} />
     </motion.div>
 );
 
@@ -259,7 +259,6 @@ const addBtnStyle = (theme) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: '1px solid transparent',
     boxShadow: `0 16px 28px -22px ${Colors.get('shadow', theme)}`,
     transition: 'background 0.3s ease',
 });

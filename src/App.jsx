@@ -53,6 +53,7 @@ const RobotMain = lazy(() => import('./assets/Pages/Robot/RobotMain'));
 const UserPanel = lazy(() => import('./assets/Pages/UserPanel'));
 const MentalMain = lazy(() => import('./assets/Pages/MentalPages/MentalMain'));
 const MentalInsight = lazy(() => import('./assets/Pages/MentalPages/MentalInsight'));
+const MentalProgress = lazy(() => import('./assets/Pages/MentalPages/MentalProgress'));
 const MathMain = lazy(() => import('./assets/Pages/MentalPages/MathMain'));
 const MemoryMain = lazy(() => import('./assets/Pages/MentalPages/MemoryMain'));
 const LogicMain = lazy(() => import('./assets/Pages/MentalPages/LogicMain'));
@@ -272,7 +273,7 @@ function App() {
         </motion.div>
     
       }
-      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'HabitsMain' && page !== 'HabitCalendar' && page !== 'HabitMetrics' && page !== 'HabitsInsight' && page !== 'AddHabitPanel' && page !== 'ToDoMain' && page !== 'ToDoMetrics' && page !== 'ToDoInsight' && page !== 'ToDoCollab' && page !== 'ToDoNew' && page !== 'ToDoPage' && page !== 'SleepMain' && page !== 'SleepMetrics' && page !== 'SleepDevices' && page !== 'SleepInsight' && page !== 'SleepNew' && page !== 'MentalMain' && page !== 'MentalInsight' && page !== 'MentalMath' && page !== 'MentalMemory' && page !== 'MentalLogic' && page !== 'MentalFocus' && page !== 'AddExercisePanel' && page !== 'TrainingInsight' && page !== 'RecoveryInsight' && page !== 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+      {page !== 'LoadPanel' && page !== 'MainMenu' && page !== 'ProfileOnboarding' && page !== 'HabitsMain' && page !== 'HabitCalendar' && page !== 'HabitMetrics' && page !== 'HabitsInsight' && page !== 'AddHabitPanel' && page !== 'ToDoMain' && page !== 'ToDoMetrics' && page !== 'ToDoInsight' && page !== 'ToDoCollab' && page !== 'ToDoNew' && page !== 'ToDoPage' && page !== 'SleepMain' && page !== 'SleepMetrics' && page !== 'SleepDevices' && page !== 'SleepInsight' && page !== 'SleepNew' && page !== 'MentalMain' && page !== 'MentalInsight' && page !== 'MentalProgress' && page !== 'MentalMath' && page !== 'MentalMemory' && page !== 'MentalLogic' && page !== 'MentalFocus' && page !== 'AddExercisePanel' && page !== 'TrainingInsight' && page !== 'RecoveryInsight' && page !== 'RobotMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <MainBtns/>
       </Suspense>}
       
@@ -347,6 +348,9 @@ function App() {
       </Suspense>}
       {page === 'MentalInsight' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <MentalInsight/>
+      </Suspense>}
+      {page === 'MentalProgress' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <MentalProgress/>
       </Suspense>}
         {page === 'RecoveryBreath' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}> 
           <BreathingMain/>
