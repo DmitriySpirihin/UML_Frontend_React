@@ -231,8 +231,8 @@ const styles = (theme, fSize = 0) => {
         },
         pageTitle: {
             color: text,
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: 22,
+            fontFamily: 'inherit',
+            fontSize: 24,
             fontWeight: 700,
             lineHeight: 1.05,
             opacity: 0.88
@@ -277,7 +277,7 @@ const styles = (theme, fSize = 0) => {
             overflow: 'visible'
         },
         header: {
-            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontFamily: 'inherit',
             fontSize: fSize === 0 ? 19 : 22,
             margin: 0,
             fontWeight: 700,
@@ -388,20 +388,27 @@ const getProgressVisual = (percent, theme, isSelected = false) => {
     const tone = isDone
         ? { ...HABITS_SUCCESS, rim: HABITS_SUCCESS.ring, from: '#13B765', to: '#075A37' }
         : { ...CALENDAR_PARTIAL, rim: CALENDAR_PARTIAL.ring, from: '#3569E4', to: '#1B3F9B' };
-    const highlight = isLight ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.055)';
+    const partialAlpha = Math.max(0.18, Math.min(0.48, percent / 100 * 0.38));
+    const highlight = isDone
+        ? (isLight ? 'rgba(255,255,255,0.11)' : 'rgba(255,255,255,0.055)')
+        : (isLight ? `rgba(255,255,255,${0.14 + partialAlpha * 0.2})` : `rgba(255,255,255,${0.04 + partialAlpha * 0.08})`);
     return {
-        background: isLight
+        background: isDone
             ? `radial-gradient(circle at 30% 18%, ${highlight}, transparent 44%), linear-gradient(145deg, ${tone.from}, ${tone.to})`
-            : `radial-gradient(circle at 30% 18%, ${highlight}, transparent 44%), linear-gradient(145deg, ${tone.from}, ${tone.to})`,
-        border: isSelected ? tone.rim : tone.rim,
+            : `radial-gradient(circle at 30% 18%, ${highlight}, transparent 42%), linear-gradient(145deg, rgba(${tone.rgb},${isLight ? partialAlpha * 0.58 : partialAlpha}), rgba(${tone.rgb},${isLight ? partialAlpha * 0.36 : partialAlpha * 0.62}))`,
+        border: isSelected ? tone.rim : `rgba(${tone.rgb},${isDone ? 0.58 : 0.24 + partialAlpha * 0.42})`,
         shadow: isSelected
             ? `0 0 0 1px rgba(${tone.rgb},0.72), 0 0 24px ${tone.glow}, 0 1px 0 rgba(255,255,255,0.14) inset`
-            : `0 0 0 1px rgba(${tone.rgb},0.56), 0 16px 24px -17px rgba(${tone.rgb},0.82), 0 1px 0 rgba(255,255,255,0.10) inset`
+            : isDone
+                ? `0 0 0 1px rgba(${tone.rgb},0.56), 0 16px 24px -17px rgba(${tone.rgb},0.82), 0 1px 0 rgba(255,255,255,0.10) inset`
+                : `0 0 0 1px rgba(${tone.rgb},${0.16 + partialAlpha * 0.38}), 0 10px 18px -18px rgba(${tone.rgb},${0.28 + partialAlpha * 0.42}), 0 1px 0 rgba(255,255,255,0.08) inset`
     };
 };
 
 const getProgressTextColor = (percent, theme) => {
-     return percent > 0 ? '#FFFFFF' : Colors.get('mainText', theme);
+     if (percent >= 100) return '#FFFFFF';
+     if (percent > 0) return theme === 'light' || theme === 'speciallight' ? 'rgba(20,34,48,0.78)' : 'rgba(235,247,255,0.74)';
+     return Colors.get('mainText', theme);
 }
 
 const monthStatChip = (theme, tone) => {
@@ -480,7 +487,7 @@ const HabitCalendar = () => {
     const [date, setDate] = useState(new Date());
     const [fSize, setfontSize] = useState(0);
     const [currentDate, setCurrentDate] = useState(date);
-    const [inFoPanelData, setInfoPanelData] = useState(false);
+    const [inFoPanelData, setInfoPanelData] = useState(() => getHabitEntriesForDate(new Date()).length > 0);
     const today = new Date().getDate(); 
     const curMonth = new Date().getMonth();
     
@@ -497,6 +504,10 @@ const HabitCalendar = () => {
         const subscription = lang$.subscribe((lang) => { setLangIndex(lang === 'ru' ? 0 : 1); });
         return () => subscription.unsubscribe();
     }, []);
+
+    useEffect(() => {
+        setInfoPanelData(getHabitEntriesForDate(currentDate).length > 0);
+    }, [currentDate]);
     
     const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
     const lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);

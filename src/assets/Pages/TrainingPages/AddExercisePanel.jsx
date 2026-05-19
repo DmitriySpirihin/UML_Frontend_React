@@ -60,7 +60,7 @@ const AddExercisePanel = () => {
                 position: 'fixed', inset: 0, zIndex: 1000,
                 paddingBottom: '100px', overflowY: 'auto',
                 backgroundColor: Colors.get('background', theme),
-                fontFamily: 'Segoe UI, Roboto, sans-serif'
+                fontFamily: 'inherit'
             }}
         >
             {/* Header */}

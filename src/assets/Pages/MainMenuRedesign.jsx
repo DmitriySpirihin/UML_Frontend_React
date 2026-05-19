@@ -8,6 +8,7 @@ import { buildSectionAccent } from './SectionAccentSettings.jsx';
 
 const EASE = [0.2, 0.8, 0.2, 1];
 const HERO_SUMMARY_COLLAPSE_KEY = 'uml_main_menu_summary_collapsed_v1';
+const APP_FONT_STACK = '"SF Pro Rounded", "Nunito Sans", Nunito, "SF Pro Display", -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", system-ui, sans-serif';
 const AERO_ACCENT = {
   hue: '#B7F3FF',
   soft: 'rgba(183,243,255,0.13)',
@@ -21,6 +22,12 @@ const ZERO_METRIC_TONE = {
   soft: 'rgba(142,152,166,0.10)',
   ring: 'rgba(142,152,166,0.22)',
   rgb: '142,152,166'
+};
+const FIRE_HERO_ACCENT = {
+  hue: '#B7F3FF',
+  soft: 'rgba(183,243,255,0.17)',
+  ring: 'rgba(183,243,255,0.40)',
+  rgb: '183,243,255'
 };
 
 const tokens = {
@@ -99,13 +106,73 @@ const IconArrow = (p) => <Icon {...p}><path d="M7 17L17 7M9 7h8v8" /></Icon>;
 const IconSliders = (p) => <Icon {...p}><path d="M4 7h7" /><path d="M15 7h5" /><circle cx="13" cy="7" r="2" /><path d="M4 17h5" /><path d="M13 17h7" /><circle cx="11" cy="17" r="2" /></Icon>;
 const StreakFlame = ({ size = 15 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>
+    <defs>
+      <linearGradient id="streakFlameOuter" x1="12" y1="2.6" x2="12" y2="20" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#F8FEFF" />
+        <stop offset="42%" stopColor="#9CEBFF" />
+        <stop offset="100%" stopColor="#2EA8FF" />
+      </linearGradient>
+      <linearGradient id="streakFlameInner" x1="13" y1="11" x2="12" y2="19.5" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FFFFFF" />
+        <stop offset="58%" stopColor="#D7FBFF" />
+        <stop offset="100%" stopColor="#72DFFF" />
+      </linearGradient>
+    </defs>
     <path
       d="M12.7 2.6c2.1 3.6 5.8 5.7 5.8 11a6.5 6.5 0 01-13 0c0-2.9 1.6-5 3.5-6.4-.2 1.5.1 2.7.9 3.7.7-3.1 1.6-5.8 2.8-8.3z"
-      fill="#FF7A3D"
+      fill="url(#streakFlameOuter)"
     />
     <path
       d="M13 19.5a3.5 3.5 0 003.3-3.7c0-2-1.2-3.2-2.6-4.7-.4 1.9-1.1 3.4-2.2 4.5-.6-.8-.9-1.7-.8-2.8-1.1.9-1.8 2.1-1.8 3.5A3.5 3.5 0 0013 19.5z"
-      fill="#FFD36A"
+      fill="url(#streakFlameInner)"
+    />
+  </svg>
+);
+const HeroStreakFlame = ({ size = 132 }) => (
+  <svg width={size} height={size} viewBox="0 0 120 140" aria-hidden="true" style={{ display: 'block', flexShrink: 0 }}>
+    <defs>
+      <radialGradient id="heroFlameGlow" cx="50%" cy="62%" r="56%">
+        <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.92" />
+        <stop offset="42%" stopColor="#8DEBFF" stopOpacity="0.52" />
+        <stop offset="100%" stopColor="#2EA8FF" stopOpacity="0" />
+      </radialGradient>
+      <linearGradient id="heroFlameOuter" x1="54" y1="5" x2="58" y2="128" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#F8FEFF" />
+        <stop offset="38%" stopColor="#A9F2FF" />
+        <stop offset="74%" stopColor="#45BFFF" />
+        <stop offset="100%" stopColor="#2366A8" />
+      </linearGradient>
+      <linearGradient id="heroFlameInner" x1="61" y1="46" x2="54" y2="119" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FFFFFF" />
+        <stop offset="48%" stopColor="#D7FBFF" />
+        <stop offset="100%" stopColor="#68DFFF" />
+      </linearGradient>
+      <linearGradient id="heroFlameCore" x1="62" y1="67" x2="59" y2="119" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FFFFFF" />
+        <stop offset="62%" stopColor="#B7F3FF" />
+        <stop offset="100%" stopColor="#55DDEB" />
+      </linearGradient>
+    </defs>
+    <ellipse cx="60" cy="84" rx="48" ry="46" fill="url(#heroFlameGlow)" opacity="0.72" />
+    <path
+      d="M66 9c7 24 35 33 36 68 1 31-19 54-44 54-25 0-44-19-44-45 0-18 10-34 27-45-3 18 1 31 11 42 5-29 9-52 18-74Z"
+      fill="url(#heroFlameOuter)"
+      opacity="0.74"
+    />
+    <path
+      d="M70 44c5 14 17 25 17 45 0 22-14 38-31 38-18 0-31-13-31-31 0-12 6-22 17-31-2 12 1 22 9 30 4-21 9-36 19-51Z"
+      fill="url(#heroFlameInner)"
+      opacity="0.82"
+    />
+    <path
+      d="M63 70c3 9 10 17 10 29 0 15-9 25-20 25-12 0-20-9-20-21 0-8 4-15 11-21-1 8 1 14 6 19 3-13 6-23 13-31Z"
+      fill="url(#heroFlameCore)"
+      opacity="0.78"
+    />
+    <path
+      d="M93 65c12 15 12 33 1 48 6-18 2-32-10-43 3-1 6-3 9-5Z"
+      fill="#55DDEB"
+      opacity="0.20"
     />
   </svg>
 );
@@ -127,9 +194,9 @@ const FieryBorder = ({ radius = 32, opacity = 0.78, duration = 6 }) => (
     animate={{
       opacity: [opacity * 0.62, opacity, opacity * 0.68],
       filter: [
-        'drop-shadow(0 0 0 rgba(255,122,61,0))',
-        'drop-shadow(0 0 10px rgba(255,122,61,0.22))',
-        'drop-shadow(0 0 0 rgba(255,122,61,0))'
+        'drop-shadow(0 0 0 rgba(183,243,255,0))',
+        'drop-shadow(0 0 11px rgba(183,243,255,0.28))',
+        'drop-shadow(0 0 0 rgba(183,243,255,0))'
       ]
     }}
     transition={{ duration, repeat: Infinity, ease: 'easeInOut' }}
@@ -139,7 +206,7 @@ const FieryBorder = ({ radius = 32, opacity = 0.78, duration = 6 }) => (
       padding: 1.4,
       borderRadius: radius,
       pointerEvents: 'none',
-      background: 'conic-gradient(from 18deg, rgba(255,122,61,0.05), rgba(255,210,106,0.92) 72deg, rgba(255,92,40,0.75) 118deg, rgba(255,122,61,0.08) 190deg, rgba(255,211,106,0.58) 272deg, rgba(255,122,61,0.05) 360deg)',
+      background: 'conic-gradient(from 18deg, rgba(183,243,255,0.06), rgba(255,255,255,0.88) 72deg, rgba(88,211,255,0.78) 118deg, rgba(183,243,255,0.10) 190deg, rgba(125,224,255,0.66) 272deg, rgba(183,243,255,0.06) 360deg)',
       WebkitMask: 'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
       WebkitMaskComposite: 'xor',
       maskComposite: 'exclude'
@@ -189,7 +256,7 @@ const StreakWatermark = ({ delay = 0 }) => (
       pointerEvents: 'none',
       zIndex: 0,
       borderRadius: '50%',
-      background: 'radial-gradient(circle at 52% 54%, rgba(255,211,106,0.24), transparent 28%), radial-gradient(circle at 54% 46%, rgba(255,122,61,0.32), transparent 50%), radial-gradient(circle at 38% 64%, rgba(255,68,34,0.18), transparent 58%)',
+      background: 'radial-gradient(circle at 52% 54%, rgba(255,255,255,0.24), transparent 28%), radial-gradient(circle at 54% 46%, rgba(125,224,255,0.32), transparent 50%), radial-gradient(circle at 38% 64%, rgba(46,168,255,0.18), transparent 58%)',
       filter: 'blur(7px)'
     }}
   />
@@ -291,9 +358,9 @@ function StreakMetricPill({ value, compact = false }) {
       animate={{
         y: [0, -1.5, 0],
         boxShadow: [
-          `0 1px 0 rgba(255,211,106,0.12) inset, 0 0 0 1px rgba(52,20,11,0.70) inset, 0 ${compact ? 7 : 9}px ${compact ? 14 : 18}px -15px rgba(255,122,61,0.42)`,
-          `0 1px 0 rgba(255,211,106,0.16) inset, 0 0 0 1px rgba(52,20,11,0.70) inset, 0 ${compact ? 9 : 12}px ${compact ? 20 : 24}px -14px rgba(255,122,61,0.62)`,
-          `0 1px 0 rgba(255,211,106,0.12) inset, 0 0 0 1px rgba(52,20,11,0.70) inset, 0 ${compact ? 7 : 9}px ${compact ? 14 : 18}px -15px rgba(255,122,61,0.42)`
+          `0 1px 0 rgba(255,255,255,0.15) inset, 0 0 0 1px rgba(16,49,72,0.72) inset, 0 ${compact ? 7 : 9}px ${compact ? 14 : 18}px -15px rgba(125,224,255,0.48)`,
+          `0 1px 0 rgba(255,255,255,0.20) inset, 0 0 0 1px rgba(16,49,72,0.72) inset, 0 ${compact ? 9 : 12}px ${compact ? 20 : 24}px -14px rgba(183,243,255,0.68)`,
+          `0 1px 0 rgba(255,255,255,0.15) inset, 0 0 0 1px rgba(16,49,72,0.72) inset, 0 ${compact ? 7 : 9}px ${compact ? 14 : 18}px -15px rgba(125,224,255,0.48)`
         ]
       }}
       transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
@@ -306,9 +373,9 @@ function StreakMetricPill({ value, compact = false }) {
         alignItems: 'center',
         justifyContent: 'center',
         gap: 5,
-        border: '1px solid rgba(255,122,61,0.36)',
-        background: 'linear-gradient(180deg, rgba(47,28,18,0.98), rgba(18,13,11,0.98))',
-        color: '#FFD36A',
+        border: '1px solid rgba(183,243,255,0.38)',
+        background: 'linear-gradient(180deg, rgba(18,44,61,0.98), rgba(8,18,27,0.98))',
+        color: '#B7F3FF',
         position: 'relative',
         overflow: 'hidden'
       }}
@@ -324,7 +391,7 @@ function StreakMetricPill({ value, compact = false }) {
           bottom: 0,
           width: '42%',
           transform: 'skewX(-18deg)',
-          background: 'linear-gradient(90deg, transparent, rgba(255,211,106,0.28), transparent)',
+          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.34), transparent)',
           pointerEvents: 'none'
         }}
       />
@@ -336,14 +403,47 @@ function StreakMetricPill({ value, compact = false }) {
         >
           <StreakFlame size={compact ? 14 : 13} />
         </Motion.span>
-        <span style={{ color: '#F2F3F5', fontSize: compact ? 15 : 12, fontWeight: 900, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</span>
+        <span style={{ color: '#F8FEFF', fontSize: compact ? 15 : 12, fontWeight: 900, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</span>
       </span>
     </Motion.div>
   );
 }
 
-function TopStreakPill({ value }) {
-  return <StreakMetricPill value={value} />;
+function TopStreakPill({ value, compact = false }) {
+  return (
+    <div style={{ position: 'relative' }}>
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          inset: -9,
+          borderRadius: 999,
+          background: 'radial-gradient(circle, rgba(183,243,255,0.30), rgba(88,211,255,0.09) 46%, transparent 72%)',
+          filter: 'blur(7px)',
+          pointerEvents: 'none'
+        }}
+      />
+      <StreakMetricPill value={value} compact={compact} />
+      <span style={{
+        position: 'absolute',
+        right: -2,
+        bottom: -9,
+        padding: '2px 6px',
+        borderRadius: 999,
+        color: '#DDFBFF',
+        background: 'rgba(13,38,57,0.78)',
+        border: '1px solid rgba(183,243,255,0.34)',
+        fontSize: 8,
+        lineHeight: 1,
+        fontWeight: 900,
+        letterSpacing: '0.05em',
+        textTransform: 'uppercase',
+        boxShadow: '0 8px 18px -12px rgba(125,224,255,0.88)'
+      }}>
+        {compact ? 'дн' : 'стрик'}
+      </span>
+    </div>
+  );
 }
 
 function SummaryToggleButton({ collapsed, count, onClick, lang, heroAccent, palette }) {
@@ -575,7 +675,7 @@ function BrandHeader({ lang, palette }) {
       textAlign: 'center'
     }}>
       <div style={{
-        fontFamily: '"SF Pro Rounded", "Nunito Sans", Nunito, "SF Pro Display", -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", system-ui, sans-serif',
+        fontFamily: APP_FONT_STACK,
         fontSize: 24,
         fontWeight: 820,
         letterSpacing: '0.01em',
@@ -600,6 +700,8 @@ function BrandHeader({ lang, palette }) {
 
 function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection }) {
   const heroAccent = getAccent('profile');
+  const hasStreak = Number(data.streak) > 0;
+  const cardAccent = hasStreak ? FIRE_HERO_ACCENT : heroAccent;
   const selectedStats = Array.isArray(data.stats) && data.stats.length > 0
     ? data.stats
     : [
@@ -626,10 +728,10 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
     });
   };
   const heroBackground = palette.isLight
-    ? `linear-gradient(145deg, rgba(255,255,255,0.76) 0%, rgba(${heroAccent.rgb},0.075) 48%, rgba(235,242,246,0.72) 100%)`
+    ? `${hasStreak ? 'radial-gradient(170px 110px at 92% 18%, rgba(183,243,255,0.22), transparent 70%), ' : ''}linear-gradient(145deg, rgba(255,255,255,0.76) 0%, rgba(${heroAccent.rgb},0.075) 48%, rgba(235,242,246,0.72) 100%)`
     : palette.isCoffee
-      ? `linear-gradient(145deg, rgba(92,61,42,0.36) 0%, rgba(38,25,18,0.70) 44%, rgba(18,12,9,0.66) 100%)`
-      : `linear-gradient(145deg, rgba(${heroAccent.rgb},0.12) 0%, rgba(22,31,38,0.68) 42%, rgba(14,20,25,0.62) 100%)`;
+      ? `${hasStreak ? 'radial-gradient(180px 120px at 92% 18%, rgba(183,243,255,0.22), transparent 70%), ' : ''}linear-gradient(145deg, rgba(92,61,42,0.36) 0%, rgba(38,25,18,0.70) 44%, rgba(18,12,9,0.66) 100%)`
+      : `${hasStreak ? 'radial-gradient(190px 130px at 92% 18%, rgba(183,243,255,0.24), transparent 70%), radial-gradient(180px 110px at 78% 2%, rgba(125,224,255,0.13), transparent 68%), ' : ''}linear-gradient(145deg, rgba(${heroAccent.rgb},0.12) 0%, rgba(22,31,38,0.68) 42%, rgba(14,20,25,0.62) 100%)`;
   const heroShadow = palette.isLight
     ? `0 22px 50px -34px rgba(15,23,42,0.30), 0 1px 0 rgba(255,255,255,0.88) inset, 0 0 0 1px rgba(255,255,255,0.32) inset`
     : palette.isCoffee
@@ -643,11 +745,11 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
       transition={{ duration: 0.45, ease: EASE }}
       style={{
         margin: '0 20px',
-        padding: 17,
+        padding: hasStreak ? '15px 16px' : 17,
         borderRadius: 32,
         background: heroBackground,
-        border: `1px solid ${palette.isLight ? 'rgba(148,163,184,0.14)' : 'rgba(180,210,225,0.11)'}`,
-        boxShadow: heroShadow,
+        border: hasStreak ? '1px solid rgba(183,243,255,0.46)' : `1px solid ${palette.isLight ? 'rgba(148,163,184,0.14)' : 'rgba(180,210,225,0.11)'}`,
+        boxShadow: hasStreak ? `${heroShadow}, 0 0 0 1px rgba(255,255,255,0.11) inset, 0 18px 46px -32px rgba(125,224,255,0.92)` : heroShadow,
         position: 'relative',
         overflow: 'hidden',
         backdropFilter: 'blur(28px) saturate(170%)',
@@ -666,81 +768,130 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
           pointerEvents: 'none'
         }}
       />
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 10, position: 'relative', zIndex: 1 }}>
-        <Motion.button
-          type="button"
-          whileHover={{ y: -1, scale: 1.005 }}
-          whileTap={{ scale: 0.975 }}
-          onClick={onOpenUser}
+      {hasStreak && <FieryBorder radius={32} opacity={0.58} duration={4.6} />}
+      {hasStreak && (
+        <Motion.div
+          aria-hidden="true"
+          animate={{ opacity: [0.28, 0.42, 0.28], scale: [0.98, 1.035, 0.98], y: [0, -2, 0] }}
+          transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
           style={{
-            minWidth: 0,
-            width: '100%',
-            padding: '2px 4px 0',
-            border: '1px solid transparent',
-            borderRadius: 18,
-            background: 'transparent',
+            position: 'absolute',
+            top: 20,
+            right: -72,
+            width: 148,
+            height: 132,
             display: 'flex',
             alignItems: 'center',
-            gap: 9,
-            textAlign: 'left',
-            fontFamily: 'inherit',
-            cursor: 'pointer',
-            outline: 'none',
-            appearance: 'none',
-            WebkitAppearance: 'none',
-            WebkitTapHighlightColor: 'transparent',
-            boxShadow: 'none'
+            justifyContent: 'center',
+            color: '#B7F3FF',
+            opacity: 0.34,
+            transform: 'rotate(4deg)',
+            filter: 'drop-shadow(0 0 24px rgba(183,243,255,0.36)) drop-shadow(0 18px 28px rgba(18,54,84,0.20))',
+            zIndex: 0,
+            pointerEvents: 'none'
           }}
         >
-          <div style={{
-            minHeight: 28,
-            padding: '0 10px',
-            borderRadius: 999,
-            display: 'inline-flex',
-            alignItems: 'center',
-            border: `1px solid rgba(${heroAccent.rgb},0.16)`,
-            background: `linear-gradient(135deg, rgba(${heroAccent.rgb},0.10), rgba(255,255,255,0.025))`,
-            boxShadow: `0 1px 0 rgba(255,255,255,0.06) inset, 0 10px 18px -18px rgba(${heroAccent.rgb},0.65)`,
-            fontSize: 10,
-            color: palette.muted,
-            fontWeight: 850,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            flexShrink: 0
-          }}>
-            {data.greeting}
-          </div>
-          <div style={{
-            fontSize: 19,
-            fontWeight: 880,
-            lineHeight: 1.12,
-            color: palette.text,
-            overflow: 'hidden',
-            whiteSpace: 'nowrap',
-            textOverflow: 'ellipsis',
-            minWidth: 0
-          }}>
-            {data.name}
-          </div>
-        </Motion.button>
+          <HeroStreakFlame size={128} />
+        </Motion.div>
+      )}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ position: 'relative', minHeight: hasStreak ? 48 : 74, paddingRight: hasStreak ? 88 : 42 }}>
+          {hasStreak && (
+            <div style={{ position: 'absolute', top: 0, right: 0, zIndex: 3 }}>
+              <TopStreakPill value={data.streak} compact />
+            </div>
+          )}
+
+          <Motion.button
+            type="button"
+            whileHover={{ y: -1, scale: 1.005 }}
+            whileTap={{ scale: 0.975 }}
+            onClick={onOpenUser}
+            style={{
+              width: '100%',
+              minHeight: 47,
+              marginTop: 0,
+              padding: '0 14px',
+              border: `1px solid rgba(${cardAccent.rgb},${hasStreak ? 0.28 : 0.18})`,
+              borderRadius: 18,
+              background: hasStreak
+                ? 'linear-gradient(135deg, rgba(183,243,255,0.18), rgba(255,255,255,0.09) 48%, rgba(88,211,255,0.045))'
+                : palette.isLight
+                  ? `linear-gradient(135deg, rgba(255,255,255,0.52), rgba(${cardAccent.rgb},0.08))`
+                  : `linear-gradient(135deg, rgba(${cardAccent.rgb},0.12), rgba(255,255,255,0.035))`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 10,
+              textAlign: 'left',
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              outline: 'none',
+              appearance: 'none',
+              WebkitAppearance: 'none',
+              WebkitTapHighlightColor: 'transparent',
+              boxShadow: hasStreak
+                ? '0 1px 0 rgba(255,255,255,0.14) inset, 0 15px 28px -22px rgba(125,224,255,0.64)'
+                : `0 1px 0 rgba(255,255,255,0.075) inset, 0 13px 24px -22px rgba(${cardAccent.rgb},0.68)`,
+              backdropFilter: 'blur(18px) saturate(160%)',
+              WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+              boxSizing: 'border-box'
+            }}
+          >
+            <span style={{
+              fontSize: 20,
+              fontWeight: 900,
+              lineHeight: 1.05,
+              color: hasStreak ? '#E9FCFF' : palette.text,
+              textShadow: hasStreak
+                ? '0 0 11px rgba(183,243,255,0.24), 0 1px 0 rgba(255,255,255,0.08)'
+                : 'none',
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+              minWidth: 0,
+              maxWidth: '100%'
+            }}>
+              {data.name}
+            </span>
+            <span style={{ color: cardAccent.hue, display: 'flex', flexShrink: 0 }}>
+              <IconChevron size={15} stroke={2.2} />
+            </span>
+          </Motion.button>
+        </div>
+
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 8,
+          gap: 10,
           width: '100%',
-          padding: '1px 1px 0 1px'
+          marginTop: hasStreak ? 9 : 12,
+          padding: hasStreak ? '7px' : '8px',
+          borderRadius: 22,
+          border: `1px solid rgba(${cardAccent.rgb},${hasStreak ? 0.16 : 0.10})`,
+          background: hasStreak
+            ? 'linear-gradient(135deg, rgba(18,55,75,0.20), rgba(255,255,255,0.03))'
+            : palette.isLight ? 'rgba(255,255,255,0.26)' : 'rgba(255,255,255,0.025)',
+          boxSizing: 'border-box'
         }}>
-          {data.streak > 0 && (
-            <TopStreakPill value={data.streak} />
-          )}
           <SummaryToggleButton
             collapsed={summaryCollapsed}
             count={selectedStats.length}
             onClick={toggleSummary}
             lang={lang}
-            heroAccent={heroAccent}
+            heroAccent={cardAccent}
             palette={palette}
+          />
+          <div
+            aria-hidden="true"
+            style={{
+              flex: '1 1 auto',
+              height: 1,
+              minWidth: 16,
+              background: `linear-gradient(90deg, rgba(${cardAccent.rgb},${hasStreak ? 0.42 : 0.22}), rgba(${cardAccent.rgb},0.05), transparent)`,
+              opacity: 0.75
+            }}
           />
           <Motion.button
             type="button"
@@ -752,16 +903,20 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
               width: 34,
               height: 34,
               borderRadius: 18,
-              border: `1px solid rgba(${heroAccent.rgb},0.22)`,
-              background: `linear-gradient(135deg, rgba(${heroAccent.rgb},0.12), rgba(255,255,255,0.045))`,
-              color: palette.sub,
+              border: `1px solid rgba(${cardAccent.rgb},${hasStreak ? 0.34 : 0.22})`,
+              background: hasStreak
+                ? 'linear-gradient(135deg, rgba(183,243,255,0.17), rgba(255,255,255,0.05))'
+                : `linear-gradient(135deg, rgba(${cardAccent.rgb},0.12), rgba(255,255,255,0.045))`,
+              color: hasStreak ? '#DDFBFF' : palette.sub,
               padding: 0,
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontFamily: 'inherit',
               cursor: 'pointer',
-              boxShadow: `0 1px 0 rgba(255,255,255,0.075) inset, 0 10px 20px -16px rgba(0,0,0,0.72), 0 12px 22px -20px rgba(${heroAccent.rgb},0.62)`
+              boxShadow: hasStreak
+                ? '0 1px 0 rgba(255,255,255,0.13) inset, 0 10px 20px -16px rgba(0,0,0,0.72), 0 12px 24px -18px rgba(125,224,255,0.66)'
+                : `0 1px 0 rgba(255,255,255,0.075) inset, 0 10px 20px -16px rgba(0,0,0,0.72), 0 12px 22px -20px rgba(${cardAccent.rgb},0.62)`
             }}
           >
             <IconSliders size={15} />
@@ -899,7 +1054,7 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -80, height: 0, marginBottom: 0 }}
       transition={{ duration: 0.32, ease: EASE, delay: 0.04 * idx }}
-      whileHover={{ y: -2, scale: 1.005 }}
+      whileHover={{ scale: 1.003 }}
       whileTap={{ scale: 0.975, y: 1 }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
@@ -913,7 +1068,7 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
         width: '100%',
         minHeight: 72,
         padding: '14px 16px',
-        borderRadius: 36,
+        borderRadius: 999,
         marginBottom: 14,
         background: rowBackground,
         border: rowBorder,
@@ -940,7 +1095,7 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
         style={{
           position: 'absolute',
           inset: 1,
-          borderRadius: 35,
+          borderRadius: 999,
           background: rowInnerGlow,
           pointerEvents: 'none',
           zIndex: 0
@@ -949,7 +1104,7 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
       <div style={{
         width: 42,
         height: 42,
-        borderRadius: 20,
+        borderRadius: '50%',
         flexShrink: 0,
         background: palette.isLight
           ? `linear-gradient(135deg, rgba(${accent.rgb},0.18), rgba(${accent.rgb},0.08))`

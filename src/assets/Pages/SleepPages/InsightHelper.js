@@ -1,5 +1,6 @@
 import { AppData, UserData } from "../../StaticClasses/AppData";
 import { allHabits } from "../../Classes/Habit";
+import { getSleepDayEntry } from "../../StaticClasses/SleepLogHelper";
 
 // FIXED: Removed trailing space in API URL (critical bug fix)
 const API_BASE = 'https://ultymylife.ru/api/insight';
@@ -212,7 +213,7 @@ USER:
     // 3. SLEEP (UNCHANGED)
     const sleepLines = [];
     last7Days.forEach(date => {
-        const s = sleeping[date];
+        const s = getSleepDayEntry(date, sleeping);
         if (!s) return;
         const durHrs = Math.round((s.duration || 0) / 360000) / 10;
         sleepLines.push(`  ${date}: Sleep=${durHrs}h, Mood=${s.mood}/5, Note="${s.note || ''}"`);

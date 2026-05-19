@@ -8,6 +8,7 @@ import {
   FaRegClock,
   FaStar,
   FaStickyNote,
+  FaSun,
   FaTimes
 } from 'react-icons/fa';
 import { AppData, logSectionVisit } from '../../StaticClasses/AppData.js';
@@ -16,6 +17,7 @@ import { lang$, selectedSleepDate$, theme$ } from '../../StaticClasses/HabitsBus
 import { saveData } from '../../StaticClasses/SaveHelper';
 import { playEffects } from '../../StaticClasses/Effects.js';
 import { syncAutoSleepIntegrations } from '../../StaticClasses/SleepIntegrationService.js';
+import { getSleepDayEntry, listSleepDayEntries } from '../../StaticClasses/SleepLogHelper.js';
 import { buildSleepAccent, SLEEP_ACCENT_PRESETS } from './SleepVisuals.js';
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 
@@ -124,7 +126,7 @@ const SleepMain = () => {
       if (imported > 0) {
         setSyncMessage(langIndex === 0 ? `Автоимпорт: ${imported}` : `Auto import: ${imported}`);
         const key = formatDateKey(currentDate);
-        setSelectedSleepEntry(AppData.sleepingLog?.[key] || null);
+        setSelectedSleepEntry(getSleepDayEntry(key));
       }
     });
     return () => { cancelled = true; };
@@ -133,7 +135,7 @@ const SleepMain = () => {
   useEffect(() => {
     const key = formatDateKey(currentDate);
     selectedSleepDate$.next(key);
-    setSelectedSleepEntry(AppData.sleepingLog?.[key] || null);
+    setSelectedSleepEntry(getSleepDayEntry(key));
   }, [currentDate]);
 
   const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -141,8 +143,7 @@ const SleepMain = () => {
   const firstDayOfWeek = (monthStart.getDay() + 6) % 7;
   const calendarCells = [...Array(firstDayOfWeek).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
 
-  const sleepData = useMemo(() => Object.entries(AppData.sleepingLog || {})
-    .map(([key, entry]) => ({ key, ...entry }))
+  const sleepData = useMemo(() => listSleepDayEntries()
     .sort((a, b) => b.key.localeCompare(a.key)), [selectedSleepEntry, syncMessage]);
 
   const sevenDays = useMemo(() => {
@@ -259,7 +260,7 @@ const SleepMain = () => {
               if (day === null) return <div key={`empty-${index}`} />;
               const cellDate = new Date(date.getFullYear(), date.getMonth(), day);
               const dayKey = formatDateKey(cellDate);
-              const entry = AppData.sleepingLog?.[dayKey];
+              const entry = getSleepDayEntry(dayKey);
               const isSelected = dayKey === formatDateKey(currentDate);
               const isToday = dayKey === formatDateKey(new Date());
               const moodPercent = entry ? getSleepMoodPercent(entry.mood) : 0;
@@ -291,32 +292,27 @@ const SleepMain = () => {
 
           <AnimatePresence mode="wait">
             {selectedSleepEntry ? (
-              <motion.div key="entry" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} style={s.entryCard}>
-                <div style={s.entryGlow(moodColors(theme, selectedSleepEntry.mood - 1))} />
-                <div style={s.entryTypePill}>
-                  {selectedSleepEntry.type === 'day'
-                    ? (langIndex === 0 ? 'Дневной сон' : 'Nap')
-                    : (langIndex === 0 ? 'Ночной сон' : 'Night sleep')}
-                </div>
-                <div style={s.metricsGrid}>
-                  <MetricItem icon={<FaMoon />} label={langIndex === 0 ? 'Отбой' : 'Bedtime'} value={formatClockTime(selectedSleepEntry.bedtime)} color={accent.hue} theme={theme} />
-                  <MetricItem icon={<FaRegClock />} label={langIndex === 0 ? 'Сон' : 'Duration'} value={formatDuration(selectedSleepEntry.duration, langIndex)} color={moodColors(theme, selectedSleepEntry.mood - 1)} theme={theme} />
-                  <div style={s.metricBox}>
-                    <div style={{ ...s.metricIcon, color: Colors.get('difficulty3', theme) }}><FaStar /></div>
-                    <div style={s.metricLabel}>{langIndex === 0 ? 'Оценка' : 'Mood'}</div>
-                    <div style={s.starRow}>
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <FaStar key={star} size={10} color={star <= selectedSleepEntry.mood ? Colors.get('difficulty3', theme) : Colors.get('subText', theme)} style={{ opacity: star <= selectedSleepEntry.mood ? 1 : 0.22 }} />
-                      ))}
+              <motion.div key="entry" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} style={s.entryStack}>
+                {selectedSleepEntry.sessions.length > 1 && (
+                  <div style={s.entrySummary}>
+                    <div style={s.entrySummaryText}>
+                      {langIndex === 0 ? 'Итого за день' : 'Day total'}
+                    </div>
+                    <div style={s.entrySummaryValue}>
+                      {formatDuration(selectedSleepEntry.duration, langIndex)}
                     </div>
                   </div>
-                </div>
-                {selectedSleepEntry.note && (
-                  <div style={s.noteBox}>
-                    <FaStickyNote size={14} style={{ flexShrink: 0, marginTop: 2, opacity: 0.72 }} />
-                    <span>{selectedSleepEntry.note}</span>
-                  </div>
                 )}
+                {selectedSleepEntry.sessions.map((session, index) => (
+                  <SleepSessionCard
+                    key={`${session.type}-${index}`}
+                    session={session}
+                    theme={theme}
+                    langIndex={langIndex}
+                    accent={accent}
+                    styles={s}
+                  />
+                ))}
               </motion.div>
             ) : (
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={s.emptyState}>
@@ -327,6 +323,41 @@ const SleepMain = () => {
           </AnimatePresence>
         </section>
       </div>
+    </div>
+  );
+};
+
+const SleepSessionCard = ({ session, theme, langIndex, accent, styles: s }) => {
+  const isDaySleep = session.type === 'day';
+  const tone = isDaySleep ? Colors.get('difficulty3', theme) : accent.hue;
+  return (
+    <div style={s.entryCard}>
+      <div style={s.entryGlow(moodColors(theme, session.mood - 1))} />
+      <div style={{ ...s.entryTypePill, color: tone, borderColor: `${tone}44`, background: `${tone}18` }}>
+        {isDaySleep ? <FaSun size={12} /> : <FaMoon size={12} />}
+        {isDaySleep
+          ? (langIndex === 0 ? 'Дневной сон' : 'Nap')
+          : (langIndex === 0 ? 'Ночной сон' : 'Night sleep')}
+      </div>
+      <div style={s.metricsGrid}>
+        <MetricItem icon={isDaySleep ? <FaSun /> : <FaMoon />} label={isDaySleep ? (langIndex === 0 ? 'Начало' : 'Start') : (langIndex === 0 ? 'Отбой' : 'Bedtime')} value={formatClockTime(session.bedtime)} color={tone} theme={theme} />
+        <MetricItem icon={<FaRegClock />} label={langIndex === 0 ? 'Сон' : 'Duration'} value={formatDuration(session.duration, langIndex)} color={moodColors(theme, session.mood - 1)} theme={theme} />
+        <div style={s.metricBox}>
+          <div style={{ ...s.metricIcon, color: Colors.get('difficulty3', theme) }}><FaStar /></div>
+          <div style={s.metricLabel}>{langIndex === 0 ? 'Оценка' : 'Mood'}</div>
+          <div style={s.starRow}>
+            {[1, 2, 3, 4, 5].map(star => (
+              <FaStar key={star} size={10} color={star <= session.mood ? Colors.get('difficulty3', theme) : Colors.get('subText', theme)} style={{ opacity: star <= session.mood ? 1 : 0.22 }} />
+            ))}
+          </div>
+        </div>
+      </div>
+      {session.note && (
+        <div style={s.noteBox}>
+          <FaStickyNote size={14} style={{ flexShrink: 0, marginTop: 2, opacity: 0.72 }} />
+          <span>{session.note}</span>
+        </div>
+      )}
     </div>
   );
 };
@@ -484,7 +515,7 @@ const styles = (theme, accent) => {
       background: isLight
         ? `radial-gradient(640px 420px at 86% -8%, ${accent.soft}, transparent 62%), radial-gradient(520px 380px at 6% 86%, ${accent.faint}, transparent 66%), ${Colors.get('background', theme)}`
         : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
-      fontFamily: 'Segoe UI, sans-serif',
+      fontFamily: 'inherit',
       color: Colors.get('mainText', theme),
       overflow: 'hidden'
     },
@@ -504,7 +535,7 @@ const styles = (theme, accent) => {
     topSpacer: { width: 96, height: 38 },
     brandBlock: { minWidth: 0, textAlign: 'center' },
 	    brand: {
-      fontFamily: 'Georgia, "Times New Roman", serif',
+      fontFamily: 'inherit',
       fontSize: 24,
       fontWeight: 700,
       color: Colors.get('mainText', theme),
@@ -641,7 +672,7 @@ const styles = (theme, accent) => {
       boxSizing: 'border-box'
     },
     monthHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 },
-    monthButton: { width: 42, height: 42, borderRadius: 999, border: `1px solid ${accent.ring}`, background: accent.soft, color: accent.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, fontWeight: 900, lineHeight: 1, padding: 0, fontFamily: 'Georgia, "Times New Roman", serif' },
+    monthButton: { width: 42, height: 42, borderRadius: 999, border: `1px solid ${accent.ring}`, background: accent.soft, color: accent.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, fontWeight: 900, lineHeight: 1, padding: 0, fontFamily: 'inherit' },
     monthTitle: { color: Colors.get('mainText', theme), fontSize: 18, fontWeight: 950, textTransform: 'capitalize' },
     yearText: { color: Colors.get('subText', theme), marginLeft: 7, fontWeight: 800 },
     weekRow: { display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 8, textAlign: 'center' },
@@ -675,9 +706,11 @@ const styles = (theme, accent) => {
       right: 0,
       bottom: 0,
       opacity: isLight ? 0.76 : 0.58,
-      background: type === 'day'
-        ? 'linear-gradient(180deg, rgba(255,211,106,0.30), rgba(255,159,61,0.70))'
-        : `linear-gradient(180deg, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.32), rgba(139,117,255,0.78))`,
+      background: type === 'mixed'
+        ? `linear-gradient(180deg, rgba(255,211,106,0.32), rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.48) 48%, rgba(139,117,255,0.78))`
+        : type === 'day'
+          ? 'linear-gradient(180deg, rgba(255,211,106,0.30), rgba(255,159,61,0.70))'
+          : `linear-gradient(180deg, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.32), rgba(139,117,255,0.78))`,
       boxShadow: type === 'day'
         ? '0 -8px 18px rgba(255,168,61,0.15)'
         : `0 -8px 18px rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.16)`
@@ -686,6 +719,33 @@ const styles = (theme, accent) => {
     selectedDot: { position: 'absolute', left: '50%', bottom: 6, width: 5, height: 5, borderRadius: 999, background: accent.hue, transform: 'translateX(-50%)', zIndex: 2 },
     details: { marginTop: 14 },
     dateLabel: { color: Colors.get('subText', theme), fontSize: 13, fontWeight: 900, padding: '0 4px 8px' },
+    entryStack: { display: 'flex', flexDirection: 'column', gap: 10 },
+    entrySummary: {
+      borderRadius: 18,
+      padding: '11px 13px',
+      background: accent.soft,
+      border: `1px solid ${accent.ring}`,
+      color: Colors.get('mainText', theme),
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      boxShadow: glassShadow,
+      boxSizing: 'border-box'
+    },
+    entrySummaryText: {
+      color: Colors.get('subText', theme),
+      fontSize: 11,
+      fontWeight: 900,
+      textTransform: 'uppercase',
+      letterSpacing: '0.08em'
+    },
+    entrySummaryValue: {
+      color: accent.hue,
+      fontSize: 15,
+      fontWeight: 950,
+      whiteSpace: 'nowrap'
+    },
     entryCard: { position: 'relative', overflow: 'hidden', borderRadius: 22, padding: 14, background: panel, border: `1px solid ${border}`, boxShadow: glassShadow, backdropFilter: 'blur(22px) saturate(165%)', WebkitBackdropFilter: 'blur(22px) saturate(165%)' },
     entryGlow: (color) => ({ position: 'absolute', right: -70, top: -90, width: 200, height: 200, borderRadius: '50%', background: `${color}25`, filter: 'blur(32px)' }),
     entryTypePill: {
@@ -693,6 +753,7 @@ const styles = (theme, accent) => {
       zIndex: 1,
       display: 'inline-flex',
       alignItems: 'center',
+      gap: 6,
       marginBottom: 10,
       padding: '6px 10px',
       borderRadius: 999,

@@ -268,7 +268,7 @@ const getStyles = (theme, needKeyBoard) => ({
         left: '0',
         transition: "transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)", // Smoother animation
         width: "100vw",
-        fontFamily: "Segoe UI, sans-serif",
+        fontFamily: 'inherit',
         borderTop: `2px solid ${Colors.get('border', theme)}`,
         borderTopLeftRadius: '12px',
         borderTopRightRadius: '12px',

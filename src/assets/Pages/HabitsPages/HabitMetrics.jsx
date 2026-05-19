@@ -267,8 +267,8 @@ const HabitMetrics = () => {
                         }}>
                             <div style={{
                                 color: ui.text,
-                                fontFamily: 'Georgia, "Times New Roman", serif',
-                                fontSize: 22,
+                                fontFamily: 'inherit',
+                                fontSize: 24,
                                 fontWeight: 700,
                                 lineHeight: 1.05,
                                 opacity: 0.88

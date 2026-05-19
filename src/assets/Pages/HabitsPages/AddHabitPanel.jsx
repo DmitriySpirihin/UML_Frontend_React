@@ -792,14 +792,19 @@ const AddHabitPanel = () => {
                                     /* ШАГ 2: Подтверждение (Барабаны даты, Цели, Слайдер) */
                                     <motion.div key="step2" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }} style={{ flex: 1, overflowY: 'auto' }}>
                                         <div style={confirmTitle(ui)}>
-                                            <div style={confirmEyebrow(ui)}>{langIndex === 0 ? 'Настройка привычки' : 'Habit setup'}</div>
-                                            <h3 style={{ color: ui.text, margin: 0, fontSize: 26, lineHeight: 1.05, fontWeight: 950, letterSpacing: 0 }}>{habitName}</h3>
+                                            <div style={{ minWidth: 0, flex: 1 }}>
+                                                <div style={confirmEyebrow(ui)}>{langIndex === 0 ? 'Настройка привычки' : 'Habit setup'}</div>
+                                                <h3 style={{ color: ui.text, margin: 0, fontSize: 24, lineHeight: 1.05, fontWeight: 950, letterSpacing: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{habitName}</h3>
+                                            </div>
+                                            <div style={confirmTitleIcon(ui)}>
+                                                <HabitOutlineIcon iconName={habitIcon} habitName={habitName} categoryKey={habitCategory} size={24} />
+                                            </div>
                                         </div>
                                         
                                         {/* БАРАБАНЫ ДАТЫ (SCROLLPICKER) */}
                                         <div style={configCard(ui)}>
                                             <p style={cardLabel(ui)}>{langIndex === 0 ? 'дата начала' : 'start date'}</p>
-                                            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', height: '120px', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', height: '96px', alignItems: 'center' }}>
                                                 <ScrollPicker items={daysArray} value={day} onChange={setDay} theme={theme} width="70px" />
                                                 <ScrollPicker items={monthsArray} value={monthsArray[month-1]} onChange={(v) => setMonth(monthsArray.indexOf(v) + 1)} theme={theme} width="120px" />
                                                 <ScrollPicker items={yearsArray} value={year} onChange={setYear} theme={theme} width="100px" />
@@ -807,14 +812,14 @@ const AddHabitPanel = () => {
                                         </div>
 
                                         <div style={configCard(ui)}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '11px' }}>
                                                 <span style={{ color: ui.text, fontWeight: '700' }}>{langIndex === 0 ? 'Срок' : 'Goal'}</span>
                                                 <span style={{ color: ui.accent, fontWeight: '900', fontSize: '24px' }}>{daysToForm} {langIndex === 0 ? 'дн.' : 'days'}</span>
                                             </div>
                                             <Slider min={21} max={180} value={daysToForm} onChange={(e, v) => setDaysToForm(v)} 
                                                 sx={{ color: ui.accent, '& .MuiSlider-thumb': { width: 24, height: 24 }, '& .MuiSlider-rail': { opacity: 0.3 } }} 
                                             />
-                                            <p style={{ fontSize: '12px', color: ui.sub, marginTop: '10px', textAlign: 'center' }}>{needDaysInfo(langIndex, daysToForm, isNegative)}</p>
+                                            <p style={{ fontSize: '12px', color: ui.sub, margin: '8px 0 0', textAlign: 'center' }}>{needDaysInfo(langIndex, daysToForm, isNegative)}</p>
                                         </div>
 
                                         {!isNegative && (
@@ -838,7 +843,7 @@ const AddHabitPanel = () => {
                                                         {langIndex === 0 ? 'Авто' : 'Auto'}
                                                     </motion.button>
                                                 </div>
-                                                <p style={{ fontSize: '12px', color: ui.sub, marginTop: '10px', textAlign: 'center' }}>
+                                                <p style={{ fontSize: '12px', color: ui.sub, margin: '8px 0 0', textAlign: 'center' }}>
                                                     {habitAutoComplete
                                                         ? (langIndex === 0 ? 'Привычка будет отмечаться выполненной автоматически каждый день.' : 'The habit will be marked done automatically each day.')
                                                         : (langIndex === 0 ? 'Отмечайте выполнение сами через карточку привычки.' : 'Mark completion yourself from the habit card.')}
@@ -1576,15 +1581,31 @@ const drumItem = (active, ui) => ({ height: '44px', display: 'flex', alignItems:
 const drumLens = (ui) => ({ position: 'absolute', top: '88px', left: 0, right: 0, height: '44px', borderTop: `1px solid ${ui.border}`, borderBottom: `1px solid ${ui.border}`, pointerEvents: 'none' });
 
 const confirmTitle = (ui) => ({
-    margin: '12px 0 16px',
-    padding: '18px',
-    borderRadius: 30,
+    margin: '8px 0 12px',
+    padding: '14px 16px',
+    borderRadius: 24,
     background: `radial-gradient(260px 130px at 90% 0%, rgba(${ui.accentRgb},0.15), transparent 72%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
     border: `1px solid ${ui.borderStrong}`,
     boxShadow: ui.shadow,
     textAlign: 'left',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
     backdropFilter: ui.blur,
     WebkitBackdropFilter: ui.blur
+});
+const confirmTitleIcon = (ui) => ({
+    width: 46,
+    height: 46,
+    borderRadius: 17,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    color: ui.accent,
+    background: ui.accentSoft,
+    border: `1px solid ${ui.accentRing}`,
+    boxShadow: `0 14px 24px -20px ${ui.accent}`
 });
 const confirmEyebrow = (ui) => ({
     color: ui.accent,
@@ -1596,20 +1617,20 @@ const confirmEyebrow = (ui) => ({
 });
 const configCard = (ui) => ({
     background: `radial-gradient(260px 140px at 92% 0%, rgba(${ui.accentRgb},0.11), transparent 74%), linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
-    borderRadius: 28,
-    padding: '19px',
-    marginBottom: 14,
+    borderRadius: 24,
+    padding: '15px 17px',
+    marginBottom: 12,
     border: `1px solid ${ui.border}`,
     boxShadow: ui.shadow,
     backdropFilter: ui.blur,
     WebkitBackdropFilter: ui.blur
 });
-const cardLabel = (ui) => ({ color: ui.sub, fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', marginBottom: '13px', letterSpacing: '0.13em' });
+const cardLabel = (ui) => ({ color: ui.sub, fontSize: '10.5px', fontWeight: '950', textTransform: 'uppercase', margin: '0 0 9px', letterSpacing: '0.13em', textAlign: 'center' });
 
-const footerButtons = { display: 'flex', gap: '10px', padding: '12px 0 calc(12px + env(safe-area-inset-bottom, 0px))', alignItems: 'center', position: 'sticky', bottom: 0, background: 'transparent', zIndex: 5 };
-const btnBase = { height: '58px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', fontSize: 15, fontWeight: 950, fontFamily: 'inherit' };
+const footerButtons = { display: 'flex', gap: '10px', padding: '10px 0 calc(10px + env(safe-area-inset-bottom, 0px))', alignItems: 'center', position: 'sticky', bottom: 0, background: 'transparent', zIndex: 5 };
+const btnBase = { height: '54px', borderRadius: '19px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', fontSize: 15, fontWeight: 950, fontFamily: 'inherit' };
 const btnCancel = (ui) => ({ ...btnBase, flex: 1, backgroundColor: '#FF3B30', border: `1px solid ${ui.border}` });
-const btnNew = (ui) => ({ ...btnBase, width: '58px', background: `linear-gradient(145deg, ${ui.accentSoft}, ${ui.field})`, color: ui.accent, border: `1px solid ${ui.accentRing}`, boxShadow: `0 14px 24px -22px ${ui.accent}, inset 0 1px 0 rgba(255,255,255,0.08)`, backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
+const btnNew = (ui) => ({ ...btnBase, width: '54px', background: `linear-gradient(145deg, ${ui.accentSoft}, ${ui.field})`, color: ui.accent, border: `1px solid ${ui.accentRing}`, boxShadow: `0 14px 24px -22px ${ui.accent}, inset 0 1px 0 rgba(255,255,255,0.08)`, backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
 const btnNext = (ui) => ({ ...btnBase, flex: 2, background: `linear-gradient(135deg, rgba(${ui.accentRgb},0.28), rgba(143,166,200,0.13))`, color: ui.text, border: `1px solid ${ui.borderStrong}`, boxShadow: `0 14px 34px -28px rgba(${ui.accentRgb},0.55), inset 0 1px 0 rgba(255,255,255,0.10)`, backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
 
 const iconSheet = (ui) => ({ width: '100%', maxHeight: '76vh', borderRadius: '34px 34px 0 0', overflow: 'hidden', borderTop: `1px solid ${ui.borderStrong}`, background: `radial-gradient(520px 240px at 80% 0%, rgba(${ui.accentRgb},0.12), transparent 70%), linear-gradient(180deg, ${ui.card}, rgba(15,17,19,0.92))`, boxShadow: '0 -18px 60px -34px rgba(0,0,0,0.72)', backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });

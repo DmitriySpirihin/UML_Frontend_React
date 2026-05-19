@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { motion, useTransform, useMotionValue, animate, AnimatePresence } from 'framer-motion'
-import Icons from '../../StaticClasses/Icons';
 import { allHabits } from '../../Classes/Habit.js'
 import { AppData, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
 import { logSectionVisit } from '../../StaticClasses/AppData.js'
@@ -11,7 +10,13 @@ import { expandedCard$, setExpandedCard } from '../../StaticClasses/HabitsBus.js
 import { theme$, lang$, fontSize$, premium$, confirmationPanel$, setShowPopUpPanel, setPage,setActiveTab, habitAccent$, habitsChanged$, habitsSelectedDate$, setHabitAccent } from '../../StaticClasses/HabitsBus'
 import Colors from '../../StaticClasses/Colors'
 import { saveData } from '../../StaticClasses/SaveHelper.js';
-import { HABITS_ACCENT as SHARED_HABITS_ACCENT, HABIT_ACCENT_PRESETS, buildHabitsAccent } from './HabitVisuals.jsx';
+import {
+    HABITS_ACCENT as SHARED_HABITS_ACCENT,
+    HABIT_ACCENT_PRESETS,
+    HABIT_ICON_GROUPS,
+    HabitOutlineIcon as SharedHabitOutlineIcon,
+    buildHabitsAccent
+} from './HabitVisuals.jsx';
 
 import { MdDone, MdClose } from 'react-icons/md'
 import { FaPlus, FaTrash, FaPencilAlt, FaFire, FaChevronDown , FaClock, FaSlidersH, FaPalette } from 'react-icons/fa'
@@ -156,11 +161,12 @@ const HABITS_SUCCESS = {
     hue: '#22C55E',
     soft: 'rgba(34,197,94,0.14)',
     ring: 'rgba(34,197,94,0.26)',
-    glow: 'rgba(34,197,94,0.16)'
+    glow: 'rgba(34,197,94,0.22)',
+    rgb: '34,197,94'
 };
 
 const HABITS_CATEGORY_TONES = {
-    'Здоровье': { hue: '#7FC8B8', soft: 'rgba(127,200,184,0.14)', ring: 'rgba(127,200,184,0.28)', icon: 'health' },
+    'Здоровье': { hue: '#55DDEB', soft: 'rgba(85,221,235,0.14)', ring: 'rgba(85,221,235,0.28)', icon: 'health' },
     'Развитие': { hue: '#8A7CD6', soft: 'rgba(138,124,214,0.14)', ring: 'rgba(138,124,214,0.28)', icon: 'growth' },
     'Продуктивность': { hue: '#8FA6C8', soft: 'rgba(143,166,200,0.14)', ring: 'rgba(143,166,200,0.28)', icon: 'productivity' },
     'Отношения и отдых': { hue: '#D49A5C', soft: 'rgba(212,154,92,0.12)', ring: 'rgba(212,154,92,0.24)', icon: 'relationships' },
@@ -192,7 +198,6 @@ const HABIT_OUTLINE_ICONS = {
     timer: ({ size }) => <HabitIconBase size={size}><circle cx="12" cy="13" r="7" /><path d="M12 9v4l2.5 1.5M9 3h6M19 5l1 1" /></HabitIconBase>,
     inbox: ({ size }) => <HabitIconBase size={size}><path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5l-3-8H7Z" /><path d="M4 13h4l1 2h6l1-2h4" /></HabitIconBase>,
     people: ({ size }) => <HabitIconBase size={size}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.3" /><path d="M3 20c1-3 3-4.5 6-4.5s5 1.5 6 4.5M15 20c.5-2 1.8-3 3.5-3s2.5.6 3.5 3" /></HabitIconBase>,
-    heart: ({ size }) => <HabitIconBase size={size}><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 10c0 5.5-7 10-7 10Z" /></HabitIconBase>,
     chat: ({ size }) => <HabitIconBase size={size}><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l.8-5.5A8 8 0 1 1 21 12Z" /></HabitIconBase>,
     hobby: ({ size }) => <HabitIconBase size={size}><path d="M7 3h10v4a5 5 0 0 1-10 0V3ZM9 12v3l-2 5h10l-2-5v-3" /></HabitIconBase>,
     creative: ({ size }) => <HabitIconBase size={size}><path d="M4 20l3-1 11-11-2-2L5 17l-1 3ZM15 7l2 2M11 20h9" /></HabitIconBase>,
@@ -209,7 +214,7 @@ const HABIT_OUTLINE_ICONS = {
 
 const HABIT_ICON_ALIASES = {
     default: 'target',
-    health: 'heart',
+    health: 'body',
     growth: 'book',
     productivity: 'target',
     relationships: 'people',
@@ -244,10 +249,10 @@ const HABIT_ICON_ALIASES = {
     inboxTray: 'inbox',
     sunsetReview: 'plan',
     callMessage: 'chat',
-    handHeart: 'heart',
+    handHeart: 'people',
     handshake: 'people',
     activeListen: 'chat',
-    gratitude: 'heart',
+    gratitude: 'hobby',
     hobby: 'hobby',
     parkWalk: 'walk',
     mindfulness: 'meditate',
@@ -322,7 +327,7 @@ const HABIT_ICON_ALIASES = {
     mealPrep: 'food',
     familyTime: 'people',
     friendMessage: 'chat',
-    compliment: 'heart',
+    compliment: 'chat',
     homeHelp: 'people',
     cleaning: 'plan',
     laundry: 'plan',
@@ -370,10 +375,21 @@ function normalizeHabitIconKey(iconName, habitName = [], categoryKey = '') {
 }
 
 function HabitOutlineIcon({ iconName, habitName, categoryKey, size = 22 }) {
-    const key = normalizeHabitIconKey(iconName, habitName, categoryKey);
-    const Icon = HABIT_OUTLINE_ICONS[key] || HABIT_OUTLINE_ICONS.target;
-    return <Icon size={size} />;
+    return <SharedHabitOutlineIcon iconName={iconName} habitName={habitName} categoryKey={categoryKey} size={size} />;
 }
+
+const normalizeCustomEmoji = (value) => {
+    const trimmed = String(value || '').trim();
+    if (!trimmed) return '';
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(trimmed)][0]?.segment || '';
+    }
+    return Array.from(trimmed)[0] || '';
+};
+
+const emojiFromIconName = (iconName) => (
+    typeof iconName === 'string' && iconName.startsWith('emoji:') ? iconName.slice(6).trim() : ''
+);
 
 function getCategoryTone(categoryKey) {
     const canonical = getCategory(categoryKey)[0];
@@ -528,6 +544,160 @@ const styles = (theme, fSize = 0) => {
             backdropFilter: 'blur(26px) saturate(155%)',
             WebkitBackdropFilter: 'blur(26px) saturate(155%)'
         },
+        habitIconModal: {
+            background: modalBg,
+            borderRadius: '28px',
+            border: borderColor,
+            width: '100%',
+            maxWidth: '370px',
+            maxHeight: 'min(82dvh, 660px)',
+            overflowY: 'auto',
+            padding: '18px',
+            boxSizing: 'border-box',
+            boxShadow: shadow,
+            backdropFilter: 'blur(26px) saturate(155%)',
+            WebkitBackdropFilter: 'blur(26px) saturate(155%)'
+        },
+        habitIconModalHeader: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            marginBottom: '14px'
+        },
+        habitIconPreview: {
+            width: '64px',
+            height: '64px',
+            borderRadius: '21px',
+            marginBottom: '12px',
+            background: HABITS_ACCENT.soft,
+            border: `1px solid ${HABITS_ACCENT.ring}`,
+            color: HABITS_ACCENT.hue,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '34px',
+            lineHeight: 1,
+            boxShadow: `0 18px 34px -24px rgba(${HABITS_ACCENT.rgb},0.78), 0 1px 0 rgba(255,255,255,0.12) inset`
+        },
+        habitIconTitle: {
+            color: Colors.get('mainText', theme),
+            fontSize: '18px',
+            fontWeight: 950,
+            lineHeight: 1.12
+        },
+        habitIconSub: {
+            marginTop: '7px',
+            color: Colors.get('subText', theme),
+            fontSize: '12px',
+            fontWeight: 750,
+            lineHeight: 1.35,
+            maxWidth: '280px'
+        },
+        habitIconSectionTitle: {
+            color: Colors.get('subText', theme),
+            fontSize: '10px',
+            fontWeight: 950,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            paddingLeft: '2px',
+            marginBottom: '7px'
+        },
+        habitEmojiInput: {
+            width: '100%',
+            height: '54px',
+            borderRadius: '17px',
+            border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.08)',
+            background: isLight ? 'rgba(255,255,255,0.66)' : 'rgba(255,255,255,0.045)',
+            color: Colors.get('mainText', theme),
+            fontSize: '28px',
+            lineHeight: 1,
+            textAlign: 'center',
+            outline: 'none',
+            fontFamily: 'inherit',
+            boxSizing: 'border-box',
+            boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.82) inset' : '0 1px 0 rgba(255,255,255,0.055) inset'
+        },
+        habitIconPresetSection: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '11px',
+            marginTop: '14px',
+            marginBottom: '14px'
+        },
+        habitIconGroup: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '7px'
+        },
+        habitIconGroupTitle: {
+            color: Colors.get('subText', theme),
+            fontSize: '10px',
+            fontWeight: 850,
+            lineHeight: 1,
+            paddingLeft: '2px'
+        },
+        habitIconGrid: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+            gap: '7px'
+        },
+        habitIconItem: (active) => ({
+            aspectRatio: '1 / 1',
+            minWidth: 0,
+            borderRadius: '13px',
+            border: `1px solid ${active ? HABITS_ACCENT.ring : (isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.075)')}`,
+            background: active ? HABITS_ACCENT.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)'),
+            color: HABITS_ACCENT.hue,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            padding: 0,
+            outline: 'none',
+            fontFamily: 'inherit',
+            WebkitTapHighlightColor: 'transparent'
+        }),
+        habitIconActions: {
+            display: 'grid',
+            gridTemplateColumns: '0.85fr 1fr 1fr',
+            gap: '9px',
+            marginTop: '14px'
+        },
+        habitIconResetBtn: {
+            minHeight: '46px',
+            borderRadius: '15px',
+            border: '1px solid rgba(235,107,127,0.24)',
+            background: isLight ? 'rgba(235,107,127,0.08)' : 'rgba(235,107,127,0.10)',
+            color: '#E68193',
+            fontSize: '13px',
+            fontWeight: 900,
+            cursor: 'pointer',
+            fontFamily: 'inherit'
+        },
+        habitIconCancelBtn: {
+            minHeight: '46px',
+            borderRadius: '15px',
+            border: isLight ? '1px solid rgba(15,23,42,0.07)' : '1px solid rgba(255,255,255,0.07)',
+            background: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.055)',
+            color: Colors.get('mainText', theme),
+            fontSize: '13px',
+            fontWeight: 900,
+            cursor: 'pointer',
+            fontFamily: 'inherit'
+        },
+        habitIconApplyBtn: {
+            minHeight: '46px',
+            borderRadius: '15px',
+            border: `1px solid rgba(${HABITS_ACCENT.rgb},0.32)`,
+            background: `linear-gradient(145deg, rgba(${HABITS_ACCENT.rgb},0.9), ${HABITS_ACCENT.hue})`,
+            color: '#fff',
+            fontSize: '13px',
+            fontWeight: 950,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            boxShadow: `0 16px 28px -22px rgba(${HABITS_ACCENT.rgb},0.82)`
+        },
         mainText: { fontSize: "17px", fontWeight: '600', color: Colors.get('mainText', theme), textAlign: 'center', marginBottom: '10px' },
         subText: { textAlign: "center", fontSize: "14px", color: Colors.get('subText', theme), marginBottom: '5px' },
         buttonsRow: { width: '100%', display: 'flex', flexDirection: 'row', gap: '15px', marginTop: '10px' },
@@ -631,8 +801,8 @@ const styles = (theme, fSize = 0) => {
         },
         pageTitle: {
             color: Colors.get('mainText', theme),
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: fSize === 0 ? 21 : 24,
+            fontFamily: 'inherit',
+            fontSize: 24,
             fontWeight: 700,
             letterSpacing: 0,
             lineHeight: 1.05,
@@ -694,6 +864,7 @@ const HabitsMain = () => {
     const [newName, setNewName] = useState('');
     const [newDescr, setNewDescr] = useState('');
     const [newIcon, setNewIcon] = useState('');
+    const [habitEmojiInput, setHabitEmojiInput] = useState('');
     const [selectIconPanel, setSelectIconPanel] = useState(false);
     const [newCategory, setNewCategory] = useState('Здоровье');
 
@@ -705,7 +876,9 @@ const HabitsMain = () => {
         if (cP.type === 0) {
             setNewName(getAllHabits().find(h => h.id === cP.hId)?.name[langIndex] || '');
             setNewDescr(getAllHabits().find(h => h.id === cP.hId)?.description[langIndex] || '');
-            setNewIcon(getAllHabits().find(h => h.id === cP.hId)?.iconName || '');
+            const nextIcon = getAllHabits().find(h => h.id === cP.hId)?.iconName || '';
+            setNewIcon(nextIcon);
+            setHabitEmojiInput(emojiFromIconName(nextIcon));
             setNewCategory(getAllHabits().find(h => h.id === cP.hId)?.category[0] || 'Здоровье');
         }
         if (cP.type === 4) {
@@ -757,9 +930,10 @@ const HabitsMain = () => {
     }, []);
 
     useEffect(() => {
-        const normalized = buildHabitsAccent(AppData.habitAccentColor || '#22C55E').hue;
-        if (AppData.habitAccentColor !== normalized) {
-            AppData.habitAccentColor = setHabitAccent(normalized).hue;
+        const normalized = buildHabitsAccent(AppData.habitAccentColor || SHARED_HABITS_ACCENT.hue).hue;
+        const applied = setHabitAccent(normalized).hue;
+        if (AppData.habitAccentColor !== applied) {
+            AppData.habitAccentColor = applied;
         }
     }, []);
 
@@ -892,6 +1066,30 @@ const HabitsMain = () => {
 	                setCP(prev => ({ ...prev, show: false }));
                 break;
         }
+    };
+
+    const applyHabitPresetIcon = (iconKey) => {
+        setNewIcon(iconKey);
+        setHabitEmojiInput('');
+        setSelectIconPanel(false);
+    };
+
+    const applyHabitEmoji = () => {
+        const emoji = normalizeCustomEmoji(habitEmojiInput);
+        if (!emoji) {
+            setShowPopUpPanel(langIndex === 0 ? 'Введите эмодзи' : 'Enter emoji', 2000, false);
+            return;
+        }
+
+        setNewIcon(`emoji:${emoji}`);
+        setHabitEmojiInput(emoji);
+        setSelectIconPanel(false);
+    };
+
+    const resetHabitIcon = () => {
+        setNewIcon('');
+        setHabitEmojiInput('');
+        setSelectIconPanel(false);
     };
 
     removeHabitFn = removeHabit;
@@ -1059,10 +1257,30 @@ const HabitsMain = () => {
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             padding: 0,
-                                            flexShrink: 0
+                                            flexShrink: 0,
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            fontFamily: 'inherit'
                                         }}
                                     >
                                         <HabitOutlineIcon iconName={newIcon} categoryKey={newCategory} size={28} />
+                                        <span style={{
+                                            position: 'absolute',
+                                            right: -4,
+                                            bottom: -4,
+                                            width: 20,
+                                            height: 20,
+                                            borderRadius: 999,
+                                            background: HABITS_ACCENT.hue,
+                                            color: '#fff',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            border: isLight ? '2px solid rgba(245,248,252,0.96)' : '2px solid rgba(17,28,38,0.96)',
+                                            boxShadow: `0 8px 16px -10px rgba(${HABITS_ACCENT.rgb},0.9)`
+                                        }}>
+                                            <FaPencilAlt size={9} />
+                                        </span>
                                     </button>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ color: Colors.get('mainText', theme), fontSize: 14, fontWeight: 900 }}>
@@ -1192,18 +1410,76 @@ const HabitsMain = () => {
 
             {selectIconPanel && (
                 <div style={styles(theme).confirmContainer} onClick={() => setSelectIconPanel(false)}>
-                    <div style={{...styles(theme).selectPanel}} onClick={e => e.stopPropagation()}>
-                        <div style={{width: '100%', textAlign:'center', marginBottom: '10px', color: Colors.get('subText', theme), fontSize: '13px', fontWeight:'600'}}>
-                            {langIndex===0?'ВЫБЕРИТЕ ИКОНКУ':'SELECT ICON'}
-                        </div>
-                        {Object.entries(Icons.ic).map(([key]) => (
-                            <div key={key} style={{ padding: '12px', borderRadius: '12px', backgroundColor: isLight ? '#F2F2F7' : 'rgba(255,255,255,0.05)', cursor:'pointer' }}
-                                onClick={() => { setNewIcon(key); setSelectIconPanel(false); }}>
-                                <div style={{ color: Colors.get('habitIcon', theme), display: 'flex' }}>
-                                    <HabitOutlineIcon iconName={key} categoryKey={newCategory} size={30} />
-                                </div>
+                    <div style={styles(theme).habitIconModal} onClick={e => e.stopPropagation()}>
+                        <div style={styles(theme).habitIconModalHeader}>
+                            <div style={styles(theme).habitIconPreview}>
+                                {normalizeCustomEmoji(habitEmojiInput) || (
+                                    <HabitOutlineIcon iconName={newIcon} categoryKey={newCategory} size={30} />
+                                )}
                             </div>
-                        ))}
+                            <div style={styles(theme).habitIconTitle}>
+                                {langIndex === 0 ? 'Иконка привычки' : 'Habit icon'}
+                            </div>
+                            <div style={styles(theme).habitIconSub}>
+                                {langIndex === 0
+                                    ? 'Выберите готовую иконку или вставьте свой эмодзи с клавиатуры.'
+                                    : 'Pick a preset icon or enter your own keyboard emoji.'}
+                            </div>
+                        </div>
+
+                        <div style={styles(theme).habitIconSectionTitle}>
+                            {langIndex === 0 ? 'С клавиатуры' : 'Keyboard emoji'}
+                        </div>
+                        <input
+                            type="text"
+                            inputMode="text"
+                            value={habitEmojiInput}
+                            onChange={(e) => setHabitEmojiInput(normalizeCustomEmoji(e.target.value))}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') applyHabitEmoji();
+                                if (e.key === 'Escape') setSelectIconPanel(false);
+                            }}
+                            placeholder={langIndex === 0 ? 'Например: ⚡' : 'Example: ⚡'}
+                            style={styles(theme).habitEmojiInput}
+                        />
+
+                        <div style={styles(theme).habitIconPresetSection}>
+                            <div style={styles(theme).habitIconSectionTitle}>
+                                {langIndex === 0 ? 'Готовые' : 'Presets'}
+                            </div>
+                            {HABIT_ICON_GROUPS.map(group => (
+                                <div key={group.key} style={styles(theme).habitIconGroup}>
+                                    <div style={styles(theme).habitIconGroupTitle}>
+                                        {group.label[langIndex]}
+                                    </div>
+                                    <div style={styles(theme).habitIconGrid}>
+                                        {group.icons.map(iconKey => (
+                                            <button
+                                                type="button"
+                                                key={iconKey}
+                                                onClick={() => applyHabitPresetIcon(iconKey)}
+                                                style={styles(theme).habitIconItem(newIcon === iconKey)}
+                                                aria-label={iconKey}
+                                            >
+                                                <HabitOutlineIcon iconName={iconKey} categoryKey={newCategory} size={16} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div style={styles(theme).habitIconActions}>
+                            <button type="button" onClick={resetHabitIcon} style={styles(theme).habitIconResetBtn}>
+                                {langIndex === 0 ? 'Сбросить' : 'Reset'}
+                            </button>
+                            <button type="button" onClick={() => setSelectIconPanel(false)} style={styles(theme).habitIconCancelBtn}>
+                                {langIndex === 0 ? 'Отмена' : 'Cancel'}
+                            </button>
+                            <button type="button" onClick={applyHabitEmoji} style={styles(theme).habitIconApplyBtn}>
+                                {langIndex === 0 ? 'Применить' : 'Apply'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
@@ -1685,6 +1961,8 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     const categoryTone = categoryBaseTone?.hue ? categoryBaseTone : { ...HABITS_ACCENT, icon: categoryBaseTone.icon };
     const negativeTone = getCategoryTone(NEGATIVE_CATEGORY);
     const statusValue = status ?? 0;
+    const doneTone = isNegative ? negativeTone : HABITS_SUCCESS;
+    const doneGlow = doneTone.glow || doneTone.ring || HABITS_ACCENT.glow;
     const habitColor = isNegative ? negativeTone.hue : categoryTone.hue;
     const isLight = theme === 'light' || theme === 'speciallight';
     const widgets = normalizeHabitCardWidgets(habitCardWidgets);
@@ -1696,8 +1974,8 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
         : 'linear-gradient(145deg, rgba(42,49,55,0.58), rgba(17,22,26,0.72))';
     let textColor = isLight ? '#1D1D1F' : Colors.get('mainText', theme);
     let subTextColor = isLight ? '#8E8E93' : Colors.get('subText', theme);
-    let iconBg = isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.065)';
-    let iconColor = isLight ? 'rgba(31,41,55,0.58)' : 'rgba(196,211,222,0.62)';
+    let iconBg = categoryTone.soft;
+    let iconColor = categoryTone.hue;
     let borderColor = `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.08)'}`;
     let progressColor = isLight ? 'rgba(31,41,55,0.28)' : 'rgba(196,211,222,0.28)';
 
@@ -1726,12 +2004,12 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
             progressColor = negativeTone.hue;
         } else {
             cardBg = isLight
-                ? `linear-gradient(145deg, rgba(255,255,255,0.92), ${HABITS_SUCCESS.soft})`
-                : `radial-gradient(220px 120px at 6% 4%, ${HABITS_SUCCESS.soft}, transparent 72%), linear-gradient(145deg, rgba(24,35,29,0.84), rgba(16,24,19,0.76))`;
-            iconBg = HABITS_SUCCESS.soft;
-            iconColor = HABITS_SUCCESS.hue;
-            borderColor = `1px solid ${HABITS_SUCCESS.ring}`;
-            progressColor = HABITS_SUCCESS.hue;
+                ? `linear-gradient(145deg, rgba(255,255,255,0.92), ${doneTone.soft})`
+                : `radial-gradient(220px 120px at 6% 4%, ${doneTone.soft}, transparent 72%), linear-gradient(145deg, rgba(${doneTone.rgb || HABITS_ACCENT.rgb},0.10), rgba(16,24,24,0.76))`;
+            iconBg = doneTone.soft;
+            iconColor = doneTone.hue;
+            borderColor = `1px solid ${doneTone.ring}`;
+            progressColor = doneTone.hue;
             shadow = isLight
                 ? '0 14px 30px -24px rgba(15,23,42,0.20), 0 1px 0 rgba(255,255,255,0.72) inset'
                 : '0 1px 0 rgba(255,255,255,0.055) inset, 0 18px 34px -28px rgba(0,0,0,0.76)';
@@ -1927,7 +2205,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 
 	                    {widgets.days && <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getDaysAmount(id)} color={subTextColor} />}
 	                    {widgets.skips && <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={statusValue === -1 ? '#D95C5C' : subTextColor} />}
-                    {widgets.streak && !isNegative && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDoneAmount(id)} color={statusValue === 1 ? HABITS_SUCCESS.hue : '#D8785E'} />}
+                    {widgets.streak && !isNegative && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDoneAmount(id)} color={statusValue === 1 ? doneTone.hue : '#D8785E'} />}
                     {widgets.timer && !isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={categoryTone.hue} />}
 	                    {widgets.timer && isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={'#D8785E'} />}
 
@@ -1942,13 +2220,13 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
                     
                         {!timer && statusValue === 0 && <TimerOffIcon onClick={(e) => { e.stopPropagation(); setShowTimerSlider(true); }} style={{ color: subTextColor, opacity: 0.52, fontSize: '23px', transition: 'color 0.42s ease, opacity 0.42s ease' }} />}
                         {timer && <TimerIcon onClick={(e) => { e.stopPropagation(); stopTimer() }} style={{ color: categoryTone.hue, fontSize: '23px', transition: 'color 0.42s ease' }} />}
-		                        <div onClick={(e) => {e.stopPropagation(); setNewStatus(statusValue !== 1)}} style={{ width: 40, height: 30, borderRadius: 12, border: statusValue === 1 ? `1px solid ${HABITS_SUCCESS.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`, background: statusValue === 1 ? HABITS_SUCCESS.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)'), color: statusValue === 1 ? HABITS_SUCCESS.hue : subTextColor, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.45s ease, border-color 0.45s ease, color 0.45s ease, box-shadow 0.45s ease', boxSizing: 'border-box', cursor: 'pointer', boxShadow: statusValue === 1 ? `0 1px 0 rgba(255,255,255,0.08) inset, 0 0 16px ${HABITS_SUCCESS.glow}` : '0 1px 0 rgba(255,255,255,0.035) inset' }}>{statusValue === 1 && <FaCheck size={14} />}</div>
+		                        <div onClick={(e) => {e.stopPropagation(); setNewStatus(statusValue !== 1)}} style={{ width: 40, height: 30, borderRadius: 12, border: statusValue === 1 ? `1px solid ${doneTone.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`, background: statusValue === 1 ? doneTone.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)'), color: statusValue === 1 ? doneTone.hue : subTextColor, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.45s ease, border-color 0.45s ease, color 0.45s ease, box-shadow 0.45s ease', boxSizing: 'border-box', cursor: 'pointer', boxShadow: statusValue === 1 ? `0 1px 0 rgba(255,255,255,0.08) inset, 0 0 16px ${doneGlow}` : '0 1px 0 rgba(255,255,255,0.035) inset' }}>{statusValue === 1 && <FaCheck size={14} />}</div>
                     </>}
 
 
 
 
-                    {isAutoComplete && <div style={{ padding: '7px 10px', borderRadius: '999px', backgroundColor: HABITS_SUCCESS.soft, border: '1px solid transparent', color: HABITS_SUCCESS.hue, fontSize: '11px', fontWeight: 900 }}>{langIndex === 0 ? 'АВТО' : 'AUTO'}</div>}
+                    {isAutoComplete && <div style={{ padding: '7px 10px', borderRadius: '999px', backgroundColor: doneTone.soft, border: `1px solid ${doneTone.ring}`, color: doneTone.hue, fontSize: '11px', fontWeight: 900 }}>{langIndex === 0 ? 'АВТО' : 'AUTO'}</div>}
                     {isNegative && <div style={{ width: 40, height: 30, borderRadius: 10, backgroundColor: 'rgba(216,120,94,0.07)', border: '1px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}><FaFire size={14} color="#D8785E" /></div>}
                     
                 </div>
@@ -1976,8 +2254,8 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
                 {/* Goals List */}
 	                {widgets.goals && <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
 	                    {habitsGoals?.map((goal, index) => (
-	                        <motion.div key={index} whileTap={{ scale: 0.98 }} style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '12px 13px', borderRadius: 15, background: goal.isDone ? (isLight ? 'linear-gradient(135deg, rgba(57,217,130,0.18), rgba(57,217,130,0.08))' : 'linear-gradient(135deg, rgba(57,217,130,0.16), rgba(57,217,130,0.055))') : (isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.035)'), border: goal.isDone ? `1px solid ${HABITS_SUCCESS.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.06)'}`, boxShadow: goal.isDone ? `0 1px 0 rgba(255,255,255,0.055) inset, 0 12px 22px -24px ${HABITS_SUCCESS.hue}` : '0 1px 0 rgba(255,255,255,0.035) inset', boxSizing: 'border-box' }}>
-                            <div style={{ fontSize: '14px', flexGrow: 1, fontWeight: goal.isDone ? '800' : '500', color: goal.isDone ? HABITS_SUCCESS.hue : textColor, textDecoration: 'none' }}>{goal.text}</div>
+	                        <motion.div key={index} whileTap={{ scale: 0.98 }} style={{ display: 'flex', alignItems: 'center', width: '100%', padding: '12px 13px', borderRadius: 15, background: goal.isDone ? (isLight ? `linear-gradient(135deg, ${doneTone.soft}, rgba(255,255,255,0.62))` : `linear-gradient(135deg, ${doneTone.soft}, rgba(255,255,255,0.035))`) : (isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.035)'), border: goal.isDone ? `1px solid ${doneTone.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.06)'}`, boxShadow: goal.isDone ? `0 1px 0 rgba(255,255,255,0.055) inset, 0 12px 22px -24px ${doneTone.hue}` : '0 1px 0 rgba(255,255,255,0.035) inset', boxSizing: 'border-box' }}>
+                            <div style={{ fontSize: '14px', flexGrow: 1, fontWeight: goal.isDone ? '800' : '500', color: goal.isDone ? doneTone.hue : textColor, textDecoration: 'none' }}>{goal.text}</div>
                             
                             {/* Edit/Delete Goal Options */}
                             {showAddOptions && currentGoal === index && (
@@ -1993,7 +2271,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
                             </div>
 
                             {/* Checkbox */}
-	                            <div onClick={async () => { const updated = (habitsGoals || []).map((h, i) => i === index ? { ...h, isDone: !h.isDone } : h); AppData.choosenHabitsGoals[id] = updated; setHabitGoals(updated); await saveData(); }} style={{ width: 25, height: 25, borderRadius: 9, border: goal.isDone ? `1px solid ${HABITS_SUCCESS.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)'}`, background: goal.isDone ? HABITS_SUCCESS.hue : 'transparent', color: isLight ? '#FFFFFF' : '#0E1512', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: goal.isDone ? `0 8px 16px -12px ${HABITS_SUCCESS.hue}` : 'none' }}>
+	                            <div onClick={async () => { const updated = (habitsGoals || []).map((h, i) => i === index ? { ...h, isDone: !h.isDone } : h); AppData.choosenHabitsGoals[id] = updated; setHabitGoals(updated); await saveData(); }} style={{ width: 25, height: 25, borderRadius: 9, border: goal.isDone ? `1px solid ${doneTone.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)'}`, background: goal.isDone ? doneTone.hue : 'transparent', color: isLight ? '#FFFFFF' : '#0E1512', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: goal.isDone ? `0 8px 16px -12px ${doneTone.hue}` : 'none' }}>
                                 {goal.isDone && <FaCheck size={12} />}
                             </div>
 	                        </motion.div>
@@ -2357,9 +2635,9 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
                         minWidth: 44,
                         height: 28,
                         borderRadius: 999,
-                        background: doneCount === totalCount && totalCount > 0 ? (isNegativeCategory ? tone.soft : HABITS_SUCCESS.soft) : (isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)'),
-                        border: `1px solid ${doneCount === totalCount && totalCount > 0 ? (isNegativeCategory ? tone.ring : HABITS_SUCCESS.ring) : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)')}`,
-                        color: doneCount === totalCount && totalCount > 0 ? (isNegativeCategory ? tone.hue : HABITS_SUCCESS.hue) : sub,
+                        background: doneCount === totalCount && totalCount > 0 ? tone.soft : (isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)'),
+                        border: `1px solid ${doneCount === totalCount && totalCount > 0 ? tone.ring : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)')}`,
+                        color: doneCount === totalCount && totalCount > 0 ? tone.hue : sub,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',

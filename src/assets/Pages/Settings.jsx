@@ -3,19 +3,42 @@ import { AppData, UserData } from '../StaticClasses/AppData'
 import { motion, AnimatePresence } from 'framer-motion'
 import Colors from "../StaticClasses/Colors";
 import { sendBugreport } from '../StaticClasses/NotificationsManager'
-import { FaAddressCard, FaLanguage, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight, FaHome, FaUser, FaCog, FaPaperPlane, FaTelegramPlane, FaTimes, FaCloudUploadAlt, FaCloudDownloadAlt, FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa'
+import { FaAddressCard, FaLanguage, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight, FaHome, FaUser, FaCog, FaPaperPlane, FaTelegramPlane, FaTimes, FaCloudUploadAlt, FaCloudDownloadAlt, FaTrashAlt, FaExclamationTriangle, FaBell, FaCheckCircle, FaTasks, FaDumbbell, FaBrain, FaSpa, FaBed } from 'react-icons/fa'
 import { LuVibrate, LuVibrateOff } from 'react-icons/lu'
 import { RiFontSize2 } from 'react-icons/ri'
 import { clearAllSaves } from '../StaticClasses/SaveHelper';
-import { MdBackup, MdInfoOutline } from 'react-icons/md'
+import { MdBackup, MdInfoOutline, MdNotificationsActive } from 'react-icons/md'
 import { IoIosArrowBack } from 'react-icons/io'
-import { theme$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, lastPage$ } from '../StaticClasses/HabitsBus';
-import { cloudBackup, cloudRestore, deleteCloudBackup } from '../StaticClasses/NotificationsManager';
+import { theme$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, lastPage$, setShowPopUpPanel } from '../StaticClasses/HabitsBus';
+import { cloudBackup, cloudRestore, deleteCloudBackup, NotificationsManager } from '../StaticClasses/NotificationsManager';
 import { playEffects } from '../StaticClasses/Effects';
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const version = '2.c.88.1.s';
 const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 18px)';
+const NOTIFICATION_SECTION_DEFS = [
+    { id: 'habits', label: ['Привычки', 'Habits'], detail: ['Ежедневные ритуалы и чек-ин', 'Daily rituals and check-in'], icon: <FaCheckCircle />, color: '#55DDEB', serverType: 'habit', message: ['время проверить привычки', 'time to check habits'] },
+    { id: 'todo', label: ['Задачи', 'Tasks'], detail: ['Планы, дедлайны и список дел', 'Plans, deadlines and task list'], icon: <FaTasks />, color: '#2E9DFF', serverType: 'todo', message: ['пора свериться с задачами', 'time to review tasks'] },
+    { id: 'training', label: ['Дневник тренировок', 'Training log'], detail: ['Тренировки, замеры и прогресс', 'Workouts, measurements and progress'], icon: <FaDumbbell />, color: '#579BC8', serverType: 'training', message: ['пора потренироваться', 'time to train'] },
+    { id: 'mental', label: ['Тренировка ума', 'Mind training'], detail: ['Память, фокус и логика', 'Memory, focus and logic'], icon: <FaBrain />, color: '#A66BFF', serverType: 'mental', message: ['время размять ум', 'time to train your mind'] },
+    { id: 'recovery', label: ['Антистресс', 'Reset'], detail: ['Дыхание, медитации и холод', 'Breathing, meditation and cold'], icon: <FaSpa />, color: '#2FD6BD', serverType: 'recovery', message: ['время восстановиться', 'time to recover'] },
+    { id: 'sleep', label: ['Качество сна', 'Sleep quality'], detail: ['Режим, сон и подготовка ко сну', 'Schedule, sleep and bedtime prep'], icon: <FaBed />, color: '#7C6CFF', serverType: 'sleep', message: ['пора готовиться ко сну', 'time to prepare for sleep'] }
+];
+const NOTIFICATION_QUICK_TIMES = [
+    { time: '09:00', label: ['Утро', 'Morning'] },
+    { time: '13:00', label: ['День', 'Day'] },
+    { time: '18:00', label: ['Вечер', 'Evening'] },
+    { time: '22:30', label: ['Сон', 'Sleep'] }
+];
+const NOTIFICATION_DAY_LABELS = [
+    ['Пн', 'Mon'],
+    ['Вт', 'Tue'],
+    ['Ср', 'Wed'],
+    ['Чт', 'Thu'],
+    ['Пт', 'Fri'],
+    ['Сб', 'Sat'],
+    ['Вс', 'Sun']
+];
 
 const Settings = () => {
     const [theme, setThemeState] = useState('dark');
@@ -26,6 +49,7 @@ const Settings = () => {
     const [additionalPanel, setAdditionalPanel] = useState(false);
     const [additionalPanelNum, setAdditionalPanelNum] = useState(1);
     const [hasPremium, setHasPremium] = useState(false);
+    const [sectionNotifications, setSectionNotifications] = useState(AppData.sectionNotifications || {});
 
     useEffect(() => {
         const subs = [
@@ -53,6 +77,7 @@ const Settings = () => {
     };
 
     const styles = s(theme, fSize);
+    const enabledNotificationsCount = NOTIFICATION_SECTION_DEFS.filter(section => sectionNotifications?.[section.id]?.enabled).length;
 
     return (
         <motion.div
@@ -101,6 +126,24 @@ const Settings = () => {
                         onClick={() => { changeSettings(3); setVibro(vibro === 0 ? 1 : 0); playEffects(null); }} />
                 </SettingsSection>
 
+                <SettingsSection title={langIndex === 0 ? 'Уведомления' : 'Notifications'} theme={theme} fSize={fSize}>
+                    <SettingsItem
+                        theme={theme}
+                        fSize={fSize}
+                        icon={<FaBell />}
+                        label={langIndex === 0 ? 'По разделам' : 'By section'}
+                        value={`${enabledNotificationsCount}/${NOTIFICATION_SECTION_DEFS.length}`}
+                        color="#B7F3FF"
+                        isActive={enabledNotificationsCount > 0}
+                        onClick={() => {
+                            setSectionNotifications(AppData.sectionNotifications || {});
+                            setAdditionalPanel(true);
+                            setAdditionalPanelNum(5);
+                            playEffects(null);
+                        }}
+                    />
+                </SettingsSection>
+
                 <SettingsSection title={langIndex === 0 ? 'Помощь' : 'Support'} theme={theme} fSize={fSize}>
                     <SettingsItem theme={theme} fSize={fSize} icon={<MdInfoOutline />} label={langIndex === 0 ? 'Как пользоваться' : 'How to use'} color="#6F8BD6"
                         onClick={() => { setPage('InfoPanel'); playEffects(null); }} />
@@ -118,7 +161,15 @@ const Settings = () => {
                 <div style={styles.version}>{version}</div>
             </div>
 
-            <AdditionalPanel theme={theme} langIndex={langIndex} isOpen={additionalPanel} setIsOpen={setAdditionalPanel} panelNum={additionalPanelNum} />
+            <AdditionalPanel
+                theme={theme}
+                langIndex={langIndex}
+                isOpen={additionalPanel}
+                setIsOpen={setAdditionalPanel}
+                panelNum={additionalPanelNum}
+                sectionNotifications={sectionNotifications}
+                setSectionNotifications={setSectionNotifications}
+            />
             <SettingsDock
                 theme={theme}
                 langIndex={langIndex}
@@ -248,13 +299,14 @@ const SettingsDockButton = ({ icon, label, onClick, theme }) => (
     </motion.button>
 );
 
-const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
+const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectionNotifications, setSectionNotifications }) => {
     const [report, setReport] = useState('');
     const [showDanger, setShowDanger] = useState(false);
     const styles = s(theme);
     const isBugPanel = panelNum === 1;
     const isContactsPanel = panelNum === 3;
     const isBackupPanel = panelNum === 4;
+    const isNotificationsPanel = panelNum === 5;
     const trimmedReport = report.trim();
     const closePanel = () => {
         setIsOpen(false);
@@ -275,7 +327,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                     style={styles.panelScreen}
                 >
                     <div style={styles.panelContent} className="no-scrollbar">
-                        <div style={styles.panelTopBar}>
+                        <div style={isNotificationsPanel ? styles.panelTopBarMinimal : styles.panelTopBar}>
                             <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={closePanel} style={styles.panelBackButton} aria-label={langIndex === 0 ? 'Назад' : 'Back'}>
                                 <FaChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />
                             </motion.button>
@@ -284,31 +336,35 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                             </motion.button>
                         </div>
 
-                        {(isBugPanel || isContactsPanel || isBackupPanel) && (
+                        {(isBugPanel || isContactsPanel || isBackupPanel || isNotificationsPanel) && (
                             <div style={styles.panelHero}>
                                 <div style={{
                                     ...styles.panelHeroIcon,
-                                    color: isBugPanel ? '#D95C5C' : isBackupPanel ? '#D49A5C' : '#7AA988',
-                                    background: isBugPanel ? 'rgba(217,92,92,0.14)' : isBackupPanel ? 'rgba(212,154,92,0.14)' : 'rgba(122,169,136,0.14)',
-                                    border: isBugPanel ? '1px solid rgba(217,92,92,0.28)' : isBackupPanel ? '1px solid rgba(212,154,92,0.28)' : '1px solid rgba(122,169,136,0.28)'
+                                    color: isBugPanel ? '#D95C5C' : isBackupPanel ? '#D49A5C' : isNotificationsPanel ? '#B7F3FF' : '#7AA988',
+                                    background: isBugPanel ? 'rgba(217,92,92,0.14)' : isBackupPanel ? 'rgba(212,154,92,0.14)' : isNotificationsPanel ? 'rgba(183,243,255,0.13)' : 'rgba(122,169,136,0.14)',
+                                    border: isBugPanel ? '1px solid rgba(217,92,92,0.28)' : isBackupPanel ? '1px solid rgba(212,154,92,0.28)' : isNotificationsPanel ? '1px solid rgba(183,243,255,0.28)' : '1px solid rgba(122,169,136,0.28)'
                                 }}>
-                                    {isBugPanel ? <FaBug size={22} /> : isBackupPanel ? <MdBackup size={24} /> : <FaAddressCard size={22} />}
+                                    {isBugPanel ? <FaBug size={22} /> : isBackupPanel ? <MdBackup size={24} /> : isNotificationsPanel ? <MdNotificationsActive size={25} /> : <FaAddressCard size={22} />}
                                 </div>
                                 <div style={styles.panelTitleBlock}>
-                                    <div style={styles.panelKicker}>{isBackupPanel ? (langIndex === 0 ? 'Данные' : 'Data') : (langIndex === 0 ? 'Поддержка' : 'Support')}</div>
+                                    <div style={styles.panelKicker}>{isBackupPanel ? (langIndex === 0 ? 'Данные' : 'Data') : isNotificationsPanel ? (langIndex === 0 ? 'Расписание' : 'Schedule') : (langIndex === 0 ? 'Поддержка' : 'Support')}</div>
                                     <div style={styles.panelTitle}>
                                         {isBugPanel
                                             ? (langIndex === 0 ? 'Сообщить об ошибке' : 'Bug report')
                                             : isBackupPanel
                                                 ? (langIndex === 0 ? 'Бекап' : 'Backup')
-                                                : (langIndex === 0 ? 'Контакты' : 'Contacts')}
+                                                : isNotificationsPanel
+                                                    ? (langIndex === 0 ? 'Уведомления по разделам' : 'Section notifications')
+                                                    : (langIndex === 0 ? 'Контакты' : 'Contacts')}
                                     </div>
                                     <div style={styles.panelSubtitle}>
                                         {isBugPanel
                                             ? (langIndex === 0 ? 'Опиши, что сломалось или выглядит неправильно' : 'Describe what is broken or looks wrong')
                                             : isBackupPanel
                                                 ? (langIndex === 0 ? 'Создай копию, восстанови данные или очисти старые сохранения' : 'Create a copy, restore data, or clear old saves')
-                                                : (langIndex === 0 ? 'Напиши нам в Telegram по вопросам приложения' : 'Reach us on Telegram about the app')}
+                                                : isNotificationsPanel
+                                                    ? (langIndex === 0 ? 'Включай напоминания отдельно: привычки, задачи, тренировки, ум, антистресс и сон.' : 'Enable reminders separately for habits, tasks, training, mind, reset and sleep.')
+                                                    : (langIndex === 0 ? 'Напиши нам в Telegram по вопросам приложения' : 'Reach us on Telegram about the app')}
                                     </div>
                                 </div>
                             </div>
@@ -400,6 +456,25 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum }) => {
                                 </div>
                             </div>
                         )}
+
+                        {panelNum === 5 && (
+                            <SectionNotificationsPanel
+                                theme={theme}
+                                langIndex={langIndex}
+                                values={sectionNotifications}
+                                onChange={async (sectionId, patch) => {
+                                    const current = AppData.sectionNotifications?.[sectionId] || {};
+                                    const nextValue = {
+                                        ...current,
+                                        ...patch
+                                    };
+                                    const saved = await AppData.setSectionNotification(sectionId, nextValue);
+                                    setSectionNotifications({ ...AppData.sectionNotifications });
+                                    syncSectionNotification(sectionId, saved, langIndex);
+                                    setShowPopUpPanel(langIndex === 0 ? 'Настройки уведомлений сохранены' : 'Notification settings saved', 1400, true);
+                                }}
+                            />
+                        )}
                     </div>
                 </motion.div>
             )}
@@ -420,6 +495,178 @@ const ContactLink = ({ theme, href, name, label, accent }) => {
             </div>
             <FaChevronRight size={12} color={Colors.get('subText', theme)} style={{ opacity: 0.48 }} />
         </motion.a>
+    );
+};
+
+const NOTIFICATION_FALLBACKS = {
+    habits: { time: '09:00', days: [1, 2, 3, 4, 5] },
+    todo: { time: '10:00', days: [1, 2, 3, 4, 5] },
+    training: { time: '18:00', days: [1, 2, 3, 4, 5] },
+    mental: { time: '20:00', days: [1, 2, 3, 4, 5] },
+    recovery: { time: '21:00', days: [1, 2, 3, 4, 5, 6, 7] },
+    sleep: { time: '22:30', days: [1, 2, 3, 4, 5, 6, 7] }
+};
+
+const normalizeNotificationValue = (value, sectionId) => {
+    const fallback = NOTIFICATION_FALLBACKS[sectionId] || NOTIFICATION_FALLBACKS.habits;
+    const time = typeof value?.time === 'string' && value.time.trim()
+        ? value.time
+        : fallback.time;
+    const days = Array.isArray(value?.days) && value.days.length > 0
+        ? value.days.filter(day => Number.isInteger(day) && day >= 1 && day <= 7)
+        : fallback.days;
+    return {
+        enabled: value?.enabled === true,
+        time,
+        days: days.length > 0 ? days : fallback.days
+    };
+};
+
+const formatNotificationDays = (days, langIndex) => {
+    const normalized = Array.isArray(days) ? [...new Set(days)].sort((a, b) => a - b) : [];
+    const same = (target) => normalized.length === target.length && target.every(day => normalized.includes(day));
+    if (same([1, 2, 3, 4, 5, 6, 7])) return langIndex === 0 ? 'каждый день' : 'every day';
+    if (same([1, 2, 3, 4, 5])) return langIndex === 0 ? 'будни' : 'weekdays';
+    if (same([6, 7])) return langIndex === 0 ? 'выходные' : 'weekends';
+    return normalized.map(day => NOTIFICATION_DAY_LABELS[day - 1]?.[langIndex] || day).join(', ');
+};
+
+const syncSectionNotification = (sectionId, value, langIndex) => {
+    const definition = NOTIFICATION_SECTION_DEFS.find(section => section.id === sectionId);
+    if (!definition || !UserData?.id) return;
+
+    const requestType = value.enabled ? definition.serverType : `${definition.serverType}off`;
+    const message = value.enabled
+        ? `⏰ ${UserData.name ? `${UserData.name}, ` : ''}${definition.message[langIndex]}$${value.cron}`
+        : UserData.id;
+
+    NotificationsManager.sendMessage(requestType, message).catch(() => {});
+};
+
+const SectionNotificationsPanel = ({ theme, langIndex, values, onChange }) => {
+    const styles = s(theme);
+    const enabledCount = NOTIFICATION_SECTION_DEFS.filter(section => values?.[section.id]?.enabled).length;
+
+    return (
+        <div style={styles.notifyStack}>
+            <div style={styles.notifyIntro}>
+                <div style={styles.notifyIntroIcon}><MdNotificationsActive size={18} /></div>
+                <div style={styles.notifyIntroText}>
+                    <div style={styles.notifyIntroTitle}>{langIndex === 0 ? 'Гибкое расписание' : 'Flexible schedule'}</div>
+                    <div style={styles.notifyIntroSub}>
+                        {langIndex === 0
+                            ? `Активно ${enabledCount} из ${NOTIFICATION_SECTION_DEFS.length}. Для каждого раздела можно выбрать время и дни.`
+                            : `${enabledCount} of ${NOTIFICATION_SECTION_DEFS.length} active. Choose time and days for every section.`}
+                    </div>
+                </div>
+            </div>
+
+            {NOTIFICATION_SECTION_DEFS.map(section => (
+                <SectionNotificationCard
+                    key={section.id}
+                    theme={theme}
+                    langIndex={langIndex}
+                    section={section}
+                    value={normalizeNotificationValue(values?.[section.id], section.id)}
+                    onChange={onChange}
+                />
+            ))}
+        </div>
+    );
+};
+
+const SectionNotificationCard = ({ theme, langIndex, section, value, onChange }) => {
+    const styles = s(theme);
+    const daySet = new Set(value.days);
+    const summary = value.enabled
+        ? `${value.time} · ${formatNotificationDays(value.days, langIndex)}`
+        : (langIndex === 0 ? 'выключено' : 'off');
+
+    const toggleDay = (day) => {
+        const nextDays = daySet.has(day)
+            ? value.days.filter(item => item !== day)
+            : [...value.days, day].sort((a, b) => a - b);
+        if (nextDays.length === 0) return;
+        onChange(section.id, { days: nextDays });
+    };
+
+    return (
+        <motion.div
+            style={styles.notifyCard(section.color, value.enabled)}
+            whileHover={{ y: -1, scale: 1.004 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+        >
+            <div style={styles.notifyCardHeader}>
+                <div style={styles.notifyIcon(section.color)}>
+                    {React.cloneElement(section.icon, { size: 17 })}
+                </div>
+                <div style={styles.notifyText}>
+                    <div style={styles.notifyTitle}>{section.label[langIndex]}</div>
+                    <div style={styles.notifyDetail}>{section.detail[langIndex]}</div>
+                    <div style={{ ...styles.notifySummary, color: value.enabled ? section.color : styles.notifySummary.color }}>{summary}</div>
+                </div>
+                <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => onChange(section.id, { enabled: !value.enabled })}
+                    style={styles.notifySwitch(section.color, value.enabled)}
+                    aria-label={section.label[langIndex]}
+                >
+                    <span style={styles.notifySwitchKnob(value.enabled)} />
+                </motion.button>
+            </div>
+
+            <AnimatePresence initial={false}>
+                {value.enabled && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.18 }}
+                        style={styles.notifyControls}
+                    >
+                        <div style={styles.notifyQuickTimes}>
+                            {NOTIFICATION_QUICK_TIMES.map(item => (
+                                <motion.button
+                                    key={item.time}
+                                    type="button"
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => onChange(section.id, { time: item.time })}
+                                    style={styles.notifyChip(section.color, value.time === item.time)}
+                                >
+                                    {item.label[langIndex]}
+                                </motion.button>
+                            ))}
+                            <input
+                                type="time"
+                                value={value.time}
+                                onChange={(event) => {
+                                    if (event.target.value) onChange(section.id, { time: event.target.value });
+                                }}
+                                style={styles.notifyTimeInput(section.color)}
+                            />
+                        </div>
+                        <div style={styles.notifyDays}>
+                            {NOTIFICATION_DAY_LABELS.map((label, index) => {
+                                const day = index + 1;
+                                const active = daySet.has(day);
+                                return (
+                                    <motion.button
+                                        key={day}
+                                        type="button"
+                                        whileTap={{ scale: 0.92 }}
+                                        onClick={() => toggleDay(day)}
+                                        style={styles.notifyDay(section.color, active)}
+                                    >
+                                        {label[langIndex]}
+                                    </motion.button>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
 
@@ -767,10 +1014,10 @@ const s = (theme, fSize = 0) => {
             zIndex: 9500,
             color: text,
             overflow: 'hidden',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            fontFamily: 'inherit',
             background: isLight
-                ? 'radial-gradient(900px 450px at 82% -10%, rgba(95,182,198,0.12), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(201,162,75,0.1), transparent 58%), #F4F5F7'
-                : 'radial-gradient(900px 480px at 80% -10%, rgba(95,182,198,0.1), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(201,162,75,0.08), transparent 58%), #0E1013'
+                ? 'radial-gradient(900px 450px at 82% -10%, rgba(95,182,198,0.16), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(201,162,75,0.11), transparent 58%), linear-gradient(180deg, #F5F8FA, #EDF2F6)'
+                : 'radial-gradient(900px 480px at 80% -10%, rgba(95,182,198,0.15), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(166,107,255,0.09), transparent 60%), linear-gradient(180deg, #0D1216 0%, #080B0E 100%)'
         },
         panelContent: {
             height: '100%',
@@ -786,46 +1033,87 @@ const s = (theme, fSize = 0) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            minHeight: '44px'
+            minHeight: '58px',
+            padding: '6px',
+            borderRadius: '24px',
+            background: isLight
+                ? 'linear-gradient(135deg, rgba(255,255,255,0.58), rgba(255,255,255,0.30))'
+                : 'linear-gradient(135deg, rgba(185,218,235,0.105), rgba(255,255,255,0.026))',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.20)' : 'rgba(190,220,235,0.115)'}`,
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.84) inset, 0 18px 34px -30px rgba(15,23,42,0.24)'
+                : '0 1px 0 rgba(255,255,255,0.095) inset, 0 18px 36px -28px rgba(0,0,0,0.70)',
+            backdropFilter: 'blur(22px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(22px) saturate(170%)'
+        },
+        panelTopBarMinimal: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            minHeight: '46px',
+            padding: 0,
+            marginBottom: '-6px'
         },
         panelBackButton: {
-            width: '42px',
-            height: '42px',
-            borderRadius: '14px',
-            border: `1px solid ${border}`,
-            background: panelStrong,
-            color: sub,
+            width: '46px',
+            height: '46px',
+            borderRadius: '17px',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.24)' : 'rgba(190,220,235,0.15)'}`,
+            background: isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.74), rgba(255,255,255,0.42))'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.10), rgba(255,255,255,0.035))',
+            color: isLight ? '#5B6672' : 'rgba(213,229,238,0.78)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
             cursor: 'pointer',
             fontFamily: 'inherit',
-            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset'
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 12px 24px -20px rgba(15,23,42,0.28)'
+                : '0 1px 0 rgba(255,255,255,0.10) inset, 0 14px 28px -22px rgba(0,0,0,0.74)',
+            backdropFilter: 'blur(16px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(150%)'
         },
         panelCloseButton: {
-            width: '42px',
-            height: '42px',
-            borderRadius: '14px',
-            border: `1px solid ${border}`,
-            background: faint,
-            color: sub,
+            width: '46px',
+            height: '46px',
+            borderRadius: '17px',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.24)' : 'rgba(190,220,235,0.15)'}`,
+            background: isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.70), rgba(255,255,255,0.34))'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.085), rgba(255,255,255,0.028))',
+            color: isLight ? '#5B6672' : 'rgba(213,229,238,0.72)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             padding: 0,
             cursor: 'pointer',
-            fontFamily: 'inherit'
+            fontFamily: 'inherit',
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.84) inset, 0 12px 24px -20px rgba(15,23,42,0.24)'
+                : '0 1px 0 rgba(255,255,255,0.08) inset, 0 14px 28px -22px rgba(0,0,0,0.70)',
+            backdropFilter: 'blur(16px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(16px) saturate(150%)'
         },
         panelHero: {
+            position: 'relative',
+            overflow: 'hidden',
             borderRadius: '24px',
-            padding: '18px',
+            minHeight: '112px',
+            padding: '18px 18px 20px',
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             gap: '14px',
-            background: panel,
-            border: `1px solid ${border}`,
-            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset'
+            background: isLight
+                ? 'radial-gradient(260px 160px at 100% 0%, rgba(183,243,255,0.18), transparent 70%), linear-gradient(145deg, rgba(255,255,255,0.70), rgba(255,255,255,0.38))'
+                : 'radial-gradient(280px 170px at 100% 0%, rgba(183,243,255,0.13), transparent 70%), linear-gradient(145deg, rgba(30,45,56,0.64), rgba(13,20,25,0.54))',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.22)' : 'rgba(190,220,235,0.14)'}`,
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 20px 42px -34px rgba(15,23,42,0.30)'
+                : '0 1px 0 rgba(255,255,255,0.10) inset, 0 24px 48px -34px rgba(0,0,0,0.78), 0 0 42px rgba(183,243,255,0.04)',
+            backdropFilter: 'blur(26px) saturate(175%)',
+            WebkitBackdropFilter: 'blur(26px) saturate(175%)'
         },
         panelHeroIcon: {
             width: '52px',
@@ -834,9 +1122,12 @@ const s = (theme, fSize = 0) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            flexShrink: 0
+            flexShrink: 0,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.08) inset, 0 14px 28px -22px rgba(0,0,0,0.60)',
+            backdropFilter: 'blur(14px) saturate(150%)',
+            WebkitBackdropFilter: 'blur(14px) saturate(150%)'
         },
-        panelTitleBlock: { minWidth: 0 },
+        panelTitleBlock: { minWidth: 0, flex: 1, paddingTop: '2px' },
         panelKicker: {
             color: sub,
             fontSize: '10px',
@@ -847,9 +1138,11 @@ const s = (theme, fSize = 0) => {
         },
         panelTitle: {
             color: text,
-            fontSize: fSize === 0 ? '20px' : '23px',
+            fontSize: fSize === 0 ? '19px' : '21px',
             fontWeight: 900,
-            lineHeight: 1.08
+            lineHeight: 1.08,
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere'
         },
         panelSubtitle: {
             color: sub,
@@ -1063,6 +1356,210 @@ const s = (theme, fSize = 0) => {
             gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
             gap: '10px'
         },
+        notifyStack: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
+        },
+        notifyIntro: {
+            minHeight: '76px',
+            borderRadius: '24px',
+            padding: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '13px',
+            background: glassPanel,
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.22)' : 'rgba(190,220,235,0.13)'}`,
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.86) inset, 0 18px 38px -34px rgba(15,23,42,0.28)'
+                : '0 1px 0 rgba(255,255,255,0.10) inset, 0 22px 46px -32px rgba(0,0,0,0.72)',
+            boxSizing: 'border-box',
+            backdropFilter: 'blur(22px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(22px) saturate(170%)'
+        },
+        notifyIntroIcon: {
+            width: '42px',
+            height: '42px',
+            borderRadius: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#B7F3FF',
+            background: 'rgba(183,243,255,0.12)',
+            border: '1px solid rgba(183,243,255,0.24)',
+            flexShrink: 0
+        },
+        notifyIntroText: {
+            minWidth: 0,
+            flex: 1
+        },
+        notifyIntroTitle: {
+            color: text,
+            fontSize: fSize === 0 ? '15px' : '17px',
+            fontWeight: 900,
+            lineHeight: 1.12
+        },
+        notifyIntroSub: {
+            color: sub,
+            fontSize: fSize === 0 ? '12px' : '13px',
+            fontWeight: 650,
+            lineHeight: 1.35,
+            marginTop: '5px'
+        },
+        notifyCard: (color, active) => ({
+            position: 'relative',
+            overflow: 'hidden',
+            borderRadius: '24px',
+            padding: '14px',
+            background: isLight
+                ? `linear-gradient(145deg, rgba(255,255,255,0.70), ${color}${active ? '18' : '08'})`
+                : `linear-gradient(145deg, ${color}${active ? '18' : '0B'}, rgba(255,255,255,0.035))`,
+            border: `1px solid ${active ? `${color}44` : border}`,
+            boxShadow: active
+                ? `0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -34px ${color}AA`
+                : '0 1px 0 rgba(255,255,255,0.045) inset',
+            boxSizing: 'border-box',
+            backdropFilter: 'blur(22px) saturate(165%)',
+            WebkitBackdropFilter: 'blur(22px) saturate(165%)'
+        }),
+        notifyCardHeader: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            minWidth: 0
+        },
+        notifyIcon: (color) => ({
+            width: '42px',
+            height: '42px',
+            borderRadius: '15px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color,
+            background: `${color}18`,
+            border: `1px solid ${color}35`,
+            flexShrink: 0
+        }),
+        notifyText: {
+            flex: 1,
+            minWidth: 0
+        },
+        notifyTitle: {
+            color: text,
+            fontSize: fSize === 0 ? '15px' : '17px',
+            fontWeight: 900,
+            lineHeight: 1.15,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+        },
+        notifyDetail: {
+            color: sub,
+            fontSize: fSize === 0 ? '11px' : '12px',
+            fontWeight: 650,
+            lineHeight: 1.25,
+            marginTop: '3px',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+        },
+        notifySummary: {
+            color: sub,
+            fontSize: fSize === 0 ? '11px' : '12px',
+            fontWeight: 850,
+            marginTop: '6px',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em'
+        },
+        notifySwitch: (color, active) => ({
+            position: 'relative',
+            width: '50px',
+            height: '31px',
+            borderRadius: '999px',
+            border: `1px solid ${active ? `${color}66` : border}`,
+            background: active
+                ? `linear-gradient(135deg, ${color}44, ${color}22)`
+                : (isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.06)'),
+            padding: 0,
+            flexShrink: 0,
+            cursor: 'pointer',
+            boxSizing: 'border-box',
+            boxShadow: active ? `0 0 18px ${color}24` : 'none'
+        }),
+        notifySwitchKnob: (active) => ({
+            position: 'absolute',
+            top: '4px',
+            left: active ? '23px' : '4px',
+            width: '21px',
+            height: '21px',
+            borderRadius: '50%',
+            background: active ? '#DDFBFF' : (isLight ? '#FFFFFF' : 'rgba(190,220,235,0.72)'),
+            boxShadow: '0 4px 12px rgba(0,0,0,0.22)',
+            transition: 'left 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.18s ease'
+        }),
+        notifyControls: {
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '11px',
+            paddingTop: '13px'
+        },
+        notifyQuickTimes: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+            gap: '7px'
+        },
+        notifyChip: (color, active) => ({
+            minHeight: '36px',
+            borderRadius: '13px',
+            border: `1px solid ${active ? `${color}70` : border}`,
+            background: active ? `${color}24` : faint,
+            color: active ? color : sub,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: fSize === 0 ? '11px' : '12px',
+            fontWeight: 900,
+            padding: '0 7px',
+            boxSizing: 'border-box',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+        }),
+        notifyTimeInput: (color) => ({
+            gridColumn: '1 / -1',
+            width: '100%',
+            height: '42px',
+            borderRadius: '14px',
+            border: `1px solid ${color}38`,
+            background: isLight ? 'rgba(255,255,255,0.54)' : 'rgba(255,255,255,0.045)',
+            color: text,
+            fontFamily: 'inherit',
+            fontSize: fSize === 0 ? '14px' : '16px',
+            fontWeight: 900,
+            padding: '0 14px',
+            boxSizing: 'border-box',
+            outline: 'none',
+            colorScheme: isLight ? 'light' : 'dark'
+        }),
+        notifyDays: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+            gap: '6px'
+        },
+        notifyDay: (color, active) => ({
+            aspectRatio: '1 / 1',
+            minHeight: '34px',
+            borderRadius: '13px',
+            border: `1px solid ${active ? `${color}66` : border}`,
+            background: active ? `${color}24` : faint,
+            color: active ? color : sub,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            fontSize: fSize === 0 ? '10px' : '11px',
+            fontWeight: 900,
+            padding: 0,
+            boxSizing: 'border-box'
+        }),
         actionButton: (color) => ({
             minHeight: '56px',
             width: '100%',

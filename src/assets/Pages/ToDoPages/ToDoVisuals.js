@@ -1,20 +1,46 @@
+import React from 'react';
 import {
   FaBook,
+  FaBrain,
   FaBriefcase,
+  FaBullseye,
+  FaCalendarCheck,
+  FaCamera,
+  FaCar,
+  FaChartLine,
   FaClipboardList,
   FaCode,
+  FaDumbbell,
+  FaEnvelope,
+  FaFilm,
+  FaFire,
+  FaFlask,
+  FaFolderOpen,
   FaGamepad,
+  FaGlobeAmericas,
   FaGraduationCap,
   FaHeartbeat,
   FaHome,
+  FaLightbulb,
+  FaMoneyBillWave,
   FaMusic,
   FaPaintBrush,
   FaPlane,
+  FaPhone,
+  FaPuzzlePiece,
   FaRunning,
+  FaRocket,
+  FaSeedling,
   FaShoppingBag,
+  FaShoppingCart,
+  FaStar,
+  FaTag,
+  FaThumbtack,
+  FaTools,
   FaUtensils,
   FaWallet
 } from 'react-icons/fa';
+import { AppData } from '../../StaticClasses/AppData.js';
 
 export const DEFAULT_TODO_ACCENT_COLOR = '#2E9DFF';
 export const TODO_ACCENT_PRESETS = ['#2E9DFF', '#149DFF', '#66D9E8', '#A66BFF', '#2FD6BD', '#7C6CFF', '#C29AD6', '#B48BC8'];
@@ -152,6 +178,86 @@ export const TODO_CATEGORY_TONES = {
   Food: { hue: '#D49A5C', soft: 'rgba(212,154,92,0.13)', ring: 'rgba(212,154,92,0.25)', icon: FaUtensils }
 };
 
+export const TODO_CUSTOM_ICON_MAP = {
+  briefcase: FaBriefcase,
+  clipboard: FaClipboardList,
+  'calendar-check': FaCalendarCheck,
+  chart: FaChartLine,
+  code: FaCode,
+  folder: FaFolderOpen,
+  pin: FaThumbtack,
+  tools: FaTools,
+  tag: FaTag,
+  star: FaStar,
+  target: FaBullseye,
+  idea: FaLightbulb,
+  puzzle: FaPuzzlePiece,
+  rocket: FaRocket,
+  home: FaHome,
+  world: FaGlobeAmericas,
+  heart: FaHeartbeat,
+  dumbbell: FaDumbbell,
+  fire: FaFire,
+  seedling: FaSeedling,
+  brain: FaBrain,
+  lab: FaFlask,
+  shopping: FaShoppingCart,
+  money: FaMoneyBillWave,
+  phone: FaPhone,
+  mail: FaEnvelope,
+  car: FaCar,
+  camera: FaCamera,
+  book: FaBook,
+  graduation: FaGraduationCap,
+  paint: FaPaintBrush,
+  music: FaMusic,
+  film: FaFilm
+};
+
+export const TODO_CUSTOM_ICON_GROUPS = [
+  {
+    id: 'work',
+    label: ['Работа и проекты', 'Work & projects'],
+    icons: ['briefcase', 'clipboard', 'calendar-check', 'chart', 'code', 'folder', 'pin', 'tools']
+  },
+  {
+    id: 'personal',
+    label: ['Личное', 'Personal'],
+    icons: ['tag', 'star', 'target', 'idea', 'puzzle', 'rocket', 'home', 'world']
+  },
+  {
+    id: 'health',
+    label: ['Здоровье и тело', 'Health & body'],
+    icons: ['heart', 'dumbbell', 'fire', 'seedling', 'brain', 'lab']
+  },
+  {
+    id: 'life',
+    label: ['Быт и связь', 'Life & contacts'],
+    icons: ['shopping', 'money', 'phone', 'mail', 'car', 'camera']
+  },
+  {
+    id: 'creative',
+    label: ['Учеба и творчество', 'Study & creative'],
+    icons: ['book', 'graduation', 'paint', 'music', 'film']
+  }
+];
+
+const isEmojiIcon = (icon) => typeof icon === 'string' && icon.startsWith('emoji:') && icon.slice(6).trim();
+
+const makeEmojiIcon = (emoji) => ({ size = 18 }) => React.createElement(
+  'span',
+  { style: { fontSize: size, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' } },
+  emoji
+);
+
+const getCustomTodoCategory = (category) => {
+  const raw = (category || '').trim().toLowerCase();
+  if (!raw || !Array.isArray(AppData.todoCustomCategories)) return null;
+  return AppData.todoCustomCategories.find(item =>
+    item?.label?.some(label => String(label || '').trim().toLowerCase() === raw)
+  ) || null;
+};
+
 export const getTodoCategoryMeta = (category, langIndex = 0) => {
   const raw = (category || '').trim();
   const lower = raw.toLowerCase();
@@ -162,18 +268,31 @@ export const getTodoCategoryMeta = (category, langIndex = 0) => {
   );
 
   if (base) return { ...base, labelText: base.label[langIndex] || base.label[0] };
+  const custom = getCustomTodoCategory(raw);
+  if (custom) {
+    return {
+      key: custom.label?.[0] || raw || 'general',
+      icon: custom.icon || 'tag',
+      label: custom.label || [raw || 'Общее', raw || 'General'],
+      labelText: custom.label?.[langIndex] || custom.label?.[0] || raw || (langIndex === 0 ? 'Общее' : 'General')
+    };
+  }
   return { key: raw || 'general', icon: 'custom', label: [raw || 'Общее', raw || 'General'], labelText: raw || (langIndex === 0 ? 'Общее' : 'General') };
 };
 
 export const normalizeTodoCategory = (category) => getTodoCategoryMeta(category, 0).key;
 
-export const getTodoCategoryTone = (category, accent) => {
+export const getTodoCategoryTone = (category, accent, iconName) => {
   const meta = getTodoCategoryMeta(category, 0);
   const tone = TODO_CATEGORY_TONES[category] || TODO_CATEGORY_TONES[meta.key] || {};
+  const iconKey = iconName || meta.icon;
+  const customIcon = isEmojiIcon(iconKey)
+    ? makeEmojiIcon(iconKey.slice(6).trim())
+    : TODO_CUSTOM_ICON_MAP[iconKey];
   return {
     hue: tone.hue || accent.hue,
     soft: tone.soft || accent.soft,
     ring: tone.ring || accent.ring,
-    icon: tone.icon || FaClipboardList
+    icon: customIcon || tone.icon || FaClipboardList
   };
 };

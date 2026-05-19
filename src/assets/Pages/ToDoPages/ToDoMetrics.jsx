@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion as Motion } from 'framer-motion';
 import {
   FaCalendarDay,
   FaChartBar,
@@ -7,7 +7,8 @@ import {
   FaClock,
   FaFire,
   FaLayerGroup,
-  FaRegCircle
+  FaRegCircle,
+  FaTasks
 } from 'react-icons/fa';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
@@ -182,7 +183,7 @@ const ToDoMetrics = () => {
 
   return (
     <div style={s.container}>
-      <motion.div
+      <Motion.div
         style={s.scroll}
         className="no-scrollbar"
         initial="hidden"
@@ -191,7 +192,7 @@ const ToDoMetrics = () => {
       >
         <ToDoMetricsPageHeader theme={theme} fSize={fSize} langIndex={lang} />
 
-        <motion.section variants={itemV} style={s.hero}>
+        <Motion.section variants={itemV} style={s.hero}>
           <div style={s.heroTop}>
             <div style={s.heroIcon}><FaChartBar /></div>
             <div style={{ minWidth: 0 }}>
@@ -209,9 +210,9 @@ const ToDoMetrics = () => {
               );
             })}
           </div>
-        </motion.section>
+        </Motion.section>
 
-        <motion.section variants={itemV} style={s.deadlinePanel}>
+        <Motion.section variants={itemV} style={s.deadlinePanel}>
           <div style={s.panelHeader}>
             <div>
               <div style={s.panelTitle}>{lang === 0 ? 'Ближайшие сроки' : 'Next deadlines'}</div>
@@ -222,26 +223,31 @@ const ToDoMetrics = () => {
             <div style={s.empty}>{lang === 0 ? 'Нет задач со сроком' : 'No tasks with deadline'}</div>
           ) : (
             <div style={s.deadlineList}>
-              {stats.nextDeadlines.map(task => (
-                <div key={task.id || task.name} style={s.deadlineRow}>
-                  <div style={s.deadlineDot(isDeadlinePassed(task.deadLine))} />
-                  <div style={s.deadlineName}>{task.name}</div>
-                  <div style={s.deadlineValue}>{getDeadlineText(task.deadLine, lang)}</div>
+              {stats.nextDeadlines.map(task => {
+                const pressure = getDeadlinePressure(task.deadLine);
+                return (
+                <div key={task.id || task.name} style={s.deadlineRow(pressure)}>
+                  <div style={s.deadlineFlame(pressure)}>
+                    <FaFire size={12} />
+                  </div>
+                  <div style={s.deadlineName(pressure)}>{task.name}</div>
+                  <div style={s.deadlineValue(pressure)}>{getDeadlineText(task.deadLine, lang)}</div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
-        </motion.section>
+        </Motion.section>
 
-        <motion.section variants={itemV} style={s.summaryGrid}>
+        <Motion.section variants={itemV} style={s.summaryGrid}>
           <MetricCard icon={<FaCheckDouble />} label={lang === 0 ? 'Выполнено' : 'Completed'} value={`${stats.completionRate}%`} sub={`${stats.completed}/${Math.max(stats.created, stats.completed)}`} theme={theme} accent={accent} tone={completionTone} />
           <MetricCard icon={<FaFire />} label={lang === 0 ? 'Просрочено' : 'Overdue'} value={stats.overdue} sub={lang === 0 ? 'требуют внимания' : 'need focus'} theme={theme} accent={accent} tone={overdueTone} />
-          <MetricCard icon={<FaFire />} label={lang === 0 ? 'В работе' : 'Active'} value={stats.active} sub={lang === 0 ? 'активных' : 'active'} theme={theme} accent={accent} tone={activeTone} />
+          <MetricCard icon={<FaTasks />} label={lang === 0 ? 'В работе' : 'Active'} value={stats.active} sub={lang === 0 ? 'активных' : 'active'} theme={theme} accent={accent} tone={activeTone} />
           <MetricCard icon={<FaClock />} label={lang === 0 ? 'Средний срок' : 'Avg time'} value={formatAvg(stats.avgDays, lang)} sub={lang === 0 ? 'до выполнения' : 'to complete'} theme={theme} accent={accent} tone={averageTone} />
-        </motion.section>
+        </Motion.section>
 
-        <motion.section variants={itemV} style={s.focusPanel}>
-          <div style={s.panelHeader}>
+        <Motion.section variants={itemV} style={s.focusPanel}>
+          <div style={s.panelHeaderCentered}>
             <div>
               <div style={s.panelTitle}>{lang === 0 ? 'Фокус' : 'Focus'}</div>
               <div style={s.panelSub}>{lang === 0 ? 'Что важно прямо сейчас' : 'What matters now'}</div>
@@ -251,10 +257,10 @@ const ToDoMetrics = () => {
           <FocusRow icon={<FaCalendarDay />} label={lang === 0 ? 'На сегодня' : 'Today'} value={stats.today} theme={theme} accent={accent} />
           <FocusRow icon={<FaRegCircle />} label={lang === 0 ? 'Без срока' : 'No deadline'} value={stats.noDeadline} theme={theme} accent={accent} />
           <FocusRow icon={<FaClock />} label={lang === 0 ? 'Отложено' : 'Pending'} value={stats.pending} theme={theme} accent={accent} />
-        </motion.section>
+        </Motion.section>
 
-        <motion.section variants={itemV} style={s.chartPanel}>
-          <div style={s.panelHeader}>
+        <Motion.section variants={itemV} style={s.chartPanel}>
+          <div style={s.panelHeaderCentered}>
             <div>
               <div style={s.panelTitle}>{lang === 0 ? 'Задачи за неделю' : 'Weekly tasks'}</div>
               <div style={s.panelSub}>{lang === 0 ? 'Сколько появилось и сколько закрыто по дням' : 'Created and closed by day'}</div>
@@ -274,8 +280,8 @@ const ToDoMetrics = () => {
             {stats.week.map(day => (
               <div key={day.key} style={s.weekColumn}>
                 <div style={s.barStack}>
-                  <motion.span initial={{ height: 0 }} animate={{ height: `${(day.created / stats.maxWeek) * 100}%` }} style={s.createdBar} />
-                  <motion.span initial={{ height: 0 }} animate={{ height: `${(day.done / stats.maxWeek) * 100}%` }} style={s.doneBar} />
+                  <Motion.span initial={{ height: 0 }} animate={{ height: `${(day.created / stats.maxWeek) * 100}%` }} style={s.createdBar} />
+                  <Motion.span initial={{ height: 0 }} animate={{ height: `${(day.done / stats.maxWeek) * 100}%` }} style={s.doneBar} />
                 </div>
                 <div style={s.weekLabel}>{day.label}</div>
               </div>
@@ -290,9 +296,9 @@ const ToDoMetrics = () => {
               ? 'Показывает, сколько задач появилось и сколько было закрыто в каждый из последних 7 дней.'
               : 'Shows how many tasks appeared and how many were closed on each of the last 7 days.'}
           </div>
-        </motion.section>
+        </Motion.section>
 
-        <motion.section variants={itemV} style={s.categoriesPanel}>
+        <Motion.section variants={itemV} style={s.categoriesPanel}>
           <div style={s.panelHeader}>
             <div>
               <div style={s.panelTitle}>{lang === 0 ? 'Категории' : 'Categories'}</div>
@@ -313,17 +319,17 @@ const ToDoMetrics = () => {
                       <span style={s.categoryCount}>{category.done}/{category.total}</span>
                     </div>
                     <div style={s.categoryTrack}>
-                      <motion.span initial={{ width: 0 }} animate={{ width: `${pct}%` }} style={s.categoryFill} />
+                      <Motion.span initial={{ width: 0 }} animate={{ width: `${pct}%` }} style={s.categoryFill} />
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
-        </motion.section>
+        </Motion.section>
 
         <div style={{ height: 24 }} />
-      </motion.div>
+      </Motion.div>
     </div>
   );
 };
@@ -333,6 +339,9 @@ const MetricCard = ({ icon, label, value, sub, theme, accent, tone }) => {
   const cardTone = tone || accent;
   return (
     <div style={s.metricCard(cardTone)}>
+      <div style={s.metricWatermark(cardTone)}>
+        {React.cloneElement(icon, { size: 86 })}
+      </div>
       <div style={s.metricIcon(cardTone)}>{icon}</div>
       <div style={s.metricValue}>{value}</div>
       <div style={s.metricLabel}>{label}</div>
@@ -355,7 +364,7 @@ const FocusRow = ({ icon, label, value, theme, accent }) => {
 const ToDoMetricsPageHeader = ({ theme, fSize, langIndex }) => {
   const s = styles(theme, buildTodoAccent(AppData.todoAccentColor || '#149DFF'), fSize);
   return (
-    <motion.div
+    <Motion.div
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.32 }}
@@ -365,7 +374,7 @@ const ToDoMetricsPageHeader = ({ theme, fSize, langIndex }) => {
       <div style={s.pageSubtitle}>
         {langIndex === 0 ? 'Вся твоя жизнь в одном месте' : 'Your whole life in one place'}
       </div>
-    </motion.div>
+    </Motion.div>
   );
 };
 
@@ -393,7 +402,7 @@ const styles = (theme, accent, fSize = 0) => {
         ? `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${accent.rgbText},0.1), transparent 66%), #F4F5F7`
         : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgbText},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgbText},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`,
       color: text,
-      fontFamily: 'Segoe UI, sans-serif'
+      fontFamily: '"SF Pro Rounded", "Nunito Sans", Nunito, "SF Pro Display", -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", system-ui, sans-serif'
     },
     scroll: { height: '100%', overflowY: 'auto', padding: `${TODO_SECTION_TOP} 18px 104px`, boxSizing: 'border-box' },
     pageHeader: {
@@ -405,8 +414,8 @@ const styles = (theme, accent, fSize = 0) => {
     },
     pageTitle: {
       color: text,
-      fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: fSize === 0 ? 24 : 26,
+      fontFamily: 'inherit',
+      fontSize: 24,
       fontWeight: 700,
       letterSpacing: 0,
       lineHeight: 1.05,
@@ -454,12 +463,24 @@ const styles = (theme, accent, fSize = 0) => {
       justifyContent: 'space-between',
       minWidth: 0
     }),
-    metricIcon: (tone = accent) => ({ width: 38, height: 38, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: tone.soft, color: tone.hue, border: `1px solid ${tone.ring}` }),
-    metricValue: { color: text, fontSize: 29, fontWeight: 950, lineHeight: 1, fontVariantNumeric: 'tabular-nums' },
-    metricLabel: { color: text, fontSize: 13, fontWeight: 900 },
-    metricSub: { color: sub, fontSize: 11, fontWeight: 750 },
+    metricWatermark: (tone = accent) => ({
+      position: 'absolute',
+      right: -18,
+      bottom: -22,
+      color: tone.hue,
+      opacity: isLight ? 0.065 : 0.085,
+      transform: 'rotate(-10deg)',
+      zIndex: 0,
+      pointerEvents: 'none',
+      display: 'flex'
+    }),
+    metricIcon: (tone = accent) => ({ position: 'relative', zIndex: 1, width: 38, height: 38, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: tone.soft, color: tone.hue, border: `1px solid ${tone.ring}` }),
+    metricValue: { position: 'relative', zIndex: 1, color: text, fontSize: 29, fontWeight: 950, lineHeight: 1, fontVariantNumeric: 'tabular-nums' },
+    metricLabel: { position: 'relative', zIndex: 1, color: text, fontSize: 13, fontWeight: 900 },
+    metricSub: { position: 'relative', zIndex: 1, color: sub, fontSize: 11, fontWeight: 750 },
     focusPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: `radial-gradient(260px 160px at 100% 0%, ${accent.soft}, transparent 72%), ${panel}`, border: `1px solid ${accent.ring}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
     panelHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 13 },
+    panelHeaderCentered: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 13, textAlign: 'center' },
     panelTitle: { color: text, fontSize: 18, fontWeight: 950 },
     panelSub: { color: sub, fontSize: 12, fontWeight: 750, marginTop: 2 },
     totalPill: { minWidth: 42, height: 34, borderRadius: 999, background: accent.soft, border: `1px solid ${accent.ring}`, color: accent.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 950 },
@@ -502,10 +523,35 @@ const styles = (theme, accent, fSize = 0) => {
     categoryFill: { display: 'block', height: '100%', borderRadius: 999, background: accent.hue, boxShadow: `0 0 14px ${accent.glow}` },
     deadlinePanel: { marginTop: 12, borderRadius: 24, padding: 15, background: `radial-gradient(260px 160px at 0% 0%, ${accent.faint}, transparent 72%), ${panel}`, border: `1px solid ${accent.ring}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
     deadlineList: { display: 'flex', flexDirection: 'column', gap: 9 },
-    deadlineRow: { minHeight: 42, display: 'grid', gridTemplateColumns: '10px minmax(0, 1fr) auto', alignItems: 'center', gap: 10, borderRadius: 15, padding: '0 10px', background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)' },
-    deadlineDot: (danger) => ({ width: 8, height: 8, borderRadius: 999, background: danger ? '#E95F5F' : accent.hue }),
-    deadlineName: { color: text, fontSize: 13, fontWeight: 850, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-    deadlineValue: { color: sub, fontSize: 11, fontWeight: 850 },
+    deadlineRow: (pressure) => ({
+      minHeight: 46,
+      display: 'grid',
+      gridTemplateColumns: '32px minmax(0, 1fr) auto',
+      alignItems: 'center',
+      gap: 10,
+      borderRadius: 16,
+      padding: '7px 11px',
+      background: pressure
+        ? `radial-gradient(170px 74px at 0% 50%, ${ACTIVE_TONE.faint}, transparent 78%), ${isLight ? 'rgba(255,114,71,0.07)' : 'rgba(255,114,71,0.10)'}`
+        : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)'),
+      border: `1px solid ${pressure ? ACTIVE_TONE.ring : 'transparent'}`,
+      boxShadow: pressure ? `0 1px 0 rgba(255,255,255,0.06) inset, 0 12px 28px -24px ${ACTIVE_TONE.glow}` : 'none',
+      boxSizing: 'border-box'
+    }),
+    deadlineFlame: (pressure) => ({
+      width: 30,
+      height: 30,
+      borderRadius: 11,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: pressure ? ACTIVE_TONE.hue : accent.hue,
+      background: pressure ? ACTIVE_TONE.soft : accent.faint,
+      border: `1px solid ${pressure ? ACTIVE_TONE.ring : accent.ring}`,
+      boxShadow: pressure ? `0 0 18px ${ACTIVE_TONE.glow}` : 'none'
+    }),
+    deadlineName: (pressure) => ({ color: pressure ? '#F8FAFC' : text, fontSize: 13, fontWeight: pressure ? 950 : 850, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
+    deadlineValue: (pressure) => ({ color: pressure ? ACTIVE_TONE.hue : sub, fontSize: 11.5, fontWeight: 950 }),
     empty: {
       minHeight: 96,
       borderRadius: 22,
@@ -551,6 +597,10 @@ function daysToDeadlineNum(dateStr) {
 
 function isDeadlinePassed(dateStr) {
   return daysToDeadlineNum(dateStr) < 0;
+}
+
+function getDeadlinePressure(dateStr) {
+  return daysToDeadlineNum(dateStr) <= 0;
 }
 
 function isTodayTask(task) {

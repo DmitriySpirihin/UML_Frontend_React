@@ -29,7 +29,6 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
     const [isFinished, setIsFinished] = useState(false);
     // eslint-disable-next-line no-unused-vars
     const [isPaused, setIsPaused] = useState(false);
-    const [startTime, setStartTime] = useState(0);
     const [finishAfterFeedback, setFinishAfterFeedback] = useState(false);
     const [pendingStage, setPendingStage] = useState(1);
 
@@ -54,7 +53,6 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
 
     // Feedback
     const [message, setMessage] = useState('');
-    const [statusColor, setStatusColor] = useState('');
     const [addScores, setAddScores] = useState(0);
     const [wrongData, setWrongData] = useState(null);
 
@@ -180,7 +178,6 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
         setIsRunning(true);
         setIsPaused(false);
         setTime(0);
-        setStartTime(Date.now());
     };
 
     const setNewProblem = (nextStage = stage) => {
@@ -214,12 +211,12 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
 
         if (precision === 0) {
             setRightAnswers((prev) => prev + 1);
-            setStatusColor(Colors.get('maxValColor', theme));
             setMessage(getPraise(langIndex));
             setAddScores(points);
             setFinishAfterFeedback(stage >= 20);
             setDelayTimer(true);
         } else {
+            setIsRunning(false);
             setWrongData({
                 items: currentProblem.items,
                 correctAnswer: parseInt(expectedAnswer),
@@ -240,6 +237,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
         } else {
             setStage(pendingNext);
             setNewProblem(pendingNext);
+            setIsRunning(true);
         }
     };
 
@@ -251,7 +249,6 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
         setHandledInput('');
         setMessage('');
         setNewProblem(1);
-        setStartTime(Date.now());
         setIsStart(true);
         setIsRunning(true);
         setIsPaused(false);
@@ -273,8 +270,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
             setRecord(finalScore);
             AppData.mentalRecords[type][difficulty] = finalScore;
         }
-        const endTime = Date.now();
-        const duration = Math.round((endTime - startTime) / 1000);
+        const duration = Math.round(time / 1000);
         saveSessionDuration(duration, finalScore > record, type, difficulty, finalScore,rightAnswers);
         setAddScores(0);
         setStage(1);
@@ -513,18 +509,17 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
                                     <motion.div
                                         style={{
                                             ...styles(theme).problemCard,
-                                            background: delayTimer ? (statusColor || Colors.get('simplePanel', theme)) : styles(theme).problemCard.background,
-                                            borderColor: delayTimer ? statusColor : 'transparent'
+                                            ...(delayTimer ? styles(theme).feedbackProblemCard(addScores > 0) : {})
                                         }}
                                         animate={delayTimer ? { scale: [1, 1.05, 1] } : { scale: 1 }}
                                     >
                                         {delayTimer ? (
                                             /* Feedback */
-                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#fff' }}>
+                                            <div style={styles(theme).feedbackContent}>
+                                                <div style={styles(theme).feedbackScore(addScores > 0)}>
                                                     {addScores > 0 ? `+${addScores}` : (langIndex === 0 ? 'Ошибка' : 'Wrong')}
                                                 </div>
-                                                <div style={{ fontSize: '16px', color: 'rgba(255,255,255,0.9)', marginTop: 5 }}>{message}</div>
+                                                <div style={styles(theme).feedbackMessage}>{message}</div>
                                             </div>
                                         ) : (
                                             /* Problem Items */
@@ -994,6 +989,41 @@ const styles = (theme, fSize = 14) => ({
         border: `1px solid ${theme === 'dark' ? 'rgba(127,200,184,0.14)' : 'rgba(46,111,99,0.12)'}`,
         padding: '20px',
         boxSizing: 'border-box',
+    },
+    feedbackProblemCard: (positive) => ({
+        background: positive
+            ? (theme === 'dark'
+                ? 'radial-gradient(circle at 50% 12%, rgba(70,226,154,0.22), transparent 58%), linear-gradient(145deg, rgba(34,52,48,0.58), rgba(15,22,25,0.78))'
+                : 'radial-gradient(circle at 50% 12%, rgba(34,197,94,0.20), transparent 58%), linear-gradient(145deg, rgba(255,255,255,0.76), rgba(226,247,238,0.70))')
+            : (theme === 'dark'
+                ? 'radial-gradient(circle at 50% 12%, rgba(239,95,95,0.20), transparent 58%), linear-gradient(145deg, rgba(54,32,36,0.58), rgba(18,18,22,0.78))'
+                : 'radial-gradient(circle at 50% 12%, rgba(239,95,95,0.16), transparent 58%), linear-gradient(145deg, rgba(255,255,255,0.76), rgba(252,232,232,0.70))'),
+        borderColor: positive ? 'rgba(70,226,154,0.34)' : 'rgba(239,95,95,0.34)',
+        boxShadow: positive
+            ? '0 1px 0 rgba(255,255,255,0.10) inset, 0 24px 54px rgba(0,0,0,0.26), 0 0 40px rgba(70,226,154,0.16)'
+            : '0 1px 0 rgba(255,255,255,0.10) inset, 0 24px 54px rgba(0,0,0,0.26), 0 0 40px rgba(239,95,95,0.14)',
+        backdropFilter: 'blur(22px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(22px) saturate(160%)'
+    }),
+    feedbackContent: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 7,
+        padding: '14px 18px',
+        textAlign: 'center'
+    },
+    feedbackScore: (positive) => ({
+        fontSize: '30px',
+        fontWeight: 950,
+        color: positive ? '#46E29A' : '#FF8E8E',
+        textShadow: positive ? '0 0 18px rgba(70,226,154,0.28)' : '0 0 18px rgba(255,142,142,0.25)'
+    }),
+    feedbackMessage: {
+        fontSize: '14px',
+        color: theme === 'dark' ? 'rgba(237,246,255,0.86)' : 'rgba(37,51,63,0.78)',
+        lineHeight: 1.35,
+        fontWeight: 750
     },
     inputDisplay: {
         minWidth: '96px',

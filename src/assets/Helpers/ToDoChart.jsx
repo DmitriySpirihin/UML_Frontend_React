@@ -31,7 +31,7 @@ const ToDoChart = ({
           borderRadius: '12px',
           border: `1px solid ${barColor}40`,
           boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
-          fontFamily: 'Segoe UI',
+          fontFamily: 'inherit',
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '11px', color: textColor, marginBottom: '2px', opacity: 0.8 }}>{label}</div>

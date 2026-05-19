@@ -173,13 +173,13 @@ const styles = (theme, accent) => {
       background: isLight
         ? `linear-gradient(180deg, ${accent.faint} 0%, ${Colors.get('background', theme)} 42%)`
         : `linear-gradient(180deg, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.12) 0%, ${Colors.get('background', theme)} 44%)`,
-      fontFamily: 'Segoe UI, sans-serif',
+      fontFamily: 'inherit',
       color: Colors.get('mainText', theme),
       overflow: 'hidden'
     },
     scroll: { height: '100%', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 18px 150px', boxSizing: 'border-box' },
     topBar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 },
-    brand: { color: Colors.get('mainText', theme), fontSize: 22, fontWeight: 950 },
+    brand: { color: Colors.get('mainText', theme), fontSize: 24, fontWeight: 950 },
     brandSub: { color: Colors.get('subText', theme), fontSize: 12, fontWeight: 800, marginTop: 2 },
     counter: { minWidth: 50, height: 38, borderRadius: 13, border: `1px solid ${accent.ring}`, background: accent.soft, color: accent.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 950 },
     hero: { position: 'relative', borderRadius: 24, padding: 18, minHeight: 156, overflow: 'hidden', background: isLight ? `linear-gradient(135deg, #fff, ${accent.faint})` : `linear-gradient(135deg, rgba(255,255,255,0.075), ${accent.faint})`, border: `1px solid ${accent.ring}` },

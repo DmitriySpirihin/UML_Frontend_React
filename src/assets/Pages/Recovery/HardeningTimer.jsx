@@ -378,7 +378,7 @@ const HardeningTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIn
                 <Motion.div animate={phaseType === 'hot' ? { scale: [1, 1.1, 1], opacity: 0.8 } : phaseType === 'cold' ? { x: [-2, 2, -2], rotate: [0, 1, -1, 0] } : { scale: 1 }} transition={phaseType === 'hot' ? { duration: 4, repeat: Infinity, ease: "easeInOut" } : { duration: 0.1, repeat: Infinity }} style={{ width: '220px', height: '220px', borderRadius: '50%', background: `radial-gradient(circle at 30% 30%, ${phaseColor} 0%, ${secondaryColor} 100%)`, position: 'absolute', boxShadow: `0 0 60px ${phaseColor}60` }} />
                 <svg width="320" height="320" style={{ transform: 'rotate(-90deg)', position: 'absolute' }}><circle cx="160" cy="160" r="140" fill="none" stroke={Colors.get('border', theme)} strokeWidth="2" opacity="0.2" /><circle cx="160" cy="160" r="140" fill="none" stroke={phaseColor} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${2 * Math.PI * 140}`} strokeDashoffset={`${2 * Math.PI * 140 * (1 - phaseProgress)}`} style={{ transition: 'stroke-dashoffset 0.1s linear', filter: `drop-shadow(0 0 10px ${phaseColor})` }} /></svg>
                 <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 5 }}>
-                    <div style={{ fontSize: '72px', fontWeight: '200', color: '#fff', fontFamily: 'Segoe UI Light', fontVariantNumeric: 'tabular-nums', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>{displayTime}</div>
+                    <div style={{ fontSize: '72px', fontWeight: '200', color: '#fff', fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums', textShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>{displayTime}</div>
                     <Motion.div key={phaseType} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} style={{ fontSize: '18px', color: '#fff', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold' }}>{phaseName}</Motion.div>
                 </div>
             </div>
@@ -491,7 +491,7 @@ const styles = (theme, show) => ({
     bottom: '0',
     transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
     width: '100vw',
-    fontFamily: 'Segoe UI',
+    fontFamily: 'inherit',
     borderTop: 'none',
     borderTopLeftRadius: 0, borderTopRightRadius: 0,
     zIndex: 2000, overflow: 'hidden', 

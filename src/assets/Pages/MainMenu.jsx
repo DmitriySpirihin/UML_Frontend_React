@@ -278,7 +278,7 @@ useEffect(() => {
         <>
             {devConsolePanel && (
                 <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', flexDirection: 'column', top: '10vh', left: '0', width: '100vw', height: '40vh', backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 10000 }}>
-                    <div style={{ display: 'flex', overflowY: 'scroll', borderRadius: '12px', width: '85vw', height: '15vh', fontSize: '12px', fontFamily: 'Segoe UI', border: '1px solid #333', color: 'white', padding: '10px' }}>
+                    <div style={{ display: 'flex', overflowY: 'scroll', borderRadius: '12px', width: '85vw', height: '15vh', fontSize: '12px', fontFamily: 'inherit', border: '1px solid #333', color: 'white', padding: '10px' }}>
                         {devMessage}
                     </div>
                     <textarea style={{ borderRadius: '12px', width: '85vw', height: '10vh', fontSize: '12px', background: '#111', color: 'white', marginTop: '10px' }} value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)} />
@@ -382,7 +382,7 @@ useEffect(() => {
                         <div style={{ flex: 1 }}>
                           <div
                             style={{
-                              fontFamily: "Segoe UI",
+                              fontFamily: 'inherit',
                               fontWeight: 900,
                               fontSize: 18,
                               color: Colors.get("mainText", theme),
@@ -395,7 +395,7 @@ useEffect(() => {
             
                           <div
                             style={{
-                              fontFamily: "Segoe UI",
+                              fontFamily: 'inherit',
                               fontWeight: 700,
                               fontSize: 13,
                               lineHeight: 1.35,
@@ -421,7 +421,7 @@ useEffect(() => {
                             border: "none",
                             cursor: "pointer",
                             fontWeight: 900,
-                            fontFamily: "Segoe UI",
+                            fontFamily: 'inherit',
                             background: "#007AFF",
                             color: "#fff",
                           }}
@@ -438,7 +438,7 @@ useEffect(() => {
                             border: `1px solid ${Colors.get("border", theme)}55`,
                             cursor: "pointer",
                             fontWeight: 800,
-                            fontFamily: "Segoe UI",
+                            fontFamily: 'inherit',
                             background: "transparent",
                             color: Colors.get("subText", theme),
                           }}
@@ -678,7 +678,7 @@ function AIInsightButton({ theme, lang, onClick }) {
         >
             <FaRobot size={18} color={mainColor} />
             <span style={{
-                fontFamily: 'Segoe UI',
+                fontFamily: 'inherit',
                 fontWeight: '600',
                 fontSize: '15px',
                 color: isDark ? '#E0F7FA' : '#333',
@@ -718,7 +718,7 @@ function ReferalButton({ theme, lang, onClick }) {
         >
             <FaCrown size={18} color={mainColor} />
             <span style={{
-                fontFamily: 'Segoe UI',
+                fontFamily: 'inherit',
                 fontWeight: '600',
                 fontSize: '15px',
                 color: isDark ? '#E0F7FA' : '#333',
@@ -754,7 +754,7 @@ function MenuCard({ item, theme, fSize, lang, isPinned, onPin, onHide,setShowRef
     const iconWrapperStyle = {
         width: '48px',
         height: '48px',
-        borderRadius: '16px',
+        borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -889,7 +889,7 @@ const styles = (theme, fontSize) => ({
         alignItems: "center",
         height: "100vh",
         width: "100vw",
-        fontFamily: "Segoe UI",
+        fontFamily: 'inherit',
         overflow: 'hidden'
     },
     scrollView: {
@@ -921,30 +921,30 @@ const styles = (theme, fontSize) => ({
         alignItems: 'center',
         justifyContent: 'center',
         gap: '9px',
-        fontFamily: 'Segoe UI',
+        fontFamily: 'inherit',
         fontSize: fontSize === 0 ? '13px' : '15px',
         fontWeight: '800',
         marginBottom: '10px',
         cursor: 'pointer'
     },
     title: {
-        fontFamily: 'Segoe UI',
+        fontFamily: 'inherit',
         fontSize: fontSize === 0 ? '19px' : '21px',
         letterSpacing: '0.2px'
     },
     subtitle: {
-        fontFamily: 'Segoe UI',
+        fontFamily: 'inherit',
         fontWeight: '500',
         fontSize: fontSize === 0 ? '12px' : '14px',
         marginTop: '2px'
     },
     text: {
-        fontFamily: "Segoe UI",
+        fontFamily: 'inherit',
         fontSize: fontSize === 0 ? "10px" : "12px",
         color: Colors.get('subText', theme)
     },
     mainText: {
-        fontFamily: "Segoe UI",
+        fontFamily: 'inherit',
         fontSize: fontSize === 0 ? "14px" : "16px",
         color: Colors.get('mainText', theme)
     }
@@ -1382,16 +1382,16 @@ const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
                         </Motion.div>
 
                         {/* Title */}
-                        <h2 style={{ 
-                            fontFamily: 'Segoe UI', fontSize: '24px', fontWeight: '800', 
-                            color: text, margin: '0 0 10px 0', textAlign: 'center' 
+                        <h2 style={{
+                            fontFamily: 'inherit', fontSize: '24px', fontWeight: '800',
+                            color: text, margin: '0 0 10px 0', textAlign: 'center'
                         }}>
                             {lang === 0 ? 'Пригласи друга' : 'Invite a Friend'}
                         </h2>
 
                         {/* Description */}
-                        <p style={{ 
-                            fontFamily: 'Segoe UI', fontSize: '15px', fontWeight: '500', 
+                        <p style={{
+                            fontFamily: 'inherit', fontSize: '15px', fontWeight: '500',
                             color: sub, margin: '0 0 30px 0', textAlign: 'center', lineHeight: '1.5',
                             maxWidth: '90%'
                         }}>

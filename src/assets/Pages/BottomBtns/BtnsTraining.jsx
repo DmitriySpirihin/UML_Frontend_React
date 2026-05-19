@@ -262,7 +262,7 @@ const dockSide = (side) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: side === 'left' ? 'flex-start' : 'flex-end',
-    gap: '4px',
+    gap: '2px',
 });
 
 const glassOverlay = (theme) => ({
@@ -288,7 +288,7 @@ const navBtnWrapper = {
     justifyContent: 'center',
     position: 'relative',
     height: '46px',
-    width: '42px',
+    width: '36px',
     borderRadius: '999px',
     cursor: 'pointer',
     WebkitTapHighlightColor: 'transparent'

@@ -72,7 +72,7 @@ const TrainingAnaliticsMain = () => {
     <div style={styles(theme).container}>
       <VolumeTabs type={0} theme={theme} langIndex={langIndex} activeTab={tab} onChange={setTab} />
 
-      <div style={{ flex: 1, width: '100%', maxWidth: '600px', position: 'relative', overflowY: 'auto', paddingBottom: '100px' }}>
+      <div style={{ flex: 1, width: '100%', maxWidth: '600px', position: 'relative', overflowY: 'auto', paddingBottom: 'calc(190px + env(safe-area-inset-bottom, 0px))' }}>
         <AnimatePresence mode="wait">
           
           {/* === VOLUME TAB === */}
@@ -307,17 +307,44 @@ const Tonnage = ({ theme, langIndex, totalTonnage, targetTonnage, progressPercen
 };
 
 const InfoText = ({ theme, langIndex }) => {
-  const textContent = langIndex === 0
-    ? `Анализ цикла основан на последней программе.\n\nОбъём = сумма тоннажа всех сессий.\nЦель = прошлый цикл × 1.05.\n\nТоннаж = вес × повторения.`
-    : `Cycle analysis based on latest program.\n\nVolume = sum of all session tonnage.\nTarget = last cycle × 1.05.\n\nTonnage = weight × reps.`;
+  const accent = getTrainingAccent();
+  const items = langIndex === 0
+    ? [
+        { icon: <FaInfoCircle />, title: 'Основа анализа', text: 'Берется последняя программа и завершенные сессии текущего цикла.' },
+        { icon: <FaChartPie />, title: 'Объём', text: 'Сумма тоннажа всех сессий: вес × повторения.' },
+        { icon: <FaBullseye />, title: 'Цель', text: 'Ориентир = прошлый полный цикл × 1.05, то есть +5%.' },
+      ]
+    : [
+        { icon: <FaInfoCircle />, title: 'Analysis basis', text: 'Uses the latest program and completed sessions in the current cycle.' },
+        { icon: <FaChartPie />, title: 'Volume', text: 'Total tonnage of all sessions: weight × reps.' },
+        { icon: <FaBullseye />, title: 'Target', text: 'Target = previous complete cycle × 1.05, or +5%.' },
+      ];
 
   return (
     <div style={{ 
-        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
-        borderRadius: '16px', padding: '12px', fontSize: '11px', color: Colors.get('subText', theme),
-        lineHeight: '1.5', whiteSpace: 'pre-wrap', textAlign: 'left'
+        background: getTrainingPanelBackground(theme, accent),
+        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+        borderRadius: '18px',
+        padding: '12px',
+        color: Colors.get('subText', theme),
+        display: 'grid',
+        gap: 8,
+        boxShadow: getTrainingPanelShadow(theme, accent),
+        backdropFilter: 'blur(18px) saturate(145%)',
+        WebkitBackdropFilter: 'blur(18px) saturate(145%)',
+        textAlign: 'left'
     }}>
-      {textContent}
+      {items.map((item) => (
+        <div key={item.title} style={{ display: 'grid', gridTemplateColumns: '28px 1fr', gap: 9, alignItems: 'start' }}>
+          <div style={{ width: 28, height: 28, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent.hue, background: accent.soft, border: `1px solid ${accent.ring}` }}>
+            {item.icon}
+          </div>
+          <div>
+            <div style={{ color: Colors.get('mainText', theme), fontSize: 12, fontWeight: 900, lineHeight: 1.18 }}>{item.title}</div>
+            <div style={{ marginTop: 2, fontSize: 11, fontWeight: 650, lineHeight: 1.35 }}>{item.text}</div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };

@@ -327,14 +327,14 @@ const getPlateStyle = (weight, index, theme) => {
     return {
         height: `${heights[weight]}px`,
         width: `${widths[weight]}px`,
-        backgroundColor: color,
-        borderRadius: '4px',
+        background: `linear-gradient(145deg, rgba(255,255,255,0.22), ${color} 34%, rgba(0,0,0,0.24))`,
+        borderRadius: '5px',
         marginRight: '2px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: 'inset 0 0 8px rgba(0,0,0,0.3), 2px 2px 5px rgba(0,0,0,0.3)',
-        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -10px 18px rgba(0,0,0,0.18), 0 10px 24px -18px ${color}`,
+        border: '1px solid rgba(255,255,255,0.22)',
         zIndex: 10 + index,
         position: 'relative'
     }
@@ -342,45 +342,91 @@ const getPlateStyle = (weight, index, theme) => {
 
 export default PlatesCalculator
 
-const styles = (theme, fSize, isError) => ({
+const styles = (theme, fSize, isError) => {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const text = Colors.get('mainText', theme);
+    const sub = Colors.get('icons', theme);
+    const accent = Colors.get('done', theme);
+    const border = isLight ? 'rgba(15,23,42,0.11)' : 'rgba(150,210,255,0.16)';
+    const panel = isLight ? 'rgba(255,255,255,0.58)' : 'rgba(23,57,84,0.55)';
+    const panelSoft = isLight ? 'rgba(255,255,255,0.38)' : 'rgba(255,255,255,0.055)';
+
+    return {
     backdrop: {
         position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-        backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(3px)', zIndex: 998
+        background: isLight
+            ? 'rgba(232,238,246,0.52)'
+            : 'radial-gradient(620px 420px at 50% 100%, rgba(35,150,255,0.16), transparent 62%), rgba(0,0,0,0.62)',
+        backdropFilter: 'blur(10px) saturate(135%)',
+        WebkitBackdropFilter: 'blur(10px) saturate(135%)',
+        zIndex: 998
     },
     drawer: {
-        position: 'fixed', bottom: 0, left: 0, width: '100%', maxHeight: '90vh',
-        backgroundColor: Colors.get('bottomPanel', theme),
-        borderTopLeftRadius: '25px', borderTopRightRadius: '25px',
-        boxShadow: '0 -10px 40px rgba(0,0,0,0.4)', zIndex: 999,
-        display: 'flex', flexDirection: 'column', overflow: 'hidden'
+        position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+        width: 'min(100%, 660px)', height: '90vh',
+        background: isLight
+            ? 'linear-gradient(155deg, rgba(255,255,255,0.76), rgba(224,237,250,0.50))'
+            : 'linear-gradient(155deg, rgba(39,75,105,0.64), rgba(15,45,70,0.58) 56%, rgba(12,30,48,0.70))',
+        borderTopLeftRadius: '30px', borderTopRightRadius: '30px',
+        border: `1px solid ${border}`,
+        borderBottom: 'none',
+        boxShadow: isLight
+            ? '0 -24px 60px -36px rgba(15,23,42,0.36), inset 0 1px 0 rgba(255,255,255,0.9)'
+            : '0 -28px 70px -36px rgba(0,0,0,0.78), inset 0 1px 0 rgba(255,255,255,0.13), 0 0 90px rgba(37,160,255,0.14)',
+        zIndex: 999,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        backdropFilter: 'blur(30px) saturate(160%)',
+        WebkitBackdropFilter: 'blur(30px) saturate(160%)'
     },
     header: {
         height: '60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '0 20px', borderBottom: '1px solid rgba(255,255,255,0.05)'
+        padding: '0 20px',
+        borderBottom: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.055)'}`,
+        background: isLight ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.018)'
     },
     headerBtn: {
-        padding: '10px', fontSize: '24px', color: Colors.get('icons', theme), cursor: 'pointer'
+        width: 42, height: 42, borderRadius: 15,
+        padding: 0, fontSize: '24px', color: sub, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: isLight ? 'rgba(255,255,255,0.42)' : 'rgba(255,255,255,0.055)',
+        border: `1px solid ${border}`,
+        boxShadow: isLight ? '0 10px 24px -22px rgba(15,23,42,0.30)' : '0 12px 28px -24px rgba(0,0,0,0.78)'
     },
     handleBar: {
-        width: '40px', height: '4px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '2px'
+        width: '44px', height: '4px', backgroundColor: isLight ? 'rgba(15,23,42,0.18)' : 'rgba(190,219,255,0.20)', borderRadius: '999px',
+        boxShadow: isLight ? 'none' : '0 0 18px rgba(130,195,255,0.16)'
     },
     contentContainer: {
         width: '100%', paddingBottom: '30px', flex: 1, overflowY: 'auto'
     },
     mainPanel: {
-        display: 'flex', flexDirection: 'column', height: '100%', gap: '10px'
+        display: 'flex', flexDirection: 'column', height: '100%', gap: '12px',
+        background: isLight
+            ? 'radial-gradient(360px 260px at 50% 19%, rgba(62,142,216,0.16), transparent 70%)'
+            : 'radial-gradient(390px 280px at 50% 20%, rgba(54,154,241,0.18), transparent 72%)'
     },
     visualizerSection: {
-        flex: 1, minHeight: '180px', display: 'flex', flexDirection: 'column', 
-        alignItems: 'center', justifyContent: 'center', position: 'relative'
+        flex: 1, minHeight: '188px', display: 'flex', flexDirection: 'column', 
+        alignItems: 'center', justifyContent: 'center', position: 'relative',
+        margin: '0 24px',
+        borderRadius: 26,
+        background: isLight ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.025)',
+        border: `1px solid ${isLight ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.045)'}`,
+        boxShadow: isLight ? 'inset 0 1px 0 rgba(255,255,255,0.55)' : 'inset 0 1px 0 rgba(255,255,255,0.055)'
     },
     barContainer: {
-        display: 'flex', alignItems: 'center', padding: '0 20px'
+        display: 'flex', alignItems: 'center', padding: '12px 18px',
+        borderRadius: 20,
+        background: panelSoft,
+        border: `1px solid ${border}`,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)'
     },
     barShaft: {
-        width: '60px', height: '25px', backgroundColor: '#555', 
+        width: '60px', height: '25px',
+        background: isLight ? 'linear-gradient(180deg, rgba(135,155,176,0.72), rgba(84,100,118,0.58))' : 'linear-gradient(180deg, rgba(156,179,202,0.42), rgba(74,92,110,0.48))', 
         borderTopLeftRadius: '4px', borderBottomLeftRadius: '4px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center'
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.20), inset 0 -8px 12px rgba(0,0,0,0.16)'
     },
     barWeightText: {
         color: '#fff', fontSize: '10px', opacity: 0.8
@@ -389,10 +435,10 @@ const styles = (theme, fSize, isError) => ({
         display: 'flex', alignItems: 'center'
     },
     barSleeveBase: {
-        width: '5px', height: '35px', backgroundColor: '#777', borderRadius: '2px', marginRight: '1px'
+        width: '5px', height: '35px', background: 'linear-gradient(180deg, rgba(220,235,248,0.55), rgba(86,112,132,0.55))', borderRadius: '2px', marginRight: '1px'
     },
     barClip: {
-        width: '5px', height: '25px', backgroundColor: '#444', marginLeft: '1px', borderRadius: '2px'
+        width: '5px', height: '25px', background: 'linear-gradient(180deg, rgba(210,230,246,0.34), rgba(49,68,84,0.70))', marginLeft: '1px', borderRadius: '2px'
     },
     plateText: {
         fontSize: '9px', fontWeight: 'bold', color: 'rgba(255,255,255,0.9)', 
@@ -400,29 +446,38 @@ const styles = (theme, fSize, isError) => ({
     },
     // Dynamic Error Style
     resultBadge: {
-        marginTop: '15px', padding: '8px 16px', borderRadius: '20px',
-        backgroundColor: isError ? 'rgba(231, 76, 60, 0.2)' : 'rgba(255,255,255,0.08)',
-        border: isError ? '1px solid #e74c3c' : 'none',
-        color: isError ? '#e74c3c' : Colors.get('mainText', theme), 
+        marginTop: '14px', padding: '9px 18px', borderRadius: '999px',
+        background: isError ? 'rgba(231, 76, 60, 0.16)' : panel,
+        border: isError ? '1px solid rgba(231,76,60,0.72)' : `1px solid ${border}`,
+        color: isError ? '#ff8b80' : text, 
         fontSize: '14px', fontWeight: '600',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        boxShadow: isError ? '0 16px 30px -24px rgba(231,76,60,0.65)' : '0 16px 32px -26px rgba(0,0,0,0.58), inset 0 1px 0 rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(18px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(18px) saturate(150%)'
     },
     pickerSection: {
-        height: '250px', position: 'relative', width: '100%',
-        borderTop: '1px solid rgba(255,255,255,0.05)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        backgroundColor: 'rgba(0,0,0,0.1)'
+        height: '250px', position: 'relative',
+        margin: '0 24px',
+        width: 'calc(100% - 48px)',
+        borderRadius: 26,
+        border: `1px solid ${border}`,
+        background: isLight ? 'rgba(255,255,255,0.22)' : 'rgba(255,255,255,0.028)',
+        boxShadow: isLight ? 'inset 0 1px 0 rgba(255,255,255,0.62)' : 'inset 0 1px 0 rgba(255,255,255,0.055)',
+        overflow: 'hidden'
     },
     drumContainer: {
         width: '100%', height: '100%', position: 'relative', overflow: 'hidden'
     },
     drumHighlight: {
         position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-        width: '80%', height: '50px', borderRadius: '12px',
-        backgroundColor: 'rgba(255,255,255,0.05)', 
-        borderTop: `1px solid ${Colors.get('done', theme)}`,
-        borderBottom: `1px solid ${Colors.get('done', theme)}`,
-        pointerEvents: 'none', zIndex: 10
+        width: '82%', height: '52px', borderRadius: '16px',
+        background: isError ? 'rgba(231,76,60,0.11)' : panel,
+        border: `1px solid ${isError ? 'rgba(231,76,60,0.58)' : `${accent}78`}`,
+        boxShadow: isError ? '0 12px 30px -24px rgba(231,76,60,0.65), inset 0 1px 0 rgba(255,255,255,0.08)' : `0 16px 36px -26px ${accent}88, inset 0 1px 0 rgba(255,255,255,0.10)`,
+        pointerEvents: 'none', zIndex: 10,
+        backdropFilter: 'blur(18px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(18px) saturate(150%)'
     },
     drumScrollArea: {
         width: '100%', height: '100%', overflowY: 'scroll',
@@ -438,39 +493,46 @@ const styles = (theme, fSize, isError) => ({
     },
     maxWeightLabel: {
         position: 'absolute', bottom: '10px', right: '20px',
-        fontSize: '10px', color: Colors.get('icons', theme), opacity: 0.5,
+        fontSize: '10px', color: sub, opacity: 0.58,
         fontWeight: 'bold', letterSpacing: '1px'
     },
     footerAction: {
-        display: 'flex', justifyContent: 'center', padding: '10px'
+        display: 'flex', justifyContent: 'center', padding: '8px 10px 10px'
     },
     doneBtn: {
-        width: '60px', height: '60px', borderRadius: '50%', border: 'none',
-        backgroundColor: Colors.get('done', theme), color: '#fff',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.3)', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center'
+        width: '60px', height: '60px', borderRadius: '50%',
+        border: `1px solid ${accent}88`,
+        background: `linear-gradient(145deg, ${accent}, #12b7a5)`, color: '#fff',
+        boxShadow: `0 18px 42px -18px ${accent}AA, inset 0 1px 0 rgba(255,255,255,0.22)`, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        outline: 'none'
     },
     settingsPanel: {
-        padding: '20px'
+        padding: '20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 14
     },
     settingHeader: {
-        fontSize: '12px', textTransform: 'uppercase', color: Colors.get('icons', theme), 
+        fontSize: '12px', textTransform: 'uppercase', color: sub, 
         marginBottom: '10px', letterSpacing: '1px'
     },
     stepperRow: {
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px',
-        backgroundColor: 'rgba(255,255,255,0.03)', padding: '15px', borderRadius: '16px'
+        background: panelSoft, padding: '15px', borderRadius: '18px',
+        border: `1px solid ${border}`,
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)'
     },
     stepperBtn: {
-        width: '40px', height: '40px', borderRadius: '50%', border: 'none',
-        backgroundColor: 'rgba(255,255,255,0.1)', color: Colors.get('mainText', theme),
+        width: '40px', height: '40px', borderRadius: '50%', border: `1px solid ${border}`,
+        background: isLight ? 'rgba(255,255,255,0.48)' : 'rgba(255,255,255,0.08)', color: text,
         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
     },
     stepperValue: {
-        fontSize: '20px', fontWeight: 'bold', color: Colors.get('mainText', theme), minWidth: '80px', textAlign: 'center'
+        fontSize: '20px', fontWeight: 'bold', color: text, minWidth: '80px', textAlign: 'center'
     },
     settingDivider: {
-        height: '1px', backgroundColor: 'rgba(255,255,255,0.05)', margin: '20px 0'
+        height: '1px', backgroundColor: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)', margin: '6px 0'
     },
     platesGrid: {
         display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px'
@@ -482,11 +544,14 @@ const styles = (theme, fSize, isError) => ({
         width: '75px', height: '75px', borderRadius: '50%', 
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontWeight: 'bold', fontSize: '12px', color: '#fff', cursor: 'pointer',
-        transition: 'transform 0.1s'
+        transition: 'transform 0.1s',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 14px 28px -22px rgba(0,0,0,0.64)'
     },
     plateCountControls: {
         display: 'flex', alignItems: 'center', gap: '8px', 
-        color: Colors.get('mainText', theme), fontSize: '16px',
-        backgroundColor: 'rgba(255,255,255,0.05)', padding: '2px 5px', borderRadius: '10px',marginBottom:'30px'
+        color: text, fontSize: '16px',
+        background: panelSoft, padding: '3px 7px', borderRadius: '10px', marginBottom: '30px',
+        border: `1px solid ${border}`
     }
-})
+    };
+};

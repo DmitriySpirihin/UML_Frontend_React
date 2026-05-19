@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+    TbActivityHeartbeat,
+    TbAlarm,
     TbApple,
     TbBabyBottle,
     TbBarbell,
@@ -10,19 +12,22 @@ import {
     TbBellOff,
     TbBike,
     TbBook,
-    TbBook2,
     TbBookmark,
     TbBottle,
     TbBowl,
+    TbBodyScan,
     TbBrain,
     TbBriefcase,
     TbBread,
+    TbBrush,
     TbBuildingBank,
     TbBulb,
     TbCalculator,
     TbCalendarCheck,
+    TbCalendarStats,
     TbCamera,
     TbCar,
+    TbCash,
     TbCarrot,
     TbChartLine,
     TbCheck,
@@ -34,6 +39,7 @@ import {
     TbCode,
     TbCoffee,
     TbCoins,
+    TbConfetti,
     TbCompass,
     TbCookieOff,
     TbDental,
@@ -46,10 +52,9 @@ import {
     TbFlag,
     TbFlame,
     TbFolder,
+    TbFirstAidKit,
     TbGlassFull,
     TbHeadphones,
-    TbHeart,
-    TbHeartPlus,
     TbHome,
     TbInbox,
     TbLanguage,
@@ -69,6 +74,7 @@ import {
     TbPigMoney,
     TbPlane,
     TbPlant2,
+    TbPray,
     TbPuzzle,
     TbReceipt,
     TbRecycle,
@@ -90,6 +96,7 @@ import {
     TbTarget,
     TbTargetArrow,
     TbTool,
+    TbToolsKitchen,
     TbToolsKitchen2,
     TbTrees,
     TbTrophy,
@@ -131,16 +138,29 @@ const isCoffeeAccentColor = (color) => {
     return r > g && g > b && r >= 120 && g >= 70 && b <= 120 && saturation > 0.22;
 };
 
+const isGreenAccentColor = (color) => {
+    if (typeof color !== 'string') return false;
+    const value = color.trim().toUpperCase();
+    if (!/^#[0-9A-F]{6}$/.test(value)) return false;
+    if (['#22C55E', '#2ED177', '#10B981', '#39D982', '#2E7D32', '#16A34A'].includes(value)) return true;
+
+    const int = Number.parseInt(value.slice(1), 16);
+    const r = (int >> 16) & 255;
+    const g = (int >> 8) & 255;
+    const b = int & 255;
+    return g >= 145 && g > r + 24 && g > b + 24;
+};
+
 const normalizeHexColor = (color) => {
     if (typeof color !== 'string') return DEFAULT_HABITS_ACCENT_COLOR;
     const value = color.trim();
     if (/^#[0-9a-fA-F]{6}$/.test(value)) {
         const normalized = value.toUpperCase();
-        return isCoffeeAccentColor(normalized) ? DEFAULT_HABITS_ACCENT_COLOR : normalized;
+        return isCoffeeAccentColor(normalized) || isGreenAccentColor(normalized) ? DEFAULT_HABITS_ACCENT_COLOR : normalized;
     }
     if (/^#[0-9a-fA-F]{3}$/.test(value)) {
         const normalized = `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`.toUpperCase();
-        return isCoffeeAccentColor(normalized) ? DEFAULT_HABITS_ACCENT_COLOR : normalized;
+        return isCoffeeAccentColor(normalized) || isGreenAccentColor(normalized) ? DEFAULT_HABITS_ACCENT_COLOR : normalized;
     }
     return DEFAULT_HABITS_ACCENT_COLOR;
 };
@@ -175,7 +195,7 @@ export const setHabitsAccentColor = (color) => {
 };
 
 export const HABITS_CATEGORY_TONES = {
-    'Здоровье': { hue: '#7FC8B8', soft: 'rgba(127,200,184,0.14)', ring: 'rgba(127,200,184,0.28)', icon: 'health' },
+    'Здоровье': { hue: '#55DDEB', soft: 'rgba(85,221,235,0.14)', ring: 'rgba(85,221,235,0.28)', icon: 'health' },
     'Развитие': { hue: '#8A7CD6', soft: 'rgba(138,124,214,0.14)', ring: 'rgba(138,124,214,0.28)', icon: 'growth' },
     'Продуктивность': { hue: '#8FA6C8', soft: 'rgba(143,166,200,0.14)', ring: 'rgba(143,166,200,0.28)', icon: 'productivity' },
     'Отношения и отдых': { hue: '#C8A46F', soft: 'rgba(200,164,111,0.12)', ring: 'rgba(200,164,111,0.24)', icon: 'relationships' },
@@ -207,7 +227,6 @@ const HABIT_OUTLINE_ICONS = {
     timer: ({ size }) => <HabitIconBase size={size}><circle cx="12" cy="13" r="7" /><path d="M12 9v4l2.5 1.5M9 3h6M19 5l1 1" /></HabitIconBase>,
     inbox: ({ size }) => <HabitIconBase size={size}><path d="M4 13v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5l-3-8H7Z" /><path d="M4 13h4l1 2h6l1-2h4" /></HabitIconBase>,
     people: ({ size }) => <HabitIconBase size={size}><circle cx="9" cy="8" r="3" /><circle cx="17" cy="9" r="2.3" /><path d="M3 20c1-3 3-4.5 6-4.5s5 1.5 6 4.5M15 20c.5-2 1.8-3 3.5-3s2.5.6 3.5 3" /></HabitIconBase>,
-    heart: ({ size }) => <HabitIconBase size={size}><path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.7A4 4 0 0 1 19 10c0 5.5-7 10-7 10Z" /></HabitIconBase>,
     chat: ({ size }) => <HabitIconBase size={size}><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l.8-5.5A8 8 0 1 1 21 12Z" /></HabitIconBase>,
     hobby: ({ size }) => <HabitIconBase size={size}><path d="M7 3h10v4a5 5 0 0 1-10 0V3ZM9 12v3l-2 5h10l-2-5v-3" /></HabitIconBase>,
     creative: ({ size }) => <HabitIconBase size={size}><path d="M4 20l3-1 11-11-2-2L5 17l-1 3ZM15 7l2 2M11 20h9" /></HabitIconBase>,
@@ -278,9 +297,11 @@ const HABIT_OUTLINE_ICONS = {
     microscope: ({ size }) => <HabitIconBase size={size}><path d="M10 4h4v5h-4zM12 9v4M9 13h6M6 20h12M8 17a5 5 0 0 0 8-4" /><path d="M7 4h10" /></HabitIconBase>,
 };
 
-const tablerIcon = (IconComponent) => ({ size }) => (
-    <IconComponent size={size} strokeWidth={1.75} style={{ display: 'block', flexShrink: 0 }} />
-);
+const tablerIcon = (IconComponent) => ({ size }) => React.createElement(IconComponent, {
+    size,
+    strokeWidth: 1.75,
+    style: { display: 'block', flexShrink: 0 }
+});
 
 const HABIT_TABLER_ICONS = {
     water: tablerIcon(TbDroplet),
@@ -288,18 +309,17 @@ const HABIT_TABLER_ICONS = {
     walk: tablerIcon(TbWalk),
     bike: tablerIcon(TbBike),
     run: tablerIcon(TbRun),
-    food: tablerIcon(TbToolsKitchen2),
+    food: tablerIcon(TbSoup),
     yoga: tablerIcon(TbYoga),
-    body: tablerIcon(TbScale),
+    body: tablerIcon(TbBodyScan),
     strength: tablerIcon(TbBarbell),
-    meditate: tablerIcon(TbYoga),
+    meditate: tablerIcon(TbPray),
     book: tablerIcon(TbBook),
-    book2: tablerIcon(TbBook2),
     brain: tablerIcon(TbBrain),
     lang: tablerIcon(TbLanguage),
     journal: tablerIcon(TbNotebook),
     skill: tablerIcon(TbSparkles),
-    plan: tablerIcon(TbCalendarCheck),
+    plan: tablerIcon(TbCalendarStats),
     target: tablerIcon(TbTarget),
     targetArrow: tablerIcon(TbTargetArrow),
     timer: tablerIcon(TbClock),
@@ -310,14 +330,13 @@ const HABIT_TABLER_ICONS = {
     inbox: tablerIcon(TbInbox),
     people: tablerIcon(TbUsers),
     usersGroup: tablerIcon(TbUsersGroup),
-    heart: tablerIcon(TbHeart),
-    heartPlus: tablerIcon(TbHeartPlus),
+    firstAid: tablerIcon(TbFirstAidKit),
     chat: tablerIcon(TbMessageCircle),
-    hobby: tablerIcon(TbTrophy),
-    creative: tablerIcon(TbPencil),
+    hobby: tablerIcon(TbConfetti),
+    creative: tablerIcon(TbBrush),
     detox: tablerIcon(TbDeviceMobileOff),
     sugar: tablerIcon(TbCookieOff),
-    late: tablerIcon(TbClock),
+    late: tablerIcon(TbAlarm),
     screen: tablerIcon(TbDeviceDesktopOff),
     smoke: tablerIcon(TbSmokingNo),
     alcohol: tablerIcon(TbBeerOff),
@@ -334,7 +353,7 @@ const HABIT_TABLER_ICONS = {
     bread: tablerIcon(TbBread),
     cup: tablerIcon(TbCoffee),
     codeIcon: tablerIcon(TbCode),
-    money: tablerIcon(TbWallet),
+    money: tablerIcon(TbCash),
     pigMoney: tablerIcon(TbPigMoney),
     coins: tablerIcon(TbCoins),
     bellOff: tablerIcon(TbBellOff),
@@ -353,7 +372,7 @@ const HABIT_TABLER_ICONS = {
     shower: tablerIcon(TbBath),
     lungs: tablerIcon(TbLungs),
     scale: tablerIcon(TbScale),
-    forkKnife: tablerIcon(TbToolsKitchen2),
+    forkKnife: tablerIcon(TbToolsKitchen),
     bowl: tablerIcon(TbBowl),
     seedling: tablerIcon(TbPlant2),
     graduation: tablerIcon(TbSchool),
@@ -377,7 +396,7 @@ const HABIT_TABLER_ICONS = {
     phoneIcon: tablerIcon(TbDeviceMobile),
     cloudIcon: tablerIcon(TbCloudUpload),
     wrench: tablerIcon(TbTool),
-    spark: tablerIcon(TbSparkles),
+    spark: tablerIcon(TbActivityHeartbeat),
     stethoscope: tablerIcon(TbStethoscope),
     batteryIcon: tablerIcon(TbBattery3),
     bookmark: tablerIcon(TbBookmark),
@@ -395,7 +414,7 @@ export const HABIT_ICON_GROUPS = [
     {
         key: 'health',
         label: ['Здоровье', 'Health'],
-        icons: ['heart', 'heartPlus', 'stethoscope', 'water', 'sleep', 'sun', 'walk', 'run', 'bike', 'strength', 'yoga', 'meditate', 'body', 'pillIcon', 'tooth', 'shower', 'lungs', 'scale', 'batteryIcon']
+        icons: ['firstAid', 'stethoscope', 'water', 'sleep', 'sun', 'walk', 'run', 'bike', 'strength', 'yoga', 'meditate', 'body', 'pillIcon', 'tooth', 'shower', 'lungs', 'scale', 'batteryIcon']
     },
     {
         key: 'food',
@@ -405,12 +424,12 @@ export const HABIT_ICON_GROUPS = [
     {
         key: 'growth',
         label: ['Развитие', 'Growth'],
-        icons: ['book', 'book2', 'brain', 'skill', 'lang', 'journal', 'graduation', 'pencil', 'bulb', 'targetArrow', 'calculatorIcon', 'codeIcon', 'microscope', 'bookmark', 'puzzle']
+        icons: ['book', 'brain', 'skill', 'lang', 'journal', 'graduation', 'pencil', 'bulb', 'targetArrow', 'calculatorIcon', 'codeIcon', 'microscope', 'bookmark', 'puzzle']
     },
     {
         key: 'productivity',
         label: ['Дела', 'Work'],
-        icons: ['target', 'targetArrow', 'plan', 'checkbox', 'checklist', 'clipboardCheck', 'timer', 'calendarCheck', 'route', 'inbox', 'folder', 'briefcase', 'mailIcon', 'chartLine', 'rocket', 'bellOff', 'cloudIcon', 'wrench', 'flagIcon']
+        icons: ['target', 'plan', 'checkbox', 'checklist', 'clipboardCheck', 'timer', 'calendarCheck', 'route', 'inbox', 'folder', 'briefcase', 'mailIcon', 'chartLine', 'rocket', 'cloudIcon', 'wrench', 'flagIcon']
     },
     {
         key: 'finance',
@@ -425,7 +444,7 @@ export const HABIT_ICON_GROUPS = [
     {
         key: 'limits',
         label: ['Ограничения', 'Limits'],
-        icons: ['screen', 'phoneIcon', 'detox', 'wifiOff', 'bellOff', 'lockIcon', 'shield', 'smoke', 'alcohol', 'sugar', 'game', 'late', 'flame', 'recycle', 'check', 'spark']
+        icons: ['screen', 'phoneIcon', 'detox', 'wifiOff', 'bellOff', 'lockIcon', 'shield', 'smoke', 'alcohol', 'game', 'late', 'flame', 'recycle', 'check', 'spark']
     }
 ];
 
@@ -434,7 +453,7 @@ export const HABIT_ICON_OPTIONS = Array.from(new Set(HABIT_ICON_GROUPS.flatMap(g
 const HABIT_ICON_ALIASES = {
     default: 'target',
     star: 'skill',
-    health: 'heart',
+    health: 'firstAid',
     growth: 'book',
     productivity: 'target',
     relationships: 'people',
@@ -467,7 +486,7 @@ const HABIT_ICON_ALIASES = {
     inboxTray: 'inbox',
     sunsetReview: 'flagIcon',
     callMessage: 'chat',
-    handHeart: 'heart',
+    handHeart: 'people',
     handshake: 'people',
     activeListen: 'speech',
     gratitude: 'trophy',
@@ -545,7 +564,7 @@ const HABIT_ICON_ALIASES = {
     mealPrep: 'bowl',
     familyTime: 'homeIcon',
     friendMessage: 'chat',
-    compliment: 'heart',
+    compliment: 'speech',
     homeHelp: 'wrench',
     cleaning: 'homeIcon',
     laundry: 'shirt',
@@ -588,10 +607,12 @@ export function getHabitCategoryTone(categoryKey) {
 
 export function normalizeHabitIconKey(iconName, habitName = [], categoryKey = '') {
     const rawKey = String(iconName || '').trim();
-    if (HABIT_OUTLINE_ICONS[rawKey]) return rawKey;
+    if (rawKey.startsWith('emoji:')) return rawKey;
 
     const direct = HABIT_ICON_ALIASES[iconName] || HABIT_ICON_ALIASES[rawKey];
     if (direct) return direct;
+    if (HABIT_OUTLINE_ICONS[rawKey]) return rawKey;
+    if (HABIT_TABLER_ICONS[rawKey]) return rawKey;
 
     const text = [rawKey, ...(Array.isArray(habitName) ? habitName : [habitName])].join(' ').toLowerCase();
     if (/вод|water|swim|плав/.test(text)) return 'water';
@@ -617,6 +638,13 @@ export function normalizeHabitIconKey(iconName, habitName = [], categoryKey = ''
 
 export function HabitOutlineIcon({ iconName, habitName, categoryKey, size = 22 }) {
     const key = normalizeHabitIconKey(iconName, habitName, categoryKey);
+    if (key.startsWith('emoji:')) {
+        return (
+            <span style={{ fontSize: size, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                {key.slice(6).trim()}
+            </span>
+        );
+    }
     const Icon = HABIT_TABLER_ICONS[key] || HABIT_OUTLINE_ICONS[key] || HABIT_OUTLINE_ICONS.target;
     return <Icon size={size} />;
 }

@@ -18,7 +18,7 @@ import { MdEdit } from 'react-icons/md';
 import ScrollPicker from '../Helpers/ScrollPicker.jsx';
 import { buildSleepAccent } from './SleepPages/SleepVisuals.js';
 import { buildTodoAccent } from './ToDoPages/ToDoVisuals.js';
-import { buildHabitsAccent } from './HabitsPages/HabitVisuals.jsx';
+import { HABITS_ACCENT as SHARED_HABITS_ACCENT, buildHabitsAccent } from './HabitsPages/HabitVisuals.jsx';
 import { buildSectionAccent } from './SectionAccentSettings.jsx';
 
 // --- CONSTANTS ---
@@ -32,6 +32,12 @@ const activityNames = [
 const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 14px)';
 const MotionDiv = motion.div;
 const MotionButton = motion.button;
+const PROFILE_ACCENT = {
+    hue: '#B7F3FF',
+    rgb: '183,243,255',
+    cold: '#58D3FF',
+    coldRgb: '88,211,255'
+};
 
 const Icon = ({ children, size = 20, stroke = 1.75 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -52,6 +58,99 @@ const XP_RULE_ICONS = {
     sleep: <FaBed />,
     recovery: <FaSpa />,
     habits: <FaMedal />
+};
+
+const XP_RULE_DETAILS = {
+    training: {
+        source: ['Дневник тренировок', 'Training log'],
+        counted: ['календарные дни с сохраненной тренировкой', 'calendar days with a saved workout'],
+        steps: [
+            {
+                title: ['Фиксация события', 'Event logging'],
+                text: ['Сохраните запись тренировки за выбранный день.', 'Save a workout entry for the selected day.']
+            },
+            {
+                title: ['Проверка условия', 'Eligibility check'],
+                text: ['День учитывается, если запись присутствует в дневнике тренировок.', 'The day counts when the entry is present in the training log.']
+            },
+            {
+                title: ['Начисление XP', 'XP award'],
+                text: ['За каждый подтвержденный день начисляется +50 XP.', 'Each confirmed day grants +50 XP.']
+            }
+        ]
+    },
+    mental: {
+        source: ['Тренировка ума', 'Mind training'],
+        counted: ['дни с завершенной ментальной практикой', 'days with a completed mental practice'],
+        steps: [
+            {
+                title: ['Завершение практики', 'Practice completion'],
+                text: ['Пройдите упражнение на память, фокус, логику или математику.', 'Complete a memory, focus, logic, or math exercise.']
+            },
+            {
+                title: ['Сохранение результата', 'Result recording'],
+                text: ['Результат должен быть сохранен в журнале тренировки ума.', 'The result must be saved in the mind training log.']
+            },
+            {
+                title: ['Начисление XP', 'XP award'],
+                text: ['За день с подтвержденной практикой начисляется +30 XP.', 'A confirmed practice day grants +30 XP.']
+            }
+        ]
+    },
+    sleep: {
+        source: ['Качество сна', 'Sleep quality'],
+        counted: ['дни с сохраненной записью сна', 'days with a saved sleep entry'],
+        steps: [
+            {
+                title: ['Заполнение данных', 'Data entry'],
+                text: ['Добавьте запись сна за выбранную дату.', 'Add a sleep entry for the selected date.']
+            },
+            {
+                title: ['Проверка журнала', 'Log validation'],
+                text: ['Запись должна отображаться в календаре сна.', 'The entry must appear in the sleep calendar.']
+            },
+            {
+                title: ['Начисление XP', 'XP award'],
+                text: ['За каждую подтвержденную запись начисляется +20 XP.', 'Each confirmed entry grants +20 XP.']
+            }
+        ]
+    },
+    recovery: {
+        source: ['Антистресс', 'Reset'],
+        counted: ['завершенные практики восстановления', 'completed recovery practices'],
+        steps: [
+            {
+                title: ['Завершение практики', 'Practice completion'],
+                text: ['Завершите дыхание, медитацию или холодовую практику.', 'Complete a breathing, meditation, or cold practice.']
+            },
+            {
+                title: ['Сохранение записи', 'Entry recording'],
+                text: ['Практика должна быть сохранена в соответствующем журнале.', 'The practice must be saved in the relevant log.']
+            },
+            {
+                title: ['Начисление XP', 'XP award'],
+                text: ['За каждую подтвержденную практику начисляется +20 XP.', 'Each confirmed practice grants +20 XP.']
+            }
+        ]
+    },
+    habits: {
+        source: ['Привычки', 'Habits'],
+        counted: ['активные привычки, добавленные в трекер', 'active habits added to the tracker'],
+        steps: [
+            {
+                title: ['Добавление привычки', 'Habit selection'],
+                text: ['Добавьте привычку в список выбранных.', 'Add a habit to the selected list.']
+            },
+            {
+                title: ['Учет в профиле', 'Profile accounting'],
+                text: ['Активная привычка включается в статистику профиля.', 'The active habit is included in profile statistics.']
+            },
+            {
+                title: ['Начисление XP', 'XP award'],
+                text: ['За каждую выбранную привычку начисляется +10 XP.', 'Each selected habit grants +10 XP.']
+            }
+        ]
+    }
 };
 
 const generateRange = (start, end, step = 1) => {
@@ -190,7 +289,10 @@ const UserPanel = () => {
     const selectedXpRuleBase = XP_RULES.find(rule => rule.key === selectedXpRule) || XP_RULES[0];
     const selectedXpRuleData = { ...selectedXpRuleBase, icon: XP_RULE_ICONS[selectedXpRuleBase.key] };
     const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF');
-    const habitsAccent = buildHabitsAccent(AppData.habitAccentColor || '#22C55E');
+    const habitAccentSource = String(AppData.habitAccentColor || '').trim().toLowerCase() === '#22c55e'
+        ? SHARED_HABITS_ACCENT.hue
+        : (AppData.habitAccentColor || SHARED_HABITS_ACCENT.hue);
+    const habitsAccent = buildHabitsAccent(habitAccentSource);
     const todoAccent = buildTodoAccent(AppData.todoAccentColor || '#149DFF');
     const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || '#579BC8', '#579BC8');
     const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || '#A66BFF', '#A66BFF');
@@ -229,8 +331,8 @@ const UserPanel = () => {
         setPage(pageId);
     };
 
-    const heroAccent = '#B7F3FF';
-    const heroAccentRgb = '183,243,255';
+    const heroAccent = PROFILE_ACCENT.hue;
+    const heroAccentRgb = PROFILE_ACCENT.rgb;
     const s = styles(theme);
     const accent = heroAccent;
 
@@ -267,14 +369,14 @@ const UserPanel = () => {
                 <div style={{
                     ...s.heroSection,
                     background: s.isLight
-                        ? `linear-gradient(145deg, rgba(255,255,255,0.76) 0%, rgba(${heroAccentRgb},0.105) 48%, rgba(235,242,246,0.72) 100%)`
-                        : `linear-gradient(145deg, rgba(${heroAccentRgb},0.17) 0%, rgba(22,31,38,0.68) 42%, rgba(14,20,25,0.62) 100%)`,
-                    borderColor: s.isLight ? `rgba(${heroAccentRgb},0.16)` : `rgba(${heroAccentRgb},0.15)`,
+                        ? `radial-gradient(190px 130px at 88% 0%, rgba(${heroAccentRgb},0.20), transparent 70%), linear-gradient(145deg, rgba(255,255,255,0.84) 0%, rgba(${heroAccentRgb},0.13) 50%, rgba(235,242,246,0.74) 100%)`
+                        : `radial-gradient(220px 150px at 88% 0%, rgba(${heroAccentRgb},0.28), transparent 70%), radial-gradient(210px 130px at 12% 24%, rgba(${PROFILE_ACCENT.coldRgb},0.12), transparent 72%), linear-gradient(145deg, rgba(${heroAccentRgb},0.18) 0%, rgba(27,44,57,0.76) 42%, rgba(13,23,31,0.72) 100%)`,
+                    borderColor: s.isLight ? `rgba(${heroAccentRgb},0.22)` : `rgba(${heroAccentRgb},0.26)`,
                     boxShadow: s.isLight
-                        ? '0 22px 50px -34px rgba(15,23,42,0.30), 0 1px 0 rgba(255,255,255,0.88) inset, 0 0 0 1px rgba(255,255,255,0.32) inset'
-                        : '0 24px 58px -38px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.11) inset, 0 0 0 1px rgba(255,255,255,0.035) inset'
+                        ? `0 22px 50px -34px rgba(15,23,42,0.30), 0 1px 0 rgba(255,255,255,0.88) inset, 0 0 0 1px rgba(255,255,255,0.38) inset, 0 18px 42px -34px rgba(${heroAccentRgb},0.52)`
+                        : `0 26px 62px -38px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.13) inset, 0 0 0 1px rgba(255,255,255,0.045) inset, 0 18px 48px -34px rgba(${heroAccentRgb},0.72)`
                 }}>
-                    <div style={{ ...s.heroColorWash, background: `radial-gradient(circle, rgba(${heroAccentRgb},0.24) 0%, transparent 62%)` }} />
+                    <div style={{ ...s.heroColorWash, background: `radial-gradient(circle, rgba(${heroAccentRgb},0.34) 0%, rgba(${PROFILE_ACCENT.coldRgb},0.13) 34%, transparent 66%)` }} />
                     <div style={s.heroTopRow}>
                         <div style={{ ...s.avatarWrapper, borderColor: accent }}>
                             {UserData.photo ? (
@@ -306,7 +408,7 @@ const UserPanel = () => {
                             </div>
                         </div>
 
-                        <div style={{...s.levelBadge, borderColor: `${stats.level.color}55`, color: stats.level.color, backgroundColor: `${stats.level.color}15`}}>
+                        <div style={s.levelBadge}>
                             <span style={s.levelLabel}>LVL</span>
                             <span style={s.levelValue}>{stats.level.current}</span>
                         </div>
@@ -326,7 +428,11 @@ const UserPanel = () => {
                                 initial={{ width: 0 }}
                                 animate={{ width: `${stats.level.percent}%` }}
                                 transition={{ duration: 1, ease: "easeOut" }}
-                                style={{ ...s.xpFill, backgroundColor: stats.level.color }} 
+                                style={{
+                                    ...s.xpFill,
+                                    background: `linear-gradient(90deg, rgba(${heroAccentRgb},0.72), rgba(${PROFILE_ACCENT.coldRgb},0.96))`,
+                                    boxShadow: `0 0 14px rgba(${heroAccentRgb},0.32)`
+                                }}
                             />
                         </div>
                     </div>
@@ -512,12 +618,14 @@ const XpGuide = ({ stats, lang, theme, selectedRule, onSelectRule }) => {
     const selectedCount = stats.counts[selectedRule.key] || 0;
     const selectedEarned = selectedCount * selectedRule.xp;
     const nextLevel = stats.level.current + 1;
+    const selectedDetails = XP_RULE_DETAILS[selectedRule.key] || XP_RULE_DETAILS.training;
 
     return (
         <div style={s.xpGuide}>
+            <div style={s.xpGuideGlow} />
             <div style={s.xpGuideHeader}>
-                <div>
-                    <h3 style={{ ...s.modalTitle, textAlign: 'left', margin: 0 }}>
+                <div style={s.xpGuideTitleBlock}>
+                    <h3 style={s.xpGuideTitle}>
                         {lang === 0 ? 'Как начисляется XP' : 'How XP works'}
                     </h3>
                     <div style={s.xpGuideSubtitle}>
@@ -566,7 +674,9 @@ const XpGuide = ({ stats, lang, theme, selectedRule, onSelectRule }) => {
                             style={{
                                 ...s.xpRuleButton,
                                 borderColor: active ? rule.color : `${Colors.get('border', theme)}50`,
-                                backgroundColor: active ? `${rule.color}18` : Colors.get('simplePanel', theme)
+                                background: active
+                                    ? `radial-gradient(130px 90px at 20% 10%, ${rule.color}30, transparent 70%), linear-gradient(145deg, ${rule.color}18, rgba(255,255,255,0.035))`
+                                    : s.xpRuleButton.background
                             }}
                         >
                             <span style={{ ...s.xpRuleIcon, color: rule.color }}>{icon}</span>
@@ -590,10 +700,42 @@ const XpGuide = ({ stats, lang, theme, selectedRule, onSelectRule }) => {
                 <div style={{ flex: 1 }}>
                     <div style={s.xpDetailsTitle}>{selectedRule.label[lang]}</div>
                     <div style={s.xpDetailsText}>{selectedRule.description[lang]}</div>
+                    <div style={s.xpDetailsMeta}>
+                        <span>{lang === 0 ? 'Источник' : 'Source'}: {selectedDetails.source[lang]}</span>
+                        <span>{lang === 0 ? 'Учитывается' : 'Counts'}: {selectedDetails.counted[lang]}</span>
+                    </div>
                 </div>
                 <div style={s.xpDetailsScore}>
                     <span style={{ color: selectedRule.color }}>+{selectedRule.xp} XP</span>
                     <small>{selectedCount} x = {selectedEarned}</small>
+                </div>
+            </MotionDiv>
+            <MotionDiv
+                key={`${selectedRule.key}-steps`}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                style={s.xpRuleExplain}
+            >
+                <div style={s.xpFormulaRow}>
+                    <span style={s.xpFormulaLabel}>{lang === 0 ? 'Расчет' : 'Calculation'}</span>
+                    <span style={{ ...s.xpFormulaValue, color: selectedRule.color }}>
+                        {selectedCount} x {selectedRule.xp} XP = {selectedEarned} XP
+                    </span>
+                </div>
+                <div style={s.xpProcessTitle}>
+                    {lang === 0 ? 'Порядок начисления' : 'Award procedure'}
+                </div>
+                <div style={s.xpDetailList}>
+                    {selectedDetails.steps.map((step, index) => (
+                        <div key={`${selectedRule.key}-${index}`} style={s.xpDetailItem}>
+                            <span style={{ ...s.xpDetailNumber, color: selectedRule.color, borderColor: `${selectedRule.color}55`, background: `${selectedRule.color}18` }}>{index + 1}</span>
+                            <span style={s.xpDetailTextBlock}>
+                                <span style={s.xpDetailTitle}>{step.title[lang]}</span>
+                                <span style={s.xpDetailText}>{step.text[lang]}</span>
+                            </span>
+                        </div>
+                    ))}
                 </div>
             </MotionDiv>
         </div>
@@ -977,19 +1119,19 @@ const InviteFriendCard = ({ lang, theme, onClick, empty }) => {
 const MetricChip = ({ icon, label, value, unit, color, series, theme, onClick }) => (
     <MotionButton
         type="button"
-        whileHover={{ y: -3, scale: 1.01 }}
+        whileHover={{ scale: 1.012 }}
         whileTap={{ scale: 0.97, y: 1 }}
         transition={{ type: 'spring', stiffness: 420, damping: 30 }}
         onClick={onClick}
         style={{
             ...styles(theme).metricChip,
             background: styles(theme).isLight
-                ? `radial-gradient(180px 120px at 18% 12%, ${color}1c, transparent 70%), linear-gradient(145deg, rgba(255,255,255,0.70), rgba(255,255,255,0.40) 55%, ${color}10)`
-                : `radial-gradient(190px 130px at 18% 12%, ${color}24, transparent 72%), linear-gradient(145deg, rgba(31,44,54,0.54), rgba(16,23,29,0.46) 54%, rgba(8,12,16,0.54))`,
-            borderColor: `${color}28`,
+                ? `radial-gradient(180px 120px at 18% 12%, ${color}22, transparent 70%), radial-gradient(170px 110px at 88% 10%, rgba(${PROFILE_ACCENT.rgb},0.11), transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.76), rgba(255,255,255,0.44) 55%, ${color}12)`
+                : `radial-gradient(190px 130px at 18% 12%, ${color}32, transparent 72%), radial-gradient(170px 120px at 88% 10%, rgba(${PROFILE_ACCENT.rgb},0.13), transparent 72%), linear-gradient(145deg, rgba(32,52,65,0.66), rgba(17,29,39,0.54) 54%, rgba(8,15,21,0.58))`,
+            borderColor: styles(theme).isLight ? `${color}34` : `${color}42`,
             boxShadow: styles(theme).isLight
-                ? `0 1px 0 rgba(255,255,255,0.90) inset, 0 20px 42px -32px ${color}55`
-                : `0 1px 0 rgba(255,255,255,0.09) inset, 0 24px 50px -32px rgba(0,0,0,0.78), 0 0 32px ${color}18`,
+                ? `0 1px 0 rgba(255,255,255,0.90) inset, 0 20px 42px -32px ${color}66`
+                : `0 1px 0 rgba(255,255,255,0.10) inset, 0 24px 50px -32px rgba(0,0,0,0.78), 0 0 34px ${color}24`,
             backdropFilter: 'blur(24px) saturate(165%)',
             WebkitBackdropFilter: 'blur(24px) saturate(165%)'
         }}
@@ -1025,7 +1167,7 @@ const BodyPills = ({ body, lang, theme, onEdit }) => {
     return (
         <MotionButton
             type="button"
-            whileHover={{ y: -2, scale: 1.004 }}
+            whileHover={{ scale: 1.006 }}
             whileTap={{ scale: 0.98, y: 1 }}
             transition={{ type: 'spring', stiffness: 420, damping: 30 }}
             onClick={onEdit}
@@ -1129,15 +1271,18 @@ const styles = (theme) => {
     const panelStrong = isLight ? 'rgba(255,255,255,0.96)' : 'rgba(20,23,25,0.92)';
     const border = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)';
     const faint = isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.04)';
+    const profileAccent = PROFILE_ACCENT.hue;
+    const profileAccentRgb = PROFILE_ACCENT.rgb;
+    const profileColdRgb = PROFILE_ACCENT.coldRgb;
 
     return {
         isLight,
         container: {
             background: isLight
-                ? 'radial-gradient(900px 450px at 80% -10%, rgba(201,162,75,0.11), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(111,139,214,0.1), transparent 58%), #F4F5F7'
-                : 'radial-gradient(1000px 500px at 80% -10%, rgba(201,162,75,0.08), transparent 55%), radial-gradient(800px 400px at -10% 100%, rgba(138,124,214,0.06), transparent 55%), #0E1013',
+                ? `radial-gradient(900px 450px at 82% -10%, rgba(${profileAccentRgb},0.16), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(${profileColdRgb},0.10), transparent 58%), #F4F8FA`
+                : `radial-gradient(920px 440px at 82% -8%, rgba(${profileAccentRgb},0.15), transparent 58%), radial-gradient(760px 420px at -12% 42%, rgba(${profileColdRgb},0.10), transparent 60%), linear-gradient(180deg, #17242D 0%, #101820 48%, #0D1217 100%)`,
             display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+            fontFamily: 'inherit',
             zIndex: 3000, position: 'fixed', top: 0, left: 0, color: text
         },
         header: {
@@ -1166,10 +1311,10 @@ const styles = (theme) => {
         },
         heroColorWash: {
             position: 'absolute',
-            right: '-44px',
-            top: '-58px',
-            width: '170px',
-            height: '170px',
+            right: '-34px',
+            top: '-52px',
+            width: '188px',
+            height: '188px',
             borderRadius: '50%',
             pointerEvents: 'none'
         },
@@ -1222,17 +1367,25 @@ const styles = (theme) => {
         },
         heroIdentity: { flex: 1, minWidth: 0, textAlign: 'left' },
         heroEyebrow: {
-            fontSize: '10px', color: sub, fontWeight: 800, letterSpacing: '0.06em',
+            fontSize: '10px', color: isLight ? 'rgba(67,82,96,0.76)' : 'rgba(202,232,244,0.64)', fontWeight: 850, letterSpacing: '0.08em',
             textTransform: 'uppercase', marginBottom: '5px'
         },
         avatarWrapper: {
             width: '68px', height: '68px', borderRadius: '20px', border: '1px solid',
             padding: '5px', position: 'relative', flexShrink: 0,
-            background: faint, boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset'
+            background: isLight
+                ? `linear-gradient(145deg, rgba(255,255,255,0.70), rgba(${profileAccentRgb},0.12))`
+                : `linear-gradient(145deg, rgba(${profileAccentRgb},0.16), rgba(255,255,255,0.045))`,
+            boxShadow: isLight
+                ? `0 1px 0 rgba(255,255,255,0.82) inset, 0 14px 24px -22px rgba(${profileAccentRgb},0.62)`
+                : `0 1px 0 rgba(255,255,255,0.09) inset, 0 16px 28px -22px rgba(${profileAccentRgb},0.72)`
         },
         avatarImg: { width: '100%', height: '100%', borderRadius: '15px', objectFit: 'cover', display: 'block' },
         avatarPlaceholder: {
-            width: '100%', height: '100%', borderRadius: '15px', background: panelStrong,
+            width: '100%', height: '100%', borderRadius: '15px',
+            background: isLight
+                ? `linear-gradient(145deg, rgba(238,250,253,0.96), rgba(211,235,246,0.90))`
+                : `linear-gradient(145deg, rgba(38,62,76,0.88), rgba(15,24,32,0.92))`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '30px', fontWeight: '900', color: text
         },
@@ -1243,15 +1396,39 @@ const styles = (theme) => {
             boxShadow: '0 4px 12px rgba(0,0,0,0.4)', border: `2px solid ${isLight ? '#fff' : '#0E1013'}`, zIndex: 1
         },
         levelBadge: {
-            minWidth: '50px', padding: '8px 10px', borderRadius: '15px',
+            minWidth: '62px',
+            minHeight: '48px',
+            padding: '9px 12px',
+            borderRadius: '17px',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            border: '1px solid', flexShrink: 0, boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
+            border: `1px solid ${isLight ? 'rgba(76,135,148,0.32)' : `rgba(${profileAccentRgb},0.48)`}`,
+            flexShrink: 0,
+            background: isLight
+                ? `radial-gradient(70px 46px at 50% 0%, rgba(${profileAccentRgb},0.28), transparent 74%), linear-gradient(145deg, rgba(255,255,255,0.84), rgba(220,244,250,0.64))`
+                : `radial-gradient(78px 52px at 50% 0%, rgba(${profileAccentRgb},0.24), transparent 72%), linear-gradient(145deg, rgba(10,25,36,0.82), rgba(7,14,21,0.72))`,
+            boxShadow: isLight
+                ? `0 1px 0 rgba(255,255,255,0.86) inset, 0 12px 24px -18px rgba(${profileAccentRgb},0.56)`
+                : `0 1px 0 rgba(255,255,255,0.12) inset, 0 16px 30px -20px rgba(${profileAccentRgb},0.72), 0 0 0 1px rgba(255,255,255,0.035) inset`
         },
-        levelLabel: {fontSize: '9px', fontWeight: '850', textTransform: 'uppercase', letterSpacing: '0.06em'},
-        levelValue: {fontSize: '17px', fontWeight: '760', lineHeight: 1, fontVariantNumeric: 'tabular-nums'},
+        levelLabel: {
+            fontSize: '9px',
+            fontWeight: '900',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            color: isLight ? 'rgba(42,74,88,0.74)' : 'rgba(183,243,255,0.70)'
+        },
+        levelValue: {
+            fontSize: '22px',
+            fontWeight: '900',
+            lineHeight: 0.96,
+            fontVariantNumeric: 'tabular-nums',
+            color: isLight ? '#163241' : '#F4FCFF',
+            textShadow: isLight ? 'none' : `0 0 14px rgba(${profileAccentRgb},0.38)`
+        },
         userName: {
             fontSize: '22px', fontWeight: '820', color: text, margin: 0, lineHeight: 1.05,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            textShadow: isLight ? 'none' : `0 0 18px rgba(${profileAccentRgb},0.16)`
         },
         userMetaRow: { display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px', minWidth: 0 },
         userTitle: {
@@ -1269,13 +1446,84 @@ const styles = (theme) => {
             border: 'none', background: 'transparent', color: sub, padding: 0, margin: 0,
             display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: '800', cursor: 'pointer'
         },
-        xpTrack: { width: '100%', height: '8px', backgroundColor: faint, borderRadius: '999px', overflow: 'hidden', border: `1px solid ${border}` },
+        xpTrack: {
+            width: '100%',
+            height: '8px',
+            backgroundColor: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(183,243,255,0.07)',
+            borderRadius: '999px',
+            overflow: 'hidden',
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : `rgba(${profileAccentRgb},0.14)`}`
+        },
         xpFill: { height: '100%', borderRadius: '999px' },
-        xpGuide: { display: 'flex', flexDirection: 'column', gap: '16px' },
-        xpGuideHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '2px' },
+        xpGuide: {
+            position: 'relative',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            borderRadius: '28px',
+            padding: '2px',
+            isolation: 'isolate'
+        },
+        xpGuideGlow: {
+            position: 'absolute',
+            inset: '-90px -70px auto auto',
+            width: '210px',
+            height: '210px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(183,243,255,0.14), transparent 68%)',
+            pointerEvents: 'none',
+            zIndex: 0
+        },
+        xpGuideHeader: {
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: '10px',
+            marginBottom: '2px',
+            minWidth: 0
+        },
+        xpGuideTitleBlock: {
+            flex: '1 1 auto',
+            minWidth: 0,
+            paddingTop: '2px'
+        },
+        xpGuideTitle: {
+            color: text,
+            fontSize: '19px',
+            fontWeight: 900,
+            lineHeight: 1.12,
+            margin: 0,
+            textAlign: 'left',
+            whiteSpace: 'normal',
+            overflowWrap: 'anywhere'
+        },
         xpGuideSubtitle: { color: sub, fontSize: '13px', fontWeight: '700', marginTop: '5px' },
-        xpNextBadge: { border: '1px solid', borderRadius: '14px', padding: '10px 12px', fontSize: '13px', fontWeight: '900', flexShrink: 0 },
-        xpUnlockPanel: { background: panel, border: `1px solid ${border}`, borderRadius: '18px', padding: '15px' },
+        xpNextBadge: {
+            border: '1px solid',
+            borderRadius: '16px',
+            padding: '9px 10px',
+            fontSize: '12px',
+            fontWeight: '900',
+            flexShrink: 0,
+            minWidth: '64px',
+            textAlign: 'center',
+            background: isLight ? 'rgba(255,255,255,0.50)' : 'rgba(255,255,255,0.045)',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.08) inset'
+        },
+        xpUnlockPanel: {
+            background: isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.68), rgba(255,255,255,0.36))'
+                : 'radial-gradient(230px 150px at 100% 0%, rgba(183,243,255,0.08), transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.070), rgba(255,255,255,0.030))',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.22)' : 'rgba(190,220,235,0.12)'}`,
+            borderRadius: '20px',
+            padding: '16px',
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.86) inset, 0 16px 34px -30px rgba(15,23,42,0.22)'
+                : '0 1px 0 rgba(255,255,255,0.08) inset, 0 18px 38px -30px rgba(0,0,0,0.68)',
+            backdropFilter: 'blur(22px) saturate(165%)',
+            WebkitBackdropFilter: 'blur(22px) saturate(165%)'
+        },
         xpUnlockTitle: { color: sub, fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '6px' },
         xpUnlockText: { color: text, fontSize: '16px', fontWeight: '800' },
         xpUnlockHint: { color: sub, fontSize: '12px', fontWeight: '600', marginTop: '7px' },
@@ -1284,14 +1532,33 @@ const styles = (theme) => {
             minHeight: '78px', borderRadius: '16px', border: '1px solid',
             padding: '10px', display: 'grid', gridTemplateColumns: '24px 1fr',
             gridTemplateRows: '1fr auto', alignItems: 'center', gap: '4px 8px',
-            textAlign: 'left', cursor: 'pointer'
+            textAlign: 'left',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            color: text,
+            background: isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.56), rgba(255,255,255,0.28))'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.058), rgba(255,255,255,0.026))',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.055) inset',
+            backdropFilter: 'blur(18px) saturate(155%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(155%)'
         },
         xpRuleIcon: { fontSize: '18px', display: 'flex', alignItems: 'center' },
         xpRuleLabel: { color: text, fontSize: '13px', fontWeight: '800', lineHeight: 1.15 },
         xpRuleValue: { gridColumn: '1 / span 2', fontSize: '12px', fontWeight: '900' },
         xpRuleDetails: {
-            background: panel, border: `1px solid ${border}`,
-            borderRadius: '18px', padding: '14px', display: 'flex', alignItems: 'center', gap: '12px'
+            background: isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.66), rgba(255,255,255,0.34))'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.070), rgba(255,255,255,0.028))',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.22)' : 'rgba(190,220,235,0.12)'}`,
+            borderRadius: '20px',
+            padding: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            boxShadow: '0 1px 0 rgba(255,255,255,0.07) inset',
+            backdropFilter: 'blur(20px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(160%)'
         },
         xpRuleDetailsIcon: {
             width: '42px', height: '42px', borderRadius: '13px',
@@ -1299,9 +1566,106 @@ const styles = (theme) => {
         },
         xpDetailsTitle: { color: text, fontSize: '15px', fontWeight: '850', marginBottom: '3px' },
         xpDetailsText: { color: sub, fontSize: '12px', fontWeight: '600', lineHeight: 1.35 },
+        xpDetailsMeta: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '3px',
+            marginTop: '8px',
+            color: sub,
+            fontSize: '10.5px',
+            fontWeight: 760,
+            lineHeight: 1.28
+        },
         xpDetailsScore: {
             minWidth: '70px', display: 'flex', flexDirection: 'column',
             alignItems: 'flex-end', gap: '2px', fontSize: '14px', fontWeight: '900'
+        },
+        xpRuleExplain: {
+            borderRadius: '20px',
+            padding: '14px',
+            background: isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.58), rgba(255,255,255,0.30))'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.052), rgba(255,255,255,0.022))',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.20)' : 'rgba(190,220,235,0.10)'}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.055) inset',
+            backdropFilter: 'blur(18px) saturate(155%)',
+            WebkitBackdropFilter: 'blur(18px) saturate(155%)'
+        },
+        xpFormulaRow: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '10px',
+            paddingBottom: '11px',
+            borderBottom: `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.065)'}`,
+            marginBottom: '11px'
+        },
+        xpFormulaLabel: {
+            color: sub,
+            fontSize: '10.5px',
+            fontWeight: 900,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase'
+        },
+        xpFormulaValue: {
+            color: text,
+            fontSize: '12px',
+            fontWeight: 950,
+            fontVariantNumeric: 'tabular-nums',
+            textAlign: 'right'
+        },
+        xpProcessTitle: {
+            color: sub,
+            fontSize: '10.5px',
+            fontWeight: 900,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            marginBottom: '10px'
+        },
+        xpDetailList: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+        },
+        xpDetailItem: {
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '10px',
+            color: text,
+            fontSize: '12px',
+            fontWeight: 760,
+            lineHeight: 1.28
+        },
+        xpDetailNumber: {
+            width: '24px',
+            height: '24px',
+            borderRadius: '9px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid',
+            flexShrink: 0,
+            fontSize: '11px',
+            fontWeight: 950
+        },
+        xpDetailTextBlock: {
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '3px',
+            paddingTop: '1px'
+        },
+        xpDetailTitle: {
+            color: text,
+            fontSize: '12.5px',
+            fontWeight: 900,
+            lineHeight: 1.18
+        },
+        xpDetailText: {
+            color: sub,
+            fontSize: '11px',
+            fontWeight: 650,
+            lineHeight: 1.32
         },
         metricsScrollContainer: {
             display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -1321,7 +1685,7 @@ const styles = (theme) => {
         contentTitle: {
             fontSize: '11px',
             fontWeight: '850',
-            color: sub,
+            color: isLight ? 'rgba(60,79,93,0.74)' : 'rgba(202,232,244,0.66)',
             letterSpacing: '0.08em',
             textTransform: 'uppercase'
         },
@@ -1355,8 +1719,10 @@ const styles = (theme) => {
             gap: '3px',
             padding: '3px',
             borderRadius: '999px',
-            background: faint,
-            border: `1px solid ${border}`,
+            background: isLight
+                ? `linear-gradient(135deg, rgba(255,255,255,0.60), rgba(${profileAccentRgb},0.07))`
+                : `linear-gradient(135deg, rgba(${profileAccentRgb},0.075), rgba(255,255,255,0.028))`,
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : `rgba(${profileAccentRgb},0.15)`}`,
             flexShrink: 0
         },
         periodButton: {
@@ -1374,9 +1740,13 @@ const styles = (theme) => {
             padding: '0 8px'
         },
         periodButtonActive: {
-            background: isLight ? 'rgba(15,23,42,0.09)' : 'rgba(255,255,255,0.09)',
-            color: text,
-            boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset'
+            background: isLight
+                ? `linear-gradient(135deg, rgba(${profileAccentRgb},0.24), rgba(255,255,255,0.52))`
+                : `linear-gradient(135deg, rgba(${profileAccentRgb},0.18), rgba(${profileColdRgb},0.075))`,
+            color: isLight ? '#264757' : profileAccent,
+            boxShadow: isLight
+                ? `0 1px 0 rgba(255,255,255,0.66) inset, 0 8px 18px -15px rgba(${profileAccentRgb},0.50)`
+                : `0 1px 0 rgba(255,255,255,0.08) inset, 0 8px 18px -14px rgba(${profileAccentRgb},0.60)`
         },
         metricChip: {
             minHeight: '166px',
@@ -1419,7 +1789,7 @@ const styles = (theme) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
+            background: isLight ? 'rgba(15,23,42,0.035)' : `rgba(${profileAccentRgb},0.055)`,
             opacity: 0.88,
             flexShrink: 0
         },
@@ -1748,18 +2118,33 @@ const styles = (theme) => {
         friendLevel: { fontSize: '10px', fontWeight: '850', color: Colors.get('accent', theme), backgroundColor: 'rgba(255,215,0,0.1)', padding:'3px 7px', borderRadius:'999px' },
         friendTrack: { width: '100%', height: '5px', backgroundColor: faint, borderRadius: '999px', overflow: 'hidden' },
         backdrop: {
-            position:'fixed', inset:0, backgroundColor:'rgba(0,0,0,0.6)', backdropFilter:'blur(5px)',
-            zIndex:3000, display:'flex', alignItems:'flex-end', justifyContent:'center'
+            position:'fixed',
+            inset:0,
+            backgroundColor: isLight ? 'rgba(15,23,42,0.22)' : 'rgba(0,0,0,0.56)',
+            backdropFilter:'blur(14px) saturate(145%)',
+            WebkitBackdropFilter:'blur(14px) saturate(145%)',
+            zIndex:3000,
+            display:'flex',
+            alignItems:'flex-end',
+            justifyContent:'center'
         },
         sheet: {
             width:'100%', maxWidth:'600px',
             background: isLight
-                ? 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(244,246,249,0.96))'
-                : 'linear-gradient(180deg, rgba(20,23,26,0.98), rgba(13,15,17,0.98))',
+                ? 'radial-gradient(650px 260px at 88% -8%, rgba(183,243,255,0.20), transparent 62%), linear-gradient(180deg, rgba(255,255,255,0.74), rgba(244,246,249,0.58))'
+                : 'radial-gradient(650px 260px at 88% -8%, rgba(183,243,255,0.14), transparent 62%), linear-gradient(180deg, rgba(28,42,52,0.74), rgba(12,17,22,0.66))',
             borderTopLeftRadius:'30px', borderTopRightRadius:'30px',
-            padding:'18px 20px 32px 20px', boxShadow:'0 -10px 40px rgba(0,0,0,0.3)',
-            borderTop: `1px solid ${border}`,
-            display: 'flex', flexDirection: 'column'
+            padding:'18px 20px 32px 20px',
+            boxShadow: isLight
+                ? '0 -18px 48px -30px rgba(15,23,42,0.30), 0 1px 0 rgba(255,255,255,0.90) inset'
+                : '0 -22px 58px -26px rgba(0,0,0,0.82), 0 1px 0 rgba(255,255,255,0.11) inset',
+            borderTop: `1px solid ${isLight ? 'rgba(148,163,184,0.24)' : 'rgba(190,220,235,0.14)'}`,
+            borderLeft: `1px solid ${isLight ? 'rgba(148,163,184,0.16)' : 'rgba(190,220,235,0.08)'}`,
+            borderRight: `1px solid ${isLight ? 'rgba(148,163,184,0.16)' : 'rgba(190,220,235,0.08)'}`,
+            display: 'flex',
+            flexDirection: 'column',
+            backdropFilter: 'blur(26px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(26px) saturate(170%)'
         },
         handle: {
             width:'40px', height:'4px', backgroundColor: sub,

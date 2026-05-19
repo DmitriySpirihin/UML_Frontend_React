@@ -407,7 +407,7 @@ const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolI
 
                     {/* Center Text */}
                     <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{ fontSize: '64px', fontWeight: '200', color: textMain, fontFamily: 'Segoe UI Light', fontVariantNumeric: 'tabular-nums' }}>
+                        <div style={{ fontSize: '64px', fontWeight: '200', color: textMain, fontFamily: 'inherit', fontVariantNumeric: 'tabular-nums' }}>
                             {displayTime}
                         </div>
                         <Motion.div 
@@ -562,7 +562,7 @@ const styles = (theme, show) => ({
     bottom: '0',
     transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
     width: '100vw',
-    fontFamily: 'Segoe UI',
+    fontFamily: 'inherit',
     borderTop: 'none',
     borderTopLeftRadius: 0, borderTopRightRadius: 0,
     zIndex: 2000, overflow: 'hidden', 

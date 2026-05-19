@@ -264,6 +264,68 @@ const TrainingCardio = () => {
   const panelBorder = isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.09)';
   const mainText = Colors.get('mainText', theme);
   const subText = Colors.get('subText', theme);
+  const metricCard = (tone = currentType.color) => ({
+    marginBottom: '18px',
+    padding: '16px 16px 18px',
+    borderRadius: '22px',
+    background: isLight
+      ? 'rgba(255,255,255,0.58)'
+      : `linear-gradient(145deg, rgba(255,255,255,0.05), rgba(${trainingAccent.rgb},0.045))`,
+    border: `1px solid ${isLight ? 'rgba(15,23,42,0.065)' : 'rgba(255,255,255,0.075)'}`,
+    boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.72) inset' : `0 1px 0 rgba(255,255,255,0.06) inset, 0 12px 30px rgba(0,0,0,0.12)`,
+    boxSizing: 'border-box',
+    outline: `1px solid ${tone}10`,
+  });
+  const metricHeader = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '14px',
+    marginBottom: '16px',
+  };
+  const metricLabel = {
+    fontSize: '16px',
+    fontWeight: 800,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '9px',
+    minWidth: 0,
+    lineHeight: 1.25,
+  };
+  const metricValue = (color) => ({
+    fontSize: '17px',
+    fontWeight: 900,
+    color,
+    lineHeight: 1.15,
+    textAlign: 'right',
+    whiteSpace: 'nowrap',
+  });
+  const pickerRow = {
+    display: 'flex',
+    gap: '22px',
+    paddingTop: '2px',
+  };
+  const sliderWrap = {
+    width: '100%',
+    marginTop: '18px',
+    padding: '0 2px',
+    boxSizing: 'border-box',
+  };
+  const sliderScale = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    marginTop: '12px',
+    fontSize: '14px',
+    color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)',
+    userSelect: 'none',
+  };
+  const sliderValuePill = (color) => ({
+    fontWeight: 800,
+    color: '#fff',
+    background: `${color}24`,
+    padding: '3px 10px',
+    borderRadius: '999px',
+  });
 
   return (
     <div style={{
@@ -357,7 +419,13 @@ const TrainingCardio = () => {
                 background: 'rgba(255,255,255,0.15)',
                 border: 'none',
                 cursor: 'pointer',
-                backdropFilter: 'blur(8px)'
+                backdropFilter: 'blur(8px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                lineHeight: 0,
+                flexShrink: 0,
               }}
             >
               <IoTrash size={26} color="#ff5252" />
@@ -401,32 +469,17 @@ const TrainingCardio = () => {
           </h2>
           
           {/* Distance Input */}
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              marginBottom: '12px',
-              alignItems: 'center'
-            }}>
-              <label style={{ 
-                fontSize: '16px', 
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
+          <div style={metricCard(currentType.color)}>
+            <div style={metricHeader}>
+              <label style={metricLabel}>
                 <TbRoute size={18} color={currentType.color} />
                 {langIndex === 0 ? 'Дистанция' : 'Distance'}
               </label>
-              <span style={{ 
-                fontSize: '17px', 
-                fontWeight: '700', 
-                color: currentType.color
-              }}>
+              <span style={metricValue(currentType.color)}>
                 {km} km {meters} m
               </span>
             </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={pickerRow}>
               <div style={{ flex: 1 }}>
                 <ScrollPicker 
                   items={kmRange.map(k => k.toString())} 
@@ -451,32 +504,17 @@ const TrainingCardio = () => {
           </div>
           
           {/* Duration Input */}
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              marginBottom: '12px',
-              alignItems: 'center'
-            }}>
-              <label style={{ 
-                fontSize: '16px', 
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
+          <div style={metricCard(currentType.color)}>
+            <div style={metricHeader}>
+              <label style={metricLabel}>
                 <TbClock size={18} color={currentType.color} />
                 {langIndex === 0 ? 'Длительность' : 'Duration'}
               </label>
-              <span style={{ 
-                fontSize: '17px', 
-                fontWeight: '700', 
-                color: currentType.color
-              }}>
+              <span style={metricValue(currentType.color)}>
                 {hours}h {minutes.toString().padStart(2, '0')}m
               </span>
             </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
+            <div style={pickerRow}>
               <div style={{ flex: 1 }}>
                 <ScrollPicker 
                   items={hoursRange.map(h => h.toString())} 
@@ -501,32 +539,17 @@ const TrainingCardio = () => {
           </div>
           
           {/* Elevation Slider */}
-          <div style={{ marginBottom: '24px' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        marginBottom: '12px',
-        alignItems: 'center'
-      }}>
-        <label style={{ 
-          fontSize: '16px', 
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
+          <div style={metricCard('#FF9E6D')}>
+      <div style={metricHeader}>
+        <label style={metricLabel}>
           <TbMountain size={18} color="#FF9E6D" />
           {langIndex === 0 ? 'Набор высоты' : 'Elevation'}
         </label>
-        <span style={{ 
-          fontSize: '17px', 
-          fontWeight: '700', 
-          color: '#FF9E6D'
-        }}>
+        <span style={metricValue('#FF9E6D')}>
           {elevation} m
         </span>
       </div>
-      <div style={{ width: '100%', marginTop: '12px' }}>
+      <div style={sliderWrap}>
         <Slider
           value={elevation}
           onChange={(_, newValue) => setElevation(newValue)}
@@ -537,22 +560,9 @@ const TrainingCardio = () => {
           sx={getSliderSx('#FF9E6D', theme)}
           valueLabelDisplay="off"
         />
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: '8px',
-          fontSize: '14px',
-          color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)',
-          userSelect: 'none'
-        }}>
+        <div style={sliderScale}>
           <span>0</span>
-          <span style={{ 
-            fontWeight: '700', 
-            color: '#fff',
-            background: `#FF9E6D20`,
-            padding: '2px 8px',
-            borderRadius: '12px'
-          }}>
+          <span style={sliderValuePill('#FF9E6D')}>
             {elevation} m
           </span>
           <span>500</span>
@@ -561,32 +571,17 @@ const TrainingCardio = () => {
     </div>
           
           {/* Heart Rate Slider */}
-          <div style={{ marginBottom: '24px' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        marginBottom: '12px',
-        alignItems: 'center'
-      }}>
-        <label style={{ 
-          fontSize: '16px', 
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
+          <div style={metricCard('#FF6B9D')}>
+      <div style={metricHeader}>
+        <label style={metricLabel}>
           <TbHeartbeat size={18} color="#FF6B9D" />
           {langIndex === 0 ? 'Пульс' : 'Heart Rate'}
         </label>
-        <span style={{ 
-          fontSize: '17px', 
-          fontWeight: '700', 
-          color: '#FF6B9D'
-        }}>
+        <span style={metricValue('#FF6B9D')}>
           {heartRate} bpm
         </span>
       </div>
-      <div style={{ width: '100%', marginTop: '12px' }}>
+      <div style={sliderWrap}>
         <Slider
           value={heartRate}
           onChange={(_, newValue) => setHeartRate(newValue)}
@@ -597,22 +592,9 @@ const TrainingCardio = () => {
           sx={getSliderSx('#FF6B9D', theme)}
           valueLabelDisplay="off"
         />
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: '8px',
-          fontSize: '14px',
-          color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)',
-          userSelect: 'none'
-        }}>
+        <div style={sliderScale}>
           <span>60</span>
-          <span style={{ 
-            fontWeight: '700', 
-            color: '#fff',
-            background: `#FF6B9D20`,
-            padding: '2px 8px',
-            borderRadius: '12px'
-          }}>
+          <span style={sliderValuePill('#FF6B9D')}>
             {heartRate} bpm
           </span>
           <span>180</span>
@@ -621,20 +603,9 @@ const TrainingCardio = () => {
     </div>
     
     {/* Cadence Slider - REPLACED */}
-    <div style={{ marginBottom: '24px' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        marginBottom: '12px',
-        alignItems: 'center'
-      }}>
-        <label style={{ 
-          fontSize: '16px', 
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
+    <div style={metricCard('#4CC9F0')}>
+      <div style={metricHeader}>
+        <label style={metricLabel}>
           <TbClockBolt size={18} color="#4CC9F0" />
           {langIndex === 0 ? 'Каденс' : 'Cadence'}
           <span style={{ 
@@ -649,15 +620,11 @@ const TrainingCardio = () => {
             {selectedType === 'RUNNING' ? 'spm' : selectedType === 'CYCLING' ? 'rpm' : 'spm'}
           </span>
         </label>
-        <span style={{ 
-          fontSize: '17px', 
-          fontWeight: '700', 
-          color: '#4CC9F0'
-        }}>
+        <span style={metricValue('#4CC9F0')}>
           {cadence}
         </span>
       </div>
-      <div style={{ width: '100%', marginTop: '12px' }}>
+      <div style={sliderWrap}>
         <Slider
           value={cadence}
           onChange={(_, newValue) => setCadence(newValue)}
@@ -668,22 +635,9 @@ const TrainingCardio = () => {
           sx={getSliderSx('#4CC9F0', theme)}
           valueLabelDisplay="off"
         />
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: '8px',
-          fontSize: '14px',
-          color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)',
-          userSelect: 'none'
-        }}>
+        <div style={sliderScale}>
           <span>50</span>
-          <span style={{ 
-            fontWeight: '700', 
-            color: '#fff',
-            background: `#4CC9F020`,
-            padding: '2px 8px',
-            borderRadius: '12px'
-          }}>
+          <span style={sliderValuePill('#4CC9F0')}>
             {cadence}
           </span>
           <span>200</span>
@@ -692,20 +646,9 @@ const TrainingCardio = () => {
     </div>
     
     {/* RPE Slider - REPLACED (with special value display) */}
-    <div style={{ marginBottom: '24px' }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        marginBottom: '12px',
-        alignItems: 'center'
-      }}>
-        <label style={{ 
-          fontSize: '16px', 
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
+    <div style={metricCard('#FFA500')}>
+      <div style={metricHeader}>
+        <label style={metricLabel}>
           <TbFlame size={18} color="#FFA500" />
           {langIndex === 0 ? 'Воспр. (RPE)' : 'Effort (RPE)'}
         </label>
@@ -720,7 +663,7 @@ const TrainingCardio = () => {
           {rpe}/10
         </span>
       </div>
-      <div style={{ width: '100%', marginTop: '12px' }}>
+      <div style={sliderWrap}>
         <Slider
           value={rpe}
           onChange={(_, newValue) => setRpe(newValue)}
@@ -731,22 +674,9 @@ const TrainingCardio = () => {
           sx={getSliderSx('#FFA500', theme)}
           valueLabelDisplay="off"
         />
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginTop: '8px',
-          fontSize: '14px',
-          color: theme === 'dark' ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.7)',
-          userSelect: 'none'
-        }}>
+        <div style={sliderScale}>
           <span>1</span>
-          <span style={{ 
-            fontWeight: '700', 
-            color: '#fff',
-            background: `#FFA50020`,
-            padding: '2px 8px',
-            borderRadius: '12px'
-          }}>
+          <span style={sliderValuePill('#FFA500')}>
             {rpe}/10
           </span>
           <span>10</span>
@@ -766,7 +696,7 @@ const TrainingCardio = () => {
           
           
           {/* Notes */}
-          <div>
+          <div style={{ ...metricCard('#A0A0A0'), marginBottom: 0 }}>
             <label style={{ 
               fontSize: '16px', 
               fontWeight: '600',

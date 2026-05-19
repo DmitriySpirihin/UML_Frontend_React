@@ -4,12 +4,10 @@ import {
     FaBrain,
     FaBullseye,
     FaCalculator,
-    FaChartLine,
     FaChevronRight,
     FaClock,
     FaFire,
     FaPalette,
-    FaMedal,
     FaPuzzlePiece,
     FaStar
 } from 'react-icons/fa';
@@ -28,8 +26,6 @@ const MODE_TONES = [
     { hue: '#2FD6BD', soft: 'rgba(47,214,189,0.16)', ring: 'rgba(47,214,189,0.34)' },
     { hue: '#D49A5C', soft: 'rgba(212,154,92,0.13)', ring: 'rgba(212,154,92,0.26)' }
 ];
-
-const EASE = [0.2, 0.8, 0.2, 1];
 
 const MentalMain = () => {
     const [theme, setThemeState] = useState('dark');
@@ -176,27 +172,6 @@ const MentalMain = () => {
                     ))}
                 </Motion.section>
 
-                <Motion.button
-                    type="button"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.28, ease: EASE, delay: 0.08 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={() => setPage('MentalProgress')}
-                    style={s.progressLink}
-                >
-                    <span style={s.progressLinkIcon}>
-                        <FaChartLine size={15} />
-                    </span>
-                    <span style={s.progressLinkCopy}>
-                        <strong>{langIndex === 0 ? 'Общий прогресс' : 'Overall progress'}</strong>
-                        <span>{langIndex === 0 ? 'Отдельная страница с рекордами по режимам' : 'Separate page with mode records'}</span>
-                    </span>
-                    <span style={s.totalBadge}>
-                        <FaMedal size={12} />
-                        <span>{formatScore(summary.totalScore)}</span>
-                    </span>
-                </Motion.button>
             </div>
         </div>
     );
@@ -243,30 +218,6 @@ function MetricPill({ icon, label, value, styleObj }) {
                 <span>{label}</span>
                 <strong>{value}</strong>
             </span>
-        </div>
-    );
-}
-
-function ProgressRow({ Icon, label, value, max, tone, styleObj }) {
-    const progress = max > 0 ? Math.max(0.04, Math.min(1, value / max)) : 0.04;
-
-    return (
-        <div style={styleObj.progressCard(tone)}>
-            <div style={styleObj.progressCardTop}>
-                <span style={styleObj.progressIcon(tone)}>
-                    <Icon size={13} />
-                </span>
-                <span style={styleObj.progressName}>{label}</span>
-                <strong style={styleObj.progressValue}>{formatScore(value)}</strong>
-            </div>
-            <div style={styleObj.progressTrack}>
-                <Motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress * 100}%` }}
-                    transition={{ duration: 0.8, ease: EASE }}
-                    style={{ ...styleObj.progressFill, background: tone.hue, boxShadow: `0 0 16px ${tone.hue}55` }}
-                />
-            </div>
         </div>
     );
 }
@@ -359,7 +310,7 @@ const styles = (theme, fontSize = 0) => {
         pageTitle: {
             color: text,
             fontFamily: '"SF Pro Rounded", "Nunito Sans", Nunito, "SF Pro Display", -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", system-ui, sans-serif',
-            fontSize: fontSize === 0 ? 21 : 24,
+            fontSize: 24,
             fontWeight: 700,
             letterSpacing: 0,
             lineHeight: 1.05,

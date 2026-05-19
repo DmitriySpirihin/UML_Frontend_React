@@ -110,7 +110,7 @@ export function LoadDonut({
                         x={cx} y={cy - 5}
                         textAnchor="middle" dominantBaseline="central"
                         fill={palette.mainText}
-                        style={{ fontSize: '32px', fontWeight: '800', fontFamily: 'Segoe UI, sans-serif' }}
+                        style={{ fontSize: '32px', fontWeight: '800', fontFamily: 'inherit' }}
                       >
                         {tonnageInTons}
                       </text>

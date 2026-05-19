@@ -1,4 +1,4 @@
-import { AppData } from "../../StaticClasses/AppData";
+import { addSleepSessionToLog } from '../../StaticClasses/SleepLogHelper';
 /*
  sleepingLog = {
     '2026-01-02':{
@@ -11,17 +11,11 @@ import { AppData } from "../../StaticClasses/AppData";
 */
 
 export const addDayToSleepingLog = (dateString, duration, bedTime, mood, note, sleepType = 'night') => {
-  const entry = {
+  addSleepSessionToLog(dateString, {
     bedtime: bedTime,
     duration: duration,
     mood: mood,
     note: note ?? '',
     type: sleepType === 'day' ? 'day' : 'night'
-  };
-
-  // This will add a new entry or replace an existing one for the same dateString
-  AppData.sleepingLog = {
-    ...AppData.sleepingLog,
-    [dateString]: entry
-  };
+  });
 };

@@ -185,7 +185,7 @@ const TrainingMain = () => {
       description: langIndex === 0 ? 'Дистанция, темп, пульс' : 'Distance, pace, heart rate',
       icon: <FaRunning size={22}/>,
       color: '#F43F5E',
-      glow: 'rgba(244,63,94,0.26)'
+      glow: 'rgba(244,63,94,0.10)'
     },
     {
       value: 'CYCLING',
@@ -193,7 +193,7 @@ const TrainingMain = () => {
       description: langIndex === 0 ? 'Скорость, набор, каденс' : 'Speed, elevation, cadence',
       icon: <FaBicycle size={22}/>,
       color: '#22C55E',
-      glow: 'rgba(34,197,94,0.24)'
+      glow: 'rgba(34,197,94,0.10)'
     },
     {
       value: 'SWIMMING',
@@ -201,7 +201,7 @@ const TrainingMain = () => {
       description: langIndex === 0 ? 'Метры, время, ощущение' : 'Meters, time, effort',
       icon: <FaSwimmer size={22}/>,
       color: '#38BDF8',
-      glow: 'rgba(56,189,248,0.24)'
+      glow: 'rgba(56,189,248,0.10)'
     }
   ], [langIndex, strengthAccent.hue, strengthAccent.glow]);
 
@@ -495,7 +495,7 @@ const TrainingMain = () => {
                         if (isChoosen) { cellBg = activeAccent; cellColor = '#ffffff'; }
                         const isToday = today === day && curMonth === cellMonth;
                         return(
-                          <td key={j} style={{padding: '3px'}}>
+                          <td key={j} style={{padding: '2px 1px'}}>
                             {day ? (
                               <div style={{
                                 ...styles(theme).cell,
@@ -504,7 +504,7 @@ const TrainingMain = () => {
                                 boxShadow: isChoosen ? `0 12px 28px rgba(${buildSectionAccent(activeAccent).rgb}, 0.22)` : 'none',
                               }}
                               onClick={() => {setCurrentDate(new Date(Date.UTC(cellYear, cellMonth, day)));playEffects(clickSound);}} >
-                                <span style={styles(theme).cellDayNumber(trAmount > 0)}>{day}</span>
+                                <span style={styles(theme).cellDayNumber}>{day}</span>
                                 {/* ICONS FOR DIFFERENT TYPES */}
                                 {trAmount > 0 &&  (
                                   <div style={styles(theme).cellIconRail}>
@@ -1020,7 +1020,7 @@ const TrainingMain = () => {
               </div>
               <MdDone size={20} />
             </Motion.div>
-            <div style={{marginBottom: '20px', width: '100%'}}>
+            <div style={styles(theme).sheetFieldBlock}>
               <PickerLabel label={langIndex === 0 ? "Программа" : "Program"} theme={theme} />
               <select
                 value={programId}
@@ -1032,7 +1032,7 @@ const TrainingMain = () => {
                 ))}
               </select>
             </div>
-            <div style={{marginBottom: '20px', width: '100%'}}>
+            <div style={styles(theme).sheetFieldBlock}>
               <PickerLabel label={langIndex === 0 ? "День" : "Day"} theme={theme} />
               <select
                 value={dayIndex}
@@ -1044,7 +1044,7 @@ const TrainingMain = () => {
                 ))}
               </select>
             </div>
-            <div style={{backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.03)', borderRadius: '20px', padding: '15px', marginBottom: '20px'}}>
+            <div style={styles(theme).timePickerPanel}>
               <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'10px', opacity:0.7}}>
                 <MdAccessTime />
                 <span style={{fontSize:'12px', fontWeight:'700', textTransform:'uppercase', letterSpacing:'1px'}}>{langIndex === 0 ? "Время" : "Time"}</span>
@@ -1153,12 +1153,18 @@ const PickerLabel = ({label, theme}) => (
 );
 
 const ActionButton = ({icon, label, onClick, theme, isPrimary, isDestructive}) => {
-  let bg = theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)';
+  const isDark = theme === 'dark' || theme === 'specialdark';
+  const accent = buildSectionAccent(AppData.trainingAccentColor || TRAINING_ACCENT, TRAINING_ACCENT);
+  let bg = isDark
+    ? `linear-gradient(145deg, rgba(${accent.rgb},0.13), rgba(255,255,255,0.052))`
+    : `linear-gradient(145deg, rgba(255,255,255,0.72), rgba(${accent.rgb},0.08))`;
+  let border = isDark ? '1px solid rgba(190,220,235,0.12)' : '1px solid rgba(15,23,42,0.08)';
   let color = Colors.get('mainText', theme);
   if (isPrimary) {
     bg = isDestructive
       ? 'linear-gradient(135deg, #EF4444, #DC2626)'
-      : 'linear-gradient(135deg, #14B8A6, #10B981)';
+      : `linear-gradient(135deg, rgba(20,184,166,0.92), rgba(16,185,129,0.92))`;
+    border = isDestructive ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(190,255,238,0.26)';
     color = '#fff';
   }
   return (
@@ -1168,9 +1174,16 @@ const ActionButton = ({icon, label, onClick, theme, isPrimary, isDestructive}) =
       style={{
         flex: 1, height: '56px', borderRadius: '16px',
         background: bg,
+        border,
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
         color: color, cursor: 'pointer', fontWeight: '600', fontSize: '16px',
-        boxShadow: isPrimary ? `0 12px 26px ${isDestructive ? 'rgba(239,68,68,0.22)' : 'rgba(16,185,129,0.22)'}` : 'none'
+        boxShadow: isPrimary
+          ? `0 1px 0 rgba(255,255,255,0.16) inset, 0 12px 26px ${isDestructive ? 'rgba(239,68,68,0.22)' : 'rgba(16,185,129,0.22)'}`
+          : '0 1px 0 rgba(255,255,255,0.08) inset',
+        backdropFilter: 'blur(18px) saturate(155%)',
+        WebkitBackdropFilter: 'blur(18px) saturate(155%)',
+        boxSizing: 'border-box',
+        fontFamily: 'inherit'
       }}
     >
       {icon}
@@ -1256,6 +1269,15 @@ const styles = (theme, fSize = 0) => {
   const subText = Colors.get('subText', theme);
   const background = Colors.get('background', theme);
   const trainingAccent = buildSectionAccent(AppData.trainingAccentColor || TRAINING_ACCENT, TRAINING_ACCENT);
+  const glassSurface = isDark
+    ? `linear-gradient(145deg, rgba(${trainingAccent.rgb},0.15), rgba(255,255,255,0.052) 46%, rgba(255,255,255,0.026))`
+    : `linear-gradient(145deg, rgba(255,255,255,0.78), rgba(${trainingAccent.rgb},0.10) 58%, rgba(255,255,255,0.58))`;
+  const glassBorder = isDark ? 'rgba(190,220,235,0.15)' : 'rgba(15,23,42,0.085)';
+  const glassInset = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.72)';
+  const glassShadow = isDark
+    ? `0 1px 0 ${glassInset} inset, 0 18px 42px -30px rgba(0,0,0,0.78), 0 16px 34px -34px rgba(${trainingAccent.rgb},0.62)`
+    : `0 1px 0 ${glassInset} inset, 0 16px 34px -28px rgba(15,23,42,0.20), 0 14px 28px -31px rgba(${trainingAccent.rgb},0.42)`;
+  const glassFilter = 'blur(24px) saturate(165%)';
 
   return {
     container: {
@@ -1322,8 +1344,8 @@ const styles = (theme, fSize = 0) => {
     },
     pageTitle: {
       color: mainText,
-      fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: fSize === 0 ? '25px' : '27px',
+      fontFamily: 'inherit',
+      fontSize: '24px',
       fontWeight: 700,
       letterSpacing: 0,
       lineHeight: 1.05,
@@ -1341,8 +1363,8 @@ const styles = (theme, fSize = 0) => {
       position: 'relative',
       width: '100%',
       maxWidth: '600px',
-      minHeight: '174px',
-      padding: '18px 18px 16px',
+      minHeight: '206px',
+      padding: '20px 18px 22px',
       borderRadius: '30px',
       overflow: 'hidden',
       boxSizing: 'border-box',
@@ -1365,8 +1387,8 @@ const styles = (theme, fSize = 0) => {
     heroCopy: {
       position: 'relative',
       zIndex: 1,
-      width: 'calc(100% - min(31vw, 156px))',
-      minWidth: '212px',
+      width: 'calc(100% - min(33vw, 164px))',
+      minWidth: '198px',
     },
     eyebrow: {
       marginBottom: '5px',
@@ -1394,13 +1416,13 @@ const styles = (theme, fSize = 0) => {
     heroStats: {
       display: 'grid',
       gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-      gap: '7px',
+      gap: '6px',
       width: '100%',
-      maxWidth: '286px',
+      maxWidth: '274px',
     },
     heroStat: {
-      minHeight: '50px',
-      padding: '7px 8px',
+      minHeight: '56px',
+      padding: '8px 7px',
       borderRadius: '15px',
       display: 'flex',
       flexDirection: 'column',
@@ -1433,11 +1455,11 @@ const styles = (theme, fSize = 0) => {
     },
     heroImage: {
       position: 'absolute',
-      right: '4px',
-      top: '50%',
-      transform: 'translateY(-44%)',
-      width: 'min(31vw, 150px)',
-      maxHeight: '154px',
+      right: '0px',
+      top: '48%',
+      transform: 'translateY(-46%)',
+      width: 'min(33vw, 160px)',
+      maxHeight: '176px',
       objectFit: 'contain',
       filter: 'drop-shadow(0 20px 32px rgba(0,0,0,0.45))',
       opacity: isDark ? 1 : 0.92,
@@ -1536,6 +1558,7 @@ const styles = (theme, fSize = 0) => {
     },
     table: {
       width: '100%',
+      tableLayout: 'fixed',
       borderCollapse: 'separate',
       borderSpacing: '0 4px',
       textAlign: 'center',
@@ -1555,11 +1578,11 @@ const styles = (theme, fSize = 0) => {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      width: 'min(12.5vw, 48px)',
-      height: 'min(12.5vw, 48px)',
-      minWidth: '38px',
-      minHeight: '38px',
-      borderRadius: '15px',
+      width: 'clamp(36px, 10.8vw, 44px)',
+      height: 'clamp(36px, 10.8vw, 44px)',
+      minWidth: 0,
+      minHeight: 0,
+      borderRadius: '14px',
       fontSize: '14px',
       fontWeight: 800,
       transition: 'all 0.2s ease-in-out',
@@ -1572,31 +1595,31 @@ const styles = (theme, fSize = 0) => {
       boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.045)' : 'inset 0 1px 0 rgba(255,255,255,0.86)',
       overflow: 'hidden',
     },
-    cellDayNumber: (hasMarkers = false) => ({
+    cellDayNumber: {
       display: 'block',
       position: 'absolute',
       left: '50%',
-      top: hasMarkers ? '7px' : '50%',
-      transform: hasMarkers ? 'translateX(-50%)' : 'translate(-50%, -50%)',
+      top: '42%',
+      transform: 'translate(-50%, -50%)',
       height: '14px',
       lineHeight: 1,
       fontVariantNumeric: 'tabular-nums',
-      fontSize: hasMarkers ? '13px' : '14px',
-      zIndex: 2,
-    }),
+      fontSize: '14px',
+      zIndex: 3,
+    },
     cellIconRail: {
       position: 'absolute',
       left: '50%',
-      bottom: '2px',
-      transform: 'translateX(-50%) scale(0.86)',
+      bottom: '1px',
+      transform: 'translateX(-50%) scale(0.74)',
       transformOrigin: 'center bottom',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: '1px',
-      minHeight: '12px',
-      maxWidth: '82%',
-      padding: '1px 5px',
+      minHeight: '11px',
+      maxWidth: '78%',
+      padding: '0 4px',
       borderRadius: '999px',
       background: isDark ? 'rgba(5,14,20,0.42)' : 'rgba(255,255,255,0.76)',
       border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)'}`,
@@ -1891,17 +1914,21 @@ const styles = (theme, fSize = 0) => {
       maxHeight: '88vh',
       overflowY: 'auto',
       background: isDark
-        ? 'linear-gradient(180deg, rgba(28,31,35,0.98), rgba(17,19,22,0.98))'
-        : Colors.get('background', theme),
+        ? `radial-gradient(520px 260px at 75% -8%, rgba(${trainingAccent.rgb},0.18), transparent 62%),
+           linear-gradient(180deg, rgba(30,45,64,0.82), rgba(22,35,51,0.74) 48%, rgba(12,20,30,0.82))`
+        : `radial-gradient(520px 260px at 75% -8%, rgba(${trainingAccent.rgb},0.16), transparent 62%),
+           linear-gradient(180deg, rgba(255,255,255,0.82), rgba(245,250,252,0.70))`,
       borderTopLeftRadius: '30px',
       borderTopRightRadius: '30px',
       padding: '20px 25px 40px',
-      boxShadow: '0 -18px 54px rgba(0,0,0,0.34)',
+      boxShadow: isDark
+        ? `0 -22px 58px rgba(0,0,0,0.42), 0 1px 0 rgba(255,255,255,0.10) inset, 0 -1px 0 rgba(${trainingAccent.rgb},0.18) inset`
+        : `0 -22px 58px rgba(15,23,42,0.18), 0 1px 0 rgba(255,255,255,0.82) inset`,
       position: 'relative',
       zIndex: 3001,
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}`,
+      backdropFilter: 'blur(30px) saturate(175%)',
+      WebkitBackdropFilter: 'blur(30px) saturate(175%)',
+      borderTop: `1px solid ${isDark ? 'rgba(190,220,235,0.18)' : 'rgba(255,255,255,0.74)'}`,
       boxSizing: 'border-box',
     },
     modalTitle: {
@@ -1951,8 +1978,8 @@ const styles = (theme, fSize = 0) => {
       padding: '12px 14px',
       border: `1px solid ${isPrimary ? 'rgba(16,185,129,0.42)' : 'rgba(59,130,246,0.42)'}`,
       background: isPrimary
-        ? 'linear-gradient(135deg, rgba(16,185,129,0.22), rgba(20,184,166,0.08))'
-        : 'linear-gradient(135deg, rgba(59,130,246,0.20), rgba(37,99,235,0.07))',
+        ? `radial-gradient(220px 92px at 18% 20%, rgba(255,255,255,0.10), transparent 62%), linear-gradient(135deg, rgba(16,185,129,0.24), rgba(20,184,166,0.08))`
+        : `radial-gradient(220px 92px at 18% 20%, rgba(255,255,255,0.10), transparent 62%), linear-gradient(135deg, rgba(59,130,246,0.22), rgba(37,99,235,0.07))`,
       color: mainText,
       display: 'flex',
       alignItems: 'center',
@@ -1961,7 +1988,9 @@ const styles = (theme, fSize = 0) => {
       cursor: 'pointer',
       boxSizing: 'border-box',
       fontFamily: 'inherit',
-      boxShadow: isPrimary ? '0 16px 36px rgba(16,185,129,0.14)' : '0 16px 36px rgba(59,130,246,0.12)',
+      boxShadow: isPrimary ? '0 1px 0 rgba(255,255,255,0.08) inset, 0 16px 36px rgba(16,185,129,0.14)' : '0 1px 0 rgba(255,255,255,0.08) inset, 0 16px 36px rgba(59,130,246,0.12)',
+      backdropFilter: glassFilter,
+      WebkitBackdropFilter: glassFilter,
     }),
     strengthChoiceIcon: (isPrimary) => ({
       width: '42px',
@@ -1998,30 +2027,30 @@ const styles = (theme, fSize = 0) => {
     },
     typeGrid: {
       display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '12px',
+      gridTemplateColumns: '1fr',
+      gap: '10px',
       width: '100%',
     },
     typeCard: (type) => ({
-      minHeight: '104px',
-      borderRadius: '22px',
-      padding: '14px',
+      minHeight: '74px',
+      borderRadius: '20px',
+      padding: '12px 14px',
       background: isDark
-        ? `linear-gradient(145deg, ${type.color}1e, rgba(255,255,255,0.045))`
-        : `linear-gradient(145deg, ${type.color}16, rgba(255,255,255,0.88))`,
-      border: `1px solid ${type.color}36`,
+        ? `linear-gradient(135deg, ${type.color}16, rgba(255,255,255,0.04))`
+        : `linear-gradient(135deg, ${type.color}12, rgba(255,255,255,0.88))`,
+      border: `1px solid ${type.color}2b`,
       display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
       gap: '12px',
       color: type.color,
       cursor: 'pointer',
-      boxShadow: `0 16px 34px ${type.glow || 'rgba(0,0,0,0.12)'}`,
+      boxShadow: `0 10px 24px ${type.glow || 'rgba(0,0,0,0.08)'}, inset 0 1px 0 rgba(255,255,255,0.07)`,
       boxSizing: 'border-box',
     }),
     typeIconBox: (type) => ({
-      width: '42px',
-      height: '42px',
+      width: '44px',
+      height: '44px',
       borderRadius: '16px',
       display: 'flex',
       alignItems: 'center',
@@ -2029,6 +2058,7 @@ const styles = (theme, fSize = 0) => {
       backgroundColor: `${type.color}18`,
       border: `1px solid ${type.color}30`,
       color: type.color,
+      flexShrink: 0,
     }),
     typeLabel: {
       color: mainText,
@@ -2042,6 +2072,7 @@ const styles = (theme, fSize = 0) => {
       fontSize: '11px',
       fontWeight: 700,
       lineHeight: 1.25,
+      maxWidth: '220px',
     },
     quickStartCard: {
       display: 'flex',
@@ -2050,12 +2081,14 @@ const styles = (theme, fSize = 0) => {
       width: '100%',
       padding: '16px',
       borderRadius: '24px',
-      background: `linear-gradient(135deg, rgba(${trainingAccent.rgb},0.22), rgba(${trainingAccent.rgb},0.08))`,
-      border: `1px solid ${trainingAccent.ring}`,
+      background: `radial-gradient(220px 120px at 14% 14%, rgba(255,255,255,${isDark ? 0.10 : 0.68}), transparent 66%), ${glassSurface}`,
+      border: `1px solid ${isDark ? `rgba(${trainingAccent.rgb},0.28)` : `rgba(${trainingAccent.rgb},0.22)`}`,
       color: trainingAccent.hue,
       cursor: 'pointer',
       boxSizing: 'border-box',
-      boxShadow: `0 16px 38px rgba(${trainingAccent.rgb},0.16)`,
+      boxShadow: glassShadow,
+      backdropFilter: glassFilter,
+      WebkitBackdropFilter: glassFilter,
     },
     quickStartIcon: {
       width: '48px',
@@ -2064,19 +2097,49 @@ const styles = (theme, fSize = 0) => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: `rgba(${trainingAccent.rgb},0.16)`,
+      background: isDark
+        ? `linear-gradient(145deg, rgba(${trainingAccent.rgb},0.24), rgba(255,255,255,0.06))`
+        : `linear-gradient(145deg, rgba(${trainingAccent.rgb},0.16), rgba(255,255,255,0.60))`,
+      border: `1px solid rgba(${trainingAccent.rgb},${isDark ? 0.28 : 0.20})`,
       color: trainingAccent.hue,
       flexShrink: 0,
+      boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset',
     },
     programStartBlock: {
       marginTop: '14px',
       padding: '16px',
       borderRadius: '24px',
-      backgroundColor: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(15,23,42,0.035)',
-      border: `1px solid ${isDark ? 'rgba(255,255,255,0.075)' : 'rgba(15,23,42,0.075)'}`,
+      background: glassSurface,
+      border: `1px solid ${glassBorder}`,
       display: 'flex',
       flexDirection: 'column',
       gap: '14px',
+      boxSizing: 'border-box',
+      boxShadow: glassShadow,
+      backdropFilter: glassFilter,
+      WebkitBackdropFilter: glassFilter,
+    },
+    sheetFieldBlock: {
+      width: '100%',
+      marginBottom: '16px',
+      padding: '12px',
+      borderRadius: '22px',
+      background: glassSurface,
+      border: `1px solid ${glassBorder}`,
+      boxShadow: glassShadow,
+      backdropFilter: glassFilter,
+      WebkitBackdropFilter: glassFilter,
+      boxSizing: 'border-box',
+    },
+    timePickerPanel: {
+      background: glassSurface,
+      border: `1px solid ${glassBorder}`,
+      borderRadius: '24px',
+      padding: '15px',
+      marginBottom: '20px',
+      boxShadow: glassShadow,
+      backdropFilter: glassFilter,
+      WebkitBackdropFilter: glassFilter,
       boxSizing: 'border-box',
     },
     programStartHeader: {
@@ -2112,8 +2175,10 @@ const styles = (theme, fSize = 0) => {
       width: '100%',
       minHeight: '48px',
       borderRadius: '16px',
-      border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.12)'}`,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.9)',
+      border: `1px solid ${isDark ? 'rgba(190,220,235,0.12)' : 'rgba(15,23,42,0.10)'}`,
+      background: isDark
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035))'
+        : 'linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,255,255,0.58))',
       color: mainText,
       padding: '0 14px',
       fontSize: '14px',
@@ -2121,6 +2186,9 @@ const styles = (theme, fSize = 0) => {
       outline: 'none',
       boxSizing: 'border-box',
       fontFamily: 'inherit',
+      boxShadow: '0 1px 0 rgba(255,255,255,0.10) inset',
+      backdropFilter: 'blur(18px) saturate(150%)',
+      WebkitBackdropFilter: 'blur(18px) saturate(150%)',
     },
   };
 };

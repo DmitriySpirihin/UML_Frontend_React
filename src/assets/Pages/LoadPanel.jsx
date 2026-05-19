@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData, fillEmptyDays } from '../StaticClasses/AppData';
-import { theme$, lang$, setPage, setTheme } from '../StaticClasses/HabitsBus';
+import { theme$, lang$, setPage, setTheme, setLang as setAppLang } from '../StaticClasses/HabitsBus';
 import Colors from '../StaticClasses/Colors';
 import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud, isNewUserPreviewMode, loadData } from '../StaticClasses/SaveHelper';
@@ -14,6 +14,17 @@ const MotionDiv = motion.div;
 const MotionImg = motion.img;
 const LOAD_ACCENT = '#8FA6C8';
 
+function getPreviewLanguageIndex() {
+  if (typeof window === 'undefined') return null;
+
+  const params = new URLSearchParams(window.location.search);
+  const requestedLang = (params.get('lang') || params.get('language') || '').toLowerCase();
+
+  if (['en', 'eng', 'english', '1'].includes(requestedLang)) return 1;
+  if (['ru', 'rus', 'russian', '0'].includes(requestedLang)) return 0;
+  return null;
+}
+
 function LoadPanel() {
   const [theme, setThemeState] = useState('dark');
   const [lang, setLang] = useState(0);
@@ -25,6 +36,12 @@ useEffect(() => {
   async function initializeApp() {
     try {
       const newUserPreview = isNewUserPreviewMode();
+      const previewLangIndex = newUserPreview ? getPreviewLanguageIndex() : null;
+      if (previewLangIndex !== null) {
+        AppData.prefs[0] = previewLangIndex;
+        setLang(previewLangIndex);
+        setAppLang(previewLangIndex === 0 ? 'ru' : 'en');
+      }
       await initDBandCloud();
       const outsideTelegram = typeof window !== 'undefined' ? !window.Telegram?.WebApp : true;
       await initializeTelegramSDK({ mock: outsideTelegram });
@@ -76,6 +93,10 @@ useEffect(() => {
       if (AppData.profileNicknameMode === 'custom' && AppData.profileCustomNickname?.trim()) {
         UserData.name = AppData.profileCustomNickname.trim();
         setUserName(UserData.name);
+      }
+      if (AppData.profileAvatarPhoto) {
+        UserData.photo = AppData.profileAvatarPhoto;
+        setUserPhoto(AppData.profileAvatarPhoto);
       }
       const hasLocalTestPremium = applyLocalTestPremium();
       fillEmptyDays();
@@ -286,7 +307,7 @@ const styles = (theme) => ({
     fontSize: "18px",
     fontWeight: "600",
     color: Colors.get('mainText', theme),
-    fontFamily: "Segoe UI, Roboto, sans-serif",
+    fontFamily: 'inherit',
     textAlign: "center",
     letterSpacing: "0.5px"
   },

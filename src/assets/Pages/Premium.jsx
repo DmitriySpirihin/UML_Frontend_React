@@ -276,7 +276,7 @@ const Premium = () => {
                 <span style={{ fontSize: '12px', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.7 }}>
                     {langIndex === 0 ? 'Статус' : 'Status'}
                 </span>
-                <span style={{ fontSize: '20px', fontWeight: '800', fontFamily: 'Segoe UI' }}>
+                <span style={{ fontSize: '20px', fontWeight: '800', fontFamily: 'inherit' }}>
                     UltyMyLife <span style={{ color: PRO_ACCENT_TEXT }}>Pro</span>
                 </span>
             </div>
@@ -566,7 +566,7 @@ export function PremiumButton({
                     fontSize: '14px', 
                     fontWeight: '700', 
                     color: isDark ? PRO_ACCENT_TEXT : '#374151',
-                    fontFamily: 'Segoe UI, sans-serif',
+                    fontFamily: 'inherit',
                     letterSpacing: '0.4px'
                 }}>
                     {textToShow[langIndex]}
@@ -1297,7 +1297,7 @@ const styles = (theme) => {
         margin: '0 0 5px 0',
         fontSize: '22px',
         fontWeight: '700',
-        fontFamily: 'Segoe UI',
+        fontFamily: 'inherit',
         color: Colors.get('mainText', theme)
     },
     userQuote: {

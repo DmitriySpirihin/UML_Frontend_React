@@ -94,12 +94,66 @@ const PopUpPanel = ({ theme, fSize }) => {
     )
 }
 
-const popUpStyles = (theme, isPositive, fSize) => ({
-    panel: { position: "fixed", top: "0", left: "5%", zIndex: 9999, width: "90vw", minHeight: "110px", padding: "12px 20px", borderRadius: "40px", border: `1px solid ${isPositive ? '#acaf4c44' : '#F4433644'}`, backgroundColor: Colors.get('simplePanel', theme) + 'F2', backdropFilter: "blur(12px)", boxShadow: `0 10px 40px -10px ${Colors.get('shadow', theme)}`, display: "flex", flexDirection: 'row', alignItems: "center", justifyContent: "flex-start", gap: "15px", boxSizing: 'border-box' },
-    text: { textAlign: "left", fontSize: fSize === 0 ? "14px" : "16px", color: Colors.get('mainText', theme), margin: "0", fontWeight: "500", fontFamily: "Segoe UI" },
-    iconContainer: { display: "flex", alignItems: "center", justifyContent: "center" },
-    icon: { color: isPositive ? '#acaf4cff' : '#F44336', fontSize: '28px' },
-});
+const popUpStyles = (theme, isPositive, fSize) => {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const accent = isPositive ? '#B7F3FF' : '#FF8A7A';
+    const accentRgb = isPositive ? '183,243,255' : '255,138,122';
+    const text = isLight ? '#162631' : '#F4FCFF';
+    const subBorder = isLight ? 'rgba(15,23,42,0.10)' : 'rgba(190,220,235,0.16)';
+
+    return {
+        panel: {
+            position: "fixed",
+            top: "0",
+            left: "5%",
+            zIndex: 9999,
+            width: "90vw",
+            minHeight: "106px",
+            padding: "14px 20px",
+            borderRadius: "38px",
+            border: `1px solid rgba(${accentRgb},0.34)`,
+            background: isLight
+                ? `radial-gradient(260px 120px at 16% 12%, rgba(${accentRgb},0.24), transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.66), rgba(246,251,253,0.34))`
+                : `radial-gradient(280px 130px at 16% 10%, rgba(${accentRgb},0.20), transparent 72%), linear-gradient(145deg, rgba(26,42,52,0.66), rgba(8,14,20,0.52))`,
+            backdropFilter: "blur(28px) saturate(175%)",
+            WebkitBackdropFilter: "blur(28px) saturate(175%)",
+            boxShadow: isLight
+                ? `0 1px 0 rgba(255,255,255,0.84) inset, 0 22px 48px -30px rgba(${accentRgb},0.45), 0 18px 46px -34px rgba(15,23,42,0.35)`
+                : `0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 54px -32px rgba(${accentRgb},0.42), 0 18px 48px -28px rgba(0,0,0,0.82)`,
+            display: "flex",
+            flexDirection: 'row',
+            alignItems: "center",
+            justifyContent: "flex-start",
+            gap: "16px",
+            boxSizing: 'border-box',
+            overflow: 'hidden'
+        },
+        text: {
+            textAlign: "left",
+            fontSize: fSize === 0 ? "14px" : "16px",
+            color: text,
+            margin: "0",
+            fontWeight: "760",
+            lineHeight: 1.25,
+            fontFamily: 'inherit',
+            textShadow: isLight ? 'none' : '0 1px 10px rgba(0,0,0,0.32)'
+        },
+        iconContainer: {
+            width: '42px',
+            height: '42px',
+            borderRadius: '16px',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            color: accent,
+            background: `rgba(${accentRgb},0.13)`,
+            border: `1px solid ${subBorder}`,
+            boxShadow: `0 1px 0 rgba(255,255,255,0.10) inset, 0 12px 24px -20px rgba(${accentRgb},0.70)`
+        },
+        icon: { color: accent, fontSize: '27px' },
+    };
+};
 
 const styles = (theme, fSize) => ({
     logoContainer: {
@@ -146,7 +200,7 @@ const UltyLogo = ({ theme = 'dark', page, langIndex }) => {
     }}>
       <div style={{
         color: Colors.get('mainText', theme),
-        fontFamily: 'Georgia, "Times New Roman", serif',
+        fontFamily: 'inherit',
         fontSize: 24,
         fontWeight: 700,
         letterSpacing: 0,

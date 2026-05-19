@@ -208,11 +208,6 @@ const RecoveryMain = () => {
                     <div>
                         <h2 style={s.sectionTitle}>{isRu ? 'Практики' : 'Practices'}</h2>
                     </div>
-                    <div style={s.summaryPill}>
-                        <FaFire size={12} />
-                        <span>{summary.streak}</span>
-                        <span style={s.summaryMuted}>{isRu ? 'серия' : 'streak'}</span>
-                    </div>
                 </div>
 
                 <Motion.div variants={containerAnim} initial="hidden" animate="show" style={s.grid}>
@@ -367,8 +362,8 @@ const styles = (theme, fontSize = 0, item = null) => {
         },
         pageTitle: {
             color: mainText,
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: fontSize === 0 ? '25px' : '27px',
+            fontFamily: 'inherit',
+            fontSize: '24px',
             fontWeight: 700,
             letterSpacing: 0,
             lineHeight: 1.05,

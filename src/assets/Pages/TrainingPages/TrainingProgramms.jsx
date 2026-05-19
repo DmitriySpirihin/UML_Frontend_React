@@ -195,7 +195,7 @@ const TrainingProgramm = () => {
                                     layout
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    {...getTrainingPressMotion(1.006, 0.988)}
+                                    {...getTrainingPressMotion(1, 0.988)}
                                     style={{
                                         ...styles(theme).card,
                                         ...getTrainingGlassSurface(theme, getTrainingAccent(), isExpanded),
@@ -340,14 +340,14 @@ const TrainingProgramm = () => {
                                                 placeholder={langIndex === 0 ? 'Название' : 'Name'}
                                                 value={name}
                                                 onChange={(e) => setName(e.target.value)}
-                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                                style={styles(theme).modalInput}
                                             />
                             <input 
                                                 type="text" 
                                                 placeholder={langIndex === 0 ? 'Описание' : 'Description'}
                                                 value={description}
                                                 onChange={(e) => setDescription(e.target.value)}
-                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                                style={styles(theme).modalInput}
                                             />
 
                            
@@ -364,7 +364,7 @@ const TrainingProgramm = () => {
                                                 placeholder={langIndex === 0 ? 'Название дня' : 'Day Name'}
                                                 value={dayName}
                                                 onChange={(e) => setDayName(e.target.value)}
-                                                style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: `solid 1px ${Colors.get('scrollFont', theme)}` , borderRadius: '16px', padding: '12px'}}
+                                                style={styles(theme).modalInput}
                                             />
                         <ModalActions onClose={() => setShowAddDayPanel(false)} onConfirm={onAddTrainingDay} theme={theme} />
                     </Modal>
@@ -426,7 +426,7 @@ const TrainingProgramm = () => {
             {/* FULL SCREEN EXERCISE PICKER */}
             {showExercisesList && (
                 <div style={styles(theme).fullOverlay}>
-                    <TrainingExercise needToAdd={true} setEx={(id) => { setCurrentExId(id); setShowExercisesList(false); setShowStarategyPanel(true); }} />
+                    <TrainingExercise needToAdd={true} setEx={(id) => { setCurrentExId(id); setShowExercisesList(false); setShowStarategyPanel(true); }} onBack={() => setShowExercisesList(false)} />
                     <Motion.div whileTap={{ scale: 0.9 }} onClick={() => setShowExercisesList(false)} style={styles(theme).closeOverlayBtn}>
                         <MdClose size={24} color="#FFF" />
                     </Motion.div>
@@ -455,7 +455,7 @@ const DayItem = ({
 }) => (
     <Motion.div
         layout
-        {...getTrainingPressMotion(1.004, 0.99)}
+        {...getTrainingPressMotion(1, 0.99)}
         style={{
             ...styles(theme).card,
             ...getTrainingGlassSurface(theme, getTrainingAccent(), active),
@@ -600,7 +600,7 @@ const DayItem = ({
 
 const ActionButton = ({ icon, onClick, theme, label, isDanger }) => (
     <Motion.div
-        whileHover={{ y: -2, scale: 1.02 }}
+        whileHover={{ scale: 1.006 }}
         whileTap={{ scale: 0.95, y: 1 }}
         transition={{ type: 'spring', stiffness: 430, damping: 30 }}
         onClick={onClick}
@@ -631,7 +631,7 @@ const Modal = ({ children, title, theme, onClose }) => (
             <div style={styles(theme).modalHeader}>
                 <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: Colors.get('mainText', theme), margin: 0 }}>{title}</h3>
             </div>
-            <div style={{ width: '100%', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ width: '100%', padding: '0 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box' }}>
                 {children}
             </div>
         </Motion.div>
@@ -640,10 +640,10 @@ const Modal = ({ children, title, theme, onClose }) => (
 
 const ModalActions = ({ onClose, onConfirm, theme }) => (
     <div style={styles(theme).modalActions}>
-        <Motion.div whileTap={{ scale: 0.9 }} onClick={onClose} style={styles(theme).circleBtn}>
+        <Motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.92 }} onClick={onClose} style={styles(theme).circleBtn}>
             <MdClose style={{ fontSize: '24px', color: Colors.get('subText', theme) }} />
         </Motion.div>
-        <Motion.div whileTap={{ scale: 0.9 }} onClick={onConfirm} style={{ ...styles(theme).circleBtn, backgroundColor: Colors.get('done', theme) }}>
+        <Motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.92 }} onClick={onConfirm} style={{ ...styles(theme).circleBtn, background: `linear-gradient(135deg, ${getTrainingAccent().hue}, #12BFA5)`, borderColor: getTrainingAccent().ring, boxShadow: `0 14px 30px rgba(${getTrainingAccent().rgb},0.26)` }}>
             <MdDone style={{ fontSize: '24px', color: '#fff' }} />
         </Motion.div>
     </div>
@@ -664,7 +664,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
         height: "auto",
         padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 18px 116px',
         width: "100vw",
-        fontFamily: "Segoe UI, Roboto, sans-serif", boxSizing: 'border-box'
+        fontFamily: 'inherit', boxSizing: 'border-box'
     },
     card: {
         width: '100%', margin: '0 auto 14px auto',
@@ -760,9 +760,13 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
         display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
     },
     circleBtn: {
-        width: '50px', height: '50px', borderRadius: '25px',
-        backgroundColor: Colors.get('skipped', theme),
-        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+        width: '58px', height: '58px', borderRadius: '20px',
+        background: isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.065)',
+        border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.10)'}`,
+        boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.70) inset' : '0 1px 0 rgba(255,255,255,0.06) inset',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        backdropFilter: 'blur(16px) saturate(145%)',
+        WebkitBackdropFilter: 'blur(16px) saturate(145%)'
     },
     secondaryBtn: {
         padding: '10px 20px', borderRadius: '12px', border: 'none',
@@ -777,24 +781,48 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
     // MODAL
     modalBackdrop: {
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(5px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000
+        backgroundColor: 'rgba(0, 0, 0, 0.62)', backdropFilter: 'blur(16px) saturate(130%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000,
+        padding: '18px',
+        boxSizing: 'border-box'
     },
     modalContainer: {
-        width: '99%', maxWidth: '400px', backgroundColor: Colors.get('background', theme),
-        borderRadius: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+        width: '100%', maxWidth: '430px',
+        background: getTrainingPanelBackground(theme, accent),
+        borderRadius: '28px',
+        boxShadow: getTrainingPanelShadow(theme, accent),
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        border: `1px solid ${Colors.get('border', theme)}`, overflow: 'hidden'
+        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+        overflow: 'hidden',
+        backdropFilter: 'blur(28px) saturate(155%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(155%)'
     },
     modalHeader: {
-        width: '100%', padding: '20px', borderBottom: `1px solid ${Colors.get('border', theme)}`,
-        textAlign: 'center', marginBottom: '15px'
+        width: '100%', padding: '22px 20px 18px', borderBottom: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+        textAlign: 'center', marginBottom: '16px',
+        background: isLight ? 'rgba(255,255,255,0.34)' : 'rgba(255,255,255,0.035)',
+        boxSizing: 'border-box'
     },
     modalActions: {
-        marginTop: '20px', padding: '15px 20px', width: '100%',
+        marginTop: '20px', padding: '16px 20px 18px', width: '100%',
         display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-        borderTop: `1px solid ${Colors.get('border', theme)}`,
-        backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)'
+        borderTop: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+        backgroundColor: theme === 'light' ? 'rgba(255,255,255,0.24)' : 'rgba(255,255,255,0.025)',
+        boxSizing: 'border-box'
+    },
+    modalInput: {
+        width: '100%',
+        border: `1px solid ${getTrainingPanelBorder(theme, accent)}`,
+        background: isLight ? 'rgba(255,255,255,0.56)' : 'rgba(6,12,18,0.22)',
+        boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.66) inset' : '0 1px 0 rgba(255,255,255,0.045) inset',
+        fontSize: '16px',
+        color: Colors.get('mainText', theme),
+        outline: 'none',
+        borderRadius: '17px',
+        padding: '14px 15px',
+        boxSizing: 'border-box',
+        backdropFilter: 'blur(16px) saturate(140%)',
+        WebkitBackdropFilter: 'blur(16px) saturate(140%)'
     },
     segmentedControl: {
         display: 'flex', width: '100%', backgroundColor: theme === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',

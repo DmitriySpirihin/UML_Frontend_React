@@ -164,7 +164,7 @@ useEffect(() => {
           fontSize: fSize + 'px',
           paddingLeft: '8px',
           textAlign:'left',
-          fontFamily: 'Segoe UI',
+          fontFamily: 'inherit',
           color: input.myString.length === 0 
             ? Colors.get('icons', theme) 
             : Colors.get('mainText', theme),

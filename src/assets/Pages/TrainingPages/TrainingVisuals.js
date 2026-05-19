@@ -11,15 +11,21 @@ export const getTrainingAccent = () => (
 export const getTrainingPageBackground = (theme, accent = getTrainingAccent()) => {
   const isLight = theme === 'light' || theme === 'speciallight';
   return isLight
-    ? `linear-gradient(180deg, rgba(${accent.rgb}, 0.12) 0%, ${Colors.get('background', theme)} 44%)`
-    : `linear-gradient(180deg, rgba(${accent.rgb}, 0.055) 0%, ${Colors.get('background', theme)} 48%)`;
+    ? `radial-gradient(680px 420px at 12% -12%, rgba(${accent.rgb},0.20), transparent 58%),
+       radial-gradient(560px 360px at 94% 8%, rgba(${accent.rgb},0.13), transparent 60%),
+       linear-gradient(180deg, rgba(${accent.rgb},0.12) 0%, ${Colors.get('background', theme)} 58%)`
+    : `radial-gradient(720px 440px at 10% -12%, rgba(${accent.rgb},0.24), transparent 58%),
+       radial-gradient(560px 380px at 96% 10%, rgba(${accent.rgb},0.14), transparent 62%),
+       linear-gradient(180deg, rgba(${accent.rgb},0.13) 0%, ${Colors.get('background', theme)} 62%)`;
 };
 
 export const getTrainingPanelBackground = (theme, accent = getTrainingAccent()) => {
   const isLight = theme === 'light' || theme === 'speciallight';
   return isLight
-    ? `linear-gradient(145deg, rgba(255,255,255,0.76), rgba(${accent.rgb}, 0.11) 48%, rgba(246,248,250,0.58))`
-    : `linear-gradient(145deg, rgba(${accent.rgb}, 0.13), rgba(27,42,52,0.56) 42%, rgba(9,14,18,0.62))`;
+    ? `radial-gradient(320px 180px at 12% 0%, rgba(${accent.rgb},0.18), transparent 70%),
+       linear-gradient(145deg, rgba(255,255,255,0.78), rgba(${accent.rgb},0.12) 52%, rgba(246,248,250,0.50))`
+    : `radial-gradient(340px 210px at 12% 0%, rgba(${accent.rgb},0.22), transparent 70%),
+       linear-gradient(145deg, rgba(${accent.rgb},0.16), rgba(27,42,52,0.58) 44%, rgba(9,14,18,0.58))`;
 };
 
 export const getTrainingPanelBorder = (theme, accent = getTrainingAccent(), active = false) => {
@@ -54,7 +60,7 @@ export const getTrainingInteractiveStyle = (theme, accent = getTrainingAccent(),
 });
 
 export const getTrainingPressMotion = (hoverScale = 1.01, tapScale = 0.985) => ({
-  whileHover: { y: -2, scale: hoverScale },
+  whileHover: { scale: hoverScale },
   whileTap: { y: 1, scale: tapScale },
   transition: { type: 'spring', stiffness: 420, damping: 32 }
 });

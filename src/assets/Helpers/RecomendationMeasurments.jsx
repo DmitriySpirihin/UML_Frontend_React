@@ -3,6 +3,12 @@ import { AppData } from '../StaticClasses/AppData.js';
 import Colors from '../StaticClasses/Colors';
 import { theme$, lang$, fontSize$ } from '../StaticClasses/HabitsBus';
 import { FaFire, FaUtensils, FaInfoCircle } from 'react-icons/fa';
+import {
+    getTrainingAccent,
+    getTrainingGlassSurface,
+    getTrainingPanelBorder,
+    getTrainingPanelShadow
+} from '../Pages/TrainingPages/TrainingVisuals.js';
 
 // 0 – набор, 1 – похудение, 2 – поддержание
 const GOALS_CONFIG = {
@@ -176,7 +182,11 @@ const MacroBox = ({ label, value, color, theme, isLight }) => (
     <div style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         padding: '10px', borderRadius: '16px',
-        backgroundColor: isLight ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.05)',
+        background: isLight
+            ? `linear-gradient(145deg, rgba(255,255,255,0.58), ${color}0F)`
+            : `linear-gradient(145deg, rgba(255,255,255,0.06), ${color}12)`,
+        border: `1px solid ${color}24`,
+        boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset',
         flex: 1
     }}>
         <div style={{ fontSize: '11px', fontWeight: 'bold', color: color, textTransform: 'uppercase', marginBottom: '4px' }}>
@@ -225,7 +235,12 @@ const getTDEE = (bmr, weeklyTrainingDays = 3) => {
 
 // --- Styles ---
 
-const styles = (theme, fSize, isLight) => ({
+const styles = (theme, fSize, isLight) => {
+    const accent = getTrainingAccent();
+    const glass = getTrainingGlassSurface(theme, accent);
+    const border = getTrainingPanelBorder(theme, accent);
+    const shadow = getTrainingPanelShadow(theme, accent, true);
+    return ({
     container: {
         width: '100%',
         maxWidth: '600px',
@@ -245,12 +260,15 @@ const styles = (theme, fSize, isLight) => ({
         opacity: 0.8
     },
     card: {
-        backgroundColor: isLight ? 'rgba(255,255,255,0.7)' : 'rgba(30,30,30,0.6)',
-        backdropFilter: 'blur(12px)',
+        position: 'relative',
+        overflow: 'hidden',
+        background: `radial-gradient(260px 170px at 50% 0%, rgba(${accent.rgb},0.18), transparent 70%), ${glass.background}`,
+        backdropFilter: 'blur(28px) saturate(170%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(170%)',
         borderRadius: '24px',
-        border: `1px solid ${isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)'}`,
+        border: `1px solid ${border}`,
         padding: '20px',
-        boxShadow: isLight ? '0 10px 30px rgba(0,0,0,0.05)' : '0 10px 30px rgba(0,0,0,0.2)',
+        boxShadow: shadow,
         display: 'flex',
         flexDirection: 'column',
     },
@@ -301,6 +319,6 @@ const styles = (theme, fSize, isLight) => ({
         justifyContent: 'space-between',
         gap: '10px'
     }
-});
+})};
 
 export default RecomendationMeasurements;

@@ -17,7 +17,7 @@ ambientAudio.volume = 0.18;
 const startTimerDuration = 3000;
 
 const stepperButtonStyle = (accent) => ({
-  width: '34px',
+  width: '36px',
   height: '34px',
   borderRadius: '13px',
   border: `1px solid ${accent}40`,
@@ -53,7 +53,7 @@ function PhaseStepper({ theme, label, value, min = 0, max = 20, step = 1, onChan
     <div style={{
       background: isDark ? 'rgba(255,255,255,0.035)' : 'rgba(15,23,42,0.045)',
       borderRadius: '16px',
-      padding: wide ? '10px 12px' : '10px 9px',
+      padding: wide ? '10px 16px' : '10px 12px',
       minHeight: wide ? '58px' : '76px',
       display: 'flex',
       flexDirection: 'column',
@@ -67,11 +67,12 @@ function PhaseStepper({ theme, label, value, min = 0, max = 20, step = 1, onChan
       </div>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: wide ? '34px 48px 34px' : '34px 44px 34px',
+        gridTemplateColumns: wide ? '36px minmax(42px, 1fr) 36px' : '36px minmax(36px, 1fr) 36px',
         alignItems: 'center',
         justifyItems: 'center',
-        gap: '8px',
-        width: wide ? 'min(148px, 100%)' : 'min(136px, 100%)',
+        columnGap: wide ? '10px' : '9px',
+        width: '100%',
+        maxWidth: wide ? '156px' : '142px',
         margin: '0 auto'
       }}>
         <Motion.button whileTap={{ scale: 0.92 }} onClick={dec} style={stepperButtonStyle('#7ee6d2')}>−</Motion.button>
@@ -232,6 +233,10 @@ const BreathingTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIn
 
   const timeRemaining = duration * (1 - phaseProgress);
   const displayTime = Math.max(0, Math.ceil(timeRemaining / 1000));
+  const sessionRemainingMs = mode === 'time' && isStart && startTime
+    ? Math.max(0, (limitMinutes * 60 * 1000) - (Date.now() - startTime))
+    : limitMinutes * 60 * 1000;
+  const sessionRemainingLabel = formatTimerMs(sessionRemainingMs);
 
   // --- ANIMATION LOOP ---
   useEffect(() => {
@@ -612,7 +617,9 @@ const BreathingTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIn
             </div>
 
             <div style={{ marginTop: '20px', padding: '8px 14px', borderRadius: '999px', background: 'rgba(255,255,255,0.045)', border: '1px solid rgba(255,255,255,0.07)', fontSize: '13px', color: textSub, letterSpacing: '0.03em', fontWeight: 800 }}>
-                {langIndex === 0 ? 'Цикл' : 'Cycle'} {cycleInfo()}
+                {mode === 'time'
+                  ? `${langIndex === 0 ? 'До конца' : 'Left'} ${sessionRemainingLabel}`
+                  : `${langIndex === 0 ? 'Цикл' : 'Cycle'} ${cycleInfo()}`}
             </div>
 
             {/* CONTROLS */}
@@ -804,6 +811,13 @@ const ControlButton = ({ onClick, icon, label, theme, type = 'secondary', accent
     );
 }
 
+const formatTimerMs = (ms) => {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+};
+
 const styles = (theme, show) => ({
   container: {
     backgroundColor: Colors.get('background', theme),
@@ -813,7 +827,7 @@ const styles = (theme, show) => ({
     bottom: '0',
     transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
     width: '100vw',
-    fontFamily: 'Segoe UI',
+    fontFamily: 'inherit',
     borderTop: 'none',
     borderTopLeftRadius: 0, borderTopRightRadius: 0,
     zIndex: 2000, overflow: 'hidden', 

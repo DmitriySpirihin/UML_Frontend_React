@@ -81,16 +81,18 @@ const TrainingAnaliticsRM = () => {
                     <TrendBadge trend={trend} theme={theme} />
                   </div>
                   <div style={styles(theme).muscleLine}>{item.muscleName}</div>
+                </div>
 
-                  <div style={styles(theme).metricsRow}>
-                    <Metric label={langIndex === 0 ? '1RM' : '1RM'} value={item.bestRM > 0 ? `${Math.round(item.bestRM)} кг` : '0 кг'} theme={theme} />
-                    <Metric label={langIndex === 0 ? 'Тоннаж' : 'Volume'} value={`${(item.volume28 / 1000).toFixed(1)} т`} theme={theme} />
-                    <Metric label={langIndex === 0 ? 'Сеты' : 'Sets'} value={item.sets28.length || item.sets365.length} theme={theme} />
-                  </div>
+                <div style={styles(theme).metricsRow}>
+                  <Metric label={langIndex === 0 ? '1RM' : '1RM'} value={item.bestRM > 0 ? `${Math.round(item.bestRM)} кг` : '0 кг'} theme={theme} />
+                  <Metric label={langIndex === 0 ? 'Тоннаж' : 'Volume'} value={`${(item.volume28 / 1000).toFixed(1)} т`} theme={theme} />
+                  <Metric label={langIndex === 0 ? 'Сеты' : 'Sets'} value={item.sets28.length || item.sets365.length} theme={theme} />
                 </div>
 
                 <div style={styles(theme).sparkColumn}>
-                  <WeekSparkline values={item.sparkline} color={sparkColor || accent.hue} />
+                  <div style={styles(theme).sparkChart}>
+                    <WeekSparkline values={item.sparkline} color={sparkColor || accent.hue} />
+                  </div>
                   <div style={styles(theme).sparkLabel}>
                     {item.lastDateLabel}
                   </div>
@@ -318,11 +320,13 @@ const styles = (theme, fSize) => {
     },
     exerciseCard: {
       width: '100%',
-      minHeight: '118px',
+      minHeight: '148px',
       display: 'grid',
-      gridTemplateColumns: '54px minmax(0, 1fr) 92px',
-      gap: '12px',
-      alignItems: 'center',
+      gridTemplateColumns: '54px minmax(0, 1fr)',
+      gridTemplateAreas: '"visual content" "metrics metrics" "spark spark"',
+      columnGap: '12px',
+      rowGap: '10px',
+      alignItems: 'start',
       padding: '14px',
       borderRadius: '24px',
       background: panelBg,
@@ -332,11 +336,13 @@ const styles = (theme, fSize) => {
       boxSizing: 'border-box'
     },
     visualColumn: {
+      gridArea: 'visual',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       gap: '8px',
-      minWidth: 0
+      minWidth: 0,
+      paddingTop: '3px'
     },
     muscleBadge: {
       width: '46px',
@@ -356,6 +362,7 @@ const styles = (theme, fSize) => {
       letterSpacing: '0.08em'
     },
     contentColumn: {
+      gridArea: 'content',
       minWidth: 0,
       display: 'flex',
       flexDirection: 'column',
@@ -372,7 +379,8 @@ const styles = (theme, fSize) => {
       fontSize: fSize === 0 ? '15px' : '17px',
       lineHeight: 1.2,
       fontWeight: 900,
-      overflowWrap: 'anywhere'
+      overflowWrap: 'break-word',
+      wordBreak: 'normal'
     },
     muscleLine: {
       color: Colors.get('subText', theme),
@@ -395,49 +403,60 @@ const styles = (theme, fSize) => {
       boxSizing: 'border-box'
     },
     metricsRow: {
+      gridArea: 'metrics',
       display: 'grid',
       gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-      gap: '6px'
+      gap: '8px'
     },
     metric: {
       minWidth: 0,
       borderRadius: '14px',
-      padding: '8px 7px',
+      padding: '9px 8px',
       background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)',
       border: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.055)'}`,
       display: 'flex',
       flexDirection: 'column',
+      alignItems: 'center',
       gap: '3px',
       boxSizing: 'border-box'
     },
     metricValue: {
       color: Colors.get('mainText', theme),
-      fontSize: '13px',
+      fontSize: '14px',
       fontWeight: 900,
       whiteSpace: 'nowrap',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis'
+      overflow: 'visible',
+      textOverflow: 'clip'
     },
     metricLabel: {
       color: Colors.get('subText', theme),
-      fontSize: '9px',
+      fontSize: '9.5px',
       fontWeight: 850,
       textTransform: 'uppercase',
-      letterSpacing: '0.04em'
+      letterSpacing: '0.02em',
+      whiteSpace: 'nowrap'
     },
     sparkColumn: {
-      width: '92px',
+      gridArea: 'spark',
+      width: '100%',
       minWidth: 0,
       display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'flex-end',
+      alignItems: 'center',
       justifyContent: 'center',
-      gap: '5px'
+      gap: '12px',
+      paddingLeft: '66px',
+      boxSizing: 'border-box'
+    },
+    sparkChart: {
+      flex: 1,
+      minWidth: 0,
+      height: '40px'
     },
     sparkLabel: {
       color: Colors.get('subText', theme),
       fontSize: '10px',
-      fontWeight: 800
+      fontWeight: 800,
+      whiteSpace: 'nowrap'
     },
     emptyState: {
       width: '100%',

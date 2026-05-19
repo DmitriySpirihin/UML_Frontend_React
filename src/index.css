@@ -1,6 +1,6 @@
 :root {
   --uml-font-scale: 1;
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: "SF Pro Rounded", "Nunito Sans", Nunito, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 

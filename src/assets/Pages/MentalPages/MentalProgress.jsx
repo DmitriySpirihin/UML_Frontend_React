@@ -12,6 +12,7 @@ import { AppData, logSectionVisit } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { fontSize$, lang$, theme$ } from '../../StaticClasses/HabitsBus';
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
+import MyAreaChart from '../../Helpers/MyAreaChart.jsx';
 import { buildSectionAccent } from '../SectionAccentSettings.jsx';
 
 const MENTAL_ACCENT = '#A66BFF';
@@ -45,6 +46,14 @@ export default function MentalProgress() {
   const labels = langIndex === 0
     ? ['Быстрый счет', 'N-back', 'Паттерны', 'Контроль']
     : ['Mental Math', 'Memory', 'Logic', 'Focus'];
+  const chartLabels = langIndex === 0
+    ? ['Счет', 'N-back', 'Паттерны', 'Контроль']
+    : ['Math', 'N-back', 'Logic', 'Focus'];
+  const chartData = chartLabels.map((label, index) => ({
+    date: label,
+    weight: summary.categoryScores[index] || 0
+  }));
+  const chartDomainMax = Math.max(1, Math.ceil(summary.maxCategoryScore * 1.16));
 
   return (
     <div style={s.container}>
@@ -53,7 +62,6 @@ export default function MentalProgress() {
         <div style={s.header}>
           <div style={s.eyebrow}>{langIndex === 0 ? 'Прогресс ума' : 'Mind progress'}</div>
           <h1 style={s.title}>{langIndex === 0 ? 'Общий прогресс' : 'Overall progress'}</h1>
-          <p style={s.subtitle}>{langIndex === 0 ? 'Рекорды по режимам без перегруза основного экрана' : 'Mode records without crowding the main screen'}</p>
         </div>
 
         <Motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} style={s.totalPanel}>
@@ -68,37 +76,57 @@ export default function MentalProgress() {
           </div>
         </Motion.section>
 
-        <section style={s.progressRows}>
-          {labels.map((label, index) => {
-            const tone = MODE_TONES[index];
-            const Icon = tone.Icon;
-            const value = summary.categoryScores[index] || 0;
-            const progress = summary.maxCategoryScore > 0 ? Math.max(0.04, Math.min(1, value / summary.maxCategoryScore)) : 0.04;
-            return (
-              <Motion.div
-                key={label}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.28, ease: EASE, delay: index * 0.04 }}
-                style={s.progressCard(tone)}
-              >
-                <div style={s.cardTop}>
-                  <span style={s.cardIcon(tone)}><Icon size={16} /></span>
-                  <span style={s.cardName}>{label}</span>
-                  <strong style={s.cardValue}>{formatScore(value)}</strong>
+        <Motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.04, ease: EASE }}
+          style={s.modesPanel}
+        >
+          <div style={s.modesHeader}>
+            <div>
+              <div style={s.kicker}>{langIndex === 0 ? 'ПО РЕЖИМАМ' : 'BY MODE'}</div>
+              <div style={s.bigTotal}>{formatScore(summary.totalScore)}</div>
+            </div>
+            <div style={s.modeCountPill}>
+              <FaChartLine size={12} />
+              <span>{labels.length}</span>
+            </div>
+          </div>
+
+          <div style={s.modeChartArea}>
+            <MyAreaChart
+              data={chartData}
+              fillColor={s.accent.hue}
+              textColor={Colors.get('subText', theme)}
+              linesColor={theme === 'dark' || theme === 'specialdark' ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}
+              backgroundColor={theme === 'dark' || theme === 'specialdark' ? 'rgba(14,16,20,0.94)' : 'rgba(255,255,255,0.92)'}
+              valueFormatter={formatScore}
+              domain={[0, chartDomainMax]}
+            />
+          </div>
+
+          <div style={s.modeLegend}>
+            {labels.map((label, index) => {
+              const tone = MODE_TONES[index];
+              const Icon = tone.Icon;
+              const value = summary.categoryScores[index] || 0;
+              const share = summary.totalScore > 0 ? Math.round((value / summary.totalScore) * 100) : 0;
+              return (
+                <div
+                  key={label}
+                  style={s.modeLegendItem(tone)}
+                >
+                  <span style={s.modeLegendIcon(tone)}><Icon size={13} /></span>
+                  <span style={s.modeLegendCopy}>
+                    <span style={s.modeLegendName}>{label}</span>
+                    <strong style={s.modeLegendValue}>{formatScore(value)}</strong>
+                  </span>
+                  <span style={s.modeLegendShare(tone)}>{share}%</span>
                 </div>
-                <div style={s.track}>
-                  <Motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progress * 100}%` }}
-                    transition={{ duration: 0.75, ease: EASE, delay: 0.08 + index * 0.04 }}
-                    style={{ ...s.fill, background: tone.hue, boxShadow: `0 0 16px ${tone.hue}55` }}
-                  />
-                </div>
-              </Motion.div>
-            );
-          })}
-        </section>
+              );
+            })}
+          </div>
+        </Motion.section>
       </div>
     </div>
   );
@@ -170,13 +198,75 @@ function styles(theme, fontSize = 0) {
     totalIcon: { width: 52, height: 52, borderRadius: 18, color: accent.hue, background: `rgba(${accent.rgb},0.13)`, border: `1px solid rgba(${accent.rgb},0.25)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 },
     totalCopy: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, color: sub, fontSize: 12, fontWeight: 800 },
     totalMeta: { minHeight: 34, padding: '0 11px', borderRadius: 999, color: accent.hue, background: `rgba(${accent.rgb},0.12)`, border: `1px solid rgba(${accent.rgb},0.22)`, display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 900 },
-    progressRows: { maxWidth: 660, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 },
-    progressCard: (tone) => ({ minHeight: 88, borderRadius: 20, padding: 13, background: isLight ? `linear-gradient(145deg, rgba(255,255,255,0.72), ${tone.soft})` : `linear-gradient(145deg, rgba(255,255,255,0.046), ${tone.soft})`, border: `1px solid ${isLight ? border : tone.ring}`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 12, overflow: 'hidden' }),
-    cardTop: { display: 'grid', gridTemplateColumns: '34px minmax(0, 1fr) auto', alignItems: 'center', gap: 9 },
-    cardIcon: (tone) => ({ width: 34, height: 34, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', color: tone.hue, background: tone.soft, border: `1px solid ${tone.ring}` }),
-    cardName: { minWidth: 0, color: text, fontSize: 13, fontWeight: 900, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', textAlign: 'left' },
-    cardValue: { color: text, fontSize: 13, fontWeight: 950, textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
-    track: { height: 7, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)', overflow: 'hidden' },
-    fill: { height: '100%', borderRadius: 999 }
+    modesPanel: {
+      maxWidth: 660,
+      margin: '0 auto',
+      padding: 16,
+      borderRadius: 28,
+      boxSizing: 'border-box',
+      background: isLight
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,255,255,0.54))'
+        : 'linear-gradient(145deg, rgba(255,255,255,0.045), rgba(18,21,26,0.94))',
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)'}`,
+      boxShadow: isLight ? '0 14px 30px rgba(15,23,42,0.08)' : '0 18px 48px rgba(0,0,0,0.24)'
+    },
+    modesHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
+    kicker: { color: sub, fontSize: 10, fontWeight: 950, letterSpacing: '0.16em', textTransform: 'uppercase' },
+    bigTotal: { marginTop: 3, color: accent.hue, fontSize: 28, fontWeight: 950, lineHeight: 1, textShadow: `0 0 20px rgba(${accent.rgb},0.34)` },
+    modeCountPill: { minHeight: 30, padding: '0 11px', borderRadius: 14, border: `1px solid rgba(${accent.rgb},0.30)`, background: `rgba(${accent.rgb},0.14)`, color: accent.hue, display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 950 },
+    modeChartArea: {
+      height: 238,
+      margin: '2px -4px 12px',
+      borderRadius: 22,
+      padding: '8px 2px 4px',
+      boxSizing: 'border-box',
+      background: isLight ? 'rgba(255,255,255,0.44)' : 'rgba(8,12,16,0.34)',
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.055)'}`,
+      overflow: 'hidden'
+    },
+    modeLegend: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gap: 8
+    },
+    modeLegendItem: (tone) => ({
+      minWidth: 0,
+      display: 'grid',
+      gridTemplateColumns: '30px minmax(0, 1fr) auto',
+      alignItems: 'center',
+      gap: 8,
+      minHeight: 48,
+      padding: '8px 9px',
+      borderRadius: 17,
+      boxSizing: 'border-box',
+      background: isLight ? 'rgba(255,255,255,0.56)' : 'rgba(255,255,255,0.04)',
+      border: `1px solid ${tone.ring}`
+    }),
+    modeLegendIcon: (tone) => ({
+      width: 30,
+      height: 30,
+      borderRadius: 12,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: tone.hue,
+      background: tone.soft,
+      border: `1px solid ${tone.ring}`
+    }),
+    modeLegendCopy: { minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 },
+    modeLegendName: { color: text, fontSize: 11, fontWeight: 900, lineHeight: 1.1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
+    modeLegendValue: { color: text, fontSize: 15, fontWeight: 950, lineHeight: 1, fontVariantNumeric: 'tabular-nums' },
+    modeLegendShare: (tone) => ({
+      minHeight: 23,
+      padding: '0 7px',
+      borderRadius: 999,
+      color: tone.hue,
+      background: tone.soft,
+      border: `1px solid ${tone.ring}`,
+      fontSize: 10,
+      fontWeight: 950,
+      display: 'flex',
+      alignItems: 'center'
+    })
   };
 }

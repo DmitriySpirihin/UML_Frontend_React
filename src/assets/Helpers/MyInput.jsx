@@ -126,7 +126,7 @@ const MyInput = ({
           display: 'block',
           textAlign: 'left',
           lineHeight: '1.4',
-          fontFamily: 'Segoe UI, Roboto, Helvetica, sans-serif',
+          fontFamily: 'inherit',
           color: input.myString.length === 0 ? Colors.get('icons', theme) : Colors.get('mainText', theme),
           width: '100%',
           opacity: input.myString.length === 0 ? 0.6 : 1,

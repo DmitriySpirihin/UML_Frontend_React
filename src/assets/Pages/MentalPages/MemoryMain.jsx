@@ -345,7 +345,7 @@ const styles = (theme, fSize = 0) => {
             boxSizing: 'border-box'
         },
         pageHeader: { width: 'calc(100% - 56px)', maxWidth: 660, margin: '0 auto 8px', padding: '4px 20px 8px', boxSizing: 'border-box', textAlign: 'center' },
-        pageTitle: { color: text, fontFamily: 'Georgia, "Times New Roman", serif', fontSize: fSize === 0 ? 21 : 24, fontWeight: 700, letterSpacing: 0, lineHeight: 1.05, opacity: 0.86 },
+        pageTitle: { color: text, fontFamily: 'inherit', fontSize: 24, fontWeight: 700, letterSpacing: 0, lineHeight: 1.05, opacity: 0.86 },
         pageSubtitle: { marginTop: 5, color: sub, fontSize: fSize === 0 ? 8 : 9, fontWeight: 600, letterSpacing: '0.14em', opacity: 0.82 },
         hero: {
             position: 'relative',

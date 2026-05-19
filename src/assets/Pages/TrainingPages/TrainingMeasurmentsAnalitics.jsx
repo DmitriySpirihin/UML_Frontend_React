@@ -3,7 +3,6 @@ import { motion as Motion } from 'framer-motion';
 import MyAreaChart from "../../Helpers/MyAreaChart";
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import ProgressMeasurmentsCircle from '../../Helpers/ProgressMeasurmentsCircle.jsx';
 import {
   getTrainingAccent,
   getTrainingPanelBackground,
@@ -57,6 +56,7 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
   const mediumValue = filteredData.length > 0 ? filteredData.reduce((sum, item) => sum + item.value, 0) / filteredData.length : currentValue;
   const hasData = filteredData.length > 0;
   const delta = currentValue - startValue;
+  const deltaTone = delta >= 0 ? '#10B981' : '#EF4444';
 
   const getUnit = (index) => index === 0 ? 'kg' : 'cm';
 
@@ -110,7 +110,7 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
                     <Motion.div
                         key={idx}
                         onClick={() => setMetricIndex(idx)}
-                        whileHover={{ y: -1, scale: 1.025 }}
+                        whileHover={{ scale: 1.025 }}
                         whileTap={{ scale: 0.95 }}
                         transition={{ type: 'spring', stiffness: 430, damping: 30 }}
                         style={{
@@ -158,7 +158,7 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
                     <Motion.div
                       key={idx}
                       onClick={() => setPeriodIndex(idx)}
-                      whileHover={{ y: -1 }}
+                      whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.96 }}
                       transition={{ type: 'spring', stiffness: 430, damping: 30 }}
                       style={{ flex: 1, position: 'relative', cursor: 'pointer', textAlign: 'center', padding: '8px 0', WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
@@ -181,12 +181,12 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
             })}
         </div>
 
-        <div style={{ 
-            padding: '18px', borderRadius: '30px', 
+        <div style={{
+            padding: '18px', borderRadius: '30px',
               ...getTrainingGlassSurface(theme, accent),
 	            background: cardBg, border: `1px solid ${borderColor}`,
 	            display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) 210px',
+              gridTemplateColumns: '1fr',
               gap: '16px',
               alignItems: 'center',
               boxSizing: 'border-box',
@@ -197,7 +197,7 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
               <div style={{fontSize: 11, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', color: Colors.get('subText', theme), marginBottom: 8}}>
                 {periodLabels[periodIndex][langIndex]}
               </div>
-              <div style={{fontSize: 30, fontWeight: 900, color: delta >= 0 ? '#10B981' : '#EF4444', lineHeight: 1, marginBottom: 8}}>
+              <div style={{fontSize: 30, fontWeight: 900, color: deltaTone, lineHeight: 1, marginBottom: 8}}>
                 {delta >= 0 ? '+' : ''}{delta.toFixed(1)} <span style={{fontSize: 14, color: Colors.get('subText', theme)}}>{getUnit(metricIndex)}</span>
               </div>
               <div style={{display:'grid', gridTemplateColumns:'repeat(3, minmax(0, 1fr))', gap: 8}}>
@@ -206,20 +206,17 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
                 <MiniMeasure label={langIndex === 0 ? 'Финиш' : 'End'} value={currentValue} unit={getUnit(metricIndex)} theme={theme} />
               </div>
             </div>
-            <ProgressMeasurmentsCircle
-                startValue={startValue}
-                endValue={currentValue}
-                mediumValue={mediumValue}
-                unit={getUnit(metricIndex)}
-                langIndex={langIndex}
-                goal={goal === 2 ? 1 : 0}
-                size={190}
-                theme={theme}
-                textColor={Colors.get('mainText', theme)}
-                linesColor={isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)'}
-                minColor="#FF453A"
-                maxColor="#30D158"
-	                mediumColor={accent.hue}
+            <MeasurementTrendPanel
+              startValue={startValue}
+              mediumValue={mediumValue}
+              currentValue={currentValue}
+              delta={delta}
+              unit={getUnit(metricIndex)}
+              langIndex={langIndex}
+              theme={theme}
+              accent={accent}
+              tone={deltaTone}
+              hasData={hasData}
             />
         </div>
       </div>
@@ -229,17 +226,111 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
 
 export default TrainingMeasurmentsAnalitics;
 
+const MeasurementTrendPanel = ({ startValue, mediumValue, currentValue, delta, unit, langIndex, theme, accent, tone, hasData }) => {
+  const isLight = theme === 'light' || theme === 'speciallight';
+  const text = Colors.get('mainText', theme);
+  const sub = Colors.get('subText', theme);
+  const border = isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.075)';
+  const panel = isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)';
+  const points = [
+    { label: langIndex === 0 ? 'Старт' : 'Start', value: startValue, color: sub },
+    { label: langIndex === 0 ? 'Среднее' : 'Average', value: mediumValue, color: accent.hue },
+    { label: langIndex === 0 ? 'Финиш' : 'End', value: currentValue, color: tone }
+  ];
+
+  return (
+    <div style={{
+      width: '100%',
+      padding: 14,
+      borderRadius: 22,
+      background: `radial-gradient(180px 80px at 92% 0%, rgba(${accent.rgb},0.12), transparent 70%), ${panel}`,
+      border: `1px solid ${border}`,
+      boxSizing: 'border-box',
+      overflow: 'hidden'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 14 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase', color: sub, marginBottom: 4 }}>
+            {langIndex === 0 ? 'Динамика' : 'Trend'}
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 900, color: text }}>
+            {langIndex === 0 ? 'Период без лишнего шума' : 'Period summary'}
+          </div>
+        </div>
+        <div style={{
+          minWidth: 86,
+          minHeight: 38,
+          padding: '0 12px',
+          borderRadius: 14,
+          background: `${tone}18`,
+          border: `1px solid ${tone}38`,
+          color: tone,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 20,
+          fontWeight: 950,
+          fontVariantNumeric: 'tabular-nums',
+          whiteSpace: 'nowrap'
+        }}>
+          {hasData ? `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}` : '-'}
+          <span style={{ fontSize: 10, color: sub, marginLeft: 4 }}>{unit}</span>
+        </div>
+      </div>
+
+      <div style={{
+        position: 'relative',
+        height: 8,
+        borderRadius: 999,
+        background: isLight ? 'rgba(15,23,42,0.075)' : 'rgba(255,255,255,0.07)',
+        overflow: 'hidden',
+        margin: '8px 6px 13px'
+      }}>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          background: `linear-gradient(90deg, ${sub}55, ${accent.hue}, ${tone})`,
+          opacity: hasData ? 0.92 : 0.28
+        }} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+        {points.map((point) => (
+          <div key={point.label} style={{ minWidth: 0, textAlign: 'center' }}>
+            <div style={{
+              width: 13,
+              height: 13,
+              borderRadius: 999,
+              background: point.color,
+              boxShadow: `0 0 14px ${point.color}55`,
+              margin: '0 auto 7px',
+              border: isLight ? '2px solid rgba(255,255,255,0.86)' : '2px solid rgba(14,22,28,0.92)'
+            }} />
+            <div style={{ fontSize: 9, fontWeight: 850, color: sub, textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {point.label}
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 900, color: text, fontVariantNumeric: 'tabular-nums', marginTop: 3, whiteSpace: 'nowrap' }}>
+              {hasData ? point.value.toFixed(1) : '-'}
+              <span style={{ fontSize: 9, color: sub, marginLeft: 3 }}>{unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const MiniMeasure = ({ label, value, unit, theme }) => (
   <div style={{
-    padding: '10px 8px',
+    padding: '10px 6px',
     borderRadius: 14,
     background: theme === 'light' || theme === 'speciallight' ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.045)',
     border: `1px solid ${theme === 'light' || theme === 'speciallight' ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.055)'}`,
   }}>
-    <div style={{fontSize: 9, fontWeight: 850, letterSpacing: '0.08em', textTransform: 'uppercase', color: Colors.get('subText', theme), marginBottom: 5}}>
+    <div style={{fontSize: 8, fontWeight: 850, letterSpacing: '0.05em', textTransform: 'uppercase', color: Colors.get('subText', theme), marginBottom: 5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'}}>
       {label}
     </div>
-    <div style={{fontSize: 15, fontWeight: 850, color: Colors.get('mainText', theme), fontVariantNumeric: 'tabular-nums'}}>
+    <div style={{fontSize: 15, fontWeight: 850, color: Colors.get('mainText', theme), fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap'}}>
       {value ? value.toFixed(1) : '-'} <span style={{fontSize: 9, color: Colors.get('subText', theme)}}>{unit}</span>
     </div>
   </div>

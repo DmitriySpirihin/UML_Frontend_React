@@ -30,6 +30,20 @@ const DEFAULT_TRAINING_ACCENT_COLOR = '#579BC8';
 const LEGACY_TRAINING_ACCENT_COLORS = ['#5FB6C6', '#FC5200', '#FF7A1A', '#9A8580', '#B87963', '#D8785E', '#7D92D6', '#8F7CFF', '#8A7CD6', '#9A84C8', '#A66BFF', '#BF5AF2'];
 const DEFAULT_SECTION_VISITS = { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
 const DEFAULT_SECTION_LAST_OPENED_AT = { habits: 0, todo: 0, mental: 0, recovery: 0, training: 0, sleep: 0 };
+const DEFAULT_NOTIFY_CRON = '10 12 * * 1,2,3,4,5';
+const DEFAULT_NOTIFY_SETTINGS = [
+  { enabled: false, cron: DEFAULT_NOTIFY_CRON },
+  { enabled: false, cron: DEFAULT_NOTIFY_CRON },
+  { enabled: false, cron: DEFAULT_NOTIFY_CRON }
+];
+const DEFAULT_SECTION_NOTIFICATIONS = {
+  habits: { enabled: false, time: '09:00', days: [1, 2, 3, 4, 5], cron: '0 9 * * 1,2,3,4,5' },
+  todo: { enabled: false, time: '10:00', days: [1, 2, 3, 4, 5], cron: '0 10 * * 1,2,3,4,5' },
+  training: { enabled: false, time: '18:00', days: [1, 2, 3, 4, 5], cron: '0 18 * * 1,2,3,4,5' },
+  mental: { enabled: false, time: '20:00', days: [1, 2, 3, 4, 5], cron: '0 20 * * 1,2,3,4,5' },
+  recovery: { enabled: false, time: '21:00', days: [1, 2, 3, 4, 5, 6, 7], cron: '0 21 * * *' },
+  sleep: { enabled: false, time: '22:30', days: [1, 2, 3, 4, 5, 6, 7], cron: '30 22 * * *' }
+};
 const COFFEE_SECTION_ACCENT_COLORS = ['#B86A37', '#B87963', '#D8785E', '#D49A5C', '#C8A46F', '#A57926', '#A46C3B', '#A6846B', '#8F6A4A', '#9A8580'];
 
 const normalizeAccentHex = (color, fallback = DEFAULT_HABITS_ACCENT_COLOR) => {
@@ -71,6 +85,81 @@ const normalizeAccentPresetList = (presets = []) => {
     .slice(-12);
 };
 
+const cloneNotifySettings = () => DEFAULT_NOTIFY_SETTINGS.map(item => ({ ...item }));
+
+const normalizeNotifySettings = (notify = []) => (
+  cloneNotifySettings().map((defaults, index) => {
+    const saved = Array.isArray(notify) ? notify[index] : null;
+    return {
+      enabled: saved?.enabled === true,
+      cron: typeof saved?.cron === 'string' && saved.cron.trim() ? saved.cron : defaults.cron
+    };
+  })
+);
+
+const cronToTime = (cron, fallback) => {
+  if (typeof cron !== 'string') return fallback;
+  const [minute, hour] = cron.split(' ');
+  const h = Number.parseInt(hour, 10);
+  const m = Number.parseInt(minute, 10);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return fallback;
+  return `${String(Math.max(0, Math.min(23, h))).padStart(2, '0')}:${String(Math.max(0, Math.min(59, m))).padStart(2, '0')}`;
+};
+
+const cronToDays = (cron, fallback) => {
+  if (typeof cron !== 'string') return fallback;
+  const parts = cron.split(' ');
+  if (parts.length < 5 || parts[4] === '*') return [1, 2, 3, 4, 5, 6, 7];
+  const days = parts[4]
+    .split(',')
+    .map(day => Number.parseInt(day, 10))
+    .filter(day => Number.isInteger(day) && day >= 1 && day <= 7);
+  return days.length > 0 ? days : fallback;
+};
+
+const buildCronFromNotification = (time, days) => {
+  const [hourRaw = '9', minuteRaw = '0'] = String(time || '09:00').split(':');
+  const hour = Math.max(0, Math.min(23, Number.parseInt(hourRaw, 10) || 0));
+  const minute = Math.max(0, Math.min(59, Number.parseInt(minuteRaw, 10) || 0));
+  const normalizedDays = Array.isArray(days)
+    ? days.filter(day => Number.isInteger(day) && day >= 1 && day <= 7)
+    : [];
+  const dayPart = normalizedDays.length === 7 || normalizedDays.length === 0 ? '*' : normalizedDays.join(',');
+  return `${minute} ${hour} * * ${dayPart}`;
+};
+
+const normalizeSectionNotifications = (sectionNotifications = {}, notify = []) => {
+  const legacyNotify = normalizeNotifySettings(notify);
+  const legacyBySection = {
+    habits: legacyNotify[0],
+    training: legacyNotify[1]
+  };
+
+  return Object.fromEntries(Object.entries(DEFAULT_SECTION_NOTIFICATIONS).map(([section, defaults]) => {
+    const saved = sectionNotifications?.[section] || {};
+    const legacy = legacyBySection[section] || {};
+    const cron = typeof saved.cron === 'string' && saved.cron.trim()
+      ? saved.cron
+      : (typeof legacy.cron === 'string' && legacy.cron.trim() ? legacy.cron : defaults.cron);
+    const time = typeof saved.time === 'string' && /^\d{1,2}:\d{2}$/.test(saved.time)
+      ? saved.time.padStart(5, '0')
+      : cronToTime(cron, defaults.time);
+    const days = Array.isArray(saved.days) && saved.days.length > 0
+      ? saved.days.filter(day => Number.isInteger(day) && day >= 1 && day <= 7)
+      : cronToDays(cron, defaults.days);
+    const normalized = {
+      enabled: saved.enabled ?? legacy.enabled ?? defaults.enabled,
+      time,
+      days: days.length > 0 ? days : defaults.days
+    };
+    return [section, {
+      ...defaults,
+      ...normalized,
+      cron: buildCronFromNotification(normalized.time, normalized.days)
+    }];
+  }));
+};
+
 const isLegacyTrainingAccentColor = (color) => {
   const normalized = normalizeAccentHex(color, '');
   if (!normalized) return true;
@@ -91,7 +180,8 @@ export class AppData{
    static lastSave = new Date().toISOString();
    static isFirstStart = true;
    static prefs = [...DEFAULT_PREFS]; // language, theme, sound, vibro, font size
-   static notify = [{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'},{enabled:false,cron:'10 12 * * 1,2,3,4,5'}];
+   static notify = cloneNotifySettings();
+   static sectionNotifications = normalizeSectionNotifications();
    //  habits
   static habitCustomCategories = []; // [{icon, label:[ru,en]}]
   static habitCategoryOverrides = {};
@@ -122,6 +212,7 @@ export class AppData{
    static profileOnboardingShown = false;
    static profileNicknameMode = 'telegram';
    static profileCustomNickname = '';
+   static profileAvatarPhoto = '';
    static profileDiscoverySource = '';
    static profilePreferredSections = [];
    static measurements = [[],[],[],[],[]];// [[{ date: newDateStr, value: val }],[],[],[],[]]
@@ -237,12 +328,14 @@ static habitCardWidgets = {
     this.choosenHabitsDaysToForm = data.choosenHabitsDaysToForm;
     this.CustomHabits = data.CustomHabits;
     this.habitsByDate = data.habitsByDate;
-    this.notify = data.notify;
+    this.notify = normalizeNotifySettings(data.notify);
+    this.sectionNotifications = normalizeSectionNotifications(data.sectionNotifications, this.notify);
     setNotify(this.notify);
     this.pData = data.pData || {filled:false,age:20,gender:0,height:180,weight:70,goal:1,activityLevel:1};
     this.profileOnboardingShown = data.profileOnboardingShown ?? this.pData.filled === true;
     this.profileNicknameMode = data.profileNicknameMode || 'telegram';
     this.profileCustomNickname = data.profileCustomNickname || '';
+    this.profileAvatarPhoto = data.profileAvatarPhoto || '';
     this.profileDiscoverySource = data.profileDiscoverySource || '';
     this.profilePreferredSections = Array.isArray(data.profilePreferredSections) ? data.profilePreferredSections : [];
     this.lastBackupDate = data.lastBackupDate;
@@ -359,6 +452,18 @@ static habitCardWidgets = {
       achievements: savedHabitCardWidgets.achievements ?? true
     };
   } 
+  static async setSectionNotification(section, config) {
+    const normalized = normalizeSectionNotifications({
+      ...this.sectionNotifications,
+      [section]: config
+    }, this.notify);
+    this.sectionNotifications = normalized;
+    if (section === 'habits') this.notify[0] = { enabled: normalized.habits.enabled, cron: normalized.habits.cron };
+    if (section === 'training') this.notify[1] = { enabled: normalized.training.enabled, cron: normalized.training.cron };
+    setNotify(this.notify);
+    await saveData();
+    return this.sectionNotifications[section];
+  }
   static async setPrefs(ind,value){
     if (ind === 1) value = 0;
     this.prefs[ind] = value;
@@ -865,6 +970,7 @@ export class Data{
     this.habitAccentPresets = AppData.habitAccentPresets;
     this.choosenHabitsDaysToForm = AppData.choosenHabitsDaysToForm;
     this.notify = AppData.notify;
+    this.sectionNotifications = AppData.sectionNotifications;
     this.exercises = AppData.exercises;
     this.programs = AppData.programs;
     this.trainingAccentColor = AppData.trainingAccentColor;
@@ -874,6 +980,7 @@ export class Data{
     this.profileOnboardingShown = AppData.profileOnboardingShown;
     this.profileNicknameMode = AppData.profileNicknameMode;
     this.profileCustomNickname = AppData.profileCustomNickname;
+    this.profileAvatarPhoto = AppData.profileAvatarPhoto;
     this.profileDiscoverySource = AppData.profileDiscoverySource;
     this.profilePreferredSections = AppData.profilePreferredSections;
     this.measurements = AppData.measurements;

@@ -19,6 +19,7 @@ import {
 } from 'react-icons/md';
 import { FaCrown } from 'react-icons/fa';
 import { buildSleepAccent } from './SleepVisuals.js';
+import { listSleepDayEntries } from '../../StaticClasses/SleepLogHelper.js';
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
@@ -29,6 +30,7 @@ const PERIOD_LABELS = [
   ['6 мес', '6 mo'],
   ['Год', 'Year']
 ];
+const WAKE_TONE = '#F6B73C';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -190,15 +192,16 @@ const PeriodSelector = ({ selectedIndex, setSelectedIndex, theme, langIndex, acc
   );
 };
 
-const MetricCard = ({ icon, label, value, hint, theme, accent, tone }) => {
+const MetricCard = ({ icon, label, value, hint, theme, accent, tone, featured = false }) => {
   const s = styles(theme, accent);
+  const cardTone = tone || accent.hue;
   return (
-    <div style={s.metricCard}>
-      <div style={s.metricIcon(tone || accent.hue)}>{icon}</div>
+    <div style={{ ...s.metricCard, ...(featured ? s.metricFeatured(cardTone) : {}) }}>
+      <div style={s.metricIcon(cardTone)}>{icon}</div>
       <div style={s.metricCopy}>
-        <div style={s.metricLabel}>{label}</div>
-        <div style={s.metricValue}>{value}</div>
-        {hint && <div style={s.metricHint}>{hint}</div>}
+        <div style={{ ...s.metricLabel, ...(featured ? s.metricLabelFeatured(cardTone) : {}) }}>{label}</div>
+        <div style={{ ...s.metricValue, ...(featured ? s.metricValueFeatured(cardTone) : {}) }}>{value}</div>
+        {hint && <div style={{ ...s.metricHint, ...(featured ? s.metricHintFeatured : {}) }}>{hint}</div>}
       </div>
     </div>
   );
@@ -269,14 +272,14 @@ const SleepMetrics = () => {
   const accent = useMemo(() => buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF'), []);
   const s = styles(theme, accent, fSize);
 
-  const sleepData = useMemo(() => Object.entries(AppData.sleepingLog || {})
-    .map(([date, entry]) => ({
-      date,
-      durationMs: Number(entry?.duration) || 0,
-      bedtime: typeof entry?.bedtime === 'number' ? entry.bedtime : null,
+  const sleepData = useMemo(() => listSleepDayEntries()
+    .map((entry) => ({
+      date: entry.key,
+      durationMs: Number(entry.duration) || 0,
+      bedtime: typeof entry.bedtime === 'number' ? entry.bedtime : null,
       wakeMs: getWakeMs(entry),
-      mood: Number(entry?.mood) || 0,
-      note: entry?.note || ''
+      mood: Number(entry.mood) || 0,
+      note: entry.note || ''
     }))
     .filter((item) => item.durationMs > 0)
     .sort((a, b) => toDate(a.date) - toDate(b.date)), []);
@@ -336,8 +339,10 @@ const SleepMetrics = () => {
             <div style={s.heroGlow} />
             {stats.count > 0 && (
               <div style={s.scoreRing(stats.score)}>
-                <div style={s.scoreValue}>{stats.score}</div>
-                <div style={s.scoreLabel}>{langIndex === 0 ? 'балл' : 'score'}</div>
+                <div style={s.scoreInner}>
+                  <div style={s.scoreValue}>{stats.score}</div>
+                  <div style={s.scoreLabel}>{langIndex === 0 ? 'балл' : 'score'}</div>
+                </div>
               </div>
             )}
             <div style={s.heroCopy}>
@@ -353,7 +358,22 @@ const SleepMetrics = () => {
               </div>
               <div style={s.heroText}>
                 {stats.count
-                  ? `${langIndex === 0 ? 'Средний сон' : 'Average'} ${formatDuration(stats.avg, langIndex)}, ${langIndex === 0 ? 'регулярность' : 'consistency'} ${stats.consistencyPct}%, ${langIndex === 0 ? 'цель' : 'goal'} ${stats.goalPct}%.`
+                  ? (
+                    <div style={s.heroStats}>
+                      <span style={s.heroStat}>
+                        <span>{langIndex === 0 ? 'Сон' : 'Sleep'}</span>
+                        <strong style={s.heroStatValue}>{formatDuration(stats.avg, langIndex)}</strong>
+                      </span>
+                      <span style={s.heroStat}>
+                        <span>{langIndex === 0 ? 'Режим' : 'Rhythm'}</span>
+                        <strong style={s.heroStatValue}>{stats.consistencyPct}%</strong>
+                      </span>
+                      <span style={s.heroStat}>
+                        <span>{langIndex === 0 ? 'Цель' : 'Goal'}</span>
+                        <strong style={s.heroStatValue}>{stats.goalPct}%</strong>
+                      </span>
+                    </div>
+                  )
                   : (langIndex === 0 ? 'После нескольких записей здесь появится короткая оценка режима.' : 'After a few records, this area will show a compact rhythm score.')}
               </div>
               {stats.count > 0 && (
@@ -397,6 +417,8 @@ const SleepMetrics = () => {
               hint={stats.latest ? `${langIndex === 0 ? 'последний' : 'last'} ${formatDate(stats.latest.date, langIndex)}` : ''}
               theme={theme}
               accent={accent}
+              tone={WAKE_TONE}
+              featured={stats.avgWake !== null}
             />
             <MetricCard
               icon={<MdOutlineStarBorder />}
@@ -406,6 +428,7 @@ const SleepMetrics = () => {
               theme={theme}
               accent={accent}
               tone={moodColor}
+              featured={stats.moodAvg > 0}
             />
             <MetricCard
               icon={<MdOutlineFlag />}
@@ -414,6 +437,7 @@ const SleepMetrics = () => {
               hint={stats.best ? formatDate(stats.best.date, langIndex, true) : ''}
               theme={theme}
               accent={accent}
+              featured={Boolean(stats.best)}
             />
           </section>
 
@@ -433,6 +457,8 @@ const SleepMetrics = () => {
                 linesColor={Colors.get('border', theme)}
                 backgroundColor="transparent"
                 height={220}
+                accentColor={accent.hue}
+                showMoodColors={false}
               />
             ) : (
               <EmptyAnalytics langIndex={langIndex} theme={theme} accent={accent} />
@@ -499,7 +525,7 @@ const styles = (theme, accent, fSize = 0) => {
         ? `linear-gradient(180deg, ${accent.faint} 0%, ${bg} 40%)`
         : `linear-gradient(180deg, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.12) 0%, ${bg} 42%)`,
       color: text,
-      fontFamily: 'Segoe UI, sans-serif',
+      fontFamily: 'inherit',
       overflow: 'hidden',
       position: 'relative'
     },
@@ -624,36 +650,42 @@ const styles = (theme, accent, fSize = 0) => {
     scoreRing: (score) => ({
       position: 'relative',
       zIndex: 1,
-      width: 92,
-      height: 92,
+      width: 88,
+      height: 88,
       borderRadius: '50%',
+      display: 'grid',
+      placeItems: 'center',
+      justifySelf: 'center',
+      alignSelf: 'center',
+      flexShrink: 0,
+      background: `conic-gradient(${accent.hue} 0deg, ${accent.hue} ${Math.round(clamp(score || 0, 0, 100) * 3.6)}deg, ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)'} ${Math.round(clamp(score || 0, 0, 100) * 3.6)}deg 360deg)`,
+      boxShadow: `0 0 30px ${accent.soft}`
+    }),
+    scoreInner: {
+      width: 70,
+      height: 70,
+      borderRadius: '50%',
+      background: bg,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      background: `conic-gradient(${accent.hue} 0deg, ${accent.hue} ${Math.round(clamp(score || 0, 0, 100) * 3.6)}deg, ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)'} ${Math.round(clamp(score || 0, 0, 100) * 3.6)}deg 360deg)`,
-      boxShadow: `0 0 30px ${accent.soft}`
-    }),
+      boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.8) inset' : '0 1px 0 rgba(255,255,255,0.08) inset'
+    },
     scoreValue: {
-      width: 72,
-      height: 72,
-      borderRadius: '50%',
-      background: bg,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
       color: text,
       fontSize: 27,
+      lineHeight: 1,
       fontWeight: 950,
       fontVariantNumeric: 'tabular-nums'
     },
     scoreLabel: {
-      position: 'absolute',
-      bottom: 14,
       color: sub,
       fontSize: 8,
+      lineHeight: 1,
       fontWeight: 900,
-      textTransform: 'uppercase'
+      textTransform: 'uppercase',
+      marginTop: 5
     },
     heroCopy: {
       position: 'relative',
@@ -685,6 +717,39 @@ const styles = (theme, accent, fSize = 0) => {
       fontSize: 12,
       lineHeight: 1.38,
       fontWeight: 720
+    },
+    heroStats: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      gap: 6,
+      marginTop: 2,
+      maxWidth: 190
+    },
+    heroStat: {
+      minWidth: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 2,
+      padding: '6px 7px',
+      borderRadius: 12,
+      background: isLight ? 'rgba(255,255,255,0.66)' : 'rgba(255,255,255,0.055)',
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
+      color: sub,
+      fontSize: 8,
+      lineHeight: 1,
+      fontWeight: 900,
+      textTransform: 'uppercase',
+      textAlign: 'center',
+      boxSizing: 'border-box'
+    },
+    heroStatValue: {
+      color: text,
+      fontSize: 11,
+      lineHeight: 1.1,
+      fontWeight: 950,
+      letterSpacing: 0,
+      textTransform: 'none',
+      whiteSpace: 'nowrap'
     },
     heroChips: {
       display: 'flex',
@@ -719,6 +784,11 @@ const styles = (theme, accent, fSize = 0) => {
       background: panel,
       border: `1px solid ${border}`
     },
+    metricFeatured: (color) => ({
+      background: `linear-gradient(135deg, ${color}24, ${panel})`,
+      border: `1px solid ${color}66`,
+      boxShadow: isLight ? `0 16px 30px -24px ${color}` : `0 16px 34px -28px ${color}`
+    }),
     metricIcon: (color) => ({
       width: 38,
       height: 38,
@@ -743,6 +813,10 @@ const styles = (theme, accent, fSize = 0) => {
       fontWeight: 950,
       textTransform: 'uppercase'
     },
+    metricLabelFeatured: (color) => ({
+      color,
+      opacity: 0.92
+    }),
     metricValue: {
       color: text,
       fontSize: 17,
@@ -752,6 +826,10 @@ const styles = (theme, accent, fSize = 0) => {
       fontVariantNumeric: 'tabular-nums',
       whiteSpace: 'nowrap'
     },
+    metricValueFeatured: (color) => ({
+      color,
+      textShadow: isLight ? 'none' : `0 0 16px ${color}44`
+    }),
     metricHint: {
       color: sub,
       fontSize: 10,
@@ -761,6 +839,10 @@ const styles = (theme, accent, fSize = 0) => {
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis'
+    },
+    metricHintFeatured: {
+      color: text,
+      opacity: 0.72
     },
     chartCard: {
       borderRadius: 24,

@@ -2,12 +2,22 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   FaBrain,
+  FaBriefcase,
   FaBullseye,
+  FaBookOpen,
+  FaCamera,
+  FaCar,
   FaCalendarDay,
+  FaCalendarCheck,
   FaCheck,
   FaChevronDown,
   FaChevronUp,
+  FaChartLine,
+  FaClipboardList,
+  FaCode,
   FaClock,
+  FaDumbbell,
+  FaEnvelope,
   FaEye,
   FaEyeSlash,
   FaFire,
@@ -15,12 +25,23 @@ import {
   FaFlask,
   FaFolderOpen,
   FaGlobeAmericas,
+  FaGraduationCap,
+  FaHeartbeat,
+  FaHome,
+  FaMoneyBillWave,
+  FaMusic,
+  FaPaintBrush,
+  FaPen,
+  FaPhone,
   FaLayerGroup,
   FaLightbulb,
   FaListUl,
   FaPlus,
   FaPuzzlePiece,
   FaRocket,
+  FaSearch,
+  FaSeedling,
+  FaShoppingCart,
   FaStar,
   FaTag,
   FaThumbtack,
@@ -46,22 +67,122 @@ const URGENCY_COLORS = ['#8FA6C8', '#64B5F6', '#FFD54F', '#FF8A65', '#E57373'];
 
 const BASE_CATEGORIES = TODO_BASE_CATEGORIES;
 
-const CUSTOM_ICON_OPTIONS = [
-  { id: 'tag', icon: FaTag },
-  { id: 'star', icon: FaStar },
-  { id: 'fire', icon: FaFire },
-  { id: 'idea', icon: FaLightbulb },
-  { id: 'target', icon: FaBullseye },
-  { id: 'puzzle', icon: FaPuzzlePiece },
-  { id: 'rocket', icon: FaRocket },
-  { id: 'brain', icon: FaBrain },
-  { id: 'pin', icon: FaThumbtack },
-  { id: 'folder', icon: FaFolderOpen },
-  { id: 'film', icon: FaFilm },
-  { id: 'world', icon: FaGlobeAmericas },
-  { id: 'lab', icon: FaFlask },
-  { id: 'tools', icon: FaTools }
+const CUSTOM_ICON_GROUPS = [
+  {
+    id: 'work',
+    label: ['Работа и проекты', 'Work & projects'],
+    icons: [
+      { id: 'briefcase', icon: FaBriefcase },
+      { id: 'clipboard', icon: FaClipboardList },
+      { id: 'calendar-check', icon: FaCalendarCheck },
+      { id: 'chart', icon: FaChartLine },
+      { id: 'code', icon: FaCode },
+      { id: 'folder', icon: FaFolderOpen },
+      { id: 'pin', icon: FaThumbtack },
+      { id: 'tools', icon: FaTools }
+    ]
+  },
+  {
+    id: 'personal',
+    label: ['Личное', 'Personal'],
+    icons: [
+      { id: 'tag', icon: FaTag },
+      { id: 'star', icon: FaStar },
+      { id: 'target', icon: FaBullseye },
+      { id: 'idea', icon: FaLightbulb },
+      { id: 'puzzle', icon: FaPuzzlePiece },
+      { id: 'rocket', icon: FaRocket },
+      { id: 'home', icon: FaHome },
+      { id: 'world', icon: FaGlobeAmericas }
+    ]
+  },
+  {
+    id: 'health',
+    label: ['Здоровье и тело', 'Health & body'],
+    icons: [
+      { id: 'heart', icon: FaHeartbeat },
+      { id: 'dumbbell', icon: FaDumbbell },
+      { id: 'fire', icon: FaFire },
+      { id: 'seedling', icon: FaSeedling },
+      { id: 'brain', icon: FaBrain },
+      { id: 'lab', icon: FaFlask }
+    ]
+  },
+  {
+    id: 'life',
+    label: ['Быт и связь', 'Life & contacts'],
+    icons: [
+      { id: 'shopping', icon: FaShoppingCart },
+      { id: 'money', icon: FaMoneyBillWave },
+      { id: 'phone', icon: FaPhone },
+      { id: 'mail', icon: FaEnvelope },
+      { id: 'car', icon: FaCar },
+      { id: 'camera', icon: FaCamera }
+    ]
+  },
+  {
+    id: 'creative',
+    label: ['Учёба и творчество', 'Study & creative'],
+    icons: [
+      { id: 'book', icon: FaBookOpen },
+      { id: 'graduation', icon: FaGraduationCap },
+      { id: 'paint', icon: FaPaintBrush },
+      { id: 'music', icon: FaMusic },
+      { id: 'film', icon: FaFilm }
+    ]
+  }
 ];
+const CUSTOM_ICON_OPTIONS = CUSTOM_ICON_GROUPS.flatMap(group => group.icons);
+const CUSTOM_ICON_SEARCH_TERMS = {
+  briefcase: 'портфель работа проект бизнес офис',
+  clipboard: 'список чеклист задачи план',
+  'calendar-check': 'календарь дата событие дедлайн',
+  chart: 'график аналитика статистика рост',
+  code: 'код разработка программирование сайт',
+  folder: 'папка файлы документы',
+  pin: 'пин закрепить важное',
+  tools: 'инструменты ремонт настройка',
+  tag: 'тег метка ярлык',
+  star: 'звезда избранное важное',
+  target: 'цель фокус мишень',
+  idea: 'идея лампа мысль',
+  puzzle: 'пазл задача решение',
+  rocket: 'ракета запуск старт',
+  home: 'дом семья быт',
+  world: 'мир глобус поездка',
+  heart: 'сердце здоровье пульс',
+  dumbbell: 'гантели спорт тренировка',
+  fire: 'огонь срочно энергия',
+  seedling: 'растение рост привычка',
+  brain: 'мозг учеба мысль',
+  lab: 'лаборатория колба эксперимент',
+  shopping: 'покупки корзина магазин',
+  money: 'деньги финансы оплата',
+  phone: 'телефон звонок связь',
+  mail: 'почта письмо сообщение',
+  car: 'машина авто дорога',
+  camera: 'камера фото снимок',
+  book: 'книга чтение учеба',
+  graduation: 'учеба выпуск образование',
+  paint: 'кисть рисование творчество',
+  music: 'музыка ноты звук',
+  film: 'фильм видео кино'
+};
+
+const matchesCustomIconQuery = (iconKey, query) => (
+  !query ||
+  iconKey.toLowerCase().includes(query) ||
+  (CUSTOM_ICON_SEARCH_TERMS[iconKey] || '').toLowerCase().includes(query)
+);
+
+const normalizeCustomEmoji = (value) => {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return '';
+  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+    return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(trimmed)][0]?.segment || '';
+  }
+  return Array.from(trimmed)[0] || '';
+};
 
 // =========================
 // Component
@@ -82,8 +203,13 @@ const ToDoNew = () => {
   const [expandedSubGoals, setExpandedSubGoals] = useState({});
   const [customCats, setCustomCats] = useState(AppData.todoCustomCategories || []);
   const [showCatModal, setShowCatModal] = useState(false);
+  const [showTaskIconModal, setShowTaskIconModal] = useState(false);
+  const [taskIcon, setTaskIcon] = useState('');
+  const [taskEmojiInput, setTaskEmojiInput] = useState('');
+  const [taskIconSearch, setTaskIconSearch] = useState('');
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState(CUSTOM_ICON_OPTIONS[0].id);
+  const [newCatEmoji, setNewCatEmoji] = useState('');
   const [visibility, setVisibility] = useState({ difficulty: true, urgency: true, startDate: true, deadLine: true, ...(AppData.todoFieldsVisibility || {}) });
   const [accentColor] = useState(buildTodoAccent(AppData.todoAccentColor || '#149DFF').hue);
   const categoryStripRef = useRef(null);
@@ -110,7 +236,8 @@ const ToDoNew = () => {
     shadow: isLight ? '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 40px -30px rgba(15,23,42,0.18)' : '0 1px 0 rgba(255,255,255,0.09) inset, 0 20px 44px -28px rgba(0,0,0,0.62)'
   };
 
-  const currentTone = getTodoCategoryTone(currentCat?.label?.[0], accent);
+  const taskIconValue = taskIcon || currentCat?.icon;
+  const currentTone = getTodoCategoryTone(currentCat?.label?.[0], accent, taskIconValue);
   const CurrentIcon = currentTone.icon;
 
   // ===== Subscribers =====
@@ -127,7 +254,8 @@ const ToDoNew = () => {
   const handleCreateCustomCat = async () => {
     const trimmed = newCatName.trim();
     if (!trimmed) return;
-    const entry = await addCustomCategory(newCatIcon, trimmed, trimmed);
+    const emoji = normalizeCustomEmoji(newCatEmoji);
+    const entry = await addCustomCategory(emoji ? `emoji:${emoji}` : newCatIcon, trimmed, trimmed);
     if (entry) {
       const updated = [...(AppData.todoCustomCategories || [])];
       setCustomCats(updated);
@@ -135,6 +263,7 @@ const ToDoNew = () => {
     }
     setNewCatName('');
     setNewCatIcon(CUSTOM_ICON_OPTIONS[0].id);
+    setNewCatEmoji('');
     setShowCatModal(false);
   };
 
@@ -178,7 +307,7 @@ const ToDoNew = () => {
       dIdx,
       pIdx,
       categoryName,
-      currentCat.icon,
+      taskIconValue,
       startDate,
       deadLine || null,
       cleanGoals,
@@ -244,8 +373,31 @@ const ToDoNew = () => {
       setUrgencyIdx(1);
       setStartDate(new Date().toISOString().split('T')[0]);
       setDeadLine('');
+      setTaskIcon('');
+      setTaskEmojiInput('');
+      setTaskIconSearch('');
       setSelectedCatIndex(0);
     }, 250);
+  };
+
+  const applyTaskEmoji = () => {
+    const emoji = normalizeCustomEmoji(taskEmojiInput);
+    if (!emoji) return;
+    setTaskIcon(`emoji:${emoji}`);
+    setTaskEmojiInput(emoji);
+    setShowTaskIconModal(false);
+  };
+
+  const applyPresetTaskIcon = (iconKey) => {
+    setTaskIcon(iconKey);
+    setTaskEmojiInput('');
+    setShowTaskIconModal(false);
+  };
+
+  const resetTaskIcon = () => {
+    setTaskIcon('');
+    setTaskEmojiInput('');
+    setShowTaskIconModal(false);
   };
 
   const addSubGoalLocal = () => {
@@ -330,9 +482,21 @@ const ToDoNew = () => {
       <div style={contentWrap()}>
         {/* HERO */}
         <div style={addHero(ui, accent)}>
-          <div style={addHeroIcon(ui, currentTone)}>
+          <motion.button
+            type="button"
+            whileTap={{ scale: 0.92 }}
+            onClick={() => {
+              setTaskIconSearch('');
+              setShowTaskIconModal(true);
+            }}
+            style={addHeroIconButton(ui, currentTone)}
+            aria-label={lang === 0 ? 'Изменить эмодзи задачи' : 'Change task emoji'}
+          >
             <CurrentIcon size={24} />
-          </div>
+            <span style={heroIconEditMark(ui, accent)}>
+              <FaPen size={9} />
+            </span>
+          </motion.button>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={heroEyebrow(ui)}>
               {currentCat?.label?.[lang] || (lang === 0 ? 'Категория' : 'Category')}
@@ -374,7 +538,7 @@ const ToDoNew = () => {
           {CATEGORIES.map((cat, index) => {
             const active = index === selectedCatIndex;
             const isCustom = index >= BASE_CATEGORIES.length;
-            const tone = getTodoCategoryTone(cat.label[0], accent);
+            const tone = getTodoCategoryTone(cat.label[0], accent, cat.icon);
             const Icon = tone.icon;
             return (
               <motion.div
@@ -508,28 +672,28 @@ const ToDoNew = () => {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {!visibility.difficulty && (
                 <motion.div whileTap={{ scale: 0.96 }} onClick={() => toggleFieldVisibility('difficulty')} style={restoreChip(ui, accent)}>
-                  <FaEye size={11} color={accent.hue} />
+                  <FaEye size={11} color={ui.sub} />
                   <FaLayerGroup size={11} />
                   <span>{lang === 0 ? 'Сложность' : 'Difficulty'}</span>
                 </motion.div>
               )}
               {!visibility.urgency && (
                 <motion.div whileTap={{ scale: 0.96 }} onClick={() => toggleFieldVisibility('urgency')} style={restoreChip(ui, accent)}>
-                  <FaEye size={11} color={accent.hue} />
+                  <FaEye size={11} color={ui.sub} />
                   <FaFire size={11} />
                   <span>{lang === 0 ? 'Срочность' : 'Urgency'}</span>
                 </motion.div>
               )}
               {!visibility.startDate && (
                 <motion.div whileTap={{ scale: 0.96 }} onClick={() => toggleFieldVisibility('startDate')} style={restoreChip(ui, accent)}>
-                  <FaEye size={11} color={accent.hue} />
+                  <FaEye size={11} color={ui.sub} />
                   <FaCalendarDay size={11} />
                   <span>{lang === 0 ? 'Старт' : 'Start'}</span>
                 </motion.div>
               )}
               {!visibility.deadLine && (
                 <motion.div whileTap={{ scale: 0.96 }} onClick={() => toggleFieldVisibility('deadLine')} style={restoreChip(ui, accent)}>
-                  <FaEye size={11} color={accent.hue} />
+                  <FaEye size={11} color={ui.sub} />
                   <FaClock size={11} />
                   <span>{lang === 0 ? 'Дедлайн' : 'Deadline'}</span>
                 </motion.div>
@@ -548,7 +712,7 @@ const ToDoNew = () => {
             </span>
           )}
         </div>
-        <div style={configCard(ui)}>
+        <div style={{ ...configCard(ui), minHeight: 162, flexShrink: 0 }}>
           <div style={addSubRow(ui)}>
             <input
               type="text"
@@ -613,7 +777,22 @@ const ToDoNew = () => {
         setNewCatName={setNewCatName}
         newCatIcon={newCatIcon}
         setNewCatIcon={setNewCatIcon}
+        newCatEmoji={newCatEmoji}
+        setNewCatEmoji={setNewCatEmoji}
         onCreate={handleCreateCustomCat}
+      />
+      <TaskIconModal
+        show={showTaskIconModal}
+        onClose={() => setShowTaskIconModal(false)}
+        lang={lang}
+        ui={ui}
+        tone={currentTone}
+        TaskIcon={CurrentIcon}
+        taskIcon={taskIcon}
+        iconSearch={taskIconSearch}
+        setIconSearch={setTaskIconSearch}
+        onApplyPreset={applyPresetTaskIcon}
+        onReset={resetTaskIcon}
       />
     </motion.div>
   );
@@ -627,11 +806,11 @@ export default ToDoNew;
 const ScaleCard = ({ ui, icon, label, value, onChange, labels, colors, onHide }) => {
   const activeColor = colors[value] || ui.accent;
   return (
-    <div style={configCard(ui)}>
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
-        <span style={{ display: 'flex', color: activeColor, marginRight: 8 }}>{icon}</span>
-        <span style={{ color: ui.text, fontWeight: 850, fontSize: 14, flex: 1 }}>{label}</span>
-        <span style={{ color: activeColor, fontWeight: 950, fontSize: 13, marginRight: 8 }}>
+    <div style={paramCard(ui)}>
+      <div style={paramCardHead()}>
+        <span style={paramIcon(activeColor)}>{icon}</span>
+        <span style={paramLabel(ui)}>{label}</span>
+        <span style={paramValue(activeColor)}>
           {labels[value]}
         </span>
         <motion.div
@@ -656,13 +835,6 @@ const ScaleCard = ({ ui, icon, label, value, onChange, labels, colors, onHide })
             />
           );
         })}
-      </div>
-      <div style={scaleLabelRow(ui)}>
-        {labels.map((l, i) => (
-          <span key={l + i} style={{ color: i === value ? colors[i] : ui.sub, fontSize: 9, fontWeight: 800, flex: 1, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {i === value ? '●' : '·'}
-          </span>
-        ))}
       </div>
     </div>
   );
@@ -765,9 +937,9 @@ const SubGoalDraftCard = ({
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             style={subDraftExpanded(ui)}
           >
             <div style={subDraftFieldLabel(ui)}>
@@ -782,22 +954,26 @@ const SubGoalDraftCard = ({
               rows={2}
             />
 
-            <div style={subDraftFieldLabel(ui)}>
-              <FaStar size={11} color={goal.isDone ? '#2ed177' : ui.sub} />
-              {lang === 0 ? 'Результат' : 'Result'}
-            </div>
-            <textarea
-              value={goal.result || ''}
-              onChange={(e) => onUpdate({ result: e.target.value })}
-              placeholder={lang === 0 ? 'Что получилось?' : 'What was achieved?'}
-              style={subDraftFieldInput(ui)}
-              rows={2}
-            />
+            {(goal.isDone || hasResult) && (
+              <>
+                <div style={subDraftFieldLabel(ui)}>
+                  <FaStar size={11} color={goal.isDone ? '#2ed177' : ui.sub} />
+                  {lang === 0 ? 'Результат' : 'Result'}
+                </div>
+                <textarea
+                  value={goal.result || ''}
+                  onChange={(e) => onUpdate({ result: e.target.value })}
+                  placeholder={lang === 0 ? 'Что получилось?' : 'What was achieved?'}
+                  style={subDraftFieldInput(ui)}
+                  rows={2}
+                />
+              </>
+            )}
 
             <div style={subDraftFooter()}>
-              <motion.div whileTap={{ scale: 0.96 }} onClick={onToggleDone} style={subDraftFooterBtn(ui, goal.isDone ? 'neutral' : 'done')}>
+              <motion.div whileTap={{ scale: 0.96 }} onClick={(e) => { e.stopPropagation(); onToggleExpand(); }} style={subDraftFooterBtn(ui, 'done')}>
                 <FaCheck size={10} />
-                {goal.isDone ? (lang === 0 ? 'Вернуть' : 'Reopen') : (lang === 0 ? 'Готово' : 'Done')}
+                {lang === 0 ? 'Готово' : 'Done'}
               </motion.div>
               <motion.div whileTap={{ scale: canMoveUp ? 0.96 : 1 }} onClick={() => canMoveUp && onMove(-1)} style={subDraftIconBtn(ui, !canMoveUp)}>
                 <FaChevronUp size={10} />
@@ -824,7 +1000,89 @@ function formatDateForDisplay(value, fallback) {
   return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-const CustomCategoryModal = ({ show, onClose, lang, ui, accent, newCatName, setNewCatName, newCatIcon, setNewCatIcon, onCreate }) => (
+const TaskIconModal = ({ show, onClose, lang, ui, tone, taskIcon, iconSearch, setIconSearch, onApplyPreset, onReset }) => {
+  const query = iconSearch.trim().toLowerCase();
+  const visibleGroups = CUSTOM_ICON_GROUPS
+    .map((group) => {
+      const groupMatch = group.label.some(label => label.toLowerCase().includes(query));
+      const icons = group.icons.filter((opt) => groupMatch || matchesCustomIconQuery(opt.id, query));
+      return { ...group, icons };
+    })
+    .filter((group) => group.icons.length > 0);
+
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={taskIconOverlayStyle} onClick={onClose}>
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+            style={taskIconModal(ui)}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={taskIconHandle()} />
+            <div style={taskIconSheetHeader()}>
+              <h3 style={taskIconModalTitle(ui)}>{lang === 0 ? 'Выбрать иконку' : 'Choose icon'}</h3>
+              <button type="button" onClick={onClose} style={taskIconCloseBtn(ui)} aria-label={lang === 0 ? 'Закрыть' : 'Close'}>
+                <MdClose size={22} />
+              </button>
+            </div>
+
+            <div style={taskIconSearchWrap(ui)}>
+              <FaSearch size={16} color={ui.sub} />
+              <input
+                type="text"
+                value={iconSearch}
+                onChange={(e) => setIconSearch(e.target.value)}
+                placeholder={lang === 0 ? 'Поиск иконки...' : 'Search icon...'}
+                style={taskIconSearchInput(ui)}
+              />
+            </div>
+
+            <div style={taskIconPresetSection()}>
+              {visibleGroups.map((group) => (
+                <div key={group.id} style={taskIconGroup()}>
+                  <div style={iconGroupLabel(ui)}>{group.label[lang]}</div>
+                  <div style={taskIconGrid()}>
+                    {group.icons.map((opt) => {
+                      const Icon = opt.icon;
+                      const active = taskIcon === opt.id;
+                      return (
+                        <motion.button
+                          type="button"
+                          key={opt.id}
+                          whileTap={{ scale: 0.9 }}
+                          onClick={() => onApplyPreset(opt.id)}
+                          style={taskIconItem(active, ui, tone)}
+                          aria-label={opt.id}
+                        >
+                          <Icon size={22} />
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {visibleGroups.length === 0 && (
+                <div style={taskIconEmpty(ui)}>{lang === 0 ? 'Ничего не найдено' : 'Nothing found'}</div>
+              )}
+            </div>
+
+            {taskIcon && (
+              <button type="button" onClick={onReset} style={taskIconResetInline(ui)}>
+                {lang === 0 ? 'Сбросить иконку' : 'Reset icon'}
+              </button>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
+const CustomCategoryModal = ({ show, onClose, lang, ui, accent, newCatName, setNewCatName, newCatIcon, setNewCatIcon, newCatEmoji, setNewCatEmoji, onCreate }) => (
   <AnimatePresence>
     {show && (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={onClose}>
@@ -849,17 +1107,36 @@ const CustomCategoryModal = ({ show, onClose, lang, ui, accent, newCatName, setN
               placeholder={lang === 0 ? 'Название' : 'Name'}
               style={{ ...textInput(ui) }}
             />
+            <div style={emojiInputRow(ui)}>
+              <span style={emojiPreview(ui, accent)}>
+                {normalizeCustomEmoji(newCatEmoji) || (lang === 0 ? '🙂' : '🙂')}
+              </span>
+              <input
+                type="text"
+                value={newCatEmoji}
+                onChange={(e) => setNewCatEmoji(normalizeCustomEmoji(e.target.value))}
+                placeholder={lang === 0 ? 'Свое эмодзи' : 'Custom emoji'}
+                style={{ ...textInput(ui), minWidth: 0, flex: 1 }}
+              />
+            </div>
             <p style={cardLabel(ui)}>{lang === 0 ? 'Иконка' : 'Icon'}</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 8, maxHeight: '38vh', overflowY: 'auto' }}>
-              {CUSTOM_ICON_OPTIONS.map((opt) => {
-                const Icon = opt.icon;
-                const active = newCatIcon === opt.id;
-                return (
-                  <motion.div key={opt.id} whileTap={{ scale: 0.9 }} onClick={() => setNewCatIcon(opt.id)} style={iconItem(active, ui, accent)}>
-                    <Icon size={18} color={active ? accent.hue : ui.sub} />
-                  </motion.div>
-                );
-              })}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '46vh', overflowY: 'auto', paddingRight: 2 }}>
+              {CUSTOM_ICON_GROUPS.map((group) => (
+                <div key={group.id} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  <div style={iconGroupLabel(ui)}>{group.label[lang]}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 8 }}>
+                    {group.icons.map((opt) => {
+                      const Icon = opt.icon;
+                      const active = newCatIcon === opt.id;
+                      return (
+                        <motion.div key={opt.id} whileTap={{ scale: 0.9 }} onClick={() => setNewCatIcon(opt.id)} style={iconItem(active, ui, accent)}>
+                          <Icon size={18} color={active ? accent.hue : ui.sub} />
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
             <motion.div whileTap={{ scale: 0.97 }} onClick={onCreate} style={modalCreateBtn(ui, accent)}>
               <span style={{ color: accent.hue, fontWeight: 900, fontSize: 14 }}>{lang === 0 ? 'Создать' : 'Create'}</span>
@@ -880,7 +1157,7 @@ const pageHeader = { width: 'calc(100% - 56px)', maxWidth: 660, margin: '0 auto'
 const contentWrap = () => ({ width: 'calc(100% - 56px)', maxWidth: 660, margin: '0 auto', minHeight: 'calc(100vh - 92px)', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' });
 const backBtn = (ui) => ({ width: 42, height: 42, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: ui.field, border: `1px solid ${ui.border}`, cursor: 'pointer', flexShrink: 0 });
 const brandBlock = () => ({ minWidth: 0, flex: 1, textAlign: 'center', padding: '0 12px' });
-const brandTitle = (ui) => ({ color: ui.text, fontFamily: 'Georgia, "Times New Roman", serif', fontSize: 22, fontWeight: 700, lineHeight: 1.05, opacity: 0.86 });
+const brandTitle = (ui) => ({ color: ui.text, fontFamily: 'inherit', fontSize: 24, fontWeight: 700, lineHeight: 1.05, opacity: 0.86 });
 const brandSubtitle = (ui) => ({ marginTop: 5, color: ui.sub, fontSize: 9, fontWeight: 700, letterSpacing: '0.18em' });
 
 const addHero = (ui, accent) => ({
@@ -890,6 +1167,8 @@ const addHero = (ui, accent) => ({
   border: `1px solid ${ui.borderStrong}`, boxShadow: ui.shadow, boxSizing: 'border-box'
 });
 const addHeroIcon = (ui, tone) => ({ width: 54, height: 54, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: tone.hue, background: tone.soft, border: `1px solid ${tone.ring}`, boxShadow: `0 0 28px ${tone.soft}`, flexShrink: 0 });
+const addHeroIconButton = (ui, tone) => ({ ...addHeroIcon(ui, tone), position: 'relative', padding: 0, cursor: 'pointer', outline: 'none', fontFamily: 'inherit', WebkitTapHighlightColor: 'transparent' });
+const heroIconEditMark = (ui, accent) => ({ position: 'absolute', right: -5, bottom: -5, width: 20, height: 20, borderRadius: 999, background: ui.card, border: `1px solid ${ui.border}`, color: accent.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: ui.shadow });
 const heroEyebrow = (ui) => ({ color: ui.sub, fontSize: 10, fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase' });
 const heroNameInput = (ui, fSize) => ({ width: '100%', border: 'none', outline: 'none', background: 'transparent', color: ui.text, fontSize: fSize === 0 ? 22 : 24, fontWeight: 950, fontFamily: 'inherit', padding: '4px 0 0', boxSizing: 'border-box' });
 
@@ -917,16 +1196,21 @@ const categoryActionBtn = (ui, danger = false) => ({ width: 22, height: 22, bord
 const addCategoryChip = (ui, accent) => ({ minHeight: 40, padding: '8px 14px', borderRadius: 14, whiteSpace: 'nowrap', background: ui.cardSoft, color: accent.hue, border: `1px dashed ${accent.ring}`, fontSize: 13, fontWeight: 850, display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flexShrink: 0, boxSizing: 'border-box', userSelect: 'none' });
 
 const configCard = (ui) => ({ background: `linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`, borderRadius: 22, padding: 16, border: `1px solid ${ui.border}`, boxShadow: ui.shadow, boxSizing: 'border-box', backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' });
+const paramCard = (ui) => ({ background: ui.cardSoft, borderRadius: 18, padding: 14, border: `1px solid ${ui.border}`, boxSizing: 'border-box', boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset' });
+const paramCardHead = () => ({ display: 'flex', alignItems: 'center', marginBottom: 12, minWidth: 0 });
+const paramIcon = (color) => ({ width: 24, height: 24, borderRadius: 9, background: `${color}18`, border: `1px solid ${color}24`, color, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: 10, flexShrink: 0 });
+const paramLabel = (ui) => ({ color: ui.text, fontWeight: 850, fontSize: 14, flex: 1, minWidth: 0 });
+const paramValue = (color) => ({ color, fontWeight: 900, fontSize: 13, marginRight: 8, flexShrink: 0 });
 const cardLabel = (ui) => ({ color: ui.sub, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10, marginTop: 0 });
 
 const dateCard = (ui) => ({ ...configCard(ui), padding: 14, cursor: 'pointer', position: 'relative' });
 const clearDateBtn = (ui) => ({ width: 24, height: 24, borderRadius: 999, border: 'none', background: ui.field, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative', zIndex: 2, cursor: 'pointer' });
 
-const eyeBtn = (ui) => ({ width: 26, height: 26, borderRadius: 9, background: ui.field, border: `1px solid ${ui.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 });
-const restoreChip = (ui, accent) => ({ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '8px 12px', borderRadius: 12, background: accent.soft, border: `1px dashed ${accent.ring}`, color: accent.hue, fontSize: 12, fontWeight: 850, cursor: 'pointer' });
+const eyeBtn = (ui) => ({ width: 24, height: 24, borderRadius: 9, background: ui.cardSoft, border: `1px solid ${ui.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 });
+const restoreChip = (ui) => ({ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '7px 10px', borderRadius: 11, background: ui.cardSoft, border: `1px solid ${ui.border}`, color: ui.sub, fontSize: 12, fontWeight: 850, cursor: 'pointer' });
 
 const dateParamGrid = () => ({ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 });
-const dateParamCard = (ui) => ({ ...configCard(ui), padding: 14, cursor: 'pointer', position: 'relative' });
+const dateParamCard = (ui) => ({ ...paramCard(ui), cursor: 'pointer', position: 'relative' });
 const dateParamHead = () => ({ display: 'flex', alignItems: 'center', marginBottom: 12, minWidth: 0 });
 const dateParamBody = (ui) => ({ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, minHeight: 42, padding: '9px 10px', borderRadius: 14, background: ui.field, border: `1px solid ${ui.border}`, overflow: 'hidden' });
 const dateParamIcon = (accent) => ({ width: 30, height: 30, borderRadius: 10, color: accent.hue, background: accent.soft, border: `1px solid ${accent.ring}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 });
@@ -934,16 +1218,15 @@ const dateParamValue = (ui, hasValue) => ({ color: hasValue ? ui.text : ui.sub, 
 const dateParamClear = (ui) => ({ width: 26, height: 26, borderRadius: 9, border: `1px solid ${ui.border}`, background: ui.field, color: ui.sub, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, position: 'relative', zIndex: 2 });
 const dateParamInput = () => ({ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', border: 'none', background: 'transparent', pointerEvents: 'none' });
 
-const scaleTrack = (ui) => ({ position: 'relative', height: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px', background: ui.field, borderRadius: 999, border: `1px solid ${ui.border}` });
-const scaleFill = (value, total, color) => ({ position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)', height: 4, width: `calc(${(value / (total - 1)) * 100}% - 8px)`, minWidth: 0, background: `linear-gradient(90deg, ${color}66, ${color})`, borderRadius: 999, transition: 'all 0.25s ease' });
+const scaleTrack = (ui) => ({ position: 'relative', height: 26, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px', background: 'rgba(255,255,255,0.032)', borderRadius: 999, border: `1px solid ${ui.border}` });
+const scaleFill = (value, total, color) => ({ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', height: 3, width: `calc(${(value / (total - 1)) * 100}% - 12px)`, minWidth: 0, background: `linear-gradient(90deg, ${color}55, ${color}AA)`, borderRadius: 999, transition: 'all 0.25s ease' });
 const scaleNode = (active, current, color, ui) => ({
-  position: 'relative', zIndex: 2, width: current ? 22 : 14, height: current ? 22 : 14, borderRadius: 999,
-  background: active ? color : ui.cardSoft,
-  border: `2px solid ${active ? color : ui.border}`,
-  boxShadow: current ? `0 0 14px ${color}88` : 'none',
+  position: 'relative', zIndex: 2, width: current ? 16 : 10, height: current ? 16 : 10, borderRadius: 999,
+  background: active ? `${color}D9` : 'rgba(255,255,255,0.035)',
+  border: `1px solid ${active ? `${color}AA` : ui.border}`,
+  boxShadow: current ? `0 0 0 4px ${color}18` : 'none',
   cursor: 'pointer', transition: 'all 0.2s ease'
 });
-const scaleLabelRow = (ui) => ({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6, padding: '0 4px' });
 
 
 
@@ -991,7 +1274,7 @@ const advancedToggle = (ui) => ({ display: 'flex', alignItems: 'center', gap: 9,
 
 const footerButtons = (ui) => ({
   display: 'flex', gap: 10, padding: '10px',
-  alignItems: 'center', position: 'sticky', bottom: 0, zIndex: 5, marginTop: 18,
+  alignItems: 'center', position: 'relative', zIndex: 5, marginTop: 18,
   borderRadius: 26,
   background: `linear-gradient(145deg, ${ui.card}, ${ui.cardSoft})`,
   border: `1px solid ${ui.border}`,
@@ -1004,9 +1287,38 @@ const btnCancel = (ui) => ({ ...btnBase, width: 60, background: 'rgba(248,113,11
 const btnSave = (ui, accent) => ({ ...btnBase, flex: 1, background: `linear-gradient(135deg, ${accent.hue}, ${accent.solidSoft})`, border: `1px solid ${accent.ring}`, boxShadow: `0 0 28px ${accent.glow}` });
 
 // Bottom sheet
+const taskIconOverlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
+const taskIconModal = (ui) => ({ width: '100%', maxWidth: 660, maxHeight: '88vh', margin: '0 auto', borderRadius: '30px 30px 0 0', padding: '14px 23px max(22px, env(safe-area-inset-bottom, 0px))', overflowY: 'auto', background: `linear-gradient(180deg, ${ui.card}, ${ui.cardSoft})`, border: `1px solid ${ui.borderStrong}`, borderBottom: 'none', boxShadow: ui.shadow, boxSizing: 'border-box', WebkitOverflowScrolling: 'touch', backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
+const taskIconHandle = () => ({ width: 45, height: 5, backgroundColor: '#8E8E93', borderRadius: 3, margin: '1px auto 25px', opacity: 0.55 });
+const taskIconSheetHeader = () => ({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 14 });
+const taskIconModalTitle = (ui) => ({ margin: 0, color: ui.text, fontSize: 20, fontWeight: 950, lineHeight: 1.1 });
+const taskIconCloseBtn = (ui) => ({ width: 44, height: 44, borderRadius: 999, border: `1px solid ${ui.border}`, background: ui.field, color: ui.sub, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer', flexShrink: 0 });
+const taskIconSearchWrap = (ui) => ({ height: 40, borderRadius: 16, border: `1px solid ${ui.border}`, background: ui.field, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', marginBottom: 15, boxSizing: 'border-box' });
+const taskIconSearchInput = (ui) => ({ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', color: ui.text, fontSize: 14, fontWeight: 700, fontFamily: 'inherit' });
+const taskIconPresetSection = () => ({ display: 'flex', flexDirection: 'column', gap: 17, paddingBottom: 10 });
+const taskIconGroup = () => ({ display: 'flex', flexDirection: 'column', gap: 11 });
+const taskIconGrid = () => ({ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12 });
+const taskIconItem = (active, ui, tone) => ({ aspectRatio: '1 / 1', minWidth: 0, borderRadius: 17, border: `1px solid ${active ? tone.ring : ui.border}`, background: active ? tone.soft : ui.field, color: active ? tone.hue : ui.sub, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, outline: 'none', boxShadow: active ? `0 10px 22px -18px ${tone.ring}` : '0 1px 0 rgba(255,255,255,0.05) inset', WebkitTapHighlightColor: 'transparent' });
+const taskIconEmpty = (ui) => ({ minHeight: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ui.sub, fontSize: 13, fontWeight: 800 });
+const taskIconResetInline = (ui) => ({ width: '100%', minHeight: 44, marginTop: 5, borderRadius: 14, border: '1px solid rgba(244,67,54,0.2)', background: 'rgba(244,67,54,0.08)', color: '#E57373', fontWeight: 900, fontFamily: 'inherit' });
 const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
 const dragHandle = { width: 45, height: 5, backgroundColor: '#8E8E93', borderRadius: 3, margin: '15px auto', opacity: 0.4 };
-const iconSheet = (ui) => ({ width: '100%', maxHeight: '76vh', borderRadius: '34px 34px 0 0', overflow: 'hidden', borderTop: `1px solid ${ui.borderStrong}`, background: `linear-gradient(180deg, ${ui.card}, ${ui.cardSoft})` });
+const iconSheet = (ui) => ({
+  width: 'calc(100% - 20px)',
+  maxWidth: 660,
+  maxHeight: '88vh',
+  margin: '0 auto',
+  borderRadius: '30px 30px 0 0',
+  overflow: 'hidden auto',
+  border: `1px solid ${ui.borderStrong}`,
+  borderBottom: 'none',
+  background: `linear-gradient(180deg, ${ui.card}, ${ui.cardSoft})`,
+  boxSizing: 'border-box',
+  paddingBottom: 'max(10px, env(safe-area-inset-bottom, 0px))'
+});
 const textInput = (ui) => ({ width: '100%', border: `1px solid ${ui.border}`, background: ui.field, fontSize: 15, color: ui.text, outline: 'none', borderRadius: 16, padding: '14px 14px', boxSizing: 'border-box', fontFamily: 'inherit', fontWeight: 700 });
+const emojiInputRow = () => ({ display: 'flex', alignItems: 'center', gap: 10 });
+const emojiPreview = (ui, accent) => ({ width: 48, height: 48, borderRadius: 16, background: accent.soft, border: `1px solid ${accent.ring}`, color: ui.text, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 });
 const iconItem = (active, ui, accent) => ({ aspectRatio: '1 / 1', borderRadius: 14, background: active ? accent.soft : ui.field, border: active ? `1px solid ${accent.ring}` : `1px solid ${ui.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' });
-const modalCreateBtn = (ui, accent) => ({ width: '100%', padding: 14, borderRadius: 14, background: accent.soft, border: `1px solid ${accent.ring}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginTop: 6 });
+const iconGroupLabel = (ui) => ({ color: ui.sub, fontSize: 10, fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase', paddingLeft: 0, textAlign: 'center' });
+const modalCreateBtn = (ui, accent) => ({ width: '100%', minHeight: 50, padding: 14, borderRadius: 14, background: accent.soft, border: `1px solid ${accent.ring}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginTop: 6, boxSizing: 'border-box', flexShrink: 0 });

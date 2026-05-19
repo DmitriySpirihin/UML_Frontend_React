@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData } from '../../StaticClasses/AppData.js';
 import { NotificationsManager } from '../../StaticClasses/NotificationsManager.js';
@@ -195,6 +195,12 @@ const getLeague = (score) => {
     return LEAGUE_META.find((league) => league.key !== 'all' && score >= league.min && score <= league.max) || LEAGUE_META[1];
 };
 
+const isPremiumPlayer = (item) => {
+    const directPremium = Boolean(item?.hasPremium || item?.premium || item?.isPremium || item?.premiumActive || item?.subscription?.active);
+    const isCurrentUser = Number(item?.uid) === Number(UserData.id);
+    return directPremium || (isCurrentUser && UserData.hasPremium);
+};
+
 const Records = () => {
     const [theme, setThemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
@@ -219,17 +225,19 @@ const Records = () => {
                         uid: UserData.id,
                         name: UserData?.name || 'User',
                         photo: UserData.photo,
+                        hasPremium: UserData.hasPremium,
                         data: AppData.mentalRecords,
                         mentalLog: AppData.mentalLog
                     }]);
                 } else {
                     setGlobalData(data);
                 }
-            } catch (err) {
+            } catch {
                 setGlobalData([{
                     uid: UserData.id,
                     name: UserData?.name || 'User',
                     photo: UserData.photo,
+                    hasPremium: UserData.hasPremium,
                     data: AppData.mentalRecords,
                     mentalLog: AppData.mentalLog
                 }]);
@@ -414,6 +422,7 @@ const Records = () => {
                                     index={index}
                                     category={category}
                                     league={getLeague(item.score)}
+                                    isPremium={isPremiumPlayer(item)}
                                 />
                             ))}
                         </AnimatePresence>
@@ -520,7 +529,7 @@ const ScopeSwitch = ({ selectedIndex, setSelectedIndex, theme, langIndex }) => {
                         onClick={() => setSelectedIndex(index)}
                         style={s.scopeBtn(active)}
                     >
-                        <Icon size={15} />
+                        {React.createElement(Icon, { size: 15 })}
                         <span>{label}</span>
                     </button>
                 );
@@ -645,7 +654,7 @@ const LeagueTabs = ({ leagues, selectedIndex, setSelectedIndex, theme, langIndex
     );
 };
 
-const Avatar = ({ name, photo, tone, size = 44 }) => {
+const Avatar = ({ name, photo, tone, size = 44, isPremium = false }) => {
     const [failed, setFailed] = useState(false);
     const imgSrc = normalizePhoto(photo);
     const initials = (name || '?')
@@ -658,11 +667,14 @@ const Avatar = ({ name, photo, tone, size = 44 }) => {
 
     return (
         <div style={{
+            position: 'relative',
             width: size,
             height: size,
             borderRadius: 16,
-            background: `linear-gradient(145deg, rgba(${tone.rgb},0.20), rgba(255,255,255,0.035))`,
-            border: `1px solid rgba(${tone.rgb},0.34)`,
+            background: isPremium
+                ? 'linear-gradient(145deg, rgba(255,216,74,0.34), rgba(255,255,255,0.055))'
+                : `linear-gradient(145deg, rgba(${tone.rgb},0.20), rgba(255,255,255,0.035))`,
+            border: isPremium ? '1px solid rgba(255,216,74,0.72)' : `1px solid rgba(${tone.rgb},0.34)`,
             color: tone.hue,
             display: 'flex',
             alignItems: 'center',
@@ -670,8 +682,21 @@ const Avatar = ({ name, photo, tone, size = 44 }) => {
             flexShrink: 0,
             fontSize: size * 0.34,
             fontWeight: 950,
-            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 24px -22px rgba(${tone.rgb},0.8)`
+            boxShadow: isPremium
+                ? 'inset 0 1px 0 rgba(255,255,255,0.16), 0 0 0 3px rgba(255,216,74,0.12), 0 14px 30px -20px rgba(255,216,74,0.90)'
+                : `inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 24px -22px rgba(${tone.rgb},0.8)`
         }}>
+            {isPremium && (
+                <div style={{
+                    position: 'absolute',
+                    inset: -4,
+                    borderRadius: 19,
+                    background: 'radial-gradient(circle at 24% 18%, rgba(255,255,255,0.40), transparent 32%), linear-gradient(145deg, rgba(255,216,74,0.34), rgba(255,255,255,0.02))',
+                    opacity: 0.9,
+                    zIndex: 0,
+                    pointerEvents: 'none'
+                }} />
+            )}
             {imgSrc && !failed ? (
                 <img
                     src={imgSrc}
@@ -682,17 +707,39 @@ const Avatar = ({ name, photo, tone, size = 44 }) => {
                         height: '100%',
                         borderRadius: Math.max(12, size * 0.31),
                         objectFit: 'cover',
-                        display: 'block'
+                        display: 'block',
+                        position: 'relative',
+                        zIndex: 1
                     }}
                 />
             ) : (
-                initials || '?'
+                <span style={{ position: 'relative', zIndex: 1 }}>{initials || '?'}</span>
+            )}
+            {isPremium && (
+                <span style={{
+                    position: 'absolute',
+                    right: -5,
+                    bottom: -5,
+                    width: 18,
+                    height: 18,
+                    borderRadius: 7,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#17130A',
+                    background: 'linear-gradient(135deg, #FFE88A, #FFD84A)',
+                    border: '1px solid rgba(255,255,255,0.42)',
+                    boxShadow: '0 8px 16px -10px rgba(255,216,74,0.9)',
+                    zIndex: 2
+                }}>
+                    <FaCrown size={9} />
+                </span>
             )}
         </div>
     );
 };
 
-const LeaderboardItem = ({ theme, fSize, langIndex, isUser, isAdmin, rank, name, photo, score, index, category, league }) => {
+const LeaderboardItem = ({ theme, fSize, langIndex, isUser, isAdmin, isPremium, rank, name, photo, score, index, category, league }) => {
     const isLight = theme === 'light' || theme === 'speciallight';
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
@@ -772,7 +819,7 @@ const LeaderboardItem = ({ theme, fSize, langIndex, isUser, isAdmin, rank, name,
             </div>
 
             <div style={{ position: 'relative', zIndex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 11 }}>
-                <Avatar name={name} photo={photo} tone={tone} />
+                <Avatar name={name} photo={photo} tone={tone} isPremium={isPremium} />
                 <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
                         <span style={{
@@ -786,6 +833,7 @@ const LeaderboardItem = ({ theme, fSize, langIndex, isUser, isAdmin, rank, name,
                         }}>
                             {name}
                         </span>
+                        {isPremium && <Badge icon={<FaCrown size={10} />} color="#FFD84A" />}
                         {isAdmin && <Badge icon={<FaUserShield size={10} />} color="#00B7FF" />}
                         {isUser && <Badge icon={<FaUserAlt size={9} />} color={category.hue} />}
                         {rank > 3 && <Badge text={league.label[langIndex][0]} color={league.hue} />}
@@ -1060,7 +1108,7 @@ const styles = (theme, fSize = 0, category = CATEGORY_META[0]) => {
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             background: isLight
                 ? `radial-gradient(900px 430px at 82% -10%, rgba(${category.rgb},0.14), transparent 58%), radial-gradient(720px 360px at -12% 100%, rgba(138,124,214,0.10), transparent 58%), #F4F5F7`
-                : `radial-gradient(980px 500px at 82% -12%, rgba(${category.rgb},0.105), transparent 56%), radial-gradient(760px 380px at -10% 100%, rgba(138,124,214,0.07), transparent 56%), #0E1013`,
+                : `radial-gradient(900px 460px at 82% -8%, rgba(${category.rgb},0.20), transparent 58%), radial-gradient(760px 420px at -12% 42%, rgba(102,217,232,0.11), transparent 60%), linear-gradient(180deg, #18232B 0%, #11171C 46%, #0F1418 100%)`,
             padding: 'calc(env(safe-area-inset-top, 0px) + 10px) 0 0',
             boxSizing: 'border-box'
         },
@@ -1075,8 +1123,8 @@ const styles = (theme, fSize = 0, category = CATEGORY_META[0]) => {
         },
         pageTitle: {
             color: text,
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: fSize === 0 ? 21 : 24,
+            fontFamily: 'inherit',
+            fontSize: 24,
             fontWeight: 700,
             letterSpacing: 0,
             lineHeight: 1.05,
@@ -1102,11 +1150,11 @@ const styles = (theme, fSize = 0, category = CATEGORY_META[0]) => {
             gap: 9,
             background: isLight
                 ? 'linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.62))'
-                : 'linear-gradient(145deg, rgba(23,27,31,0.92), rgba(23,27,31,0.58))',
+                : `radial-gradient(320px 180px at 86% 0%, rgba(${category.rgb},0.13), transparent 70%), linear-gradient(145deg, rgba(24,42,54,0.74), rgba(18,28,36,0.52))`,
             border: `1px solid ${border}`,
             boxShadow: isLight
                 ? '0 20px 44px -34px rgba(15,23,42,0.22), inset 0 1px 0 rgba(255,255,255,0.7)'
-                : '0 22px 44px -34px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.055)',
+                : `0 22px 44px -34px rgba(0,0,0,0.72), 0 14px 42px -38px rgba(${category.rgb},0.78), inset 0 1px 0 rgba(255,255,255,0.07)`,
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)'
         },

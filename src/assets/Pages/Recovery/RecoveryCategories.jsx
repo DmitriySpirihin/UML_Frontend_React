@@ -455,8 +455,8 @@ const styles = (theme, fSize = 0, meta = PAGE_META[0]) => {
         },
         pageTitle: {
             color: mainText,
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: fSize === 0 ? '25px' : '27px',
+            fontFamily: 'inherit',
+            fontSize: '24px',
             fontWeight: 700,
             lineHeight: 1.05,
             opacity: 0.9,

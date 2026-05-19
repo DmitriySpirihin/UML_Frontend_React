@@ -4,7 +4,7 @@ import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
 import { theme$, lang$, fontSize$, setPage, setCurrentTrainingMuscle } from '../../StaticClasses/HabitsBus.js'
 import { playEffects } from '../../StaticClasses/Effects.js'
-import { IoIosArrowDown, IoIosSearch } from 'react-icons/io'
+import { IoIosArrowBack, IoIosArrowDown, IoIosSearch } from 'react-icons/io'
 import { MuscleIcon, removeExercise, updateExercise } from '../../Classes/TrainingData.jsx'
 import { FaTrash, FaPencilAlt, FaPlus } from 'react-icons/fa';
 import { TbDotsVertical } from 'react-icons/tb'
@@ -19,7 +19,7 @@ import {
     getTrainingPressMotion
 } from './TrainingVisuals.js'
 
-const TrainingExercise = ({ needToAdd, setEx }) => {
+const TrainingExercise = ({ needToAdd, setEx, onBack }) => {
     // states
     const [theme, setthemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
@@ -123,6 +123,14 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
         setCurrentExerciseId(-1);
         setShowConfirmRemove(false);
     }
+    function handleBack() {
+        playEffects(null);
+        if (typeof onBack === 'function') {
+            onBack();
+            return;
+        }
+        setPage('TrainingMain');
+    }
     
     // --- ANIMATION VARIANTS ---
     const accordionVariants = {
@@ -137,26 +145,31 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
     };
 
     return (
-        <div style={styles(theme).container}>
-            {/* SEARCH BAR */}
-            <div style={styles(theme).searchContainer}>
-                <IoIosSearch style={{ color: Colors.get('subText', theme), fontSize: '20px', marginLeft: '10px' }} />
-                <input 
-                    type="text" 
-                    placeholder={langIndex === 0 ? "Поиск упражнения..." : "Search exercise..."}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px'}}
-                />
-                {searchTerm && (
-                    <MdClose 
-                        onClick={() => setSearchTerm('')} 
-                        style={{ color: Colors.get('subText', theme), fontSize: '18px', marginRight: '10px', cursor:'pointer' }} 
+        <div style={{...styles(theme).container, paddingBottom: needToAdd ? 'calc(env(safe-area-inset-bottom, 0px) + 18px)' : styles(theme).container.paddingBottom}}>
+            <div style={styles(theme).topBar}>
+                <button type="button" onClick={handleBack} style={styles(theme).backButton} aria-label={langIndex === 0 ? 'Назад' : 'Back'}>
+                    <IoIosArrowBack style={{ fontSize: '24px' }} />
+                </button>
+                {/* SEARCH BAR */}
+                <div style={styles(theme).searchContainer}>
+                    <IoIosSearch style={{ color: Colors.get('subText', theme), fontSize: '20px', marginLeft: '10px' }} />
+                    <input
+                        type="text"
+                        placeholder={langIndex === 0 ? "Поиск упражнения..." : "Search exercise..."}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        style={{flex: 1, border: 'none', background: 'transparent', fontSize: '16px', color: Colors.get('mainText', theme), outline: 'none',marginLeft: '10px', minWidth: 0}}
                     />
-                )}
+                    {searchTerm && (
+                        <MdClose
+                            onClick={() => setSearchTerm('')}
+                            style={{ color: Colors.get('subText', theme), fontSize: '18px', marginRight: '10px', cursor:'pointer' }}
+                        />
+                    )}
+                </div>
             </div>
 
-            <div className="no-scrollbar" style={{ width: '100%', maxWidth: '600px', paddingBottom: '142px', flex: 1, overflowY: 'auto', overflowX: 'hidden', scrollbarWidth: 'none' }}>
+            <div className="no-scrollbar" style={{ width: '100%', maxWidth: '600px', paddingBottom: needToAdd ? '22px' : '96px', flex: 1, overflowY: 'auto', overflowX: 'hidden', scrollbarWidth: 'none' }}>
                 {Object.keys(MuscleIcon.muscleIconsSrc[0]).map((keyStr) => {
                     const key = Number(keyStr);
                     
@@ -226,7 +239,7 @@ const TrainingExercise = ({ needToAdd, setEx }) => {
                                                             {/* Exercise Row */}
                                                             <Motion.div
                                                                 onClick={() => setExercise(exId)}
-                                                                whileHover={{ y: -1, scale: 1.006 }}
+                                                                whileHover={{ scale: 1.006 }}
                                                                 whileTap={{ scale: 0.985, y: 1 }}
                                                                 transition={{ type: 'spring', stiffness: 430, damping: 32 }}
                                                                 style={{
@@ -463,14 +476,42 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
         height: "100dvh",
         padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 18px 116px',
         width: "100vw",
-        fontFamily: "Segoe UI, Roboto, sans-serif", boxSizing: 'border-box'
+        fontFamily: 'inherit', boxSizing: 'border-box'
+    },
+    topBar: {
+        width: '100%',
+        maxWidth: '600px',
+        display: 'grid',
+        gridTemplateColumns: '52px minmax(0, 1fr)',
+        gap: '10px',
+        alignItems: 'center',
+        marginBottom: '16px',
+        flexShrink: 0,
+    },
+    backButton: {
+        width: '52px',
+        height: '52px',
+        borderRadius: '18px',
+        border: `1px solid ${getTrainingPanelBorder(theme, accent, false)}`,
+        background: getTrainingPanelBackground(theme),
+        color: Colors.get('mainText', theme),
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        padding: 0,
+        boxShadow: getTrainingPanelShadow(theme, accent, false),
+        backdropFilter: 'blur(18px) saturate(150%)',
+        WebkitBackdropFilter: 'blur(18px) saturate(150%)',
+        boxSizing: 'border-box',
     },
     // SEARCH
 	    searchContainer: {
 	        width: '100%', maxWidth: '600px',
         ...getTrainingGlassSurface(theme, accent),
         borderRadius: '20px', display: 'flex', alignItems: 'center',
-	        padding: '12px 0', marginBottom: '16px', boxSizing: 'border-box'
+	        padding: '12px 0', boxSizing: 'border-box',
+        minWidth: 0,
     },
     searchInput: {
         flex: 1, border: 'none', background: 'transparent',

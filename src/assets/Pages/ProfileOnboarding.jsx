@@ -1,25 +1,23 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { IoMdFemale, IoMdMale } from 'react-icons/io';
 import {
-    MdBedtime,
-    MdCheckCircle,
-    MdChecklist,
     MdDone,
     MdFavorite,
     MdFitnessCenter,
-    MdHeight,
-    MdOutlinePsychology,
     MdPerson,
-    MdSelfImprovement,
-    MdStraighten,
     MdTrendingUp
 } from 'react-icons/md';
-import { FaDumbbell, FaFire, FaTelegramPlane } from 'react-icons/fa';
+import { FaBullhorn, FaCamera, FaDumbbell, FaFire, FaRulerVertical, FaSearch, FaTelegramPlane, FaUndo, FaUserAlt, FaUserFriends, FaWeight } from 'react-icons/fa';
 import Colors from '../StaticClasses/Colors';
 import { AppData, UserData } from '../StaticClasses/AppData';
 import { saveData } from '../StaticClasses/SaveHelper';
-import { lang$, setPage, theme$ } from '../StaticClasses/HabitsBus';
+import { habitAccent$, lang$, setPage, theme$ } from '../StaticClasses/HabitsBus';
+import { buildHabitsAccent } from './HabitsPages/HabitVisuals.jsx';
+import { buildSleepAccent } from './SleepPages/SleepVisuals.js';
+import { buildTodoAccent } from './ToDoPages/ToDoVisuals.js';
+import { buildSectionAccent } from './SectionAccentSettings.jsx';
+import { MENU_ICON_MAP } from './MainMenuRedesign.jsx';
 
 const MotionDiv = motion.div;
 const MotionButton = motion.button;
@@ -37,20 +35,20 @@ const goalNames = [
 ];
 
 const goalMeta = [
-    { icon: <FaDumbbell />, color: '#8FA6C8' },
-    { icon: <MdTrendingUp />, color: '#66D9E8' },
+    { icon: <FaDumbbell />, color: '#FF8A3D' },
+    { icon: <MdTrendingUp />, color: '#8F7CFF' },
     { icon: <FaFire />, color: '#D8785E' },
-    { icon: <MdFavorite />, color: '#74B8AF' },
+    { icon: <MdFavorite />, color: '#66D9E8' },
     { icon: <MdFitnessCenter />, color: '#C9A24B' }
 ];
 
 const sectionOptions = [
-    { key: 'habits', label: ['Привычки', 'Habits'], icon: <MdCheckCircle />, color: '#22C55E' },
-    { key: 'training', label: ['Тренировки', 'Training'], icon: <FaDumbbell />, color: '#579BC8' },
-    { key: 'mental', label: ['Ментал', 'Mental'], icon: <MdOutlinePsychology />, color: '#A66BFF' },
-    { key: 'recovery', label: ['Восстановление', 'Recovery'], icon: <MdSelfImprovement />, color: '#2FD6BD' },
-    { key: 'sleep', label: ['Сон', 'Sleep'], icon: <MdBedtime />, color: '#7C6CFF' },
-    { key: 'todo', label: ['Задачи', 'Tasks'], icon: <MdChecklist />, color: '#149DFF' }
+    { key: 'habits', label: ['Привычки', 'Habits'] },
+    { key: 'training', label: ['Тренировки', 'Training'] },
+    { key: 'mental', label: ['Ментал', 'Mental'] },
+    { key: 'recovery', label: ['Восстановление', 'Recovery'] },
+    { key: 'sleep', label: ['Сон', 'Sleep'] },
+    { key: 'todo', label: ['Задачи', 'Tasks'] }
 ];
 
 const sectionMenuIds = {
@@ -65,10 +63,10 @@ const sectionMenuIds = {
 const menuIds = ['MainCard', ...Object.values(sectionMenuIds)];
 
 const sourceOptions = [
-    ['Друг', 'Friend'],
-    ['Telegram'],
-    ['Реклама', 'Ad'],
-    ['Поиск', 'Search']
+    { label: ['Друг', 'Friend'], icon: <FaUserFriends />, color: '#74B8AF' },
+    { label: ['Telegram'], icon: <FaTelegramPlane />, color: '#2E9DFF' },
+    { label: ['Реклама', 'Ad'], icon: <FaBullhorn />, color: '#C9A24B' },
+    { label: ['Поиск', 'Search'], icon: <FaSearch />, color: '#A66BFF' }
 ];
 
 const buildMenuStateFromPreferredSections = (preferredSections, currentState = {}) => {
@@ -87,44 +85,86 @@ const buildMenuStateFromPreferredSections = (preferredSections, currentState = {
     }, {});
 };
 
+const normalizePhoto = (photo) => Array.isArray(photo) ? photo[0] : photo;
+
 const ProfileOnboarding = () => {
     const [theme, setThemeState] = useState(theme$.value);
     const [lang, setLangIndex] = useState(AppData.prefs[0]);
     const [age, setAge] = useState(AppData.pData?.age || 20);
     const [gender, setGender] = useState(AppData.pData?.gender ?? 0);
     const [height, setHeight] = useState(AppData.pData?.height || 180);
-    const [wrist, setWrist] = useState(AppData.pData?.wrist || 20);
+    const [weight, setWeight] = useState(AppData.pData?.weight || 70);
     const [goal, setGoal] = useState(AppData.pData?.goal || 1);
     const [nicknameMode, setNicknameMode] = useState(AppData.profileNicknameMode || 'telegram');
     const [customNickname, setCustomNickname] = useState(AppData.profileCustomNickname || UserData.name || '');
     const [discoverySource, setDiscoverySource] = useState(AppData.profileDiscoverySource || '');
     const [preferredSections, setPreferredSections] = useState(AppData.profilePreferredSections || []);
+    const [habitAccent, setHabitAccentState] = useState(habitAccent$.value);
+    const telegramPhoto = normalizePhoto(UserData.photo) || 'images/Ui/Guest.jpg';
+    const [avatarPhoto, setAvatarPhoto] = useState(AppData.profileAvatarPhoto || telegramPhoto);
+    const avatarInputRef = useRef(null);
 
     const currentGoalNames = useMemo(() => goalNames.map(g => g[lang]), [lang]);
+    const onboardingSectionOptions = useMemo(() => {
+        const accents = {
+            habits: buildHabitsAccent(habitAccent?.hue || AppData.habitAccentColor || '#55DDEB'),
+            training: buildSectionAccent(AppData.trainingAccentColor || '#579BC8', '#579BC8'),
+            mental: buildSectionAccent(AppData.mentalAccentColor || '#A66BFF', '#A66BFF'),
+            recovery: buildSectionAccent(AppData.recoveryAccentColor || '#2FD6BD', '#2FD6BD'),
+            sleep: buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF'),
+            todo: buildTodoAccent(AppData.todoAccentColor || '#2E9DFF')
+        };
+
+        return sectionOptions.map(option => {
+            const menuId = sectionMenuIds[option.key];
+            const SectionIcon = MENU_ICON_MAP[menuId];
+            return {
+                ...option,
+                color: accents[option.key]?.hue || '#55DDEB',
+                icon: SectionIcon ? <SectionIcon size={17} /> : null
+            };
+        });
+    }, [habitAccent]);
 
     useEffect(() => {
         const themeSub = theme$.subscribe(setThemeState);
         const langSub = lang$.subscribe(l => setLangIndex(l === 'ru' ? 0 : 1));
+        const habitAccentSub = habitAccent$.subscribe(setHabitAccentState);
         return () => {
             themeSub.unsubscribe();
             langSub.unsubscribe();
+            habitAccentSub.unsubscribe();
         };
     }, []);
 
     const completeOnboarding = async () => {
         const normalizedNickname = customNickname.trim();
-        AppData.pData = { filled: true, age, gender, height, wrist, goal };
+        AppData.pData = { filled: true, age, gender, height, weight, goal };
         AppData.profileOnboardingShown = true;
         AppData.profileNicknameMode = nicknameMode;
         AppData.profileCustomNickname = normalizedNickname;
+        AppData.profileAvatarPhoto = avatarPhoto;
         AppData.profileDiscoverySource = discoverySource.trim();
         AppData.profilePreferredSections = preferredSections;
         AppData.menuCardsStates = buildMenuStateFromPreferredSections(preferredSections, AppData.menuCardsStates);
         const selectedHeroWidgets = preferredSections.map(key => sectionMenuIds[key]).filter(Boolean).slice(0, 3);
         if (selectedHeroWidgets.length > 0) AppData.mainHeroWidgets = selectedHeroWidgets;
         if (nicknameMode === 'custom' && normalizedNickname) UserData.name = normalizedNickname;
+        UserData.photo = avatarPhoto;
         await saveData();
         setPage('MainMenu');
+    };
+
+    const handleAvatarFileChange = (event) => {
+        const file = event.target.files?.[0];
+        if (!file || !file.type.startsWith('image/')) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (typeof reader.result === 'string') setAvatarPhoto(reader.result);
+        };
+        reader.readAsDataURL(file);
+        event.target.value = '';
     };
 
     const toggleSection = (key) => {
@@ -142,6 +182,7 @@ const ProfileOnboarding = () => {
     const displayName = nicknameMode === 'custom' && customNickname.trim()
         ? customNickname.trim()
         : (UserData.name || (lang === 0 ? 'гость' : 'guest'));
+    const avatarInitial = displayName.charAt(0).toUpperCase();
     const profileAccent = gender === 1 ? genderAccents.female : genderAccents.male;
     const s = styles(theme, profileAccent);
 
@@ -181,10 +222,22 @@ const ProfileOnboarding = () => {
                                 : 'Baseline for logs and progress. You can edit it later.'}
                         </div>
                     </div>
-                    <div style={s.avatarOrb}>
-                        <span>{displayName.charAt(0).toUpperCase()}</span>
-                    </div>
+                    <MotionButton type="button" whileTap={{ scale: 0.97 }} onClick={() => avatarInputRef.current?.click()} style={s.avatarOrb}>
+                        {avatarPhoto ? (
+                            <img src={avatarPhoto} alt={displayName} style={s.avatarImage} />
+                        ) : (
+                            <span>{avatarInitial}</span>
+                        )}
+                        <span style={s.avatarBadge}><FaCamera size={12} /></span>
+                    </MotionButton>
                 </MotionDiv>
+                <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileChange}
+                    style={{ display: 'none' }}
+                />
 
                 <MotionDiv initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.09 }} style={s.identityCard}>
                     <SectionHeader
@@ -200,6 +253,16 @@ const ProfileOnboarding = () => {
                     <div style={s.telegramName}>
                         <span>{lang === 0 ? 'Сейчас:' : 'Current:'}</span>
                         <strong>{displayName}</strong>
+                    </div>
+                    <div style={s.avatarControls}>
+                        <MotionButton type="button" whileTap={{ scale: 0.97 }} onClick={() => avatarInputRef.current?.click()} style={s.avatarControlBtn}>
+                            <FaCamera size={13} />
+                            <span>{lang === 0 ? 'Изменить фото' : 'Change photo'}</span>
+                        </MotionButton>
+                        <MotionButton type="button" whileTap={{ scale: 0.97 }} onClick={() => setAvatarPhoto(telegramPhoto)} style={s.avatarControlBtn}>
+                            <FaUndo size={12} />
+                            <span>{lang === 0 ? 'Фото Telegram' : 'Telegram photo'}</span>
+                        </MotionButton>
                     </div>
                     {nicknameMode === 'custom' && (
                         <input
@@ -219,9 +282,9 @@ const ProfileOnboarding = () => {
                         styles={s}
                     />
                     <div style={s.metricStack}>
-                        <MetricControl icon={<MdPerson />} label={lang === 0 ? 'Возраст' : 'Age'} value={age} onChange={setAge} min={10} max={100} step={1} theme={theme} tone={profileAccent} suffix={lang === 0 ? 'лет' : 'y'} />
-                        <MetricControl icon={<MdHeight />} label={lang === 0 ? 'Рост' : 'Height'} value={height} onChange={setHeight} min={50} max={250} step={1} theme={theme} tone={profileAccent} suffix={lang === 0 ? 'см' : 'cm'} />
-                        <MetricControl icon={<MdStraighten />} label={lang === 0 ? 'Запястье' : 'Wrist'} value={wrist} onChange={setWrist} min={10} max={40} step={0.5} theme={theme} tone={profileAccent} suffix={lang === 0 ? 'см' : 'cm'} />
+                        <MetricControl icon={<FaUserAlt />} label={lang === 0 ? 'Возраст' : 'Age'} value={age} onChange={setAge} min={10} max={100} step={1} theme={theme} tone={profileAccent} suffix={lang === 0 ? 'лет' : 'y'} />
+                        <MetricControl icon={<FaRulerVertical />} label={lang === 0 ? 'Рост' : 'Height'} value={height} onChange={setHeight} min={50} max={250} step={1} theme={theme} tone={profileAccent} suffix={lang === 0 ? 'см' : 'cm'} />
+                        <MetricControl icon={<FaWeight />} label={lang === 0 ? 'Вес' : 'Weight'} value={weight} onChange={setWeight} min={30} max={250} step={0.5} theme={theme} tone={profileAccent} suffix={lang === 0 ? 'кг' : 'kg'} />
                         <div style={s.genderCard}>
                             <div style={s.metricTop}>
                                 <span style={{ ...s.metricIcon, color: profileAccent }}>{gender === 0 ? <IoMdMale /> : <IoMdFemale />}</span>
@@ -242,9 +305,9 @@ const ProfileOnboarding = () => {
                         theme={theme}
                         styles={s}
                     />
-                    <div style={s.goalStatus}>
+                    <div style={s.goalStatus(activeGoalMeta.color)}>
                         <span style={s.goalStatusLabel}>{lang === 0 ? 'Выбрано' : 'Selected'}</span>
-                        <strong style={s.goalStatusValue}>{selectedGoal}</strong>
+                        <strong style={s.goalStatusValue(activeGoalMeta.color)}>{selectedGoal}</strong>
                     </div>
                     <div style={s.goalGrid}>
                         {currentGoalNames.map((name, index) => {
@@ -275,7 +338,7 @@ const ProfileOnboarding = () => {
                     />
                     <div style={s.sourceGrid}>
                         {sourceOptions.map((item) => {
-                            const label = item[lang] || item[0];
+                            const label = item.label[lang] || item.label[0];
                             const active = discoverySource.trim().toLowerCase() === label.toLowerCase();
                             return (
                                 <MotionButton
@@ -283,9 +346,10 @@ const ProfileOnboarding = () => {
                                     type="button"
                                     whileTap={{ scale: 0.97 }}
                                     onClick={() => setDiscoverySource(label)}
-                                    style={s.sourceChip(active)}
+                                    style={s.sourceChip(active, item.color)}
                                 >
-                                    {label}
+                                    <span style={s.sourceIcon(active, item.color)}>{item.icon}</span>
+                                    <span>{label}</span>
                                 </MotionButton>
                             );
                         })}
@@ -311,7 +375,7 @@ const ProfileOnboarding = () => {
                             : 'Selected sections will appear on the home screen. The rest stay hidden.'}
                     </div>
                     <div style={s.sectionGrid}>
-                        {sectionOptions.map(option => {
+                        {onboardingSectionOptions.map(option => {
                             const selected = preferredSections.includes(option.key);
                             return (
                                 <MotionButton
@@ -329,14 +393,14 @@ const ProfileOnboarding = () => {
                     </div>
                 </MotionDiv>
 
-                <div style={s.scrollSpacer} />
-            </div>
+                <div style={s.footer}>
+                    <MotionButton type="button" whileTap={{ scale: 0.96 }} onClick={completeOnboarding} style={s.primaryBtn}>
+                        <MdDone size={23} />
+                        {lang === 0 ? 'Сохранить профиль' : 'Save profile'}
+                    </MotionButton>
+                </div>
 
-            <div style={s.footer}>
-                <MotionButton type="button" whileTap={{ scale: 0.96 }} onClick={completeOnboarding} style={s.primaryBtn}>
-                    <MdDone size={23} />
-                    {lang === 0 ? 'Сохранить профиль' : 'Save profile'}
-                </MotionButton>
+                <div style={s.scrollSpacer} />
             </div>
         </MotionDiv>
     );
@@ -372,7 +436,7 @@ const MetricControl = ({ icon, label, value, onChange, min, max, step, theme, to
     const changeValue = (direction) => onChange(clampMetric(value + (direction * step), min, max, step));
 
     return (
-        <div style={s.metricControl(tone)}>
+        <div style={s.metricControl}>
             <div style={s.metricControlTop}>
                 <span style={s.metricGlyph(tone)}>{icon}</span>
                 <div style={s.metricCopy}>
@@ -584,18 +648,45 @@ const styles = (theme, activeColor = genderAccents.male) => {
             width: 76,
             height: 76,
             borderRadius: 24,
+            border: 'none',
             alignSelf: 'center',
             justifySelf: 'end',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            position: 'relative',
+            overflow: 'hidden',
             color: '#061017',
             fontSize: 34,
             fontWeight: 950,
+            cursor: 'pointer',
+            padding: 0,
+            fontFamily: 'inherit',
             background: isLight
                 ? `linear-gradient(145deg, rgba(${activeRgb},0.92), ${secondaryAccent})`
                 : `linear-gradient(145deg, rgba(${activeRgb},0.66), color-mix(in srgb, ${secondaryAccent} 68%, #0F1418))`,
             boxShadow: `0 18px 38px rgba(${activeRgb},0.16), inset 0 1px 0 rgba(255,255,255,0.14)`
+        },
+        avatarImage: {
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+        },
+        avatarBadge: {
+            position: 'absolute',
+            right: 7,
+            bottom: 7,
+            width: 24,
+            height: 24,
+            borderRadius: 10,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#061017',
+            background: activeColor,
+            border: '1px solid rgba(255,255,255,0.24)',
+            boxShadow: '0 8px 18px rgba(0,0,0,0.22)'
         },
         identityCard: sectionPanel(panelStrong, border, isLight, activeRgb),
         metricsCard: sectionPanel(panelStrong, border, isLight, activeRgb),
@@ -678,6 +769,30 @@ const styles = (theme, activeColor = genderAccents.male) => {
             fontWeight: 800,
             overflow: 'hidden'
         },
+        avatarControls: {
+            marginTop: 10,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 8
+        },
+        avatarControlBtn: {
+            minHeight: 42,
+            borderRadius: 14,
+            border: `1px solid rgba(${activeRgb},0.28)`,
+            background: isLight ? `rgba(${activeRgb},0.07)` : `rgba(${activeRgb},0.09)`,
+            color: activeColor,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 7,
+            padding: '0 10px',
+            fontSize: 12,
+            fontWeight: 900,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            overflow: 'hidden',
+            whiteSpace: 'nowrap'
+        },
         input: {
             width: '100%',
             boxSizing: 'border-box',
@@ -697,7 +812,7 @@ const styles = (theme, activeColor = genderAccents.male) => {
             flexDirection: 'column',
             gap: 9
         },
-        metricControl: (tone) => ({
+        metricControl: {
             minHeight: 104,
             borderRadius: 20,
             padding: '11px',
@@ -713,7 +828,7 @@ const styles = (theme, activeColor = genderAccents.male) => {
             columnGap: 10,
             rowGap: 10,
             overflow: 'hidden'
-        }),
+        },
         metricControlTop: {
             gridArea: 'info',
             display: 'flex',
@@ -721,19 +836,23 @@ const styles = (theme, activeColor = genderAccents.male) => {
             gap: 9,
             minWidth: 0
         },
-        metricGlyph: (tone) => ({
-            width: 36,
-            height: 36,
-            borderRadius: 13,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: tone,
-            background: `rgba(${activeRgb},0.13)`,
-            border: `1px solid rgba(${activeRgb},0.20)`,
-            flexShrink: 0,
-            fontSize: 18
-        }),
+        metricGlyph: (tone) => {
+            const toneRgb = hexToRgb(tone);
+            return {
+                width: 36,
+                height: 36,
+                borderRadius: 13,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: tone,
+                background: `rgba(${toneRgb},0.18)`,
+                border: `1px solid rgba(${toneRgb},0.34)`,
+                boxShadow: `0 0 18px rgba(${toneRgb},0.14), inset 0 1px 0 rgba(255,255,255,0.09)`,
+                flexShrink: 0,
+                fontSize: 19
+            };
+        },
         metricCopy: {
             minWidth: 0,
             display: 'flex',
@@ -892,19 +1011,22 @@ const styles = (theme, activeColor = genderAccents.male) => {
             gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
             gap: 9
         },
-        goalStatus: {
-            minHeight: 42,
-            margin: '-4px 0 12px',
-            padding: '0 13px',
-            borderRadius: 16,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            color: text,
-            background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)',
-            border: `1px solid ${border}`,
-            boxSizing: 'border-box'
+        goalStatus: (color) => {
+            const goalRgb = hexToRgb(color);
+            return {
+                minHeight: 42,
+                margin: '-4px 0 12px',
+                padding: '0 13px',
+                borderRadius: 16,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                color: text,
+                background: isLight ? `rgba(${goalRgb},0.065)` : `rgba(${goalRgb},0.075)`,
+                border: `1px solid rgba(${goalRgb},0.25)`,
+                boxSizing: 'border-box'
+            };
         },
         goalStatusLabel: {
             color: sub,
@@ -913,63 +1035,100 @@ const styles = (theme, activeColor = genderAccents.male) => {
             letterSpacing: '0.08em',
             textTransform: 'uppercase'
         },
-        goalStatusValue: {
+        goalStatusValue: (color) => ({
             minWidth: 0,
-            color: activeColor,
+            color,
             fontSize: 13,
             fontWeight: 950,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
             textAlign: 'right'
+        }),
+        goalChip: (selected, color) => {
+            const goalRgb = hexToRgb(color);
+            return {
+                minHeight: 58,
+                borderRadius: 18,
+                border: `1px solid ${selected ? `rgba(${goalRgb},0.58)` : `rgba(${goalRgb},0.25)`}`,
+                background: selected
+                    ? `linear-gradient(135deg, rgba(${goalRgb},0.24), rgba(${goalRgb},0.09))`
+                    : (isLight ? `rgba(${goalRgb},0.055)` : `rgba(${goalRgb},0.070)`),
+                color: selected ? color : text,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 9,
+                padding: '0 11px',
+                fontSize: 13,
+                fontWeight: 900,
+                cursor: 'pointer',
+                textAlign: 'left',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                boxShadow: selected ? `0 10px 24px rgba(${goalRgb},0.10), inset 0 1px 0 rgba(255,255,255,0.08)` : 'none'
+            };
         },
-        goalChip: (selected, color) => ({
-            minHeight: 58,
-            borderRadius: 18,
-            border: `1px solid ${selected ? `rgba(${activeRgb},0.45)` : border}`,
-            background: selected ? `rgba(${activeRgb},0.13)` : (isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.045)'),
-            color: selected ? activeColor : text,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 9,
-            padding: '0 11px',
-            fontSize: 13,
-            fontWeight: 900,
-            cursor: 'pointer',
-            textAlign: 'left',
-            fontFamily: 'inherit',
-            boxSizing: 'border-box'
-        }),
-        goalIcon: (selected, color) => ({
-            width: 32,
-            height: 32,
-            borderRadius: 12,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: selected ? '#061017' : activeColor,
-            background: selected ? activeColor : `rgba(${activeRgb},0.12)`,
-            flexShrink: 0
-        }),
+        goalIcon: (selected, color) => {
+            const goalRgb = hexToRgb(color);
+            return {
+                width: 32,
+                height: 32,
+                borderRadius: 12,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: selected ? '#061017' : color,
+                background: selected ? color : `rgba(${goalRgb},0.15)`,
+                border: `1px solid rgba(${goalRgb},${selected ? 0.24 : 0.18})`,
+                flexShrink: 0
+            };
+        },
         sourceGrid: {
             display: 'grid',
             gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
             gap: 8
         },
-        sourceChip: (active) => ({
-            minHeight: 40,
-            borderRadius: 14,
-            border: `1px solid ${active ? `rgba(${activeRgb},0.48)` : border}`,
-            background: active ? `rgba(${activeRgb},0.15)` : (isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.045)'),
-            color: active ? activeColor : sub,
-            fontSize: 12,
-            fontWeight: 900,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-        }),
+        sourceChip: (active, color) => {
+            const sourceRgb = hexToRgb(color);
+            return {
+                minHeight: 44,
+                borderRadius: 15,
+                border: `1px solid ${active ? `rgba(${sourceRgb},0.58)` : `rgba(${sourceRgb},0.25)`}`,
+                background: active
+                    ? `linear-gradient(135deg, rgba(${sourceRgb},0.24), rgba(${sourceRgb},0.09))`
+                    : (isLight ? `rgba(${sourceRgb},0.055)` : `rgba(${sourceRgb},0.070)`),
+                color: active ? color : text,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '0 10px',
+                fontSize: 12,
+                fontWeight: 900,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                boxShadow: active ? `0 10px 22px rgba(${sourceRgb},0.10), inset 0 1px 0 rgba(255,255,255,0.08)` : 'none'
+            };
+        },
+        sourceIcon: (active, color) => {
+            const sourceRgb = hexToRgb(color);
+            return {
+                width: 28,
+                height: 28,
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: active ? '#061017' : color,
+                background: active ? color : `rgba(${sourceRgb},0.15)`,
+                border: `1px solid rgba(${sourceRgb},${active ? 0.24 : 0.18})`,
+                flexShrink: 0,
+                fontSize: 14
+            };
+        },
         sectionGrid: {
             display: 'grid',
             gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
@@ -986,47 +1145,63 @@ const styles = (theme, activeColor = genderAccents.male) => {
             lineHeight: 1.35,
             fontWeight: 750
         },
-        sectionChip: (selected, color) => ({
-            minHeight: 54,
-            borderRadius: 18,
-            border: `1px solid ${selected ? `rgba(${activeRgb},0.45)` : border}`,
-            background: selected ? `rgba(${activeRgb},0.13)` : (isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.045)'),
-            color: selected ? activeColor : text,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 9,
-            padding: '0 10px',
-            fontSize: 12,
-            fontWeight: 900,
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            boxSizing: 'border-box',
-            overflow: 'hidden'
-        }),
-        sectionIcon: (selected, color) => ({
-            width: 30,
-            height: 30,
-            borderRadius: 11,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: selected ? '#061017' : activeColor,
-            background: selected ? activeColor : `rgba(${activeRgb},0.12)`,
-            flexShrink: 0
-        }),
-        scrollSpacer: { height: 14, flexShrink: 0 },
+        sectionChip: (selected, color) => {
+            const sectionRgb = hexToRgb(color);
+            return {
+                minHeight: 54,
+                borderRadius: 18,
+                border: `1px solid ${selected ? `rgba(${sectionRgb},0.58)` : `rgba(${sectionRgb},0.28)`}`,
+                background: selected
+                    ? `linear-gradient(135deg, rgba(${sectionRgb},0.24), rgba(${sectionRgb},0.09))`
+                    : (isLight ? `rgba(${sectionRgb},0.065)` : `rgba(${sectionRgb},0.075)`),
+                color: selected ? color : text,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 9,
+                padding: '0 10px',
+                fontSize: 12,
+                fontWeight: 900,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                boxSizing: 'border-box',
+                overflow: 'hidden',
+                boxShadow: selected ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 24px rgba(${sectionRgb},0.10)` : 'none'
+            };
+        },
+        sectionIcon: (selected, color) => {
+            const sectionRgb = hexToRgb(color);
+            return {
+                width: 30,
+                height: 30,
+                borderRadius: 11,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: selected ? '#061017' : color,
+                background: selected ? color : `rgba(${sectionRgb},0.16)`,
+                border: `1px solid rgba(${sectionRgb},${selected ? 0.24 : 0.18})`,
+                flexShrink: 0
+            };
+        },
+        scrollSpacer: { height: 'calc(18px + env(safe-area-inset-bottom, 0px))', flexShrink: 0 },
         footer: {
             position: 'relative',
-            zIndex: 4,
+            zIndex: 1,
             width: '100%',
-            maxWidth: 440,
-            alignSelf: 'center',
-            padding: '6px 14px calc(env(safe-area-inset-bottom, 0px) + 12px)',
+            padding: 10,
+            marginTop: 4,
             display: 'block',
             boxSizing: 'border-box',
+            borderRadius: 26,
             background: isLight
-                ? 'linear-gradient(180deg, rgba(244,245,247,0), rgba(244,245,247,0.96) 30%)'
-                : 'linear-gradient(180deg, rgba(15,20,24,0), rgba(15,20,24,0.97) 30%)'
+                ? 'linear-gradient(135deg, rgba(255,255,255,0.76), rgba(255,255,255,0.48))'
+                : 'linear-gradient(135deg, rgba(19,29,36,0.68), rgba(8,13,17,0.54))',
+            border: `1px solid ${isLight ? 'rgba(148,163,184,0.28)' : 'rgba(190,220,235,0.14)'}`,
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.88) inset, 0 20px 44px -30px rgba(15,23,42,0.28)'
+                : '0 1px 0 rgba(255,255,255,0.12) inset, 0 24px 48px -22px rgba(0,0,0,0.70), 0 0 28px rgba(20,157,255,0.08)',
+            backdropFilter: 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(180%)'
         },
         secondaryBtn: {
             border: `1px solid ${border}`,

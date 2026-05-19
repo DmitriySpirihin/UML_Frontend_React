@@ -27,7 +27,9 @@ const MyBarChart = ({
   textColor = '#94a3b8',
   linesColor = '#334155',
   backgroundColor = 'transparent',
-  height = 220
+  height = 220,
+  accentColor = null,
+  showMoodColors = true
 }) => {
   const isLight = theme === 'light';
 
@@ -37,7 +39,7 @@ const MyBarChart = ({
         height: `${height}px`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: textColor, opacity: 0.6,
-        fontFamily: 'Segoe UI, sans-serif', fontSize: '14px',
+        fontFamily: 'inherit', fontSize: '14px',
       }}>
         No sleep data available
       </div>
@@ -61,7 +63,16 @@ const MyBarChart = ({
   }));
 
   const maxHours = Math.max(...chartData.map(d => d.hours), 1);
-  const getBarColor = (mood) => MOOD_COLORS[mood] || MOOD_COLORS[3];
+  const baseBarColor = accentColor || MOOD_COLORS[4] || '#7C6CFF';
+  const getBarColor = (mood) => showMoodColors ? (MOOD_COLORS[mood] || MOOD_COLORS[3]) : baseBarColor;
+  const getBarOpacity = (mood) => {
+    if (showMoodColors) return { top: 1, bottom: 0.6 };
+    const normalized = Math.max(1, Math.min(5, Number(mood) || 3));
+    return {
+      top: 0.64 + normalized * 0.055,
+      bottom: 0.42 + normalized * 0.04
+    };
+  };
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -79,7 +90,7 @@ const MyBarChart = ({
           borderRadius: '12px',
           border: `1px solid ${color}40`,
           boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
-          fontFamily: 'Segoe UI',
+          fontFamily: 'inherit',
           textAlign: 'center'
         }}>
           <div style={{ fontSize: '12px', color: textColor, marginBottom: '4px', opacity: 0.8 }}>{label}</div>
@@ -102,7 +113,7 @@ const MyBarChart = ({
       backgroundColor,
       borderRadius: '16px',
       padding: '10px 0',
-      fontFamily: 'Segoe UI, sans-serif'
+      fontFamily: 'inherit'
     }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
@@ -111,11 +122,11 @@ const MyBarChart = ({
           barSize={18} // Slimmer, elegant bars
         >
           <defs>
-            {/* Create dynamic gradients for each mood color used */}
+            {/* Keep one calm hue when mood colors are disabled, with only subtle opacity shifts. */}
             {[1, 2, 3, 4, 5].map(m => (
               <linearGradient key={m} id={`grad-${m}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={getBarColor(m)} stopOpacity={1} />
-                <stop offset="100%" stopColor={getBarColor(m)} stopOpacity={0.6} />
+                <stop offset="0%" stopColor={getBarColor(m)} stopOpacity={getBarOpacity(m).top} />
+                <stop offset="100%" stopColor={getBarColor(m)} stopOpacity={getBarOpacity(m).bottom} />
               </linearGradient>
             ))}
           </defs>

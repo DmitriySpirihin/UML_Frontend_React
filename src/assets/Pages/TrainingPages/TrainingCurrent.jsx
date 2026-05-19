@@ -1,12 +1,13 @@
 import React, {useState,useEffect,useRef} from 'react'
+import { motion as Motion } from 'framer-motion'
 import { AppData,UserData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
-import { theme$ ,lang$,fontSize$,trainInfo$,setPage} from '../../StaticClasses/HabitsBus'
+import { theme$ ,lang$,fontSize$,trainInfo$,setPage,setShowPopUpPanel} from '../../StaticClasses/HabitsBus'
 import {addExerciseToSchedule} from '../../Classes/TrainingData.jsx'
 import {findPreviousSimilarExercise, finishSession, addExerciseToSession,
    removeExerciseFromSession, addSet, finishExercise, redactSet,getAllReps,getTonnage,getAllSets,redactRPEandNote} from '../../StaticClasses/TrainingLogHelper'
 import {FaTrash,FaPencilAlt,FaFlag,FaPlusCircle,FaDumbbell,FaCrown} from 'react-icons/fa'
-import {FaRegCircleCheck,FaRegCircle,FaPlus,FaMinus,FaStopwatch,FaCalculator,FaClock, FaListCheck} from 'react-icons/fa6'
+import {FaRegCircleCheck,FaRegCircle,FaPlus,FaMinus,FaStopwatch,FaCalculator, FaListCheck} from 'react-icons/fa6'
 import {MdClose,MdDone,MdFitnessCenter, MdOutlineHistory} from 'react-icons/md'
 import Stopwatch from '../../Helpers/StopWatch'
 import PlatesCalculator from '../../Helpers/PlatesCalculator'
@@ -319,18 +320,35 @@ return (
 
                 {!isCompleted && (
                     <div style={styles(theme).sessionToolbar}>
-                        <div style={styles(theme).restTimerPill}>
-                             <ParsedTime time={currTimer} maxTime={maxTimer} theme={theme}/>
+                        <div style={styles(theme).toolbarHeader}>
+                            <div style={styles(theme).toolbarTitle}>
+                                {langIndex === 0 ? 'Управление' : 'Controls'}
+                            </div>
+                            <div style={styles(theme).toolbarTimerBadge}>
+                                {timer ? (
+                                    <>
+                                        <span>{langIndex === 0 ? 'Отдых' : 'Rest'}</span>
+                                        <ParsedTime time={currTimer} maxTime={maxTimer} theme={theme}/>
+                                    </>
+                                ) : (
+                                    <span>{langIndex === 0 ? 'Таймер отдыха' : 'Rest timer'}</span>
+                                )}
+                            </div>
                         </div>
-                        <button type="button" style={styles(theme).toolIconWrapper} onClick={() => {timer ? (setTimer(false), setCurrTimer(0)) : setTimer(true)}}>
-                            {timer ? <TimerIcon style={styles(theme).headerIcon}/> : <TimerOffIcon style={styles(theme).headerIcon}/>}
-                        </button>
-                        <button type="button" style={styles(theme).toolIconWrapper} onClick={() => {setStopWatchPanel(true)}}>
-                            <FaStopwatch style={styles(theme).headerIcon}/>
-                        </button>
-                        <button type="button" style={styles(theme).toolIconWrapper} onClick={() => {setShowPlatesCalculator(true)}}>
-                            <FaCalculator style={styles(theme).headerIcon}/>
-                        </button>
+                        <div style={styles(theme).toolbarGrid}>
+                            <button type="button" style={styles(theme).toolActionCard(timer)} onClick={() => {timer ? (setTimer(false), setCurrTimer(0)) : setTimer(true)}}>
+                                {timer ? <TimerIcon style={styles(theme).headerIcon}/> : <TimerOffIcon style={styles(theme).headerIcon}/>}
+                                <span style={styles(theme).toolActionCardLabel}>{timer ? (langIndex === 0 ? 'Сброс' : 'Reset') : (langIndex === 0 ? 'Таймер' : 'Timer')}</span>
+                            </button>
+                            <button type="button" style={styles(theme).toolActionCard(false)} onClick={() => {setStopWatchPanel(true)}}>
+                                <FaStopwatch style={styles(theme).headerIcon}/>
+                                <span style={styles(theme).toolActionCardLabel}>{langIndex === 0 ? 'Секундомер' : 'Stopwatch'}</span>
+                            </button>
+                            <button type="button" style={styles(theme).toolActionCard(false)} onClick={() => {setShowPlatesCalculator(true)}}>
+                                <FaCalculator style={styles(theme).headerIcon}/>
+                                <span style={styles(theme).toolActionCardLabel}>{langIndex === 0 ? 'Диски' : 'Plates'}</span>
+                            </button>
+                        </div>
                         <button type="button" style={styles(theme).finishWorkoutBtn} onClick={() => {setShowConfirmPanel(true)}}>
                             <MdDone style={{fontSize:'18px'}}/>
                             {langIndex === 0 ? 'Завершить' : 'Finish'}
@@ -384,7 +402,13 @@ return (
                 </div>
                 <button
                     type="button"
-                    onClick={() => redactRPEandNote(trainInfo.dayKey,trainInfo.dInd,sessionRPE,sessionNote)}
+                    onClick={async () => {
+                      const saved = await redactRPEandNote(trainInfo.dayKey,trainInfo.dInd,sessionRPE,sessionNote);
+                      if (saved) {
+                        setSession(prev => ({ ...prev, RPE: sessionRPE, note: sessionNote.trim() }));
+                        setShowPopUpPanel(langIndex === 0 ? 'Оценка сохранена' : 'Review saved', 1800, true);
+                      }
+                    }}
                     style={styles(theme).saveReviewBtn}
                 >
                     <MdDone style={{ fontSize: '18px' }} />
@@ -411,7 +435,12 @@ return (
                  }
                 
                 return (
-                 <div key={exId} style={{
+                 <Motion.div
+                    key={exId}
+                    whileHover={{ scale: 1.006 }}
+                    whileTap={{ scale: 0.992 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                    style={{
                      ...styles(theme).exerciseCard,
                      border: isSelected ? `1px solid ${getTrainingAccent().hue}` : styles(theme).exerciseCard.border,
                      boxShadow: isSelected ? `0 18px 45px rgba(${getTrainingAccent().rgb}, 0.14)` : styles(theme).exerciseCard.boxShadow
@@ -508,7 +537,7 @@ return (
                   </div>
                 
                 </div>}
-               </div>
+               </Motion.div>
               );
              })}
 
@@ -560,8 +589,10 @@ return (
       {showAddNewSetPanel && (
   <div style={{...styles(theme).confirmContainer}}>
     <div style={{
-      ...styles(theme).bottomSheet,height:'75vh',
-      borderTop: `3px solid ${isWarmUp ? Colors.get('difficulty2', theme) : Colors.get('difficulty5', theme)}`
+      ...styles(theme).bottomSheet,
+      maxHeight: 'calc(100dvh - 24px)',
+      overflowY: 'auto',
+      borderTop: styles(theme).setTypeTopBorder(isWarmUp)
     }}>
       <div style={{ width: '40px', height: '4px', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: '2px', alignSelf: 'center', marginBottom: '15px' }}></div>
 
@@ -570,11 +601,11 @@ return (
           {langIndex === 0 ? "Добавить сет" : "Add Set"}
         </div>
         {/* Warmup Toggle */}
-        <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '20px', padding: '4px' }}>
-          <div onClick={() => setIsWarmUp(true)} style={{ ...styles(theme).segmentBtn, color: isWarmUp ? Colors.get('difficulty2', theme) : Colors.get('subText', theme) }}>
+        <div style={styles(theme).setTypeToggle}>
+          <div onClick={() => setIsWarmUp(true)} style={styles(theme).setTypeSegment(isWarmUp, 'warmup')}>
             {langIndex === 0 ? "Разминка" : "Warmup"}
           </div>
-          <div onClick={() => setIsWarmUp(false)} style={{ ...styles(theme).segmentBtn, color: !isWarmUp ? Colors.get('difficulty5', theme) : Colors.get('subText', theme) }}>
+          <div onClick={() => setIsWarmUp(false)} style={styles(theme).setTypeSegment(!isWarmUp, 'work')}>
             {langIndex === 0 ? "Рабочий" : "Work"}
           </div>
         </div>
@@ -628,30 +659,32 @@ return (
       </div>
 
       {/* --- PICKER ROW: TIME --- */}
-      <div style={{ ...styles(theme).inputCard, height: 'auto', marginTop: '10px', padding: '15px 10px' }}>
-        <div style={{ marginBottom: '10px', textAlign: 'center', display:'flex', alignItems:'center', justifyContent:'center', width:'90%' }}>
-           <FaStopwatch style={{color:Colors.get('difficulty', theme),fontSize:'35px',marginRight:'auto'}} onClick={() => setStopWatchPanel(true)}/> 
-           <div style={{ ...styles(theme, fSize).mainText}}> {langIndex === 0 ? "Время выполнения" : "Exercise time"}</div>
+      <div style={styles(theme).setTimeCard}>
+        <div style={styles(theme).setTimeHeader}>
+           <div style={styles(theme).setTimeTitle}>{langIndex === 0 ? "Время выполнения" : "Exercise time"}</div>
+           <button type="button" style={styles(theme).setTimeToolBtn} onClick={() => setStopWatchPanel(true)}>
+             {langIndex === 0 ? "Секундомер" : "Stopwatch"}
+           </button>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+        <div style={styles(theme).setTimePickerRow}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
              <ScrollPicker 
                 items={minutesRange} 
                 value={Math.floor(exTime / 60000)} 
                 onChange={(min) => setExTime((min * 60000) + (exTime % 60000))} 
                 theme={theme} 
-                width="50px"
+                width="62px"
                 suffix="m"
               />
           </div>
-          <div style={{ paddingTop: '40px', fontSize: '20px', fontWeight: 'bold', color: Colors.get('subText', theme) }}>:</div>
+          <div style={styles(theme).setTimeSeparator}>:</div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
              <ScrollPicker 
                 items={secondsRange} 
                 value={Math.floor((exTime % 60000) / 1000)} 
                 onChange={(sec) => setExTime((Math.floor(exTime / 60000) * 60000) + (sec * 1000))} 
                 theme={theme} 
-                width="50px"
+                width="62px"
                 suffix="s"
               />
           </div>
@@ -694,7 +727,7 @@ return (
       }
 
       {/* Action Buttons */}
-      <div style={{ display: 'flex', gap: '15px', marginTop: 'auto', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', gap: '15px', marginTop: '14px', marginBottom: '10px' }}>
         <button onClick={() => setShowAddNewSetPanel(false)} style={{ ...styles(theme).secondaryBtn, flex: 1 }}><MdClose style={{ fontSize: '24px' }} /></button>
         <button onClick={() => { addset() }} style={{ ...styles(theme).primaryBtn, flex: 3 }}><MdDone style={{ fontSize: '24px' }} /></button>
       </div>
@@ -812,7 +845,7 @@ return (
                         padding: '12px',
                         color: Colors.get('mainText', theme),
                         fontSize: '14px',
-                        fontFamily: 'Segoe UI',
+                        fontFamily: 'inherit',
                         resize: 'none',
                         outline: 'none'
                     }}
@@ -859,7 +892,7 @@ return (
   <div style={styles(theme).confirmContainer}>
     <div style={{
       ...styles(theme).bottomSheet,
-      borderTop: `3px solid ${isWarmUp ? Colors.get('difficulty2', theme) : Colors.get('difficulty5', theme)}`
+      borderTop: styles(theme).setTypeTopBorder(isWarmUp)
     }}>
       <div style={{ ...styles(theme, fSize).text, fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', textAlign: 'center' }}>
         {langIndex === 0 ? "Изменить сет" : "Edit Set"}
@@ -903,36 +936,39 @@ return (
       </div>
 
       {/* Type Toggle */}
-      <div style={{ display: 'flex', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '4px', margin: '20px 0' }}>
-        <div onClick={() => { setIsWarmUp(true) }} style={{ ...styles(theme).segmentBtn, color: isWarmUp ? Colors.get('difficulty2', theme) : Colors.get('subText', theme) }}>
+      <div style={{ ...styles(theme).setTypeToggle, margin: '20px 0' }}>
+        <div onClick={() => { setIsWarmUp(true) }} style={styles(theme).setTypeSegment(isWarmUp, 'warmup')}>
           {langIndex === 0 ? "Разминка" : "Warmup"}
         </div>
-        <div onClick={() => { setIsWarmUp(false) }} style={{ ...styles(theme).segmentBtn, color: !isWarmUp ? Colors.get('difficulty5', theme) : Colors.get('subText', theme) }}>
+        <div onClick={() => { setIsWarmUp(false) }} style={styles(theme).setTypeSegment(!isWarmUp, 'work')}>
           {langIndex === 0 ? "Рабочий" : "Work"}
         </div>
       </div>
 
       {/* TIME PICKER */}
-      <div style={{ ...styles(theme).inputCard, height: 'auto', padding: '15px 10px' }}>
-        <div style={{ ...styles(theme, fSize).subtext, marginBottom: '10px', textAlign: 'center', display:'flex', alignItems:'center', justifyContent:'center', gap:'8px' }}>
-           <FaClock /> {langIndex === 0 ? "Время" : "Time"}
+      <div style={styles(theme).setTimeCard}>
+        <div style={styles(theme).setTimeHeader}>
+           <div style={styles(theme).setTimeTitle}>{langIndex === 0 ? "Время" : "Time"}</div>
+           <button type="button" style={styles(theme).setTimeToolBtn} onClick={() => setStopWatchPanel(true)}>
+             {langIndex === 0 ? "Секундомер" : "Stopwatch"}
+           </button>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '15px' }}>
+        <div style={styles(theme).setTimePickerRow}>
              <ScrollPicker 
                 items={minutesRange} 
                 value={Math.floor(exTime / 60000)} 
                 onChange={(min) => setExTime((min * 60000) + (exTime % 60000))} 
                 theme={theme} 
-                width="50px"
+                width="62px"
                 suffix="m"
               />
-          <div style={{ paddingTop: '40px', fontSize: '20px', fontWeight: 'bold', color: Colors.get('subText', theme) }}>:</div>
+          <div style={styles(theme).setTimeSeparator}>:</div>
              <ScrollPicker 
                 items={secondsRange} 
                 value={Math.floor((exTime % 60000) / 1000)} 
                 onChange={(sec) => setExTime((Math.floor(exTime / 60000) * 60000) + (sec * 1000))} 
                 theme={theme} 
-                width="50px"
+                width="62px"
                 suffix="s"
               />
         </div>
@@ -1035,7 +1071,7 @@ return (
            
            
 
-           <div style={{width: '100%',flex:1, overflowY:'scroll', display:'flex', flexDirection:'column', alignItems:'center' }}>
+	           <div className="trainingCurrentRecordsScroll" style={styles(theme).finishRecordsArea}>
              <div style={{...styles(theme,fSize).subtext ,fontSize:'16px',fontWeight:'bold',marginTop:'17px', marginBottom:'10px' }}>{langIndex === 0 ? "Рекорды" : "Records"}</div>
             <img src="images/Medal.png" style={{ width: '100px', marginBottom:'10px' }} />
             {newRmRecords.length > 0 ? (
@@ -1108,7 +1144,7 @@ return (
       </div>}
       {showExerciseList && (
         <div style={{...styles(theme).confirmContainer}}>
-          <TrainingExercise needToAdd={true} setEx={addExercise} />
+          <TrainingExercise needToAdd={true} setEx={addExercise} onBack={() => setShowExerciseList(false)} />
         </div>
       )}
       {/* strategy panel */}
@@ -1160,9 +1196,15 @@ return (
            </div>
          </div>
       </div>}
-    </div>
-  )
-}
+	      <style>{`
+	        .trainingCurrentRecordsScroll::-webkit-scrollbar {
+	          width: 0;
+	          height: 0;
+	        }
+	      `}</style>
+	    </div>
+	  )
+	}
 
 export default TrainingCurrent
 
@@ -1205,11 +1247,11 @@ const styles = (theme,fSize) => {
     ? `radial-gradient(circle at 50% -15%, rgba(${accent.rgb}, 0.14), transparent 38%), #F5F7FA`
     : `radial-gradient(circle at 50% -12%, rgba(${accent.rgb}, 0.18), transparent 42%), #0B0F14`;
   const panelBg = isLight
-    ? 'rgba(255,255,255,0.86)'
-    : 'rgba(17, 22, 29, 0.92)';
+    ? `linear-gradient(145deg, rgba(255,255,255,0.76), rgba(${accent.rgb},0.10))`
+    : `radial-gradient(circle at 18% 0%, rgba(${accent.rgb},0.14), transparent 48%), linear-gradient(145deg, rgba(24, 34, 45, 0.72), rgba(12, 18, 25, 0.70))`;
   const cardBg = isLight
-    ? 'rgba(255,255,255,0.92)'
-    : 'linear-gradient(145deg, rgba(23, 30, 39, 0.98), rgba(14, 19, 25, 0.96))';
+    ? `linear-gradient(145deg, rgba(255,255,255,0.80), rgba(${accent.rgb},0.08))`
+    : `radial-gradient(circle at 14% 2%, rgba(${accent.rgb},0.15), transparent 46%), linear-gradient(145deg, rgba(23, 34, 46, 0.72), rgba(12, 18, 25, 0.68))`;
   const border = isLight ? 'rgba(15,23,42,0.09)' : 'rgba(148,163,184,0.13)';
   const muted = Colors.get('subText', theme);
 
@@ -1383,14 +1425,56 @@ const styles = (theme,fSize) => {
     },
     sessionToolbar: {
       display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      flexWrap: 'wrap',
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      gap: '12px',
       marginTop: '16px',
-      padding: '10px',
-      borderRadius: '20px',
-      background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)',
-      border: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(148,163,184,0.10)'}`,
+      padding: '14px',
+      borderRadius: '22px',
+      background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.74), rgba(${accent.rgb},0.08))`
+        : `radial-gradient(circle at 20% 0%, rgba(${accent.rgb},0.16), transparent 42%), linear-gradient(145deg, rgba(24,34,46,0.74), rgba(12,18,25,0.70))`,
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : `rgba(${accent.rgb},0.26)`}`,
+      boxShadow: isLight
+        ? '0 16px 34px rgba(15,23,42,0.08), inset 0 1px 0 rgba(255,255,255,0.76)'
+        : `0 18px 42px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.08)`,
+      backdropFilter: 'blur(18px) saturate(150%)',
+      WebkitBackdropFilter: 'blur(18px) saturate(150%)',
+    },
+    toolbarHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '12px',
+      minHeight: '30px',
+    },
+    toolbarTitle: {
+      color: muted,
+      fontSize: '11px',
+      fontWeight: 850,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
+    },
+    toolbarTimerBadge: {
+      minHeight: '30px',
+      padding: '0 10px',
+      borderRadius: '999px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '7px',
+      background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(0,0,0,0.20)',
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.07)' : 'rgba(148,163,184,0.10)'}`,
+      color: muted,
+      fontSize: '11px',
+      fontWeight: 800,
+      fontVariantNumeric: 'tabular-nums',
+      whiteSpace: 'nowrap',
+    },
+    toolbarGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      gap: '9px',
     },
     restTimerPill: {
       minWidth: '38px',
@@ -1401,7 +1485,7 @@ const styles = (theme,fSize) => {
     },
     headerIcon: {
       fontSize: '19px',
-      color: Colors.get('icons', theme),
+      color: 'currentColor',
     },
     toolIconWrapper: {
       width:'42px',
@@ -1416,21 +1500,55 @@ const styles = (theme,fSize) => {
       padding: 0,
       flexShrink: 0,
     },
+    toolActionCard: (active = false) => ({
+      minWidth: 0,
+      height: '58px',
+      borderRadius: '17px',
+      background: active
+        ? `linear-gradient(145deg, rgba(${accent.rgb},0.22), rgba(${accent.rgb},0.10))`
+        : isLight ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.045)',
+      border: `1px solid ${active ? `rgba(${accent.rgb},0.42)` : border}`,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '6px',
+      cursor: 'pointer',
+      padding: '0 6px',
+      color: active ? accent.hue : muted,
+      boxShadow: active
+        ? `0 10px 24px rgba(${accent.rgb},0.18), inset 0 1px 0 rgba(255,255,255,0.10)`
+        : 'inset 0 1px 0 rgba(255,255,255,0.05)',
+      boxSizing: 'border-box',
+      fontFamily: fontStack,
+    }),
+    toolActionCardLabel: {
+      fontSize: '10px',
+      fontWeight: 800,
+      lineHeight: 1,
+      letterSpacing: '0.01em',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      maxWidth: '100%',
+    },
     finishWorkoutBtn: {
-      minHeight: '42px',
+      width: '100%',
+      minHeight: '48px',
       border: 'none',
-      borderRadius: '15px',
-      background: 'linear-gradient(135deg, #EF4444, #DC2626)',
+      borderRadius: '17px',
+      background: `linear-gradient(135deg, rgba(248,113,113,0.96), rgba(220,38,38,0.92))`,
       color: '#fff',
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
       gap: '8px',
-      padding: '0 16px',
-      fontSize: '13px',
+      padding: '0 18px',
+      fontSize: '14px',
       fontWeight: 850,
       cursor: 'pointer',
-      boxShadow: '0 12px 28px rgba(239,68,68,0.26)',
+      boxShadow: '0 14px 30px rgba(239,68,68,0.24), inset 0 1px 0 rgba(255,255,255,0.20)',
+      fontFamily: fontStack,
     },
     scrollView: {
       display:'flex',
@@ -1454,8 +1572,12 @@ const styles = (theme,fSize) => {
       borderRadius: '22px',
       padding: '14px',
       border: `1px solid ${border}`,
-      boxShadow: isLight ? '0 14px 34px rgba(15,23,42,0.06)' : '0 18px 42px rgba(0,0,0,0.22)',
+      boxShadow: isLight ? `0 16px 36px rgba(${accent.rgb},0.09), 0 1px 0 rgba(255,255,255,0.70) inset` : `0 18px 46px rgba(0,0,0,0.24), 0 1px 0 rgba(255,255,255,0.075) inset`,
+      backdropFilter: 'blur(22px) saturate(150%)',
+      WebkitBackdropFilter: 'blur(22px) saturate(150%)',
       boxSizing: 'border-box',
+      cursor: 'pointer',
+      transformOrigin: 'center',
     },
     exerciseHeader: {
       display:'flex',
@@ -1602,9 +1724,11 @@ const styles = (theme,fSize) => {
       width: '100%',
       borderRadius: '26px',
       padding: '18px',
-      background: isLight ? 'rgba(255,255,255,0.94)' : 'rgba(17,22,29,0.94)',
+      background: cardBg,
       border: `1px solid ${border}`,
-      boxShadow: isLight ? '0 18px 40px rgba(15,23,42,0.07)' : '0 20px 48px rgba(0,0,0,0.25)',
+      boxShadow: isLight ? `0 18px 40px rgba(${accent.rgb},0.10), 0 1px 0 rgba(255,255,255,0.74) inset` : `0 22px 52px rgba(0,0,0,0.28), 0 1px 0 rgba(255,255,255,0.07) inset`,
+      backdropFilter: 'blur(24px) saturate(155%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(155%)',
       boxSizing: 'border-box',
     },
     completionHeader: {
@@ -1644,10 +1768,15 @@ const styles = (theme,fSize) => {
     reviewSection: {
       borderRadius: '20px',
       padding: '14px',
-      background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)',
+      background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.56), rgba(${accent.rgb},0.075))`
+        : `linear-gradient(145deg, rgba(${accent.rgb},0.11), rgba(255,255,255,0.035))`,
       border: `1px solid ${border}`,
       marginBottom: '12px',
       boxSizing: 'border-box',
+      boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.62) inset' : '0 1px 0 rgba(255,255,255,0.055) inset',
+      backdropFilter: 'blur(18px) saturate(145%)',
+      WebkitBackdropFilter: 'blur(18px) saturate(145%)',
     },
     reviewLabel: {
       fontSize: '12px',
@@ -1675,7 +1804,7 @@ const styles = (theme,fSize) => {
     notesTextarea: {
       width: '100%',
       minHeight: '116px',
-      background: isLight ? 'rgba(255,255,255,0.72)' : 'rgba(0,0,0,0.18)',
+      background: isLight ? 'rgba(255,255,255,0.58)' : 'rgba(6,12,18,0.24)',
       border: `1px solid ${border}`,
       borderRadius: '16px',
       padding: '13px',
@@ -1686,11 +1815,14 @@ const styles = (theme,fSize) => {
       resize: 'vertical',
       outline: 'none',
       boxSizing: 'border-box',
+      boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.64) inset' : '0 1px 0 rgba(255,255,255,0.045) inset',
+      backdropFilter: 'blur(16px) saturate(140%)',
+      WebkitBackdropFilter: 'blur(16px) saturate(140%)',
     },
-    saveReviewBtn: {
-      width: '100%',
-      minHeight: '46px',
-      border: 'none',
+	    saveReviewBtn: {
+	      width: '100%',
+	      minHeight: '46px',
+	      border: 'none',
       borderRadius: '16px',
       background: `linear-gradient(135deg, ${accent.hue}, #2F80ED)`,
       color: '#fff',
@@ -1700,11 +1832,21 @@ const styles = (theme,fSize) => {
       gap: '8px',
       fontSize: '14px',
       fontWeight: 850,
-      cursor: 'pointer',
-      boxShadow: `0 14px 28px rgba(${accent.rgb}, 0.24)`,
-    },
-    emptySessionState: {
-      width: 'min(92vw, 760px)',
+	      cursor: 'pointer',
+	      boxShadow: `0 14px 28px rgba(${accent.rgb}, 0.24)`,
+	    },
+	    finishRecordsArea: {
+	      width: '100%',
+	      flex: 1,
+	      overflowY: 'auto',
+	      display: 'flex',
+	      flexDirection: 'column',
+	      alignItems: 'center',
+	      scrollbarWidth: 'none',
+	      msOverflowStyle: 'none',
+	    },
+	    emptySessionState: {
+	      width: 'min(92vw, 760px)',
       minHeight: '240px',
       borderRadius: '26px',
       border: `1px dashed ${border}`,
@@ -1778,7 +1920,10 @@ const styles = (theme,fSize) => {
       padding: '16px 20px 30px',
       display: 'flex',
       flexDirection: 'column',
-      boxShadow: '0 -18px 45px rgba(0,0,0,0.32)',
+      border: `1px solid ${border}`,
+      boxShadow: isLight ? `0 -18px 45px rgba(${accent.rgb},0.12)` : '0 -18px 45px rgba(0,0,0,0.34)',
+      backdropFilter: 'blur(26px) saturate(155%)',
+      WebkitBackdropFilter: 'blur(26px) saturate(155%)',
       boxSizing: 'border-box',
     },
     modalCard: {
@@ -1790,14 +1935,18 @@ const styles = (theme,fSize) => {
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: '0 24px 64px rgba(0,0,0,0.34)',
+      boxShadow: isLight ? `0 24px 64px rgba(${accent.rgb},0.12), 0 1px 0 rgba(255,255,255,0.72) inset` : '0 24px 64px rgba(0,0,0,0.36), 0 1px 0 rgba(255,255,255,0.07) inset',
       border: `1px solid ${border}`,
+      backdropFilter: 'blur(26px) saturate(155%)',
+      WebkitBackdropFilter: 'blur(26px) saturate(155%)',
       boxSizing: 'border-box',
     },
     inputCard: {
       flex: 1,
       minHeight:'80px',
-      background: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.05)',
+      background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.58), rgba(${accent.rgb},0.065))`
+        : `linear-gradient(145deg, rgba(${accent.rgb},0.10), rgba(255,255,255,0.035))`,
       borderRadius: '18px',
       fontSize:'16px',
       padding: '12px',
@@ -1805,6 +1954,9 @@ const styles = (theme,fSize) => {
       flexDirection: 'column',
       alignItems: 'center',
       border: `1px solid ${border}`,
+      boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.60) inset' : '0 1px 0 rgba(255,255,255,0.055) inset',
+      backdropFilter: 'blur(18px) saturate(145%)',
+      WebkitBackdropFilter: 'blur(18px) saturate(145%)',
       boxSizing: 'border-box',
     },
     circleBtn: {
@@ -1858,6 +2010,106 @@ const styles = (theme,fSize) => {
       fontWeight: 750,
       transition: 'all 0.2s',
       cursor: 'pointer',
+    },
+    setTypeToggle: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '5px',
+      background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(4,10,18,0.28)',
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(148,163,184,0.10)'}`,
+      borderRadius: '18px',
+      padding: '4px',
+      boxShadow: isLight ? 'inset 0 1px 0 rgba(255,255,255,0.66)' : 'inset 0 1px 0 rgba(255,255,255,0.05)',
+      backdropFilter: 'blur(14px) saturate(145%)',
+      WebkitBackdropFilter: 'blur(14px) saturate(145%)',
+    },
+    setTypeSegment: (active, type) => {
+      const isWarmup = type === 'warmup';
+      const tone = isWarmup
+        ? { hue: '#8EC5D8', rgb: '142,197,216' }
+        : { hue: accent.hue, rgb: accent.rgb };
+      return {
+        minWidth: '82px',
+        textAlign: 'center',
+        padding: '9px 12px',
+        borderRadius: '14px',
+        fontSize: '13px',
+        lineHeight: 1,
+        fontWeight: 850,
+        letterSpacing: '0.01em',
+        transition: 'all 0.2s ease',
+        cursor: 'pointer',
+        color: active ? tone.hue : muted,
+        background: active
+          ? `linear-gradient(145deg, rgba(${tone.rgb}, ${isWarmup ? 0.16 : 0.22}), rgba(${tone.rgb}, ${isWarmup ? 0.07 : 0.10}))`
+          : 'transparent',
+        border: `1px solid ${active ? `rgba(${tone.rgb}, ${isWarmup ? 0.30 : 0.42})` : 'transparent'}`,
+        boxShadow: active
+          ? `0 10px 22px rgba(${tone.rgb}, ${isWarmup ? 0.12 : 0.18}), inset 0 1px 0 rgba(255,255,255,0.10)`
+          : 'none',
+        boxSizing: 'border-box',
+        userSelect: 'none',
+      };
+    },
+    setTypeTopBorder: (isWarmup) => {
+      const tone = isWarmup
+        ? { rgb: '142,197,216' }
+        : { rgb: accent.rgb };
+      return `3px solid rgba(${tone.rgb}, ${isWarmup ? 0.34 : 0.48})`;
+    },
+    setTimeCard: {
+      width: '100%',
+      marginTop: '10px',
+      padding: '12px',
+      borderRadius: '20px',
+      background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.56), rgba(${accent.rgb},0.06))`
+        : `linear-gradient(145deg, rgba(${accent.rgb},0.09), rgba(255,255,255,0.035))`,
+      border: `1px solid ${border}`,
+      boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.62) inset' : '0 1px 0 rgba(255,255,255,0.055) inset',
+      backdropFilter: 'blur(18px) saturate(145%)',
+      WebkitBackdropFilter: 'blur(18px) saturate(145%)',
+      boxSizing: 'border-box',
+    },
+    setTimeHeader: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '10px',
+      marginBottom: '8px',
+    },
+    setTimeTitle: {
+      color: Colors.get('mainText', theme),
+      fontSize: '14px',
+      fontWeight: 850,
+      lineHeight: 1.2,
+      textAlign: 'left',
+    },
+    setTimeToolBtn: {
+      flexShrink: 0,
+      border: `1px solid rgba(${accent.rgb}, 0.24)`,
+      background: `rgba(${accent.rgb}, 0.09)`,
+      color: accent.hue,
+      borderRadius: '999px',
+      padding: '7px 10px',
+      fontSize: '11px',
+      lineHeight: 1,
+      fontWeight: 850,
+      cursor: 'pointer',
+      fontFamily: fontStack,
+    },
+    setTimePickerRow: {
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: '10px',
+    },
+    setTimeSeparator: {
+      fontSize: '20px',
+      fontWeight: 850,
+      color: muted,
+      lineHeight: 1,
+      paddingBottom: '2px',
     },
     slider: {
       width:'90%',

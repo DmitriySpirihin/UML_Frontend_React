@@ -157,16 +157,17 @@ const NavButton = ({ id, current, icon, onClick, theme, accent, disabled = false
 
 const AddButton = ({ disabled, onClick, theme, active, accent }) => (
     <Motion.div
+        whileHover={!disabled ? { scale: 1.04 } : {}}
         whileTap={!disabled ? { scale: 0.9 } : {}}
         onClick={onClick}
         style={{
             ...addBtnStyle(theme),
-            opacity: disabled ? 0.5 : 1,
-            background: active ? accent.soft : Colors.get('simplePanel', theme),
-            border: active ? `1px solid ${accent.ring}` : `1px solid ${Colors.get('border', theme)}`,
+            opacity: disabled ? 0.42 : 1,
+            background: (active || !disabled) ? accent.soft : 'rgba(255,255,255,0.045)',
+            border: (active || !disabled) ? `1px solid ${accent.ring}` : `1px solid ${Colors.get('border', theme)}`,
         }}
     >
-        <Add style={{ fontSize: '26px', color: active ? accent.hue : Colors.get('icons', theme) }} />
+        <Add style={{ fontSize: '26px', color: (active || !disabled) ? accent.hue : Colors.get('icons', theme) }} />
     </Motion.div>
 );
 

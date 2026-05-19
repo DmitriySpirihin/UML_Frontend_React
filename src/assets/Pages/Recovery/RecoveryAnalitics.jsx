@@ -27,6 +27,14 @@ const formatDuration = (ms, isRu = true) => {
     return `${min}${isRu ? 'м' : 'm'} ${sec}${isRu ? 'с' : 's'}`;
 };
 
+const formatChartMinutes = (minutes, isRu = true) => {
+    const value = Math.max(0, Number(minutes) || 0);
+    if (value === 0) return `0${isRu ? 'м' : 'm'}`;
+    if (value < 1) return `<1${isRu ? 'м' : 'm'}`;
+    const rounded = value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
+    return `${rounded}${isRu ? 'м' : 'm'}`;
+};
+
 const formatDate = (iso, isRu) => {
     const date = new Date(iso);
     return date.toLocaleDateString(isRu ? 'ru-RU' : 'en-US', { day: 'numeric', month: 'short' });
@@ -62,7 +70,7 @@ function PageHeader({ theme, isRu, fSize }) {
     const s = sharedStyles(theme);
     return (
         <div style={s.pageHeader}>
-            <div style={{ ...s.pageTitle, fontSize: fSize === 0 ? '25px' : '27px' }}>UltyMyLife</div>
+            <div style={s.pageTitle}>UltyMyLife</div>
             <div style={s.pageSubtitle}>{isRu ? 'Восстановление — часть роста' : 'Recovery is where growth happens'}</div>
         </div>
     );
@@ -122,7 +130,7 @@ const RecoveryAnalytics = () => {
         () =>
             filteredData.map((item) => ({
                 date: item.date.split('-').slice(1).reverse().join('.'),
-                weight: Math.round(item.totalDuration / 1000),
+                weight: Math.round((item.totalDuration / 60000) * 10) / 10,
             })),
         [filteredData]
     );
@@ -190,6 +198,7 @@ const RecoveryAnalytics = () => {
                                 textColor={Colors.get('subText', theme)}
                                 linesColor={theme === 'dark' || theme === 'specialdark' ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}
                                 backgroundColor="rgba(12, 14, 18, 0.92)"
+                                valueFormatter={(value) => formatChartMinutes(value, isRu)}
                             />
                         ) : (
                             <div style={s.emptyChart}>
@@ -544,7 +553,8 @@ const sharedStyles = (theme, accent = '#7ee6d2') => {
         },
         pageTitle: {
             color: mainText,
-            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontFamily: 'inherit',
+            fontSize: '24px',
             fontWeight: 700,
             lineHeight: 1.05,
             opacity: 0.9,

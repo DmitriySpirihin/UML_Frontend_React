@@ -8,7 +8,7 @@ import {
     FaTasks, FaLayerGroup, FaPen, FaSave, FaPlus,
     FaExclamationTriangle, FaChevronDown, FaChevronUp,
     FaBullseye, FaAward, FaTrash, FaCheckCircle,
-    FaEye, FaEyeSlash, FaFire
+    FaEye, FaEyeSlash, FaFire, FaSearch
 } from "react-icons/fa";
 import {
     redactGoal, deleteGoal, toggleGoal, toggleSubGoal,
@@ -20,7 +20,7 @@ import {
     moveSubGoal
 } from "./ToDoHelper";
 import { selectedTodo$, theme$, lang$, fontSize$, setPage, lastPage$ } from '../../StaticClasses/HabitsBus';
-import { buildTodoAccent, getTodoCategoryTone } from './ToDoVisuals.js';
+import { buildTodoAccent, getTodoCategoryTone, TODO_CUSTOM_ICON_GROUPS, TODO_CUSTOM_ICON_MAP } from './ToDoVisuals.js';
 
 // --- CONSTANTS ---
 const DIFFICULTY_LABELS = [['Очень легко', 'Very Easy'], ['Легко', 'Easy'], ['Средне', 'Medium'], ['Сложно', 'Hard'], ['Кошмар', 'Nightmare']];
@@ -46,6 +46,55 @@ const applyEditableFields = (target, source) => EDITABLE_TASK_FIELDS.reduce((acc
     [field]: source?.[field]
 }), { ...target });
 
+const normalizeTaskEmoji = (value) => {
+    const compact = String(value || '').trim().replace(/\s+/g, '');
+    if (!compact) return '';
+    const match = compact.match(/\p{Extended_Pictographic}(?:\uFE0F|\u200D|\p{Extended_Pictographic})*/u);
+    return match?.[0] || Array.from(compact)[0] || '';
+};
+
+const emojiFromTaskIcon = (icon) => (typeof icon === 'string' && icon.startsWith('emoji:') ? icon.slice(6).trim() : '');
+const TODO_ICON_SEARCH_TERMS = {
+    briefcase: 'портфель работа проект бизнес офис',
+    clipboard: 'список чеклист задачи план',
+    'calendar-check': 'календарь дата событие дедлайн',
+    chart: 'график аналитика статистика рост',
+    code: 'код разработка программирование сайт',
+    folder: 'папка файлы документы',
+    pin: 'пин закрепить важное',
+    tools: 'инструменты ремонт настройка',
+    tag: 'тег метка ярлык',
+    star: 'звезда избранное важное',
+    target: 'цель фокус мишень',
+    idea: 'идея лампа мысль',
+    puzzle: 'пазл задача решение',
+    rocket: 'ракета запуск старт',
+    home: 'дом семья быт',
+    world: 'мир глобус поездка',
+    heart: 'сердце здоровье пульс',
+    dumbbell: 'гантели спорт тренировка',
+    fire: 'огонь срочно энергия',
+    seedling: 'растение рост привычка',
+    brain: 'мозг учеба мысль',
+    lab: 'лаборатория колба эксперимент',
+    shopping: 'покупки корзина магазин',
+    money: 'деньги финансы оплата',
+    phone: 'телефон звонок связь',
+    mail: 'почта письмо сообщение',
+    car: 'машина авто дорога',
+    camera: 'камера фото снимок',
+    book: 'книга чтение учеба',
+    graduation: 'учеба выпуск образование',
+    paint: 'кисть рисование творчество',
+    music: 'музыка ноты звук',
+    film: 'фильм видео кино'
+};
+const matchesTodoIconQuery = (iconKey, query) => (
+    !query ||
+    iconKey.toLowerCase().includes(query) ||
+    (TODO_ICON_SEARCH_TERMS[iconKey] || '').toLowerCase().includes(query)
+);
+
 const ToDoPage = () => {
     const [task, setTask] = useState(null);
     const [theme, setThemeState] = useState('dark');
@@ -55,7 +104,10 @@ const ToDoPage = () => {
     const [newSubGoalText, setNewSubGoalText] = useState('');
     const [showDeleteWarning, setShowDeleteWarning] = useState(null);
     const [showResultModal, setShowResultModal] = useState(false);
+    const [showIconModal, setShowIconModal] = useState(false);
     const [taskResultText, setTaskResultText] = useState('');
+    const [taskEmojiInput, setTaskEmojiInput] = useState('');
+    const [taskIconSearch, setTaskIconSearch] = useState('');
     const [expandedSubGoals, setExpandedSubGoals] = useState({});
     const [editingFields, setEditingFields] = useState({});
 
@@ -80,6 +132,8 @@ const ToDoPage = () => {
                     originalTaskRef.current = cloneTask(t);
                     setTask(nextTask);
                     setTaskResultText(t.result || '');
+                    setTaskEmojiInput(emojiFromTaskIcon(t.icon));
+                    setTaskIconSearch('');
                     setEditingSubGoalIndex(null);
                     setEditingSubGoalText('');
                     setExpandedSubGoals({});
@@ -107,10 +161,20 @@ const ToDoPage = () => {
     const totalGoals = task.goals?.length || 0;
     const completedGoals = task.goals?.filter(g => g.isDone).length || 0;
     const progressPercent = totalGoals === 0 ? (task.isDone ? 100 : 0) : Math.round((completedGoals / totalGoals) * 100);
+    const difficultyIndex = normalizeScaleIndex(task.difficulty, DIFFICULTY_LABELS.length, 2);
+    const urgencyIndex = normalizeScaleIndex(task.urgency ?? task.priority, URGENCY_LABELS.length, 1);
     const s = styles(theme, fSize, accentColor);
     const pageAccent = buildTodoAccent(accentColor);
-    const categoryTone = getTodoCategoryTone(task.category, pageAccent);
+    const categoryTone = getTodoCategoryTone(task.category, pageAccent, task.icon);
     const TaskIcon = categoryTone.icon;
+    const taskIconQuery = taskIconSearch.trim().toLowerCase();
+    const taskIconGroups = TODO_CUSTOM_ICON_GROUPS
+        .map((group) => {
+            const groupMatch = group.label.some(label => label.toLowerCase().includes(taskIconQuery));
+            const icons = group.icons.filter(iconKey => groupMatch || matchesTodoIconQuery(iconKey, taskIconQuery));
+            return { ...group, icons };
+        })
+        .filter(group => group.icons.length > 0);
 
     const persistTask = async () => {
         const cleanTask = {
@@ -151,6 +215,32 @@ const ToDoPage = () => {
     const handleSaveTaskChanges = async () => {
         if (!hasTaskChanges) return;
         await persistTask();
+    };
+
+    const openIconModal = () => {
+        setTaskEmojiInput(emojiFromTaskIcon(task.icon));
+        setTaskIconSearch('');
+        setShowIconModal(true);
+    };
+
+    const applyTaskEmoji = () => {
+        const emoji = normalizeTaskEmoji(taskEmojiInput);
+        if (!emoji) return;
+        updateTaskField('icon', `emoji:${emoji}`);
+        setTaskEmojiInput(emoji);
+        setShowIconModal(false);
+    };
+
+    const applyPresetIcon = (iconKey) => {
+        updateTaskField('icon', iconKey);
+        setTaskEmojiInput('');
+        setShowIconModal(false);
+    };
+
+    const resetTaskIcon = () => {
+        updateTaskField('icon', '');
+        setTaskEmojiInput('');
+        setShowIconModal(false);
     };
 
     const toggleFieldVisibility = async (field) => {
@@ -409,6 +499,86 @@ const ToDoPage = () => {
                 )}
             </AnimatePresence>
 
+            <AnimatePresence>
+                {showIconModal && (
+                    <motion.div
+                        style={s.iconPickerOverlay}
+                        onClick={() => setShowIconModal(false)}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div
+                            style={s.iconPickerSheet}
+                            onClick={(e) => e.stopPropagation()}
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
+                            transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+                        >
+                            <div style={s.iconPickerHandle} />
+                            <div style={s.iconPickerHeader}>
+                                <h3 style={s.iconPickerTitle}>{lang === 0 ? 'Выбрать иконку' : 'Choose icon'}</h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowIconModal(false)}
+                                    style={s.iconPickerClose}
+                                    aria-label={lang === 0 ? 'Закрыть' : 'Close'}
+                                >
+                                    <FaTimes size={18} />
+                                </button>
+                            </div>
+
+                            <div style={s.iconPickerSearch}>
+                                <FaSearch size={16} color={Colors.get('subText', theme)} />
+                                <input
+                                    type="text"
+                                    value={taskIconSearch}
+                                    onChange={(e) => setTaskIconSearch(e.target.value)}
+                                    placeholder={lang === 0 ? 'Поиск иконки...' : 'Search icon...'}
+                                    style={s.iconPickerSearchInput}
+                                />
+                            </div>
+
+                            <div style={s.presetIconSection}>
+                                {taskIconGroups.map((group) => (
+                                    <div key={group.id} style={s.presetIconGroup}>
+                                        <div style={s.presetIconGroupTitle}>{group.label[lang]}</div>
+                                        <div style={s.presetIconGrid}>
+                                            {group.icons.map((iconKey) => {
+                                                const PresetIcon = TODO_CUSTOM_ICON_MAP[iconKey];
+                                                if (!PresetIcon) return null;
+                                                return (
+                                                    <motion.button
+                                                        type="button"
+                                                        key={iconKey}
+                                                        whileTap={{ scale: 0.92 }}
+                                                        onClick={() => applyPresetIcon(iconKey)}
+                                                        style={s.presetIconButton(task.icon === iconKey, categoryTone)}
+                                                        aria-label={iconKey}
+                                                    >
+                                                        <PresetIcon size={22} />
+                                                    </motion.button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                ))}
+                                {taskIconGroups.length === 0 && (
+                                    <div style={s.iconPickerEmpty}>{lang === 0 ? 'Ничего не найдено' : 'Nothing found'}</div>
+                                )}
+                            </div>
+
+                            {task.icon && (
+                                <button type="button" onClick={resetTaskIcon} style={s.resetIconInlineBtn}>
+                                    {lang === 0 ? 'Сбросить иконку' : 'Reset icon'}
+                                </button>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* TOP BAR */}
             <div style={s.topBar}>
                 <motion.button
@@ -431,9 +601,18 @@ const ToDoPage = () => {
             <div style={s.headerWrapper}>
                 <div style={s.fixedHeader}>
                     <div style={s.headerLeft}>
-                        <div style={s.iconBadge(categoryTone)}>
+                        <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.92 }}
+                            onClick={openIconModal}
+                            style={s.iconBadgeButton(categoryTone)}
+                            aria-label={lang === 0 ? 'Изменить эмодзи задачи' : 'Change task emoji'}
+                        >
                             <TaskIcon size={22} />
-                        </div>
+                            <span style={s.iconEditMark}>
+                                <FaPen size={9} />
+                            </span>
+                        </motion.button>
                     </div>
                     <div style={s.headerCenter}>
                         <input
@@ -448,6 +627,25 @@ const ToDoPage = () => {
                             <TaskIcon size={11} />
                             <span>{task.category || (lang === 0 ? 'Общее' : 'General')}</span>
                         </div>
+                    </div>
+                </div>
+
+                <div style={s.heroSummaryGrid}>
+                    <div style={s.heroSummaryChip(DIFFICULTY_COLORS[difficultyIndex])}>
+                        <FaLayerGroup size={10} />
+                        <span>{DIFFICULTY_LABELS[difficultyIndex][lang]}</span>
+                    </div>
+                    <div style={s.heroSummaryChip(URGENCY_COLORS[urgencyIndex])}>
+                        <FaFire size={10} />
+                        <span>{URGENCY_LABELS[urgencyIndex][lang]}</span>
+                    </div>
+                    <div style={s.heroSummaryChip(accentColor)}>
+                        <FaCalendarDay size={10} />
+                        <span>{formatDateForDisplay(task.deadLine, lang === 0 ? 'Без срока' : 'No due')}</span>
+                    </div>
+                    <div style={s.heroSummaryChip(categoryTone.hue)}>
+                        <FaTasks size={10} />
+                        <span>{completedGoals}/{totalGoals}</span>
                     </div>
                 </div>
 
@@ -771,6 +969,12 @@ const SubGoalCard = ({
     const sub = Colors.get('subText', theme);
     const hasAim = !!goal.aim;
     const hasResult = !!goal.result;
+    const confirmSubGoalEdit = async (event) => {
+        event.stopPropagation();
+        const activeField = ['text', 'aim', 'result'].find(field => editingFields[`${index}-${field}`]);
+        if (activeField) await onSaveField(index, activeField);
+        onToggleExpand(index);
+    };
 
     return (
         <div style={{ ...s.subGoalCard, border: goal.isDone ? `2px solid #2ed177` : `1px solid ${border}30` }}>
@@ -962,11 +1166,11 @@ const SubGoalCard = ({
                             <motion.button
                                 type="button"
                                 whileTap={{ scale: 0.96 }}
-                                onClick={() => onToggleComplete(index)}
-                                style={s.subGoalFooterBtn(goal.isDone ? 'neutral' : 'done')}
+                                onClick={confirmSubGoalEdit}
+                                style={s.subGoalFooterBtn('done')}
                             >
                                 <FaCheck size={10} />
-                                {goal.isDone ? (lang === 0 ? 'Вернуть' : 'Reopen') : (lang === 0 ? 'Готово' : 'Done')}
+                                {lang === 0 ? 'Готово' : 'Done'}
                             </motion.button>
                             <motion.button
                                 type="button"
@@ -1179,7 +1383,7 @@ const styles = (theme, fSize, rawAccentColor) => {
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
             color: text
         },
-        warningOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 },
+        warningOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(8px)', zIndex: 3000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, boxSizing: 'border-box' },
         warningBox: { backgroundColor: panelStrong, borderRadius: 24, padding: 25, width: '100%', maxWidth: 320, display: 'flex', flexDirection: 'column', alignItems: 'center', border: `1px solid ${border}` },
         cancelBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: border, color: text, fontWeight: 'bold' },
         confirmDeleteBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: '#F44336', color: '#fff', fontWeight: 'bold' },
@@ -1189,6 +1393,31 @@ const styles = (theme, fSize, rawAccentColor) => {
         resultTextarea: { width: '100%', padding: '12px', borderRadius: 12, border: `1px solid ${border}`, backgroundColor: panel, color: text, fontSize: '16px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' },
         skipBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: border, color: text, fontWeight: 'bold' },
         saveResultBtn: { flex: 1, padding: '12px', borderRadius: 12, border: 'none', backgroundColor: accentColor, color: '#fff', fontWeight: 'bold' },
+        iconPickerOverlay: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' },
+        iconPickerSheet: { width: '100%', maxWidth: 660, maxHeight: '88vh', margin: '0 auto', borderRadius: '30px 30px 0 0', padding: '14px 23px max(22px, env(safe-area-inset-bottom, 0px))', overflowY: 'auto', background: `linear-gradient(180deg, ${panelStrong}, ${panel})`, border: `1px solid ${border}`, borderBottom: 'none', boxShadow: glassShadow, boxSizing: 'border-box', WebkitOverflowScrolling: 'touch', backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
+        iconPickerHandle: { width: 45, height: 5, backgroundColor: '#8E8E93', borderRadius: 3, margin: '1px auto 25px', opacity: 0.55 },
+        iconPickerHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 14 },
+        iconPickerTitle: { margin: 0, color: text, fontSize: 20, fontWeight: 950, lineHeight: 1.1 },
+        iconPickerClose: { width: 44, height: 44, borderRadius: 999, border: `1px solid ${border}`, background: panel, color: sub, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer', flexShrink: 0 },
+        iconPickerSearch: { height: 40, borderRadius: 16, border: `1px solid ${border}`, background: panel, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', marginBottom: 15, boxSizing: 'border-box' },
+        iconPickerSearchInput: { flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', color: text, fontSize: 14, fontWeight: 700, fontFamily: 'inherit' },
+        iconPickerEmpty: { minHeight: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', color: sub, fontSize: 13, fontWeight: 800 },
+        resetIconInlineBtn: { width: '100%', minHeight: 44, marginTop: 5, borderRadius: 14, border: `1px solid rgba(244,67,54,0.2)`, backgroundColor: 'rgba(244,67,54,0.08)', color: '#E57373', fontWeight: 'bold' },
+        emojiModalBox: { backgroundColor: panelStrong, borderRadius: 24, padding: 18, width: '100%', maxWidth: 360, maxHeight: 'min(82vh, 650px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', border: `1px solid ${border}`, boxShadow: glassShadow, boxSizing: 'border-box', WebkitOverflowScrolling: 'touch' },
+        emojiModalHeader: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 14 },
+        emojiPreviewLarge: (tone = accent) => ({ width: 64, height: 64, borderRadius: 21, marginBottom: 12, backgroundColor: tone.soft, border: `1px solid ${tone.ring}`, color: tone.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 34, lineHeight: 1, boxShadow: `0 18px 34px -24px rgba(${accent.rgbText},0.78), 0 1px 0 rgba(255,255,255,0.12) inset` }),
+        emojiModalTitle: { color: text, fontSize: 18, fontWeight: 950, lineHeight: 1.12 },
+        emojiModalSub: { marginTop: 7, color: sub, fontSize: 12, fontWeight: 750, lineHeight: 1.35, maxWidth: 280 },
+        presetIconSection: { display: 'flex', flexDirection: 'column', gap: 17, marginTop: 0, marginBottom: 10 },
+        presetIconSectionTitle: { color: sub, fontSize: 10, fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase', paddingLeft: 2, marginBottom: 7 },
+        presetIconGroup: { display: 'flex', flexDirection: 'column', gap: 11 },
+        presetIconGroupTitle: { color: sub, fontSize: 10, fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase', textAlign: 'center', lineHeight: 1, paddingLeft: 0 },
+        presetIconGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12 },
+        presetIconButton: (active, tone = accent) => ({ aspectRatio: '1 / 1', minWidth: 0, borderRadius: 17, border: `1px solid ${active ? tone.ring : border}`, background: active ? tone.soft : panel, color: active ? tone.hue : sub, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer', boxShadow: active ? `0 10px 22px -18px ${tone.ring}` : '0 1px 0 rgba(255,255,255,0.05) inset', outline: 'none', WebkitTapHighlightColor: 'transparent' }),
+        manualEmojiLabel: { marginBottom: 7, color: sub, fontSize: 10, fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase', paddingLeft: 2 },
+        emojiInput: { width: '100%', height: 54, borderRadius: 17, border: `1px solid ${border}`, backgroundColor: panel, color: text, fontSize: 28, lineHeight: 1, textAlign: 'center', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', boxShadow: '0 1px 0 rgba(255,255,255,0.055) inset' },
+        emojiModalActions: { display: 'grid', gridTemplateColumns: '0.85fr 1fr 1fr', gap: 9, marginTop: 14 },
+        resetIconBtn: { flex: 1, padding: '12px', borderRadius: 12, border: `1px solid rgba(244,67,54,0.18)`, backgroundColor: 'rgba(244,67,54,0.07)', color: '#E57373', fontWeight: 'bold' },
 
         topBar: { display: 'grid', gridTemplateColumns: '44px minmax(0, 1fr) 44px', alignItems: 'center', gap: 10, padding: `${HEADER_TOP_PADDING} 18px 0`, minHeight: 54 },
         roundTopBtn: {
@@ -1232,11 +1461,41 @@ const styles = (theme, fSize, rawAccentColor) => {
             cursor: 'pointer', flexShrink: 0, transition: 'all 0.2s ease'
         }),
         iconBadge: (tone = accent) => ({ width: 54, height: 54, borderRadius: 18, fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: tone.soft, border: `1px solid ${tone.ring}`, color: tone.hue, flexShrink: 0 }),
+        iconBadgeButton: (tone = accent) => ({ width: 54, height: 54, borderRadius: 18, fontSize: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: tone.soft, border: `1px solid ${tone.ring}`, color: tone.hue, flexShrink: 0, position: 'relative', cursor: 'pointer', padding: 0, fontFamily: 'inherit', outline: 'none', WebkitTapHighlightColor: 'transparent' }),
+        iconEditMark: { position: 'absolute', right: -4, bottom: -4, width: 20, height: 20, borderRadius: 999, background: panelStrong, border: `1px solid ${border}`, color: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: glassShadow },
         headerCenter: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 7, minWidth: 0 },
         headerRight: { display: 'flex', width:'100%', alignItems: 'center', flexShrink: 0 },
         title: { fontSize: 24, fontWeight: 950, color: text, margin: 0, width:"100%", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: 0 },
         titleInput: { width: '100%', border: 'none', background: 'transparent', fontSize: '21px', lineHeight: 1.12, fontWeight: '950', color: text, outline: 'none', borderRadius: '12px', padding: '2px 0', boxSizing: 'border-box', textAlign: 'left', letterSpacing: 0 },
         categoryPill: (tone = accent) => ({ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, maxWidth: '100%', padding: '5px 9px', borderRadius: 999, background: tone.soft, border: `1px solid ${tone.ring}`, color: tone.hue, fontSize: 10.5, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }),
+        heroSummaryGrid: {
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 8,
+            marginTop: 12,
+            paddingTop: 11,
+            borderTop: `1px solid ${isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.06)'}`
+        },
+        heroSummaryChip: (tone = accentColor) => ({
+            minWidth: 0,
+            minHeight: 30,
+            borderRadius: 12,
+            padding: '0 10px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.045)',
+            border: `1px solid ${isLight ? 'rgba(15,23,42,0.065)' : 'rgba(255,255,255,0.065)'}`,
+            color: tone,
+            fontSize: 11,
+            fontWeight: 900,
+            lineHeight: 1,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            boxShadow: `0 8px 18px -18px ${tone}`
+        }),
         completeBtn: (isDone) => ({ width: '100%', minHeight: 46, padding: '12px 14px', borderRadius: 14, border: `1px solid ${isDone ? border : 'rgba(46,209,119,0.28)'}`, backgroundColor: isDone ? panel : 'rgba(46,209,119,0.13)', color: isDone ? sub : '#2ed177', fontSize: 13, fontWeight: 900, textAlign: 'center', cursor: 'pointer', marginTop: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' }),
         deleteBtn: { width: '100%', minHeight: 44, padding: '12px 14px', borderRadius: 14, border: '1px solid rgba(244,67,54,0.16)', backgroundColor: 'rgba(244,67,54,0.06)', color: '#E57373', fontSize: 13, fontWeight: 850, textAlign: 'center', cursor: 'pointer', marginTop: 14, marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' },
         editActionBar: {

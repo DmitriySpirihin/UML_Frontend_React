@@ -95,7 +95,7 @@ const styles = (theme, fSize) => {
     padding: '18px 0 88px',
     boxSizing: 'border-box',
     width: '100vw',
-    fontFamily: 'Segoe UI',
+    fontFamily: 'inherit',
     fontSize: fSize === 0 ? '14px' : '16px',
     overflow: 'hidden',
     position: 'relative',

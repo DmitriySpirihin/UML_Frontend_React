@@ -580,7 +580,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
       <FilterDropdowns expanded={expandedFilter} setExpanded={setExpandedFilter}/>
 
       {/* === Training List === */}
-      <div style={{ width: '100%', maxWidth: '800px', paddingBottom: '50px' }}>
+      <div style={{ width: '100%', maxWidth: '800px' }}>
         {allTrainings.length > 0 ? (
           <AnimatePresence>
             {allTrainings.map((item, i) => {
@@ -830,7 +830,6 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
           </Motion.div>
         )}
       </div>
-      <div style={{marginBottom:'150px'}}></div>
     </div>
   );
 };
@@ -859,7 +858,7 @@ const styles = (theme, fSize = 0) => {
       flexDirection: 'column',
       alignItems: 'center',
       boxSizing: 'border-box',
-      padding: '24px 4.5vw 150px',
+      padding: '24px 4.5vw max(96px, calc(92px + env(safe-area-inset-bottom, 0px)))',
       background: isDark
         ? `radial-gradient(circle at 18% 6%, rgba(53,194,255,0.12), transparent 28%),
            radial-gradient(circle at 92% 28%, rgba(20,184,166,0.10), transparent 26%),
@@ -877,8 +876,8 @@ const styles = (theme, fSize = 0) => {
     },
     pageTitle: {
       color: mainText,
-      fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: fSize === 0 ? '25px' : '27px',
+      fontFamily: 'inherit',
+      fontSize: '24px',
       fontWeight: 700,
       letterSpacing: 0,
       lineHeight: 1.05,
@@ -896,8 +895,8 @@ const styles = (theme, fSize = 0) => {
       position: 'relative',
       width: '100%',
       maxWidth: '600px',
-      minHeight: '164px',
-      padding: '18px',
+      minHeight: '196px',
+      padding: '18px 18px 20px',
       borderRadius: '30px',
       overflow: 'hidden',
       boxSizing: 'border-box',
@@ -986,7 +985,7 @@ const styles = (theme, fSize = 0) => {
       position: 'absolute',
       right: '-4px',
       top: '50%',
-      transform: 'translateY(-43%)',
+      transform: 'translateY(-47%)',
       width: 'min(32vw, 150px)',
       maxHeight: '156px',
       objectFit: 'contain',

@@ -109,14 +109,16 @@ const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, hei
             {/* --- BENTO GRID (METRICS) --- */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <MetricCard 
-                    title={langIndex === 0 ? 'Вес' : 'Weight'} 
+                    title={langIndex === 0 ? 'Вес' : 'Weight'}
+                    hint={langIndex === 0 ? 'текущий вес' : 'current weight'}
                     value={measurmentString(data, 0, langIndex)} 
                     icon={<FaWeight />} 
-                    color={Colors.get('currentDateBorder', theme)} 
+                    color={accent.hue}
                     theme={theme} 
                 />
                 <MetricCard 
-                    title={langIndex === 0 ? 'Жир' : 'Body Fat'} 
+                    title={langIndex === 0 ? 'Жир, %' : 'Body fat, %'}
+                    hint={langIndex === 0 ? 'расчетная доля' : 'estimated share'}
                     value={fatPercentString(data, height, age, gender)} 
                     icon={<IoAccessibility />} 
                     color="#FF9F43" 
@@ -124,6 +126,7 @@ const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, hei
                 />
                 <MetricCard 
                     title={langIndex === 0 ? 'ИМТ' : 'BMI'} 
+                    hint={langIndex === 0 ? 'индекс массы тела' : 'body mass index'}
                     value={bmiString(data, langIndex, height)} 
                     icon={<FaHeartbeat />} 
                     color={currentBMIColor} 
@@ -131,6 +134,7 @@ const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, hei
                 />
                 <MetricCard 
                     title={langIndex === 0 ? 'Метаболизм' : 'Metabolism'} 
+                    hint={langIndex === 0 ? 'базовый обмен' : 'basal rate'}
                     value={baseMetabolismString(data, langIndex, height, age, gender)} 
                     icon={<FaFire />} 
                     color="#FF6B6B" 
@@ -149,7 +153,24 @@ const TrainingMeasurmentsOveview = ({ theme, langIndex, fSize, data, filled, hei
                     <div style={{ height: '1px', backgroundColor: borderColor, margin: '5px 0' }} />
                     
                     {/* Proportions Components rendered here */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{
+                        borderRadius: 18,
+                        padding: '12px 13px',
+                        background: isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)',
+                        border: `1px solid ${borderColor}`,
+                        color: subTextColor,
+                        fontSize: 12,
+                        fontWeight: 750,
+                        lineHeight: 1.35
+                    }}>
+                        <div style={{ color: textColor, fontSize: 13, fontWeight: 900, marginBottom: 4 }}>
+                            {langIndex === 0 ? 'Индексы риска по талии' : 'Waist risk indexes'}
+                        </div>
+                        {langIndex === 0
+                            ? 'Показывают, насколько талия велика относительно бедер и роста. Чем выше значение, тем выше риск, связанный с абдоминальным жиром.'
+                            : 'They show how large the waist is relative to hips and height. Higher values mean higher abdominal-fat related risk.'}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
                         <GetWHR theme={theme} langIndex={langIndex} data={data} />
                         <GetWHTr theme={theme} langIndex={langIndex} data={data} height={height} />
                     </div>
@@ -213,26 +234,44 @@ const StatRow = ({ icon, label, value, theme, highlight }) => (
     </div>
 )
 
-const MetricCard = ({ title, value, icon, color, theme }) => (
+const MetricCard = ({ title, hint, value, icon, color, theme }) => (
     <div style={{
         background: theme === 'light'
-            ? `linear-gradient(145deg, rgba(255,255,255,0.64), ${color}10)`
-            : `linear-gradient(145deg, rgba(255,255,255,0.06), ${color}12)`,
+            ? `radial-gradient(circle at 96% 8%, ${color}24, transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.66), ${color}12)`
+            : `radial-gradient(circle at 94% 8%, ${color}24, transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.065), ${color}16)`,
         borderRadius: '20px',
         padding: '15px',
-        border: `1px solid ${theme === 'light' ? 'rgba(15,23,42,0.06)' : 'rgba(255,255,255,0.08)'}`,
+        border: `1px solid ${theme === 'light' ? `${color}2E` : `${color}32`}`,
         boxShadow: getTrainingPanelShadow(theme, getTrainingAccent()),
         backdropFilter: 'blur(18px) saturate(1.14)',
         WebkitBackdropFilter: 'blur(18px) saturate(1.14)',
-        display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '100px'
+        display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '122px',
+        position: 'relative',
+        overflow: 'hidden'
     }}>
+        <div style={{
+            position: 'absolute',
+            right: '-12px',
+            bottom: '-20px',
+            fontSize: '74px',
+            lineHeight: 1,
+            color,
+            opacity: theme === 'light' ? 0.08 : 0.12,
+            transform: 'rotate(-8deg)',
+            pointerEvents: 'none'
+        }}>
+            {icon}
+        </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '12px', fontWeight: '700', color: Colors.get('subText', theme) }}>{title}</span>
+            <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '12px', fontWeight: '800', color: Colors.get('subText', theme), lineHeight: 1.15 }}>{title}</div>
+                {hint && <div style={{ marginTop: 3, fontSize: '9px', fontWeight: 750, color: Colors.get('subText', theme), opacity: 0.66, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{hint}</div>}
+            </div>
             <div style={{ backgroundColor: `${color}20`, padding: '6px', borderRadius: '10px', color: color }}>
                 {icon}
             </div>
         </div>
-        <div style={{ fontSize: '18px', fontWeight: '800', color: Colors.get('mainText', theme) }}>
+        <div style={{ position: 'relative', zIndex: 1, fontSize: '18px', fontWeight: '850', color: Colors.get('mainText', theme), lineHeight: 1.12 }}>
             {value}
         </div>
     </div>
@@ -241,7 +280,7 @@ const MetricCard = ({ title, value, icon, color, theme }) => (
 const DetailRow = ({ label, value, theme }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <span style={{ fontSize: '14px', color: Colors.get('subText', theme) }}>{label}</span>
-        <span style={{ fontSize: '15px', fontWeight: '600', color: Colors.get('mainText', theme) }}>{value}</span>
+        <span style={{ fontSize: '15px', fontWeight: '650', color: Colors.get('mainText', theme), textAlign: 'right', maxWidth: '62%' }}>{value}</span>
     </div>
 )
 
@@ -383,17 +422,17 @@ const bmiNames = (BMI, langIndex) => {
 const getBMIColor = (theme,data,height) =>{
   if(data[0].length === 0) return Colors.get('light', theme);
   const bmi  = getBMI(data[0][data[0].length - 1].value,height);
-  return bmi > 18.5 && bmi < 25 ? Colors.get('light', theme) : Colors.get('heavy', theme);
+  return bmi > 18.5 && bmi < 25 ? getTrainingAccent().hue : Colors.get('heavy', theme);
 }
 
 const bodyTypesNames = (type, langIndex) => {
   switch (type) {
     case 'small':
-      return langIndex === 0 ? 'астеник' : 'asthenic';
+      return langIndex === 0 ? 'Астеник (узкое телосложение)' : 'Asthenic (narrow frame)';
     case 'medium':
-      return langIndex === 0 ? 'нормостеник' : 'normosthenic';
+      return langIndex === 0 ? 'Нормостеник (среднее телосложение)' : 'Normosthenic (medium frame)';
     case 'large':
-      return langIndex === 0 ? 'гиперстеник' : 'hypersthenic';
+      return langIndex === 0 ? 'Гиперстеник (широкое телосложение)' : 'Hypersthenic (wide frame)';
     default:
       return langIndex === 0 ? 'неизвестно' : 'unknown';
   }
@@ -412,7 +451,7 @@ const bmiString = (data,langIndex,height) => {
 const fatPercentString = (data,height,age,gender) => {
   if(data[0].length === 0 || data[0][data[0].length - 1].value === null)return '-';
   const fat  = getFatPercent(getBMI(data[0][data[0].length - 1].value,height),age,gender);
-  return fat.toFixed();
+  return fat.toFixed() + '%';
 }
 const baseMetabolismString = (data,langIndex,height,age,gender) => {
   if(data[0].length === 0 || data[0][data[0].length - 1].value === null)return '-';
@@ -474,24 +513,17 @@ const GetWHR = ({ theme, langIndex, data }) => {
     }
   }
 
-  const bgColor = 
-    status === 'normal' ? Colors.get('difficulty0', theme) :
-   Colors.get('difficulty5', theme)
+  const color = status === 'normal' ? Colors.get('difficulty0', theme) : Colors.get('difficulty5', theme);
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      borderRadius: '5px',
-      minWidth: '45%'
-    }}>
-      <span style={{ ...styles(theme, false, false, 14).text, color: bgColor, fontSize: '12px' }}>
-        {langIndex === 0 ? 'WHR: ' : 'WHR: '}
-        {whr.toFixed(2)}
-        {label}
-      </span>
-    </div>
+    <RatioChip
+      theme={theme}
+      color={color}
+      label="WHR"
+      value={whr.toFixed(2)}
+      status={label}
+      helper={langIndex === 0 ? 'талия / бедра: распределение жира' : 'waist / hips: fat distribution'}
+    />
   );
 };
 
@@ -511,25 +543,43 @@ const GetWHTr = ({ theme, langIndex, data,height }) => {
   if (whtr >= 0.5 && whtr < 0.6) status = 'elevated';
   else if (whtr >= 0.6) status = 'high';
 
-  const bgColor = 
-    status === 'normal' ? Colors.get('difficulty0', theme) :
-    Colors.get('difficulty5', theme)
+  const color = status === 'normal' ? Colors.get('difficulty0', theme) : Colors.get('difficulty5', theme);
+  const label = status === 'normal'
+    ? (langIndex === 0 ? 'Норма' : 'Normal')
+    : (langIndex === 0 ? 'Повышенный риск' : 'Elevated risk');
 
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'flex-start',
-      alignItems: 'center',
-      borderRadius: '5px',
-      minWidth: '45%'
-    }}>
-      <span style={{ ...styles(theme, false, false, 14).text, color: bgColor, fontSize: '12px' }}>
-        {langIndex === 0 ? 'WHtR: ' : 'WHtR: '}
-        {whtr.toFixed(2)}
-      </span>
-    </div>
+    <RatioChip
+      theme={theme}
+      color={color}
+      label="WHtR"
+      value={whtr.toFixed(2)}
+      status={label}
+      helper={langIndex === 0 ? 'талия / рост: нагрузка на здоровье' : 'waist / height: health load'}
+    />
   );
 };
+
+const RatioChip = ({ theme, color, label, value, status, helper }) => (
+  <div style={{
+    minWidth: 0,
+    borderRadius: 16,
+    padding: '11px 12px',
+    background: theme === 'light' || theme === 'speciallight'
+      ? `linear-gradient(145deg, rgba(255,255,255,0.54), ${color}12)`
+      : `linear-gradient(145deg, rgba(255,255,255,0.052), ${color}14)`,
+    border: `1px solid ${color}36`,
+    boxShadow: '0 1px 0 rgba(255,255,255,0.06) inset',
+    boxSizing: 'border-box'
+  }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+      <span style={{ fontSize: 11, fontWeight: 900, color, letterSpacing: '0.08em' }}>{label}</span>
+      <span style={{ fontSize: 17, fontWeight: 900, color: Colors.get('mainText', theme), fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+    </div>
+    <div style={{ marginTop: 4, fontSize: 10, fontWeight: 800, color: Colors.get('subText', theme), opacity: 0.72 }}>{helper}</div>
+    <div style={{ marginTop: 6, fontSize: 10, fontWeight: 850, color, lineHeight: 1.15 }}>{status}</div>
+  </div>
+);
 
 const infoText = (langIndex) => {
   if (langIndex === 0) {

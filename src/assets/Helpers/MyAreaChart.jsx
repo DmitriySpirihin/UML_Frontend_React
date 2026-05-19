@@ -10,8 +10,13 @@ import {
 } from "recharts";
 
 // Modern Glassmorphism Tooltip
-const CustomTooltip = ({ active, payload, label, backgroundColor, textColor, fillColor }) => {
+const CustomTooltip = ({ active, payload, label, backgroundColor, textColor, fillColor, valueFormatter }) => {
   if (active && payload && payload.length) {
+    const rawValue = payload[0].value;
+    const formattedValue = valueFormatter
+      ? valueFormatter(rawValue)
+      : (Number.isFinite(rawValue) ? rawValue.toFixed(1) : rawValue);
+
     return (
       <div style={{
         backgroundColor: backgroundColor, // Use passed background or fallback
@@ -24,7 +29,7 @@ const CustomTooltip = ({ active, payload, label, backgroundColor, textColor, fil
       }}>
         <p style={{ margin: 0, fontSize: '12px', color: textColor, opacity: 0.7, marginBottom: '2px' }}>{label}</p>
         <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: fillColor }}>
-          {payload[0].value.toFixed(1)}
+          {formattedValue}
         </p>
       </div>
     );
@@ -32,7 +37,7 @@ const CustomTooltip = ({ active, payload, label, backgroundColor, textColor, fil
   return null;
 };
 
-export function MyAreaChart({ data, fillColor, textColor, linesColor, backgroundColor }) {
+export function MyAreaChart({ data, fillColor, textColor, linesColor, backgroundColor, valueFormatter, domain }) {
   if (!data?.length) return null;
 
   return (
@@ -77,12 +82,13 @@ export function MyAreaChart({ data, fillColor, textColor, linesColor, background
           tickLine={false}
           axisLine={false}
           tick={{ fontSize: 10, fill: textColor, opacity: 0.6 }}
-          domain={["dataMin - 1", "dataMax + 1"]}
+          domain={domain || ["dataMin - 1", "dataMax + 1"]}
+          tickFormatter={valueFormatter}
           dx={-10}
         />
         
         <Tooltip
-          content={<CustomTooltip backgroundColor={backgroundColor} textColor={textColor} fillColor={fillColor} />}
+          content={<CustomTooltip backgroundColor={backgroundColor} textColor={textColor} fillColor={fillColor} valueFormatter={valueFormatter} />}
           cursor={{ stroke: linesColor, strokeWidth: 1, strokeDasharray: "4 4" }}
         />
 

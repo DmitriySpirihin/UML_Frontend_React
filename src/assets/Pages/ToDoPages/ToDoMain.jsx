@@ -379,6 +379,18 @@ const ToDoMain = () => {
     playEffects(clickSound);
   };
 
+  const toggleArchiveView = () => {
+    setFilterParams(prev => (prev === 4 ? 0 : 4));
+    setShowHiddenTasks(false);
+    playEffects(clickSound);
+  };
+
+  const openNewTask = () => {
+    selectedTodo$.next({});
+    setPage('ToDoNew');
+    playEffects(clickSound);
+  };
+
   const changeAccentColor = async (color) => {
     const next = buildTodoAccent(color).hue;
     AppData.todoAccentColor = next;
@@ -393,6 +405,7 @@ const ToDoMain = () => {
   };
 
   const hasQuery = searchQuery.trim().length > 0;
+  const hasAnyTasks = (AppData.todoList || []).length > 0;
   const emptyText = hiddenTasksCount > 0 && !showHiddenTasks
     ? (langIndex === 0 ? 'Все найденные задачи скрыты' : 'All matching tasks are hidden')
     : hasQuery
@@ -421,49 +434,64 @@ const ToDoMain = () => {
           accent={accent}
           onAccentClick={() => setShowAccentSettings(true)}
         />
-        <FocusHero
-          stats={stats}
-          theme={theme}
-          accent={accent}
-          langIndex={langIndex}
-          fSize={fSize}
-          controls={{
-            showFilters,
-            setShowFilters,
-            searchInputRef,
-            searchQuery,
-            setSearchQuery,
-            showSorts,
-            setShowSorts,
-            sortParams,
-            setSortParams,
-            filterParams,
-            setFilterParams,
-            hiddenTasksCount,
-            showHiddenTasks,
-            setShowHiddenTasks
-          }}
-        />
-        <ToDoWeekStrip
-          theme={theme}
-          accent={accent}
-          langIndex={langIndex}
-          tasks={AppData.todoList || []}
-          selectedDateKey={selectedDateKey}
-          onSelectDate={(key) => {
-            setSelectedDateKey(key);
-            setFilterParams(0);
-          }}
-        />
-        <section style={s.listWrap}>
+        {hasAnyTasks && (
+          <>
+            <FocusHero
+              stats={stats}
+              theme={theme}
+              accent={accent}
+              langIndex={langIndex}
+              fSize={fSize}
+              controls={{
+                showFilters,
+                setShowFilters,
+                searchInputRef,
+                searchQuery,
+                setSearchQuery,
+                showSorts,
+                setShowSorts,
+                sortParams,
+                setSortParams,
+                filterParams,
+                setFilterParams,
+                hiddenTasksCount,
+                showHiddenTasks,
+                setShowHiddenTasks
+              }}
+            />
+            <ToDoWeekStrip
+              theme={theme}
+              accent={accent}
+              langIndex={langIndex}
+              tasks={AppData.todoList || []}
+              selectedDateKey={selectedDateKey}
+              onSelectDate={(key) => {
+                setSelectedDateKey(key);
+                setFilterParams(0);
+              }}
+            />
+          </>
+        )}
+        <section style={hasAnyTasks ? s.listWrap : s.emptyListWrap}>
           <AnimatePresence mode="popLayout">
             {sortedList.length === 0 ? (
-              <motion.div key="empty" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={s.emptyState}>
-                <div style={s.emptyIcon}><FaInbox /></div>
-                <div style={s.emptyTitle}>{emptyText}</div>
-                <div style={s.emptySub}>
-                  {langIndex === 0 ? 'Новые дела появятся здесь.' : 'New tasks will appear here.'}
+              <motion.div key="empty" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={hasAnyTasks ? s.emptyState : s.zeroState}>
+                {!hasAnyTasks && <div style={s.zeroGlow} />}
+                <div style={hasAnyTasks ? s.emptyIcon : s.zeroIcon}>
+                  {hasAnyTasks ? <FaInbox /> : <FaListUl />}
                 </div>
+                <div style={hasAnyTasks ? s.emptyTitle : s.zeroTitle}>{emptyText}</div>
+                <div style={hasAnyTasks ? s.emptySub : s.zeroSub}>
+                  {hasAnyTasks
+                    ? (langIndex === 0 ? 'Новые дела появятся здесь.' : 'New tasks will appear here.')
+                    : (langIndex === 0 ? 'Создайте первую задачу: сроки, шаги и фокус появятся здесь.' : 'Create your first task: deadlines, steps, and focus will appear here.')}
+                </div>
+                {!hasAnyTasks && (
+                  <motion.button type="button" whileTap={{ scale: 0.96 }} onClick={openNewTask} style={s.zeroCta}>
+                    <FaPlus size={13} />
+                    {langIndex === 0 ? 'Добавить задачу' : 'Add task'}
+                  </motion.button>
+                )}
               </motion.div>
             ) : (
               Object.keys(groupedTasks).map(category => {
@@ -540,11 +568,7 @@ const ToDoMain = () => {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setFilterParams(4);
-                    setShowHiddenTasks(false);
-                    playEffects(clickSound);
-                  }}
+                  onClick={toggleArchiveView}
                   style={s.hiddenRevealBar(filterParams === 4)}
                 >
                   <FaCheckCircle />
@@ -704,6 +728,12 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
                   key={filter.id}
                   type="button"
                   onClick={() => {
+                    if (filter.id === 4) {
+                      setFilterParams(prev => (prev === 4 ? 0 : 4));
+                      setShowHiddenTasks(false);
+                      playEffects(clickSound);
+                      return;
+                    }
                     setFilterParams(filter.id);
                     playEffects(clickSound);
                   }}
@@ -1070,11 +1100,12 @@ const TaskCard = ({
   const doneGoals = item.goals ? item.goals.filter(goal => goal.isDone).length : 0;
   const progress = totalGoals === 0 ? (item.isDone ? 100 : 0) : Math.round((doneGoals / totalGoals) * 100);
   const isOverdue = isDeadlinePassed(item.deadLine) && !item.isDone;
-  const categoryTone = getTodoCategoryTone(item.category, accent);
+  const categoryTone = getTodoCategoryTone(item.category, accent, item.icon);
   const cardAccent = categoryTone;
   const overdueTone = makeTodoTone('#E95F5F');
   const glyphTone = item.isDone ? TODO_SUCCESS : (isOverdue ? overdueTone : cardAccent);
-  const progressTone = item.isDone ? TODO_SUCCESS : (isOverdue ? overdueTone : cardAccent);
+  const isProgressComplete = progress >= 100;
+  const progressTone = isProgressComplete ? TODO_SUCCESS : (isOverdue ? overdueTone : cardAccent);
   const completedBadgeColor = theme === 'light' || theme === 'speciallight' ? '#7D8794' : '#8E98A6';
   const badgeColor = (color) => item.isDone ? completedBadgeColor : color;
   const TaskIcon = cardAccent.icon;
@@ -1096,7 +1127,7 @@ const TaskCard = ({
         opacity: { duration: 0.18 },
         y: { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
       }}
-      whileHover={{ y: -2, scale: 1.004 }}
+      whileHover={{ scale: 1.003 }}
       whileTap={{ scale: 0.985 }}
       onClick={onOpen}
       style={s.taskCard(item.isDone, isOverdue, item.isPinned, cardAccent)}
@@ -1149,7 +1180,7 @@ const TaskCard = ({
           >
             <div style={s.taskExpanded}>
               {(totalGoals > 0 || item.isDone) && (
-                <div style={s.progressTrack}>
+                <div style={s.progressTrack(isProgressComplete, progressTone)}>
                   <div style={{ ...s.progressFill(progressTone.hue), width: `${progress}%` }} />
                 </div>
               )}
@@ -1246,7 +1277,7 @@ const ActionButton = ({ active, label, icon, onClick, theme, accent }) => {
   const s = styles(theme, accent);
   return (
     <motion.button type="button" whileTap={{ scale: 0.94, y: 1 }} onClick={onClick} style={s.actionButton(active)}>
-      {icon}
+      {React.cloneElement(icon, { size: 9 })}
       <span style={s.actionButtonLabel}>{label}</span>
     </motion.button>
   );
@@ -1342,8 +1373,8 @@ const styles = (theme, accent, fSize = 0) => {
     pageHeaderBrand: { minWidth: 0, textAlign: 'center' },
     pageTitle: {
       color: text,
-      fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: fSize === 0 ? 21 : 24,
+      fontFamily: 'inherit',
+      fontSize: 24,
       fontWeight: 700,
       letterSpacing: 0,
       lineHeight: 1.05,
@@ -1788,6 +1819,14 @@ const styles = (theme, accent, fSize = 0) => {
 	      gap: 18,
 	      boxSizing: 'border-box'
 	    },
+    emptyListWrap: {
+      width: 'calc(100% - 56px)',
+      maxWidth: 520,
+      margin: '52px auto 0',
+      display: 'flex',
+      flexDirection: 'column',
+      boxSizing: 'border-box'
+    },
     emptyState: {
       minHeight: 210,
       borderRadius: 30,
@@ -1817,6 +1856,83 @@ const styles = (theme, accent, fSize = 0) => {
     },
     emptyTitle: { marginTop: 12, color: text, fontSize: 18, fontWeight: 950 },
     emptySub: { marginTop: 6, color: sub, fontSize: 13, lineHeight: 1.35, fontWeight: 700, maxWidth: 260 },
+    zeroState: {
+      width: '100%',
+      minHeight: 280,
+      borderRadius: 28,
+      background: isLight
+        ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${accent.faint})`
+        : `linear-gradient(145deg, rgba(23,27,31,0.96), ${accent.faint})`,
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : accent.ring}`,
+      boxShadow: '0 1px 0 rgba(255,255,255,0.055) inset',
+      boxSizing: 'border-box',
+      textAlign: 'center',
+      position: 'relative',
+      overflow: 'hidden',
+      padding: '38px 24px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    zeroGlow: {
+      position: 'absolute',
+      top: -80,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: 220,
+      height: 220,
+      borderRadius: 999,
+      background: `radial-gradient(circle, ${accent.soft}, transparent 68%)`,
+      pointerEvents: 'none'
+    },
+    zeroIcon: {
+      position: 'relative',
+      width: 72,
+      height: 72,
+      borderRadius: 22,
+      margin: '0 auto 18px',
+      background: accent.soft,
+      border: `1px solid ${accent.ring}`,
+      color: accent.hue,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 30
+    },
+    zeroTitle: {
+      position: 'relative',
+      color: text,
+      fontSize: fSize === 0 ? 22 : 25,
+      fontWeight: 950
+    },
+    zeroSub: {
+      position: 'relative',
+      color: sub,
+      fontSize: fSize === 0 ? 14 : 16,
+      fontWeight: 750,
+      lineHeight: 1.45,
+      marginTop: 8,
+      maxWidth: 320
+    },
+    zeroCta: {
+      position: 'relative',
+      minHeight: 48,
+      borderRadius: 16,
+      border: `1px solid ${accent.ring}`,
+      background: `linear-gradient(135deg, ${accent.soft}, rgba(255,255,255,0.035))`,
+      color: text,
+      fontFamily: 'inherit',
+      fontSize: 14,
+      fontWeight: 900,
+      padding: '0 18px',
+      marginTop: 20,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      cursor: 'pointer'
+    },
 	    category: { width: '100%', margin: '0 auto', boxSizing: 'border-box' },
 	    categoryHeader: {
 	      width: '100%',
@@ -1871,8 +1987,8 @@ const styles = (theme, accent, fSize = 0) => {
       boxSizing: 'border-box',
       background: done
         ? (isLight
-          ? `linear-gradient(145deg, rgba(255,255,255,0.95), ${TODO_SUCCESS.soft})`
-          : `radial-gradient(240px 128px at 6% 8%, ${TODO_SUCCESS.soft}, transparent 72%), linear-gradient(145deg, rgba(22,34,27,0.82), rgba(15,21,18,0.76))`)
+          ? `radial-gradient(260px 142px at 5% 8%, rgba(16,185,129,0.18), transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.95), rgba(16,185,129,0.16))`
+          : `radial-gradient(260px 142px at 6% 8%, rgba(16,185,129,0.28), transparent 72%), linear-gradient(145deg, rgba(20,48,36,0.84), rgba(13,30,24,0.78))`)
         : (overdue
           ? (isLight
             ? 'linear-gradient(145deg, rgba(255,255,255,0.94), rgba(233,95,95,0.14))'
@@ -1884,9 +2000,9 @@ const styles = (theme, accent, fSize = 0) => {
           : (isLight
             ? 'linear-gradient(145deg, rgba(255,255,255,0.82), rgba(244,246,248,0.56))'
             : 'linear-gradient(145deg, rgba(42,49,55,0.52), rgba(17,22,26,0.66))'))),
-      border: `1px solid ${done ? TODO_SUCCESS.ring : overdue ? 'rgba(233,95,95,0.42)' : pinned ? tone.ring : border}`,
+      border: `1px solid ${done ? 'rgba(16,185,129,0.52)' : overdue ? 'rgba(233,95,95,0.42)' : pinned ? tone.ring : border}`,
       boxShadow: done
-        ? `0 1px 0 rgba(255,255,255,0.06) inset, 0 16px 38px -28px ${TODO_SUCCESS.glow}`
+        ? `0 1px 0 rgba(255,255,255,0.07) inset, 0 18px 42px -26px rgba(16,185,129,0.44), 0 0 0 1px rgba(16,185,129,0.08) inset`
         : overdue
           ? '0 1px 0 rgba(255,255,255,0.055) inset, 0 16px 40px -28px rgba(233,95,95,0.58)'
           : pinned
@@ -1970,13 +2086,23 @@ const styles = (theme, accent, fSize = 0) => {
       width: '100%',
       maxWidth: '100%'
     },
-    progressTrack: { height: 5, borderRadius: 999, background: isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)', overflow: 'hidden', marginTop: 15, marginBottom: 8 },
+    progressTrack: (complete = false, tone = accent) => ({
+      height: 5,
+      borderRadius: 999,
+      background: complete
+        ? (isLight ? 'rgba(16,185,129,0.13)' : 'rgba(16,185,129,0.16)')
+        : (isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.065)'),
+      overflow: 'hidden',
+      marginTop: 15,
+      marginBottom: 8,
+      boxShadow: complete ? `0 0 14px ${tone.glow}` : 'none'
+    }),
     progressFill: (color) => ({ height: '100%', borderRadius: 999, background: color, boxShadow: `0 0 18px ${color}66` }),
     taskExpandedShell: {
       overflow: 'hidden',
       willChange: 'height, opacity, transform'
     },
-    taskExpanded: { marginTop: 12, borderTop: `1px solid ${border}`, paddingTop: 12, paddingBottom: 3 },
+    taskExpanded: { marginTop: 12, borderTop: `1px solid ${border}`, paddingTop: 12, paddingBottom: 10 },
     expandedInfoGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 12, marginTop: 14 },
     expandedInfo: {
       minHeight: 42,
@@ -1994,7 +2120,7 @@ const styles = (theme, accent, fSize = 0) => {
       overflow: 'hidden'
     },
     expandedDescription: { color: text, fontSize: 12.5, fontWeight: 700, lineHeight: 1.45, opacity: 0.86, textAlign: 'center', marginTop: 2 },
-    expandedChecklist: { marginTop: 16, borderRadius: 18, background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.032)', border: `1px solid ${border}`, padding: '14px 14px 15px' },
+    expandedChecklist: { marginTop: 16, borderRadius: 20, background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.032)', border: `1px solid ${border}`, padding: '16px 16px 18px', minHeight: 166, boxSizing: 'border-box' },
     expandedTitle: { display: 'flex', alignItems: 'center', gap: 8, color: sub, fontSize: 11.5, fontWeight: 900, marginBottom: 13 },
     expandedGoals: { display: 'flex', flexDirection: 'column', gap: 12 },
     expandedGoal: (done) => ({
@@ -2007,10 +2133,10 @@ const styles = (theme, accent, fSize = 0) => {
       display: 'flex',
       alignItems: 'center',
       gap: 12,
-      minHeight: 58,
+      minHeight: 74,
       fontFamily: 'inherit',
       textAlign: 'left',
-      padding: '12px 14px',
+      padding: '16px 16px',
       cursor: 'pointer',
       borderRadius: 17
     }),
@@ -2086,35 +2212,32 @@ const styles = (theme, accent, fSize = 0) => {
       fontFamily: 'inherit'
     },
     actionRow: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+      display: 'flex',
+      flexWrap: 'wrap',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
+      gap: 9,
       width: '100%',
-      marginTop: 14,
-      paddingLeft: 0,
-      paddingRight: 0,
-      paddingTop: 10,
-      borderTop: `1px solid ${isLight ? 'rgba(15,23,42,0.09)' : 'rgba(159,180,196,0.14)'}`,
+      marginTop: 13,
+      padding: '9px 10px 0',
+      borderTop: `1px solid ${isLight ? 'rgba(15,23,42,0.06)' : 'rgba(159,180,196,0.11)'}`,
       boxSizing: 'border-box',
-      overflow: 'hidden'
+      overflow: 'visible'
     },
     actionButton: (active) => ({
-      border: `1px solid ${active ? accent.ring : border}`,
-      background: active ? accent.soft : isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.025)',
+      border: `1px solid ${active ? accent.ring : (isLight ? 'rgba(15,23,42,0.055)' : 'rgba(159,180,196,0.09)')}`,
+      background: active ? accent.soft : 'transparent',
       color: active ? accent.hue : sub,
       borderRadius: 999,
-      width: '100%',
       minWidth: 0,
-      height: 24,
-      padding: '0 7px',
-      display: 'flex',
+      height: 22,
+      padding: '0 10px',
+      display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 3,
-      fontSize: 8.5,
-      fontWeight: 900,
+      gap: 4,
+      fontSize: 9.5,
+      fontWeight: 950,
       fontFamily: 'inherit',
       whiteSpace: 'nowrap',
       overflow: 'hidden'

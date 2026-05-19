@@ -366,7 +366,7 @@ const styles = (theme, accent, fSize = 0) => {
         : `linear-gradient(180deg, rgba(${accent.rgb.r},${accent.rgb.g},${accent.rgb.b},0.13) 0%, ${bg} 46%)`,
       color: text,
       overflow: 'hidden',
-      fontFamily: 'Segoe UI, sans-serif'
+      fontFamily: 'inherit'
     },
     sheet: {
       width: '100%',

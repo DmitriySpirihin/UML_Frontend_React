@@ -1,5 +1,6 @@
 import { AppData, UserData } from './AppData';
 import { saveData } from './SaveHelper';
+import { addSleepSessionToLog } from './SleepLogHelper';
 
 const API_BASE = 'https://ultymylife.ru';
 const MS_PER_MINUTE = 60 * 1000;
@@ -136,12 +137,7 @@ export const importSleepRecords = (provider, records) => {
     .map(record => normalizeSleepRecord(provider, record))
     .filter(Boolean);
 
-  normalized.forEach(({ dateKey, entry }) => {
-    AppData.sleepingLog = {
-      ...(AppData.sleepingLog || {}),
-      [dateKey]: entry
-    };
-  });
+  normalized.forEach(({ dateKey, entry }) => addSleepSessionToLog(dateKey, entry));
 
   return normalized.length;
 };
