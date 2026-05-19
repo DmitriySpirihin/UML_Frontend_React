@@ -9,10 +9,22 @@ import { initializeTelegramSDK, getTelegramContext } from '../StaticClasses/Save
 import { isUserHasPremium ,sendXp,getFriendsList} from '../StaticClasses/NotificationsManager';
 import { applyLocalTestPremium } from '../StaticClasses/PremiumTestHelper';
 import { calculateStats } from '../Helpers/UserStats.js';
+import { FaUser } from 'react-icons/fa';
 
 const MotionDiv = motion.div;
-const MotionImg = motion.img;
-const LOAD_ACCENT = '#8FA6C8';
+const LOAD_ACCENT = '#B7F3FF';
+const LOAD_SLEEP_ACCENT = '#7C6CFF';
+const GUEST_PHOTO = 'images/Ui/Guest.jpg';
+
+function getDisplayName(user, lang) {
+  if (!user) return lang === 0 ? 'гость' : 'guest';
+  return user.first_name || user.username || (lang === 0 ? 'гость' : 'guest');
+}
+
+function waitForMinimumLoad(startedAt, minMs = 850) {
+  const remaining = minMs - (Date.now() - startedAt);
+  return remaining > 0 ? new Promise(resolve => setTimeout(resolve, remaining)) : Promise.resolve();
+}
 
 function getPreviewLanguageIndex() {
   if (typeof window === 'undefined') return null;
@@ -28,12 +40,14 @@ function getPreviewLanguageIndex() {
 function LoadPanel() {
   const [theme, setThemeState] = useState('dark');
   const [lang, setLang] = useState(0);
-  const [userName, setUserName] = useState('Guest');
-  const [userPhoto, setUserPhoto] = useState('images/Ui/Guest.jpg');
+  const [userName, setUserName] = useState('guest');
+  const [userPhoto, setUserPhoto] = useState(GUEST_PHOTO);
   const [loading, setLoading] = useState(true);
+  const avatarIsFallback = !userPhoto || userPhoto === GUEST_PHOTO;
 
 useEffect(() => {
   async function initializeApp() {
+    const startedAt = Date.now();
     try {
       const newUserPreview = isNewUserPreviewMode();
       const previewLangIndex = newUserPreview ? getPreviewLanguageIndex() : null;
@@ -55,9 +69,11 @@ useEffect(() => {
           AppData.prefs[1] = 0;
           setTheme('dark');
         }
-        UserData.Init(user.id, user.username, user.photo_url || 'images/Ui/Guest.jpg');
-        setUserName(user.username);
-        setUserPhoto(Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url);
+        const displayName = getDisplayName(user, AppData.prefs[0]);
+        const photoUrl = Array.isArray(user.photo_url) ? user.photo_url[0] : user.photo_url;
+        UserData.Init(user.id, displayName, photoUrl || GUEST_PHOTO);
+        setUserName(displayName);
+        setUserPhoto(photoUrl || GUEST_PHOTO);
 
         // --- Referral Logic ---
         const referrerId = start_param; 
@@ -75,9 +91,9 @@ useEffect(() => {
           }
         }
       } else {
-        UserData.Init(0, AppData.prefs[0] === 0 ? 'гость' : 'guest', 'images/Ui/Guest.jpg');
+        UserData.Init(0, AppData.prefs[0] === 0 ? 'гость' : 'guest', GUEST_PHOTO);
         setUserName(AppData.prefs[0] === 0 ? 'гость' : 'guest');
-        setUserPhoto('images/Ui/Guest.jpg');
+        setUserPhoto(GUEST_PHOTO);
       }
 
       if (!newUserPreview) {
@@ -115,12 +131,14 @@ useEffect(() => {
         await getFriendsList(); 
       }
 
+      await waitForMinimumLoad(startedAt);
       setLoading(false);
       const nextPage = newUserPreview || (!AppData.pData?.filled && !AppData.profileOnboardingShown) ? 'ProfileOnboarding' : 'MainMenu';
       setTimeout(() => setPage(nextPage), 1200);
 
     } catch (error) {
       console.error('Initialization error:', error);
+      await waitForMinimumLoad(startedAt);
       setLoading(false);
       const nextPage = isNewUserPreviewMode() || (!AppData.pData?.filled && !AppData.profileOnboardingShown) ? 'ProfileOnboarding' : 'MainMenu';
       setTimeout(() => setPage(nextPage), 1200);
@@ -137,8 +155,20 @@ useEffect(() => {
 
   return (
     <div style={styles(theme).container}>
-      {/* Animated Background Overlay */}
       <div style={styles(theme).bgOverlay} />
+      <div style={styles(theme).grain} />
+      <MotionDiv
+        aria-hidden="true"
+        style={styles(theme).haloTop}
+        animate={{ opacity: [0.52, 0.82, 0.52], scale: [1, 1.04, 1] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <MotionDiv
+        aria-hidden="true"
+        style={styles(theme).haloBottom}
+        animate={{ opacity: [0.38, 0.7, 0.38], scale: [1, 1.05, 1] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+      />
 
       <MotionDiv 
         initial={{ opacity: 0, y: 20 }}
@@ -146,26 +176,46 @@ useEffect(() => {
         transition={{ duration: 0.8, ease: "easeOut" }}
         style={styles(theme).content}
       >
-        <MotionImg 
-          src={'images/Ui/Main_Dark.png'} 
-          style={styles(theme).logo} 
-          alt="UltyMyLife"
-          animate={{ scale: [0.95, 1, 0.95] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        />
+        <div style={styles(theme).brand}>
+          <div style={styles(theme).brandTitle}>UltyMyLife</div>
+          <div style={styles(theme).brandSubtitle}>
+            {lang === 0 ? 'Вся твоя жизнь в одном месте' : 'Your life in one place'}
+          </div>
+        </div>
 
+        <MotionDiv
+          style={styles(theme).glassCard}
+          initial={{ opacity: 0, y: 18, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.55, delay: 0.12, ease: "easeOut" }}
+        >
         <div style={styles(theme).loaderSection}>
           <AnimatePresence mode="wait">
             {loading ? (
               <MotionDiv
                 key="loader"
-                initial={{ scale: 0, opacity: 0 }}
+                initial={{ scale: 0.84, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
+                exit={{ scale: 0.94, opacity: 0 }}
                 style={styles(theme).pulseContainer}
               >
-                <div style={styles(theme).ring} />
-                <img src={userPhoto} style={styles(theme).loadingPhoto} alt="Loading..." />
+                <MotionDiv
+                  style={styles(theme).orbit}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 5.5, repeat: Infinity, ease: "linear" }}
+                />
+                <MotionDiv
+                  style={styles(theme).ring}
+                  animate={{ scale: [1, 1.08, 1], opacity: [0.72, 1, 0.72] }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                />
+                {avatarIsFallback ? (
+                  <div style={styles(theme).loadingPhotoFallback} aria-label="Loading user">
+                    <FaUser size={34} />
+                  </div>
+                ) : (
+                  <img src={userPhoto} style={styles(theme).loadingPhoto} alt="Loading..." />
+                )}
               </MotionDiv>
             ) : (
               <MotionDiv
@@ -175,7 +225,18 @@ useEffect(() => {
                 transition={{ type: 'spring', stiffness: 200, damping: 15 }}
                 style={styles(theme).photoWrapper}
               >
-                <img src={userPhoto} style={styles(theme).userPhoto} alt="User" />
+                <MotionDiv
+                  style={styles(theme).photoGlow}
+                  animate={{ scale: [1, 1.08, 1], opacity: [0.55, 0.9, 0.55] }}
+                  transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+                />
+                {avatarIsFallback ? (
+                  <div style={styles(theme).userPhotoFallback} aria-label="User">
+                    <FaUser size={40} />
+                  </div>
+                ) : (
+                  <img src={userPhoto} style={styles(theme).userPhoto} alt="User" />
+                )}
                 <MotionDiv 
                    initial={{ opacity: 0 }} 
                    animate={{ opacity: 1 }} 
@@ -187,18 +248,29 @@ useEffect(() => {
         </div>
 
         <MotionDiv 
-          animate={{ opacity: [0.4, 1, 0.4] }}
-          transition={{ duration: 2, repeat: Infinity }}
+          animate={{ opacity: loading ? [0.76, 1, 0.76] : 1 }}
+          transition={{ duration: 2.2, repeat: loading ? Infinity : 0 }}
           style={styles(theme).textContainer}
         >
+          <div style={styles(theme).statusPill}>
+            <span style={styles(theme).statusDot} />
+            {loading
+              ? (lang === 0 ? 'Загрузка пользователя' : 'Loading user')
+              : (lang === 0 ? 'Профиль готов' : 'Profile ready')}
+          </div>
           <h2 style={styles(theme).mainText}>
             {loading 
-              ? (lang === 0 ? 'Синхронизация...' : 'Synchronizing...')
+              ? (lang === 0 ? 'Подготавливаем профиль' : 'Preparing your profile')
               : (lang === 0 
-                  ? `Рады видеть, ${userName}`
+                  ? `Привет, ${userName}`
                   : `Welcome back, ${userName}`)
             }
           </h2>
+          {loading && (
+            <p style={styles(theme).subText}>
+              {lang === 0 ? 'Синхронизируем данные и настраиваем пространство.' : 'Syncing data and setting up your space.'}
+            </p>
+          )}
           <div style={styles(theme).progressBar}>
             <MotionDiv 
               initial={{ width: "0%" }}
@@ -207,12 +279,12 @@ useEffect(() => {
             />
           </div>
         </MotionDiv>
+        </MotionDiv>
       </MotionDiv>
 
-      {/* Modern Spinner CSS */}
       <style>{`
         @keyframes custom-pulse {
-	          0% { transform: scale(0.95); box-shadow: 0 0 0 0 ${LOAD_ACCENT}22; }
+	          0% { transform: scale(0.95); box-shadow: 0 0 0 0 ${LOAD_ACCENT}26; }
 	          70% { transform: scale(1); box-shadow: 0 0 0 18px ${LOAD_ACCENT}00; }
 	          100% { transform: scale(0.95); box-shadow: 0 0 0 0 ${LOAD_ACCENT}00; }
         }
@@ -225,7 +297,11 @@ export default LoadPanel;
 
 const styles = (theme) => ({
   container: {
-    backgroundColor: Colors.get('background', theme),
+    background: theme === 'light' || theme === 'speciallight'
+      ? `radial-gradient(900px 450px at 80% -10%, rgba(85,221,235,0.08), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(124,108,255,0.08), transparent 58%), #F4F5F7`
+      : theme === 'coffee' || theme === 'specialcoffee'
+        ? `radial-gradient(900px 460px at 82% -8%, rgba(200,135,74,0.16), transparent 58%), radial-gradient(760px 420px at -12% 42%, rgba(124,108,255,0.08), transparent 60%), linear-gradient(180deg, #271A13 0%, #1A120E 47%, #120C09 100%)`
+        : `radial-gradient(900px 460px at 82% -8%, rgba(85,221,235,0.13), transparent 58%), radial-gradient(760px 420px at -12% 42%, rgba(124,108,255,0.11), transparent 60%), linear-gradient(180deg, #18232B 0%, #11171C 46%, #0F1418 100%)`,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -237,10 +313,41 @@ const styles = (theme) => ({
   bgOverlay: {
     position: "absolute",
     inset: 0,
-    background: theme === 'dark' 
-	      ? "radial-gradient(circle at 50% 44%, rgba(143,166,200,0.18) 0%, rgba(18,21,25,0.92) 48%, #0c0c10 100%)"
-	      : "radial-gradient(circle at 50% 44%, rgba(143,166,200,0.16) 0%, #fff 52%, #e6e8ec 100%)",
-	    opacity: 0.72,
+    background: theme === 'light' || theme === 'speciallight'
+      ? "linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0.02))"
+      : "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.12))",
+    opacity: 0.9,
+    zIndex: 1
+  },
+  grain: {
+    position: "absolute",
+    inset: 0,
+    backgroundImage: "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px)",
+    backgroundSize: "42px 42px",
+    maskImage: "linear-gradient(180deg, rgba(0,0,0,0.16), transparent 72%)",
+    pointerEvents: "none",
+    zIndex: 1
+  },
+  haloTop: {
+    position: "absolute",
+    width: 260,
+    height: 260,
+    top: "8vh",
+    right: "-82px",
+    borderRadius: "50%",
+    background: `radial-gradient(circle, ${LOAD_ACCENT}22 0%, ${LOAD_ACCENT}00 70%)`,
+    filter: "blur(2px)",
+    zIndex: 1
+  },
+  haloBottom: {
+    position: "absolute",
+    width: 280,
+    height: 280,
+    left: "-110px",
+    bottom: "4vh",
+    borderRadius: "50%",
+    background: `radial-gradient(circle, ${LOAD_SLEEP_ACCENT}20 0%, ${LOAD_SLEEP_ACCENT}00 68%)`,
+    filter: "blur(2px)",
     zIndex: 1
   },
   content: {
@@ -249,80 +356,229 @@ const styles = (theme) => ({
     flexDirection: "column",
     alignItems: "center",
     width: "100%",
-    paddingTop: "20vh"
+    minHeight: "100%",
+    boxSizing: "border-box",
+    padding: "calc(env(safe-area-inset-top, 0px) + 34px) 20px calc(env(safe-area-inset-bottom, 0px) + 28px)",
+    justifyContent: "center"
   },
-  logo: {
-    width: "220px",
-    filter: `drop-shadow(0 0 20px ${Colors.get('shadow', theme)}88)`,
-    marginBottom: "8vh"
+  brand: {
+    position: "absolute",
+    top: "calc(env(safe-area-inset-top, 0px) + 24px)",
+    left: 20,
+    right: 20,
+    textAlign: "center"
+  },
+  brandTitle: {
+    fontSize: 24,
+    fontWeight: 820,
+    color: Colors.get('mainText', theme),
+    lineHeight: 1.05,
+    opacity: 0.92
+  },
+  brandSubtitle: {
+    marginTop: 5,
+    fontSize: 9,
+    fontWeight: 600,
+    color: Colors.get('subText', theme),
+    textTransform: "uppercase"
+  },
+  glassCard: {
+    width: "min(82vw, 330px)",
+    minHeight: 318,
+    boxSizing: "border-box",
+    borderRadius: "72px",
+    padding: "30px 24px 28px",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    background: theme === 'light' || theme === 'speciallight'
+      ? "radial-gradient(130% 90% at 50% 0%, rgba(255,255,255,0.84), rgba(255,255,255,0.46) 58%, rgba(255,255,255,0.26))"
+      : theme === 'coffee' || theme === 'specialcoffee'
+        ? "radial-gradient(130% 92% at 50% 0%, rgba(62,42,31,0.78), rgba(34,23,17,0.58) 58%, rgba(18,12,9,0.34))"
+        : "radial-gradient(130% 92% at 50% 0%, rgba(38,54,64,0.72), rgba(18,27,34,0.55) 58%, rgba(10,15,20,0.34))",
+    border: theme === 'light' || theme === 'speciallight'
+      ? "1px solid rgba(255,255,255,0.44)"
+      : "1px solid rgba(183,243,255,0.075)",
+    boxShadow: theme === 'light' || theme === 'speciallight'
+      ? "0 28px 64px rgba(15,23,42,0.10), 0 1px 0 rgba(255,255,255,0.86) inset, 0 -20px 60px rgba(85,221,235,0.06) inset"
+      : "0 32px 86px rgba(0,0,0,0.42), 0 1px 0 rgba(255,255,255,0.08) inset, 0 -24px 70px rgba(183,243,255,0.045) inset",
+    backdropFilter: "blur(28px) saturate(165%)",
+    WebkitBackdropFilter: "blur(28px) saturate(165%)",
+    position: "relative",
+    overflow: "hidden"
   },
   loaderSection: {
-    height: "120px",
+    height: "122px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: "4vh"
+    marginBottom: 18
   },
   pulseContainer: {
     position: "relative",
-    width: "80px",
-    height: "80px",
+    width: "112px",
+    height: "112px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center"
   },
+  orbit: {
+    position: "absolute",
+    inset: 0,
+    borderRadius: "50%",
+    background: `conic-gradient(from 90deg, ${LOAD_ACCENT}00, ${LOAD_ACCENT}cc, ${LOAD_SLEEP_ACCENT}66, ${LOAD_ACCENT}00)`,
+    maskImage: "radial-gradient(circle, transparent 58%, #000 60%)",
+    WebkitMaskImage: "radial-gradient(circle, transparent 58%, #000 60%)"
+  },
   ring: {
     position: "absolute",
-    width: "100%",
-    height: "100%",
+    width: "86%",
+    height: "86%",
     borderRadius: "50%",
-	    border: `2px solid ${LOAD_ACCENT}`,
-    animation: "custom-pulse 2s infinite ease-in-out"
+    border: `1px solid ${LOAD_ACCENT}66`,
+    boxShadow: `0 0 36px ${LOAD_ACCENT}26 inset`
   },
   loadingPhoto: {
-    width: "60px",
-    height: "60px",
-    borderRadius: "50%",
-    opacity: 0.5,
-    filter: "grayscale(1)"
-  },
-  photoWrapper: {
-    position: "relative"
-  },
-  userPhoto: {
-	    border: `3px solid ${LOAD_ACCENT}`,
-    width: "90px",
-    height: "90px",
+    width: "78px",
+    height: "78px",
     borderRadius: "50%",
     objectFit: "cover",
-    boxShadow: `0 10px 30px ${Colors.get('shadow', theme)}`,
+    opacity: 0.72,
+    filter: "saturate(0.78)",
+    border: `2px solid rgba(255,255,255,0.18)`,
+    boxShadow: `0 16px 38px ${Colors.get('shadow', theme)}`
+  },
+  loadingPhotoFallback: {
+    width: "78px",
+    height: "78px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: theme === 'light' || theme === 'speciallight' ? "#335566" : LOAD_ACCENT,
+    background: theme === 'light' || theme === 'speciallight'
+      ? "linear-gradient(145deg, rgba(255,255,255,0.92), rgba(231,239,244,0.72))"
+      : "linear-gradient(145deg, rgba(183,243,255,0.18), rgba(124,108,255,0.12))",
+    border: `2px solid rgba(255,255,255,0.18)`,
+    boxShadow: `0 16px 38px ${Colors.get('shadow', theme)}`,
+    position: "relative",
+    zIndex: 2
+  },
+  photoWrapper: {
+    position: "relative",
+    width: 112,
+    height: 112,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  photoGlow: {
+    position: "absolute",
+    inset: 6,
+    borderRadius: "50%",
+    background: `radial-gradient(circle, ${LOAD_ACCENT}35, ${LOAD_ACCENT}00 72%)`,
+    filter: "blur(2px)"
+  },
+  userPhoto: {
+    border: `2px solid ${LOAD_ACCENT}cc`,
+    width: "92px",
+    height: "92px",
+    borderRadius: "50%",
+    objectFit: "cover",
+    boxShadow: `0 18px 44px ${Colors.get('shadow', theme)}, 0 0 34px ${LOAD_ACCENT}24`,
+    position: "relative",
+    zIndex: 2
+  },
+  userPhotoFallback: {
+    border: `2px solid ${LOAD_ACCENT}cc`,
+    width: "92px",
+    height: "92px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: theme === 'light' || theme === 'speciallight' ? "#335566" : LOAD_ACCENT,
+    background: theme === 'light' || theme === 'speciallight'
+      ? "linear-gradient(145deg, rgba(255,255,255,0.96), rgba(232,241,247,0.82))"
+      : "linear-gradient(145deg, rgba(183,243,255,0.20), rgba(124,108,255,0.12))",
+    boxShadow: `0 18px 44px ${Colors.get('shadow', theme)}, 0 0 34px ${LOAD_ACCENT}24`,
+    position: "relative",
+    zIndex: 2
+  },
+  premiumBadge: {
+    position: "absolute",
+    right: 8,
+    bottom: 10,
+    width: 18,
+    height: 18,
+    borderRadius: "50%",
+    background: `linear-gradient(135deg, #FFFFFF, ${LOAD_ACCENT})`,
+    border: `2px solid ${theme === 'light' || theme === 'speciallight' ? '#FFFFFF' : '#18232B'}`,
+    boxShadow: `0 0 18px ${LOAD_ACCENT}88`,
+    zIndex: 3
   },
   textContainer: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: "15px"
+    gap: "10px",
+    width: "100%"
+  },
+  statusPill: {
+    minHeight: 30,
+    padding: "0 12px",
+    borderRadius: 999,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    color: LOAD_ACCENT,
+    background: `${LOAD_ACCENT}14`,
+    border: `1px solid ${LOAD_ACCENT}28`,
+    fontSize: 11,
+    fontWeight: 850,
+    textTransform: "uppercase"
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: "50%",
+    background: LOAD_ACCENT,
+    boxShadow: `0 0 14px ${LOAD_ACCENT}`
   },
   mainText: {
-    fontSize: "18px",
-    fontWeight: "600",
+    margin: 0,
+    fontSize: "25px",
+    fontWeight: "900",
     color: Colors.get('mainText', theme),
     fontFamily: 'inherit',
     textAlign: "center",
-    letterSpacing: "0.5px"
+    lineHeight: 1.08,
+    maxWidth: "100%",
+    overflowWrap: "anywhere"
+  },
+  subText: {
+    margin: "0 0 4px",
+    maxWidth: 260,
+    color: Colors.get('subText', theme),
+    fontSize: 13,
+    fontWeight: 650,
+    lineHeight: 1.42,
+    textAlign: "center"
   },
   progressBar: {
-    width: "120px",
-    height: "4px",
-    backgroundColor: Colors.get('border', theme),
+    width: "100%",
+    maxWidth: "210px",
+    height: "5px",
+    backgroundColor: theme === 'light' || theme === 'speciallight' ? "rgba(15,23,42,0.08)" : "rgba(255,255,255,0.08)",
     borderRadius: "10px",
-    overflow: "hidden"
+    overflow: "hidden",
+    boxShadow: theme === 'light' || theme === 'speciallight' ? "none" : "0 0 18px rgba(0,0,0,0.28) inset"
   },
   progressFill: {
     height: "100%",
-	    backgroundColor: LOAD_ACCENT,
+    background: `linear-gradient(90deg, ${LOAD_ACCENT}, ${LOAD_SLEEP_ACCENT})`,
     borderRadius: "10px",
+    boxShadow: `0 0 22px ${LOAD_ACCENT}66`
   }
 });
-
-// Helper to avoid code duplication
