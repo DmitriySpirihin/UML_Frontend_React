@@ -913,8 +913,8 @@ const styles = (theme, fSize = 14) => ({
     problemCard: {
         width: 'calc(100% - 40px)',
         maxWidth: '680px',
-        minHeight: '320px',
-        borderRadius: '26px',
+        minHeight: 'clamp(330px, 52vh, 520px)',
+        borderRadius: '34px',
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',
@@ -922,41 +922,45 @@ const styles = (theme, fSize = 14) => ({
         alignItems: 'center',
         justifyContent: 'center',
         background: theme === 'dark'
-            ? 'radial-gradient(circle at 18% 10%, rgba(102,217,232,0.12), transparent 34%), radial-gradient(circle at 90% 0%, rgba(240,193,142,0.12), transparent 32%), linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.022))'
-            : 'radial-gradient(circle at 18% 10%, rgba(102,217,232,0.16), transparent 34%), radial-gradient(circle at 90% 0%, rgba(240,193,142,0.16), transparent 32%), linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,255,255,0.58))',
+            ? 'radial-gradient(circle at 18% 2%, rgba(102,217,232,0.18), transparent 36%), radial-gradient(circle at 96% 0%, rgba(240,193,142,0.16), transparent 34%), radial-gradient(circle at 18% 92%, rgba(138,124,214,0.14), transparent 42%), linear-gradient(145deg, rgba(24,32,39,0.62), rgba(10,13,17,0.78))'
+            : 'radial-gradient(circle at 18% 2%, rgba(102,217,232,0.20), transparent 36%), radial-gradient(circle at 96% 0%, rgba(240,193,142,0.16), transparent 34%), radial-gradient(circle at 18% 92%, rgba(138,124,214,0.13), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.86), rgba(236,245,248,0.62))',
         boxShadow: theme === 'dark'
-            ? 'inset 0 1px 0 rgba(255,255,255,0.13), inset 0 -1px 0 rgba(255,255,255,0.04), 0 28px 70px rgba(0,0,0,0.34), 0 0 44px rgba(102,217,232,0.06)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.8), 0 18px 40px rgba(24,36,44,0.12)',
+            ? 'inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(255,255,255,0.05), 0 32px 86px rgba(0,0,0,0.44), 0 0 54px rgba(102,217,232,0.10), 0 0 90px rgba(138,124,214,0.06)'
+            : 'inset 0 1px 0 rgba(255,255,255,0.88), 0 22px 52px rgba(24,36,44,0.14), 0 0 42px rgba(102,217,232,0.08)',
         marginBottom: '18px',
-        border: `1px solid ${theme === 'dark' ? 'rgba(170,229,238,0.14)' : 'rgba(37,87,96,0.12)'}`,
-        outline: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.45)'}`,
-        backdropFilter: 'blur(26px) saturate(170%)',
-        WebkitBackdropFilter: 'blur(26px) saturate(170%)',
-        padding: '20px',
+        border: `1px solid ${theme === 'dark' ? 'rgba(170,229,238,0.20)' : 'rgba(37,87,96,0.14)'}`,
+        outline: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.56)'}`,
+        backdropFilter: 'blur(34px) saturate(185%)',
+        WebkitBackdropFilter: 'blur(34px) saturate(185%)',
+        padding: '24px',
         boxSizing: 'border-box',
+        isolation: 'isolate',
     },
     ruleText: {
-        minHeight: '30px',
-        marginBottom: '16px',
-        padding: '0 14px',
+        minHeight: '34px',
+        marginBottom: '20px',
+        padding: '0 18px',
         borderRadius: '999px',
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: theme === 'dark' ? 'rgba(224,235,248,0.76)' : 'rgba(47,65,78,0.72)',
+        color: theme === 'dark' ? 'rgba(231,243,255,0.82)' : 'rgba(47,65,78,0.76)',
         textAlign: 'center',
         fontSize: '14px',
         lineHeight: 1.25,
-        fontWeight: 850,
-        background: theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.54)',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(20,24,32,0.045)'}`,
+        fontWeight: 900,
+        background: theme === 'dark'
+            ? 'linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025))'
+            : 'linear-gradient(145deg, rgba(255,255,255,0.76), rgba(255,255,255,0.48))',
+        border: `1px solid ${theme === 'dark' ? 'rgba(170,229,238,0.10)' : 'rgba(20,24,32,0.055)'}`,
+        boxShadow: theme === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,0.12)' : 'inset 0 1px 0 rgba(255,255,255,0.8)',
     },
     symbolGrid: {
         display: 'grid',
         gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-        gap: '10px',
+        gap: '12px',
         width: '100%',
-        maxWidth: '300px',
+        maxWidth: '330px',
     },
     symbolTile: (state, enabled) => {
         const selected = state === 'selected';
@@ -979,16 +983,16 @@ const styles = (theme, fSize = 14) => ({
                     : selected
                         ? 'radial-gradient(circle at 50% 24%, rgba(102,217,232,0.24), transparent 58%), linear-gradient(145deg, rgba(102,217,232,0.14), rgba(255,255,255,0.04))'
                         : (theme === 'dark'
-                            ? 'radial-gradient(circle at 24% 16%, rgba(102,217,232,0.08), transparent 50%), linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))'
-                            : 'radial-gradient(circle at 24% 16%, rgba(102,217,232,0.12), transparent 50%), linear-gradient(145deg, rgba(255,255,255,0.86), rgba(255,255,255,0.56))'),
+                            ? 'radial-gradient(circle at 26% 16%, rgba(170,229,238,0.16), transparent 48%), radial-gradient(circle at 80% 88%, rgba(138,124,214,0.12), transparent 48%), linear-gradient(145deg, rgba(24,35,43,0.76), rgba(9,13,18,0.66))'
+                            : 'radial-gradient(circle at 26% 16%, rgba(102,217,232,0.16), transparent 48%), radial-gradient(circle at 80% 88%, rgba(138,124,214,0.10), transparent 48%), linear-gradient(145deg, rgba(255,255,255,0.88), rgba(238,248,250,0.58))'),
             border: `1px solid ${correct
                 ? 'rgba(70,226,154,0.4)'
                 : wrong
                     ? 'rgba(255,142,142,0.4)'
                     : selected
                         ? 'rgba(102,217,232,0.42)'
-                        : (theme === 'dark' ? 'rgba(170,229,238,0.14)' : 'rgba(37,87,96,0.12)')}`,
-            borderRadius: '14px',
+                        : (theme === 'dark' ? 'rgba(170,229,238,0.18)' : 'rgba(37,87,96,0.13)')}`,
+            borderRadius: '18px',
             cursor: enabled ? 'pointer' : 'default',
             userSelect: 'none',
             boxShadow: correct
@@ -998,10 +1002,11 @@ const styles = (theme, fSize = 14) => ({
                     : selected
                         ? 'inset 0 1px 0 rgba(255,255,255,0.16), 0 0 26px rgba(102,217,232,0.18), 0 12px 24px rgba(0,0,0,0.18)'
                         : (theme === 'dark'
-                            ? 'inset 0 1px 0 rgba(255,255,255,0.11), 0 12px 22px rgba(0,0,0,0.18)'
-                            : 'inset 0 1px 0 rgba(255,255,255,0.78), 0 10px 18px rgba(24,36,44,0.08)'),
-            backdropFilter: 'blur(16px) saturate(160%)',
-            WebkitBackdropFilter: 'blur(16px) saturate(160%)',
+                            ? 'inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(255,255,255,0.035), 0 14px 28px rgba(0,0,0,0.24), 0 0 22px rgba(102,217,232,0.07)'
+                            : 'inset 0 1px 0 rgba(255,255,255,0.86), 0 11px 22px rgba(24,36,44,0.09)'),
+            backdropFilter: 'blur(22px) saturate(178%)',
+            WebkitBackdropFilter: 'blur(22px) saturate(178%)',
+            transition: 'background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, transform 0.2s ease',
         };
     },
     feedbackProblemCard: (positive) => ({
@@ -1043,8 +1048,8 @@ const styles = (theme, fSize = 14) => ({
         width: 'calc(100% - 40px)',
         maxWidth: '680px',
         marginTop: '20px',
-        padding: '28px 24px',
-        borderRadius: '28px',
+        padding: '30px 24px',
+        borderRadius: '34px',
         position: 'relative',
         overflow: 'hidden',
         display: 'flex',
@@ -1053,15 +1058,15 @@ const styles = (theme, fSize = 14) => ({
         gap: '16px',
         boxSizing: 'border-box',
         background: theme === 'dark'
-            ? 'radial-gradient(circle at 50% 0%, rgba(255,142,142,0.18), transparent 36%), radial-gradient(circle at 86% 8%, rgba(138,124,214,0.12), transparent 34%), linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,90,98,0.035))'
-            : 'radial-gradient(circle at 50% 0%, rgba(255,142,142,0.18), transparent 36%), radial-gradient(circle at 86% 8%, rgba(138,124,214,0.12), transparent 34%), linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,242,242,0.62))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,142,142,0.26)' : 'rgba(190,65,70,0.18)'}`,
-        outline: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.42)'}`,
+            ? 'radial-gradient(circle at 50% -8%, rgba(255,142,142,0.22), transparent 34%), radial-gradient(circle at 12% 98%, rgba(102,217,232,0.11), transparent 42%), radial-gradient(circle at 92% 8%, rgba(138,124,214,0.14), transparent 38%), linear-gradient(145deg, rgba(28,30,38,0.68), rgba(12,14,18,0.82))'
+            : 'radial-gradient(circle at 50% -8%, rgba(255,142,142,0.20), transparent 34%), radial-gradient(circle at 12% 98%, rgba(102,217,232,0.12), transparent 42%), radial-gradient(circle at 92% 8%, rgba(138,124,214,0.12), transparent 38%), linear-gradient(145deg, rgba(255,255,255,0.88), rgba(248,238,240,0.62))',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,142,142,0.20)' : 'rgba(190,65,70,0.16)'}`,
+        outline: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.50)'}`,
         boxShadow: theme === 'dark'
-            ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 26px 66px rgba(0,0,0,0.34), 0 0 40px rgba(255,90,98,0.08)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.78), 0 18px 40px rgba(24,36,44,0.12)',
-        backdropFilter: 'blur(26px) saturate(170%)',
-        WebkitBackdropFilter: 'blur(26px) saturate(170%)',
+            ? 'inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(255,255,255,0.04), 0 30px 78px rgba(0,0,0,0.42), 0 0 50px rgba(255,90,98,0.09)'
+            : 'inset 0 1px 0 rgba(255,255,255,0.84), 0 20px 48px rgba(24,36,44,0.13)',
+        backdropFilter: 'blur(34px) saturate(185%)',
+        WebkitBackdropFilter: 'blur(34px) saturate(185%)',
     },
     feedbackSymbol: {
         width: '54px',
@@ -1082,15 +1087,15 @@ const styles = (theme, fSize = 14) => ({
             : 'inset 0 1px 0 rgba(255,255,255,0.78), 0 10px 20px rgba(24,36,44,0.08)',
     },
     feedbackAnswer: {
-        minHeight: '42px',
-        padding: '0 14px',
-        borderRadius: '16px',
+        minHeight: '46px',
+        padding: '0 18px',
+        borderRadius: '18px',
         display: 'inline-flex',
         alignItems: 'center',
         gap: '10px',
         background: theme === 'dark'
-            ? 'radial-gradient(circle at 20% 8%, rgba(255,142,142,0.2), transparent 48%), linear-gradient(145deg, rgba(255,90,98,0.12), rgba(255,255,255,0.035))'
-            : 'radial-gradient(circle at 20% 8%, rgba(255,142,142,0.18), transparent 48%), linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,90,98,0.08))',
+            ? 'radial-gradient(circle at 20% 8%, rgba(255,142,142,0.22), transparent 48%), linear-gradient(145deg, rgba(255,90,98,0.14), rgba(255,255,255,0.045))'
+            : 'radial-gradient(circle at 20% 8%, rgba(255,142,142,0.18), transparent 48%), linear-gradient(145deg, rgba(255,255,255,0.86), rgba(255,90,98,0.08))',
         border: `1px solid ${theme === 'dark' ? 'rgba(255,142,142,0.26)' : 'rgba(190,65,70,0.16)'}`,
         boxShadow: theme === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 24px rgba(0,0,0,0.18)' : '0 10px 20px rgba(24,36,44,0.08)',
         backdropFilter: 'blur(18px) saturate(160%)',
@@ -1115,15 +1120,15 @@ const styles = (theme, fSize = 14) => ({
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        padding: '14px 16px',
-        borderRadius: '18px',
+        padding: '16px',
+        borderRadius: '20px',
         background: theme === 'dark'
-            ? 'radial-gradient(circle at 12% 18%, rgba(240,193,142,0.12), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.032))'
-            : 'radial-gradient(circle at 12% 18%, rgba(240,193,142,0.14), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.86), rgba(255,255,255,0.58))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.115)' : 'rgba(20,24,32,0.07)'}`,
-        boxShadow: theme === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 28px rgba(0,0,0,0.16)' : '0 10px 20px rgba(24,36,44,0.08)',
-        backdropFilter: 'blur(18px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+            ? 'radial-gradient(circle at 12% 18%, rgba(240,193,142,0.13), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.035))'
+            : 'radial-gradient(circle at 12% 18%, rgba(240,193,142,0.14), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,255,255,0.60))',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.13)' : 'rgba(20,24,32,0.07)'}`,
+        boxShadow: theme === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,0.14), 0 16px 32px rgba(0,0,0,0.18)' : '0 10px 20px rgba(24,36,44,0.08)',
+        backdropFilter: 'blur(22px) saturate(170%)',
+        WebkitBackdropFilter: 'blur(22px) saturate(170%)',
     },
     feedbackTipIcon: {
         width: '26px',
