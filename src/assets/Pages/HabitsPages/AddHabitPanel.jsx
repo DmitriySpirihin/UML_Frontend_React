@@ -12,6 +12,7 @@ import Slider from '@mui/material/Slider';
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx'; // Imported Component
 import { playEffects } from '../../StaticClasses/Effects.js';
 import { HABITS_ACCENT, HABIT_ICON_GROUPS, HABIT_ICON_OPTIONS, HabitOutlineIcon, buildHabitsAccent, getHabitCategoryTone, normalizeHabitIconKey } from './HabitVisuals.jsx';
+import EmojiIconPickerPanel, { emojiFromIconName, normalizeCustomEmoji } from '../../Helpers/EmojiIconPickerPanel.jsx';
 
 const click = new Audio('Audio/Click.wav');
 const now = new Date();
@@ -23,134 +24,6 @@ const getAllHabits = () => {
         allHabits.filter(habit => !custom.some(customHabit => customHabit.id === habit.id))
     );
 }
-
-const iconSearchAliases = {
-    default: ['default', 'обычно', 'дефолт', 'смайл', 'улыбка'],
-    star: ['star', 'звезда', 'звёзды', 'избранное'],
-    clock: ['clock', 'time', 'часы', 'время', 'таймер'],
-    calendar: ['calendar', 'date', 'календарь', 'дата'],
-    search: ['search', 'find', 'поиск', 'лупа'],
-    settings: ['settings', 'gear', 'настройки', 'шестеренка'],
-    gift: ['gift', 'present', 'подарок'],
-    health: ['health', 'здоровье'],
-    meditation: ['meditation', 'медитация'],
-    workout: ['workout', 'gym', 'тренировка', 'зал'],
-    running: ['running', 'run', 'бег'],
-    exercise: ['exercise', 'упражнение'],
-    yoga: ['yoga', 'йога'],
-    walking: ['walking', 'walk', 'ходьба', 'прогулка'],
-    pulse: ['pulse', 'heart', 'пульс', 'сердце'],
-    pill: ['pill', 'medicine', 'таблетка', 'лекарство'],
-    sleep: ['sleep', 'сон'],
-    bedtime: ['bedtime', 'ночь', 'луна'],
-    wakeup: ['wakeup', 'утро', 'подъем', 'рассвет'],
-    zzz: ['zzz', 'sleepy', 'сонный', 'спать'],
-    food: ['food', 'еда'],
-    meal: ['meal', 'блюдо', 'прием пищи'],
-    cooking: ['cooking', 'cook', 'готовка'],
-    water: ['water', 'вода'],
-    coffee: ['coffee', 'кофе'],
-    tea: ['tea', 'чай'],
-    reading: ['reading', 'book', 'чтение', 'книга'],
-    learning: ['learning', 'study', 'обучение', 'учеба'],
-    journaling: ['journaling', 'diary', 'дневник'],
-    planning: ['planning', 'plan', 'планирование', 'план'],
-    goals: ['goals', 'goal', 'цель', 'цели'],
-    idea: ['idea', 'идея'],
-    success: ['success', 'успех', 'награда'],
-    work: ['work', 'job', 'работа'],
-    study: ['study', 'учеба'],
-    school: ['school', 'школа'],
-    hobby: ['hobby', 'хобби'],
-    music: ['music', 'музыка'],
-    movies: ['movies', 'movie', 'фильм', 'кино'],
-    games: ['games', 'game', 'игры', 'игра'],
-    art: ['art', 'творчество'],
-    writing: ['writing', 'писать', 'письмо'],
-    photography: ['photography', 'camera', 'фото', 'камера'],
-    family: ['family', 'семья'],
-    friends: ['friends', 'друзья'],
-    social: ['social', 'общение', 'соцсети'],
-    gratitude: ['gratitude', 'благодарность'],
-    money: ['money', 'деньги'],
-    budget: ['budget', 'бюджет'],
-    investment: ['investment', 'инвестиции'],
-    home: ['home', 'дом'],
-    cleaning: ['cleaning', 'уборка'],
-    grocery: ['grocery', 'покупки', 'магазин'],
-    garden: ['garden', 'сад'],
-    english: ['english', 'английский'],
-    russian: ['russian', 'русский'],
-    forbidden: ['forbidden', 'ban', 'запрет'],
-    noSmoking: ['nosmoking', 'smoking', 'курение', 'сигарета'],
-    noAlcohol: ['noalcohol', 'alcohol', 'алкоголь'],
-    noMobile: ['nomobile', 'phone', 'телефон', 'гаджет'],
-    warning: ['warning', 'опасность', 'внимание'],
-    fail: ['fail', 'cross', 'крест', 'ошибка'],
-    target: ['цель', 'фокус', 'мишень'],
-    people: ['люди', 'семья', 'друзья'],
-    chat: ['чат', 'сообщение', 'общение'],
-    speech: ['речь', 'выступление'],
-    creative: ['творчество', 'рисование'],
-    musicNote: ['музыка', 'нота'],
-    cameraIcon: ['фото', 'камера'],
-    homeIcon: ['дом', 'семья'],
-    cart: ['покупки', 'магазин'],
-    tree: ['природа', 'парк'],
-    screen: ['экран', 'телефон'],
-    detox: ['детокс', 'запрет'],
-    sugar: ['сладкое', 'сахар'],
-    soda: ['газировка', 'напиток'],
-    late: ['поздно', 'сон'],
-    smoke: ['курение', 'сигарета'],
-    alcohol: ['алкоголь'],
-    game: ['игры'],
-    pillIcon: ['таблетка', 'лекарства', 'витамины'],
-    leaf: ['овощи', 'лист'],
-    apple: ['фрукты', 'яблоко'],
-    cup: ['кофе', 'чай', 'кофеин'],
-    codeIcon: ['код', 'программирование'],
-    bellOff: ['уведомления', 'колокол'],
-    folder: ['файлы', 'папка'],
-    tooth: ['зубы', 'гигиена'],
-    shower: ['душ', 'уход'],
-    lungs: ['дыхание', 'легкие'],
-    scale: ['вес', 'измерение'],
-    forkKnife: ['еда', 'столовые приборы'],
-    bowl: ['миска', 'еда'],
-    seedling: ['растение', 'рост'],
-    graduation: ['учеба', 'образование'],
-    pencil: ['карандаш', 'писать'],
-    bulb: ['идея', 'лампа'],
-    calculatorIcon: ['калькулятор', 'счет'],
-    chartLine: ['график', 'аналитика'],
-    briefcase: ['работа', 'портфель'],
-    mailIcon: ['почта', 'письмо'],
-    rocket: ['запуск', 'рост'],
-    mapPin: ['место', 'карта'],
-    car: ['машина', 'поездка'],
-    plane: ['самолет', 'путешествие'],
-    calendarCheck: ['календарь', 'дата'],
-    trophy: ['награда', 'достижение'],
-    shield: ['защита', 'безопасность'],
-    lockIcon: ['замок', 'закрыть'],
-    paletteIcon: ['палитра', 'творчество'],
-    headphones: ['наушники', 'музыка'],
-    phoneIcon: ['телефон', 'смартфон'],
-    cloudIcon: ['облако', 'бэкап'],
-    wrench: ['инструмент', 'настройка'],
-    spark: ['искра', 'новое'],
-    batteryIcon: ['энергия', 'батарея'],
-    bookmark: ['закладка', 'сохранить'],
-    flagIcon: ['флаг', 'цель'],
-    compass: ['компас', 'направление'],
-    puzzle: ['пазл', 'логика'],
-    recycle: ['повтор', 'переработка'],
-    wallet: ['кошелек', 'финансы'],
-    receipt: ['чек', 'расходы'],
-    bank: ['банк', 'финансы'],
-    microscope: ['исследование', 'наука'],
-};
 
 const AddHabitPanel = () => {
     const [theme, setTheme] = useState(theme$.value);
@@ -164,6 +37,7 @@ const AddHabitPanel = () => {
     const [habitCategory, setHabitCategory] = useState(0);
     const [habitDescription, setHabitDescription] = useState('');
     const [habitIcon, setHabitIcon] = useState('default');
+    const [habitEmojiInput, setHabitEmojiInput] = useState('');
     const [habitId, setHabitId] = useState(-1);
 
     // Date/Goals
@@ -181,10 +55,10 @@ const AddHabitPanel = () => {
     const [selectCategoryPanel, setSelectCategoryPanel] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const [newCategoryIcon, setNewCategoryIcon] = useState('star');
+    const [newCategoryEmojiInput, setNewCategoryEmojiInput] = useState('');
     const [newCategoryNameEn, setNewCategoryNameEn] = useState('');
     const [editingCategoryIndex, setEditingCategoryIndex] = useState(null);
     const [newCategoryIsNegative, setNewCategoryIsNegative] = useState(false);
-    const [iconSearchQuery, setIconSearchQuery] = useState('');
     const [categoriesVersion, setCategoriesVersion] = useState(0);
     const [showDeletedCategories, setShowDeletedCategories] = useState(false);
     const categoryStripRef = useRef(null);
@@ -193,16 +67,6 @@ const AddHabitPanel = () => {
     const activeCategories = useMemo(() => allCategories.map((cat, idx) => ({ ...cat, _idx: idx })).filter(cat => !cat.isDeleted), [allCategories]);
     const deletedCategories = useMemo(() => allCategories.map((cat, idx) => ({ ...cat, _idx: idx })).filter(cat => cat.isDeleted), [allCategories]);
     const [filterCategory, setFilterCategory] = useState(allCategories[0]?.label[langIndex] || 'Здоровье');
-
-    const filteredIconKeys = useMemo(() => {
-        const allIcons = HABIT_ICON_OPTIONS;
-        if (!iconSearchQuery.trim()) return allIcons;
-        const query = iconSearchQuery.toLowerCase();
-        return allIcons.filter((key) => {
-            const aliases = iconSearchAliases[key] || [];
-            return key.toLowerCase().includes(query) || aliases.some(alias => alias.toLowerCase().includes(query));
-        });
-    }, [iconSearchQuery]);
 
     useEffect(() => {
         const sub1 = theme$.subscribe(setTheme);
@@ -274,6 +138,10 @@ const AddHabitPanel = () => {
         return <HabitOutlineIcon iconName={habit.iconName || 'default'} habitName={habit.name} categoryKey={habit.category?.[0]} size={size} />;
     };
 
+    const renderHabitPickerIcon = (iconKey, size = 20) => (
+        <HabitOutlineIcon iconName={iconKey} habitName={habitName} categoryKey={habitCategory} size={size} />
+    );
+
 
     // --- 2. HANDLE PICKER CHANGE ---
     const handleHabitSelect = (selectedHabit) => {
@@ -331,6 +199,7 @@ const AddHabitPanel = () => {
             setNewCategoryName(cat.label[0]);
             setNewCategoryNameEn(cat.label[1]);
             setNewCategoryIcon(cat.icon);
+            setNewCategoryEmojiInput(emojiFromIconName(cat.icon));
             setNewCategoryIsNegative(cat.isNegative || false);
             setSelectCategoryPanel(true);
         }
@@ -351,6 +220,7 @@ const AddHabitPanel = () => {
         setHabitName(habitSearchQuery.trim());
         setHabitDescription('');
         setHabitIcon('default');
+        setHabitEmojiInput('');
         setGoals([]);
         setGoalName('');
         setHabitCategory(selectedCat?.label?.[0] || 'Здоровье');
@@ -366,6 +236,7 @@ const AddHabitPanel = () => {
         setHabitName('');
         setHabitDescription('');
         setHabitIcon('default');
+        setHabitEmojiInput('');
         setGoals([]);
         setGoalName('');
         setHabitCategory(selectedCat?.label?.[0] || 'Здоровье');
@@ -409,9 +280,9 @@ const AddHabitPanel = () => {
         setNewCategoryName('');
         setNewCategoryNameEn('');
         setNewCategoryIcon('star');
+        setNewCategoryEmojiInput('');
         setNewCategoryIsNegative(false);
         setEditingCategoryIndex(null);
-        setIconSearchQuery('');
     };
 
     const handleSaveCategory = () => {
@@ -423,12 +294,14 @@ const AddHabitPanel = () => {
         const prevLabel = editingCategoryIndex !== null ? allCategories[editingCategoryIndex]?.label : null;
         const labelRu = langIndex === 0 ? newCategoryName.trim() : (newCategoryNameEn.trim() || newCategoryName.trim());
         const labelEn = (langIndex === 1 ? newCategoryName.trim() : newCategoryNameEn.trim()) || labelRu;
+        const categoryEmoji = normalizeCustomEmoji(newCategoryEmojiInput);
+        const categoryIcon = categoryEmoji ? `emoji:${categoryEmoji}` : newCategoryIcon;
 
         if (editingCategoryIndex !== null) {
-            AppData.UpdateHabitCustomCategory(editingCategoryIndex, newCategoryIcon, labelRu, labelEn, newCategoryIsNegative);
+            AppData.UpdateHabitCustomCategory(editingCategoryIndex, categoryIcon, labelRu, labelEn, newCategoryIsNegative);
             setShowPopUpPanel(langIndex === 0 ? 'Категория обновлена' : 'Category updated', 2000, true);
         } else {
-            AppData.AddHabitCustomCategory(newCategoryIcon, labelRu, labelEn, newCategoryIsNegative);
+            AppData.AddHabitCustomCategory(categoryIcon, labelRu, labelEn, newCategoryIsNegative);
             setShowPopUpPanel(langIndex === 0 ? 'Категория создана' : 'Category created', 2000, true);
         }
 
@@ -635,49 +508,6 @@ const AddHabitPanel = () => {
             </div>
         )
     );
-
-    const renderIconGroups = (selectedIcon, onSelectIcon, compact = false) => {
-        const hasSearch = iconSearchQuery.trim().length > 0;
-        const groups = hasSearch
-            ? [{ key: 'search', label: [filteredIconKeys.length ? 'Результаты' : 'Ничего не найдено', filteredIconKeys.length ? 'Results' : 'Nothing found'], icons: filteredIconKeys }]
-            : HABIT_ICON_GROUPS;
-
-        return (
-            <div className="no-scrollbar" style={iconGroupsScroll(compact)}>
-                {groups.map((group) => {
-                    const icons = hasSearch ? group.icons : group.icons.filter(icon => filteredIconKeys.includes(icon));
-                    if (icons.length === 0 && hasSearch) {
-                        return (
-                            <div key={group.key} style={iconEmptyState(ui)}>
-                                {langIndex === 0 ? 'Попробуй другое слово' : 'Try another word'}
-                            </div>
-                        );
-                    }
-                    if (icons.length === 0) return null;
-
-                    return (
-                        <div key={group.key} style={iconGroupBlock()}>
-                            <div style={iconGroupTitle(ui)}>{group.label[langIndex]}</div>
-                            <div style={iconGroupGrid(compact)}>
-                                {icons.map((iconKey) => (
-                                    <motion.div
-                                        key={iconKey}
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={() => onSelectIcon(iconKey)}
-                                        style={{ ...iconItem(selectedIcon === iconKey, ui), padding: compact ? '10px' : '15px', cursor: 'pointer' }}
-                                    >
-                                        <span style={{ color: selectedIcon === iconKey ? ui.accent : ui.sub, display: 'flex' }}>
-                                            <HabitOutlineIcon iconName={iconKey} habitName={habitName} categoryKey={habitCategory} size={compact ? 24 : 28} />
-                                        </span>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-        );
-    };
 
     return (
         <motion.div
@@ -919,25 +749,40 @@ const AddHabitPanel = () => {
                                     onClick={e => e.stopPropagation()}
                                 >
                                     <div style={dragHandle} />
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 25px 15px' }}>
-                                        <h3 style={{ margin: 0, color: ui.text }}>{langIndex === 0 ? 'Выбрать иконку' : 'Choose icon'}</h3>
-                                        <motion.div whileTap={{ scale: 0.9 }} onClick={() => setSelectIconPanel(false)} style={{ padding: '8px', background: ui.cardSoft, border: `1px solid ${ui.border}`, borderRadius: '50%' }}>
-                                            <MdClose color={ui.sub} />
-                                        </motion.div>
+                                    <div style={{ padding: '0 12px 18px' }}>
+                                        <EmojiIconPickerPanel
+                                            theme={theme}
+                                            langIndex={langIndex}
+                                            accent={dynamicAccent}
+                                            title={langIndex === 0 ? 'Иконка привычки' : 'Habit icon'}
+                                            subtitle={langIndex === 0 ? 'Выберите готовую иконку или вставьте свой эмодзи с клавиатуры.' : 'Pick a preset icon or enter your own keyboard emoji.'}
+                                            selectedIcon={habitIcon}
+                                            emojiInput={habitEmojiInput}
+                                            setEmojiInput={setHabitEmojiInput}
+                                            groups={HABIT_ICON_GROUPS}
+                                            renderIcon={renderHabitPickerIcon}
+                                            onSelectPreset={(key) => {
+                                                setHabitIcon(key);
+                                                setHabitEmojiInput('');
+                                                setSelectIconPanel(false);
+                                            }}
+                                            onApplyEmoji={(emoji) => {
+                                                if (!emoji) {
+                                                    setShowPopUpPanel(langIndex === 0 ? 'Введите эмодзи' : 'Enter emoji', 2000, false);
+                                                    return;
+                                                }
+                                                setHabitIcon(`emoji:${emoji}`);
+                                                setHabitEmojiInput(emoji);
+                                                setSelectIconPanel(false);
+                                            }}
+                                            onReset={() => {
+                                                setHabitIcon('default');
+                                                setHabitEmojiInput('');
+                                                setSelectIconPanel(false);
+                                            }}
+                                            onCancel={() => setSelectIconPanel(false)}
+                                        />
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', borderRadius: '10px', padding: '0 25px 12px', gap: '8px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', borderRadius: '16px', padding: '0 10px', background: ui.field, border: `1px solid ${ui.border}`, width: '100%' }}>
-                                            <FaSearch color={ui.sub} style={{ marginRight: '8px' }} />
-                                            <input
-                                                type="text"
-                                                placeholder={langIndex === 0 ? 'Поиск иконки...' : 'Search icon...'}
-                                                value={iconSearchQuery}
-                                                onChange={(e) => setIconSearchQuery(e.target.value)}
-                                                style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '14px', color: ui.text, padding: '10px 0', outline: 'none' }}
-                                            />
-                                        </div>
-                                    </div>
-                                    {renderIconGroups(habitIcon, (key) => { setHabitIcon(key); setSelectIconPanel(false); })}
                                 </motion.div>
                             </motion.div>
                         )}
@@ -1014,21 +859,37 @@ const AddHabitPanel = () => {
                                             </motion.div>
                                         </div>
 
-                                        {/* Выбор иконки */}
-                                        <div style={{ padding: '14px', background: ui.field, border: `1px solid ${ui.border}`, borderRadius: '18px' }}>
-                                            <p style={{ color: ui.sub, fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', marginBottom: '8px' }}>{langIndex === 0 ? 'Иконка' : 'Icon'}</p>
-                                            <div style={{ display: 'flex', alignItems: 'center', borderRadius: '12px', padding: '0 10px', marginBottom: '10px', background: ui.cardSoft, border: `1px solid ${ui.border}` }}>
-                                                <FaSearch color={ui.sub} style={{ marginRight: '8px' }} />
-                                                <input
-                                                    type="text"
-                                                    placeholder={langIndex === 0 ? 'Поиск...' : 'Search...'}
-                                                    value={iconSearchQuery}
-                                                    onChange={(e) => setIconSearchQuery(e.target.value)}
-                                                    style={{ flex: 1, border: 'none', background: 'transparent', fontSize: '14px', color: ui.text, padding: '10px 0', outline: 'none' }}
-                                                />
-                                            </div>
-                                            {renderIconGroups(newCategoryIcon, setNewCategoryIcon, true)}
-                                        </div>
+                                        <EmojiIconPickerPanel
+                                            theme={theme}
+                                            langIndex={langIndex}
+                                            accent={dynamicAccent}
+                                            title={langIndex === 0 ? 'Иконка категории' : 'Category icon'}
+                                            subtitle={langIndex === 0 ? 'Выберите готовую иконку или вставьте свой эмодзи с клавиатуры.' : 'Pick a preset icon or enter your own keyboard emoji.'}
+                                            selectedIcon={newCategoryIcon}
+                                            emojiInput={newCategoryEmojiInput}
+                                            setEmojiInput={setNewCategoryEmojiInput}
+                                            groups={HABIT_ICON_GROUPS}
+                                            renderIcon={renderHabitPickerIcon}
+                                            onSelectPreset={(key) => {
+                                                setNewCategoryIcon(key);
+                                                setNewCategoryEmojiInput('');
+                                            }}
+                                            onApplyEmoji={(emoji) => {
+                                                if (!emoji) return;
+                                                setNewCategoryIcon(`emoji:${emoji}`);
+                                                setNewCategoryEmojiInput(emoji);
+                                            }}
+                                            onReset={() => {
+                                                setNewCategoryIcon('star');
+                                                setNewCategoryEmojiInput('');
+                                            }}
+                                            onCancel={() => {
+                                                setSelectCategoryPanel(false);
+                                                resetCategoryForm();
+                                            }}
+                                            showActions={false}
+                                            compact
+                                        />
 
                                         {/* Кнопки */}
                                         <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
@@ -1633,57 +1494,21 @@ const btnCancel = (ui) => ({ ...btnBase, flex: 1, backgroundColor: '#FF3B30', bo
 const btnNew = (ui) => ({ ...btnBase, width: '54px', background: `linear-gradient(145deg, ${ui.accentSoft}, ${ui.field})`, color: ui.accent, border: `1px solid ${ui.accentRing}`, boxShadow: `0 14px 24px -22px ${ui.accent}, inset 0 1px 0 rgba(255,255,255,0.08)`, backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
 const btnNext = (ui) => ({ ...btnBase, flex: 2, background: `linear-gradient(135deg, rgba(${ui.accentRgb},0.28), rgba(143,166,200,0.13))`, color: ui.text, border: `1px solid ${ui.borderStrong}`, boxShadow: `0 14px 34px -28px rgba(${ui.accentRgb},0.55), inset 0 1px 0 rgba(255,255,255,0.10)`, backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
 
-const iconSheet = (ui) => ({ width: '100%', maxHeight: '76vh', borderRadius: '34px 34px 0 0', overflow: 'hidden', borderTop: `1px solid ${ui.borderStrong}`, background: `radial-gradient(520px 240px at 80% 0%, rgba(${ui.accentRgb},0.12), transparent 70%), linear-gradient(180deg, ${ui.card}, rgba(15,17,19,0.92))`, boxShadow: '0 -18px 60px -34px rgba(0,0,0,0.72)', backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
-const iconGrid = { maxHeight: '50vh', overflowY: 'scroll', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '15px', padding: '0 25px 40px', WebkitOverflowScrolling: 'touch', touchAction: 'pan-y', overscrollBehavior: 'contain' };
-const iconGroupsScroll = (compact = false) => ({
-    maxHeight: compact ? 'min(330px, 38vh)' : '50vh',
-    overflowY: 'scroll',
-    padding: compact ? '0 2px 4px' : '0 25px 40px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: compact ? 14 : 18,
+const iconSheet = (ui) => ({
+    width: '100%',
+    maxHeight: 'calc(100dvh - 18px)',
+    borderRadius: '34px 34px 0 0',
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    borderTop: `1px solid ${ui.borderStrong}`,
+    background: `radial-gradient(520px 240px at 80% 0%, rgba(${ui.accentRgb},0.12), transparent 70%), linear-gradient(180deg, ${ui.card}, rgba(15,17,19,0.92))`,
+    boxShadow: '0 -18px 60px -34px rgba(0,0,0,0.72)',
+    backdropFilter: ui.blur,
+    WebkitBackdropFilter: ui.blur,
     WebkitOverflowScrolling: 'touch',
-    touchAction: 'pan-y',
-    overscrollBehavior: 'contain'
+    overscrollBehavior: 'contain',
+    touchAction: 'pan-y'
 });
-const iconGroupBlock = () => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 9
-});
-const iconGroupTitle = (ui) => ({
-    color: ui.sub,
-    fontSize: 10,
-    fontWeight: 950,
-    letterSpacing: '0.14em',
-    textTransform: 'uppercase',
-    paddingLeft: 2
-});
-const iconGroupGrid = (compact = false) => ({
-    display: 'grid',
-    gridTemplateColumns: compact ? 'repeat(5, minmax(0, 1fr))' : 'repeat(auto-fill, minmax(58px, 1fr))',
-    gap: compact ? 8 : 12
-});
-const iconEmptyState = (ui) => ({
-    color: ui.sub,
-    fontSize: 13,
-    fontWeight: 800,
-    textAlign: 'center',
-    padding: '18px 8px'
-});
-const categoryIconGrid = () => ({
-    display: 'grid',
-    gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-    gap: 8,
-    maxHeight: 'min(320px, 36vh)',
-    minHeight: 224,
-    overflowY: 'scroll',
-    paddingRight: 3,
-    WebkitOverflowScrolling: 'touch',
-    touchAction: 'pan-y',
-    overscrollBehavior: 'contain'
-});
-const iconItem = (active, ui) => ({ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '15px', borderRadius: '18px', background: active ? ui.accentSoft : ui.field, border: `1px solid ${active ? ui.accentRing : ui.border}`, boxShadow: active ? `0 14px 24px -22px ${ui.accent}, 0 1px 0 rgba(255,255,255,0.07) inset` : '0 1px 0 rgba(255,255,255,0.04) inset' });
 const iconPickerTrigger = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 16px', background: ui.field, border: `1px solid ${ui.border}`, borderRadius: '18px', boxShadow: '0 1px 0 rgba(255,255,255,0.055) inset', backdropFilter: 'blur(18px) saturate(155%)', WebkitBackdropFilter: 'blur(18px) saturate(155%)' });
 const addBtn = (ui) => ({ width: '42px', height: '42px', borderRadius: '14px', background: ui.accentSoft, border: `1px solid ${ui.accentRing}`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '12px', flexShrink: 0, cursor: 'pointer', boxShadow: `0 12px 22px -20px ${ui.accent}` });
 const goalRow = (ui) => ({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: '15px', background: ui.field, border: `1px solid ${ui.border}`, borderRadius: '16px', boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset' });
