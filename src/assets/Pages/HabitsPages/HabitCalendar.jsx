@@ -32,7 +32,7 @@ const CALENDAR_PARTIAL = {
     rgb: '55,107,234'
 };
 
-const NEGATIVE_SUCCESS = {
+const NEGATIVE_TONE = {
     hue: '#D8785E',
     soft: 'rgba(216,120,94,0.18)',
     ring: 'rgba(216,120,94,0.32)',
@@ -163,8 +163,22 @@ const isNegativeHabitEntry = (id, habit) => {
     return AppData.choosenHabitsTypes[habitIndex] === true || categoryKey === NEGATIVE_CATEGORY || categoryKey === NEGATIVE_CATEGORY_EN;
 };
 
+const getNegativeCleanStreakDays = (id) => {
+    const habitIndex = AppData.choosenHabits.indexOf(Number(id));
+    const startDate = habitIndex >= 0 ? AppData.choosenHabitsStartDates?.[habitIndex] : null;
+    const lastSkip = AppData.choosenHabitsLastSkip?.[id] ?? AppData.choosenHabitsLastSkip?.[Number(id)];
+    const baseDate = lastSkip || startDate;
+    const baseMs = typeof baseDate === 'number' ? baseDate : new Date(baseDate).getTime();
+    if (!Number.isFinite(baseMs)) return 0;
+    return Math.max(0, Math.floor((Date.now() - baseMs) / (24 * 60 * 60 * 1000)));
+};
+
+const getNegativeToneForStreak = (id) => (
+    getNegativeCleanStreakDays(id) > 1 ? HABITS_SUCCESS : NEGATIVE_TONE
+);
+
 const getCalendarCategoryTone = (categoryKey, isNegative) => {
-    if (isNegative) return { ...NEGATIVE_SUCCESS, icon: 'negative' };
+    if (isNegative) return { ...NEGATIVE_TONE, icon: 'negative' };
     const tone = getHabitCategoryTone(categoryKey);
     return { ...HABITS_ACCENT, icon: tone.icon };
 };
@@ -867,8 +881,14 @@ const Habit = ({theme, langIndex, date, fSize, onHabitClick}) => {
 const CalendarCategoryGroup = ({ group, theme, langIndex, date, fSize, onHabitClick }) => {
     const isLight = theme === 'light' || theme === 'speciallight';
     const dateKey = formatDateKey(date);
-    const tone = getCalendarCategoryTone(group.categoryKey, group.isNegative);
     const doneCount = group.entries.filter(({ status }) => status > 0).length;
+    const negativeMinCleanStreak = group.isNegative
+        ? group.entries.reduce((min, { id }) => Math.min(min, getNegativeCleanStreakDays(id)), Number.POSITIVE_INFINITY)
+        : 0;
+    const isNegativeSuccess = group.isNegative && doneCount === group.entries.length && negativeMinCleanStreak > 1;
+    const tone = group.isNegative
+        ? { ...(isNegativeSuccess ? HABITS_SUCCESS : NEGATIVE_TONE), icon: 'negative' }
+        : getCalendarCategoryTone(group.categoryKey, false);
     const sub = Colors.get('subText', theme);
 
     return (
@@ -1070,20 +1090,21 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
     let cardBorder = isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.08)';
     let textColor = Colors.get('mainText', theme);
     let subTextColor = Colors.get('subText', theme);
-    const categoryTone = isNegative ? NEGATIVE_SUCCESS : tone;
+    const isNegativeSuccess = isNegative && status === 1 && getNegativeCleanStreakDays(id) > 1;
+    const categoryTone = isNegative ? getNegativeToneForStreak(id) : tone;
     let iconColor = isLight ? 'rgba(31,41,55,0.58)' : 'rgba(196,211,222,0.62)';
     let iconBg = isLight ? 'rgba(15,23,42,0.055)' : 'rgba(255,255,255,0.065)';
     let iconBorder = 'transparent';
     let categoryTextColor = categoryTone.hue;
     let statusHint = '';
-    const checkTone = isNegative ? NEGATIVE_SUCCESS : HABITS_SUCCESS;
+    const checkTone = isNegativeSuccess ? HABITS_SUCCESS : (isNegative ? NEGATIVE_TONE : HABITS_SUCCESS);
     const isChecked = status === 1;
 
     if (status === 1) {
-        const doneTone = isNegative ? NEGATIVE_SUCCESS : HABITS_SUCCESS;
+        const doneTone = isNegativeSuccess ? HABITS_SUCCESS : (isNegative ? NEGATIVE_TONE : HABITS_SUCCESS);
         cardBg = isLight
             ? `linear-gradient(145deg, rgba(255,255,255,0.92), ${doneTone.soft})`
-            : `radial-gradient(220px 120px at 6% 4%, ${doneTone.soft}, transparent 72%), ${isNegative ? 'rgba(30,24,22,0.92)' : 'linear-gradient(145deg, rgba(24,35,29,0.84), rgba(16,24,19,0.76))'}`;
+            : `radial-gradient(220px 120px at 6% 4%, ${doneTone.soft}, transparent 72%), ${isNegative && !isNegativeSuccess ? 'rgba(30,24,22,0.92)' : 'linear-gradient(145deg, rgba(24,35,29,0.84), rgba(16,24,19,0.76))'}`;
         cardBorder = doneTone.ring;
         iconColor = doneTone.hue;
         iconBg = doneTone.soft;
