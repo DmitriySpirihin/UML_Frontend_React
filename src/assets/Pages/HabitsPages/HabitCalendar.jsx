@@ -5,6 +5,7 @@ import { AppData } from '../../StaticClasses/AppData.js'
 import { playEffects } from '../../StaticClasses/Effects.js'
 import Colors from '../../StaticClasses/Colors'
 import { HABITS_ACCENT, HabitOutlineIcon, getHabitCategoryTone } from './HabitVisuals.jsx';
+import ScrollPicker from '../../Helpers/ScrollPicker.jsx';
 
 // ВАЖНО: Импорты как в HabitsMain
 import { expandedCard$, setExpandedCard } from '../../StaticClasses/HabitsBus.js';
@@ -59,6 +60,28 @@ const buildTimestampFromTime = (date, time) => {
     result.setHours(hours || 0, minutes || 0, 0, 0);
     return result.getTime();
 };
+
+const getTimeParts = (time) => {
+    const [rawHours, rawMinutes] = String(time || '00:00').split(':').map(Number);
+    return {
+        hours: Number.isFinite(rawHours) ? rawHours : 0,
+        minutes: Number.isFinite(rawMinutes) ? rawMinutes : 0
+    };
+};
+
+const wrapPickerValue = (value, max) => ((value % max) + max) % max;
+
+const buildTimeValue = (hours, minutes) => (
+    `${String(wrapPickerValue(hours, 24)).padStart(2, '0')}:${String(wrapPickerValue(minutes, 60)).padStart(2, '0')}`
+);
+
+const RESET_MONTHS = [
+    ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'],
+    ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+];
+
+const RESET_HOURS = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'));
+const RESET_MINUTES = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, '0'));
 
 const getMondayIndex = (d) => (d.getDay() + 6) % 7;
 const clickSound = new Audio('Audio/Click.wav');
@@ -946,6 +969,7 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
     const dateKey = formatDateKey(date);
     const savedEventTime = AppData.getHabitEventTimestamp(dateKey, id);
     const [eventTime, setEventTime] = useState(() => formatTimeInput(savedEventTime, date));
+    const [resetDate, setResetDate] = useState(date);
     const maxX = 70; const minX = -70;
     const x = useMotionValue(0);
     const constrainedX = useTransform(x, [-1, 1], [minX, maxX]);
@@ -953,21 +977,24 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
     useEffect(() => {
         setStatus(statusInit);
         setEventTime(formatTimeInput(AppData.getHabitEventTimestamp(formatDateKey(date), id), date));
+        setResetDate(date);
     }, [statusInit, date, id]);
 
     const saveNegativeReset = async () => {
-        const dayKey = formatDateKey(date);
-        await AppData.changeStatus(dayKey, id, -1, buildTimestampFromTime(date, eventTime));
-        setStatus(-1);
+        const targetDate = resetDate instanceof Date ? resetDate : date;
+        const dayKey = formatDateKey(targetDate);
+        await AppData.changeStatus(dayKey, id, -1, buildTimestampFromTime(targetDate, eventTime));
+        if (dayKey === formatDateKey(date)) setStatus(-1);
         setShowResetPanel(false);
         emitHabitsChanged();
         if (AppData.prefs[2] == 0) playEffects(skipSound);
     };
 
     const saveCleanDay = async () => {
-        const dayKey = formatDateKey(date);
+        const targetDate = resetDate instanceof Date ? resetDate : date;
+        const dayKey = formatDateKey(targetDate);
         await AppData.changeStatus(dayKey, id, 1);
-        setStatus(1);
+        if (dayKey === formatDateKey(date)) setStatus(1);
         setShowResetPanel(false);
         emitHabitsChanged();
         if (AppData.prefs[2] == 0) playEffects(isDoneSound);
@@ -980,7 +1007,11 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
             dragHandled.current = true;
             didDragAction.current = true;
             if (isNegative) {
-                if (dx < 0) setShowResetPanel(true);
+                if (dx < 0) {
+                    setResetDate(date);
+                    setEventTime(formatTimeInput(AppData.getHabitEventTimestamp(formatDateKey(date), id), date));
+                    setShowResetPanel(true);
+                }
                 else saveCleanDay();
                 setCanDrag(false);
                 animate(constrainedX, 0, { type: 'tween', duration: 0.2 });
@@ -1104,7 +1135,11 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
                         didDragAction.current = false;
                         return;
                     }
-                    if (isNegative) setShowResetPanel(true);
+                    if (isNegative) {
+                        setResetDate(date);
+                        setEventTime(formatTimeInput(AppData.getHabitEventTimestamp(formatDateKey(date), id), date));
+                        setShowResetPanel(true);
+                    }
                     else onHabitClick?.(id, date);
                 }}
             >
@@ -1166,6 +1201,8 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
                     <NegativeHabitResetPanel
                         theme={theme}
                         langIndex={langIndex}
+                        date={resetDate}
+                        onDateChange={setResetDate}
                         time={eventTime}
                         onTimeChange={setEventTime}
                         onClose={() => setShowResetPanel(false)}
@@ -1178,7 +1215,7 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
     );
 }
 
-const NegativeHabitResetPanel = ({ theme, langIndex, time, onTimeChange, onClose, onReset, onClean }) => {
+const NegativeHabitResetPanel = ({ theme, langIndex, date, onDateChange, time, onTimeChange, onClose, onReset, onClean }) => {
     const isLight = theme === 'light' || theme === 'speciallight';
     const text = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
@@ -1233,29 +1270,10 @@ const NegativeHabitResetPanel = ({ theme, langIndex, time, onTimeChange, onClose
                     {langIndex === 0 ? 'Записать срыв' : 'Record reset'}
                 </div>
                 <div style={{ color: sub, fontSize: '13px', fontWeight: 750, lineHeight: 1.45, margin: '0 auto 18px', textAlign: 'center', maxWidth: 310 }}>
-                    {langIndex === 0 ? 'Выберите точное время для выбранной даты.' : 'Choose the exact time for the selected date.'}
+                    {langIndex === 0 ? 'Выберите день и точное время срыва.' : 'Choose the reset day and exact time.'}
                 </div>
-                <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => onTimeChange(e.target.value)}
-                    style={{
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(190,220,235,0.13)'}`,
-                        borderRadius: '22px',
-                        padding: '15px 18px',
-                        background: isLight ? 'rgba(255,255,255,0.52)' : 'rgba(255,255,255,0.07)',
-                        color: text,
-                        fontSize: '18px',
-                        fontWeight: 900,
-                        outline: 'none',
-                        marginBottom: '18px',
-                        boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.76) inset' : '0 1px 0 rgba(255,255,255,0.07) inset',
-                        backdropFilter: 'blur(18px) saturate(155%)',
-                        WebkitBackdropFilter: 'blur(18px) saturate(155%)'
-                    }}
-                />
+                <ResetDateWheel theme={theme} langIndex={langIndex} date={date} onDateChange={onDateChange} />
+                <ResetTimeWheel theme={theme} langIndex={langIndex} time={time} onTimeChange={onTimeChange} />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <motion.button type="button" whileTap={{ scale: 0.97 }} onClick={onClean} style={calendarActionButton('#32D74B', isLight)}>
                         <MdDoneAll size={18} /> {langIndex === 0 ? 'Чистый день' : 'Clean day'}
@@ -1269,12 +1287,61 @@ const NegativeHabitResetPanel = ({ theme, langIndex, time, onTimeChange, onClose
     );
 };
 
+const ResetDateWheel = ({ theme, langIndex, date, onDateChange }) => {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const day = date.getDate();
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    const months = RESET_MONTHS[langIndex] || RESET_MONTHS[0];
+    const days = Array.from({ length: new Date(year, month + 1, 0).getDate() }, (_, index) => index + 1);
+    const years = Array.from({ length: 7 }, (_, index) => year - 3 + index);
+
+    const commitDate = (nextYear, nextMonth, nextDay) => {
+        const maxDay = new Date(nextYear, nextMonth + 1, 0).getDate();
+        const next = new Date(date);
+        next.setFullYear(nextYear, nextMonth, Math.min(nextDay, maxDay));
+        next.setHours(0, 0, 0, 0);
+        onDateChange(next);
+    };
+
+    return (
+        <div style={resetPickerCardStyle(isLight, 10)}>
+            <p style={resetPickerLabelStyle(theme)}>{langIndex === 0 ? 'дата срыва' : 'reset date'}</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', height: '96px', alignItems: 'center' }}>
+                <ScrollPicker items={days} value={day} onChange={(nextDay) => commitDate(year, month, nextDay)} theme={theme} width="62px" />
+                <ScrollPicker items={months} value={months[month]} onChange={(nextMonth) => commitDate(year, months.indexOf(nextMonth), day)} theme={theme} width="118px" />
+                <ScrollPicker items={years} value={year} onChange={(nextYear) => commitDate(nextYear, month, day)} theme={theme} width="88px" />
+            </div>
+        </div>
+    );
+};
+
+const ResetTimeWheel = ({ theme, langIndex, time, onTimeChange }) => {
+    const isLight = theme === 'light' || theme === 'speciallight';
+    const { hours, minutes } = getTimeParts(time);
+    const hourValue = String(hours).padStart(2, '0');
+    const minuteValue = String(minutes).padStart(2, '0');
+
+    return (
+        <div style={resetPickerCardStyle(isLight, 18)}>
+            <p style={resetPickerLabelStyle(theme)}>{langIndex === 0 ? 'время срыва' : 'reset time'}</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', height: '96px', alignItems: 'center' }}>
+                <ScrollPicker items={RESET_HOURS} value={hourValue} onChange={(nextHours) => onTimeChange(buildTimeValue(nextHours, minuteValue))} theme={theme} width="76px" />
+                <div style={{ color: Colors.get('scrollFont', theme), fontSize: 20, fontWeight: 950, margin: '0 -2px 2px' }}>:</div>
+                <ScrollPicker items={RESET_MINUTES} value={minuteValue} onChange={(nextMinutes) => onTimeChange(buildTimeValue(hourValue, nextMinutes))} theme={theme} width="76px" />
+            </div>
+        </div>
+    );
+};
+
 const calendarActionButton = (color, isLight = false) => ({
-    minHeight: '52px',
-    border: `1px solid ${color}66`,
-    borderRadius: '22px',
-    background: `linear-gradient(145deg, ${color}e6, ${color}b8)`,
-    color: '#FFF',
+    minHeight: '50px',
+    border: `1px solid ${color}${isLight ? '44' : '3d'}`,
+    borderRadius: '18px',
+    background: isLight
+        ? `linear-gradient(145deg, ${color}1c, rgba(255,255,255,0.62))`
+        : `linear-gradient(145deg, ${color}24, rgba(255,255,255,0.052))`,
+    color,
     fontSize: '13px',
     fontWeight: 900,
     display: 'flex',
@@ -1282,11 +1349,43 @@ const calendarActionButton = (color, isLight = false) => ({
     justifyContent: 'center',
     gap: '7px',
     cursor: 'pointer',
+    outline: 'none',
+    appearance: 'none',
+    WebkitAppearance: 'none',
     boxShadow: isLight
-        ? `0 1px 0 rgba(255,255,255,0.42) inset, 0 14px 28px -22px ${color}`
-        : `0 1px 0 rgba(255,255,255,0.20) inset, 0 16px 32px -22px ${color}`,
-    backdropFilter: 'blur(16px) saturate(155%)',
-    WebkitBackdropFilter: 'blur(16px) saturate(155%)'
+        ? `0 1px 0 rgba(255,255,255,0.72) inset, 0 12px 26px -24px ${color}88`
+        : `0 1px 0 rgba(255,255,255,0.085) inset, 0 14px 28px -25px ${color}99`,
+    backdropFilter: 'blur(18px) saturate(155%)',
+    WebkitBackdropFilter: 'blur(18px) saturate(155%)',
+    WebkitTapHighlightColor: 'transparent'
+});
+
+const resetPickerCardStyle = (isLight, marginBottom) => ({
+    width: '100%',
+    boxSizing: 'border-box',
+    marginBottom,
+    padding: '13px 12px 10px',
+    borderRadius: 22,
+    border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(190,220,235,0.13)',
+    background: isLight
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.56), rgba(255,255,255,0.28))'
+        : 'linear-gradient(145deg, rgba(255,255,255,0.085), rgba(255,255,255,0.035))',
+    boxShadow: isLight
+        ? '0 1px 0 rgba(255,255,255,0.76) inset, 0 14px 28px -26px rgba(15,23,42,0.16)'
+        : '0 1px 0 rgba(255,255,255,0.075) inset, 0 16px 32px -28px rgba(0,0,0,0.66)',
+    backdropFilter: 'blur(20px) saturate(155%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(155%)'
+});
+
+const resetPickerLabelStyle = (theme) => ({
+    margin: '0 0 2px',
+    color: Colors.get('subText', theme),
+    fontSize: 11,
+    lineHeight: 1,
+    fontWeight: 900,
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    textAlign: 'center'
 });
 
 function habitAmountString(date,langIndex) {

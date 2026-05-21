@@ -1,52 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  FaBrain,
-  FaBriefcase,
   FaBullseye,
-  FaBookOpen,
-  FaCamera,
-  FaCar,
   FaCalendarDay,
-  FaCalendarCheck,
   FaCheck,
   FaChevronDown,
   FaChevronUp,
-  FaChartLine,
-  FaClipboardList,
-  FaCode,
   FaClock,
-  FaDumbbell,
-  FaEnvelope,
   FaEye,
   FaEyeSlash,
   FaFire,
-  FaFilm,
-  FaFlask,
-  FaFolderOpen,
-  FaGlobeAmericas,
-  FaGraduationCap,
-  FaHeartbeat,
-  FaHome,
-  FaMoneyBillWave,
-  FaMusic,
-  FaPaintBrush,
   FaPen,
-  FaPhone,
   FaLayerGroup,
-  FaLightbulb,
   FaListUl,
   FaPlus,
-  FaPuzzlePiece,
-  FaRocket,
-  FaSearch,
-  FaSeedling,
-  FaShoppingCart,
   FaStar,
   FaTag,
-  FaThumbtack,
   FaTimes,
-  FaTools,
   FaTrashAlt
 } from 'react-icons/fa';
 import { MdClose, MdDone } from 'react-icons/md';
@@ -56,6 +26,8 @@ import Colors from '../../StaticClasses/Colors';
 import { fontSize$, lang$, lastPage$, selectedTodo$, setPage, setShowPopUpPanel, theme$ } from '../../StaticClasses/HabitsBus.js';
 import { addCustomCategory, createGoal, removeCustomCategory, setTodoFieldVisibility, todoEvents$ } from './ToDoHelper';
 import { buildTodoAccent, getTodoCategoryTone, TODO_BASE_CATEGORIES } from './ToDoVisuals.js';
+import EmojiIconPickerPanel, { normalizeCustomEmoji } from '../../Helpers/EmojiIconPickerPanel.jsx';
+import { HABIT_ICON_GROUPS, HABIT_ICON_OPTIONS, HabitOutlineIcon } from '../HabitsPages/HabitVisuals.jsx';
 
 // =========================
 // Константы
@@ -67,121 +39,16 @@ const URGENCY_COLORS = ['#8FA6C8', '#64B5F6', '#FFD54F', '#FF8A65', '#E57373'];
 
 const BASE_CATEGORIES = TODO_BASE_CATEGORIES;
 
-const CUSTOM_ICON_GROUPS = [
-  {
-    id: 'work',
-    label: ['Работа и проекты', 'Work & projects'],
-    icons: [
-      { id: 'briefcase', icon: FaBriefcase },
-      { id: 'clipboard', icon: FaClipboardList },
-      { id: 'calendar-check', icon: FaCalendarCheck },
-      { id: 'chart', icon: FaChartLine },
-      { id: 'code', icon: FaCode },
-      { id: 'folder', icon: FaFolderOpen },
-      { id: 'pin', icon: FaThumbtack },
-      { id: 'tools', icon: FaTools }
-    ]
-  },
-  {
-    id: 'personal',
-    label: ['Личное', 'Personal'],
-    icons: [
-      { id: 'tag', icon: FaTag },
-      { id: 'star', icon: FaStar },
-      { id: 'target', icon: FaBullseye },
-      { id: 'idea', icon: FaLightbulb },
-      { id: 'puzzle', icon: FaPuzzlePiece },
-      { id: 'rocket', icon: FaRocket },
-      { id: 'home', icon: FaHome },
-      { id: 'world', icon: FaGlobeAmericas }
-    ]
-  },
-  {
-    id: 'health',
-    label: ['Здоровье и тело', 'Health & body'],
-    icons: [
-      { id: 'heart', icon: FaHeartbeat },
-      { id: 'dumbbell', icon: FaDumbbell },
-      { id: 'fire', icon: FaFire },
-      { id: 'seedling', icon: FaSeedling },
-      { id: 'brain', icon: FaBrain },
-      { id: 'lab', icon: FaFlask }
-    ]
-  },
-  {
-    id: 'life',
-    label: ['Быт и связь', 'Life & contacts'],
-    icons: [
-      { id: 'shopping', icon: FaShoppingCart },
-      { id: 'money', icon: FaMoneyBillWave },
-      { id: 'phone', icon: FaPhone },
-      { id: 'mail', icon: FaEnvelope },
-      { id: 'car', icon: FaCar },
-      { id: 'camera', icon: FaCamera }
-    ]
-  },
-  {
-    id: 'creative',
-    label: ['Учёба и творчество', 'Study & creative'],
-    icons: [
-      { id: 'book', icon: FaBookOpen },
-      { id: 'graduation', icon: FaGraduationCap },
-      { id: 'paint', icon: FaPaintBrush },
-      { id: 'music', icon: FaMusic },
-      { id: 'film', icon: FaFilm }
-    ]
+const TODO_ICON_PICKER_GROUPS = HABIT_ICON_GROUPS.map(group => ({
+  key: group.key,
+  label: group.label,
+  icons: group.icons
+}));
+const renderTodoPickerIcon = (iconKey, size = 20) => {
+  if (typeof iconKey === 'string' && iconKey.startsWith('emoji:')) {
+    return <span style={{ fontSize: size, lineHeight: 1 }}>{iconKey.slice(6).trim()}</span>;
   }
-];
-const CUSTOM_ICON_OPTIONS = CUSTOM_ICON_GROUPS.flatMap(group => group.icons);
-const CUSTOM_ICON_SEARCH_TERMS = {
-  briefcase: 'портфель работа проект бизнес офис',
-  clipboard: 'список чеклист задачи план',
-  'calendar-check': 'календарь дата событие дедлайн',
-  chart: 'график аналитика статистика рост',
-  code: 'код разработка программирование сайт',
-  folder: 'папка файлы документы',
-  pin: 'пин закрепить важное',
-  tools: 'инструменты ремонт настройка',
-  tag: 'тег метка ярлык',
-  star: 'звезда избранное важное',
-  target: 'цель фокус мишень',
-  idea: 'идея лампа мысль',
-  puzzle: 'пазл задача решение',
-  rocket: 'ракета запуск старт',
-  home: 'дом семья быт',
-  world: 'мир глобус поездка',
-  heart: 'сердце здоровье пульс',
-  dumbbell: 'гантели спорт тренировка',
-  fire: 'огонь срочно энергия',
-  seedling: 'растение рост привычка',
-  brain: 'мозг учеба мысль',
-  lab: 'лаборатория колба эксперимент',
-  shopping: 'покупки корзина магазин',
-  money: 'деньги финансы оплата',
-  phone: 'телефон звонок связь',
-  mail: 'почта письмо сообщение',
-  car: 'машина авто дорога',
-  camera: 'камера фото снимок',
-  book: 'книга чтение учеба',
-  graduation: 'учеба выпуск образование',
-  paint: 'кисть рисование творчество',
-  music: 'музыка ноты звук',
-  film: 'фильм видео кино'
-};
-
-const matchesCustomIconQuery = (iconKey, query) => (
-  !query ||
-  iconKey.toLowerCase().includes(query) ||
-  (CUSTOM_ICON_SEARCH_TERMS[iconKey] || '').toLowerCase().includes(query)
-);
-
-const normalizeCustomEmoji = (value) => {
-  const trimmed = String(value || '').trim();
-  if (!trimmed) return '';
-  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-    return [...new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(trimmed)][0]?.segment || '';
-  }
-  return Array.from(trimmed)[0] || '';
+  return <HabitOutlineIcon iconName={iconKey || 'target'} size={size} />;
 };
 
 // =========================
@@ -206,9 +73,8 @@ const ToDoNew = () => {
   const [showTaskIconModal, setShowTaskIconModal] = useState(false);
   const [taskIcon, setTaskIcon] = useState('');
   const [taskEmojiInput, setTaskEmojiInput] = useState('');
-  const [taskIconSearch, setTaskIconSearch] = useState('');
   const [newCatName, setNewCatName] = useState('');
-  const [newCatIcon, setNewCatIcon] = useState(CUSTOM_ICON_OPTIONS[0].id);
+  const [newCatIcon, setNewCatIcon] = useState(HABIT_ICON_OPTIONS[0] || 'target');
   const [newCatEmoji, setNewCatEmoji] = useState('');
   const [visibility, setVisibility] = useState({ difficulty: true, urgency: true, startDate: true, deadLine: true, ...(AppData.todoFieldsVisibility || {}) });
   const [accentColor] = useState(buildTodoAccent(AppData.todoAccentColor || '#149DFF').hue);
@@ -262,7 +128,7 @@ const ToDoNew = () => {
       setSelectedCatIndex(BASE_CATEGORIES.length + updated.length - 1);
     }
     setNewCatName('');
-    setNewCatIcon(CUSTOM_ICON_OPTIONS[0].id);
+    setNewCatIcon(HABIT_ICON_OPTIONS[0] || 'target');
     setNewCatEmoji('');
     setShowCatModal(false);
   };
@@ -375,13 +241,12 @@ const ToDoNew = () => {
       setDeadLine('');
       setTaskIcon('');
       setTaskEmojiInput('');
-      setTaskIconSearch('');
       setSelectedCatIndex(0);
     }, 250);
   };
 
-  const applyTaskEmoji = () => {
-    const emoji = normalizeCustomEmoji(taskEmojiInput);
+  const applyTaskEmoji = (value = taskEmojiInput) => {
+    const emoji = normalizeCustomEmoji(value);
     if (!emoji) return;
     setTaskIcon(`emoji:${emoji}`);
     setTaskEmojiInput(emoji);
@@ -486,7 +351,6 @@ const ToDoNew = () => {
             type="button"
             whileTap={{ scale: 0.92 }}
             onClick={() => {
-              setTaskIconSearch('');
               setShowTaskIconModal(true);
             }}
             style={addHeroIconButton(ui, currentTone)}
@@ -779,19 +643,21 @@ const ToDoNew = () => {
         setNewCatIcon={setNewCatIcon}
         newCatEmoji={newCatEmoji}
         setNewCatEmoji={setNewCatEmoji}
+        theme={theme}
         onCreate={handleCreateCustomCat}
       />
       <TaskIconModal
         show={showTaskIconModal}
         onClose={() => setShowTaskIconModal(false)}
         lang={lang}
+        theme={theme}
         ui={ui}
         tone={currentTone}
-        TaskIcon={CurrentIcon}
         taskIcon={taskIcon}
-        iconSearch={taskIconSearch}
-        setIconSearch={setTaskIconSearch}
+        taskEmojiInput={taskEmojiInput}
+        setTaskEmojiInput={setTaskEmojiInput}
         onApplyPreset={applyPresetTaskIcon}
+        onApplyEmoji={applyTaskEmoji}
         onReset={resetTaskIcon}
       />
     </motion.div>
@@ -1000,16 +866,7 @@ function formatDateForDisplay(value, fallback) {
   return d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-const TaskIconModal = ({ show, onClose, lang, ui, tone, taskIcon, iconSearch, setIconSearch, onApplyPreset, onReset }) => {
-  const query = iconSearch.trim().toLowerCase();
-  const visibleGroups = CUSTOM_ICON_GROUPS
-    .map((group) => {
-      const groupMatch = group.label.some(label => label.toLowerCase().includes(query));
-      const icons = group.icons.filter((opt) => groupMatch || matchesCustomIconQuery(opt.id, query));
-      return { ...group, icons };
-    })
-    .filter((group) => group.icons.length > 0);
-
+const TaskIconModal = ({ show, onClose, lang, theme, ui, tone, taskIcon, taskEmojiInput, setTaskEmojiInput, onApplyPreset, onApplyEmoji, onReset }) => {
   return (
     <AnimatePresence>
       {show && (
@@ -1023,58 +880,22 @@ const TaskIconModal = ({ show, onClose, lang, ui, tone, taskIcon, iconSearch, se
             onClick={(e) => e.stopPropagation()}
           >
             <div style={taskIconHandle()} />
-            <div style={taskIconSheetHeader()}>
-              <h3 style={taskIconModalTitle(ui)}>{lang === 0 ? 'Выбрать иконку' : 'Choose icon'}</h3>
-              <button type="button" onClick={onClose} style={taskIconCloseBtn(ui)} aria-label={lang === 0 ? 'Закрыть' : 'Close'}>
-                <MdClose size={22} />
-              </button>
-            </div>
-
-            <div style={taskIconSearchWrap(ui)}>
-              <FaSearch size={16} color={ui.sub} />
-              <input
-                type="text"
-                value={iconSearch}
-                onChange={(e) => setIconSearch(e.target.value)}
-                placeholder={lang === 0 ? 'Поиск иконки...' : 'Search icon...'}
-                style={taskIconSearchInput(ui)}
-              />
-            </div>
-
-            <div style={taskIconPresetSection()}>
-              {visibleGroups.map((group) => (
-                <div key={group.id} style={taskIconGroup()}>
-                  <div style={iconGroupLabel(ui)}>{group.label[lang]}</div>
-                  <div style={taskIconGrid()}>
-                    {group.icons.map((opt) => {
-                      const Icon = opt.icon;
-                      const active = taskIcon === opt.id;
-                      return (
-                        <motion.button
-                          type="button"
-                          key={opt.id}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={() => onApplyPreset(opt.id)}
-                          style={taskIconItem(active, ui, tone)}
-                          aria-label={opt.id}
-                        >
-                          <Icon size={22} />
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              {visibleGroups.length === 0 && (
-                <div style={taskIconEmpty(ui)}>{lang === 0 ? 'Ничего не найдено' : 'Nothing found'}</div>
-              )}
-            </div>
-
-            {taskIcon && (
-              <button type="button" onClick={onReset} style={taskIconResetInline(ui)}>
-                {lang === 0 ? 'Сбросить иконку' : 'Reset icon'}
-              </button>
-            )}
+            <EmojiIconPickerPanel
+              theme={theme}
+              langIndex={lang}
+              accent={tone}
+              title={lang === 0 ? 'Иконка задачи' : 'Task icon'}
+              subtitle={lang === 0 ? 'Выберите готовую иконку или вставьте свой эмодзи с клавиатуры.' : 'Pick a preset icon or enter your own keyboard emoji.'}
+              selectedIcon={taskIcon}
+              emojiInput={taskEmojiInput}
+              setEmojiInput={setTaskEmojiInput}
+              groups={TODO_ICON_PICKER_GROUPS}
+              renderIcon={renderTodoPickerIcon}
+              onSelectPreset={onApplyPreset}
+              onApplyEmoji={onApplyEmoji}
+              onReset={onReset}
+              onCancel={onClose}
+            />
           </motion.div>
         </motion.div>
       )}
@@ -1082,7 +903,7 @@ const TaskIconModal = ({ show, onClose, lang, ui, tone, taskIcon, iconSearch, se
   );
 };
 
-const CustomCategoryModal = ({ show, onClose, lang, ui, accent, newCatName, setNewCatName, newCatIcon, setNewCatIcon, newCatEmoji, setNewCatEmoji, onCreate }) => (
+const CustomCategoryModal = ({ show, onClose, lang, theme, ui, accent, newCatName, setNewCatName, newCatIcon, setNewCatIcon, newCatEmoji, setNewCatEmoji, onCreate }) => (
   <AnimatePresence>
     {show && (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={onClose}>
@@ -1107,37 +928,28 @@ const CustomCategoryModal = ({ show, onClose, lang, ui, accent, newCatName, setN
               placeholder={lang === 0 ? 'Название' : 'Name'}
               style={{ ...textInput(ui) }}
             />
-            <div style={emojiInputRow(ui)}>
-              <span style={emojiPreview(ui, accent)}>
-                {normalizeCustomEmoji(newCatEmoji) || (lang === 0 ? '🙂' : '🙂')}
-              </span>
-              <input
-                type="text"
-                value={newCatEmoji}
-                onChange={(e) => setNewCatEmoji(normalizeCustomEmoji(e.target.value))}
-                placeholder={lang === 0 ? 'Свое эмодзи' : 'Custom emoji'}
-                style={{ ...textInput(ui), minWidth: 0, flex: 1 }}
-              />
-            </div>
-            <p style={cardLabel(ui)}>{lang === 0 ? 'Иконка' : 'Icon'}</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxHeight: '46vh', overflowY: 'auto', paddingRight: 2 }}>
-              {CUSTOM_ICON_GROUPS.map((group) => (
-                <div key={group.id} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                  <div style={iconGroupLabel(ui)}>{group.label[lang]}</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 8 }}>
-                    {group.icons.map((opt) => {
-                      const Icon = opt.icon;
-                      const active = newCatIcon === opt.id;
-                      return (
-                        <motion.div key={opt.id} whileTap={{ scale: 0.9 }} onClick={() => setNewCatIcon(opt.id)} style={iconItem(active, ui, accent)}>
-                          <Icon size={18} color={active ? accent.hue : ui.sub} />
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <EmojiIconPickerPanel
+              theme={theme}
+              langIndex={lang}
+              accent={accent}
+              title={lang === 0 ? 'Иконка категории' : 'Category icon'}
+              subtitle={lang === 0 ? 'Выберите готовую иконку или вставьте свой эмодзи с клавиатуры.' : 'Pick a preset icon or enter your own keyboard emoji.'}
+              selectedIcon={newCatIcon}
+              emojiInput={newCatEmoji}
+              setEmojiInput={setNewCatEmoji}
+              groups={TODO_ICON_PICKER_GROUPS}
+              renderIcon={renderTodoPickerIcon}
+              onSelectPreset={(key) => { setNewCatIcon(key); setNewCatEmoji(''); }}
+              onApplyEmoji={(emoji) => {
+                if (!emoji) return;
+                setNewCatIcon(`emoji:${emoji}`);
+                setNewCatEmoji(emoji);
+              }}
+              onReset={() => { setNewCatIcon(HABIT_ICON_OPTIONS[0] || 'target'); setNewCatEmoji(''); }}
+              onCancel={onClose}
+              showActions={false}
+              compact
+            />
             <motion.div whileTap={{ scale: 0.97 }} onClick={onCreate} style={modalCreateBtn(ui, accent)}>
               <span style={{ color: accent.hue, fontWeight: 900, fontSize: 14 }}>{lang === 0 ? 'Создать' : 'Create'}</span>
             </motion.div>
@@ -1290,17 +1102,6 @@ const btnSave = (ui, accent) => ({ ...btnBase, flex: 1, background: `linear-grad
 const taskIconOverlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
 const taskIconModal = (ui) => ({ width: '100%', maxWidth: 660, maxHeight: '88vh', margin: '0 auto', borderRadius: '30px 30px 0 0', padding: '14px 23px max(22px, env(safe-area-inset-bottom, 0px))', overflowY: 'auto', background: `linear-gradient(180deg, ${ui.card}, ${ui.cardSoft})`, border: `1px solid ${ui.borderStrong}`, borderBottom: 'none', boxShadow: ui.shadow, boxSizing: 'border-box', WebkitOverflowScrolling: 'touch', backdropFilter: ui.blur, WebkitBackdropFilter: ui.blur });
 const taskIconHandle = () => ({ width: 45, height: 5, backgroundColor: '#8E8E93', borderRadius: 3, margin: '1px auto 25px', opacity: 0.55 });
-const taskIconSheetHeader = () => ({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 14 });
-const taskIconModalTitle = (ui) => ({ margin: 0, color: ui.text, fontSize: 20, fontWeight: 950, lineHeight: 1.1 });
-const taskIconCloseBtn = (ui) => ({ width: 44, height: 44, borderRadius: 999, border: `1px solid ${ui.border}`, background: ui.field, color: ui.sub, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'pointer', flexShrink: 0 });
-const taskIconSearchWrap = (ui) => ({ height: 40, borderRadius: 16, border: `1px solid ${ui.border}`, background: ui.field, display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', marginBottom: 15, boxSizing: 'border-box' });
-const taskIconSearchInput = (ui) => ({ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', color: ui.text, fontSize: 14, fontWeight: 700, fontFamily: 'inherit' });
-const taskIconPresetSection = () => ({ display: 'flex', flexDirection: 'column', gap: 17, paddingBottom: 10 });
-const taskIconGroup = () => ({ display: 'flex', flexDirection: 'column', gap: 11 });
-const taskIconGrid = () => ({ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: 12 });
-const taskIconItem = (active, ui, tone) => ({ aspectRatio: '1 / 1', minWidth: 0, borderRadius: 17, border: `1px solid ${active ? tone.ring : ui.border}`, background: active ? tone.soft : ui.field, color: active ? tone.hue : ui.sub, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, outline: 'none', boxShadow: active ? `0 10px 22px -18px ${tone.ring}` : '0 1px 0 rgba(255,255,255,0.05) inset', WebkitTapHighlightColor: 'transparent' });
-const taskIconEmpty = (ui) => ({ minHeight: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', color: ui.sub, fontSize: 13, fontWeight: 800 });
-const taskIconResetInline = (ui) => ({ width: '100%', minHeight: 44, marginTop: 5, borderRadius: 14, border: '1px solid rgba(244,67,54,0.2)', background: 'rgba(244,67,54,0.08)', color: '#E57373', fontWeight: 900, fontFamily: 'inherit' });
 const overlayStyle = { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 3000, display: 'flex', alignItems: 'flex-end' };
 const dragHandle = { width: 45, height: 5, backgroundColor: '#8E8E93', borderRadius: 3, margin: '15px auto', opacity: 0.4 };
 const iconSheet = (ui) => ({
@@ -1317,8 +1118,6 @@ const iconSheet = (ui) => ({
   paddingBottom: 'max(10px, env(safe-area-inset-bottom, 0px))'
 });
 const textInput = (ui) => ({ width: '100%', border: `1px solid ${ui.border}`, background: ui.field, fontSize: 15, color: ui.text, outline: 'none', borderRadius: 16, padding: '14px 14px', boxSizing: 'border-box', fontFamily: 'inherit', fontWeight: 700 });
-const emojiInputRow = () => ({ display: 'flex', alignItems: 'center', gap: 10 });
-const emojiPreview = (ui, accent) => ({ width: 48, height: 48, borderRadius: 16, background: accent.soft, border: `1px solid ${accent.ring}`, color: ui.text, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 });
 const iconItem = (active, ui, accent) => ({ aspectRatio: '1 / 1', borderRadius: 14, background: active ? accent.soft : ui.field, border: active ? `1px solid ${accent.ring}` : `1px solid ${ui.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' });
 const iconGroupLabel = (ui) => ({ color: ui.sub, fontSize: 10, fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase', paddingLeft: 0, textAlign: 'center' });
 const modalCreateBtn = (ui, accent) => ({ width: '100%', minHeight: 50, padding: 14, borderRadius: 14, background: accent.soft, border: `1px solid ${accent.ring}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginTop: 6, boxSizing: 'border-box', flexShrink: 0 });

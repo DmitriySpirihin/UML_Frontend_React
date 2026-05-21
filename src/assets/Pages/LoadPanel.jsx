@@ -15,6 +15,7 @@ const MotionDiv = motion.div;
 const LOAD_ACCENT = '#B7F3FF';
 const LOAD_SLEEP_ACCENT = '#7C6CFF';
 const GUEST_PHOTO = 'images/Ui/Guest.jpg';
+const API_ORIGIN = 'https://ultymylife.ru';
 
 function getDisplayName(user, lang) {
   if (!user) return lang === 0 ? 'гость' : 'guest';
@@ -78,14 +79,16 @@ useEffect(() => {
         // --- Referral Logic ---
         const referrerId = start_param; 
         if (referrerId && !isNaN(referrerId) && Number(referrerId) !== user.id) {
-          const refKey = `ref_processed_${referrerId}`;
+          const refKey = `ref_processed_${referrerId}_${user.id}`;
           if (!localStorage.getItem(refKey)) {
             try {
-              await fetch('/api/record-referral', {
+              const response = await fetch(`${API_ORIGIN}/api/record-referral`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({ referrerId: Number(referrerId), newUserId: user.id }),
               });
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
               localStorage.setItem(refKey, '1');
             } catch (err) { console.warn('Referral submission failed:', err); }
           }

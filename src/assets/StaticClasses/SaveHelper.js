@@ -63,10 +63,18 @@ export async function initializeTelegramSDK(opts = {}) {
 
 export function getTelegramContext() {
   const wa = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined;
-  const user = wa?.initDataUnsafe?.user ?? null;
-  const languageCode = (wa?.initDataUnsafe?.user?.language_code ?? wa?.languageCode) ?? 'ru';
+  const initDataUnsafe = wa?.initDataUnsafe || {};
+  const user = initDataUnsafe.user ?? null;
+  const languageCode = (initDataUnsafe.user?.language_code ?? wa?.languageCode) ?? 'ru';
   const colorScheme = wa?.colorScheme ?? 'dark';
-  return { user, languageCode, colorScheme };
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const start_param = initDataUnsafe.start_param
+    || initDataUnsafe.startParam
+    || urlParams?.get('tgWebAppStartParam')
+    || urlParams?.get('startapp')
+    || urlParams?.get('start_param')
+    || '';
+  return { user, languageCode, colorScheme, start_param };
 }
 
 let db = null;

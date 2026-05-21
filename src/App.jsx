@@ -12,7 +12,7 @@ import BtnsRobot from './assets/Pages/BottomBtns/BtnsRobot'
 import NotifyPanel from './assets/Pages/NotifyPanel'
 import BtnsMenu from './assets/Pages/BottomBtns/BtnsMenu';
 import BtnsInfo from './assets/Pages/BottomBtns/BtnsInfo';
-import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, keyboardVisible$,notifyPanel$,isServerAvailable$, confirmationPanel$} from './assets/StaticClasses/HabitsBus'
+import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, keyboardVisible$,notifyPanel$,isServerAvailable$, confirmationPanel$, setKeyboardVisible} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaServer, FaCog, FaTools } from 'react-icons/fa';
@@ -145,6 +145,31 @@ function App() {
   useEffect(() => {
     const subscription = keyboardVisible$.subscribe(setKeyboardVisibleState);
     return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+
+    const viewport = window.visualViewport;
+    let stableHeight = Math.max(window.innerHeight || 0, viewport?.height || 0);
+
+    const updateViewportHeight = () => {
+      const currentHeight = viewport?.height || window.innerHeight;
+      stableHeight = Math.max(stableHeight, window.innerHeight || 0, currentHeight || 0);
+      document.documentElement.style.setProperty('--app-viewport-height', `${Math.round(currentHeight)}px`);
+      setKeyboardVisible(stableHeight - currentHeight > 140);
+    };
+
+    updateViewportHeight();
+    viewport?.addEventListener('resize', updateViewportHeight);
+    viewport?.addEventListener('scroll', updateViewportHeight);
+    window.addEventListener('resize', updateViewportHeight);
+
+    return () => {
+      viewport?.removeEventListener('resize', updateViewportHeight);
+      viewport?.removeEventListener('scroll', updateViewportHeight);
+      window.removeEventListener('resize', updateViewportHeight);
+    };
   }, []);
 
   useEffect(() => {
