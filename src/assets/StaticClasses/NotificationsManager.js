@@ -101,8 +101,8 @@ export async function isUserHasPremium(uid) {
 
     if (!response.ok) {
       console.warn(`Premium check failed with HTTP ${response.status}`);
-      setIsServerAvailable(true);
-      return getCurrentPremiumSnapshot(true);
+      setIsServerAvailable(false);
+      return getCurrentPremiumSnapshot(false);
     }
 
     const data = await response.json();
@@ -134,8 +134,8 @@ export async function isUserHasPremium(uid) {
     }
   } catch (error) {
     console.error('Error checking premium status:', error);
-    setIsServerAvailable(true);
-    return getCurrentPremiumSnapshot(true);
+    setIsServerAvailable(false);
+    return getCurrentPremiumSnapshot(false);
   }
 }
 
