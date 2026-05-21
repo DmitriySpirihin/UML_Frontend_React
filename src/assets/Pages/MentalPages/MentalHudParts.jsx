@@ -3,16 +3,10 @@ import Colors from '../../StaticClasses/Colors';
 import { FaArrowRight, FaRedo } from 'react-icons/fa';
 
 const neutralStyle = (theme) => ({
-    background: theme === 'dark'
-        ? 'radial-gradient(circle at 18% 0%, rgba(102,217,232,0.12), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))'
-        : 'radial-gradient(circle at 18% 0%, rgba(102,217,232,0.14), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.86), rgba(255,255,255,0.58))',
-    border: `1px solid ${theme === 'dark' ? 'rgba(170,229,238,0.13)' : 'rgba(37,87,96,0.11)'}`,
+    background: theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.7)',
+    border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.065)' : 'rgba(20,24,32,0.06)'}`,
     color: theme === 'dark' ? '#C9D6E8' : '#4C6472',
-    boxShadow: theme === 'dark'
-        ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 24px rgba(0,0,0,0.18)'
-        : 'inset 0 1px 0 rgba(255,255,255,0.78), 0 8px 18px rgba(24,36,44,0.08)',
-    backdropFilter: 'blur(18px) saturate(160%)',
-    WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+    boxShadow: theme === 'dark' ? '0 10px 24px rgba(0,0,0,0.12)' : '0 8px 18px rgba(24,36,44,0.08)',
 });
 
 const activeStyle = (theme, heat) => {
@@ -20,15 +14,13 @@ const activeStyle = (theme, heat) => {
     const border = 0.2 + heat * 0.22;
     return {
         background: theme === 'dark'
-            ? `radial-gradient(circle at 24% 0%, rgba(255,218,142,${0.16 + heat * 0.16}), transparent 46%), linear-gradient(135deg, rgba(255,188,76,${0.12 + heat * 0.14}), rgba(255,82,64,${0.08 + heat * 0.12}))`
-            : `radial-gradient(circle at 24% 0%, rgba(255,218,142,${0.2 + heat * 0.16}), transparent 46%), linear-gradient(135deg, rgba(255,198,92,${0.2 + heat * 0.16}), rgba(255,108,72,${0.11 + heat * 0.14}))`,
+            ? `linear-gradient(135deg, rgba(255,188,76,${0.12 + heat * 0.14}), rgba(255,82,64,${0.08 + heat * 0.12}))`
+            : `linear-gradient(135deg, rgba(255,198,92,${0.2 + heat * 0.16}), rgba(255,108,72,${0.11 + heat * 0.14}))`,
         border: `1px solid ${theme === 'dark' ? `rgba(255,182,82,${border})` : `rgba(171,96,38,${border})`}`,
         color: theme === 'dark' ? '#FFD18A' : '#9A5A24',
         boxShadow: theme === 'dark'
-            ? `inset 0 1px 0 rgba(255,255,255,0.14), 0 10px 26px rgba(255,116,78,${glow}), 0 0 ${10 + heat * 18}px rgba(255,174,84,${0.08 + heat * 0.18})`
-            : `inset 0 1px 0 rgba(255,255,255,0.78), 0 8px 20px rgba(171,96,38,${0.08 + heat * 0.12})`,
-        backdropFilter: 'blur(18px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+            ? `0 10px 26px rgba(255,116,78,${glow}), 0 0 ${10 + heat * 18}px rgba(255,174,84,${0.08 + heat * 0.18})`
+            : `0 8px 20px rgba(171,96,38,${0.08 + heat * 0.12})`,
     };
 };
 

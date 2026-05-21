@@ -357,12 +357,8 @@ const styles = (theme, accent, fSize = 0) => {
   return {
     page: {
       position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 'auto',
+      inset: 0,
       zIndex: 1000,
-      height: 'var(--app-viewport-height, 100dvh)',
       display: 'flex',
       justifyContent: 'center',
       background: isLight
@@ -594,7 +590,7 @@ const styles = (theme, accent, fSize = 0) => {
       outline: 'none',
       background: 'transparent',
       color: text,
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: 650,
       lineHeight: 1.45,
       fontFamily: 'inherit',

@@ -176,6 +176,18 @@ const HeroStreakFlame = ({ size = 132 }) => (
     />
   </svg>
 );
+const BurntFlame = ({ size = 15 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: 'block', flexShrink: 0, opacity: 0.78 }}>
+    <path
+      d="M12.7 2.6c2.1 3.6 5.8 5.7 5.8 11a6.5 6.5 0 01-13 0c0-2.9 1.6-5 3.5-6.4-.2 1.5.1 2.7.9 3.7.7-3.1 1.6-5.8 2.8-8.3z"
+      fill="#68717B"
+    />
+    <path
+      d="M13 19.5a3.5 3.5 0 003.3-3.7c0-2-1.2-3.2-2.6-4.7-.4 1.9-1.1 3.4-2.2 4.5-.6-.8-.9-1.7-.8-2.8-1.1.9-1.8 2.1-1.8 3.5A3.5 3.5 0 0013 19.5z"
+      fill="#3F4650"
+    />
+  </svg>
+);
 const FieryBorder = ({ radius = 32, opacity = 0.78, duration = 6 }) => (
   <Motion.div
     aria-hidden="true"
@@ -308,17 +320,6 @@ function colorsAreClose(a, b) {
 }
 
 function getMetricParts(metric) {
-  if (metric && typeof metric === 'object') {
-    const value = Number(metric.value) || 0;
-    const isStreakMetric = metric.type === 'sectionStreak';
-    return {
-      value: value.toString(),
-      isStreak: isStreakMetric && value > 0,
-      isZero: isStreakMetric && value === 0,
-      isAtRisk: isStreakMetric && value > 0 && metric.state === 'atRisk'
-    };
-  }
-
   const text = `${metric}`.trim();
   if (!text) return { value: '', isStreak: false, isZero: false };
 
@@ -350,33 +351,19 @@ function Pill({ children, style }) {
   );
 }
 
-function StreakMetricPill({ value, compact = false, atRisk = false }) {
-  const flameOpacity = atRisk ? 0.46 : 1;
-  const pillBorder = atRisk ? '1px solid rgba(142,152,166,0.34)' : '1px solid rgba(183,243,255,0.38)';
-  const pillBackground = atRisk
-    ? 'linear-gradient(180deg, rgba(34,43,50,0.82), rgba(15,20,25,0.88))'
-    : 'linear-gradient(180deg, rgba(18,44,61,0.98), rgba(8,18,27,0.98))';
-  const pillColor = atRisk ? '#9AA8B7' : '#B7F3FF';
-  const shadowFrames = atRisk
-    ? [
-      '0 1px 0 rgba(255,255,255,0.08) inset, 0 0 0 1px rgba(70,83,94,0.48) inset, 0 7px 14px -15px rgba(142,152,166,0.30)',
-      '0 1px 0 rgba(255,255,255,0.10) inset, 0 0 0 1px rgba(70,83,94,0.54) inset, 0 9px 18px -15px rgba(142,152,166,0.40)',
-      '0 1px 0 rgba(255,255,255,0.08) inset, 0 0 0 1px rgba(70,83,94,0.48) inset, 0 7px 14px -15px rgba(142,152,166,0.30)'
-    ]
-    : [
-      `0 1px 0 rgba(255,255,255,0.15) inset, 0 0 0 1px rgba(16,49,72,0.72) inset, 0 ${compact ? 7 : 9}px ${compact ? 14 : 18}px -15px rgba(125,224,255,0.48)`,
-      `0 1px 0 rgba(255,255,255,0.20) inset, 0 0 0 1px rgba(16,49,72,0.72) inset, 0 ${compact ? 9 : 12}px ${compact ? 20 : 24}px -14px rgba(183,243,255,0.68)`,
-      `0 1px 0 rgba(255,255,255,0.15) inset, 0 0 0 1px rgba(16,49,72,0.72) inset, 0 ${compact ? 7 : 9}px ${compact ? 14 : 18}px -15px rgba(125,224,255,0.48)`
-    ];
-
+function StreakMetricPill({ value, compact = false }) {
   return (
     <Motion.div
       aria-hidden="true"
       animate={{
         y: [0, -1.5, 0],
-        boxShadow: shadowFrames
+        boxShadow: [
+          `0 1px 0 rgba(255,255,255,0.15) inset, 0 0 0 1px rgba(16,49,72,0.72) inset, 0 ${compact ? 7 : 9}px ${compact ? 14 : 18}px -15px rgba(125,224,255,0.48)`,
+          `0 1px 0 rgba(255,255,255,0.20) inset, 0 0 0 1px rgba(16,49,72,0.72) inset, 0 ${compact ? 9 : 12}px ${compact ? 20 : 24}px -14px rgba(183,243,255,0.68)`,
+          `0 1px 0 rgba(255,255,255,0.15) inset, 0 0 0 1px rgba(16,49,72,0.72) inset, 0 ${compact ? 7 : 9}px ${compact ? 14 : 18}px -15px rgba(125,224,255,0.48)`
+        ]
       }}
-      transition={{ duration: atRisk ? 3.2 : 2.6, repeat: Infinity, ease: 'easeInOut' }}
+      transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
       style={{
         height: compact ? 27 : 30,
         minWidth: compact ? 42 : 54,
@@ -386,15 +373,15 @@ function StreakMetricPill({ value, compact = false, atRisk = false }) {
         alignItems: 'center',
         justifyContent: 'center',
         gap: 5,
-        border: pillBorder,
-        background: pillBackground,
-        color: pillColor,
+        border: '1px solid rgba(183,243,255,0.38)',
+        background: 'linear-gradient(180deg, rgba(18,44,61,0.98), rgba(8,18,27,0.98))',
+        color: '#B7F3FF',
         position: 'relative',
         overflow: 'hidden'
       }}
     >
-      {!atRisk && <FieryBorder radius={999} opacity={compact ? 0.72 : 0.82} duration={3.8} />}
-      {!atRisk && <Motion.span
+      <FieryBorder radius={999} opacity={compact ? 0.72 : 0.82} duration={3.8} />
+      <Motion.span
         aria-hidden="true"
         animate={{ x: ['-120%', '130%'], opacity: [0, 0.42, 0] }}
         transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut', delay: 0.35 }}
@@ -407,16 +394,16 @@ function StreakMetricPill({ value, compact = false, atRisk = false }) {
           background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.34), transparent)',
           pointerEvents: 'none'
         }}
-      />}
+      />
       <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
         <Motion.span
-          animate={atRisk ? { opacity: [0.34, 0.55, 0.34] } : { scale: [1, 1.12, 0.98, 1], rotate: [0, -3, 3, 0] }}
-          transition={{ duration: atRisk ? 2.2 : 1.8, repeat: Infinity, ease: 'easeInOut' }}
-          style={{ display: 'inline-flex', opacity: flameOpacity, filter: atRisk ? 'grayscale(0.8) saturate(0.45)' : 'none' }}
+          animate={{ scale: [1, 1.12, 0.98, 1], rotate: [0, -3, 3, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ display: 'inline-flex' }}
         >
           <StreakFlame size={compact ? 14 : 13} />
         </Motion.span>
-        <span style={{ color: atRisk ? '#C4CCD4' : '#F8FEFF', fontSize: compact ? 15 : 12, fontWeight: 900, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</span>
+        <span style={{ color: '#F8FEFF', fontSize: compact ? 15 : 12, fontWeight: 900, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>{value}</span>
       </span>
     </Motion.div>
   );
@@ -1033,7 +1020,7 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
   const IconComponent = iconMap[item.id] || (() => item.icon);
   const metric = showInfo ? (info || '0') : '';
   const metricParts = getMetricParts(metric);
-  const hasActiveStreak = metricParts.isStreak && !metricParts.isZero && !metricParts.isAtRisk;
+  const hasActiveStreak = metricParts.isStreak && !metricParts.isZero;
   const rowBackground = palette.isLight
     ? `radial-gradient(190px 98px at 9% 45%, rgba(${accent.rgb},0.24), transparent 70%), linear-gradient(135deg, rgba(255,255,255,0.82) 0%, rgba(245,250,252,0.70) 58%, rgba(232,239,243,0.80) 100%)`
     : palette.isCoffee
@@ -1147,13 +1134,14 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
       {metric ? (
         <div style={{ textAlign: 'right', minWidth: metricParts.isStreak || metricParts.isZero ? 48 : 40, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', position: 'relative', zIndex: 2 }}>
           {metricParts.isStreak ? (
-            <StreakMetricPill value={metricParts.value} compact atRisk={metricParts.isAtRisk} />
+            <StreakMetricPill value={metricParts.value} compact />
           ) : metricParts.isZero ? (
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              minWidth: 38,
+              gap: 5,
+              minWidth: 50,
               height: 27,
               padding: '0 8px',
               borderRadius: 999,
@@ -1168,6 +1156,7 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
               <span style={{ fontSize: 15, fontWeight: 900, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
                 0
               </span>
+              <BurntFlame />
             </div>
           ) : (
             <div style={{

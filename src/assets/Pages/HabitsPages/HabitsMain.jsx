@@ -19,7 +19,7 @@ import {
 } from './HabitVisuals.jsx';
 
 import { MdDone, MdClose } from 'react-icons/md'
-import { FaPlus, FaTrash, FaPencilAlt, FaFire, FaChevronDown, FaClock, FaSlidersH, FaPalette } from 'react-icons/fa'
+import { FaPlus, FaTrash, FaPencilAlt, FaFire, FaChevronDown , FaClock, FaSlidersH, FaPalette } from 'react-icons/fa'
 //new
 import {FiCalendar, FiEdit3, FiTrash2, FiChevronUp} from 'react-icons/fi'
 import {MdSkipNext} from 'react-icons/md'
@@ -759,26 +759,11 @@ const styles = (theme, fSize = 0) => {
             padding: '4px 0 8px',
             boxSizing: 'border-box',
             display: 'grid',
-            gridTemplateColumns: '48px minmax(0, 1fr) 98px',
+            gridTemplateColumns: '96px minmax(0, 1fr) 96px',
             alignItems: 'center',
             gap: 12
         },
-        pageBackButton: {
-            width: 38,
-            height: 38,
-            borderRadius: 14,
-            border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(159,180,196,0.18)',
-            background: isLight ? 'rgba(255,255,255,0.62)' : 'rgba(175,196,212,0.09)',
-            color: Colors.get('mainText', theme),
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            justifySelf: 'start',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-            boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.72) inset' : '0 1px 0 rgba(255,255,255,0.045) inset',
-            WebkitTapHighlightColor: 'transparent'
-        },
+        pageHeaderSpacer: { width: 96, height: 38 },
         pageHeaderBrand: { minWidth: 0, textAlign: 'center' },
         headerAccentButton: {
             minWidth: 0,
@@ -795,11 +780,9 @@ const styles = (theme, fSize = 0) => {
             fontSize: 12,
             fontWeight: 900,
             fontFamily: 'inherit',
-            padding: '0 10px',
+            padding: '0 11px',
             whiteSpace: 'nowrap',
-            cursor: 'pointer',
-            maxWidth: 98,
-            overflow: 'hidden'
+            cursor: 'pointer'
         },
         actionColorDot: {
             width: 8,
@@ -872,7 +855,6 @@ const HabitsMain = () => {
     const [currentId, setCurrentId] = useState(0);
     const [dataVersion, setDataVersion] = useState(0);
     const [showWidgetSettings, setShowWidgetSettings] = useState(false);
-    const [showAccentSettings, setShowAccentSettings] = useState(false);
     const [habitCardWidgets, setHabitCardWidgets] = useState(normalizeHabitCardWidgets(AppData.habitCardWidgets));
     const [selectedDateKey, setSelectedDateKey] = useState(dateKey);
     const scrollViewRef = React.useRef(null);
@@ -1157,12 +1139,6 @@ const HabitsMain = () => {
                 onClose={() => setShowWidgetSettings(false)}
                 values={habitCardWidgets}
                 onToggle={toggleHabitWidget}
-                theme={theme}
-                langIndex={langIndex}
-            />
-            <HabitAccentModal
-                isOpen={showAccentSettings}
-                onClose={() => setShowAccentSettings(false)}
                 accentColor={AppData.habitAccentColor}
                 onAccentChange={changeHabitAccentColor}
                 customPresets={AppData.habitAccentPresets}
@@ -1189,8 +1165,7 @@ const HabitsMain = () => {
                         theme={theme}
                         fSize={fSize}
                         langIndex={langIndex}
-                        onAccentClick={() => setShowAccentSettings(true)}
-                        onBack={() => setPage('MainMenu')}
+                        onAccentClick={() => setShowWidgetSettings(true)}
                     />
                     <HabitsEmptyState theme={theme} langIndex={langIndex} fSize={fSize} />
                 </div>
@@ -1201,8 +1176,7 @@ const HabitsMain = () => {
                     theme={theme}
                     fSize={fSize}
                     langIndex={langIndex}
-                    onAccentClick={() => setShowAccentSettings(true)}
-                    onBack={() => setPage('MainMenu')}
+                    onAccentClick={() => setShowWidgetSettings(true)}
                 />
                 <HabitsHero theme={theme} langIndex={langIndex} habitsCards={habitsCards} fSize={fSize} selectedDateKey={selectedDateKey} onOpenWidgets={() => setShowWidgetSettings(true)} />
                 <div style={styles(theme).categoriesWrap}>
@@ -1529,7 +1503,7 @@ function getAllHabits() {
     );
 }
 
-function HabitsPageHeader({ theme, fSize, langIndex, onAccentClick, onBack }) {
+function HabitsPageHeader({ theme, fSize, langIndex, onAccentClick }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: -6 }}
@@ -1537,15 +1511,7 @@ function HabitsPageHeader({ theme, fSize, langIndex, onAccentClick, onBack }) {
             transition={{ duration: 0.32 }}
             style={styles(theme, fSize).pageHeader}
         >
-            <motion.button
-                type="button"
-                whileTap={{ scale: 0.94 }}
-                onClick={onBack}
-                aria-label={langIndex === 0 ? 'Назад' : 'Back'}
-                style={styles(theme, fSize).pageBackButton}
-            >
-                <span style={{ fontSize: 25, lineHeight: 1, fontWeight: 900, transform: 'translateY(-1px)' }}>‹</span>
-            </motion.button>
+            <div style={styles(theme, fSize).pageHeaderSpacer} />
             <div style={styles(theme, fSize).pageHeaderBrand}>
                 <div style={styles(theme, fSize).pageTitle}>UltyMyLife</div>
                 <div style={styles(theme, fSize).pageSubtitle}>
@@ -1922,7 +1888,6 @@ function buildMenu({ theme, habitsCards, categories, selectedDateKey, setCP, set
 
         if (habitsInCategory.length === 0) return null;
         const doneCount = habitsInCategory.filter(h => getHabitStatus(h.id, selectedDateKey) === 1 || (selectedDateKey === dateKey && AppData.isHabitAutoComplete(h.id))).length;
-        const minDoneStreak = habitsInCategory.reduce((min, h) => Math.min(min, getDoneAmount(h.id)), Number.POSITIVE_INFINITY);
         const categoryLabel = getCategory(category);
 
         return (
@@ -1934,7 +1899,6 @@ function buildMenu({ theme, habitsCards, categories, selectedDateKey, setCP, set
                 isNegative={category === NEGATIVE_CATEGORY}
                 doneCount={doneCount}
                 totalCount={habitsInCategory.length}
-                minDoneStreak={Number.isFinite(minDoneStreak) ? minDoneStreak : 0}
                 langIndex={langIndex}
                 summaryLabel={getSelectedDateLabel(selectedDateKey, langIndex)}
                 onToggle={onCategoryToggle}
@@ -1997,11 +1961,9 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     const categoryTone = categoryBaseTone?.hue ? categoryBaseTone : { ...HABITS_ACCENT, icon: categoryBaseTone.icon };
     const negativeTone = getCategoryTone(NEGATIVE_CATEGORY);
     const statusValue = status ?? 0;
-    const currentDoneStreak = getDoneAmount(id);
-    const isNegativeSuccess = isNegative && currentDoneStreak > 1;
-    const doneTone = isNegativeSuccess || !isNegative ? HABITS_SUCCESS : negativeTone;
+    const doneTone = isNegative ? negativeTone : HABITS_SUCCESS;
     const doneGlow = doneTone.glow || doneTone.ring || HABITS_ACCENT.glow;
-    const habitColor = isNegativeSuccess ? doneTone.hue : (isNegative ? negativeTone.hue : categoryTone.hue);
+    const habitColor = isNegative ? negativeTone.hue : categoryTone.hue;
     const isLight = theme === 'light' || theme === 'speciallight';
     const widgets = normalizeHabitCardWidgets(habitCardWidgets);
     const showStatsRow = widgets.days || widgets.skips || widgets.streak || widgets.timer;
@@ -2022,25 +1984,24 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
         : '0 1px 0 rgba(255,255,255,0.055) inset, 0 18px 34px -28px rgba(0,0,0,0.72)';
 
     if (isNegative) {
-        const activeNegativeTone = isNegativeSuccess ? doneTone : negativeTone;
         cardBg = isLight
-            ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${activeNegativeTone.soft})`
-            : `radial-gradient(240px 120px at 4% 10%, ${activeNegativeTone.soft}, transparent 72%), linear-gradient(145deg, rgba(20,28,24,0.9), rgba(20,23,25,0.92))`;
+            ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(216,120,94,0.09))'
+            : 'radial-gradient(240px 120px at 4% 10%, rgba(216,120,94,0.14), transparent 72%), linear-gradient(145deg, rgba(28,24,22,0.9), rgba(20,23,25,0.92))';
         borderColor = '1px solid transparent';
-        iconBg = activeNegativeTone.soft;
-        iconColor = activeNegativeTone.hue;
-        progressColor = activeNegativeTone.hue;
+        iconBg = negativeTone.soft;
+        iconColor = negativeTone.hue;
+        progressColor = '#D8785E';
     }
 
     if (statusValue === 1) {
         if (isNegative) {
             cardBg = isLight
-                ? `linear-gradient(145deg, rgba(255,255,255,0.96), ${doneTone.soft})`
-                : `radial-gradient(240px 120px at 4% 10%, ${doneTone.soft}, transparent 72%), linear-gradient(145deg, rgba(20,28,24,0.92), rgba(20,23,25,0.92))`;
-            iconBg = doneTone.soft;
-            iconColor = doneTone.hue;
-            borderColor = isNegativeSuccess ? `1px solid ${doneTone.ring}` : '1px solid transparent';
-            progressColor = doneTone.hue;
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(216,120,94,0.11))'
+                : 'radial-gradient(240px 120px at 4% 10%, rgba(216,120,94,0.16), transparent 72%), linear-gradient(145deg, rgba(28,24,22,0.92), rgba(20,23,25,0.92))';
+            iconBg = negativeTone.soft;
+            iconColor = negativeTone.hue;
+            borderColor = '1px solid transparent';
+            progressColor = negativeTone.hue;
         } else {
             cardBg = isLight
                 ? `linear-gradient(145deg, rgba(255,255,255,0.92), ${doneTone.soft})`
@@ -2246,7 +2207,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 	                    {widgets.skips && <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={statusValue === -1 ? '#D95C5C' : subTextColor} />}
                     {widgets.streak && !isNegative && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDoneAmount(id)} color={statusValue === 1 ? doneTone.hue : '#D8785E'} />}
                     {widgets.timer && !isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={categoryTone.hue} />}
-	                    {widgets.timer && isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={isNegativeSuccess ? doneTone.hue : '#D8785E'} />}
+	                    {widgets.timer && isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={'#D8785E'} />}
 
 	                    </div>}
 
@@ -2266,7 +2227,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 
 
                     {isAutoComplete && <div style={{ padding: '7px 10px', borderRadius: '999px', backgroundColor: doneTone.soft, border: `1px solid ${doneTone.ring}`, color: doneTone.hue, fontSize: '11px', fontWeight: 900 }}>{langIndex === 0 ? 'АВТО' : 'AUTO'}</div>}
-                    {isNegative && <div style={{ width: 40, height: 30, borderRadius: 10, backgroundColor: isNegativeSuccess ? doneTone.soft : 'rgba(216,120,94,0.07)', border: isNegativeSuccess ? `1px solid ${doneTone.ring}` : '1px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}><FaFire size={14} color={isNegativeSuccess ? doneTone.hue : '#D8785E'} /></div>}
+                    {isNegative && <div style={{ width: 40, height: 30, borderRadius: 10, backgroundColor: 'rgba(216,120,94,0.07)', border: '1px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}><FaFire size={14} color="#D8785E" /></div>}
                     
                 </div>
             </div>
@@ -2387,7 +2348,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     )
 }
 
-function HabitAccentModal({ isOpen, onClose, accentColor, onAccentChange, customPresets, onSavePreset, theme, langIndex }) {
+function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, accentColor, onAccentChange, customPresets, onSavePreset, theme, langIndex }) {
     const isLight = theme === 'light' || theme === 'speciallight';
     const bg = isLight ? 'rgba(255,255,255,0.97)' : 'rgba(20,23,25,0.97)';
     const text = Colors.get('mainText', theme);
@@ -2395,186 +2356,6 @@ function HabitAccentModal({ isOpen, onClose, accentColor, onAccentChange, custom
     const presetColors = mergeAccentPresets(HABIT_ACCENT_PRESETS, customPresets);
     const currentColor = accentColor || HABITS_ACCENT.hue;
     const presetSaved = presetColors.some(color => color.toUpperCase() === currentColor.toUpperCase());
-
-    return (
-        <AnimatePresence>
-            {isOpen && (
-                <>
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={onClose}
-                        style={{
-                            position: 'fixed',
-                            inset: 0,
-                            backgroundColor: 'rgba(0,0,0,0.6)',
-                            backdropFilter: 'blur(6px)',
-                            zIndex: 5000
-                        }}
-                    />
-                    <motion.div
-                        initial={{ y: 40, opacity: 0, scale: 0.98 }}
-                        animate={{ y: 0, opacity: 1, scale: 1 }}
-                        exit={{ y: 40, opacity: 0, scale: 0.98 }}
-                        transition={{ type: 'spring', damping: 23, stiffness: 260 }}
-                        style={{
-                            position: 'fixed',
-                            left: '4%',
-                            right: '4%',
-                            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)',
-                            maxWidth: '560px',
-                            margin: '0 auto',
-                            borderRadius: '26px',
-                            padding: '18px',
-                            background: `radial-gradient(260px 180px at 92% 6%, ${HABITS_ACCENT.soft} 0%, transparent 66%), ${bg}`,
-                            border: isLight ? '1px solid rgba(15,23,42,0.08)' : `1px solid ${HABITS_ACCENT.ring}`,
-                            boxShadow: isLight ? '0 24px 70px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.7) inset' : '0 28px 80px rgba(0,0,0,0.72), 0 1px 0 rgba(255,255,255,0.055) inset',
-                            zIndex: 5001
-                        }}
-                    >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-                            <div style={{
-                                width: '42px',
-                                height: '42px',
-                                borderRadius: '14px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: HABITS_ACCENT.soft,
-                                border: `1px solid ${HABITS_ACCENT.ring}`,
-                                color: HABITS_ACCENT.hue,
-                                flexShrink: 0
-                            }}>
-                                <FaPalette />
-                            </div>
-                            <div style={{ minWidth: 0 }}>
-                                <div style={{ color: text, fontSize: '18px', fontWeight: 900 }}>
-                                    {langIndex === 0 ? 'Акцент привычек' : 'Habit accent'}
-                                </div>
-                                <div style={{ color: sub, fontSize: '12px', fontWeight: 700, marginTop: '3px' }}>
-                                    {langIndex === 0 ? 'Основной цвет раздела' : 'Main section color'}
-                                </div>
-                            </div>
-                            <motion.button
-                                type="button"
-                                whileTap={{ scale: 0.94 }}
-                                onClick={onClose}
-                                aria-label={langIndex === 0 ? 'Закрыть' : 'Close'}
-                                style={{
-                                    marginLeft: 'auto',
-                                    width: 38,
-                                    height: 38,
-                                    borderRadius: 14,
-                                    border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.09)',
-                                    background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.055)',
-                                    color: text,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <span style={{ fontSize: 24, lineHeight: 1, fontWeight: 900, transform: 'translateY(-1px)' }}>×</span>
-                            </motion.button>
-                        </div>
-
-                        <div style={{
-                            borderRadius: '18px',
-                            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
-                            background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.035)',
-                            padding: '12px',
-                            boxSizing: 'border-box'
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
-                                <div style={{ minWidth: 0 }}>
-                                    <div style={{ color: text, fontSize: '14px', fontWeight: 850 }}>
-                                        {langIndex === 0 ? 'Основной цвет' : 'Main color'}
-                                    </div>
-                                    <div style={{ color: sub, fontSize: '11px', fontWeight: 650, marginTop: 2 }}>
-                                        {currentColor}
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <motion.button
-                                        type="button"
-                                        whileTap={!presetSaved ? { scale: 0.94 } : {}}
-                                        onClick={presetSaved ? undefined : onSavePreset}
-                                        disabled={presetSaved}
-                                        style={{
-                                            minHeight: 38,
-                                            borderRadius: 14,
-                                            border: `1px solid ${presetSaved ? (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.09)') : HABITS_ACCENT.ring}`,
-                                            background: presetSaved ? (isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)') : HABITS_ACCENT.soft,
-                                            color: presetSaved ? sub : HABITS_ACCENT.hue,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: 6,
-                                            padding: '0 11px',
-                                            fontSize: 11,
-                                            fontWeight: 900,
-                                            fontFamily: 'inherit',
-                                            cursor: presetSaved ? 'default' : 'pointer'
-                                        }}
-                                    >
-                                        <FaPlus size={10} />
-                                        <span>{presetSaved ? (langIndex === 0 ? 'В пресетах' : 'Saved') : (langIndex === 0 ? 'В пресет' : 'Save')}</span>
-                                    </motion.button>
-                                    <input
-                                        type="color"
-                                        value={currentColor}
-                                        onChange={(event) => onAccentChange(event.target.value)}
-                                        style={{
-                                            width: 42,
-                                            height: 42,
-                                            padding: 0,
-                                            border: `1px solid ${HABITS_ACCENT.ring}`,
-                                            borderRadius: 14,
-                                            background: 'transparent',
-                                            cursor: 'pointer',
-                                            flexShrink: 0
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 1fr))', gap: 7 }}>
-                                {presetColors.map((color) => {
-                                    const active = currentColor.toUpperCase() === color.toUpperCase();
-                                    return (
-                                        <motion.button
-                                            key={color}
-                                            type="button"
-                                            whileTap={{ scale: 0.92 }}
-                                            onClick={() => onAccentChange(color)}
-                                            aria-label={color}
-                                            style={{
-                                                width: '100%',
-                                                aspectRatio: '1 / 1',
-                                                minHeight: 28,
-                                                borderRadius: 11,
-                                                border: active ? `2px solid ${Colors.get('mainText', theme)}` : `1px solid ${isLight ? 'rgba(15,23,42,0.1)' : 'rgba(255,255,255,0.09)'}`,
-                                                background: color,
-                                                boxShadow: active ? `0 0 18px ${color}55` : 'none',
-                                                cursor: 'pointer'
-                                            }}
-                                        />
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </motion.div>
-                </>
-            )}
-        </AnimatePresence>
-    );
-}
-
-function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, langIndex }) {
-    const isLight = theme === 'light' || theme === 'speciallight';
-    const bg = isLight ? 'rgba(255,255,255,0.97)' : 'rgba(20,23,25,0.97)';
-    const text = Colors.get('mainText', theme);
-    const sub = Colors.get('subText', theme);
 
     return (
         <AnimatePresence>
@@ -2635,30 +2416,95 @@ function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, la
 	                                    {langIndex === 0 ? 'Вид раздела' : 'Section view'}
 	                                </div>
 	                                <div style={{ color: sub, fontSize: '12px', fontWeight: 700, marginTop: '3px' }}>
-	                                    {langIndex === 0 ? 'Блоки карточек привычек' : 'Habit card blocks'}
+	                                    {langIndex === 0 ? 'Цвет и блоки карточек привычек' : 'Accent color and habit card blocks'}
 	                                </div>
 	                            </div>
-                            <motion.button
-                                type="button"
-                                whileTap={{ scale: 0.94 }}
-                                onClick={onClose}
-                                aria-label={langIndex === 0 ? 'Закрыть' : 'Close'}
-                                style={{
-                                    marginLeft: 'auto',
-                                    width: 38,
-                                    height: 38,
-                                    borderRadius: 14,
-                                    border: isLight ? '1px solid rgba(15,23,42,0.08)' : '1px solid rgba(255,255,255,0.09)',
-                                    background: isLight ? 'rgba(15,23,42,0.045)' : 'rgba(255,255,255,0.055)',
-                                    color: text,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                <span style={{ fontSize: 24, lineHeight: 1, fontWeight: 900, transform: 'translateY(-1px)' }}>×</span>
-                            </motion.button>
+	                        </div>
+
+	                        <div style={{
+	                            borderRadius: '18px',
+	                            border: `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`,
+	                            background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.035)',
+	                            padding: '12px',
+	                            marginBottom: '12px',
+	                            boxSizing: 'border-box'
+	                        }}>
+	                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+	                                <div style={{ minWidth: 0 }}>
+	                                    <div style={{ color: text, fontSize: '14px', fontWeight: 850 }}>
+	                                        {langIndex === 0 ? 'Основной цвет' : 'Main color'}
+	                                    </div>
+	                                    <div style={{ color: sub, fontSize: '11px', fontWeight: 650, marginTop: 2 }}>
+	                                        {langIndex === 0 ? 'Акцент раздела привычек' : 'Habit section accent'}
+	                                    </div>
+	                                </div>
+	                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+	                                    <motion.button
+	                                        type="button"
+	                                        whileTap={!presetSaved ? { scale: 0.94 } : {}}
+	                                        onClick={presetSaved ? undefined : onSavePreset}
+	                                        disabled={presetSaved}
+	                                        style={{
+	                                            minHeight: 38,
+	                                            borderRadius: 14,
+	                                            border: `1px solid ${presetSaved ? (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.09)') : HABITS_ACCENT.ring}`,
+	                                            background: presetSaved ? (isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)') : HABITS_ACCENT.soft,
+	                                            color: presetSaved ? sub : HABITS_ACCENT.hue,
+	                                            display: 'flex',
+	                                            alignItems: 'center',
+	                                            justifyContent: 'center',
+	                                            gap: 6,
+	                                            padding: '0 11px',
+	                                            fontSize: 11,
+	                                            fontWeight: 900,
+	                                            fontFamily: 'inherit',
+	                                            cursor: presetSaved ? 'default' : 'pointer'
+	                                        }}
+	                                    >
+	                                        <FaPlus size={10} />
+	                                        <span>{presetSaved ? (langIndex === 0 ? 'В пресетах' : 'Saved') : (langIndex === 0 ? 'В пресет' : 'Save')}</span>
+	                                    </motion.button>
+	                                    <input
+	                                        type="color"
+	                                        value={currentColor}
+	                                        onChange={(event) => onAccentChange(event.target.value)}
+	                                        style={{
+	                                            width: 42,
+	                                            height: 42,
+	                                            padding: 0,
+	                                            border: `1px solid ${HABITS_ACCENT.ring}`,
+	                                            borderRadius: 14,
+	                                            background: 'transparent',
+	                                            cursor: 'pointer',
+	                                            flexShrink: 0
+	                                        }}
+	                                    />
+	                                </div>
+	                            </div>
+	                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, minmax(0, 1fr))', gap: 7 }}>
+	                                {presetColors.map((color) => {
+	                                    const active = currentColor.toUpperCase() === color.toUpperCase();
+	                                    return (
+	                                        <motion.button
+	                                            key={color}
+	                                            type="button"
+	                                            whileTap={{ scale: 0.92 }}
+	                                            onClick={() => onAccentChange(color)}
+	                                            aria-label={color}
+	                                            style={{
+	                                                width: '100%',
+	                                                aspectRatio: '1 / 1',
+	                                                minHeight: 28,
+	                                                borderRadius: 11,
+	                                                border: active ? `2px solid ${Colors.get('mainText', theme)}` : `1px solid ${isLight ? 'rgba(15,23,42,0.1)' : 'rgba(255,255,255,0.09)'}`,
+	                                                background: color,
+	                                                boxShadow: active ? `0 0 18px ${color}55` : 'none',
+	                                                cursor: 'pointer'
+	                                            }}
+	                                        />
+	                                    );
+	                                })}
+	                            </div>
 	                        </div>
 
 	                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -2716,13 +2562,12 @@ function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, la
     );
 }
 
-function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme, isNegative = false, doneCount = 0, totalCount = 0, minDoneStreak = 0, langIndex = AppData.prefs[0], summaryLabel, onToggle }) {
+function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme, doneCount = 0, totalCount = 0, langIndex = AppData.prefs[0], summaryLabel, onToggle }) {
     const [isOpen, setIsOpen] = useState(() => !isCategoryCollapsed(categoryKey));
     const isLight = theme === 'light' || theme === 'speciallight';
     const categoryBaseTone = getCategoryTone(categoryKey);
-    const isNegativeCategory = isNegative || getCategory(categoryKey)[0] === NEGATIVE_CATEGORY || categoryBaseTone.icon === 'negative';
-    const isNegativeSuccess = isNegativeCategory && totalCount > 0 && doneCount === totalCount && minDoneStreak > 1;
-    const tone = isNegativeSuccess ? HABITS_SUCCESS : categoryBaseTone;
+    const isNegativeCategory = getCategory(categoryKey)[0] === NEGATIVE_CATEGORY || categoryBaseTone.icon === 'negative';
+    const tone = categoryBaseTone;
     const textColor = Colors.get('mainText', theme);
     const sub = Colors.get('subText', theme);
 
@@ -2766,9 +2611,7 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
                         justifyContent: 'center',
                         flexShrink: 0
                     }}>
-                        <span style={{ color: tone.hue, display: 'flex' }}>
-                            <HabitOutlineIcon iconName={categoryBaseTone.icon} categoryKey={categoryKey} size={16} />
-                        </span>
+                        {getCategoryIcon(categoryKey, theme)}
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
                         <div style={{ 

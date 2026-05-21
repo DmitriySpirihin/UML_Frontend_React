@@ -853,54 +853,79 @@ export const logSectionVisit = async (sectionId) => {
   await saveData();
 };
 
-const normalizeDateKeyToLocalDate = (dateKey) => {
-  const [year, month, day] = String(dateKey || '').split('-').map(Number);
-  if (!year || !month || !day) return null;
-  const date = new Date(year, month - 1, day);
-  date.setHours(0, 0, 0, 0);
-  return date;
-};
-
-export const getSectionStreakInfo = (sectionId) => {
+export const getSectionStreak = (sectionId) => {
+  // Collect all dates from section visits
   const visitDates = new Set(AppData.sectionVisits[sectionId] || []);
-  if (visitDates.size === 0) return { streak: 0, state: 'empty', lastVisitDate: null };
 
+  // Collect dates from activity logs based on section
+  switch (sectionId) {
+    case 'habits': {
+      Object.keys(AppData.habitsByDate).forEach(date => {
+        const habitsOnDate = AppData.habitsByDate[date];
+        if (habitsOnDate) {
+          const hasActivity = Object.values(habitsOnDate).some(status => status > 0);
+          if (hasActivity) visitDates.add(date);
+        }
+      });
+      break;
+    }
+    case 'todo': {
+      AppData.todoList.forEach(task => {
+        if (task.completedAt) visitDates.add(task.completedAt.split('T')[0]);
+      });
+      break;
+    }
+    case 'mental': {
+      Object.keys(AppData.mentalLog).forEach(date => visitDates.add(date));
+      break;
+    }
+    case 'recovery': {
+      ['breathingLog', 'meditationLog', 'hardeningLog'].forEach(logKey => {
+        const log = AppData[logKey];
+        if (log) Object.keys(log).forEach(date => visitDates.add(date));
+      });
+      break;
+    }
+    case 'training': {
+      Object.keys(AppData.trainingLog).forEach(date => visitDates.add(date));
+      break;
+    }
+    case 'sleep': {
+      Object.keys(AppData.sleepingLog).forEach(date => visitDates.add(date));
+      break;
+    }
+    default:
+      break;
+  }
+
+  if (visitDates.size === 0) return 0;
+
+  // Sort dates descending
   const sortedDates = Array.from(visitDates).sort((a, b) => b.localeCompare(a));
 
+  // Calculate streak (consecutive days from today/yesterday)
   let streak = 0;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const latestDate = normalizeDateKeyToLocalDate(sortedDates[0]);
-
-  if (!latestDate) return { streak: 0, state: 'empty', lastVisitDate: null };
-  const latestDiffDays = Math.floor((today - latestDate) / (1000 * 60 * 60 * 24));
-  if (latestDiffDays > 1) return { streak: 0, state: 'expired', lastVisitDate: sortedDates[0] };
 
   for (let i = 0; i < sortedDates.length; i++) {
-    const date = normalizeDateKeyToLocalDate(sortedDates[i]);
-    if (!date) continue;
+    const date = new Date(sortedDates[i]);
+    date.setHours(0, 0, 0, 0);
 
     const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
 
-    if (i === 0 && diffDays > 1) return { streak: 0, state: 'expired', lastVisitDate: sortedDates[0] };
+    // Allow gap of 0 (today) or 1 (yesterday) days
+    if (i === 0 && diffDays > 1) return 0;
     if (i > 0) {
-      const prevDate = normalizeDateKeyToLocalDate(sortedDates[i - 1]);
-      if (!prevDate) break;
+      const prevDate = new Date(sortedDates[i - 1]);
+      prevDate.setHours(0, 0, 0, 0);
       const gap = Math.floor((prevDate - date) / (1000 * 60 * 60 * 24));
       if (gap !== 1) break;
     }
     streak++;
   }
 
-  return {
-    streak,
-    state: latestDiffDays === 1 ? 'atRisk' : 'fresh',
-    lastVisitDate: sortedDates[0]
-  };
-};
-
-export const getSectionStreak = (sectionId) => {
-  return getSectionStreakInfo(sectionId).streak;
+  return streak;
 };
 
 export class UserData {

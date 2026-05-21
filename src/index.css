@@ -1,6 +1,5 @@
 :root {
   --uml-font-scale: 1;
-  --app-viewport-height: 100dvh;
   font-family: "SF Pro Rounded", "Nunito Sans", Nunito, -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -29,24 +28,8 @@ body {
   display: flex;
   place-items: center;
   min-width: 320px;
-  min-height: var(--app-viewport-height);
+  min-height: 100vh;
   font-size: calc(16px * var(--uml-font-scale));
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-  overflow: hidden;
-}
-
-html,
-body,
-#root {
-  width: 100%;
-  height: var(--app-viewport-height);
-}
-
-input,
-textarea,
-select {
-  font-size: 16px;
 }
 
 h1 {

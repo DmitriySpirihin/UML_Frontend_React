@@ -30,10 +30,9 @@ const currencies = [
     <MdOutlineDiamond key="ton" size={18} />
 ];
 
-const PRO_ACCENT = '#8F86FF';
-const PRO_ACCENT_STRONG = '#66D9E8';
-const PRO_ACCENT_SOFT = '#A7B2FF';
-const PRO_ACCENT_TEXT = '#E8F7FF';
+const PRO_ACCENT = '#9FB4C4';
+const PRO_ACCENT_STRONG = '#CAD6DF';
+const PRO_ACCENT_TEXT = '#D8E2EA';
 
 const paymentInMonth = [
     ['', '133', '83'],
@@ -201,13 +200,18 @@ const Premium = () => {
             {!isValidation && !needAgreement && !hasPremium && (
                 <div style={styles(theme).contentWrapper}>
                     <header style={styles(theme).heroHeader}>
+                        <div style={styles(theme).heroAura} />
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={styles(theme).heroImageWrap}>
+                            <img style={styles(theme).heroImage} src={'images/Premium_Bro.png'} alt="logo" />
+                        </motion.div>
                         <div style={styles(theme).heroTextBlock}>
                             <div style={styles(theme).heroKicker}>{langIndex === 0 ? 'Pro-доступ' : 'Pro access'}</div>
                             <h1 style={styles(theme).title}>UltyMyLife <span style={{ color: PRO_ACCENT_TEXT }}>Pro</span></h1>
+                            <p style={styles(theme).subtitle}>
+                                {langIndex === 0 ? 'Аналитика, рекомендации и Pro-режимы без лишнего шума.' : 'Analytics, guidance, and Pro modes without extra noise.'}
+                            </p>
                         </div>
                     </header>
-
-                    <ValueStrip theme={theme} langIndex={langIndex} />
 
                     <div style={styles(theme).sectionLabel}>{langIndex === 0 ? 'Что входит' : 'Included'}</div>
                     <BenefitsGrid theme={theme} langIndex={langIndex} />
@@ -580,23 +584,19 @@ export function PremiumButton({
     );
 }
 
-const SegmentOption = ({ id, current, set, label, icon, isDark }) => {
-    const tone = PRO_ACCENT_STRONG;
-    const active = current === id;
-    return (
+const SegmentOption = ({ id, current, set, label, icon, isDark }) => (
     <div onClick={() => set(id)} style={{
-        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '38px', borderRadius: '14px',
-        background: active ? (isDark ? 'rgba(102,217,232,0.16)' : 'rgba(255,255,255,0.9)') : 'transparent',
-        border: active ? `1px solid rgba(102,217,232,0.42)` : '1px solid transparent',
-        color: active ? (isDark ? '#F8FAFC' : '#111827') : (isDark ? 'rgba(166,173,184,0.74)' : 'rgba(17,24,39,0.55)'),
-        fontSize: '13px', transition: 'all 0.2s ease', fontWeight: active ? '900' : '700',
-        boxShadow: active ? '0 1px 0 rgba(255,255,255,0.06) inset, 0 14px 28px -24px rgba(102,217,232,0.55)' : 'none',
+        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', height: '36px', borderRadius: '13px',
+        background: current === id ? (isDark ? 'rgba(159,180,196,0.16)' : 'rgba(255,255,255,0.88)') : 'transparent',
+        border: current === id ? `1px solid ${isDark ? 'rgba(159,180,196,0.34)' : 'rgba(159,180,196,0.24)'}` : '1px solid transparent',
+        color: current === id ? (isDark ? '#F2F3F5' : '#111827') : (isDark ? 'rgba(166,173,184,0.75)' : 'rgba(17,24,39,0.55)'),
+        fontSize: '13px', transition: 'all 0.2s ease', fontWeight: current === id ? '800' : '650',
+        boxShadow: current === id ? '0 1px 0 rgba(255,255,255,0.05) inset, 0 14px 28px -24px rgba(159,180,196,0.72)' : 'none',
         cursor: 'pointer'
     }}>
         {icon} <span>{label}</span>
     </div>
-    );
-};
+);
 
 const FeatureItem = ({ icon, title, sub, variants, theme }) => {
     const isDark = theme === 'dark';
@@ -611,50 +611,12 @@ const FeatureItem = ({ icon, title, sub, variants, theme }) => {
     );
 }
 
-const ValueStrip = ({ theme, langIndex }) => {
-    const isDark = theme === 'dark';
-    const items = [
-        { value: langIndex === 0 ? '6' : '6', label: langIndex === 0 ? 'Pro-блоков' : 'Pro areas' },
-        { value: langIndex === 0 ? '∞' : '∞', label: langIndex === 0 ? 'истории' : 'history' },
-        { value: langIndex === 0 ? '0' : '0', label: langIndex === 0 ? 'автосписаний' : 'auto-renewals' }
-    ];
-
-    return (
-        <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: 8,
-            margin: '0 0 16px'
-        }}>
-            {items.map(item => (
-                <div
-                    key={item.label}
-                    style={{
-                        minHeight: 62,
-                        borderRadius: 18,
-                        padding: '10px 8px',
-                        boxSizing: 'border-box',
-                        background: isDark
-                            ? 'linear-gradient(145deg, rgba(255,255,255,0.070), rgba(255,255,255,0.032)), radial-gradient(80px 64px at 50% 0%, rgba(102,217,232,0.16), transparent 72%)'
-                            : 'linear-gradient(145deg, rgba(255,255,255,0.95), rgba(255,255,255,0.78)), radial-gradient(80px 64px at 50% 0%, rgba(102,217,232,0.14), transparent 72%)',
-                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.10)' : 'rgba(15,23,42,0.08)'}`,
-                        boxShadow: isDark ? '0 14px 28px -24px rgba(0,0,0,0.8)' : '0 14px 28px -24px rgba(15,23,42,0.24)',
-                        textAlign: 'center'
-                    }}
-                >
-                    <div style={{ color: PRO_ACCENT_STRONG, fontSize: 20, fontWeight: 950, lineHeight: 1 }}>{item.value}</div>
-                    <div style={{ color: isDark ? '#C8D0DA' : '#4B5563', fontSize: 10, fontWeight: 850, lineHeight: 1.15, marginTop: 6 }}>
-                        {item.label}
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-};
-
 const BenefitsGrid = ({ theme, langIndex }) => {
     const [expanded, setExpanded] = useState(true);
     const [selectedIndex, setSelectedIndex] = useState(null);
+    const accent = PRO_ACCENT;
+    const accentSoft = 'rgba(159,180,196,0.12)';
+    const accentRing = 'rgba(159,180,196,0.28)';
     const items = [
         {
             icon: <FaRobot />,
@@ -671,10 +633,9 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                     ['How it helps', 'Shows what moves you forward and what slows you down.'],
                     ['Where to see it', 'In Pro analytics and personal guidance.']
                 ],
-            color: PRO_ACCENT_STRONG,
-            soft: 'rgba(102,217,232,0.13)',
-            ring: 'rgba(102,217,232,0.24)',
-            glow: 'rgba(102,217,232,0.13)'
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
         },
         {
             icon: <FaChartPie />,
@@ -691,10 +652,9 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                     ['How it helps', 'Makes trends clearer than one good or bad day.'],
                     ['Where to see it', 'In charts, comparisons, and progress history.']
                 ],
-            color: '#8F86FF',
-            soft: 'rgba(143,134,255,0.14)',
-            ring: 'rgba(143,134,255,0.24)',
-            glow: 'rgba(143,134,255,0.12)'
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
         },
         {
             icon: <FaStar />,
@@ -711,10 +671,9 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                     ['How it helps', 'Removes guesswork about what to improve first.'],
                     ['Where to see it', 'In analytics takeaways and Pro tips.']
                 ],
-            color: '#7DD3FC',
-            soft: 'rgba(125,211,252,0.13)',
-            ring: 'rgba(125,211,252,0.22)',
-            glow: 'rgba(125,211,252,0.11)'
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
         },
         {
             icon: <FaBrain />,
@@ -731,10 +690,9 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                     ['How it helps', 'Lets you raise difficulty gradually and cleanly.'],
                     ['Where to see it', 'In mind training, practice, and Pro sections.']
                 ],
-            color: '#A78BFA',
-            soft: 'rgba(167,139,250,0.13)',
-            ring: 'rgba(167,139,250,0.22)',
-            glow: 'rgba(167,139,250,0.11)'
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
         },
         {
             icon: <FaInfinity />,
@@ -751,10 +709,9 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                     ['How it helps', 'Fewer limits, more normal use.'],
                     ['Where to see it', 'Everywhere Pro access is marked.']
                 ],
-            color: '#5EEAD4',
-            soft: 'rgba(94,234,212,0.12)',
-            ring: 'rgba(94,234,212,0.20)',
-            glow: 'rgba(94,234,212,0.10)'
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
         },
         {
             icon: <FaCrown />,
@@ -771,10 +728,9 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                     ['How it helps', 'Lets you try what is evolving in the app sooner.'],
                     ['Where to see it', 'In new Pro features and section upgrades.']
                 ],
-            color: '#93C5FD',
-            soft: 'rgba(147,197,253,0.12)',
-            ring: 'rgba(147,197,253,0.20)',
-            glow: 'rgba(147,197,253,0.10)'
+            color: accent,
+            soft: accentSoft,
+            ring: accentRing
         }
     ];
     const isDark = theme === 'dark';
@@ -788,12 +744,12 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                 position: 'relative',
                 overflow: 'hidden',
                 borderRadius: 21,
-                border: `1px solid ${isDark ? 'rgba(102,217,232,0.16)' : 'rgba(15,23,42,0.08)'}`,
+                border: `1px solid ${isDark ? 'rgba(159,180,196,0.18)' : 'rgba(15,23,42,0.08)'}`,
                 background: isDark
-                    ? 'radial-gradient(220px 130px at 15% 0%, rgba(102,217,232,0.10), transparent 70%), radial-gradient(220px 120px at 100% 20%, rgba(143,134,255,0.10), transparent 68%), linear-gradient(145deg, rgba(24,27,30,0.94), rgba(15,18,22,0.92))'
-                    : 'radial-gradient(220px 130px at 15% 0%, rgba(102,217,232,0.10), transparent 70%), radial-gradient(220px 120px at 100% 20%, rgba(143,134,255,0.08), transparent 68%), linear-gradient(145deg, rgba(255,255,255,0.98), rgba(255,255,255,0.88))',
+                    ? 'linear-gradient(145deg, rgba(24,27,30,0.86), rgba(20,23,25,0.9) 62%, rgba(159,180,196,0.06))'
+                    : 'linear-gradient(145deg, rgba(255,255,255,0.96), rgba(255,255,255,0.86) 62%, rgba(159,180,196,0.08))',
                 padding: 12,
-                boxShadow: isDark ? '0 1px 0 rgba(255,255,255,0.06) inset, 0 22px 44px -30px rgba(0,0,0,0.86)' : '0 18px 34px -26px rgba(15,23,42,0.18)'
+                boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 18px 36px -28px rgba(0,0,0,0.72)'
             }}>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: expanded ? 12 : 0 }}>
                     <div>
@@ -811,8 +767,8 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                             minWidth: 92,
                             minHeight: 36,
                             borderRadius: 13,
-                            border: `1px solid ${isDark ? 'rgba(102,217,232,0.30)' : 'rgba(102,217,232,0.24)'}`,
-                            background: isDark ? 'rgba(102,217,232,0.10)' : 'rgba(102,217,232,0.10)',
+                            border: `1px solid ${isDark ? 'rgba(159,180,196,0.28)' : 'rgba(159,180,196,0.2)'}`,
+                            background: isDark ? 'rgba(159,180,196,0.1)' : 'rgba(159,180,196,0.08)',
                             color: isDark ? PRO_ACCENT_TEXT : '#506B80',
                             fontFamily: 'inherit',
                             fontSize: 12,
@@ -849,8 +805,8 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                                 borderRadius: 18,
                                 border: `1px solid ${item.ring}`,
                                 background: isDark
-                                    ? `radial-gradient(110px 80px at 100% 0%, ${item.glow}, transparent 70%), linear-gradient(145deg, rgba(255,255,255,0.060), rgba(255,255,255,0.028))`
-                                    : `radial-gradient(110px 80px at 100% 0%, ${item.glow}, transparent 70%), linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,255,255,0.72))`,
+                                    ? 'linear-gradient(145deg, rgba(255,255,255,0.052), rgba(255,255,255,0.026))'
+                                    : 'linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,255,255,0.68))',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'flex-start',
@@ -861,7 +817,7 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                                 cursor: 'pointer',
                                 fontFamily: 'inherit',
                                 textAlign: 'left',
-                                boxShadow: isDark ? '0 1px 0 rgba(255,255,255,0.055) inset, 0 12px 24px -24px rgba(102,217,232,0.42)' : '0 10px 22px -20px rgba(15,23,42,0.20)'
+                                boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset'
                             }}
                         >
                             <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -1082,23 +1038,21 @@ const ReferralCard = ({ theme, langIndex, onClick }) => {
 
 const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, theme }) => {
     const isDark = theme === 'dark';
-    const accent = badge ? PRO_ACCENT_SOFT : PRO_ACCENT_STRONG;
+    const accent = isDark ? PRO_ACCENT_STRONG : '#506B80';
     return (
         <motion.button
             type="button"
             whileTap={{ scale: 0.985 }}
             onClick={onClick}
             style={{
-                position: 'relative',
-                overflow: 'hidden',
-                minHeight: badge ? 84 : 68,
+                minHeight: badge ? 76 : 64,
                 width: '100%',
                 borderRadius: badge ? 22 : 18,
-                border: active ? '1px solid rgba(102,217,232,0.58)' : `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}`,
+                border: active ? `1px solid ${isDark ? 'rgba(159,180,196,0.5)' : 'rgba(80,107,128,0.24)'}` : `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}`,
                 background: active
                     ? (isDark
-                        ? `radial-gradient(210px 110px at 92% 0%, rgba(102,217,232,0.18), transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.105), rgba(255,255,255,0.045) 60%, rgba(143,134,255,0.08))`
-                        : `radial-gradient(210px 110px at 92% 0%, ${accent}22, transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.98), rgba(255,255,255,0.82))`)
+                        ? 'linear-gradient(145deg, rgba(159,180,196,0.2), rgba(255,255,255,0.055) 58%, rgba(159,180,196,0.12))'
+                        : 'linear-gradient(145deg, rgba(255,255,255,0.95), rgba(159,180,196,0.12))')
                     : (isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.88)'),
                 color: isDark ? '#F2F3F5' : '#111827',
                 display: 'flex',
@@ -1107,7 +1061,7 @@ const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, t
                 padding: '12px 14px',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
-                boxShadow: active ? '0 1px 0 rgba(255,255,255,0.08) inset, 0 20px 42px -26px rgba(102,217,232,0.62)' : '0 1px 0 rgba(255,255,255,0.04) inset',
+                boxShadow: active ? '0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 38px -26px rgba(159,180,196,0.62)' : '0 1px 0 rgba(255,255,255,0.04) inset',
                 textAlign: 'left',
                 boxSizing: 'border-box',
                 outline: 'none',
@@ -1117,11 +1071,11 @@ const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, t
             }}
         >
             <div style={{
-                width: 27,
-                height: 27,
+                width: 24,
+                height: 24,
                 borderRadius: 999,
-                border: active ? `1px solid ${isDark ? 'rgba(255,255,255,0.38)' : 'rgba(255,255,255,0.8)'}` : `1px solid ${isDark ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)'}`,
-                background: active ? 'linear-gradient(135deg, #2F7F94, #B7F3FF)' : 'transparent',
+                border: active ? 'none' : `1px solid ${isDark ? 'rgba(255,255,255,0.16)' : 'rgba(15,23,42,0.14)'}`,
+                background: active ? accent : 'transparent',
                 color: isDark ? '#0E1013' : '#F2F3F5',
                 display: 'flex',
                 alignItems: 'center',
@@ -1132,15 +1086,15 @@ const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, t
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: badge ? 16 : 15, fontWeight: 950, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
                     {badge && (
                         <span style={{
                             fontSize: 9,
                             fontWeight: 900,
                             color: isDark ? '#0E1013' : '#F2F3F5',
-                            background: 'linear-gradient(135deg, #2F7F94, #B7F3FF)',
+                            background: accent,
                             borderRadius: 999,
-                            padding: '4px 8px',
+                            padding: '3px 7px',
                             textTransform: 'uppercase',
                             flexShrink: 0
                         }}>
@@ -1148,9 +1102,9 @@ const PlanOption = ({ active, onClick, price, label, sub, currencyIcon, badge, t
                         </span>
                     )}
                 </div>
-                {sub && <div style={{ fontSize: 12, color: isDark ? '#D9E2EA' : '#596273', marginTop: 4, fontWeight: 800 }}>{sub}</div>}
+                {sub && <div style={{ fontSize: 11, color: isDark ? '#A6ADB8' : '#596273', marginTop: 3, fontWeight: 650 }}>{sub}</div>}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: active ? accent : (isDark ? '#F2F3F5' : '#111827'), fontSize: badge ? 24 : 22, fontWeight: 950, flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: active ? accent : (isDark ? '#F2F3F5' : '#111827'), fontSize: 20, fontWeight: 900, flexShrink: 0 }}>
                 {price}
                 <span style={{ fontSize: 14 }}>{currencyIcon}</span>
             </div>
@@ -1210,43 +1164,74 @@ const styles = (theme) => {
     return {
         container: { 
             position: 'fixed', inset: 0, 
-            backgroundColor: isDark ? '#11171C' : '#F4F5F7',
+            backgroundColor: isDark ? '#0E1013' : '#F4F5F7',
             zIndex: 5000, display: 'flex', flexDirection: 'column', 
             backgroundImage: isDark 
-                ? 'radial-gradient(900px 460px at 82% -8%, rgba(85,221,235,0.13), transparent 58%), radial-gradient(760px 420px at -12% 42%, rgba(124,108,255,0.11), transparent 60%), linear-gradient(180deg, #18232B 0%, #11171C 46%, #0F1418 100%)'
-                : 'radial-gradient(900px 450px at 80% -10%, rgba(85,221,235,0.08), transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(124,108,255,0.08), transparent 58%), #F4F5F7',
+                ? 'radial-gradient(900px 420px at 84% -8%, rgba(159,180,196,0.12), transparent 58%), radial-gradient(700px 360px at -10% 104%, rgba(102,217,232,0.04), transparent 58%), #0E1013'
+                : 'radial-gradient(900px 420px at 84% -8%, rgba(159,180,196,0.13), transparent 58%), radial-gradient(700px 360px at -10% 104%, rgba(102,217,232,0.08), transparent 58%), #F4F5F7',
             fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
         },
-        contentWrapper: { padding: 'calc(env(safe-area-inset-top, 0px) + 36px) 20px 30px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', boxSizing: 'border-box' },
+        contentWrapper: { padding: 'calc(env(safe-area-inset-top, 0px) + 66px) 20px 28px', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', boxSizing: 'border-box' },
         heroHeader: {
-            minHeight: '62px',
-            margin: '0 0 10px',
-            padding: '4px 4px 2px',
-            borderRadius: 0,
-            background: 'transparent',
-            border: 'none',
-            boxShadow: 'none',
+            minHeight: '156px',
+            margin: '0 0 14px',
+            padding: '18px 15px 17px',
+            borderRadius: '24px',
+            background: isDark
+                ? 'linear-gradient(145deg, rgba(18,21,24,0.98), rgba(25,28,32,0.92) 58%, rgba(159,180,196,0.12))'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.98), rgba(255,255,255,0.88) 58%, rgba(159,180,196,0.12))',
+            border: `1px solid ${isDark ? 'rgba(159,180,196,0.22)' : 'rgba(15,23,42,0.08)'}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 24px 48px -30px rgba(0,0,0,0.78)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            position: 'relative',
+            overflow: 'hidden'
+        },
+        heroAura: {
+            position: 'absolute',
+            right: '-70px',
+            top: '-86px',
+            width: '190px',
+            height: '190px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(159,180,196,0.24), transparent 64%)',
+            pointerEvents: 'none'
+        },
+        heroImageWrap: {
+            width: '78px',
+            height: '106px',
+            borderRadius: '18px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            flexShrink: 0,
             position: 'relative',
-            overflow: 'visible'
+            zIndex: 1
         },
-        heroTextBlock: { minWidth: 0, width: '100%', maxWidth: 310, position: 'relative', zIndex: 1, textAlign: 'center' },
-        heroKicker: { fontSize: 9, color: isDark ? PRO_ACCENT_SOFT : '#2F7F94', fontWeight: 950, letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 5, textShadow: isDark ? '0 0 14px rgba(143,134,255,0.42)' : 'none' },
-        title: {
-            fontSize: '29px',
-            fontWeight: '950',
-            color: isDark ? '#FFFFFF' : '#111827',
-            margin: 0,
-            lineHeight: 1.02,
-            whiteSpace: 'nowrap',
-            textShadow: isDark ? '0 0 22px rgba(102,217,232,0.30), 0 8px 24px rgba(0,0,0,0.45)' : 'none'
+        heroImage: { width: '94px', maxHeight: '116px', objectFit: 'contain', filter: 'drop-shadow(0 16px 22px rgba(0,0,0,0.34))' },
+        heroTextBlock: { minWidth: 0, flex: 1, position: 'relative', zIndex: 1 },
+        heroKicker: { fontSize: 9, color: isDark ? PRO_ACCENT_TEXT : '#506B80', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 5 },
+        title: { fontSize: '22px', fontWeight: '900', color: isDark ? '#F2F3F5' : '#111827', margin: 0, lineHeight: 1.03, whiteSpace: 'nowrap' },
+        subtitle: { fontSize: '12px', color: isDark ? '#A6ADB8' : '#596273', margin: '7px 0 0', lineHeight: 1.3, fontWeight: 700 },
+        heroChips: { display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, flexWrap: 'wrap' },
+        heroChip: {
+            minHeight: 22,
+            borderRadius: 999,
+            padding: '0 7px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            border: `1px solid ${isDark ? 'rgba(159,180,196,0.28)' : 'rgba(159,180,196,0.2)'}`,
+            background: isDark ? 'rgba(159,180,196,0.1)' : 'rgba(159,180,196,0.08)',
+            color: isDark ? PRO_ACCENT_TEXT : '#506B80',
+            fontSize: 9,
+            fontWeight: 850,
+            whiteSpace: 'nowrap'
         },
         closeBtn: { position: 'absolute', top: 'calc(env(safe-area-inset-top, 0px) + 18px)', right: '20px', zIndex: 10 },
         iconCircle: { width: '36px', height: '36px', borderRadius: '50%', background: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)', color: isDark ? '#F2F3F5' : '#111827' },
-        segmentedControl: { background: isDark ? 'rgba(255,255,255,0.060)' : 'rgba(0,0,0,0.045)', borderRadius: '18px', padding: '5px', display: 'flex', width: '100%', margin: '0 0 16px', boxSizing: 'border-box', border: `1px solid ${isDark ? 'rgba(255,255,255,0.075)' : 'rgba(15,23,42,0.07)'}` },
-        sectionLabel: { fontSize: 11, color: isDark ? '#9AA8B7' : '#657184', fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase', margin: '4px 0 9px' },
+        segmentedControl: { background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.045)', borderRadius: '16px', padding: '4px', display: 'flex', width: '100%', margin: '0 0 16px', boxSizing: 'border-box' },
+        sectionLabel: { fontSize: 11, color: isDark ? '#6B7280' : '#8A94A6', fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '2px 0 8px' },
         featuresGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', width: '100%', marginBottom: '18px' },
         footerHint: { textAlign: 'center', fontSize: '11px', color: isDark ? 'rgba(166,173,184,0.55)' : 'rgba(89,98,115,0.72)', marginTop: '13px', lineHeight: 1.4 },
         bottomSheet: { position: 'absolute', bottom: 0, left: 0, width: '100%', background: isDark ? '#1C1C1E' : '#FFFFFF', borderTopLeftRadius: '28px', borderTopRightRadius: '28px', padding: '20px 24px 40px 24px', boxSizing: 'border-box', zIndex: 6000, boxShadow: isDark ? '0 -20px 40px rgba(0,0,0,0.6)' : '0 -10px 30px rgba(0,0,0,0.1)' },
@@ -1257,7 +1242,7 @@ const styles = (theme) => {
         checkoutTotalBox: { background: isDark ? 'rgba(255,255,255,0.03)' : '#F9FAFB', borderRadius: '16px', padding: '16px', marginBottom: '20px' },
         checkoutRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', fontSize: '14px' },
         totalPriceDisplay: { color: isDark ? PRO_ACCENT_TEXT : '#506B80', fontWeight: '800', fontSize: '22px', display:'flex', alignItems:'center', gap:'5px' },
-        mainButton: { width: '100%', padding: '17px', borderRadius: '20px', background: isDark ? `linear-gradient(135deg, #2F7F94 0%, #B7F3FF 48%, #66D9E8 100%)` : `linear-gradient(135deg, #111827 0%, #393342 52%, #2F7F94 100%)`, color: isDark ? '#10131B' : '#F8FAFC', fontSize: '18px', fontWeight: '950', border: 'none', boxShadow: isDark ? '0 20px 42px rgba(102,217,232,0.24)' : '0 18px 34px rgba(80,107,128,0.24)' },
+        mainButton: { width: '100%', padding: '16px', borderRadius: '18px', background: isDark ? 'linear-gradient(135deg, #CAD6DF 0%, #D8E2EA 100%)' : 'linear-gradient(135deg, #111827 0%, #506B80 100%)', color: isDark ? '#0E1013' : '#F2F3F5', fontSize: '17px', fontWeight: '850', border: 'none', boxShadow: isDark ? '0 16px 34px rgba(159,180,196,0.24)' : '0 16px 34px rgba(80,107,128,0.22)' },
         cancelBtn: { background: 'transparent', border: 'none', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', width: '100%', padding: '15px', fontSize: '15px' },
         fullPolicyOverlay: { position: 'fixed', inset: 0, background: isDark ? '#000' : '#FFF', zIndex: 7000, padding: '20px', display: 'flex', flexDirection: 'column' },
         policyHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: isDark ? 'white' : 'black', marginBottom: '20px',marginTop:'75px', paddingBottom: '15px', borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}` },

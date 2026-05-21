@@ -318,16 +318,44 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
         if (!currentProblem || !currentProblem.items) return null;
 
         return (
-            <div style={styles(theme).symbolGrid}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', width: '100%', maxWidth: '300px' }}>
                 {currentProblem.items.map((symbol, i) => {
-                    const tileState = feedback[i] || (userSelection.has(i) ? 'selected' : 'idle');
+                    let bgColor = Colors.get('bottomPanel', theme);
+                    let borderColor = Colors.get('border', theme);
+                    let textColor = Colors.get('mainText', theme);
+
+                    if (feedback[i] === 'correct') {
+                        bgColor = Colors.get('maxValColor', theme) + '30';
+                        borderColor = Colors.get('maxValColor', theme);
+                        textColor = Colors.get('maxValColor', theme);
+                    } else if (feedback[i] === 'wrong') {
+                        bgColor = Colors.get('minValColor', theme) + '30';
+                        borderColor = Colors.get('minValColor', theme);
+                        textColor = Colors.get('minValColor', theme);
+                    } else if (userSelection.has(i)) {
+                        borderColor = Colors.get('mainText', theme);
+                        bgColor = Colors.get('mainText', theme) + '20';
+                    }
 
                     return (
                         <motion.div
                             key={i}
                             whileTap={{ scale: 0.9 }}
                             onClick={() => handleSymbolClick(i)}
-                            style={styles(theme).symbolTile(tileState, isStart && !delayTimer && !isPaused)}
+                            style={{
+                                aspectRatio: '1/1',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '24px',
+                                fontWeight: 'bold',
+                                color: textColor,
+                                backgroundColor: bgColor,
+                                border: `2px solid ${borderColor}`,
+                                borderRadius: '12px',
+                                cursor: isStart && !delayTimer && !isPaused ? 'pointer' : 'default',
+                                userSelect: 'none',
+                            }}
                         >
                             {symbol}
                         </motion.div>
@@ -472,7 +500,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
                                 {/* Round Timer */}
                                 <div style={styles(theme).timerWrapper}>
                                      <svg viewBox="0 0 28 28" style={{ width: '100%', height: '100%' }}>
-                                        <circle cx="14" cy="14" r="12" fill="rgba(255,255,255,0.04)" stroke={theme === 'dark' ? 'rgba(102,217,232,0.26)' : 'rgba(37,87,96,0.16)'} strokeWidth="1"/>
+                                        <circle cx="14" cy="14" r="12" fill={Colors.get('background', theme)} stroke={Colors.get('border', theme)} strokeWidth="1"/>
                                         <text x="14" y="18" textAnchor="middle" fill={roundTimeLeft <= 3 ? Colors.get('minValColor', theme) : Colors.get('mainText', theme)} fontSize="10" fontWeight="bold">
                                             {roundTimeLeft}
                                         </text>
@@ -498,7 +526,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
                                     ) : (
                                         /* Problem Grid */
                                         <div style={{ width: '100%', display:'flex', flexDirection:'column', alignItems:'center' }}>
-                                            <div style={styles(theme).ruleText}>
+                                            <div style={{ fontSize: '14px', marginBottom: '16px', color: Colors.get('subText', theme), textAlign: 'center', opacity: 0.8 }}>
                                                 {focusTrainingLevels[difficulty].rules?.[langIndex] || (langIndex === 0 ? 'Нажми на все ★' : 'Click all ★')}
                                             </div>
                                             {renderProblemItems()}
@@ -738,15 +766,10 @@ const styles = (theme, fSize = 14) => ({
         padding: '10px',
         marginTop: '0',
         borderRadius: '24px',
-        background: theme === 'dark'
-            ? 'radial-gradient(circle at 18% 0%, rgba(102,217,232,0.14), transparent 38%), radial-gradient(circle at 100% 18%, rgba(138,124,214,0.16), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.105), rgba(255,255,255,0.035))'
-            : 'radial-gradient(circle at 18% 0%, rgba(102,217,232,0.18), transparent 38%), radial-gradient(circle at 100% 18%, rgba(138,124,214,0.14), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.84), rgba(255,255,255,0.56))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(170,229,238,0.16)' : 'rgba(37,87,96,0.12)'}`,
-        boxShadow: theme === 'dark'
-            ? 'inset 0 1px 0 rgba(255,255,255,0.13), inset 0 -1px 0 rgba(255,255,255,0.04), 0 22px 52px rgba(0,0,0,0.34), 0 0 34px rgba(102,217,232,0.08)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.78), 0 16px 36px rgba(24,36,44,0.12)',
-        backdropFilter: 'blur(26px) saturate(170%)',
-        WebkitBackdropFilter: 'blur(26px) saturate(170%)',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.68)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(20,24,32,0.08)'}`,
+        boxShadow: theme === 'dark' ? '0 18px 38px rgba(0,0,0,0.22)' : '0 14px 28px rgba(24,36,44,0.1)',
+        backdropFilter: 'blur(18px)',
     },
     gameStat: {
         display: 'flex',
@@ -773,18 +796,12 @@ const styles = (theme, fSize = 14) => ({
         alignItems: 'center',
         justifyContent: 'center',
         gap: '10px',
-        background: theme === 'dark'
-            ? 'linear-gradient(145deg, rgba(255,255,255,0.115), rgba(255,255,255,0.045))'
-            : 'linear-gradient(145deg, rgba(255,255,255,0.9), rgba(255,255,255,0.66))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(20,24,32,0.07)'}`,
+        background: theme === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.78)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(20,24,32,0.07)'}`,
         color: Colors.get('mainText', theme),
         fontSize: '20px',
         fontWeight: 900,
-        boxShadow: theme === 'dark'
-            ? 'inset 0 1px 0 rgba(255,255,255,0.14), 0 12px 28px rgba(0,0,0,0.18)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.8), 0 10px 20px rgba(24,36,44,0.08)',
-        backdropFilter: 'blur(18px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+        boxShadow: theme === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,0.06)' : '0 10px 20px rgba(24,36,44,0.08)',
     },
     scoreStat: {
         justifySelf: 'end',
@@ -796,16 +813,11 @@ const styles = (theme, fSize = 14) => ({
         alignItems: 'center',
         justifyContent: 'center',
         gap: '9px',
-        background: theme === 'dark'
-            ? 'radial-gradient(circle at 24% 18%, rgba(240,193,142,0.22), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.095), rgba(255,255,255,0.035))'
-            : 'radial-gradient(circle at 24% 18%, rgba(240,193,142,0.22), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.86), rgba(255,255,255,0.58))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(240,193,142,0.16)' : 'rgba(142,89,43,0.11)'}`,
-        color: theme === 'dark' ? '#DCE7F4' : '#3E5666',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.72)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.075)' : 'rgba(20,24,32,0.065)'}`,
+        color: theme === 'dark' ? '#C9D6E8' : '#3E5666',
         fontSize: '18px',
         fontWeight: 900,
-        boxShadow: theme === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 28px rgba(0,0,0,0.16)' : '0 10px 20px rgba(24,36,44,0.08)',
-        backdropFilter: 'blur(18px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
     },
     scoreGlyph: {
         width: '28px',
@@ -870,16 +882,9 @@ const styles = (theme, fSize = 14) => ({
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        background: theme === 'dark'
-            ? 'radial-gradient(circle at 24% 12%, rgba(240,193,142,0.26), transparent 50%), linear-gradient(145deg, rgba(255,255,255,0.08), rgba(212,154,92,0.07))'
-            : 'radial-gradient(circle at 24% 12%, rgba(240,193,142,0.28), transparent 50%), linear-gradient(145deg, rgba(255,255,255,0.84), rgba(212,154,92,0.12))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(240,193,142,0.24)' : 'rgba(142,89,43,0.13)'}`,
+        background: theme === 'dark' ? 'rgba(212,154,92,0.09)' : 'rgba(212,154,92,0.15)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(212,154,92,0.18)' : 'rgba(142,89,43,0.1)'}`,
         color: theme === 'dark' ? '#F0C18E' : '#8C6038',
-        boxShadow: theme === 'dark'
-            ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 24px rgba(0,0,0,0.18), 0 0 22px rgba(212,154,92,0.08)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.78), 0 10px 20px rgba(24,36,44,0.08)',
-        backdropFilter: 'blur(18px) saturate(165%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(165%)',
     },
     miniLabel: {
         fontSize: '10px',
@@ -899,15 +904,8 @@ const styles = (theme, fSize = 14) => ({
         marginBottom: '12px',
         padding: '5px',
         borderRadius: '20px',
-        background: theme === 'dark'
-            ? 'radial-gradient(circle at 50% 20%, rgba(102,217,232,0.16), transparent 60%), linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025))'
-            : 'radial-gradient(circle at 50% 20%, rgba(102,217,232,0.2), transparent 60%), linear-gradient(145deg, rgba(255,255,255,0.86), rgba(255,255,255,0.58))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(102,217,232,0.18)' : 'rgba(37,87,96,0.12)'}`,
-        boxShadow: theme === 'dark'
-            ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 28px rgba(0,0,0,0.22), 0 0 24px rgba(102,217,232,0.08)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.8), 0 10px 20px rgba(24,36,44,0.08)',
-        backdropFilter: 'blur(18px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.72)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(20,24,32,0.06)'}`,
         boxSizing: 'border-box',
     },
     problemCard: {
@@ -915,94 +913,18 @@ const styles = (theme, fSize = 14) => ({
         maxWidth: '680px',
         minHeight: '320px',
         borderRadius: '26px',
-        position: 'relative',
-        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         background: theme === 'dark'
-            ? 'radial-gradient(circle at 18% 10%, rgba(102,217,232,0.12), transparent 34%), radial-gradient(circle at 90% 0%, rgba(240,193,142,0.12), transparent 32%), linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.022))'
-            : 'radial-gradient(circle at 18% 10%, rgba(102,217,232,0.16), transparent 34%), radial-gradient(circle at 90% 0%, rgba(240,193,142,0.16), transparent 32%), linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,255,255,0.58))',
-        boxShadow: theme === 'dark'
-            ? 'inset 0 1px 0 rgba(255,255,255,0.13), inset 0 -1px 0 rgba(255,255,255,0.04), 0 28px 70px rgba(0,0,0,0.34), 0 0 44px rgba(102,217,232,0.06)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.8), 0 18px 40px rgba(24,36,44,0.12)',
+            ? 'linear-gradient(145deg, rgba(37,29,24,0.96), rgba(16,19,23,0.98))'
+            : 'linear-gradient(145deg, rgba(255,255,255,0.92), rgba(248,241,233,0.94))',
+        boxShadow: theme === 'dark' ? '0 24px 52px rgba(0,0,0,0.32)' : '0 18px 40px rgba(24,36,44,0.12)',
         marginBottom: '18px',
-        border: `1px solid ${theme === 'dark' ? 'rgba(170,229,238,0.14)' : 'rgba(37,87,96,0.12)'}`,
-        outline: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.45)'}`,
-        backdropFilter: 'blur(26px) saturate(170%)',
-        WebkitBackdropFilter: 'blur(26px) saturate(170%)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(212,154,92,0.14)' : 'rgba(142,89,43,0.12)'}`,
         padding: '20px',
         boxSizing: 'border-box',
-    },
-    ruleText: {
-        minHeight: '30px',
-        marginBottom: '16px',
-        padding: '0 14px',
-        borderRadius: '999px',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: theme === 'dark' ? 'rgba(224,235,248,0.76)' : 'rgba(47,65,78,0.72)',
-        textAlign: 'center',
-        fontSize: '14px',
-        lineHeight: 1.25,
-        fontWeight: 850,
-        background: theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.54)',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(20,24,32,0.045)'}`,
-    },
-    symbolGrid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
-        gap: '10px',
-        width: '100%',
-        maxWidth: '300px',
-    },
-    symbolTile: (state, enabled) => {
-        const selected = state === 'selected';
-        const correct = state === 'correct';
-        const wrong = state === 'wrong';
-        const accentColor = correct ? '#46E29A' : wrong ? '#FF8E8E' : selected ? '#66D9E8' : (theme === 'dark' ? '#EAF4FF' : '#2E4658');
-        return {
-            aspectRatio: '1/1',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '25px',
-            fontWeight: 950,
-            lineHeight: 1,
-            color: accentColor,
-            background: correct
-                ? 'radial-gradient(circle at 50% 28%, rgba(70,226,154,0.22), transparent 58%), linear-gradient(145deg, rgba(70,226,154,0.13), rgba(255,255,255,0.035))'
-                : wrong
-                    ? 'radial-gradient(circle at 50% 28%, rgba(255,142,142,0.22), transparent 58%), linear-gradient(145deg, rgba(255,90,98,0.13), rgba(255,255,255,0.035))'
-                    : selected
-                        ? 'radial-gradient(circle at 50% 24%, rgba(102,217,232,0.24), transparent 58%), linear-gradient(145deg, rgba(102,217,232,0.14), rgba(255,255,255,0.04))'
-                        : (theme === 'dark'
-                            ? 'radial-gradient(circle at 24% 16%, rgba(102,217,232,0.08), transparent 50%), linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))'
-                            : 'radial-gradient(circle at 24% 16%, rgba(102,217,232,0.12), transparent 50%), linear-gradient(145deg, rgba(255,255,255,0.86), rgba(255,255,255,0.56))'),
-            border: `1px solid ${correct
-                ? 'rgba(70,226,154,0.4)'
-                : wrong
-                    ? 'rgba(255,142,142,0.4)'
-                    : selected
-                        ? 'rgba(102,217,232,0.42)'
-                        : (theme === 'dark' ? 'rgba(170,229,238,0.14)' : 'rgba(37,87,96,0.12)')}`,
-            borderRadius: '14px',
-            cursor: enabled ? 'pointer' : 'default',
-            userSelect: 'none',
-            boxShadow: correct
-                ? 'inset 0 1px 0 rgba(255,255,255,0.16), 0 0 28px rgba(70,226,154,0.18), 0 12px 24px rgba(0,0,0,0.18)'
-                : wrong
-                    ? 'inset 0 1px 0 rgba(255,255,255,0.16), 0 0 28px rgba(255,90,98,0.16), 0 12px 24px rgba(0,0,0,0.18)'
-                    : selected
-                        ? 'inset 0 1px 0 rgba(255,255,255,0.16), 0 0 26px rgba(102,217,232,0.18), 0 12px 24px rgba(0,0,0,0.18)'
-                        : (theme === 'dark'
-                            ? 'inset 0 1px 0 rgba(255,255,255,0.11), 0 12px 22px rgba(0,0,0,0.18)'
-                            : 'inset 0 1px 0 rgba(255,255,255,0.78), 0 10px 18px rgba(24,36,44,0.08)'),
-            backdropFilter: 'blur(16px) saturate(160%)',
-            WebkitBackdropFilter: 'blur(16px) saturate(160%)',
-        };
     },
     feedbackProblemCard: (positive) => ({
         background: positive
@@ -1045,23 +967,16 @@ const styles = (theme, fSize = 14) => ({
         marginTop: '20px',
         padding: '28px 24px',
         borderRadius: '28px',
-        position: 'relative',
-        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: '16px',
         boxSizing: 'border-box',
         background: theme === 'dark'
-            ? 'radial-gradient(circle at 50% 0%, rgba(255,142,142,0.18), transparent 36%), radial-gradient(circle at 86% 8%, rgba(138,124,214,0.12), transparent 34%), linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,90,98,0.035))'
-            : 'radial-gradient(circle at 50% 0%, rgba(255,142,142,0.18), transparent 36%), radial-gradient(circle at 86% 8%, rgba(138,124,214,0.12), transparent 34%), linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,242,242,0.62))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,142,142,0.26)' : 'rgba(190,65,70,0.18)'}`,
-        outline: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.42)'}`,
-        boxShadow: theme === 'dark'
-            ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 26px 66px rgba(0,0,0,0.34), 0 0 40px rgba(255,90,98,0.08)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.78), 0 18px 40px rgba(24,36,44,0.12)',
-        backdropFilter: 'blur(26px) saturate(170%)',
-        WebkitBackdropFilter: 'blur(26px) saturate(170%)',
+            ? 'linear-gradient(145deg, rgba(48,24,28,0.86), rgba(18,20,24,0.98))'
+            : 'linear-gradient(145deg, rgba(255,246,246,0.94), rgba(255,255,255,0.9))',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,90,98,0.26)' : 'rgba(190,65,70,0.18)'}`,
+        boxShadow: theme === 'dark' ? '0 24px 58px rgba(0,0,0,0.32)' : '0 18px 40px rgba(24,36,44,0.12)',
     },
     feedbackSymbol: {
         width: '54px',
@@ -1070,16 +985,11 @@ const styles = (theme, fSize = 14) => ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: theme === 'dark'
-            ? 'radial-gradient(circle at 50% 24%, rgba(240,193,142,0.26), transparent 58%), linear-gradient(145deg, rgba(255,255,255,0.09), rgba(212,154,92,0.08))'
-            : 'radial-gradient(circle at 50% 24%, rgba(240,193,142,0.28), transparent 58%), linear-gradient(145deg, rgba(255,255,255,0.88), rgba(212,154,92,0.12))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(240,193,142,0.28)' : 'rgba(142,89,43,0.16)'}`,
+        background: theme === 'dark' ? 'rgba(212,154,92,0.14)' : 'rgba(212,154,92,0.18)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(212,154,92,0.24)' : 'rgba(142,89,43,0.16)'}`,
         color: theme === 'dark' ? '#F2C896' : '#8C6038',
         fontSize: '24px',
         fontWeight: 950,
-        boxShadow: theme === 'dark'
-            ? 'inset 0 1px 0 rgba(255,255,255,0.14), 0 14px 32px rgba(0,0,0,0.22), 0 0 24px rgba(212,154,92,0.12)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.78), 0 10px 20px rgba(24,36,44,0.08)',
     },
     feedbackAnswer: {
         minHeight: '42px',
@@ -1088,13 +998,8 @@ const styles = (theme, fSize = 14) => ({
         display: 'inline-flex',
         alignItems: 'center',
         gap: '10px',
-        background: theme === 'dark'
-            ? 'radial-gradient(circle at 20% 8%, rgba(255,142,142,0.2), transparent 48%), linear-gradient(145deg, rgba(255,90,98,0.12), rgba(255,255,255,0.035))'
-            : 'radial-gradient(circle at 20% 8%, rgba(255,142,142,0.18), transparent 48%), linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,90,98,0.08))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,142,142,0.26)' : 'rgba(190,65,70,0.16)'}`,
-        boxShadow: theme === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 24px rgba(0,0,0,0.18)' : '0 10px 20px rgba(24,36,44,0.08)',
-        backdropFilter: 'blur(18px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+        background: theme === 'dark' ? 'rgba(255,90,98,0.12)' : 'rgba(255,90,98,0.11)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,90,98,0.2)' : 'rgba(190,65,70,0.16)'}`,
     },
     feedbackLabel: {
         color: theme === 'dark' ? '#FF8F96' : '#C94149',
@@ -1117,13 +1022,8 @@ const styles = (theme, fSize = 14) => ({
         gap: '12px',
         padding: '14px 16px',
         borderRadius: '18px',
-        background: theme === 'dark'
-            ? 'radial-gradient(circle at 12% 18%, rgba(240,193,142,0.12), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.032))'
-            : 'radial-gradient(circle at 12% 18%, rgba(240,193,142,0.14), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.86), rgba(255,255,255,0.58))',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.115)' : 'rgba(20,24,32,0.07)'}`,
-        boxShadow: theme === 'dark' ? 'inset 0 1px 0 rgba(255,255,255,0.12), 0 14px 28px rgba(0,0,0,0.16)' : '0 10px 20px rgba(24,36,44,0.08)',
-        backdropFilter: 'blur(18px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+        background: theme === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.72)',
+        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(20,24,32,0.07)'}`,
     },
     feedbackTipIcon: {
         width: '26px',
@@ -1156,20 +1056,18 @@ const styles = (theme, fSize = 14) => ({
         minWidth: '230px',
         minHeight: '58px',
         padding: '0 24px',
-        border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.58)'}`,
+        border: 'none',
         borderRadius: '22px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         gap: '12px',
         cursor: 'pointer',
-        background: 'radial-gradient(circle at 18% 0%, rgba(255,255,255,0.34), transparent 38%), linear-gradient(135deg, #F0C18E 0%, #8A7CD6 100%)',
+        background: 'linear-gradient(135deg, #D49A5C 0%, #8A7CD6 100%)',
         color: '#0E1013',
         fontSize: '17px',
         fontWeight: 950,
-        boxShadow: theme === 'dark'
-            ? 'inset 0 1px 0 rgba(255,255,255,0.28), 0 18px 42px rgba(212,154,92,0.2), 0 0 36px rgba(138,124,214,0.16)'
-            : 'inset 0 1px 0 rgba(255,255,255,0.68), 0 16px 34px rgba(24,36,44,0.14)',
+        boxShadow: '0 18px 38px rgba(212,154,92,0.22)',
     },
     ackButtonIcon: {
         width: '30px',

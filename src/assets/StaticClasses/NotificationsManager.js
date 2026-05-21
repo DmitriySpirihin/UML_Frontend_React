@@ -61,13 +61,6 @@ export const sendBugreport = (message) => {
     return NotificationsManager.sendMessage("bugreport", message);
 }
 
-const getCurrentPremiumSnapshot = (isServerAvailable = false) => ({
-  hasPremium: UserData.hasPremium === true,
-  premiumEndDate: UserData.premiumEndDate || null,
-  isValidation: UserData.isValidation === true,
-  isServerAvailable
-});
-
 export async function isUserHasPremium(uid) {
   if (applyLocalTestPremium()) {
     return {
@@ -100,22 +93,20 @@ export async function isUserHasPremium(uid) {
     });
 
     if (!response.ok) {
-      console.warn(`Premium check failed with HTTP ${response.status}`);
-      setIsServerAvailable(true);
-      return getCurrentPremiumSnapshot(true);
+      UserData.hasPremium = false;
+      setPremium(false);
+      return 'Network error';
     }
 
     const data = await response.json();
     
     if (data.success) {
-      const hasPremium = data.message.hasPremium === true || data.message.hasPremium === 'true';
+      const hasPremium = data.message.hasPremium === true;
       const premiumEndDate = data.message.premiumEndDate ? new Date(data.message.premiumEndDate) : null;
       const isValidation = data.message.isValidation || false;
       
-      // The UI subject stores "technical works" state, so true means show the blocking overlay.
-      const technicalWorks = data.message.isServerAvailable !== undefined
-        ? data.message.isServerAvailable === false
-        : false;
+      // ✅ Capture Server Status
+      const isServerAvailable = data.message.isServerAvailable !== undefined ? !data.message.isServerAvailable : true;
 
       // Update UserData/AppData
       UserData.hasPremium = hasPremium;
@@ -124,18 +115,19 @@ export async function isUserHasPremium(uid) {
 
       setPremium(hasPremium);
       setValidation(isValidation);
-      setIsServerAvailable(technicalWorks);
+      setIsServerAvailable(isServerAvailable);
       
      // console.log(`Premium: ${hasPremium}, Valid: ${isValidation}, Server OK: ${isServerAvailable}`);
       
-      return { hasPremium, premiumEndDate, isValidation, isServerAvailable: technicalWorks };
+      return { hasPremium, premiumEndDate, isValidation, isServerAvailable };
     } else {
       throw new Error(data.error || 'Unknown error');
     }
   } catch (error) {
     console.error('Error checking premium status:', error);
-    setIsServerAvailable(true);
-    return getCurrentPremiumSnapshot(true);
+    UserData.hasPremium = false;
+    setPremium(false);
+    throw error;
   }
 }
 

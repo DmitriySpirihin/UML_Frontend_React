@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import Colors from '../StaticClasses/Colors'
 import { theme$, lang$, devMessage$, isPasswordCorrect$, premium$, isValidation$, setPage, lastPage$, habitAccent$ } from '../StaticClasses/HabitsBus'
-import { AppData, UserData, getSectionStreak, getSectionStreakInfo } from '../StaticClasses/AppData'
+import { AppData, UserData, getSectionStreak } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
 import { FaRobot, FaStar, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift, FaTelegramPlane, FaSlidersH, FaCheck } from "react-icons/fa";
@@ -856,9 +856,6 @@ function MenuCard({ item, theme, fSize, lang, isPinned, onPin, onHide,setShowRef
 
 const Info = ({ id, theme, lang }) => {
   const info = getInfo(id, lang);
-  const isSectionStreak = info && typeof info === 'object' && info.type === 'sectionStreak';
-  const sectionStreakValue = isSectionStreak ? (Number(info.value) || 0) : 0;
-  const isAtRisk = isSectionStreak && sectionStreakValue > 0 && info.state === 'atRisk';
 
   return (
     <div
@@ -873,18 +870,10 @@ const Info = ({ id, theme, lang }) => {
         fontSize: '13px',
         fontWeight: '700',
         color: Colors.get('mainText', theme),
-        opacity: isAtRisk ? 0.58 : 1,
 
       }}
     >
-      {isSectionStreak
-        ? (
-          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
-            {sectionStreakValue > 0 && <span style={{ filter: isAtRisk ? 'grayscale(0.65)' : 'none' }}>🔥</span>}
-            {sectionStreakValue}
-          </span>
-        )
-        : (info.length > 0 ? info : '-')}
+      {info.length > 0 ? info : '-'}
       {id === 'MentalMain' && <FaStar style={{marginLeft:'5px'}}/>}
     </div>
   );
@@ -964,14 +953,8 @@ const styles = (theme, fontSize) => ({
 function getInfo(id) {
     const sectionMap = { HabitsMain: 'habits', ToDoMain: 'todo', MentalMain: 'mental', RecoveryMain: 'recovery', TrainingMain: 'training', SleepMain: 'sleep' };
     const sectionId = sectionMap[id];
-    if (sectionId) {
-        const streakInfo = getSectionStreakInfo(sectionId);
-        return {
-            type: 'sectionStreak',
-            value: streakInfo.streak || 0,
-            state: streakInfo.state
-        };
-    }
+    const streak = sectionId ? getSectionStreak(sectionId) : 0;
+    if (streak > 0) return `${streak}🔥`;
     if (id === 'HabitsMain') return AppData.choosenHabits.length > 0 ? AppData.choosenHabits.length.toString() : '';
     else if (id === 'TrainingMain') {
         const sessions = getCurrentCycleAnalysis().currentCycle?.length || 0;

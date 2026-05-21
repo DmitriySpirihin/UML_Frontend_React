@@ -41,7 +41,6 @@ import {
   FaWallet
 } from 'react-icons/fa';
 import { AppData } from '../../StaticClasses/AppData.js';
-import { HabitOutlineIcon } from '../HabitsPages/HabitVisuals.jsx';
 
 export const DEFAULT_TODO_ACCENT_COLOR = '#2E9DFF';
 export const TODO_ACCENT_PRESETS = ['#2E9DFF', '#149DFF', '#66D9E8', '#A66BFF', '#2FD6BD', '#7C6CFF', '#C29AD6', '#B48BC8'];
@@ -251,11 +250,6 @@ const makeEmojiIcon = (emoji) => ({ size = 18 }) => React.createElement(
   emoji
 );
 
-const makeHabitIcon = (iconName) => ({ size = 18 }) => React.createElement(HabitOutlineIcon, {
-  iconName,
-  size
-});
-
 const getCustomTodoCategory = (category) => {
   const raw = (category || '').trim().toLowerCase();
   if (!raw || !Array.isArray(AppData.todoCustomCategories)) return null;
@@ -294,7 +288,7 @@ export const getTodoCategoryTone = (category, accent, iconName) => {
   const iconKey = iconName || meta.icon;
   const customIcon = isEmojiIcon(iconKey)
     ? makeEmojiIcon(iconKey.slice(6).trim())
-    : (TODO_CUSTOM_ICON_MAP[iconKey] || ((iconName || !tone.icon) ? makeHabitIcon(iconKey) : null));
+    : TODO_CUSTOM_ICON_MAP[iconKey];
   return {
     hue: tone.hue || accent.hue,
     soft: tone.soft || accent.soft,
