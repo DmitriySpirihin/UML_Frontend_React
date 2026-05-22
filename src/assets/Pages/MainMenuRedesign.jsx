@@ -1286,7 +1286,7 @@ function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
   const isPremium = accent === tokens.accents.premium;
   const isNeutral = accent?.tone === 'menu';
   const accentRgb = accent.rgb || buildHabitsAccent(accent.hue).rgb;
-  const minWidth = isNeutral ? 82 : (compact ? 46 : 92);
+  const minWidth = isNeutral ? 96 : (compact ? 58 : 112);
 
   return (
     <Motion.button
@@ -1296,37 +1296,39 @@ function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
       onClick={onClick}
       aria-label={label}
       style={{
-        height: 34,
+        height: 40,
         minWidth,
-        borderRadius: 18,
-        border: `1px solid ${accent.ring}`,
+        borderRadius: 22,
+        border: `1px solid ${isPremium ? 'rgba(255,255,255,0.20)' : accent.ring}`,
         background: isPremium
-          ? `linear-gradient(135deg, rgba(196,211,222,0.24), rgba(116,132,146,0.12))`
+          ? `linear-gradient(145deg, rgba(255,255,255,0.18), rgba(196,211,222,0.12) 48%, rgba(95,113,130,0.08))`
           : isNeutral
-            ? `linear-gradient(135deg, rgba(${accentRgb},0.18), rgba(${accentRgb},0.075))`
-          : `linear-gradient(135deg, rgba(${accentRgb},0.22), rgba(${accentRgb},0.08))`,
+            ? `linear-gradient(145deg, rgba(${accentRgb},0.24), rgba(255,255,255,0.06) 42%, rgba(${accentRgb},0.10))`
+          : `linear-gradient(145deg, rgba(${accentRgb},0.30), rgba(255,255,255,0.055) 42%, rgba(${accentRgb},0.10))`,
         color: accent.hue,
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 6,
-        padding: compact ? '0 10px' : '0 12px',
+        gap: 7,
+        padding: compact ? '0 13px' : '0 16px',
         cursor: 'pointer',
         fontFamily: 'inherit',
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: 900,
         whiteSpace: 'nowrap',
         position: 'relative',
         overflow: 'hidden',
+        backdropFilter: 'blur(24px) saturate(170%)',
+        WebkitBackdropFilter: 'blur(24px) saturate(170%)',
         boxShadow: isPremium
-          ? '0 1px 0 rgba(255,255,255,0.085) inset, 0 14px 26px -20px rgba(196,211,222,0.62)'
+          ? '0 1px 0 rgba(255,255,255,0.18) inset, 0 -10px 22px rgba(0,0,0,0.18) inset, 0 18px 34px -20px rgba(196,211,222,0.74)'
           : isNeutral
-            ? `0 1px 0 rgba(255,255,255,0.075) inset, 0 12px 22px -18px rgba(${accentRgb},0.60)`
-          : `0 1px 0 rgba(255,255,255,0.075) inset, 0 12px 22px -18px rgba(${accentRgb},0.74)`
+            ? `0 1px 0 rgba(255,255,255,0.16) inset, 0 -10px 22px rgba(0,0,0,0.14) inset, 0 16px 30px -19px rgba(${accentRgb},0.68)`
+          : `0 1px 0 rgba(255,255,255,0.17) inset, 0 -10px 22px rgba(0,0,0,0.14) inset, 0 16px 30px -18px rgba(${accentRgb},0.78)`
       }}
     >
       <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-        {React.createElement(Icon, { size: 14 })}
+        {React.createElement(Icon, { size: 15 })}
         <span>{label}</span>
       </span>
     </Motion.button>

@@ -169,7 +169,7 @@ const TrainingExercise = ({ needToAdd, setEx, onBack }) => {
                 </div>
             </div>
 
-            <div className="no-scrollbar" style={{ width: '100%', maxWidth: '600px', paddingBottom: needToAdd ? '22px' : '96px', flex: 1, overflowY: 'auto', overflowX: 'hidden', scrollbarWidth: 'none' }}>
+            <div className="no-scrollbar" style={{ width: '100%', maxWidth: '600px', padding: `0 5px ${needToAdd ? '22px' : '96px'}`, flex: 1, overflowY: 'auto', overflowX: 'hidden', scrollbarWidth: 'none', boxSizing: 'border-box' }}>
                 {Object.keys(MuscleIcon.muscleIconsSrc[0]).map((keyStr) => {
                     const key = Number(keyStr);
                     
@@ -520,7 +520,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
     },
     // CARDS
 	    card: {
-	        width: '100%', margin: '0 auto 16px auto',
+	        width: 'calc(100% - 8px)', margin: '0 auto 16px auto',
 	        borderRadius: '24px', overflow: 'hidden',
 	        ...getTrainingGlassSurface(theme, accent),
 	        boxSizing: 'border-box'

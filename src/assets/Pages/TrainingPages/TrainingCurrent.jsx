@@ -1266,7 +1266,9 @@ const styles = (theme,fSize) => {
       justifyContent: 'flex-start',
       alignItems: 'center',
       minHeight: '100dvh',
+      height: '100dvh',
       top: 0,
+      bottom: 0,
       width: '100vw',
       boxSizing: 'border-box',
       padding: '20px 0 132px',
@@ -1562,7 +1564,7 @@ const styles = (theme,fSize) => {
       flexDirection: 'column',
       width: 'min(92vw, 760px)',
       gap: '12px',
-      paddingBottom: '96px',
+      paddingBottom: 0,
       boxSizing: 'border-box',
     },
     exerciseCard: {
@@ -1858,6 +1860,7 @@ const styles = (theme,fSize) => {
       padding: '28px',
       boxSizing: 'border-box',
       textAlign: 'center',
+      marginBottom: '16px',
     },
     emptySessionIcon: {
       width: '62px',
@@ -2139,10 +2142,10 @@ const styles = (theme,fSize) => {
       });
     },
     floatingMenu: {
-      position: 'fixed',
-      left: '50%',
-      bottom: '92px',
-      transform: 'translateX(-50%)',
+      position: 'relative',
+      left: 'auto',
+      bottom: 'auto',
+      transform: 'none',
       width: 'min(88vw, 420px)',
       minHeight: '50px',
       background: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(14, 19, 25, 0.82)',
@@ -2155,8 +2158,9 @@ const styles = (theme,fSize) => {
       padding: '6px 8px',
       boxShadow: '0 18px 45px rgba(0,0,0,0.32)',
       border: `1px solid ${border}`,
-      zIndex: 1100,
+      zIndex: 2,
       boxSizing: 'border-box',
+      margin: '16px auto calc(env(safe-area-inset-bottom, 0px) + 156px)',
     },
     menuPillBtn: {
       display: 'flex',

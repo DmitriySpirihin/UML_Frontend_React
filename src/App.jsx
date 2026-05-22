@@ -12,7 +12,22 @@ import BtnsRobot from './assets/Pages/BottomBtns/BtnsRobot'
 import NotifyPanel from './assets/Pages/NotifyPanel'
 import BtnsMenu from './assets/Pages/BottomBtns/BtnsMenu';
 import BtnsInfo from './assets/Pages/BottomBtns/BtnsInfo';
-import { addPanel$, setPage$ ,theme$, bottomBtnPanel$, keyboardVisible$,notifyPanel$,isServerAvailable$, confirmationPanel$, setKeyboardVisible} from './assets/StaticClasses/HabitsBus'
+import {
+  addPanel$,
+  setPage$,
+  theme$,
+  bottomBtnPanel$,
+  keyboardVisible$,
+  notifyPanel$,
+  isServerAvailable$,
+  confirmationPanel$,
+  setKeyboardVisible,
+  setPage as navigateToPage,
+  lastPage$,
+  setAddPanel as publishAddPanel,
+  setNotifyPanel as publishNotifyPanel,
+  setConfirmationPanel as publishConfirmationPanel,
+} from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaServer, FaCog, FaTools } from 'react-icons/fa';
@@ -69,6 +84,15 @@ const SleepDevices = lazy(() => import('./assets/Pages/SleepPages/SleepDevices')
 const SleepInsight = lazy(() => import('./assets/Pages/SleepPages/SleepInsight'));
 
 const tg = window.Telegram?.WebApp;
+const SECTION_ROOT_PAGES = new Set([
+  'HabitsMain',
+  'TrainingMain',
+  'RecoveryMain',
+  'MentalMain',
+  'SleepMain',
+  'ToDoMain',
+  'RobotMain',
+]);
 
 
 function App() {
@@ -176,6 +200,45 @@ function App() {
     const subscription = confirmationPanel$.subscribe(setConfirmationPanel);
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const webApp = window.Telegram?.WebApp;
+    const backButton = webApp?.BackButton;
+    if (!backButton) return;
+
+    const canGoBack = page && page !== 'LoadPanel' && page !== 'MainMenu';
+    const hasOverlay = Boolean(addPanel);
+    const shouldShowBackButton = canGoBack || hasOverlay || notifyPanel || confirmationPanel;
+
+    if (shouldShowBackButton) backButton.show?.();
+    else backButton.hide?.();
+
+    const handleTelegramBack = () => {
+      if (confirmationPanel) {
+        return publishConfirmationPanel(false);
+      }
+
+      if (notifyPanel) {
+        return publishNotifyPanel(false);
+      }
+
+      if (addPanel) {
+        return publishAddPanel('');
+      }
+
+      if (SECTION_ROOT_PAGES.has(page)) {
+        return navigateToPage('MainMenu');
+      }
+
+      const previousPage = lastPage$.value;
+      navigateToPage(previousPage && previousPage !== page ? previousPage : 'MainMenu');
+    };
+
+    backButton.onClick(handleTelegramBack);
+    return () => {
+      backButton.offClick?.(handleTelegramBack);
+    };
+  }, [addPanel, confirmationPanel, notifyPanel, page]);
 
   return (
     <>

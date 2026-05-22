@@ -75,41 +75,22 @@ const TrainingAnaliticsTypes = () => {
     <div style={styles(theme, fSize).container}>
       {/* PREMIUM OVERLAY - FIXED LOGIC: Show ONLY when user lacks premium */}
       {!hasPremium && (
-        <div onClick={(e) => e.stopPropagation()}
-            style={{
-                position: 'fixed', inset: 0, zIndex: 2555,
-                display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-                background: theme === 'dark' ? 'rgba(10,10,14,0.82)' : 'rgba(248,248,250,0.88)',
-                backdropFilter: 'blur(20px)', textAlign: 'center'
-            }}>
-            <div style={{
-                width: '72px', height: '72px', background: 'rgba(159,180,196,0.12)',
-                borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                marginBottom: '16px', border: '1px solid rgba(159,180,196,0.22)',
-            }}>
-                <FaCrown size={30} color="#9FB4C4" />
+        <div onClick={(e) => e.stopPropagation()} style={styles(theme, fSize).premiumScreen}>
+          <div style={styles(theme, fSize).premiumGlass}>
+            <div style={styles(theme, fSize).premiumIcon}>
+              <FaCrown size={28} />
             </div>
-            <div style={{
-                fontSize: '13px', lineHeight: '1.6',
-                color: theme === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)',
-                marginBottom: '24px', maxWidth: '210px',
-            }}>
-                {langIndex === 0 ? 'Откройте полный доступ ко всей аналитике' : 'Unlock full access to all analytics'}
+            <div style={styles(theme, fSize).premiumText}>
+              {langIndex === 0 ? 'Откройте полный доступ ко всей аналитике' : 'Unlock full access to all analytics'}
             </div>
-            <button onClick={() => setPage('premium')} style={{
-                fontSize: '15px', fontWeight: '700', color: '#fff', background: '#9FB4C4',
-                border: 'none', borderRadius: '14px', padding: '13px 0', marginBottom: '10px',
-                cursor: 'pointer', boxShadow: '0 4px 16px rgba(159,180,196,0.35)', width: '220px',
-            }}>
-                {langIndex === 0 ? 'Купить подписку' : 'Buy subscription'}
+            <button onClick={() => setPage('premium')} style={styles(theme, fSize).premiumButton}>
+              <FaCrown size={13} />
+              {langIndex === 0 ? 'Премиум' : 'Premium'}
             </button>
-            <button onClick={() => setPage('MainMenu')} style={{
-                fontSize: '13px', fontWeight: '500',
-                color: theme === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
-                background: 'transparent', border: 'none', padding: '8px 20px', cursor: 'pointer',
-            }}>
-                {langIndex === 0 ? '← На главную' : '← Home'}
+            <button onClick={() => setPage('MainMenu')} style={styles(theme, fSize).premiumBack}>
+              {langIndex === 0 ? 'На главную' : 'Home'}
             </button>
+          </div>
         </div>
       )}
 
@@ -333,6 +314,39 @@ const styles = (theme, fSize) => {
       boxShadow: `0 4px 14px rgba(${accent.rgb}, 0.18)`
     },
     
+    premiumScreen: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 2555,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 'calc(env(safe-area-inset-top, 0px) + 28px) 22px calc(env(safe-area-inset-bottom, 0px) + 28px)',
+      textAlign: 'center',
+      background: isLight
+        ? 'radial-gradient(circle at 50% 14%, rgba(87,155,200,0.22), transparent 38%), rgba(245,249,252,0.86)'
+        : 'radial-gradient(circle at 50% 16%, rgba(87,155,200,0.28), transparent 40%), rgba(6,12,18,0.84)',
+      backdropFilter: 'blur(24px) saturate(150%)',
+      WebkitBackdropFilter: 'blur(24px) saturate(150%)',
+      boxSizing: 'border-box',
+    },
+    premiumGlass: {
+      width: 'min(88vw, 360px)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: '28px 22px',
+      borderRadius: '34px',
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.12)'}`,
+      background: isLight
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.36))'
+        : 'linear-gradient(145deg, rgba(23,35,46,0.72), rgba(9,14,20,0.54))',
+      boxShadow: isLight
+        ? '0 26px 70px rgba(38,76,103,0.18), inset 0 1px 0 rgba(255,255,255,0.78)'
+        : '0 34px 90px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.10)',
+      backdropFilter: 'blur(28px) saturate(160%)',
+      WebkitBackdropFilter: 'blur(28px) saturate(160%)',
+    },
     // PREMIUM STYLES (FIXED LOGIC)
     premiumOverlay: {
       position: 'absolute', 
@@ -364,16 +378,19 @@ const styles = (theme, fSize) => {
       width: '100%'
     },
     premiumIcon: {
-      width: '80px',
-      height: '80px',
+      width: '76px',
+      height: '76px',
       borderRadius: '24px',
-      background: 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)',
+      background: isLight
+        ? 'linear-gradient(145deg, rgba(87,155,200,0.20), rgba(255,255,255,0.66))'
+        : 'linear-gradient(145deg, rgba(87,155,200,0.26), rgba(255,255,255,0.055))',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: '24px',
-      color: 'white',
-      boxShadow: '0 10px 30px rgba(239, 68, 68, 0.35)'
+      marginBottom: '18px',
+      color: '#BFE8FF',
+      border: `1px solid ${isLight ? 'rgba(87,155,200,0.26)' : 'rgba(191,232,255,0.20)'}`,
+      boxShadow: '0 18px 42px rgba(87,155,200,0.22), inset 0 1px 0 rgba(255,255,255,0.18)'
     },
     premiumTitle: {
       fontSize: `${baseFontSize + 4}px`,
@@ -388,25 +405,43 @@ const styles = (theme, fSize) => {
       backgroundClip: 'text'
     },
     premiumText: {
-      fontSize: `${baseFontSize}px`,
-      color: Colors.get('subText', theme),
-      lineHeight: '1.6',
-      marginBottom: '28px',
-      maxWidth: '380px'
+      fontSize: `${baseFontSize + 1}px`,
+      color: isLight ? 'rgba(28,42,56,0.72)' : 'rgba(226,238,248,0.76)',
+      lineHeight: '1.45',
+      marginBottom: '22px',
+      maxWidth: '260px',
+      fontWeight: 850
     },
     premiumButton: {
-      background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%)',
-      color: 'white',
-      border: 'none',
-      borderRadius: '18px',
-      padding: '14px 42px',
-      fontSize: `${baseFontSize}px`,
-      fontWeight: '700',
+      width: '100%',
+      maxWidth: '244px',
+      minHeight: '50px',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '9px',
+      background: 'linear-gradient(135deg, #63D8F5 0%, #7D8CF4 100%)',
+      color: '#071018',
+      border: '1px solid rgba(255,255,255,0.22)',
+      borderRadius: '22px',
+      padding: '0 22px',
+      fontSize: `${baseFontSize + 1}px`,
+      fontWeight: '900',
       cursor: 'pointer',
-      boxShadow: '0 8px 25px rgba(147, 51, 234, 0.45)',
+      boxShadow: '0 18px 44px rgba(87,155,200,0.30), inset 0 1px 0 rgba(255,255,255,0.44)',
       transition: 'all 0.3s ease',
       marginTop: '8px'
-    }
+    },
+    premiumBack: {
+      marginTop: '14px',
+      border: 'none',
+      background: 'transparent',
+      color: isLight ? 'rgba(28,42,56,0.46)' : 'rgba(226,238,248,0.48)',
+      fontSize: `${baseFontSize}px`,
+      fontWeight: 850,
+      cursor: 'pointer',
+      padding: '8px 16px',
+    },
   };
 };
 

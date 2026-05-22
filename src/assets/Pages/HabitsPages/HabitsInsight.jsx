@@ -25,7 +25,7 @@ const HabitsInsight = () => {
       justifyContent: 'center',
       alignItems: 'flex-start',
       boxSizing: 'border-box',
-      padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 12px 104px',
+      padding: 0,
       background: isLight
         ? `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgb},0.16), transparent 62%), radial-gradient(520px 380px at 6% 86%, rgba(${accent.rgb},0.1), transparent 66%), #F4F5F7`
         : `radial-gradient(640px 420px at 86% -8%, rgba(${accent.rgb},0.15), transparent 62%), radial-gradient(520px 420px at 8% 86%, rgba(${accent.rgb},0.1), transparent 68%), linear-gradient(180deg, #18232A 0%, ${Colors.get('background', theme)} 46%, #10161A 100%)`

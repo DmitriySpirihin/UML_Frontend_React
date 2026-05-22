@@ -3,7 +3,7 @@ import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { AppData, UserData } from '../../StaticClasses/AppData.js';
 import { NotificationsManager } from '../../StaticClasses/NotificationsManager.js';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, premium$, setPage } from '../../StaticClasses/HabitsBus';
+import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
 import {
     FaBrain,
     FaBullseye,
@@ -207,7 +207,6 @@ const Records = () => {
     const [fSize, setFSize] = useState(AppData.prefs[4]);
     const [categoryIndex, setCategoryIndex] = useState(0);
     const [difficultyIndex, setDifficultyIndex] = useState(0);
-    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
     const [globalData, setGlobalData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filterMode, setFilterMode] = useState(0);
@@ -253,12 +252,10 @@ const Records = () => {
         const sub1 = theme$.subscribe(setThemeState);
         const sub2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
         const sub3 = fontSize$.subscribe(setFSize);
-        const sub4 = premium$.subscribe(setHasPremium);
         return () => {
             sub1.unsubscribe();
             sub2.unsubscribe();
             sub3.unsubscribe();
-            sub4.unsubscribe();
         };
     }, []);
 
@@ -289,8 +286,6 @@ const Records = () => {
 
     return (
         <div style={s.container}>
-            {!hasPremium && <PremiumOverlay theme={theme} langIndex={langIndex} />}
-
             <div style={s.pageHeader}>
                 <div style={s.pageTitle}>UltyMyLife</div>
                 <div style={s.pageSubtitle}>
@@ -438,75 +433,6 @@ const Records = () => {
                     </Motion.div>
                 )}
             </div>
-        </div>
-    );
-};
-
-const PremiumOverlay = ({ theme, langIndex }) => {
-    const isLight = theme === 'light' || theme === 'speciallight';
-    return (
-        <div onClick={(e) => e.stopPropagation()} style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 2555,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            background: isLight ? 'rgba(248,248,250,0.88)' : 'rgba(10,10,14,0.82)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            textAlign: 'center'
-        }}>
-            <div style={{
-                width: 72,
-                height: 72,
-                background: 'rgba(159,180,196,0.12)',
-                borderRadius: 22,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-                border: '1px solid rgba(159,180,196,0.22)'
-            }}>
-                <FaCrown size={30} color="#9FB4C4" />
-            </div>
-            <div style={{
-                fontSize: 13,
-                lineHeight: 1.6,
-                color: isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.5)',
-                marginBottom: 24,
-                maxWidth: 230
-            }}>
-                {langIndex === 0 ? 'Откройте полный доступ ко всем рекордам' : 'Unlock full access to all records'}
-            </div>
-            <button onClick={() => setPage('premium')} style={{
-                width: 220,
-                minHeight: 48,
-                fontSize: 15,
-                fontWeight: 800,
-                color: '#fff',
-                background: 'linear-gradient(135deg, #8A7CD6, #66D9E8)',
-                border: 'none',
-                borderRadius: 16,
-                padding: '0 18px',
-                marginBottom: 10,
-                cursor: 'pointer',
-                boxShadow: '0 18px 36px -24px rgba(138,124,214,0.75)'
-            }}>
-                {langIndex === 0 ? 'Купить подписку' : 'Buy subscription'}
-            </button>
-            <button onClick={() => setPage('MainMenu')} style={{
-                fontSize: 13,
-                fontWeight: 700,
-                color: isLight ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.4)',
-                background: 'transparent',
-                border: 'none',
-                padding: '8px 20px',
-                cursor: 'pointer'
-            }}>
-                {langIndex === 0 ? 'На главную' : 'Home'}
-            </button>
         </div>
     );
 };

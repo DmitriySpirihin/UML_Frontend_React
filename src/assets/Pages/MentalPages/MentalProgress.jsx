@@ -5,12 +5,13 @@ import {
   FaBullseye,
   FaCalculator,
   FaChartLine,
+  FaCrown,
   FaMedal,
   FaPuzzlePiece
 } from 'react-icons/fa';
-import { AppData, logSectionVisit } from '../../StaticClasses/AppData.js';
+import { AppData, UserData, logSectionVisit } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { fontSize$, lang$, theme$ } from '../../StaticClasses/HabitsBus';
+import { fontSize$, lang$, premium$, setPage, theme$ } from '../../StaticClasses/HabitsBus';
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 import MyAreaChart from '../../Helpers/MyAreaChart.jsx';
 import { buildSectionAccent } from '../SectionAccentSettings.jsx';
@@ -29,12 +30,15 @@ export default function MentalProgress() {
   const [theme, setThemeState] = useState('dark');
   const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
+  const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
+  const [selectedMode, setSelectedMode] = useState(0);
 
   useEffect(() => {
     const subs = [
       theme$.subscribe(setThemeState),
       lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1)),
-      fontSize$.subscribe(setFSize)
+      fontSize$.subscribe(setFSize),
+      premium$.subscribe(setHasPremium)
     ];
     return () => subs.forEach(sub => sub.unsubscribe());
   }, []);
@@ -43,17 +47,18 @@ export default function MentalProgress() {
 
   const summary = useMemo(() => buildMentalSummary(), []);
   const s = styles(theme, fSize);
-  const labels = langIndex === 0
-    ? ['Быстрый счет', 'N-back', 'Паттерны', 'Контроль']
-    : ['Mental Math', 'Memory', 'Logic', 'Focus'];
-  const chartLabels = langIndex === 0
-    ? ['Счет', 'N-back', 'Паттерны', 'Контроль']
-    : ['Math', 'N-back', 'Logic', 'Focus'];
-  const chartData = chartLabels.map((label, index) => ({
+  const labels = getModeLabels(langIndex);
+  const selected = summary.modes[selectedMode] || summary.modes[0];
+  const selectedTone = MODE_TONES[selectedMode] || MODE_TONES[0];
+  const SelectedIcon = selectedTone.Icon;
+  const difficultyLabels = langIndex === 0
+    ? ['Легко', 'Средне', 'Сложно', 'Про']
+    : ['Easy', 'Medium', 'Hard', 'Pro'];
+  const chartData = difficultyLabels.map((label, index) => ({
     date: label,
-    weight: summary.categoryScores[index] || 0
+    weight: selected.records[index] || 0
   }));
-  const chartDomainMax = Math.max(1, Math.ceil(summary.maxCategoryScore * 1.16));
+  const chartDomainMax = Math.max(1, Math.ceil(selected.best * 1.16));
 
   return (
     <div style={s.container}>
@@ -61,18 +66,18 @@ export default function MentalProgress() {
       <div style={s.scrollView} className="no-scrollbar">
         <div style={s.header}>
           <div style={s.eyebrow}>{langIndex === 0 ? 'Прогресс ума' : 'Mind progress'}</div>
-          <h1 style={s.title}>{langIndex === 0 ? 'Общий прогресс' : 'Overall progress'}</h1>
+          <h1 style={s.title}>{langIndex === 0 ? 'Прогресс по режимам' : 'Progress by mode'}</h1>
         </div>
 
         <Motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: EASE }} style={s.totalPanel}>
-          <div style={s.totalIcon}><FaMedal /></div>
+          <div style={s.totalIcon(selectedTone)}><SelectedIcon /></div>
           <div style={s.totalCopy}>
-            <span>{langIndex === 0 ? 'Сумма рекордов' : 'Combined records'}</span>
-            <strong>{formatScore(summary.totalScore)}</strong>
+            <span>{labels[selectedMode].title}</span>
+            <strong>{formatScore(selected.total)}</strong>
           </div>
           <div style={s.totalMeta}>
             <FaChartLine size={13} />
-            <span>{summary.trainedDays} {langIndex === 0 ? 'дн.' : 'days'}</span>
+            <span>{langIndex === 0 ? 'лучший' : 'best'} {formatScore(selected.best)}</span>
           </div>
         </Motion.section>
 
@@ -84,19 +89,19 @@ export default function MentalProgress() {
         >
           <div style={s.modesHeader}>
             <div>
-              <div style={s.kicker}>{langIndex === 0 ? 'ПО РЕЖИМАМ' : 'BY MODE'}</div>
-              <div style={s.bigTotal}>{formatScore(summary.totalScore)}</div>
+              <div style={s.kicker}>{langIndex === 0 ? 'ПО СЛОЖНОСТЯМ' : 'BY DIFFICULTY'}</div>
+              <div style={s.bigTotal(selectedTone)}>{labels[selectedMode].title}</div>
             </div>
             <div style={s.modeCountPill}>
-              <FaChartLine size={12} />
-              <span>{labels.length}</span>
+              <FaMedal size={12} />
+              <span>{formatScore(selected.total)}</span>
             </div>
           </div>
 
           <div style={s.modeChartArea}>
             <MyAreaChart
               data={chartData}
-              fillColor={s.accent.hue}
+              fillColor={selectedTone.hue}
               textColor={Colors.get('subText', theme)}
               linesColor={theme === 'dark' || theme === 'specialdark' ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)'}
               backgroundColor={theme === 'dark' || theme === 'specialdark' ? 'rgba(14,16,20,0.94)' : 'rgba(255,255,255,0.92)'}
@@ -109,40 +114,44 @@ export default function MentalProgress() {
             {labels.map((label, index) => {
               const tone = MODE_TONES[index];
               const Icon = tone.Icon;
-              const value = summary.categoryScores[index] || 0;
-              const share = summary.totalScore > 0 ? Math.round((value / summary.totalScore) * 100) : 0;
+              const value = summary.modes[index]?.total || 0;
+              const best = summary.modes[index]?.best || 0;
+              const active = selectedMode === index;
               return (
-                <div
-                  key={label}
-                  style={s.modeLegendItem(tone)}
+                <button
+                  key={label.title}
+                  type="button"
+                  onClick={() => setSelectedMode(index)}
+                  style={s.modeLegendItem(tone, active)}
                 >
                   <span style={s.modeLegendIcon(tone)}><Icon size={13} /></span>
                   <span style={s.modeLegendCopy}>
-                    <span style={s.modeLegendName}>{label}</span>
+                    <span style={s.modeLegendName}>{label.title}</span>
                     <strong style={s.modeLegendValue}>{formatScore(value)}</strong>
                   </span>
-                  <span style={s.modeLegendShare(tone)}>{share}%</span>
-                </div>
+                  <span style={s.modeLegendShare(tone)}>{langIndex === 0 ? 'лучший' : 'best'} {formatScore(best)}</span>
+                </button>
               );
             })}
           </div>
         </Motion.section>
       </div>
+      {!hasPremium && <PremiumOverlay theme={theme} langIndex={langIndex} />}
     </div>
   );
 }
 
 function buildMentalSummary() {
   const records = Array.isArray(AppData.mentalRecords) ? AppData.mentalRecords : [];
-  const categoryScores = [0, 1, 2, 3].map((index) => {
+  const modes = [0, 1, 2, 3].map((index) => {
     const row = Array.isArray(records[index]) ? records[index] : [];
-    return row.reduce((sum, value) => sum + (Number(value) || 0), 0);
+    const modeRecords = [0, 1, 2, 3].map((difficulty) => Number(row[difficulty]) || 0);
+    const total = modeRecords.reduce((sum, value) => sum + value, 0);
+    const best = Math.max(0, ...modeRecords);
+    return { records: modeRecords, total, best };
   });
-  const totalScore = categoryScores.reduce((sum, value) => sum + value, 0);
-  const bestScore = Math.max(0, ...categoryScores);
-  const maxCategoryScore = Math.max(1, bestScore);
   const trainedDays = Object.keys(AppData.mentalLog || {}).length;
-  return { categoryScores, totalScore, maxCategoryScore, trainedDays };
+  return { modes, trainedDays };
 }
 
 function formatScore(value) {
@@ -150,6 +159,92 @@ function formatScore(value) {
   if (score >= 1000) return `${(score / 1000).toFixed(score >= 10000 ? 0 : 1)}k`;
   return `${Math.round(score)}`;
 }
+
+function getModeLabels(langIndex) {
+  return langIndex === 0
+    ? [
+      { title: 'Быстрый счет' },
+      { title: 'N-back' },
+      { title: 'Паттерны' },
+      { title: 'Контроль' }
+    ]
+    : [
+      { title: 'Mental Math' },
+      { title: 'N-back' },
+      { title: 'Patterns' },
+      { title: 'Focus Control' }
+    ];
+}
+
+const PremiumOverlay = ({ theme, langIndex }) => {
+  const isLight = theme === 'light' || theme === 'speciallight';
+  return (
+    <div onClick={(event) => event.stopPropagation()} style={{
+      position: 'fixed',
+      inset: 0,
+      zIndex: 2555,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      alignItems: 'center',
+      textAlign: 'center',
+      background: isLight ? 'rgba(248,248,250,0.88)' : 'rgba(10,10,14,0.82)',
+      backdropFilter: 'blur(22px)',
+      WebkitBackdropFilter: 'blur(22px)'
+    }}>
+      <div style={{
+        width: 72,
+        height: 72,
+        borderRadius: 22,
+        marginBottom: 16,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#9FB4C4',
+        background: 'rgba(159,180,196,0.12)',
+        border: '1px solid rgba(159,180,196,0.22)'
+      }}>
+        <FaCrown size={30} />
+      </div>
+      <div style={{
+        maxWidth: 240,
+        marginBottom: 24,
+        color: isLight ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.5)',
+        fontSize: 13,
+        fontWeight: 750,
+        lineHeight: 1.55
+      }}>
+        {langIndex === 0 ? 'Откройте полный доступ к прогрессу по режимам' : 'Unlock full access to progress by mode'}
+      </div>
+      <button onClick={() => setPage('premium')} style={{
+        width: 220,
+        minHeight: 48,
+        marginBottom: 10,
+        border: 'none',
+        borderRadius: 16,
+        color: '#fff',
+        background: 'linear-gradient(135deg, #8A7CD6, #66D9E8)',
+        fontSize: 15,
+        fontWeight: 850,
+        cursor: 'pointer',
+        boxShadow: '0 18px 36px -24px rgba(138,124,214,0.75)'
+      }}>
+        {langIndex === 0 ? 'Купить подписку' : 'Buy subscription'}
+      </button>
+      <button onClick={() => setPage('MainMenu')} style={{
+        padding: '8px 20px',
+        border: 'none',
+        color: isLight ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.4)',
+        background: 'transparent',
+        fontSize: 13,
+        fontWeight: 750,
+        cursor: 'pointer'
+      }}>
+        {langIndex === 0 ? 'На главную' : 'Home'}
+      </button>
+    </div>
+  );
+};
 
 function styles(theme, fontSize = 0) {
   const isLight = theme === 'light' || theme === 'speciallight';
@@ -177,7 +272,7 @@ function styles(theme, fontSize = 0) {
     },
     header: { maxWidth: 660, margin: '0 auto 16px', textAlign: 'left' },
     eyebrow: { color: accent.hue, fontSize: 10, fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase' },
-    title: { margin: '8px 0 0', color: text, fontSize: fontSize === 0 ? 28 : 32, lineHeight: 1.05, fontWeight: 950 },
+    title: { margin: '8px 0 0', color: text, fontSize: 'clamp(36px, 10.4vw, 58px)', lineHeight: 1.02, fontWeight: 950 },
     subtitle: { margin: '8px 0 0', color: sub, fontSize: fontSize === 0 ? 13 : 14, lineHeight: 1.35, fontWeight: 720 },
     totalPanel: {
       maxWidth: 660,
@@ -195,7 +290,7 @@ function styles(theme, fontSize = 0) {
       border: `1px solid rgba(${accent.rgb},${isLight ? 0.16 : 0.22})`,
       boxShadow: isLight ? '0 18px 40px -32px rgba(15,23,42,0.22)' : '0 24px 52px -36px rgba(0,0,0,0.78)'
     },
-    totalIcon: { width: 52, height: 52, borderRadius: 18, color: accent.hue, background: `rgba(${accent.rgb},0.13)`, border: `1px solid rgba(${accent.rgb},0.25)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 },
+    totalIcon: (tone) => ({ width: 52, height: 52, borderRadius: 18, color: tone.hue, background: tone.soft, border: `1px solid ${tone.ring}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }),
     totalCopy: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, color: sub, fontSize: 12, fontWeight: 800 },
     totalMeta: { minHeight: 34, padding: '0 11px', borderRadius: 999, color: accent.hue, background: `rgba(${accent.rgb},0.12)`, border: `1px solid rgba(${accent.rgb},0.22)`, display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 900 },
     modesPanel: {
@@ -212,7 +307,7 @@ function styles(theme, fontSize = 0) {
     },
     modesHeader: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
     kicker: { color: sub, fontSize: 10, fontWeight: 950, letterSpacing: '0.16em', textTransform: 'uppercase' },
-    bigTotal: { marginTop: 3, color: accent.hue, fontSize: 28, fontWeight: 950, lineHeight: 1, textShadow: `0 0 20px rgba(${accent.rgb},0.34)` },
+    bigTotal: (tone) => ({ marginTop: 3, color: tone.hue, fontSize: 24, fontWeight: 950, lineHeight: 1.05, textShadow: `0 0 20px ${tone.soft}` }),
     modeCountPill: { minHeight: 30, padding: '0 11px', borderRadius: 14, border: `1px solid rgba(${accent.rgb},0.30)`, background: `rgba(${accent.rgb},0.14)`, color: accent.hue, display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 950 },
     modeChartArea: {
       height: 238,
@@ -229,18 +324,23 @@ function styles(theme, fontSize = 0) {
       gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
       gap: 8
     },
-    modeLegendItem: (tone) => ({
+    modeLegendItem: (tone, active) => ({
       minWidth: 0,
       display: 'grid',
-      gridTemplateColumns: '30px minmax(0, 1fr) auto',
+      gridTemplateColumns: '34px minmax(0, 1fr)',
       alignItems: 'center',
       gap: 8,
-      minHeight: 48,
-      padding: '8px 9px',
+      minHeight: 78,
+      padding: '10px',
       borderRadius: 17,
+      appearance: 'none',
+      textAlign: 'left',
+      cursor: 'pointer',
       boxSizing: 'border-box',
-      background: isLight ? 'rgba(255,255,255,0.56)' : 'rgba(255,255,255,0.04)',
-      border: `1px solid ${tone.ring}`
+      background: active
+        ? `linear-gradient(145deg, ${tone.soft}, rgba(255,255,255,0.055))`
+        : (isLight ? 'rgba(255,255,255,0.56)' : 'rgba(255,255,255,0.04)'),
+      border: `1px solid ${active ? tone.hue : tone.ring}`
     }),
     modeLegendIcon: (tone) => ({
       width: 30,
@@ -253,8 +353,8 @@ function styles(theme, fontSize = 0) {
       background: tone.soft,
       border: `1px solid ${tone.ring}`
     }),
-    modeLegendCopy: { minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 },
-    modeLegendName: { color: text, fontSize: 11, fontWeight: 900, lineHeight: 1.1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
+    modeLegendCopy: { minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 },
+    modeLegendName: { color: text, fontSize: 12, fontWeight: 900, lineHeight: 1.12, whiteSpace: 'normal', overflowWrap: 'anywhere' },
     modeLegendValue: { color: text, fontSize: 15, fontWeight: 950, lineHeight: 1, fontVariantNumeric: 'tabular-nums' },
     modeLegendShare: (tone) => ({
       minHeight: 23,
@@ -263,10 +363,18 @@ function styles(theme, fontSize = 0) {
       color: tone.hue,
       background: tone.soft,
       border: `1px solid ${tone.ring}`,
-      fontSize: 10,
+      fontSize: 9,
       fontWeight: 950,
       display: 'flex',
-      alignItems: 'center'
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'stretch',
+      gridColumn: '1 / 3',
+      width: '100%',
+      boxSizing: 'border-box',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis'
     })
   };
 }

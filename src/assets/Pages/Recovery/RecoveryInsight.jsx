@@ -25,7 +25,7 @@ const RecoveryInsight = () => {
       justifyContent: 'center',
       alignItems: 'flex-start',
       boxSizing: 'border-box',
-      padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 12px 104px',
+      padding: 0,
       background: isLight
         ? `linear-gradient(180deg, ${accent.faint} 0%, ${Colors.get('background', theme)} 42%)`
         : `linear-gradient(180deg, rgba(${accent.rgb},0.12) 0%, ${Colors.get('background', theme)} 44%)`

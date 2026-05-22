@@ -100,13 +100,20 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
 
     // Auto-submit logic
     useEffect(() => {
-        if (userSelection.size === 0 || delayTimer) return;
+        if (!currentProblem || userSelection.size === 0 || delayTimer) return;
+        const { items, targetSymbol } = currentProblem;
+        const correctCount = items.filter((sym) => sym === targetSymbol).length;
+        const userCorrect = Array.from(userSelection).filter(i => items[i] === targetSymbol).length;
+        const userWrong = Array.from(userSelection).filter(i => items[i] !== targetSymbol).length;
+
+        if (userCorrect !== correctCount || userWrong > 0) return;
+
         const timeout = setTimeout(() => {
             handleSubmit();
-        }, 800); 
+        }, 280);
         return () => clearTimeout(timeout);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [userSelection, delayTimer]);
+    }, [userSelection, delayTimer, currentProblem]);
 
     // Round Timer
     useEffect(() => {
@@ -152,6 +159,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
 
         const symbol = currentProblem.items[index];
         const isTarget = symbol === currentProblem.targetSymbol;
+        const wasSelected = userSelection.has(index);
 
         setUserSelection((prev) => {
             const newSet = new Set(prev);
@@ -163,15 +171,17 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
             return newSet;
         });
 
-        setFeedback((prev) => ({
-            ...prev,
-            [index]: isTarget ? 'correct' : 'wrong',
-        }));
+        setFeedback((prev) => {
+            const next = { ...prev };
+            if (wasSelected) delete next[index];
+            else next[index] = isTarget ? 'correct' : 'wrong';
+            return next;
+        });
 
-        if (!isTarget) {
+        if (!wasSelected && !isTarget) {
             playWrong();
         }
-    }, [currentProblem, isStart, isFinished, delayTimer, isPaused, wrongData, playWrong]);
+    }, [currentProblem, isStart, isFinished, delayTimer, isPaused, wrongData, userSelection, playWrong]);
 
     const handleSubmit = () => {
         if (!currentProblem || delayTimer || wrongData) return;
@@ -207,6 +217,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
             setWrongData({
                 found: userCorrect,
                 expected: expectedAnswer,
+                targetSymbol,
                 isLast: stage >= 20,
             });
             setUserSelection(new Set());
@@ -244,7 +255,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
 
     const setNewProblem = (nextStage) => {
         const level = focusTrainingLevels[difficulty];
-        const [items, answerStr] = getProblem(type, difficulty, nextStage);
+        const [items, answerStr, targetSymbol] = getProblem(type, difficulty, nextStage);
         const roundTime = level.roundTimeSec || 10;
         setRoundTimeLeft(roundTime);
         setRoundTimerActive(true);
@@ -260,7 +271,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
 
         setCurrentProblem({
             items,
-            targetSymbol: level.targetSymbol || '★',
+            targetSymbol: targetSymbol || level.targetSymbol || '★',
         });
         setUserSelection(new Set());
         setFeedback({});
@@ -422,7 +433,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
                                     <div style={styles(theme).roundStat}><span style={styles(theme).miniLabel}>{langIndex === 0 ? "Раунд" : "Round"}</span><span style={styles(theme).miniValue}>{`${stage}/20`}</span></div>
                                 </div>
                                 <div style={styles(theme).wrongCard}>
-                                    <div style={styles(theme).feedbackSymbol}>★</div>
+                                    <div style={styles(theme).feedbackSymbol}>{wrongData.targetSymbol}</div>
                                     <div style={styles(theme).feedbackAnswer}>
                                         <span style={styles(theme).feedbackLabel}>{langIndex === 0 ? 'Найдено' : 'Found'}</span>
                                         <span style={styles(theme).feedbackValue}>{`${wrongData.found}/${wrongData.expected}`}</span>
@@ -431,8 +442,8 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
                                         <span style={styles(theme).feedbackTipIcon}>i</span>
                                         <span style={styles(theme).feedbackTipText}>
                                             {langIndex === 0
-                                                ? `Нужно было найти все ${wrongData.expected} символов ★. Ищи внимательно до конца раунда.`
-                                                : `You needed to find all ${wrongData.expected} ★ symbols. Look carefully until the round ends.`}
+                                                ? `Нужно было найти все ${wrongData.expected} фигуры ${wrongData.targetSymbol}. Ищи внимательно до конца раунда.`
+                                                : `You needed to find all ${wrongData.expected} ${wrongData.targetSymbol} shapes. Look carefully until the round ends.`}
                                         </span>
                                     </div>
                                 </div>
@@ -499,7 +510,7 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
                                         /* Problem Grid */
                                         <div style={{ width: '100%', display:'flex', flexDirection:'column', alignItems:'center' }}>
                                             <div style={styles(theme).ruleText}>
-                                                {focusTrainingLevels[difficulty].rules?.[langIndex] || (langIndex === 0 ? 'Нажми на все ★' : 'Click all ★')}
+                                                {getTargetRule(langIndex, currentProblem?.targetSymbol)}
                                             </div>
                                             {renderProblemItems()}
                                         </div>
@@ -536,6 +547,10 @@ const MentalGamePanelFocus = ({ show, type, difficulty, setShow }) => {
 export default MentalGamePanelFocus;
 
 // === HELPER FUNCTIONS & COMPONENTS ===
+
+const getTargetRule = (langIndex, targetSymbol = '★') => (
+    langIndex === 0 ? `Нажми на все ${targetSymbol}` : `Tap every ${targetSymbol}`
+);
 
 const StatItem = ({ theme, label, value }) => (
     <div style={{ 
@@ -974,6 +989,7 @@ const styles = (theme, fSize = 14) => ({
             justifyContent: 'center',
             fontSize: '25px',
             fontWeight: 950,
+            fontFamily: 'Arial, Helvetica, sans-serif',
             lineHeight: 1,
             color: accentColor,
             background: correct
@@ -1082,6 +1098,7 @@ const styles = (theme, fSize = 14) => ({
         color: theme === 'dark' ? '#F2C896' : '#8C6038',
         fontSize: '24px',
         fontWeight: 950,
+        fontFamily: 'Arial, Helvetica, sans-serif',
         boxShadow: theme === 'dark'
             ? 'inset 0 1px 0 rgba(255,255,255,0.14), 0 14px 32px rgba(0,0,0,0.22), 0 0 24px rgba(212,154,92,0.12)'
             : 'inset 0 1px 0 rgba(255,255,255,0.78), 0 10px 20px rgba(24,36,44,0.08)',
@@ -1233,15 +1250,15 @@ const styles = (theme, fSize = 14) => ({
 const FocusInstructionsBlock = ({ theme, langIndex }) => {
     const isDark = theme === 'dark';
     const items = langIndex === 0 ? [
-        { icon: '★', text: 'Найди все звёздочки ★ среди других символов' },
-        { icon: '👆', text: 'Нажми на каждую ★ до истечения времени' },
-        { icon: '🚫', text: 'Не трогай другие символы — это штраф к серии' },
-        { icon: '⚡', text: 'Чем быстрее и точнее — тем выше счёт' },
+        { icon: '◆', text: 'Цель меняется каждый раунд: смотри на подсказку сверху' },
+        { icon: '●', text: 'Нажми все такие фигуры до окончания круглого таймера' },
+        { icon: '✕', text: 'Лишние фигуры сбивают серию, но раунд не обрывается раньше времени' },
+        { icon: '✚', text: 'Чем быстрее и точнее, тем выше счёт' },
     ] : [
-        { icon: '★', text: 'Find all ★ symbols among the distractors' },
-        { icon: '👆', text: 'Tap each ★ before the round ends' },
-        { icon: '🚫', text: 'Don\'t tap other symbols — it breaks your streak' },
-        { icon: '⚡', text: 'Faster and more accurate = higher score' },
+        { icon: '◆', text: 'The target changes every round: follow the hint above' },
+        { icon: '●', text: 'Tap every matching shape before the round timer ends' },
+        { icon: '✕', text: 'Extra shapes break your streak, but the round does not end early' },
+        { icon: '✚', text: 'Faster and more accurate means a higher score' },
     ];
     return (
         <div style={{

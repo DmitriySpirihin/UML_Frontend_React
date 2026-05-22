@@ -84,23 +84,30 @@ export const StreakBadge = ({ theme, langIndex, streakLength }) => {
 
 const resultStyles = (theme, fSize = 14) => {
     const isDark = theme === 'dark';
+    const glassPanel = isDark
+        ? 'linear-gradient(145deg, rgba(255,255,255,0.095), rgba(255,255,255,0.032))'
+        : 'linear-gradient(145deg, rgba(255,255,255,0.88), rgba(255,255,255,0.58))';
+    const glassBorder = isDark ? 'rgba(170,229,238,0.14)' : 'rgba(37,87,96,0.12)';
+    const glassShadow = isDark
+        ? 'inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(255,255,255,0.035), 0 18px 40px rgba(0,0,0,0.22), 0 0 30px rgba(102,217,232,0.055)'
+        : 'inset 0 1px 0 rgba(255,255,255,0.82), 0 14px 30px rgba(24,36,44,0.10)';
     return {
         page: {
             flex: 1,
             width: '100%',
-            minHeight: '100vh',
+            minHeight: 'var(--app-viewport-height, 100vh)',
             boxSizing: 'border-box',
-            padding: 'calc(env(safe-area-inset-top, 0px) + 22px) 20px calc(28px + env(safe-area-inset-bottom, 0px))',
+            padding: 'calc(env(safe-area-inset-top, 0px) + 20px) 20px calc(24px + env(safe-area-inset-bottom, 0px))',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '16px',
+            gap: 'clamp(10px, 1.6vh, 16px)',
             overflowY: 'auto',
             color: Colors.get('mainText', theme),
         },
         title: {
             margin: 0,
-            fontSize: `${Math.max(28, fSize + 18)}px`,
+            fontSize: `clamp(30px, 8.4vw, ${Math.max(38, fSize + 24)}px)`,
             fontWeight: 950,
             lineHeight: 1.05,
             letterSpacing: '0',
@@ -112,17 +119,20 @@ const resultStyles = (theme, fSize = 14) => {
             position: 'relative',
             overflow: 'hidden',
             borderRadius: '30px',
-            padding: '26px 20px 22px',
+            padding: 'clamp(20px, 3vh, 26px) 20px clamp(18px, 2.4vh, 22px)',
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '18px',
+            gap: 'clamp(12px, 1.9vh, 18px)',
             background: isDark
-                ? 'radial-gradient(circle at 50% 4%, rgba(102,217,232,0.13), transparent 34%), linear-gradient(145deg, rgba(24,34,38,0.96), rgba(14,17,21,0.98))'
-                : 'radial-gradient(circle at 50% 4%, rgba(102,217,232,0.16), transparent 34%), linear-gradient(145deg, rgba(255,255,255,0.94), rgba(235,242,245,0.94))',
-            border: `1px solid ${isDark ? 'rgba(102,217,232,0.18)' : 'rgba(37,87,96,0.14)'}`,
-            boxShadow: isDark ? '0 28px 70px rgba(0,0,0,0.38)' : '0 20px 50px rgba(24,36,44,0.12)',
+                ? 'radial-gradient(circle at 50% 0%, rgba(102,217,232,0.18), transparent 36%), radial-gradient(circle at 10% 92%, rgba(138,124,214,0.12), transparent 42%), linear-gradient(145deg, rgba(24,34,38,0.78), rgba(14,17,21,0.90))'
+                : 'radial-gradient(circle at 50% 0%, rgba(102,217,232,0.18), transparent 36%), radial-gradient(circle at 10% 92%, rgba(138,124,214,0.10), transparent 42%), linear-gradient(145deg, rgba(255,255,255,0.88), rgba(235,242,245,0.72))',
+            border: `1px solid ${isDark ? 'rgba(102,217,232,0.24)' : 'rgba(37,87,96,0.14)'}`,
+            outline: `1px solid ${isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.54)'}`,
+            boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.14), 0 28px 70px rgba(0,0,0,0.38), 0 0 54px rgba(102,217,232,0.08)' : '0 20px 50px rgba(24,36,44,0.12)',
+            backdropFilter: 'blur(30px) saturate(178%)',
+            WebkitBackdropFilter: 'blur(30px) saturate(178%)',
         },
         statusPill: {
             minHeight: '34px',
@@ -131,13 +141,18 @@ const resultStyles = (theme, fSize = 14) => {
             display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
-            background: isDark ? 'rgba(102,217,232,0.1)' : 'rgba(102,217,232,0.16)',
-            border: `1px solid ${isDark ? 'rgba(102,217,232,0.18)' : 'rgba(37,87,96,0.12)'}`,
+            background: isDark
+                ? 'radial-gradient(circle at 20% 0%, rgba(102,217,232,0.20), transparent 60%), linear-gradient(145deg, rgba(255,255,255,0.08), rgba(102,217,232,0.06))'
+                : 'radial-gradient(circle at 20% 0%, rgba(102,217,232,0.22), transparent 60%), linear-gradient(145deg, rgba(255,255,255,0.84), rgba(102,217,232,0.12))',
+            border: `1px solid ${isDark ? 'rgba(102,217,232,0.28)' : 'rgba(37,87,96,0.12)'}`,
             color: isDark ? '#AEEBF2' : '#226877',
             fontSize: '11px',
             fontWeight: 900,
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
+            boxShadow: isDark ? 'inset 0 1px 0 rgba(255,255,255,0.16), 0 12px 28px rgba(102,217,232,0.08)' : glassShadow,
+            backdropFilter: 'blur(22px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(22px) saturate(170%)',
         },
         statusDot: {
             width: '9px',
@@ -150,8 +165,8 @@ const resultStyles = (theme, fSize = 14) => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '10px',
-            padding: '6px 0 4px',
+            gap: 'clamp(7px, 1.2vh, 10px)',
+            padding: '2px 0 0',
         },
         resultMark: {
             width: '76px',
@@ -185,7 +200,7 @@ const resultStyles = (theme, fSize = 14) => {
         score: {
             margin: 0,
             color: Colors.get('mainText', theme),
-            fontSize: 'clamp(56px, 15vw, 88px)',
+            fontSize: 'clamp(52px, 14vw, 84px)',
             fontWeight: 950,
             lineHeight: 0.95,
             letterSpacing: '0',
@@ -197,15 +212,21 @@ const resultStyles = (theme, fSize = 14) => {
             gap: '10px',
         },
         metric: {
-            minHeight: '76px',
-            padding: '12px',
+            minHeight: 'clamp(78px, 10.8vh, 92px)',
+            padding: '13px 12px',
             borderRadius: '20px',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
             boxSizing: 'border-box',
-            background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.72)',
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.075)' : 'rgba(20,24,32,0.065)'}`,
+            background: isDark
+                ? `radial-gradient(circle at 18% 0%, rgba(102,217,232,0.11), transparent 54%), ${glassPanel}`
+                : `radial-gradient(circle at 18% 0%, rgba(102,217,232,0.16), transparent 54%), ${glassPanel}`,
+            border: `1px solid ${glassBorder}`,
+            outline: `1px solid ${isDark ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.50)'}`,
+            boxShadow: glassShadow,
+            backdropFilter: 'blur(24px) saturate(175%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(175%)',
         },
         metricLabel: {
             color: Colors.get('subText', theme),
@@ -226,10 +247,16 @@ const resultStyles = (theme, fSize = 14) => {
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            padding: '14px 16px',
+            padding: '15px 16px',
             borderRadius: '20px',
-            background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.7)',
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(20,24,32,0.06)'}`,
+            background: isDark
+                ? `radial-gradient(circle at 10% 0%, rgba(102,217,232,0.13), transparent 50%), ${glassPanel}`
+                : `radial-gradient(circle at 10% 0%, rgba(102,217,232,0.15), transparent 50%), ${glassPanel}`,
+            border: `1px solid ${glassBorder}`,
+            outline: `1px solid ${isDark ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.50)'}`,
+            boxShadow: glassShadow,
+            backdropFilter: 'blur(24px) saturate(175%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(175%)',
         },
         messageIcon: {
             width: '30px',
@@ -255,11 +282,12 @@ const resultStyles = (theme, fSize = 14) => {
         mascotWrap: {
             width: '100%',
             maxWidth: '680px',
-            minHeight: '170px',
+            minHeight: 'clamp(116px, 18vh, 170px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             position: 'relative',
+            flexShrink: 0,
         },
         mascotGlow: {
             position: 'absolute',
@@ -271,8 +299,8 @@ const resultStyles = (theme, fSize = 14) => {
             filter: 'blur(18px)',
         },
         mascot: {
-            width: 'min(34vw, 150px)',
-            maxHeight: '170px',
+            width: 'clamp(108px, 32vw, 150px)',
+            maxHeight: 'clamp(120px, 18vh, 170px)',
             objectFit: 'contain',
             position: 'relative',
             filter: isDark ? 'drop-shadow(0 16px 26px rgba(0,0,0,0.38))' : 'drop-shadow(0 12px 22px rgba(24,36,44,0.16))',
@@ -281,25 +309,28 @@ const resultStyles = (theme, fSize = 14) => {
             width: '100%',
             maxWidth: '680px',
             display: 'grid',
-            gridTemplateColumns: '72px minmax(0, 1fr)',
+            gridTemplateColumns: 'clamp(76px, 20vw, 92px) minmax(0, 1fr)',
             gap: '12px',
-            marginTop: 'auto',
+            marginTop: '0',
+            flexShrink: 0,
         },
         retry: {
-            height: '62px',
+            minHeight: 'clamp(64px, 8vh, 76px)',
             borderRadius: '22px',
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(20,24,32,0.07)'}`,
-            background: isDark ? 'rgba(255,255,255,0.045)' : 'rgba(255,255,255,0.72)',
+            border: `1px solid ${glassBorder}`,
+            background: glassPanel,
             color: Colors.get('subText', theme),
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
             fontSize: '21px',
-            boxShadow: isDark ? '0 12px 28px rgba(0,0,0,0.18)' : '0 10px 22px rgba(24,36,44,0.08)',
+            boxShadow: glassShadow,
+            backdropFilter: 'blur(24px) saturate(175%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(175%)',
         },
         finish: {
-            height: '62px',
+            minHeight: 'clamp(64px, 8vh, 76px)',
             borderRadius: '22px',
             border: 'none',
             background: 'linear-gradient(135deg, #66D9E8 0%, #8A7CD6 100%)',

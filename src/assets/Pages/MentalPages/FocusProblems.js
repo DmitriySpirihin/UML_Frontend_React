@@ -5,38 +5,44 @@ import { focusTrainingLevels } from "./MentalHelper";
  * @param {number} type - Task type (3 = focus/attention counting)
  * @param {number} difficulty - 0=easy, 1=medium, 2=hard, 3=max
  * @param {number} stage - Progression stage (currently unused in generation)
- * @returns {[string[], string]} - [symbols array, correct count as string]
+ * @returns {[string[], string, string]} - [symbols array, correct count as string, target symbol]
  */
-const DISTRACTOR_POOL = ['●', '▲', '■', '◆', '⬟', '✚', '⬢', '⬟', '✦', '✳', '❄', '⬟'];
+const SHAPE_POOL = ['●', '○', '■', '□', '◆', '◇', '▲', '△', '▼', '▽', '⬟', '⬢', '★', '✚', '✦', '✕'];
 export function getProblem(type, difficulty, stage) {
   if (type !== 3) {
-    return [[], '']; // unsupported type
+    return [[], '', '']; // unsupported type
   }
 
   const levelIndex = Math.max(0, Math.min(difficulty, focusTrainingLevels.length - 1));
   const levelConfig = focusTrainingLevels[levelIndex];
 
-  // Use targetSymbol from config (default to '★' if missing)
-  const targetSymbol = levelConfig.targetSymbol || '★';
+  const targetSymbol = getTargetSymbol(levelConfig);
 
   let problem;
   switch (levelIndex) {
-    case 0: problem = getEasyProblem(levelConfig); break;
-    case 1: problem = getMediumProblem(levelConfig); break;
-    case 2: problem = getHardProblem(levelConfig); break;
-    case 3: problem = getMaxProblem(levelConfig); break;
-    default: problem = getEasyProblem(levelConfig);
+    case 0: problem = getEasyProblem(levelConfig, targetSymbol); break;
+    case 1: problem = getMediumProblem(levelConfig, targetSymbol); break;
+    case 2: problem = getHardProblem(levelConfig, targetSymbol); break;
+    case 3: problem = getMaxProblem(levelConfig, targetSymbol); break;
+    default: problem = getEasyProblem(levelConfig, targetSymbol);
   }
 
   const answer = problem.filter(char => char === targetSymbol).length;
-  return [problem, answer.toString()];
+  return [problem, answer.toString(), targetSymbol];
 }
 
 
-const getEasyProblem = (config) => generateSequence(config, 0);
-const getMediumProblem = (config) => generateSequence(config, 1);
-const getHardProblem = (config) => generateSequence(config, 2);
-const getMaxProblem = (config) => generateSequence(config, 3);
+const getEasyProblem = (config, targetSymbol) => generateSequence(config, targetSymbol, 0);
+const getMediumProblem = (config, targetSymbol) => generateSequence(config, targetSymbol, 1);
+const getHardProblem = (config, targetSymbol) => generateSequence(config, targetSymbol, 2);
+const getMaxProblem = (config, targetSymbol) => generateSequence(config, targetSymbol, 3);
+
+function getTargetSymbol(config) {
+  const pool = Array.isArray(config.targetSymbols) && config.targetSymbols.length
+    ? config.targetSymbols
+    : SHAPE_POOL;
+  return pool[Math.floor(Math.random() * pool.length)] || '★';
+}
 
 
 /**
@@ -45,16 +51,16 @@ const getMaxProblem = (config) => generateSequence(config, 3);
  * @param {number} difficulty - Used to pick distractor variant
  * @returns {string[]}
  */
-function generateSequence(config, difficulty) {
+function generateSequence(config, targetSymbol, difficulty) {
   const totalItems = randomInRange(...config.totalItemsRange);
   let targetCount = randomInRange(...config.targetsPerRoundRange);
   targetCount = Math.min(targetCount, totalItems); // 🔒 safety
 
-  const targetSymbol = config.targetSymbol || '★';
+  const distractors = SHAPE_POOL.filter(symbol => symbol !== targetSymbol);
 
-  // 🔥 Generate array of random distractors (one per slot)
+  // Generate one simple geometric distractor per slot.
   const sequence = Array.from({ length: totalItems }, () =>
-    DISTRACTOR_POOL[Math.floor(Math.random() * DISTRACTOR_POOL.length)]
+    distractors[Math.floor(Math.random() * distractors.length)]
   );
 
   // Place targets at random unique indices

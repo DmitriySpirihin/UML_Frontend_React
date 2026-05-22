@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AppData } from '../../StaticClasses/AppData.js';
-import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus.js';
+import { AppData, UserData } from '../../StaticClasses/AppData.js';
+import { theme$, lang$, fontSize$, premium$, setPage } from '../../StaticClasses/HabitsBus.js';
 import { getInsight, INSIGHT_TYPES } from './InsightHelper.js';
 import { buildHabitsAccent } from '../HabitsPages/HabitVisuals.jsx';
 import { buildSleepAccent } from './SleepVisuals.js';
@@ -12,7 +12,7 @@ import {
     MdOutlineSelfImprovement, MdExpandLess,
     MdOutlineHealthAndSafety
 } from 'react-icons/md';
-import { FaBrain, FaListUl, FaMedal } from 'react-icons/fa';
+import { FaBrain, FaCrown, FaListUl, FaMedal } from 'react-icons/fa';
 
 const CACHE_VERSION = 6;
 
@@ -145,6 +145,7 @@ const Insight = ({
     const [insight, setInsight] = useState('');
     const [loading, setLoading] = useState(true);
     const [showAllTypes, setShowAllTypes] = useState(false);
+    const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
     const requestIdRef = useRef(0);
 
     if (!AppData.insightCache) AppData.insightCache = {};
@@ -174,8 +175,15 @@ const Insight = ({
     const loadContent = useCallback(async (type) => {
         const requestId = requestIdRef.current + 1;
         requestIdRef.current = requestId;
-        setLoading(true);
         setActiveType(type);
+
+        if (!hasPremium) {
+            setLoading(false);
+            setInsight('');
+            return;
+        }
+
+        setLoading(true);
 
         const today = new Date().toISOString().split('T')[0];
         const cacheKey = `${type}_${langIndex}`;
@@ -206,7 +214,7 @@ const Insight = ({
         } finally {
             if (requestId === requestIdRef.current) setLoading(false);
         }
-    }, [langIndex]);
+    }, [hasPremium, langIndex]);
 
     useEffect(() => {
         const nextType = buttons.some((button) => button.type === initialType)
@@ -219,7 +227,8 @@ const Insight = ({
         const sub1 = theme$.subscribe(setTheme);
         const sub2 = fontSize$.subscribe(setFontSize);
         const sub3 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
-        return () => { sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); };
+        const sub4 = premium$.subscribe(setHasPremium);
+        return () => { sub1.unsubscribe(); sub2.unsubscribe(); sub3.unsubscribe(); sub4.unsubscribe(); };
     }, []);
 
     const disclaimerText = langIndex === 0
@@ -324,9 +333,34 @@ const Insight = ({
                 }
                 .insightScroll::-webkit-scrollbar { width: 0; }
             `}</style>
+            {!hasPremium && (
+                <PremiumOverlay
+                    theme={theme}
+                    langIndex={langIndex}
+                    accentOverride={resolvedAccent}
+                />
+            )}
         </section>
     );
 };
+
+function PremiumOverlay({ theme, langIndex, accentOverride }) {
+    const sx = (activeOrSize) => styles(theme, activeOrSize, accentOverride);
+    return (
+        <div onClick={(event) => event.stopPropagation()} style={sx().premiumOverlay}>
+            <div style={sx().premiumIcon}><FaCrown size={30} /></div>
+            <div style={sx().premiumText}>
+                {langIndex === 0 ? 'AI-анализ доступен только с премиумом' : 'AI analysis is available with Premium only'}
+            </div>
+            <button type="button" onClick={() => setPage('premium')} style={sx().premiumButton}>
+                {langIndex === 0 ? 'Купить подписку' : 'Buy subscription'}
+            </button>
+            <button type="button" onClick={() => setPage('MainMenu')} style={sx().premiumBack}>
+                {langIndex === 0 ? 'На главную' : 'Home'}
+            </button>
+        </div>
+    );
+}
 
 function LoadingState({ theme, langIndex, accentOverride }) {
     const sx = (activeOrSize) => styles(theme, activeOrSize, accentOverride);
@@ -438,21 +472,20 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
         panel: {
             display: 'flex',
             flexDirection: 'column',
-            width: 'min(430px, calc(100vw - 24px))',
-            height: `calc(100dvh - ${bottomInset + 24}px)`,
-            minHeight: 0,
-            maxHeight: 780,
-            borderRadius: 34,
-            background: theme === 'dark'
-                ? `radial-gradient(360px 220px at 12% -8%, ${p.accentSoft}, transparent 72%), linear-gradient(145deg, rgba(35,46,56,0.62), rgba(255,255,255,0.035) 58%, rgba(12,17,21,0.52))`
-                : `radial-gradient(360px 220px at 12% -8%, ${p.accentSoft}, transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.74), rgba(255,255,255,0.38))`,
-            border: `1px solid ${p.accentRing}`,
-            boxShadow: theme === 'dark'
-                ? '0 1px 0 rgba(255,255,255,0.08) inset, 0 24px 62px -34px rgba(0,0,0,0.72)'
-                : '0 1px 0 rgba(255,255,255,0.82) inset, 0 22px 50px -34px rgba(15,23,42,0.20)',
-            backdropFilter: 'blur(28px) saturate(170%)',
-            WebkitBackdropFilter: 'blur(28px) saturate(170%)',
+            width: '100%',
+            height: '100%',
+            minHeight: '100dvh',
+            maxHeight: 'none',
+            borderRadius: 0,
+            background: theme === 'dark' || theme === 'specialdark'
+                ? `radial-gradient(900px 460px at 82% -8%, ${p.accentSoft}, transparent 58%), radial-gradient(760px 420px at -12% 42%, rgba(124,108,255,0.11), transparent 60%), linear-gradient(180deg, #18232B 0%, #11171C 46%, #0F1418 100%)`
+                : `radial-gradient(900px 450px at 80% -10%, ${p.accentSoft}, transparent 58%), radial-gradient(700px 360px at -10% 100%, rgba(124,108,255,0.08), transparent 58%), #F4F5F7`,
+            border: 'none',
+            boxShadow: 'none',
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
             overflow: 'hidden',
+            position: 'relative',
             color: p.text,
             fontFamily: '"Inter", "Segoe UI", sans-serif'
         },
@@ -461,13 +494,16 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             gridTemplateColumns: '72px minmax(0, 1fr)',
             gap: 13,
             alignItems: 'center',
-            padding: '16px 16px 14px',
-            borderBottom: `1px solid ${p.border}`,
+            padding: 'calc(env(safe-area-inset-top, 0px) + 72px) 16px 14px',
+            borderBottom: `1px solid ${theme === 'dark' || theme === 'specialdark' ? 'rgba(183,243,255,0.10)' : p.border}`,
             background: theme === 'dark'
-                ? `linear-gradient(135deg, ${p.accentSoft}, rgba(255,255,255,0.052))`
-                : 'linear-gradient(180deg, rgba(255,255,255,0.66), rgba(255,255,255,0.36))',
-            backdropFilter: 'blur(18px) saturate(160%)',
-            WebkitBackdropFilter: 'blur(18px) saturate(160%)'
+                ? `linear-gradient(135deg, rgba(255,255,255,0.075), rgba(255,255,255,0.018) 54%, ${p.accentSoft})`
+                : 'linear-gradient(180deg, rgba(255,255,255,0.58), rgba(255,255,255,0.18))',
+            boxShadow: theme === 'dark'
+                ? '0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 44px -34px rgba(0,0,0,0.72)'
+                : '0 1px 0 rgba(255,255,255,0.72) inset, 0 18px 38px -32px rgba(15,23,42,0.18)',
+            backdropFilter: 'blur(26px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(26px) saturate(170%)'
         },
         botFrame: {
             position: 'relative',
@@ -562,14 +598,20 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
         typeRail: {
             display: 'flex',
             gap: 8,
-            padding: '12px 14px 10px',
+            padding: '12px 14px 12px',
             overflowX: 'auto',
             scrollbarWidth: 'none',
-            borderBottom: `1px solid ${p.border}`,
+            borderTop: `1px solid ${theme === 'dark' || theme === 'specialdark' ? 'rgba(183,243,255,0.06)' : 'rgba(15,23,42,0.06)'}`,
+            borderBottom: `1px solid ${theme === 'dark' || theme === 'specialdark' ? 'rgba(183,243,255,0.09)' : 'rgba(15,23,42,0.08)'}`,
             WebkitOverflowScrolling: 'touch',
-            background: theme === 'dark' ? 'rgba(255,255,255,0.018)' : 'rgba(255,255,255,0.22)',
-            backdropFilter: 'blur(14px) saturate(150%)',
-            WebkitBackdropFilter: 'blur(14px) saturate(150%)'
+            background: theme === 'dark'
+                ? 'linear-gradient(180deg, rgba(183,243,255,0.045), rgba(183,243,255,0.012))'
+                : 'linear-gradient(180deg, rgba(255,255,255,0.48), rgba(255,255,255,0.12))',
+            boxShadow: theme === 'dark'
+                ? '0 1px 0 rgba(255,255,255,0.045) inset, 0 20px 42px -34px rgba(0,0,0,0.68)'
+                : '0 1px 0 rgba(255,255,255,0.72) inset',
+            backdropFilter: 'blur(24px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(170%)'
         },
         typeChip: {
             minHeight: 34,
@@ -580,17 +622,19 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             borderRadius: 16,
             border: `1px solid ${isActive ? p.accentRing : p.border}`,
             background: isActive
-                ? `linear-gradient(145deg, ${p.accentSoft}, rgba(255,255,255,0.055))`
-                : (theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.42)'),
+                ? `linear-gradient(145deg, ${p.accentSoft}, rgba(255,255,255,0.09))`
+                : (theme === 'dark' ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.46)'),
             color: isActive ? p.text : p.sub,
             fontSize: 12,
             fontWeight: 800,
             whiteSpace: 'nowrap',
             cursor: 'pointer',
             fontFamily: 'inherit',
-            boxShadow: theme === 'dark' ? '0 1px 0 rgba(255,255,255,0.045) inset' : '0 1px 0 rgba(255,255,255,0.72) inset',
-            backdropFilter: 'blur(16px) saturate(155%)',
-            WebkitBackdropFilter: 'blur(16px) saturate(155%)'
+            boxShadow: theme === 'dark'
+                ? `0 1px 0 rgba(255,255,255,0.07) inset, ${isActive ? `0 0 20px -12px ${p.accent}` : '0 12px 28px -24px rgba(0,0,0,0.7)'}`
+                : '0 1px 0 rgba(255,255,255,0.72) inset',
+            backdropFilter: 'blur(20px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(170%)'
         },
         chipIcon: {
             display: 'flex',
@@ -614,7 +658,7 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
         contentBody: {
             flex: 1,
             overflowY: 'auto',
-            padding: `14px 14px calc(${bottomInset}px + env(safe-area-inset-bottom, 0px))`,
+            padding: '14px 14px calc(100px + env(safe-area-inset-bottom, 0px))',
             scrollbarWidth: 'none',
             fontSize: fSize === 0 ? 14 : 16
         },
@@ -627,14 +671,16 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
         insightCard: {
             borderRadius: 22,
             background: theme === 'dark'
-                ? `linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025))`
-                : 'linear-gradient(145deg, rgba(255,255,255,0.66), rgba(255,255,255,0.34))',
-            border: `1px solid ${p.border}`,
-            padding: '14px 14px',
+                ? `linear-gradient(145deg, rgba(255,255,255,0.085), rgba(255,255,255,0.026) 54%, rgba(183,243,255,0.025))`
+                : 'linear-gradient(145deg, rgba(255,255,255,0.72), rgba(255,255,255,0.34))',
+            border: `1px solid ${theme === 'dark' ? 'rgba(183,243,255,0.13)' : p.border}`,
+            padding: '15px 14px',
             textAlign: 'left',
-            boxShadow: theme === 'dark' ? '0 1px 0 rgba(255,255,255,0.05) inset' : '0 1px 0 rgba(255,255,255,0.72) inset',
-            backdropFilter: 'blur(18px) saturate(155%)',
-            WebkitBackdropFilter: 'blur(18px) saturate(155%)'
+            boxShadow: theme === 'dark'
+                ? '0 1px 0 rgba(255,255,255,0.07) inset, 0 22px 46px -36px rgba(0,0,0,0.82)'
+                : '0 1px 0 rgba(255,255,255,0.78) inset, 0 18px 38px -32px rgba(15,23,42,0.18)',
+            backdropFilter: 'blur(24px) saturate(170%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(170%)'
         },
         sectionHeader: {
             display: 'flex',
@@ -706,9 +752,13 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             gap: 9,
             padding: '12px 13px',
             borderRadius: 18,
-            background: theme === 'dark' ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.38)',
-            border: `1px solid ${p.border}`,
-            textAlign: 'left'
+            background: theme === 'dark'
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))'
+                : 'rgba(255,255,255,0.42)',
+            border: `1px solid ${theme === 'dark' ? 'rgba(183,243,255,0.10)' : p.border}`,
+            textAlign: 'left',
+            backdropFilter: 'blur(20px) saturate(160%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(160%)'
         },
         disclaimerIcon: {
             color: p.gold,
@@ -771,6 +821,65 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             borderRadius: 99,
             background: p.panelSoft,
             marginTop: 8
+        },
+        premiumOverlay: {
+            position: 'absolute',
+            inset: 0,
+            zIndex: 20,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            padding: 'calc(env(safe-area-inset-top, 0px) + 72px) 24px calc(110px + env(safe-area-inset-bottom, 0px))',
+            boxSizing: 'border-box',
+            background: theme === 'dark'
+                ? `linear-gradient(180deg, rgba(11,18,24,0.76), rgba(11,18,24,0.58)), radial-gradient(520px 380px at 50% 34%, ${p.accentSoft}, transparent 68%)`
+                : `linear-gradient(180deg, rgba(248,248,250,0.78), rgba(248,248,250,0.62)), radial-gradient(520px 380px at 50% 34%, ${p.accentSoft}, transparent 68%)`,
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)'
+        },
+        premiumIcon: {
+            width: 72,
+            height: 72,
+            borderRadius: 22,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 16,
+            color: p.accent,
+            background: p.accentSoft,
+            border: `1px solid ${p.accentRing}`
+        },
+        premiumText: {
+            maxWidth: 240,
+            marginBottom: 24,
+            color: p.sub,
+            fontSize: 13,
+            fontWeight: 760,
+            lineHeight: 1.55
+        },
+        premiumButton: {
+            width: 220,
+            minHeight: 48,
+            marginBottom: 10,
+            border: 'none',
+            borderRadius: 16,
+            color: '#fff',
+            background: 'linear-gradient(135deg, #8A7CD6, #66D9E8)',
+            fontSize: 15,
+            fontWeight: 850,
+            cursor: 'pointer',
+            boxShadow: '0 18px 36px -24px rgba(138,124,214,0.75)'
+        },
+        premiumBack: {
+            padding: '8px 20px',
+            border: 'none',
+            color: p.muted,
+            background: 'transparent',
+            fontSize: 13,
+            fontWeight: 760,
+            cursor: 'pointer'
         }
     };
 };

@@ -191,7 +191,7 @@ export const focusTrainingLevels = [
     id: 'easy',
     level: ['легко', 'easy'],
     title: ['фокус на цели', 'target focus'],
-    targetSymbol: '★',
+    targetSymbols: ['●', '■', '◆', '▲', '⬟', '★'],
     targetsPerRoundRange: [2, 4],          // ↑ more targets
     totalItemsRange: [8, 12],              // ↑↑↑ was [4,6]
     timeLimitSec: 25,
@@ -200,15 +200,15 @@ export const focusTrainingLevels = [
     distractorMotion: false,
     ruleShiftInterval: 0,
     description: [
-      'Найди все ★ среди большого количества символов.',
-      'Find all ★ among many symbols.'
+      'Найди все указанные фигуры среди большого количества символов.',
+      'Find all requested shapes among many symbols.'
     ],
   },
   {
     id: 'medium',
     level: ['средний', 'medium'],
     title: ['борьба с помехами', 'fight distractions'],
-    targetSymbol: '★',
+    targetSymbols: ['●', '○', '■', '□', '◆', '◇', '▲', '△', '⬟', '★', '✚'],
     targetsPerRoundRange: [3, 5],
     totalItemsRange: [14, 18],             // ↑↑↑ was [6,9]
     timeLimitSec: 30,
@@ -217,15 +217,15 @@ export const focusTrainingLevels = [
     distractorMotion: false,
     ruleShiftInterval: 0,
     description: [
-      'Еще больше символов. Сосредоточься, не теряй ★ из виду.',
-      'Even more symbols. Stay focused—don’t lose track of ★.'
+      'Еще больше фигур. Сосредоточься и не теряй цель из виду.',
+      'Even more shapes. Stay focused and don’t lose track of the target.'
     ],
   },
   {
     id: 'hard',
     level: ['сложно', 'hard'],
     title: ['устойчивый фокус', 'sustained focus'],
-    targetSymbol: '★',
+    targetSymbols: ['●', '○', '■', '□', '◆', '◇', '▲', '△', '▼', '▽', '⬟', '⬢', '★', '✚', '✦'],
     targetsPerRoundRange: [4, 7],
     totalItemsRange: [22, 28],             // ↑↑↑ was [8,12] → now very dense
     timeLimitSec: 35,
@@ -234,15 +234,15 @@ export const focusTrainingLevels = [
     distractorMotion: true,
     ruleShiftInterval: 0,
     description: [
-      'Высокая плотность символов. Только ★ статичны.',
-      'High symbol density. Only ★ stay still.'
+      'Высокая плотность фигур. Цель меняется от раунда к раунду.',
+      'High shape density. The target changes from round to round.'
     ],
   },
   {
     id: 'max',
     level: ['про-режим', 'max pro'],
     title: ['фокус под давлением', 'focus under pressure'],
-    targetSymbol: '★',
+    targetSymbols: ['●', '○', '■', '□', '◆', '◇', '▲', '△', '▼', '▽', '⬟', '⬢', '★', '✚', '✦', '✕'],
     targetsPerRoundRange: [5, 9],          // up to 9 targets!
     totalItemsRange: [26, 36],             // ↑↑↑ was [10,14] → now 32 max!
     timeLimitSec: 40,
@@ -251,8 +251,8 @@ export const focusTrainingLevels = [
     distractorMotion: true,
     ruleShiftInterval: 3,
     description: [
-      'Экстремальная нагрузка: до 32 символов! Цель может смениться.',
-      'Extreme load: up to 32 symbols! Target may change mid-session.'
+      'Экстремальная нагрузка: до 36 фигур. Цель меняется каждый раунд.',
+      'Extreme load: up to 36 shapes. The target changes every round.'
     ],
   },
 ];

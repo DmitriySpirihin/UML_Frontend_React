@@ -1300,7 +1300,7 @@ const styles = (theme, fSize = 0) => {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: '18px 4.5vw 122px',
+      padding: 'calc(max(env(safe-area-inset-top, 0px), 18px) + 6px) 4.5vw 122px',
       boxSizing: 'border-box',
     },
     pageHeader: {

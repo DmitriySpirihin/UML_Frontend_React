@@ -352,6 +352,8 @@ function PracticeCard({
 
 function LockedOverlay({ theme, isRu }) {
     const isDark = theme === 'dark' || theme === 'specialdark';
+    const lockHue = isDark ? '#8EEFE0' : '#168A80';
+    const lockRgb = isDark ? '142,239,224' : '22,138,128';
     return (
         <div
             onClick={(event) => event.stopPropagation()}
@@ -363,22 +365,27 @@ function LockedOverlay({ theme, isRu }) {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px',
-                background: isDark ? 'rgba(10, 12, 15, 0.76)' : 'rgba(255,255,255,0.8)',
-                backdropFilter: 'blur(12px)',
+                gap: '10px',
+                background: isDark
+                    ? 'linear-gradient(145deg, rgba(7,12,16,0.74), rgba(12,24,29,0.58))'
+                    : 'linear-gradient(145deg, rgba(255,255,255,0.74), rgba(225,250,247,0.52))',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.07)' : 'rgba(22,138,128,0.14)'}`,
+                backdropFilter: 'blur(22px) saturate(160%)',
+                WebkitBackdropFilter: 'blur(22px) saturate(160%)',
             }}
         >
             <div
                 style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '15px',
+                    width: '54px',
+                    height: '54px',
+                    borderRadius: '18px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#f5d33f',
-                    background: 'rgba(245, 211, 63, 0.13)',
-                    border: '1px solid rgba(245, 211, 63, 0.26)',
+                    color: lockHue,
+                    background: `linear-gradient(145deg, rgba(${lockRgb},0.18), rgba(255,255,255,0.055))`,
+                    border: `1px solid rgba(${lockRgb},0.34)`,
+                    boxShadow: `0 16px 38px rgba(${lockRgb},0.18), inset 0 1px 0 rgba(255,255,255,0.14)`,
                 }}
             >
                 <FaLock />
@@ -387,14 +394,22 @@ function LockedOverlay({ theme, isRu }) {
                 type="button"
                 onClick={() => setPage('premium')}
                 style={{
-                    border: 0,
-                    borderRadius: '13px',
-                    padding: '9px 15px',
+                    minWidth: '132px',
+                    minHeight: '40px',
+                    border: `1px solid rgba(${lockRgb},0.34)`,
+                    borderRadius: '18px',
+                    padding: '0 16px',
                     cursor: 'pointer',
-                    color: '#111417',
-                    background: '#f5d33f',
-                    fontSize: '12px',
+                    color: isDark ? '#E9FFFB' : '#062B2B',
+                    background: `linear-gradient(135deg, rgba(${lockRgb},0.34), rgba(${lockRgb},0.16))`,
+                    fontSize: '13px',
                     fontWeight: 900,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: `0 14px 34px rgba(${lockRgb},0.20), inset 0 1px 0 rgba(255,255,255,0.16)`,
+                    backdropFilter: 'blur(18px) saturate(150%)',
+                    WebkitBackdropFilter: 'blur(18px) saturate(150%)',
                 }}
             >
                 <FaCrown style={{ marginRight: '6px' }} />

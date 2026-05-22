@@ -84,10 +84,10 @@ const openGuide = () => {
         { id: 'MainCard', icon: null, title: lang === 0 ? '' : '', subtitle: lang === 0 ? '' : '', color: '#00ff6600' },
         { id: 'ToDoMain', icon: menuIcon('ToDoMain'), title: lang === 0 ? 'Задачи' : 'Tasks', subtitle: lang === 0 ? 'Планы и дела' : 'Plans and tasks', color: todoAccent.hue },
         { id: 'HabitsMain', icon: menuIcon('HabitsMain'), title: lang === 0 ? 'Привычки' : 'Habits', subtitle: lang === 0 ? 'Ежедневные ритуалы' : 'Daily rituals', color: habitAccent.hue },
-        { id: 'MentalMain', icon: menuIcon('MentalMain'), title: lang === 0 ? 'Тренировка ума' : 'Mind Training', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: mentalAccent.hue },
-        { id: 'TrainingMain', icon: menuIcon('TrainingMain'), title: lang === 0 ? 'Дневник тренировок' : 'Training Log', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: trainingAccent.hue},
+        { id: 'MentalMain', icon: menuIcon('MentalMain'), title: lang === 0 ? 'Ум' : 'Mind', subtitle: lang === 0 ? 'Память, фокус, логика' : 'Memory, focus, logic', color: mentalAccent.hue },
+        { id: 'TrainingMain', icon: menuIcon('TrainingMain'), title: lang === 0 ? 'Тренировки' : 'Training', subtitle: lang === 0 ? 'Силовые и прогресс' : 'Strength and progress', color: trainingAccent.hue},
         { id: 'RecoveryMain', icon: menuIcon('RecoveryMain'), title: lang === 0 ? 'Антистресс' : 'Stress Reset', subtitle: lang === 0 ? 'Дыхание, медитации, холод' : 'Breathing, meditation, cold', color: recoveryAccent.hue},
-        { id: 'SleepMain', icon: menuIcon('SleepMain'), title: lang === 0 ? 'Качество сна' : 'Sleep Quality', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: sleepAccent.hue}
+        { id: 'SleepMain', icon: menuIcon('SleepMain'), title: lang === 0 ? 'Сон' : 'Sleep', subtitle: lang === 0 ? 'Длительность и режим' : 'Duration and rhythm', color: sleepAccent.hue}
     ];
 
     useEffect(() => {
