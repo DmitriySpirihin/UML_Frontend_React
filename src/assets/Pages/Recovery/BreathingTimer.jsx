@@ -345,12 +345,20 @@ const BreathingTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIn
   const handlePause = () => { setEndTime(Date.now()); setIsRunning(false); setIsPaused(true); ambientAudio.pause(); };
   const handleResume = () => { setIsRunning(true); setIsPaused(false); };
   const handleReload = () => { resetSession(); };
+  const getCompletedCycles = () => {
+      const stepsPerCycle = Math.max(1, effectiveLevelData.steps?.length || 1);
+      return Math.min(effectiveLevelData.cycles, Math.max(1, Math.floor(currentStepIndex / stepsPerCycle) + 1));
+  };
+  const getSaveMeta = () => ({
+      ...getSessionMeta(protocol, categoryIndex, protocolIndex),
+      cycles: getCompletedCycles(),
+  });
   const onFinishSession = async() => {
-      await saveBreathingSession(startTime, Date.now(), maxHoldRef.current, getSessionMeta(protocol, categoryIndex, protocolIndex));
+      await saveBreathingSession(startTime, Date.now(), maxHoldRef.current, getSaveMeta());
       setFinishMessage(congratulations(langIndex)); setIsFinished(true);
   };
   const onSaveSession = async() => {
-      await saveBreathingSession(startTime, endTime, maxHoldRef.current, getSessionMeta(protocol, categoryIndex, protocolIndex)); resetSession(); setShow(false);
+      await saveBreathingSession(startTime, endTime, maxHoldRef.current, getSaveMeta()); resetSession(); setShow(false);
   };
 
   // Styles

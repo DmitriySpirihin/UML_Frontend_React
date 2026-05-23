@@ -40,6 +40,8 @@ const cleanSessionMeta = (meta = {}) => {
   const result = {};
   if (Number.isInteger(meta.categoryIndex)) result.categoryIndex = meta.categoryIndex;
   if (Number.isInteger(meta.protocolIndex)) result.protocolIndex = meta.protocolIndex;
+  if (Number.isFinite(Number(meta.cycles))) result.cycles = Math.max(1, Math.round(Number(meta.cycles)));
+  if (Number.isFinite(Number(meta.completedCycles))) result.completedCycles = Math.max(1, Math.round(Number(meta.completedCycles)));
   if (typeof meta.protocolName === 'string' && meta.protocolName.trim()) result.protocolName = meta.protocolName.trim();
   return result;
 };

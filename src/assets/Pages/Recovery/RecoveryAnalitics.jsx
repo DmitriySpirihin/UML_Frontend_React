@@ -18,6 +18,11 @@ const PERIODS = [
     { ru: 'Год', en: 'Year', days: 360 },
 ];
 
+const CHART_MODES = [
+    { key: 'minutes', ru: 'Минуты', en: 'Minutes' },
+    { key: 'cycles', ru: 'Циклы', en: 'Cycles' },
+];
+
 const formatDuration = (ms, isRu = true) => {
     const totalSec = Math.max(0, Math.floor(ms / 1000));
     const hours = Math.floor(totalSec / 3600);
@@ -33,6 +38,11 @@ const formatChartMinutes = (minutes, isRu = true) => {
     if (value < 1) return `<1${isRu ? 'м' : 'm'}`;
     const rounded = value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
     return `${rounded}${isRu ? 'м' : 'm'}`;
+};
+
+const formatCycles = (value, isRu = true) => {
+    const cycles = Math.max(0, Math.round(Number(value) || 0));
+    return `${cycles} ${isRu ? 'ц.' : 'cyc.'}`;
 };
 
 const formatDate = (iso, isRu) => {
@@ -83,6 +93,7 @@ const RecoveryAnalytics = () => {
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
     const [metricIndex, setMetricIndex] = useState(0);
     const [periodIndex, setPeriodIndex] = useState(0);
+    const [chartModeIndex, setChartModeIndex] = useState(0);
 
     useEffect(() => {
         const subs = [
@@ -108,12 +119,15 @@ const RecoveryAnalytics = () => {
                 const totals = sessions.reduce(
                     (acc, session) => {
                         const duration = Math.max(0, (session.endTime || 0) - (session.startTime || 0));
+                        const cycles = Math.max(1, Number(session.cycles || session.completedCycles || 1));
                         acc.totalDuration += duration;
+                        acc.totalCycles += cycles;
+                        acc.sessionCount += 1;
                         if (metricIndex === 0 && session.maxHold) acc.totalMaxHold += session.maxHold;
                         if (metricIndex === 2 && session.timeInColdWater) acc.totalTimeInCold += session.timeInColdWater;
                         return acc;
                     },
-                    { date, totalDuration: 0, totalMaxHold: 0, totalTimeInCold: 0 }
+                    { date, totalDuration: 0, totalCycles: 0, sessionCount: 0, totalMaxHold: 0, totalTimeInCold: 0 }
                 );
                 return totals;
             })
@@ -130,12 +144,14 @@ const RecoveryAnalytics = () => {
         () =>
             filteredData.map((item) => ({
                 date: item.date.split('-').slice(1).reverse().join('.'),
-                weight: Math.round((item.totalDuration / 60000) * 10) / 10,
+                weight: chartModeIndex === 0 ? Math.round((item.totalDuration / 60000) * 10) / 10 : item.totalCycles,
             })),
-        [filteredData]
+        [filteredData, chartModeIndex]
     );
 
     const totalPeriodTime = filteredData.reduce((acc, item) => acc + item.totalDuration, 0);
+    const totalPeriodCycles = filteredData.reduce((acc, item) => acc + item.totalCycles, 0);
+    const chartValueFormatter = chartModeIndex === 0 ? formatChartMinutes : formatCycles;
     const MetricIcon = metric.Icon;
 
     return (
@@ -178,16 +194,28 @@ const RecoveryAnalytics = () => {
                         <div>
                             <div style={s.kicker}>{isRu ? 'ЗА ПЕРИОД' : 'PERIOD'}</div>
                             <div style={s.bigTotal}>{formatDuration(totalPeriodTime, isRu)}</div>
+                            <div style={s.subTotal}>{formatCycles(totalPeriodCycles, isRu)}</div>
                         </div>
-                        <SegmentTabs
-                            items={PERIODS}
-                            activeIndex={periodIndex}
-                            onChange={setPeriodIndex}
-                            theme={theme}
-                            isRu={isRu}
-                            accent={activeColor}
-                            compact
-                        />
+                        <div style={s.chartControls}>
+                            <SegmentTabs
+                                items={PERIODS}
+                                activeIndex={periodIndex}
+                                onChange={setPeriodIndex}
+                                theme={theme}
+                                isRu={isRu}
+                                accent={activeColor}
+                                compact
+                            />
+                            <SegmentTabs
+                                items={CHART_MODES}
+                                activeIndex={chartModeIndex}
+                                onChange={setChartModeIndex}
+                                theme={theme}
+                                isRu={isRu}
+                                accent={activeColor}
+                                compact
+                            />
+                        </div>
                     </div>
 
                     <div style={s.chartArea}>
@@ -198,7 +226,7 @@ const RecoveryAnalytics = () => {
                                 textColor={Colors.get('subText', theme)}
                                 linesColor={theme === 'dark' || theme === 'specialdark' ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.08)'}
                                 backgroundColor="rgba(12, 14, 18, 0.92)"
-                                valueFormatter={(value) => formatChartMinutes(value, isRu)}
+                                valueFormatter={(value) => chartValueFormatter(value, isRu)}
                             />
                         ) : (
                             <div style={s.emptyChart}>
@@ -213,7 +241,7 @@ const RecoveryAnalytics = () => {
                     <div>
                         <h2 style={s.historyTitle}>{isRu ? 'История' : 'History'}</h2>
                         <div style={s.historyMeta}>
-                            {filteredData.length} {isRu ? 'записей' : 'records'}
+                            {filteredData.length} {isRu ? 'записей' : 'records'} · {formatCycles(totalPeriodCycles, isRu)}
                         </div>
                     </div>
                 </div>
@@ -249,6 +277,9 @@ function HistoryRow({ item, metricIndex, theme, activeColor, isRu }) {
             <div style={s.rowCopy}>
                 <div style={s.rowDate}>{formatDate(item.date, isRu)}</div>
                 <div style={s.rowMeta}>
+                    {formatCycles(item.totalCycles, isRu)}
+                    <span style={s.rowDot}>·</span>
+                    <FaClock /> {formatDuration(item.totalDuration, isRu)}
                     {metricIndex === 0 && item.totalMaxHold > 0 && (
                         <>
                             <FaFire /> {formatDuration(item.totalMaxHold, isRu)}
@@ -383,7 +414,7 @@ const styles = (theme, accent = '#7ee6d2', fSize = 0) => {
             minHeight: '104px',
             display: 'flex',
             alignItems: 'center',
-            gap: '14px',
+            gap: '12px',
             padding: '15px 16px',
             boxSizing: 'border-box',
             borderRadius: '28px',
@@ -419,14 +450,18 @@ const styles = (theme, accent = '#7ee6d2', fSize = 0) => {
         heroTitle: {
             margin: '4px 0 0',
             color: mainText,
-            fontSize: fSize === 0 ? '28px' : '30px',
+            fontSize: fSize === 0 ? '25px' : '27px',
             fontWeight: 900,
             lineHeight: 1.05,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
         },
         totalPill: {
-            minWidth: '88px',
+            flex: '0 0 auto',
+            minWidth: '82px',
             height: '42px',
-            padding: '0 12px',
+            padding: '0 10px',
             borderRadius: '17px',
             display: 'flex',
             alignItems: 'center',
@@ -458,6 +493,12 @@ const styles = (theme, accent = '#7ee6d2', fSize = 0) => {
             gap: '12px',
             marginBottom: '10px',
         },
+        chartControls: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '7px',
+        },
         kicker: {
             color: subText,
             fontSize: '10px',
@@ -471,6 +512,13 @@ const styles = (theme, accent = '#7ee6d2', fSize = 0) => {
             fontWeight: 900,
             lineHeight: 1,
             textShadow: `0 0 20px ${accent}38`,
+        },
+        subTotal: {
+            marginTop: '5px',
+            color: subText,
+            fontSize: '12px',
+            fontWeight: 800,
+            lineHeight: 1,
         },
         chartArea: {
             height: '166px',
@@ -652,6 +700,9 @@ const sharedStyles = (theme, accent = '#7ee6d2') => {
             fontSize: '11px',
             fontWeight: 800,
             marginTop: '3px',
+        },
+        rowDot: {
+            opacity: 0.55,
         },
         rowValue: {
             color: accent,

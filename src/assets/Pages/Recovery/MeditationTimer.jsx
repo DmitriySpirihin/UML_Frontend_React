@@ -198,11 +198,15 @@ const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolI
   const handlePause = () => { setEndTime(Date.now()); setIsRunning(false); setIsPaused(true); audio.pause(); };
   const handleResume = () => { setIsRunning(true); setIsPaused(false); };
   const handleReload = () => { setCurrentStepIndex(0); setElapsed(0); setIsRunning(false); setIsStart(false); setIsPaused(false); setIsFinished(false); };
+  const getSaveMeta = () => ({
+    ...getSessionMeta(protocol, categoryIndex, protocolIndex),
+    cycles: session.cycles,
+  });
   const onFinishSession = async () => {
-    await saveMeditationSession(startTime, Date.now(), getSessionMeta(protocol, categoryIndex, protocolIndex));
+    await saveMeditationSession(startTime, Date.now(), getSaveMeta());
     setFinishMessage(congratulations(langIndex)); setIsFinished(true);
   };
-  const onSaveSession = async () => { await saveMeditationSession(startTime, endTime, getSessionMeta(protocol, categoryIndex, protocolIndex)); handleReload(); setShow(false); };
+  const onSaveSession = async () => { await saveMeditationSession(startTime, endTime, getSaveMeta()); handleReload(); setShow(false); };
 
   // --- RENDER VARS ---
   const accent = Colors.get('meditate', theme);

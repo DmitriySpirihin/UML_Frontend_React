@@ -199,11 +199,15 @@ const HardeningTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIn
   const handlePause = () => { setEndTime(Date.now()); setIsRunning(false); setIsPaused(true); audio.pause(); };
   const handleResume = () => { setIsRunning(true); setIsPaused(false); };
   const handleReload = () => { setCurrentStepIndex(0); setPhaseProgress(0); setIsRunning(false); setIsStart(false); setIsPaused(false); setIsFinished(false); coldTimeRef.current = 0; startTimeRef.current = 0; audio.pause(); audio.currentTime = 0; };
+  const getSaveMeta = () => ({
+    ...getSessionMeta(protocol, categoryIndex, protocolIndex),
+    cycles: session.cycles,
+  });
   const onFinishSession = async () => {
-    await saveHardeningSession(startTime, Date.now(), coldTimeRef.current, getSessionMeta(protocol, categoryIndex, protocolIndex));
+    await saveHardeningSession(startTime, Date.now(), coldTimeRef.current, getSaveMeta());
     setFinishMessage(congratulations(langIndex)); setIsFinished(true);
   };
-  const onSaveSession = async () => { await saveHardeningSession(startTime, endTime, coldTimeRef.current, getSessionMeta(protocol, categoryIndex, protocolIndex)); handleReload(); setShow(false); };
+  const onSaveSession = async () => { await saveHardeningSession(startTime, endTime, coldTimeRef.current, getSaveMeta()); handleReload(); setShow(false); };
 
   // --- RENDER ---
   const textMain = Colors.get('mainText', theme);
