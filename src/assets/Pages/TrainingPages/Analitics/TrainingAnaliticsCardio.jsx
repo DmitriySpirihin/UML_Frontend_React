@@ -275,7 +275,6 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
         </div>
         {hasFilters && expanded && (
           <Motion.button
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               setSelectedYear(null);
@@ -295,7 +294,6 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
             {langIndex === 0 ? 'Год' : 'Year'}
           </div>
           <Motion.div
-            whileHover={{ scale: 1.01 }}
             style={styles(theme).dropdownContainer}
           >
             <select
@@ -332,7 +330,6 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
               {langIndex === 0 ? 'Месяц' : 'Month'}
             </div>
             <Motion.div
-              whileHover={{ scale: 1.01 }}
               style={styles(theme).dropdownContainer}
             >
               <select
@@ -481,7 +478,6 @@ const filteredSessions = useMemo(() => {
   // --- METRIC CARDS ---
   const MetricCard = ({ icon: Icon, label, value, subValue, color, isLoading = false }) => (
     <Motion.div 
-      whileHover={{ y: -3 }}
       style={{
         ...styles(theme).metricCard,
         borderLeft: `3px solid ${color}`,
@@ -551,10 +547,10 @@ const filteredSessions = useMemo(() => {
 
     return (
       <Motion.div
-        layout
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.16, ease: 'easeOut' }}
         style={{
           ...styles(theme).sessionCard,
           borderLeft: `3px solid ${activity.color}`,
@@ -825,7 +821,6 @@ const filteredSessions = useMemo(() => {
             return (
               <Motion.button
                 key={key}
-                whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   setTab(key);
@@ -849,7 +844,10 @@ const filteredSessions = useMemo(() => {
                 {activity.label}
                 {isActive && (
                   <Motion.div
-                    layoutId="activeTypeIndicator"
+                    initial={{ opacity: 0, scaleX: 0.72 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    exit={{ opacity: 0, scaleX: 0.72 }}
+                    transition={{ duration: 0.14, ease: 'easeOut' }}
                     style={{
                       position: 'absolute',
                       bottom: '-3px',
@@ -926,7 +924,6 @@ const filteredSessions = useMemo(() => {
                 return (
                   <Motion.button
                     key={metric}
-                    whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setSelectedMetric(metric)}
                     style={{

@@ -751,7 +751,6 @@ const TrainingCardio = () => {
       >
         <Motion.button
           whileTap={{ scale: 0.97 }}
-          whileHover={{ scale: 1.02 }}
           onClick={handleSave}
           style={{
             background: currentType.gradient,

@@ -514,7 +514,7 @@ const ToDoPage = () => {
                             initial={{ y: '100%' }}
                             animate={{ y: 0 }}
                             exit={{ y: '100%' }}
-                            transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+	                            transition={{ duration: 0.18, ease: 'easeOut' }}
                         >
                             <div style={s.iconPickerHandle} />
                             <div style={s.iconPickerHeader}>
@@ -581,15 +581,7 @@ const ToDoPage = () => {
 
             {/* TOP BAR */}
             <div style={s.topBar}>
-                <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.9 }}
-                    onClick={goBack}
-                    style={s.roundTopBtn}
-                    aria-label={lang === 0 ? 'Назад' : 'Back'}
-                >
-                    <IoIosArrowBack size={24} color={Colors.get('mainText', theme)} style={{ display: 'block', flexShrink: 0 }} />
-                </motion.button>
+                <div aria-hidden="true" style={{ width: 46, height: 46, flexShrink: 0 }} />
                 <div style={s.topTitleBlock}>
                     <div style={s.topEyebrow}>{lang === 0 ? 'ЗАДАЧА' : 'TASK'}</div>
                     <div style={s.topTitle}>{task.category || (lang === 0 ? 'Общее' : 'General')}</div>
@@ -1063,15 +1055,8 @@ const SubGoalCard = ({
                 </div>
             </div>
 
-            <AnimatePresence>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                        style={s.expandedContent}
-                    >
+            <div className={`smooth-accordion ${isExpanded ? 'is-open' : ''}`}>
+                <div className="smooth-accordion-inner" style={s.expandedContent}>
                         <div style={s.expandedField}>
                             <div style={s.fieldHeader}>
                                 <FaBullseye size={14} color={task.color} />
@@ -1200,9 +1185,8 @@ const SubGoalCard = ({
                                 {lang === 0 ? 'Удалить' : 'Delete'}
                             </motion.button>
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                </div>
+            </div>
         </div>
     );
 };

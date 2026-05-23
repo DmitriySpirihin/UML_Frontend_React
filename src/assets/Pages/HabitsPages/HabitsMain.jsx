@@ -759,7 +759,7 @@ const styles = (theme, fSize = 0) => {
             padding: '4px 0 8px',
             boxSizing: 'border-box',
             display: 'grid',
-            gridTemplateColumns: '48px minmax(0, 1fr) 98px',
+            gridTemplateColumns: '98px minmax(0, 1fr) 98px',
             alignItems: 'center',
             gap: 12
         },
@@ -1537,15 +1537,7 @@ function HabitsPageHeader({ theme, fSize, langIndex, onAccentClick, onBack }) {
             transition={{ duration: 0.32 }}
             style={styles(theme, fSize).pageHeader}
         >
-            <motion.button
-                type="button"
-                whileTap={{ scale: 0.94 }}
-                onClick={onBack}
-                aria-label={langIndex === 0 ? 'Назад' : 'Back'}
-                style={styles(theme, fSize).pageBackButton}
-            >
-                <span style={{ fontSize: 25, lineHeight: 1, fontWeight: 900, transform: 'translateY(-1px)' }}>‹</span>
-            </motion.button>
+            <div aria-hidden="true" />
             <div style={styles(theme, fSize).pageHeaderBrand}>
                 <div style={styles(theme, fSize).pageTitle}>UltyMyLife</div>
                 <div style={styles(theme, fSize).pageSubtitle}>
@@ -1610,10 +1602,9 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, selectedDateKey = da
 
     return (
         <motion.div
-            layout
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.36 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
             style={{
                 width: 'calc(100% - 56px)',
                 maxWidth: 660,
@@ -1717,7 +1708,7 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, selectedDateKey = da
                     >
                         <motion.span
                             animate={{ rotate: detailsCollapsed ? -90 : 0 }}
-                            transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+                            transition={{ duration: 0.16, ease: 'easeOut' }}
                             style={{ display: 'flex' }}
                         >
                             <FaChevronDown size={13} />
@@ -1725,15 +1716,8 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, selectedDateKey = da
                     </motion.button>
                 </div>
             </div>
-            <AnimatePresence initial={false}>
-                {!detailsCollapsed && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0, y: -6 }}
-                        animate={{ height: 'auto', opacity: 1, y: 0 }}
-                        exit={{ height: 0, opacity: 0, y: -6 }}
-                        transition={{ type: 'spring', stiffness: 230, damping: 28 }}
-                        style={{ position: 'relative', zIndex: 1, minWidth: 0, paddingBottom: 0, overflow: 'hidden' }}
-                    >
+            <div className={`smooth-accordion ${detailsCollapsed ? '' : 'is-open'}`} style={{ position: 'relative', zIndex: 1, minWidth: 0, paddingBottom: 0 }}>
+                <div className="smooth-accordion-inner">
                 <div style={{
                     borderRadius: 14,
                     border: `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.105)'}`,
@@ -1764,9 +1748,8 @@ function HabitsHero({ theme, langIndex, habitsCards, fSize, selectedDateKey = da
                     {stat(langIndex === 0 ? 'Лучшая серия' : 'Best streak', summary.bestStreak, HABITS_SUCCESS)}
                     {stat(langIndex === 0 ? 'Формирование привычек' : 'Habit formation', `${summary.avgFormation}%`, HABITS_ACCENT, true)}
                 </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                </div>
+            </div>
             </div>
         </motion.div>
     );
@@ -2206,8 +2189,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
                 if (el.clientHeight < 88 || (event.nativeEvent.pageY - (el.getBoundingClientRect().top + window.scrollY)) < 88) toggleIsActive();
             }}
             drag={canDrag && !isAutoComplete ? 'x' : false} dragConstraints={{ left: minX, right: statusValue > 0 || isNegative ? 0 : maxX }}
-            onDrag={handledDrag} onDragEnd={onDragEnd} whileHover={{ y: -1 }} whileTap={{ scale: 0.985 }}
-            animate={{ height: expanded ? 'auto' : '88px' }} transition={{ type: 'spring', stiffness: 118, damping: 27, mass: 0.92 }}
+            onDrag={handledDrag} onDragEnd={onDragEnd} whileTap={{ scale: 0.985 }}
         >
            
             <div style={{ display: "flex", alignItems: "center", minHeight: 88, width: '100%', padding: '14px 16px', boxSizing: 'border-box', gap: 14 }}>
@@ -2270,13 +2252,9 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
                     
                 </div>
             </div>
-            {expanded && (
-    <motion.div 
-        initial={{ opacity: 0 }} 
-        animate={{ opacity: 1 }} 
-        transition={{ duration: 0.34, ease: 'easeOut', delay: 0.06 }} 
-        style={{ padding: '0 16px 18px 16px' }}
-    >
+            <div className={`smooth-accordion ${expanded ? 'is-open' : ''}`}>
+                <div className="smooth-accordion-inner">
+    <div style={{ padding: '0 16px 18px 16px' }}>
         {/* Separator Line */}
         <div style={{ height: '1px', width: '100%', backgroundColor: isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.075)', marginBottom: '14px' }} />
         {/* Description */}
@@ -2371,8 +2349,9 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
             </motion.button>
         </div>
 
-    </motion.div>
-)}
+    </div>
+                </div>
+            </div>
             {showTimerSlider && (
                 <div style={{ display: 'flex', alignItems: 'center', position: 'absolute', borderRadius: 28, width: '100%', height: 88, top: 0, zIndex: 1001, background: isLight ? 'rgba(255,255,255,0.98)' : 'rgba(20,23,25,0.98)', border: borderColor }} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '90%', margin: '0 auto' }}>
@@ -2417,7 +2396,7 @@ function HabitAccentModal({ isOpen, onClose, accentColor, onAccentChange, custom
                         initial={{ y: 40, opacity: 0, scale: 0.98 }}
                         animate={{ y: 0, opacity: 1, scale: 1 }}
                         exit={{ y: 40, opacity: 0, scale: 0.98 }}
-                        transition={{ type: 'spring', damping: 23, stiffness: 260 }}
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
                         style={{
                             position: 'fixed',
                             left: '4%',
@@ -2597,7 +2576,7 @@ function HabitWidgetSettingsModal({ isOpen, onClose, values, onToggle, theme, la
                         initial={{ y: 40, opacity: 0, scale: 0.98 }}
                         animate={{ y: 0, opacity: 1, scale: 1 }}
                         exit={{ y: 40, opacity: 0, scale: 0.98 }}
-                        transition={{ type: 'spring', damping: 23, stiffness: 260 }}
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
                         style={{
                             position: 'fixed',
                             left: '4%',
@@ -2806,7 +2785,7 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
                     </div>
                     <motion.div
                         animate={{ rotate: isOpen ? 0 : -90 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                        transition={{ duration: 0.16, ease: 'easeOut' }}
                         style={{ color: sub, display: 'flex' }}
                     >
                         <FaChevronDown size={14} />
@@ -2814,21 +2793,13 @@ function CategoryPanel({ categoryKey, text = ["Имя", "Name"], children, theme
                 </div>
             </motion.div>
             
-            <AnimatePresence initial={false}>
-                {isOpen && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                        style={{ overflowY: 'hidden', overflowX: 'visible', padding: '4px 1px 2px', boxSizing: 'border-box' }}
-                    >
+            <div className={`smooth-accordion ${isOpen ? 'is-open' : ''}`} style={{ padding: isOpen ? '4px 1px 2px' : '0 1px', boxSizing: 'border-box' }}>
+                <div className="smooth-accordion-inner" style={{ overflowX: 'visible' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
                             {children}
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                </div>
+            </div>
         </div>
     )
 }

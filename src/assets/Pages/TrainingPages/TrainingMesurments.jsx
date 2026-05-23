@@ -194,7 +194,7 @@ const TrainingMesurments = () => {
                 <div style={{ width: '100%', maxWidth: '600px', display: 'flex', flexDirection: 'column', gap: '12px', paddingBottom: '100px' }}>
                     
                     {/* --- PERSONAL DATA (BENTO GRID) --- */}
-                    <Motion.div layout {...getTrainingPressMotion(1.004, 0.988)} style={{ ...styles(theme).card, ...getTrainingGlassSurface(theme, accent, currentType === -1), background: cardBg, border: `1px solid ${borderColor}` }}>
+                    <Motion.div {...getTrainingPressMotion(1.004, 0.988)} style={{ ...styles(theme).card, ...getTrainingGlassSurface(theme, accent, currentType === -1), background: cardBg, border: `1px solid ${borderColor}` }}>
                         <div style={styles(theme).cardHeader} onClick={() => setCurrentType(p => p === -1 ? -2 : -1)}>
                             <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
                                 <div style={styles(theme).iconBox}><IoPerson size={18} color={accent.hue} /></div>
@@ -205,23 +205,21 @@ const TrainingMesurments = () => {
                                 {currentType === -1 ? <FaChevronUp size={12} color={Colors.get('subText', theme)}/> : <FaChevronDown size={12} color={Colors.get('subText', theme)}/>}
                             </div>
                         </div>
-                        <AnimatePresence>
-                            {currentType === -1 && (
-                                <Motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} style={{ overflow: 'hidden' }}>
+                        <div className={`smooth-accordion ${currentType === -1 ? 'is-open' : ''}`}>
+                            <div className="smooth-accordion-inner">
                                     <div style={{ padding: '0 15px 20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                                         <StatCard label={langIndex===0?'Возраст':'Age'} value={age} sub={langIndex===0?'лет':'y.o.'} theme={theme} />
                                         <StatCard label={langIndex===0?'Пол':'Gender'} value={gender===0?(langIndex===0?'Муж':'Male'):(langIndex===0?'Жен':'Fem')} theme={theme} icon={gender===0?<IoMdMale/>:<IoMdFemale/>} />
                                         <StatCard label={langIndex===0?'Рост':'Height'} value={height} sub="cm" theme={theme} />
                                         <StatCard label={langIndex===0?'Цель':'Goal'} value={goalNames[goal][langIndex]} theme={theme} isWide />
                                     </div>
-                                </Motion.div>
-                            )}
-                        </AnimatePresence>
+                            </div>
+                        </div>
                     </Motion.div>
 
                     {/* --- MEASUREMENTS LIST --- */}
                     {data.map((el, ind) => (
-                        <Motion.div key={ind} layout {...getTrainingPressMotion(1.004, 0.988)} style={{ ...styles(theme).card, ...getTrainingGlassSurface(theme, accent, currentType === ind), background: cardBg, border: `1px solid ${borderColor}` }}>
+                        <Motion.div key={ind} {...getTrainingPressMotion(1.004, 0.988)} style={{ ...styles(theme).card, ...getTrainingGlassSurface(theme, accent, currentType === ind), background: cardBg, border: `1px solid ${borderColor}` }}>
                             <div style={styles(theme).cardHeader} onClick={() => setCurrentType(p => p === ind ? -2 : ind)}>
                                 <div style={{display: 'flex', alignItems: 'center', gap: '12px'}}>
                                     <div style={styles(theme).iconBox}>
@@ -236,9 +234,8 @@ const TrainingMesurments = () => {
                                     {currentType === ind ? <FaChevronUp size={12} color={Colors.get('subText', theme)}/> : <FaChevronDown size={12} color={Colors.get('subText', theme)}/>}
                                 </div>
                             </div>
-                            <AnimatePresence>
-                                {currentType === ind && (
-                                    <Motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} style={{ overflow: 'hidden' }}>
+                            <div className={`smooth-accordion ${currentType === ind ? 'is-open' : ''}`}>
+                                <div className="smooth-accordion-inner">
                                         <div style={{ padding: '0 15px 15px' }}>
                                             <Motion.button whileTap={{scale:0.98}} onClick={openAdd} style={styles(theme).addBtn}>
                                                 <FaPlus size={12}/> {langIndex === 0 ? 'Добавить замер' : 'Add Measurement'}
@@ -266,9 +263,8 @@ const TrainingMesurments = () => {
                                                 {el.length === 0 && <div style={{textAlign:'center', fontSize:'13px', color:Colors.get('subText', theme), padding:'10px'}}>{langIndex===0?'Пусто':'Empty'}</div>}
                                             </div>
                                         </div>
-                                    </Motion.div>
-                                )}
-                            </AnimatePresence>
+                                </div>
+                            </div>
                         </Motion.div>
                     ))}
                 </div>
@@ -503,7 +499,7 @@ const BottomSheet = ({ children, onClose, theme }) => (
     <div style={styles(theme).backdrop} onClick={onClose}>
         <Motion.div 
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+	            transition={{ duration: 0.18, ease: 'easeOut' }}
             style={styles(theme).sheet} onClick={e => e.stopPropagation()}
         >
             <div style={styles(theme).handle} />

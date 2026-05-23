@@ -238,9 +238,8 @@ const SettingsItem = ({ theme, fSize, icon, label, value, onClick, color, isActi
     <motion.button
         type="button"
         style={s(theme, fSize).listEl}
-        whileHover={{ y: -1, scale: 1.006 }}
         whileTap={{ scale: 0.975, y: 1 }}
-        transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+        transition={{ duration: 0.14, ease: 'easeOut' }}
         onClick={onClick}
     >
         <div style={s(theme, fSize).itemLeft}>
@@ -266,9 +265,8 @@ const FontSizeControl = ({ theme, fSize, langIndex, onChange }) => {
         <motion.button
             type="button"
             style={styles.listEl}
-            whileHover={{ y: -1, scale: 1.006 }}
             whileTap={{ scale: 0.98 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
             onClick={() => onChange(fSize === 0 ? 1 : 0)}
         >
             <div style={styles.itemLeft}>
@@ -323,14 +321,12 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
             {isOpen && (
                 <motion.div
                     initial={{ x: '100%' }} animate={{ x: '0%' }} exit={{ x: '100%' }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
                     style={styles.panelScreen}
                 >
                     <div style={styles.panelContent} className="no-scrollbar">
                         <div style={isNotificationsPanel ? styles.panelTopBarMinimal : styles.panelTopBar}>
-                            <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={closePanel} style={styles.panelBackButton} aria-label={langIndex === 0 ? 'Назад' : 'Back'}>
-                                <FaChevronRight size={14} style={{ transform: 'rotate(180deg)' }} />
-                            </motion.button>
+                            <div aria-hidden="true" style={{ width: 44, height: 44 }} />
                             <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={closePanel} style={styles.panelCloseButton} aria-label={langIndex === 0 ? 'Закрыть' : 'Close'}>
                                 <FaTimes size={13} />
                             </motion.button>
@@ -593,8 +589,7 @@ const SectionNotificationCard = ({ theme, langIndex, section, value, onChange })
     return (
         <motion.div
             style={styles.notifyCard(section.color, value.enabled)}
-            whileHover={{ y: -1, scale: 1.004 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
         >
             <div style={styles.notifyCardHeader}>
                 <div style={styles.notifyIcon(section.color)}>
@@ -673,9 +668,8 @@ const SectionNotificationCard = ({ theme, langIndex, section, value, onChange })
 const ActionButton = ({ icon, text, onClick, theme, color }) => (
     <motion.button
         type="button"
-        whileHover={{ y: -1, scale: 1.01 }}
         whileTap={{ scale: 0.96, y: 1 }}
-        transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+        transition={{ duration: 0.14, ease: 'easeOut' }}
         onClick={onClick}
         style={s(theme).actionButton(color)}
     >

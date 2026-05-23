@@ -67,7 +67,7 @@ const ConfirmationPanel = () => {
                 initial={{ opacity: 0, scale: 0.96, y: 14 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96, y: 14 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
                 style={styles(theme).panel}
             >
                 <div style={styles(theme).iconWrap}>

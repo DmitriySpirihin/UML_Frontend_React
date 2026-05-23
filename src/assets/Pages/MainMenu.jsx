@@ -330,7 +330,7 @@ useEffect(() => {
                     initial={{ y: 40, opacity: 0, scale: 0.98 }}
                     animate={{ y: 0, opacity: 1, scale: 1 }}
                     exit={{ y: 40, opacity: 0, scale: 0.98 }}
-                    transition={{ type: "spring", damping: 22, stiffness: 260 }}
+                    transition={{ duration: 0.18, ease: 'easeOut' }}
                     style={{
                       position: "fixed",
                       left: "5%",
@@ -767,7 +767,6 @@ function MenuCard({ item, theme, fSize, lang, isPinned, onPin, onHide,setShowRef
 
     return (
         <Motion.div
-            layout 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, x: -100, height: 0, marginBottom: 0 }}
@@ -1057,7 +1056,7 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                         initial={{ y: 40, opacity: 0, scale: 0.98 }}
                         animate={{ y: 0, opacity: 1, scale: 1 }}
                         exit={{ y: 40, opacity: 0, scale: 0.98 }}
-                        transition={{ type: 'spring', damping: 23, stiffness: 260 }}
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
                         style={{
                             position: 'fixed',
                             left: '4%',
@@ -1219,9 +1218,8 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                         <Motion.button
                                             key={`hero-${item.id}`}
                                             type="button"
-                                            whileHover={disabledByLimit ? undefined : { y: -1, scale: 1.006 }}
                                             whileTap={disabledByLimit ? undefined : { scale: 0.985 }}
-                                            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                                            transition={{ duration: 0.14, ease: 'easeOut' }}
                                             onClick={() => { if (!disabledByLimit) onToggleHeroWidget(item.id); }}
                                             style={{
                                                 minHeight: 56,
@@ -1277,9 +1275,8 @@ const WidgetSettingsModal = ({ isOpen, onClose, items, sectionStates, heroValues
                                         <Motion.button
                                             key={item.id}
                                             type="button"
-                                            whileHover={{ y: -1, scale: 1.006 }}
                                             whileTap={{ scale: 0.985, y: 1 }}
-                                            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                                            transition={{ duration: 0.14, ease: 'easeOut' }}
                                             onClick={() => onToggleSectionVisibility(item.id)}
                                             style={{
                                                 minHeight: 56,
@@ -1368,7 +1365,7 @@ const ReferralModal = ({ isOpen, onClose, onSend, theme, lang }) => {
                         initial={{ y: '100%' }}
                         animate={{ y: 0 }}
                         exit={{ y: '100%' }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+	                        transition={{ duration: 0.18, ease: 'easeOut' }}
                         style={{
                             position: 'fixed', bottom: 0, left: 0, right: 0,
                             backgroundColor: bg,

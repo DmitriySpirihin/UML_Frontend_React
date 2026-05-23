@@ -29,7 +29,7 @@ import {
   setConfirmationPanel as publishConfirmationPanel,
 } from './assets/StaticClasses/HabitsBus'
 import Colors from './assets/StaticClasses/Colors'
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { FaServer, FaCog, FaTools } from 'react-icons/fa';
 import { maybeSeedDemoData } from './assets/StaticClasses/DemoSeed';
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
@@ -241,7 +241,7 @@ function App() {
   }, [addPanel, confirmationPanel, notifyPanel, page]);
 
   return (
-    <>
+    <MotionConfig transition={{ duration: 0.18, ease: 'easeOut' }}>
       {
         isTechicalWorks && 
         <motion.div
@@ -264,7 +264,7 @@ function App() {
             <motion.div
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
-                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                transition={{ duration: 0.18, ease: 'easeOut' }}
                 style={{
                     width: '85%',
                     maxWidth: '320px',
@@ -521,7 +521,7 @@ function App() {
         {bottomBtnPanel === 'BtnsMenu' && page !== 'MainMenu' && !keyboardVisible && <BtnsMenu/>}
         {bottomBtnPanel === 'BtnsInfo' && !keyboardVisible && <BtnsInfo/>}
       </>}
-    </>
+    </MotionConfig>
   )
 }
 const SuspenseSpinner = ({ theme }) => {

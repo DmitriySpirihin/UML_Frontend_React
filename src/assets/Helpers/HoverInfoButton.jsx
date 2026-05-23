@@ -96,15 +96,9 @@ const HoverInfoButton = ({ tab = 'MainCard', variant = 'default', accent = '#007
             initial={{ scale: 0, opacity: 0, rotate: -45 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
             exit={{ scale: 0, opacity: 0 }}
-            transition={{ 
-                delay: 1.5, 
-                type: "spring", 
-                stiffness: 260, 
-                damping: 20 
-            }}
+            transition={{ delay: 1.5, duration: 0.18, ease: 'easeOut' }}
             
             whileTap={{ scale: 0.9 }}
-            whileHover={{ scale: 1.1 }}
             drag
             dragElastic={0.42}
             dragMomentum={false}

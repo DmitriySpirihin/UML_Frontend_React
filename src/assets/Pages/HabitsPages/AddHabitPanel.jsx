@@ -7,7 +7,6 @@ import { addHabitFn } from '../../Pages/HabitsPages/HabitsMain';
 import { setShowPopUpPanel, setPage, lastPage$, theme$, lang$, fontSize$, setCurrentBottomBtn, keyboardVisible$, updateConfirmationPanel, emitHabitsChanged } from '../../StaticClasses/HabitsBus';
 import { FaSearch, FaTrashAlt, FaChevronRight, FaPlus, FaListUl, FaUndo, FaPencilAlt } from 'react-icons/fa';
 import { MdFiberNew, MdDone, MdClose , MdListAlt } from 'react-icons/md';
-import { IoIosArrowBack } from 'react-icons/io';
 import Slider from '@mui/material/Slider';
 import ScrollPicker from '../../Helpers/ScrollPicker.jsx'; // Imported Component
 import { playEffects } from '../../StaticClasses/Effects.js';
@@ -518,9 +517,7 @@ const AddHabitPanel = () => {
             style={{ ...pageStyle, background: ui.bg }}
         >
                         <div style={pageHeader}>
-                            <motion.div whileTap={{ scale: 0.9 }} onClick={confirmationPanel ? () => setConfirmationPanel(false) : closePanel} style={backBtn(ui)}>
-                                <IoIosArrowBack size={24} color={ui.text} />
-                            </motion.div>
+                            <div aria-hidden="true" style={{ width: 46, height: 46, flexShrink: 0 }} />
                             <div style={brandBlock(ui)}>
                                 <div style={brandTitle(ui)}>UltyMyLife</div>
                                 <div style={brandSubtitle(ui)}>{langIndex === 0 ? 'Вся твоя жизнь в одном месте' : 'Your whole life in one place'}</div>
@@ -696,7 +693,7 @@ const AddHabitPanel = () => {
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                                 {goals.map((g, i) => (
-                                                    <motion.div layout key={i} style={goalRow(ui)}>
+                                                    <motion.div key={i} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.14, ease: 'easeOut' }} style={goalRow(ui)}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                             <FaListUl color={ui.accent} size={14} />
                                                             <span style={{ color: ui.text, fontSize: '15px', fontWeight: '500' }}>{g}</span>
@@ -744,7 +741,7 @@ const AddHabitPanel = () => {
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={() => setSelectIconPanel(false)}>
                                 <motion.div
                                     initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                    transition={{ duration: 0.18, ease: 'easeOut' }}
                                     style={{ ...iconSheet(ui), backdropFilter: ui.blur }}
                                     onClick={e => e.stopPropagation()}
                                 >
@@ -794,7 +791,7 @@ const AddHabitPanel = () => {
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={() => { setSelectCategoryPanel(false); resetCategoryForm(); }}>
                                 <motion.div
                                     initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-                                    transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                    transition={{ duration: 0.18, ease: 'easeOut' }}
                                     style={{ ...iconSheet(ui), backdropFilter: ui.blur }}
                                     onClick={e => e.stopPropagation()}
                                 >

@@ -344,13 +344,7 @@ const UserPanel = () => {
         >
             {/* Header */}
             <div style={s.header}>
-                <MotionDiv
-                    whileTap={{ scale: 0.9 }}
-                    onClick={goBack}
-                    style={s.backBtn}
-                >
-                    <IoIosArrowBack size={22} />
-                </MotionDiv>
+                <div aria-hidden="true" style={{ width: 40 }} />
                 <span style={s.headerTitle}>{lang === 0 ? 'Профиль' : 'Profile'}</span>
                 <div style={{ width: 40 }} />
             </div>
@@ -781,7 +775,7 @@ const BottomSheet = ({ children, onClose, theme }) => (
     <div style={styles(theme).backdrop} onClick={onClose}>
         <MotionDiv 
             initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+	            transition={{ duration: 0.18, ease: 'easeOut' }}
             style={styles(theme).sheet} onClick={e => e.stopPropagation()}
         >
             <div style={styles(theme).handle} />
@@ -1119,9 +1113,8 @@ const InviteFriendCard = ({ lang, theme, onClick, empty }) => {
 const MetricChip = ({ icon, label, value, unit, color, series, theme, onClick }) => (
     <MotionButton
         type="button"
-        whileHover={{ scale: 1.012 }}
-        whileTap={{ scale: 0.97, y: 1 }}
-        transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+	        whileTap={{ scale: 0.97, y: 1 }}
+	        transition={{ duration: 0.14, ease: 'easeOut' }}
         onClick={onClick}
         style={{
             ...styles(theme).metricChip,
@@ -1167,9 +1160,8 @@ const BodyPills = ({ body, lang, theme, onEdit }) => {
     return (
         <MotionButton
             type="button"
-            whileHover={{ scale: 1.006 }}
-            whileTap={{ scale: 0.98, y: 1 }}
-            transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+	            whileTap={{ scale: 0.98, y: 1 }}
+	            transition={{ duration: 0.14, ease: 'easeOut' }}
             onClick={onEdit}
             style={s.bodyPillsCard}
         >

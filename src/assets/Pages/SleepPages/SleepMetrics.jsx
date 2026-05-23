@@ -183,7 +183,7 @@ const PeriodSelector = ({ selectedIndex, setSelectedIndex, theme, langIndex, acc
             onClick={() => setSelectedIndex(index)}
             style={s.segmentButton(isActive)}
           >
-            {isActive && <motion.span layoutId="sleepPeriodActive" style={s.segmentActiveBg} />}
+            {isActive && <motion.span initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.14, ease: 'easeOut' }} style={s.segmentActiveBg} />}
             <span style={s.segmentLabel}>{label[langIndex]}</span>
           </motion.button>
         );
@@ -338,10 +338,12 @@ const SleepMetrics = () => {
           <section style={s.heroCard(stats.count > 0)}>
             <div style={s.heroGlow} />
             {stats.count > 0 && (
-              <div style={s.scoreRing(stats.score)}>
-                <div style={s.scoreInner}>
-                  <div style={s.scoreValue}>{stats.score}</div>
-                  <div style={s.scoreLabel}>{langIndex === 0 ? 'балл' : 'score'}</div>
+              <div style={s.heroScoreWrap}>
+                <div style={s.scoreRing(stats.score)}>
+                  <div style={s.scoreInner}>
+                    <div style={s.scoreValue}>{stats.score}</div>
+                    <div style={s.scoreLabel}>{langIndex === 0 ? 'балл' : 'score'}</div>
+                  </div>
                 </div>
               </div>
             )}
@@ -411,14 +413,13 @@ const SleepMetrics = () => {
               accent={accent}
             />
             <MetricCard
-              icon={<MdWbSunny />}
-              label={langIndex === 0 ? 'Подъем' : 'Wake'}
-              value={formatClock(stats.avgWake)}
-              hint={stats.latest ? `${langIndex === 0 ? 'последний' : 'last'} ${formatDate(stats.latest.date, langIndex)}` : ''}
+              icon={<MdOutlineFlag />}
+              label={langIndex === 0 ? 'Лучший день' : 'Best day'}
+              value={stats.best ? formatDuration(stats.best.durationMs, langIndex) : '-'}
+              hint={stats.best ? formatDate(stats.best.date, langIndex, true) : ''}
               theme={theme}
               accent={accent}
-              tone={WAKE_TONE}
-              featured={stats.avgWake !== null}
+              featured={Boolean(stats.best)}
             />
             <MetricCard
               icon={<MdOutlineStarBorder />}
@@ -431,13 +432,14 @@ const SleepMetrics = () => {
               featured={stats.moodAvg > 0}
             />
             <MetricCard
-              icon={<MdOutlineFlag />}
-              label={langIndex === 0 ? 'Лучший день' : 'Best day'}
-              value={stats.best ? formatDuration(stats.best.durationMs, langIndex) : '-'}
-              hint={stats.best ? formatDate(stats.best.date, langIndex, true) : ''}
+              icon={<MdWbSunny />}
+              label={langIndex === 0 ? 'Подъем' : 'Wake'}
+              value={formatClock(stats.avgWake)}
+              hint={stats.latest ? `${langIndex === 0 ? 'последний' : 'last'} ${formatDate(stats.latest.date, langIndex)}` : ''}
               theme={theme}
               accent={accent}
-              featured={Boolean(stats.best)}
+              tone={WAKE_TONE}
+              featured={stats.avgWake !== null}
             />
           </section>
 
@@ -623,13 +625,13 @@ const styles = (theme, accent, fSize = 0) => {
       position: 'relative',
       overflow: 'hidden',
       display: 'grid',
-      gridTemplateColumns: hasData ? '92px minmax(0, 1fr)' : 'minmax(0, 1fr)',
-      gap: hasData ? 15 : 10,
+      gridTemplateColumns: hasData ? 'minmax(78px, 90px) minmax(0, 1fr)' : 'minmax(0, 1fr)',
+      gap: hasData ? 13 : 10,
       alignItems: 'center',
       justifyItems: hasData ? 'stretch' : 'center',
-      minHeight: hasData ? 124 : 156,
+      minHeight: hasData ? 166 : 156,
       borderRadius: 26,
-      padding: hasData ? 16 : '22px 18px',
+      padding: hasData ? '24px 18px' : '22px 18px',
       background: `linear-gradient(135deg, ${panelStrong}, ${accent.faint})`,
       border: `1px solid ${accent.ring}`,
       boxShadow: isLight ? `0 24px 56px -44px ${accent.hue}` : '0 24px 62px rgba(0,0,0,0.28)',
@@ -647,23 +649,33 @@ const styles = (theme, accent, fSize = 0) => {
       filter: 'blur(14px)',
       opacity: 0.8
     },
+    heroScoreWrap: {
+      position: 'relative',
+      zIndex: 1,
+      minWidth: 0,
+      width: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'center',
+      justifySelf: 'center',
+      boxSizing: 'border-box'
+    },
     scoreRing: (score) => ({
       position: 'relative',
       zIndex: 1,
-      width: 88,
-      height: 88,
+      width: 'min(82px, 100%)',
+      aspectRatio: '1 / 1',
       borderRadius: '50%',
       display: 'grid',
       placeItems: 'center',
-      justifySelf: 'center',
-      alignSelf: 'center',
       flexShrink: 0,
       background: `conic-gradient(${accent.hue} 0deg, ${accent.hue} ${Math.round(clamp(score || 0, 0, 100) * 3.6)}deg, ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.08)'} ${Math.round(clamp(score || 0, 0, 100) * 3.6)}deg 360deg)`,
       boxShadow: `0 0 30px ${accent.soft}`
     }),
     scoreInner: {
-      width: 70,
-      height: 70,
+      width: 'calc(100% - 14px)',
+      height: 'calc(100% - 14px)',
       borderRadius: '50%',
       background: bg,
       display: 'flex',
@@ -674,7 +686,7 @@ const styles = (theme, accent, fSize = 0) => {
     },
     scoreValue: {
       color: text,
-      fontSize: 27,
+      fontSize: 25,
       lineHeight: 1,
       fontWeight: 950,
       fontVariantNumeric: 'tabular-nums'
@@ -690,7 +702,9 @@ const styles = (theme, accent, fSize = 0) => {
     heroCopy: {
       position: 'relative',
       zIndex: 1,
-      minWidth: 0
+      minWidth: 0,
+      overflow: 'hidden',
+      padding: '2px 0'
     },
     heroEmptyIcon: {
       width: 50,
@@ -710,7 +724,7 @@ const styles = (theme, accent, fSize = 0) => {
       fontSize: 18,
       lineHeight: 1.16,
       fontWeight: 950,
-      marginBottom: 7
+      marginBottom: 10
     },
     heroText: {
       color: sub,
@@ -721,7 +735,7 @@ const styles = (theme, accent, fSize = 0) => {
     heroStats: {
       display: 'grid',
       gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-      gap: 6,
+      gap: 7,
       marginTop: 2,
       maxWidth: 190
     },
@@ -754,8 +768,8 @@ const styles = (theme, accent, fSize = 0) => {
     heroChips: {
       display: 'flex',
       flexWrap: 'wrap',
-      gap: 7,
-      marginTop: 11
+      gap: '9px 8px',
+      marginTop: 15
     },
     heroChip: {
       display: 'inline-flex',

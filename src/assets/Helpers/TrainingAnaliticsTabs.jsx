@@ -74,8 +74,9 @@ export const VolumeTabs = ({ type, theme, langIndex, activeTab, onChange }) => {
             {/* The Floating Active Background */}
             {isActive && (
               <Motion.div
-                layoutId="activeTabBackground"
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.14, ease: 'easeOut' }}
                 style={{
                   position: 'absolute',
                   top: 0,

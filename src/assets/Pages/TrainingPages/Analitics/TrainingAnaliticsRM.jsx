@@ -57,10 +57,9 @@ const TrainingAnaliticsRM = () => {
             return (
               <Motion.div
                 key={item.id}
-                layout
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.035 }}
+                transition={{ duration: 0.16, delay: i * 0.02, ease: 'easeOut' }}
                 onClick={() => {
                   setCurrentExId(item.id);
                   setShowBarChart(true);

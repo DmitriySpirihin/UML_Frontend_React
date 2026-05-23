@@ -437,9 +437,8 @@ return (
                 return (
                  <Motion.div
                     key={exId}
-                    whileHover={{ scale: 1.006 }}
                     whileTap={{ scale: 0.992 }}
-                    transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                    transition={{ duration: 0.14, ease: 'easeOut' }}
                     style={{
                      ...styles(theme).exerciseCard,
                      border: isSelected ? `1px solid ${getTrainingAccent().hue}` : styles(theme).exerciseCard.border,

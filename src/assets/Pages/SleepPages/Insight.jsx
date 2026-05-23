@@ -494,7 +494,7 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
             gridTemplateColumns: '72px minmax(0, 1fr)',
             gap: 13,
             alignItems: 'center',
-            padding: 'calc(env(safe-area-inset-top, 0px) + 72px) 16px 14px',
+            padding: 'calc(env(safe-area-inset-top, 0px) + 28px) 16px 14px',
             borderBottom: `1px solid ${theme === 'dark' || theme === 'specialdark' ? 'rgba(183,243,255,0.10)' : p.border}`,
             background: theme === 'dark'
                 ? `linear-gradient(135deg, rgba(255,255,255,0.075), rgba(255,255,255,0.018) 54%, ${p.accentSoft})`

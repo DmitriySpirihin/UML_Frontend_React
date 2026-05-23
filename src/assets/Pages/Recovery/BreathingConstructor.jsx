@@ -242,10 +242,10 @@ const StepItem = ({ index, step, theme, onDelete, addTime, langIndex }) => {
 
     return (
         <Motion.div
-            layout
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
             style={{ ...styles(theme).stepCard, borderLeft: `4px solid ${accentColor}` }}
         >
             <div style={styles(theme).stepHeader}>

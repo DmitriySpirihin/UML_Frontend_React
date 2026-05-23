@@ -442,7 +442,7 @@ const Premium = () => {
                 {needAgreement && (
                     <motion.div 
                         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} 
-                        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+	                        transition={{ duration: 0.18, ease: 'easeOut' }}
                         style={styles(theme).bottomSheet}
                     >
                         <div style={styles(theme).sheetHandle} />
@@ -506,8 +506,7 @@ export function PremiumButton({
 
     return (
         <motion.button
-            whileHover={{ scale: 1.02, y: -1 }}
-            whileTap={{ scale: 0.97 }}
+	            whileTap={{ scale: 0.97 }}
             onClick={clickHandler}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -784,7 +783,7 @@ const BenefitsGrid = ({ theme, langIndex }) => {
 
     return (
         <div style={{ marginBottom: 16 }}>
-            <motion.div layout style={{
+	            <motion.div style={{
                 position: 'relative',
                 overflow: 'hidden',
                 borderRadius: 21,
@@ -838,8 +837,7 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                                 {items.map((item, index) => (
                         <motion.button
                             type="button"
-                            layout
-                            key={item.title}
+	                            key={item.title}
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             onClick={() => setSelectedIndex(index)}
@@ -919,7 +917,7 @@ const BenefitsGrid = ({ theme, langIndex }) => {
                             initial={{ y: 34, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 34, opacity: 0 }}
-                            transition={{ type: 'spring', damping: 24, stiffness: 280 }}
+	                            transition={{ duration: 0.18, ease: 'easeOut' }}
                             onClick={(event) => event.stopPropagation()}
                             style={{
                                 width: '100%',

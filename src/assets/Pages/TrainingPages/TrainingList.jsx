@@ -363,7 +363,6 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
         </div>
         {hasFilters && expanded && (
           <Motion.button
-            whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
               setSelectedYear(null);
@@ -383,7 +382,6 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
             {langIndex === 0 ? 'Год' : 'Year'}
           </div>
           <Motion.div
-            whileHover={{ scale: 1.01 }}
             style={styles(theme).dropdownContainer}
           >
             <select
@@ -420,7 +418,6 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
               {langIndex === 0 ? 'Месяц' : 'Month'}
             </div>
             <Motion.div
-              whileHover={{ scale: 1.01 }}
               style={styles(theme).dropdownContainer}
             >
               <select
@@ -471,7 +468,7 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
       <Motion.section
         initial={{ opacity: 0, y: 14, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         style={styles(theme).hero}
       >
         <div style={styles(theme).heroGlow} />
@@ -644,14 +641,8 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                   </div>
 
                   {/* Expanded Details */}
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <Motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        style={{ overflow: 'hidden' }}
-                      >
+                  <div className={`smooth-accordion ${isExpanded ? 'is-open' : ''}`}>
+                    <div className="smooth-accordion-inner">
                         <div style={styles(theme).expandedContent}>
                           {session.type === 'GYM' ? (
                             // Силовая тренировка
@@ -807,9 +798,8 @@ const FilterDropdowns = ({expanded,setExpanded}) => {
                             </>
                           )}
                         </div>
-                      </Motion.div>
-                    )}
-                  </AnimatePresence>
+                    </div>
+                  </div>
                 </Motion.div>
               );
             })}

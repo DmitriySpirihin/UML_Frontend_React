@@ -276,7 +276,7 @@ const SleepMain = () => {
                   }}
                   style={s.dayCell(isSelected, isToday, Boolean(entry))}
                 >
-                  {entry && <motion.span initial={{ height: 0 }} animate={{ height: `${moodPercent}%` }} style={s.dayMoodFill(entry.type)} />}
+                  {entry && <motion.span initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ duration: 0.18, ease: 'easeOut' }} style={{ ...s.dayMoodFill(entry.type), height: `${moodPercent}%`, transformOrigin: 'bottom' }} />}
                   <span style={s.dayNumber}>{day}</span>
                   {isSelected && <span style={s.selectedDot} />}
                 </motion.button>
@@ -547,10 +547,9 @@ const styles = (theme, accent) => {
       marginTop: 6,
       color: Colors.get('subText', theme),
       fontSize: 10,
-      fontWeight: 800,
-      letterSpacing: '0.14em',
-      textTransform: 'uppercase',
-      lineHeight: 1.25
+      fontWeight: 700,
+      letterSpacing: '0.18em',
+      lineHeight: 1.3
     },
     accentButton: {
       height: 38,

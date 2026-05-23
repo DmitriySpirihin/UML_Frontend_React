@@ -4,7 +4,6 @@ import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
 import { theme$, lang$, fontSize$, lastPage$, setPage, currentTrainingMuscle$, setShowPopUpPanel } from '../../StaticClasses/HabitsBus.js'
 import { playEffects } from '../../StaticClasses/Effects.js'
-import { IoIosArrowBack } from 'react-icons/io'
 import { MuscleIcon, addExercise } from '../../Classes/TrainingData.jsx'
 import { MdDone } from 'react-icons/md'
 
@@ -70,9 +69,7 @@ const AddExercisePanel = () => {
                 minHeight: '76px',
                 borderBottom: `1px solid ${Colors.get('border', theme)}`
             }}>
-                <motion.div whileTap={{ scale: 0.9 }} onClick={goBack} style={{ marginRight: '15px', cursor: 'pointer' }}>
-                    <IoIosArrowBack style={{ fontSize: '24px', color: Colors.get('icons', theme) }} />
-                </motion.div>
+                <div aria-hidden="true" style={{ width: 39, marginRight: '15px' }} />
                 <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: Colors.get('mainText', theme), margin: 0 }}>
                     {langIndex === 0 ? 'Конструктор' : 'Constructor'}
                 </h3>

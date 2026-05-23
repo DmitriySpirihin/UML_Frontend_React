@@ -85,7 +85,7 @@ const PopUpPanel = ({ theme, fSize }) => {
     return (
         <AnimatePresence>
             {show.show && (
-                <motion.div initial={{ y: '-150%', opacity: 0, scale: 0.8 }} animate={{ y: '130px', opacity: 1, scale: 1 }} exit={{ y: '-150%', opacity: 0, scale: 0.8 }} transition={{ type: 'spring', stiffness: 400, damping: 25 }} style={popUpStyles(theme, show.isPositive, fSize).panel}>
+                <motion.div initial={{ y: '-150%', opacity: 0, scale: 0.8 }} animate={{ y: '130px', opacity: 1, scale: 1 }} exit={{ y: '-150%', opacity: 0, scale: 0.8 }} transition={{ duration: 0.18, ease: 'easeOut' }} style={popUpStyles(theme, show.isPositive, fSize).panel}>
                     <div style={popUpStyles(theme, show.isPositive, fSize).iconContainer}>{show.isPositive ? <CheckCircleOutlineIcon style={popUpStyles(theme, show.isPositive, fSize).icon} /> : <WarningAmberIcon style={popUpStyles(theme, show.isPositive, fSize).icon} />}</div>
                     <h1 style={popUpStyles(theme, show.isPositive, fSize).text}>{show.header}</h1>
                 </motion.div>

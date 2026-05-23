@@ -11,7 +11,7 @@ import {
   MdSentimentVeryDissatisfied,
   MdSentimentVerySatisfied
 } from 'react-icons/md';
-import { FaBed, FaChevronLeft, FaPen, FaRegClock, FaSun } from 'react-icons/fa';
+import { FaBed, FaPen, FaRegClock, FaSun } from 'react-icons/fa';
 
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
@@ -130,9 +130,7 @@ const SleepNew = () => {
     >
       <div style={s.sheet}>
         <header style={s.header}>
-          <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={closePanel} style={s.backButton}>
-            <FaChevronLeft />
-          </motion.button>
+          <div aria-hidden="true" style={{ width: 46, height: 46 }} />
           <div style={s.headerCenter}>
             <div style={s.iconBadge}><MdNightsStay /></div>
             <div>

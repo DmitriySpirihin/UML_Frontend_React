@@ -410,7 +410,7 @@ const TrainingMain = () => {
         <Motion.section
           initial={{ opacity: 0, y: 16, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 260, damping: 28 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           style={styles(theme).hero}
         >
           <div style={styles(theme).heroGlow} />

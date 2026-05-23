@@ -6,7 +6,6 @@ import { theme$, lang$, fontSize$ } from '../../StaticClasses/HabitsBus';
 import { getProblem, getPoints, hasStreak, getPrecision, getLogicExplanation } from './LogicProblems';
 import BreathAudio from "../../Helpers/BreathAudio";
 import { FaStar, FaMedal, FaStopwatch, FaPlay, FaRedo } from 'react-icons/fa';
-import { IoArrowBackCircle } from "react-icons/io5";
 import MentalInput from './MentalInput';
 import { logicOddOneOutLevels, saveSessionDuration } from './MentalHelper';
 import { MentalResultScreen, StreakBadge } from './MentalHudParts';
@@ -352,7 +351,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
                         {!isStart && !showStartTimer && !isFinished && (
                             <motion.div key="start-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).contentWrapper}>
                                 <div style={styles(theme).header}>
-                                    <IoArrowBackCircle onClick={() => { setShow(false); setIsFinished(false); }} style={styles(theme).iconButton} />
+                                    <div aria-hidden="true" style={{ width: 40 }} />
                                     <h2 style={styles(theme, fSize).title}>{logicOddOneOutLevels[difficulty].level[langIndex]}</h2>
                                     <div style={{ width: 40 }} />
                                 </div>
@@ -473,7 +472,7 @@ const MentalGamePanel = ({ show, type, difficulty, setShow }) => {
                             <motion.div key="game-screen" variants={fadeIn} initial="hidden" animate="visible" exit="exit" style={styles(theme).gameContainer}>
                                 {/* Top Bar */}
                                 <div style={styles(theme).gameHeader}>
-                                    <IoArrowBackCircle onClick={() => onFinishSession(scores + addScores)} style={styles(theme).iconButtonSmall} />
+                                    <div aria-hidden="true" style={{ width: 42, height: 42 }} />
                                     
                                     <div style={styles(theme).timerStat}>
                                         <FaStopwatch /> {getParsedTime(time)}

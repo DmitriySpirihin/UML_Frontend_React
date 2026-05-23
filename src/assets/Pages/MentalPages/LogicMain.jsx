@@ -228,7 +228,6 @@ function LogicCard({ protocol, difficulty, onClick, theme, lang, fSize, variants
         <Motion.div 
             variants={variants}
             whileTap={!isLocked ? { scale: 0.96 } : {}}
-            whileHover={!isLocked ? { y: -2 } : {}}
             onClick={onClick}
             style={cardStyle}
         >

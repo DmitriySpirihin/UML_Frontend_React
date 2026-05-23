@@ -110,9 +110,8 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
                     <Motion.div
                         key={idx}
                         onClick={() => setMetricIndex(idx)}
-                        whileHover={{ scale: 1.025 }}
                         whileTap={{ scale: 0.95 }}
-                        transition={{ type: 'spring', stiffness: 430, damping: 30 }}
+                        transition={{ duration: 0.14, ease: 'easeOut' }}
                         style={{
                             padding: '6px 14px', borderRadius: '20px',
 	                            background: isActive ? accent.soft : (isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)'),
@@ -158,14 +157,16 @@ const TrainingMeasurmentsAnalitics = ({ theme, langIndex, fSize, data }) => {
                     <Motion.div
                       key={idx}
                       onClick={() => setPeriodIndex(idx)}
-                      whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.96 }}
-                      transition={{ type: 'spring', stiffness: 430, damping: 30 }}
+                      transition={{ duration: 0.14, ease: 'easeOut' }}
                       style={{ flex: 1, position: 'relative', cursor: 'pointer', textAlign: 'center', padding: '8px 0', WebkitTapHighlightColor: 'transparent', userSelect: 'none' }}
                     >
                         {isActive && (
                             <Motion.div
-                                layoutId="periodTab"
+                                initial={{ opacity: 0, scale: 0.96 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.96 }}
+                                transition={{ duration: 0.14, ease: 'easeOut' }}
                                 style={{
 	                                    position: 'absolute', inset: 0, background: accent.soft,
                                       border: `1px solid ${accent.ring}`,

@@ -143,10 +143,10 @@ const NavButton = ({ id, current, icon, onClick, theme, accent, disabled = false
             <AnimatePresence>
                 {isActive && (
                     <Motion.div 
-                        layoutId="sleepActiveTab"
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0 }}
+                        transition={{ duration: 0.14, ease: 'easeOut' }}
                         style={activeIndicator(accent)}
                     />
                 )}
@@ -157,8 +157,8 @@ const NavButton = ({ id, current, icon, onClick, theme, accent, disabled = false
 
 const AddButton = ({ disabled, onClick, theme, active, accent }) => (
     <Motion.div
-        whileHover={!disabled ? { scale: 1.04 } : {}}
         whileTap={!disabled ? { scale: 0.9 } : {}}
+        transition={{ duration: 0.14, ease: 'easeOut' }}
         onClick={onClick}
         style={{
             ...addBtnStyle(theme),

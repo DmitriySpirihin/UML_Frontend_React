@@ -580,7 +580,7 @@ const HabitMetrics = () => {
             <AnimatePresence>
                 {showListOfHabitsPanel && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={() => setShowListOfHabitsPanel(false)}>
-                        <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                        <motion.div initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ duration: 0.2, ease: 'easeOut' }}
                             style={{
                                 position: 'absolute',
                                 top: 0,
@@ -653,7 +653,7 @@ const HabitMetrics = () => {
 
                 {showInfo && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ ...overlayStyle, justifyContent: 'center', alignItems: 'flex-end' }} onClick={() => setShowInfo(false)}>
-                        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ duration: 0.2, ease: 'easeOut' }}
                             style={{
                                 ...bottomSheetStyle,
                                 background: isLight
@@ -675,7 +675,7 @@ const HabitMetrics = () => {
 
                 {showChangeDaysPanel && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ ...overlayStyle, justifyContent: 'center', alignItems: 'flex-end' }} onClick={() => setShowChangeDaysPanel(false)}>
-                        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 30, stiffness: 165 }}
+                        <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ duration: 0.22, ease: 'easeOut' }}
                             style={{
                                 ...bottomSheetStyle,
                                 background: isLight

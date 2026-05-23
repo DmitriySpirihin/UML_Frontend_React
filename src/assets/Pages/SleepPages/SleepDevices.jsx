@@ -71,7 +71,7 @@ const SleepDevices = () => {
     <div style={s.container}>
       <div style={s.scroll}>
         <div style={s.topBar}>
-          <div>
+          <div style={s.brandWrap}>
             <div style={s.brand}>UltyMyLife</div>
             <div style={s.brandSub}>{langIndex === 0 ? 'Подраздел сна' : 'Sleep subsection'}</div>
           </div>
@@ -178,10 +178,21 @@ const styles = (theme, accent) => {
       overflow: 'hidden'
     },
     scroll: { height: '100%', overflowY: 'auto', padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 18px 150px', boxSizing: 'border-box' },
-    topBar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 },
-    brand: { color: Colors.get('mainText', theme), fontSize: 24, fontWeight: 950 },
+    topBar: {
+      display: 'grid',
+      gridTemplateColumns: 'minmax(50px, 1fr) auto minmax(50px, 1fr)',
+      alignItems: 'center',
+      columnGap: 10,
+      marginBottom: 16
+    },
+    brandWrap: {
+      gridColumn: 2,
+      minWidth: 0,
+      textAlign: 'center'
+    },
+    brand: { color: Colors.get('mainText', theme), fontSize: 24, fontWeight: 950, lineHeight: 1.05 },
     brandSub: { color: Colors.get('subText', theme), fontSize: 12, fontWeight: 800, marginTop: 2 },
-    counter: { minWidth: 50, height: 38, borderRadius: 13, border: `1px solid ${accent.ring}`, background: accent.soft, color: accent.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 950 },
+    counter: { gridColumn: 3, justifySelf: 'end', minWidth: 50, height: 38, borderRadius: 13, border: `1px solid ${accent.ring}`, background: accent.soft, color: accent.hue, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 950 },
     hero: { position: 'relative', borderRadius: 24, padding: 18, minHeight: 156, overflow: 'hidden', background: isLight ? `linear-gradient(135deg, #fff, ${accent.faint})` : `linear-gradient(135deg, rgba(255,255,255,0.075), ${accent.faint})`, border: `1px solid ${accent.ring}` },
     heroIcon: { position: 'absolute', right: -12, top: -14, width: 112, height: 112, borderRadius: 36, background: accent.soft, color: accent.hue, fontSize: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'rotate(-8deg)' },
     eyebrow: { color: accent.hue, fontSize: 11, fontWeight: 950, textTransform: 'uppercase', marginBottom: 8 },

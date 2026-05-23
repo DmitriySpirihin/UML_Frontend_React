@@ -685,15 +685,8 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
       </div>
 
       {/* Поиск и фильтры — независимый раскрывающийся блок */}
-      <AnimatePresence initial={false}>
-        {showFilters && (
-          <motion.div
-            initial={{ height: 0, opacity: 0, y: -6 }}
-            animate={{ height: 'auto', opacity: 1, y: 0 }}
-            exit={{ height: 0, opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: [0.2, 0, 0.2, 1] }}
-            style={s.filterDrawer}
-          >
+      <div className={`smooth-accordion ${showFilters ? 'is-open' : ''}`} style={{ marginTop: showFilters ? 12 : 0 }}>
+        <div className="smooth-accordion-inner" style={{ ...s.filterDrawer, marginTop: 0 }}>
             <div style={s.searchCard}>
               <FaSearch size={14} color={Colors.get('subText', theme)} />
               <input
@@ -744,15 +737,8 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
               ))}
             </div>
 
-            <AnimatePresence initial={false}>
-              {showSorts && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  style={s.sortRow}
-                  className="no-scrollbar"
-                >
+            <div className={`smooth-accordion ${showSorts ? 'is-open' : ''}`}>
+              <div className="smooth-accordion-inner no-scrollbar" style={s.sortRow}>
                   {SORTS.map(sort => (
                     <button
                       key={sort.id}
@@ -767,9 +753,8 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
                       {sort.label[langIndex]}
                     </button>
                   ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+              </div>
+            </div>
 
             {hiddenTasksCount > 0 && (
               <button
@@ -786,20 +771,12 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
                   : (langIndex === 0 ? `Показать скрытые: ${hiddenTasksCount}` : `Show hidden: ${hiddenTasksCount}`)}
               </button>
             )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
 
       {/* Виджеты-статистика — открывается кнопкой "Виджеты" */}
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0, y: -6 }}
-            animate={{ height: 'auto', opacity: 1, y: 0 }}
-            exit={{ height: 0, opacity: 0, y: -6 }}
-            transition={{ duration: 0.18, ease: [0.2, 0, 0.2, 1] }}
-            style={s.heroCollapsible}
-          >
+      <div className={`smooth-accordion ${isOpen ? 'is-open' : ''}`} style={{ marginTop: isOpen ? 12 : 0 }}>
+        <div className="smooth-accordion-inner" style={{ ...s.heroCollapsible, marginTop: 0 }}>
             <div style={s.heroSummaryCard(isAllDone, doneTone)}>
               <div style={s.heroSummaryTop}>
                 <span>{langIndex === 0 ? 'Готово' : 'Done'}</span>
@@ -820,9 +797,8 @@ const FocusHero = ({ stats, theme, accent, langIndex, fSize, controls }) => {
               <HeroMetric label={langIndex === 0 ? 'Отложено' : 'Pending'} value={stats.pending} tone={pendingTone} stylesObj={s} />
               <HeroMetric label={langIndex === 0 ? 'Просрочено' : 'Overdue'} value={stats.overdue} tone={overdueTone} stylesObj={s} icon={<FaFire size={10} />} />
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </motion.section>
   );
 };
@@ -1060,19 +1036,11 @@ const CategoryPanel = ({ title, categoryKey, count, doneCount, todayCount, child
           </motion.span>
         </div>
       </div>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={false}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-            style={s.categoryBody}
-          >
+      <div className={`smooth-accordion ${isOpen ? 'is-open' : ''}`}>
+        <div className="smooth-accordion-inner" style={s.categoryBody}>
             {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1127,8 +1095,7 @@ const TaskCard = ({
         opacity: { duration: 0.18 },
         y: { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
       }}
-      whileHover={{ scale: 1.003 }}
-      whileTap={{ scale: 0.985 }}
+	      whileTap={{ scale: 0.985 }}
       onClick={onOpen}
       style={s.taskCard(item.isDone, isOverdue, item.isPinned, cardAccent)}
     >
@@ -1163,21 +1130,13 @@ const TaskCard = ({
           </div>
         </div>
 
-        <motion.button type="button" whileHover={{ scale: 1.035 }} whileTap={{ scale: 0.9 }} onClick={onCheck} style={s.checkButton(item.isDone)}>
+	        <motion.button type="button" whileTap={{ scale: 0.9 }} transition={{ duration: 0.14, ease: 'easeOut' }} onClick={onCheck} style={s.checkButton(item.isDone)}>
           {item.isDone && <FaCheck size={14} />}
         </motion.button>
       </div>
 
-      <AnimatePresence initial={false}>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0, y: -6 }}
-            animate={{ height: 'auto', opacity: 1, y: 0 }}
-            exit={{ height: 0, opacity: 0, y: -6 }}
-            transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-            style={s.taskExpandedShell}
-            onClick={(event) => event.stopPropagation()}
-          >
+      <div className={`smooth-accordion ${expanded ? 'is-open' : ''}`} style={s.taskExpandedShell} onClick={(event) => event.stopPropagation()}>
+        <div className="smooth-accordion-inner">
             <div style={s.taskExpanded}>
               {(totalGoals > 0 || item.isDone) && (
                 <div style={s.progressTrack(isProgressComplete, progressTone)}>
@@ -1266,9 +1225,8 @@ const TaskCard = ({
                 )}
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </motion.article>
   );
 };

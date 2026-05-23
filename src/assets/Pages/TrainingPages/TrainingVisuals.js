@@ -60,7 +60,6 @@ export const getTrainingInteractiveStyle = (theme, accent = getTrainingAccent(),
 });
 
 export const getTrainingPressMotion = (hoverScale = 1.01, tapScale = 0.985) => ({
-  whileHover: { scale: hoverScale },
   whileTap: { y: 1, scale: tapScale },
-  transition: { type: 'spring', stiffness: 420, damping: 32 }
+  transition: { duration: 0.14, ease: 'easeOut' }
 });

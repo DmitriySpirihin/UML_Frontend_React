@@ -46,7 +46,7 @@ const TrainingMetrics = ({ id, closePanel }) => {
     <div style={styles(theme).backdrop} onClick={() => closePanel(false)}>
       <Motion.div
         initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: "100%", opacity: 0 }}
-        transition={{ type: "spring", damping: 30, stiffness: 300, mass: 0.8 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         style={{ ...styles(theme).panel, backgroundColor: panelBg }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -74,7 +74,7 @@ const TrainingMetrics = ({ id, closePanel }) => {
                     >
                         {label[langIndex]}
                         {/* Active tab bottom glow indicator */}
-                        {isActive && <Motion.div layoutId="tabGlow" style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: '3px', borderRadius:'2px', backgroundColor: accentColor, boxShadow: `0 -1px 8px ${accentColor}` }} />}
+                        {isActive && <Motion.div initial={{ opacity: 0, scaleX: 0.75 }} animate={{ opacity: 1, scaleX: 1 }} exit={{ opacity: 0, scaleX: 0.75 }} transition={{ duration: 0.14, ease: 'easeOut' }} style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: '3px', borderRadius:'2px', backgroundColor: accentColor, boxShadow: `0 -1px 8px ${accentColor}` }} />}
                     </div>
                 )
             })}

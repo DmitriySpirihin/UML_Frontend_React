@@ -20,7 +20,6 @@ import {
   FaTrashAlt
 } from 'react-icons/fa';
 import { MdClose, MdDone } from 'react-icons/md';
-import { IoIosArrowBack } from 'react-icons/io';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { fontSize$, lang$, lastPage$, selectedTodo$, setPage, setShowPopUpPanel, theme$ } from '../../StaticClasses/HabitsBus.js';
@@ -333,9 +332,7 @@ const ToDoNew = () => {
     >
       {/* Header */}
       <div style={pageHeader}>
-        <motion.div whileTap={{ scale: 0.9 }} onClick={closePanel} style={backBtn(ui)}>
-          <IoIosArrowBack size={24} color={ui.text} />
-        </motion.div>
+        <div aria-hidden="true" style={{ width: 42, height: 42, flexShrink: 0 }} />
         <div style={brandBlock()}>
           <div style={brandTitle(ui)}>UltyMyLife</div>
           <div style={brandSubtitle(ui)}>{lang === 0 ? 'НОВАЯ ЗАДАЧА' : 'NEW TASK'}</div>
@@ -875,7 +872,7 @@ const TaskIconModal = ({ show, onClose, lang, theme, ui, tone, taskIcon, taskEmo
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             style={taskIconModal(ui)}
             onClick={(e) => e.stopPropagation()}
           >
@@ -909,7 +906,7 @@ const CustomCategoryModal = ({ show, onClose, lang, theme, ui, accent, newCatNam
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={overlayStyle} onClick={onClose}>
         <motion.div
           initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          transition={{ duration: 0.18, ease: 'easeOut' }}
           style={{ ...iconSheet(ui), backdropFilter: ui.blur }}
           onClick={(e) => e.stopPropagation()}
         >

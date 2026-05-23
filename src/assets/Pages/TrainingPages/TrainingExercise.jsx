@@ -4,7 +4,7 @@ import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
 import { theme$, lang$, fontSize$, setPage, setCurrentTrainingMuscle } from '../../StaticClasses/HabitsBus.js'
 import { playEffects } from '../../StaticClasses/Effects.js'
-import { IoIosArrowBack, IoIosArrowDown, IoIosSearch } from 'react-icons/io'
+import { IoIosArrowDown, IoIosSearch } from 'react-icons/io'
 import { MuscleIcon, removeExercise, updateExercise } from '../../Classes/TrainingData.jsx'
 import { FaTrash, FaPencilAlt, FaPlus } from 'react-icons/fa';
 import { TbDotsVertical } from 'react-icons/tb'
@@ -147,9 +147,6 @@ const TrainingExercise = ({ needToAdd, setEx, onBack }) => {
     return (
         <div style={{...styles(theme).container, paddingBottom: needToAdd ? 'calc(env(safe-area-inset-bottom, 0px) + 18px)' : styles(theme).container.paddingBottom}}>
             <div style={styles(theme).topBar}>
-                <button type="button" onClick={handleBack} style={styles(theme).backButton} aria-label={langIndex === 0 ? 'Назад' : 'Back'}>
-                    <IoIosArrowBack style={{ fontSize: '24px' }} />
-                </button>
                 {/* SEARCH BAR */}
                 <div style={styles(theme).searchContainer}>
                     <IoIosSearch style={{ color: Colors.get('subText', theme), fontSize: '20px', marginLeft: '10px' }} />
@@ -190,7 +187,6 @@ const TrainingExercise = ({ needToAdd, setEx, onBack }) => {
                     return (
                         <Motion.div
                             key={key}
-                            layout
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             {...getTrainingPressMotion(1.006, 0.988)}
@@ -235,13 +231,12 @@ const TrainingExercise = ({ needToAdd, setEx, onBack }) => {
                                                     const isBaseEx = exercise.isBase;
 
                                                     return (
-                                                        <Motion.div key={exId} layout style={{ marginBottom: '8px' }}>
+                                                        <Motion.div key={exId} style={{ marginBottom: '8px' }}>
                                                             {/* Exercise Row */}
                                                             <Motion.div
                                                                 onClick={() => setExercise(exId)}
-                                                                whileHover={{ scale: 1.006 }}
                                                                 whileTap={{ scale: 0.985, y: 1 }}
-                                                                transition={{ type: 'spring', stiffness: 430, damping: 32 }}
+                                                                transition={{ duration: 0.14, ease: 'easeOut' }}
                                                                 style={{
                                                                     ...styles(theme).exerciseRow,
                                                                     background: isExSelected
@@ -270,14 +265,8 @@ const TrainingExercise = ({ needToAdd, setEx, onBack }) => {
                                                             </Motion.div>
 
                                                             {/* Exercise Description / Actions */}
-                                                            <AnimatePresence>
-                                                                {isExSelected && (
-                                                                    <Motion.div
-                                                                        initial={{ height: 0, opacity: 0 }}
-                                                                        animate={{ height: 'auto', opacity: 1 }}
-                                                                        exit={{ height: 0, opacity: 0 }}
-                                                                        style={{ padding: '2px 22px 16px 22px' }}
-                                                                    >
+                                                            <div className={`smooth-accordion ${isExSelected ? 'is-open' : ''}`}>
+                                                                <div className="smooth-accordion-inner" style={{ padding: '2px 22px 16px 22px' }}>
                                                                         <ExerciseGuide exercise={exercise} langIndex={langIndex} theme={theme} fSize={fSize} />
                                                                         
                                                                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px', gap: '15px' }}>
@@ -291,9 +280,8 @@ const TrainingExercise = ({ needToAdd, setEx, onBack }) => {
                                                                             </AnimatePresence>
                                                                             <TbDotsVertical onClick={(e) => { e.stopPropagation(); setShowAddOptions(!showAddOptions); }} style={{ color: Colors.get('icons', theme), fontSize: '20px' }} />
                                                                         </div>
-                                                                    </Motion.div>
-                                                                )}
-                                                            </AnimatePresence>
+                                                                </div>
+                                                            </div>
                                                         </Motion.div>
                                                     );
                                                 })}
@@ -482,8 +470,7 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
         width: '100%',
         maxWidth: '600px',
         display: 'grid',
-        gridTemplateColumns: '52px minmax(0, 1fr)',
-        gap: '10px',
+        gridTemplateColumns: 'minmax(0, 1fr)',
         alignItems: 'center',
         marginBottom: '16px',
         flexShrink: 0,

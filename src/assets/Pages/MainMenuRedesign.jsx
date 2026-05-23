@@ -463,7 +463,6 @@ function SummaryToggleButton({ collapsed, count, onClick, lang, heroAccent, pale
   return (
     <Motion.button
       type="button"
-      whileHover={{ y: -1, scale: 1.01 }}
       whileTap={{ scale: 0.91, y: 2 }}
       onClick={onClick}
       aria-expanded={!collapsed}
@@ -521,7 +520,7 @@ function SummaryToggleButton({ collapsed, count, onClick, lang, heroAccent, pale
       </span>
       <Motion.span
         animate={{ rotate: collapsed ? 0 : 90 }}
-        transition={{ type: 'spring', stiffness: 320, damping: 25 }}
+        transition={{ duration: 0.16, ease: 'easeOut' }}
         style={{ color: palette.sub, display: 'flex' }}
       >
         <IconChevron size={15} stroke={2.2} />
@@ -591,7 +590,6 @@ function HeroStat({ accent, label, value, palette, onClick }) {
   return (
     <Motion.button
       type="button"
-      whileHover={{ y: -1, scale: 1.01 }}
       whileTap={{ scale: 0.94, y: 2 }}
       onClick={onClick}
       style={{
@@ -657,7 +655,6 @@ function TopIconButton({ Icon, onClick, palette, active }) {
   return (
     <Motion.button
       type="button"
-      whileHover={{ y: -1, scale: 1.02 }}
       whileTap={{ scale: 0.92 }}
       onClick={onClick}
       style={{
@@ -808,7 +805,7 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         </Motion.div>
       )}
       <div style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ position: 'relative', minHeight: hasStreak ? 48 : 74, paddingRight: hasStreak ? 88 : 42 }}>
+        <div style={{ position: 'relative', minHeight: 48, paddingRight: hasStreak ? 88 : 42 }}>
           {hasStreak && (
             <div style={{ position: 'absolute', top: 0, right: 0, zIndex: 3 }}>
               <TopStreakPill value={data.streak} compact />
@@ -817,7 +814,6 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
 
           <Motion.button
             type="button"
-            whileHover={{ y: -1, scale: 1.005 }}
             whileTap={{ scale: 0.975 }}
             onClick={onOpenUser}
             style={{
@@ -879,7 +875,7 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
           justifyContent: 'space-between',
           gap: 10,
           width: '100%',
-          marginTop: hasStreak ? 9 : 12,
+          marginTop: hasStreak ? 9 : 7,
           padding: hasStreak ? '7px' : '8px',
           borderRadius: 22,
           border: `1px solid rgba(${cardAccent.rgb},${hasStreak ? 0.16 : 0.10})`,
@@ -908,7 +904,6 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
           />
           <Motion.button
             type="button"
-            whileHover={{ y: -1, scale: 1.035 }}
             whileTap={{ scale: 0.96 }}
             onClick={onOpenWidgets}
             aria-label={lang === 0 ? 'Настроить верхнюю карточку' : 'Customize top card'}
@@ -937,19 +932,11 @@ function Hero({ data, palette, lang, onOpenWidgets, onOpenUser, onOpenSection })
         </div>
       </div>
 
-      <AnimatePresence initial={false}>
-        {!summaryCollapsed && (
-          <Motion.div
-            initial={{ height: 0, opacity: 0, y: -6 }}
-            animate={{ height: 'auto', opacity: 1, y: 0 }}
-            exit={{ height: 0, opacity: 0, y: -6 }}
-            transition={{ type: 'spring', stiffness: 240, damping: 28 }}
-            style={{ marginTop: 12, overflow: 'hidden' }}
-          >
+      <div className={`smooth-accordion ${summaryCollapsed ? '' : 'is-open'}`} style={{ marginTop: summaryCollapsed ? 0 : 12 }}>
+        <div className="smooth-accordion-inner">
             <SummaryChips stats={selectedStats} palette={palette} onOpenSection={onOpenSection} />
-          </Motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </div>
     </Motion.div>
   );
 }
@@ -1062,12 +1049,10 @@ function CategoryRow({ item, info, showInfo, isPinned, idx, onOpen, onPin, onHid
   return (
     <Motion.button
       type="button"
-      layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -80, height: 0, marginBottom: 0 }}
       transition={{ duration: 0.32, ease: EASE, delay: 0.04 * idx }}
-      whileHover={{ scale: 1.003 }}
       whileTap={{ scale: 0.975, y: 1 }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
@@ -1226,7 +1211,6 @@ function ActionButton({ Icon, label, accent, onClick, palette }) {
   return (
     <Motion.button
       type="button"
-      whileHover={{ y: -1, scale: 1.01 }}
       whileTap={{ scale: 0.93, y: 2 }}
       onClick={onClick}
       style={{
@@ -1260,7 +1244,6 @@ function HeaderIconAction({ Icon, accent, onClick, label }) {
   return (
     <Motion.button
       type="button"
-      whileHover={{ y: -1, scale: 1.03 }}
       whileTap={{ scale: 0.91, y: 2 }}
       onClick={onClick}
       aria-label={label}
@@ -1291,7 +1274,6 @@ function HeaderTextAction({ Icon, accent, onClick, label, compact }) {
   return (
     <Motion.button
       type="button"
-      whileHover={{ y: -1, scale: 1.02 }}
       whileTap={{ scale: 0.92, y: 2 }}
       onClick={onClick}
       aria-label={label}
@@ -1390,7 +1372,6 @@ function DockBtn({ Icon, onClick, primary, palette }) {
   return (
     <Motion.button
       type="button"
-      whileHover={{ y: -1, scale: 1.03 }}
       whileTap={{ scale: 0.90, y: 2 }}
       onClick={onClick}
       style={{

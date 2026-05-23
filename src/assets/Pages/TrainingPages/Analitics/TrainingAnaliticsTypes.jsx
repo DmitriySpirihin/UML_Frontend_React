@@ -122,12 +122,11 @@ const TrainingAnaliticsTypes = () => {
               return (
                 <motion.div
                   key={type.id}
-                  layout
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ 
                     opacity: 1, 
                     scale: isSelected ? 1.05 : 1,
-                    transition: { type: "spring", damping: 15, stiffness: 300 }
+                    transition: { duration: 0.16, ease: 'easeOut' }
                   }}
                   {...getTrainingPressMotion(1.018, 0.972)}
                   onClick={() => setPage(type.id === 'GYM' ? 'TrainingAnaliticsMain' :  'TrainingAnaliticsCardio')}

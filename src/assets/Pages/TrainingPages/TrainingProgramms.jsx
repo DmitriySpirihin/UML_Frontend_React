@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { motion as Motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { AppData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors.js'
 import { theme$, lang$, fontSize$, addPanel$ } from '../../StaticClasses/HabitsBus.js'
@@ -180,19 +180,17 @@ const TrainingProgramm = () => {
 
     return (
         <div style={styles(theme).container}>
-            <LayoutGroup>
-                <div style={{ width: '100%', maxWidth: '600px', paddingBottom: '80px' }}>
-                    {Object.entries(programs)
-                        .map(([idStr, program]) => ({ id: Number(idStr), ...program }))
-                        .filter(p => p.show)
-                        .sort((a, b) => a.id - b.id)
-                        .map((program) => {
-                            const isExpanded = currentId === program.id;
-                            
-                            return (
-                                <Motion.div
-                                    key={program.id}
-                                    layout
+            <div style={{ width: '100%', maxWidth: '600px', paddingBottom: '80px' }}>
+                {Object.entries(programs)
+                    .map(([idStr, program]) => ({ id: Number(idStr), ...program }))
+                    .filter(p => p.show)
+                    .sort((a, b) => a.id - b.id)
+                    .map((program) => {
+                        const isExpanded = currentId === program.id;
+                        
+                        return (
+                            <Motion.div
+                                key={program.id}
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     {...getTrainingPressMotion(1, 0.988)}
@@ -312,11 +310,10 @@ const TrainingProgramm = () => {
                                             </Motion.div>
                                         )}
                                     </AnimatePresence>
-                                </Motion.div>
-                            )
-                        })}
-                </div>
-            </LayoutGroup>
+                            </Motion.div>
+                        )
+                    })}
+            </div>
 
             {/* FLOATING ADD BUTTON */}
             {currentId === -1 && (
@@ -454,7 +451,6 @@ const DayItem = ({
     onMoveExerciseDown
 }) => (
     <Motion.div
-        layout
         {...getTrainingPressMotion(1, 0.99)}
         style={{
             ...styles(theme).card,
@@ -510,14 +506,8 @@ const DayItem = ({
             )}
         </div>
 
-        <AnimatePresence>
-            {active && (
-                <Motion.div 
-                    initial={{ height: 0, opacity: 0 }} 
-                    animate={{ height: 'auto', opacity: 1 }} 
-                    exit={{ height: 0, opacity: 0 }} 
-                    style={{ overflow: 'hidden' }}
-                >
+        <div className={`smooth-accordion ${active ? 'is-open' : ''}`}>
+            <div className="smooth-accordion-inner">
                     <div style={{ padding: '0 15px 15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {day.exercises.map((item, exIndex) => {
                             const ex = AppData.exercises[item.exId];
@@ -592,17 +582,15 @@ const DayItem = ({
                             </div>
                         )}
                     </div>
-                </Motion.div>
-            )}
-        </AnimatePresence>
+            </div>
+        </div>
     </Motion.div>
 );
 
 const ActionButton = ({ icon, onClick, theme, label, isDanger }) => (
     <Motion.div
-        whileHover={{ scale: 1.006 }}
         whileTap={{ scale: 0.95, y: 1 }}
-        transition={{ type: 'spring', stiffness: 430, damping: 30 }}
+        transition={{ duration: 0.14, ease: 'easeOut' }}
         onClick={onClick}
         style={{
             flex: 1, padding: '8px 12px', borderRadius: '12px', minWidth: '80px',
@@ -640,10 +628,10 @@ const Modal = ({ children, title, theme, onClose }) => (
 
 const ModalActions = ({ onClose, onConfirm, theme }) => (
     <div style={styles(theme).modalActions}>
-        <Motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.92 }} onClick={onClose} style={styles(theme).circleBtn}>
+        <Motion.div whileTap={{ scale: 0.92 }} transition={{ duration: 0.14, ease: 'easeOut' }} onClick={onClose} style={styles(theme).circleBtn}>
             <MdClose style={{ fontSize: '24px', color: Colors.get('subText', theme) }} />
         </Motion.div>
-        <Motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.92 }} onClick={onConfirm} style={{ ...styles(theme).circleBtn, background: `linear-gradient(135deg, ${getTrainingAccent().hue}, #12BFA5)`, borderColor: getTrainingAccent().ring, boxShadow: `0 14px 30px rgba(${getTrainingAccent().rgb},0.26)` }}>
+        <Motion.div whileTap={{ scale: 0.92 }} transition={{ duration: 0.14, ease: 'easeOut' }} onClick={onConfirm} style={{ ...styles(theme).circleBtn, background: `linear-gradient(135deg, ${getTrainingAccent().hue}, #12BFA5)`, borderColor: getTrainingAccent().ring, boxShadow: `0 14px 30px rgba(${getTrainingAccent().rgb},0.26)` }}>
             <MdDone style={{ fontSize: '24px', color: '#fff' }} />
         </Motion.div>
     </div>

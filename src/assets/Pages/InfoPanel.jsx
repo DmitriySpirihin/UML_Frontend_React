@@ -103,13 +103,7 @@ const InfoPanel = () => {
       {/* STICKY HEADER */}
       <div style={s.header}>
         <div style={s.topBar}>
-          <Motion.button
-            style={s.backBtn}
-            onClick={handleBack}
-            whileTap={{ scale: 0.88 }}
-          >
-            <IoIosArrowBack size={22} />
-          </Motion.button>
+          <div aria-hidden="true" style={{ width: 40, height: 40 }} />
           <span style={s.headerTitle}>{lang === 0 ? "Как пользоваться" : "How to use"}</span>
           <div style={{ width: 40 }} />
         </div>
@@ -182,7 +176,6 @@ const InfoPanel = () => {
               style={s.goToBtn(accent)}
               onClick={() => setPage(getGoToPage(activeTab))}
               whileTap={{ scale: 0.96 }}
-              whileHover={{ scale: 1.02 }}
             >
               <span>{getGoToLabel(lang, activeTab)}</span>
               <IoIosArrowForward size={18} />

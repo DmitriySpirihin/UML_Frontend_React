@@ -1265,7 +1265,7 @@ const NegativeHabitResetPanel = ({ theme, langIndex, date, onDateChange, time, o
                 initial={{ y: 35, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 35, opacity: 0 }}
-                transition={{ type: 'spring', damping: 24, stiffness: 260 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
                 style={{
                     position: 'fixed',
                     left: '4%',

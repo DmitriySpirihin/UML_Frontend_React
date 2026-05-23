@@ -280,8 +280,8 @@ const ToDoMetrics = () => {
             {stats.week.map(day => (
               <div key={day.key} style={s.weekColumn}>
                 <div style={s.barStack}>
-                  <Motion.span initial={{ height: 0 }} animate={{ height: `${(day.created / stats.maxWeek) * 100}%` }} style={s.createdBar} />
-                  <Motion.span initial={{ height: 0 }} animate={{ height: `${(day.done / stats.maxWeek) * 100}%` }} style={s.doneBar} />
+                  <Motion.span initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ duration: 0.18, ease: 'easeOut' }} style={{ ...s.createdBar, height: `${(day.created / stats.maxWeek) * 100}%`, transformOrigin: 'bottom' }} />
+                  <Motion.span initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ duration: 0.18, ease: 'easeOut' }} style={{ ...s.doneBar, height: `${(day.done / stats.maxWeek) * 100}%`, transformOrigin: 'bottom' }} />
                 </div>
                 <div style={s.weekLabel}>{day.label}</div>
               </div>

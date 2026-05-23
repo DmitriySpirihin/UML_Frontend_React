@@ -65,6 +65,8 @@ const DIFFICULTY_META = [
     { Icon: FaInfinity, label: ['Без конца', 'Endless'], hue: '#FF5A68' }
 ];
 
+const ALL_DIFFICULTIES_META = { Icon: GiStarsStack, label: ['Все сложности', 'All difficulties'], hue: '#66D9E8' };
+
 const PERIOD_META = [
     { key: 'day', label: ['День', 'Day'] },
     { key: 'week', label: ['Неделя', 'Week'] },
@@ -115,8 +117,16 @@ const toNumber = (value) => {
 
 const getMatrixScore = (matrix, categoryIndex, difficultyIndex) => toNumber(matrix?.[categoryIndex]?.[difficultyIndex]);
 
+const getMatrixCategoryTotal = (matrix, categoryIndex) => {
+    const categoryRecords = matrix?.[categoryIndex];
+    if (!Array.isArray(categoryRecords)) return 0;
+    return categoryRecords.reduce((sum, value) => sum + toNumber(value), 0);
+};
+
 const getAllTimeScore = (item, categoryIndex, difficultyIndex) => {
-    return getMatrixScore(item?.data || item?.mentalRecords || item?.records, categoryIndex, difficultyIndex);
+    const matrix = item?.data || item?.mentalRecords || item?.records;
+    if (difficultyIndex === null) return getMatrixCategoryTotal(matrix, categoryIndex);
+    return getMatrixScore(matrix, categoryIndex, difficultyIndex);
 };
 
 const periodStartDate = (periodKey) => {
@@ -153,7 +163,7 @@ const getLogPeriodScore = (item, periodKey, categoryIndex, difficultyIndex) => {
 
     const startDate = periodStartDate(periodKey);
     const type = TYPE_KEYS[categoryIndex];
-    const difficulty = DIFFICULTY_KEYS[difficultyIndex];
+    const difficulty = difficultyIndex === null ? null : DIFFICULTY_KEYS[difficultyIndex];
     let score = 0;
     let found = false;
 
@@ -167,7 +177,7 @@ const getLogPeriodScore = (item, periodKey, categoryIndex, difficultyIndex) => {
             const sessionType = String(session?.type || '').toUpperCase();
             const sessionDifficulty = String(session?.difficulty || '').toUpperCase();
             if (sessionType && sessionType !== type) return;
-            if (sessionDifficulty && sessionDifficulty !== difficulty) return;
+            if (difficulty && sessionDifficulty && sessionDifficulty !== difficulty) return;
             const sessionScore = toNumber(session?.scores ?? session?.score ?? session?.record);
             if (sessionScore > 0) {
                 score += sessionScore;
@@ -180,15 +190,16 @@ const getLogPeriodScore = (item, periodKey, categoryIndex, difficultyIndex) => {
 };
 
 const getPeriodScore = (item, periodKey, categoryIndex, difficultyIndex) => {
-    if (periodKey === 'all') return getAllTimeScore(item, categoryIndex, difficultyIndex);
+    const resolvedDifficultyIndex = periodKey === 'all' ? null : difficultyIndex;
+    if (periodKey === 'all') return getAllTimeScore(item, categoryIndex, resolvedDifficultyIndex);
 
-    const matrixScore = getPeriodMatrixScore(item, periodKey, categoryIndex, difficultyIndex);
+    const matrixScore = getPeriodMatrixScore(item, periodKey, categoryIndex, resolvedDifficultyIndex);
     if (matrixScore !== null) return matrixScore;
 
-    const logScore = getLogPeriodScore(item, periodKey, categoryIndex, difficultyIndex);
+    const logScore = getLogPeriodScore(item, periodKey, categoryIndex, resolvedDifficultyIndex);
     if (logScore !== null) return logScore;
 
-    return getAllTimeScore(item, categoryIndex, difficultyIndex);
+    return getAllTimeScore(item, categoryIndex, resolvedDifficultyIndex);
 };
 
 const getLeague = (score) => {
@@ -321,7 +332,7 @@ const Records = () => {
 
                 <CompactFilterBar
                     period={period}
-                    difficulty={currentDifficulties[difficultyIndex]}
+                    difficulty={period.key === 'all' ? ALL_DIFFICULTIES_META : currentDifficulties[difficultyIndex]}
                     league={league}
                     isOpen={filtersOpen}
                     setIsOpen={setFiltersOpen}
@@ -351,16 +362,18 @@ const Records = () => {
                                 />
                             </div>
 
-                            <div style={s.filterGroup}>
-                                <div style={s.filterLabel}>{langIndex === 0 ? 'Сложность' : 'Difficulty'}</div>
-                                <DifficultyTabs
-                                    difficulties={currentDifficulties}
-                                    selectedIndex={difficultyIndex}
-                                    setSelectedIndex={setDifficultyIndex}
-                                    theme={theme}
-                                    langIndex={langIndex}
-                                />
-                            </div>
+                            {period.key !== 'all' && (
+                                <div style={s.filterGroup}>
+                                    <div style={s.filterLabel}>{langIndex === 0 ? 'Сложность' : 'Difficulty'}</div>
+                                    <DifficultyTabs
+                                        difficulties={currentDifficulties}
+                                        selectedIndex={difficultyIndex}
+                                        setSelectedIndex={setDifficultyIndex}
+                                        theme={theme}
+                                        langIndex={langIndex}
+                                    />
+                                </div>
+                            )}
 
                             <div style={s.filterGroup}>
                                 <div style={s.filterLabel}>{langIndex === 0 ? 'Лига' : 'League'}</div>
@@ -397,11 +410,8 @@ const Records = () => {
                         {langIndex === 0 ? 'Загрузка рейтинга...' : 'Loading leaderboard...'}
                     </div>
                 ) : (
-                    <Motion.div
-                        layout
-                        style={s.listStack}
-                    >
-                        <AnimatePresence mode="popLayout">
+                    <Motion.div style={s.listStack}>
+                        <AnimatePresence initial={false}>
                             {sortedData.map((item, index) => (
                                 <LeaderboardItem
                                     key={`${item.uid || item.name}-${index}`}
@@ -526,7 +536,7 @@ const CategoryTabs = ({ categories, selectedIndex, setSelectedIndex, theme, lang
                         onClick={() => setSelectedIndex(index)}
                         style={s.categoryBtn(active, item)}
                     >
-                        {active && <Motion.div layoutId="recordsCategoryActive" style={s.activeFill(item)} transition={{ type: 'spring', bounce: 0.18, duration: 0.5 }} />}
+                        {active && <Motion.div style={s.activeFill(item)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.14, ease: 'easeOut' }} />}
                         <Icon size={18} />
                         <span>{item.title[langIndex]}</span>
                     </button>
@@ -684,14 +694,13 @@ const LeaderboardItem = ({ theme, fSize, langIndex, isUser, isAdmin, isPremium, 
             opacity: 1,
             y: 0,
             scale: 1,
-            transition: { delay: index * 0.035, type: 'spring', stiffness: 300, damping: 25 }
+            transition: { delay: Math.min(index, 6) * 0.018, duration: 0.16, ease: 'easeOut' }
         },
         exit: { opacity: 0, scale: 0.96 }
     };
 
     return (
         <Motion.div
-            layout
             variants={itemVariants}
             initial="hidden"
             animate="visible"
