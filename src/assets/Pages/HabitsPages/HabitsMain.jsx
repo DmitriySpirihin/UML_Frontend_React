@@ -1985,6 +1985,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     const doneTone = isNegativeSuccess || !isNegative ? HABITS_SUCCESS : negativeTone;
     const doneGlow = doneTone.glow || doneTone.ring || HABITS_ACCENT.glow;
     const habitColor = isNegativeSuccess ? doneTone.hue : (isNegative ? negativeTone.hue : categoryTone.hue);
+    const actionTone = isNegative ? doneTone : categoryTone;
     const isLight = theme === 'light' || theme === 'speciallight';
     const widgets = normalizeHabitCardWidgets(habitCardWidgets);
     const showStatsRow = widgets.days || widgets.skips || widgets.streak || widgets.timer;
@@ -2228,7 +2229,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 	                    {widgets.skips && <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={statusValue === -1 ? '#D95C5C' : subTextColor} />}
                     {widgets.streak && !isNegative && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDoneAmount(id)} color={statusValue === 1 ? doneTone.hue : '#D8785E'} />}
                     {widgets.timer && !isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={categoryTone.hue} />}
-	                    {widgets.timer && isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={isNegativeSuccess ? doneTone.hue : '#D8785E'} />}
+	                    {widgets.timer && isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={isNegativeSuccess ? doneTone.hue : '#D8785E'} onClick={(e) => { e.stopPropagation(); setNewStatus(false); }} />}
 
 	                    </div>}
 
@@ -2248,7 +2249,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 
 
                     {isAutoComplete && <div style={{ padding: '7px 10px', borderRadius: '999px', backgroundColor: doneTone.soft, border: `1px solid ${doneTone.ring}`, color: doneTone.hue, fontSize: '11px', fontWeight: 900 }}>{langIndex === 0 ? 'АВТО' : 'AUTO'}</div>}
-                    {isNegative && <div style={{ width: 40, height: 30, borderRadius: 10, backgroundColor: isNegativeSuccess ? doneTone.soft : 'rgba(216,120,94,0.07)', border: isNegativeSuccess ? `1px solid ${doneTone.ring}` : '1px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}><FaFire size={14} color={isNegativeSuccess ? doneTone.hue : '#D8785E'} /></div>}
+                    {isNegative && <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={(e) => { e.stopPropagation(); setNewStatus(false); }} style={{ width: 40, height: 30, borderRadius: 10, backgroundColor: isNegativeSuccess ? doneTone.soft : 'rgba(216,120,94,0.07)', border: isNegativeSuccess ? `1px solid ${doneTone.ring}` : '1px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', padding: 0, cursor: 'pointer', outline: 'none', WebkitAppearance: 'none', WebkitTapHighlightColor: 'transparent' }}><FaFire size={14} color={isNegativeSuccess ? doneTone.hue : '#D8785E'} /></motion.button>}
                     
                 </div>
             </div>
@@ -2296,7 +2297,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 	                </div>}
 
 	                {/* Add Goal Button */}
-	                {widgets.goals && <div onClick={() => setCP({ show: true, type: 1, hId: id, gId: 0, setGoals: setHabitGoals })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '12px', cursor: 'pointer', padding: '12px', borderRadius: 15, border: `1px solid ${categoryTone.ring}`, background: categoryTone.soft }}>
+	                {widgets.goals && <div onClick={() => setCP({ show: true, type: 1, hId: id, gId: 0, setGoals: setHabitGoals })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '12px', cursor: 'pointer', padding: '12px', borderRadius: 15, border: `1px solid ${actionTone.ring}`, background: actionTone.soft }}>
 	                    <FaPlus style={{ fontSize: '12px', color: habitColor }} />
 	                    <span style={{ fontSize: '13px', marginLeft: '8px', color: habitColor, fontWeight: '600' }}>
 	                        {langIndex === 0 ? 'Добавить цель' : 'Add goal'}
@@ -2947,14 +2948,16 @@ const getDayName = (langIndex,days) => {
 }
 
 
-const MiniBadge = ({ icon, text, color , theme}) => (
-    <div style={{ 
+const MiniBadge = ({ icon, text, color, theme, onClick }) => (
+    <div onClick={onClick} style={{ 
         display: 'flex', alignItems: 'center', gap: '3px', 
         padding: '4px 7px', borderRadius: 999, 
         background: theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.035)',
         border: `1px solid ${theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.06)'}`,
         color: color, fontSize: '10px', fontWeight: '850',
-        whiteSpace: 'nowrap'
+        whiteSpace: 'nowrap',
+        cursor: onClick ? 'pointer' : 'default',
+        WebkitTapHighlightColor: 'transparent'
     }}>
         {icon}
         {text && <span>{text}</span>}

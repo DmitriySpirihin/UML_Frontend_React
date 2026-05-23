@@ -1,4 +1,4 @@
-import React, {useState,useEffect,useRef} from 'react'
+import React, {useState,useEffect,useRef,useMemo} from 'react'
 import { motion, useMotionValue, useTransform, animate, AnimatePresence } from 'framer-motion'
 import { allHabits} from '../../Classes/Habit.js'
 import { AppData } from '../../StaticClasses/AppData.js'
@@ -157,10 +157,46 @@ const getHabitCategoryLabel = (habit, langIndex) => {
     return habit.category;
 };
 
+const getChosenHabitIndex = (id) => (
+    (AppData.choosenHabits || []).findIndex((habitId) => Number(habitId) === Number(id))
+);
+
 const isNegativeHabitEntry = (id, habit) => {
-    const habitIndex = AppData.choosenHabits.indexOf(Number(id));
+    const habitIndex = getChosenHabitIndex(id);
+    if (habitIndex !== -1 && typeof AppData.choosenHabitsTypes?.[habitIndex] === 'boolean') {
+        return AppData.choosenHabitsTypes[habitIndex];
+    }
+
     const categoryKey = getHabitCategoryKey(habit);
-    return AppData.choosenHabitsTypes[habitIndex] === true || categoryKey === NEGATIVE_CATEGORY || categoryKey === NEGATIVE_CATEGORY_EN;
+    return categoryKey === NEGATIVE_CATEGORY || categoryKey === NEGATIVE_CATEGORY_EN;
+};
+
+const getHabitEffectiveCategoryKey = (id, habit) => {
+    if (isNegativeHabitEntry(id, habit)) return NEGATIVE_CATEGORY;
+
+    const categoryKey = getHabitCategoryKey(habit);
+    if (categoryKey !== NEGATIVE_CATEGORY && categoryKey !== NEGATIVE_CATEGORY_EN) return categoryKey;
+
+    const defaultHabit = allHabits.find((defaultItem) => Number(defaultItem.id) === Number(id));
+    const defaultCategory = getHabitCategoryKey(defaultHabit);
+    if (defaultCategory !== NEGATIVE_CATEGORY && defaultCategory !== NEGATIVE_CATEGORY_EN) {
+        return defaultCategory;
+    }
+
+    return 'Здоровье';
+};
+
+const getHabitEffectiveCategoryLabel = (id, habit, langIndex) => {
+    const effectiveCategoryKey = getHabitEffectiveCategoryKey(id, habit);
+    const originalCategoryKey = getHabitCategoryKey(habit);
+    if (effectiveCategoryKey === originalCategoryKey) return getHabitCategoryLabel(habit, langIndex);
+
+    const defaultHabit = allHabits.find((defaultItem) => Number(defaultItem.id) === Number(id));
+    if (defaultHabit && getHabitCategoryKey(defaultHabit) === effectiveCategoryKey) {
+        return getHabitCategoryLabel(defaultHabit, langIndex);
+    }
+
+    return effectiveCategoryKey;
 };
 
 const getNegativeCleanStreakDays = (id) => {
@@ -188,15 +224,15 @@ const groupHabitEntriesByCategory = (entries, langIndex) => {
     const indexByKey = new Map();
 
     entries.forEach((entry) => {
-        const categoryKey = getHabitCategoryKey(entry.habit);
         const isNegative = isNegativeHabitEntry(entry.id, entry.habit);
+        const categoryKey = getHabitEffectiveCategoryKey(entry.id, entry.habit);
         const groupKey = isNegative ? NEGATIVE_CATEGORY : categoryKey;
 
         if (!indexByKey.has(groupKey)) {
             indexByKey.set(groupKey, groups.length);
             groups.push({
                 key: groupKey,
-                label: isNegative ? (langIndex === 0 ? NEGATIVE_CATEGORY : NEGATIVE_CATEGORY_EN) : getHabitCategoryLabel(entry.habit, langIndex),
+                label: isNegative ? (langIndex === 0 ? NEGATIVE_CATEGORY : NEGATIVE_CATEGORY_EN) : getHabitEffectiveCategoryLabel(entry.id, entry.habit, langIndex),
                 categoryKey,
                 isNegative,
                 entries: []
@@ -293,7 +329,8 @@ const styles = (theme, fSize = 0) => {
             boxShadow: glassShadow,
             backdropFilter: 'blur(28px) saturate(170%)',
             WebkitBackdropFilter: 'blur(28px) saturate(170%)',
-            overflow: 'visible'
+            overflow: 'visible',
+            isolation: 'isolate'
         },
         calendarHead: {
             display: 'flex',
@@ -399,6 +436,7 @@ const styles = (theme, fSize = 0) => {
             display: 'flex',
             flexDirection: 'column',
             overflow: 'visible',
+            isolation: 'isolate',
             background: glassPanel,
             boxShadow: glassShadow,
             backdropFilter: 'blur(28px) saturate(170%)',
@@ -972,15 +1010,9 @@ const CalendarCategoryGroup = ({ group, theme, langIndex, date, fSize, onHabitCl
 const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, onHabitClick }) => {
     const name = habitData.name[langIndex];
     const isLight = theme === 'light' || theme === 'speciallight';
-    const categoryKey = Array.isArray(habitData.category) ? habitData.category[0] : (habitData.category || 'Здоровье');
+    const categoryKey = getHabitEffectiveCategoryKey(id, habitData);
     const tone = getHabitCategoryTone(categoryKey);
-    let category = "";
-    if (habitData.category) {
-        if (Array.isArray(habitData.category)) category = habitData.category[langIndex];
-        else category = habitData.category;
-    } else category = langIndex === 0 ? "Общее" : "General";
-
-    const isNegative = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(id)];
+    const isNegative = isNegativeHabitEntry(id, habitData);
     const [status, setStatus] = useState(statusInit);
     const [canDrag, setCanDrag] = useState(true);
     const [showResetPanel, setShowResetPanel] = useState(false);
@@ -1065,15 +1097,10 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
         const dayKey = formatDateKey(date);
 
         if (isNegative) {
-            if (status === 1) {
-                await AppData.changeStatus(dayKey, id, 0);
-                setStatus(0);
-                emitHabitsChanged();
-                if (AppData.prefs[2] == 0) playEffects(clickSound);
-                return;
-            }
-
-            await saveCleanDay();
+            setResetDate(date);
+            setEventTime(formatTimeInput(AppData.getHabitEventTimestamp(dayKey, id), date));
+            setShowResetPanel(true);
+            if (AppData.prefs[2] == 0) playEffects(clickSound);
             return;
         }
 
@@ -1156,12 +1183,7 @@ const HabitRow = ({ id, habitData, theme, date, statusInit, langIndex, fSize, on
                         didDragAction.current = false;
                         return;
                     }
-                    if (isNegative) {
-                        setResetDate(date);
-                        setEventTime(formatTimeInput(AppData.getHabitEventTimestamp(formatDateKey(date), id), date));
-                        setShowResetPanel(true);
-                    }
-                    else onHabitClick?.(id, date);
+                    onHabitClick?.(id, date);
                 }}
             >
                 <div style={{
@@ -1310,19 +1332,32 @@ const NegativeHabitResetPanel = ({ theme, langIndex, date, onDateChange, time, o
 
 const ResetDateWheel = ({ theme, langIndex, date, onDateChange }) => {
     const isLight = theme === 'light' || theme === 'speciallight';
+    const currentYear = new Date().getFullYear();
+    const dateYear = date.getFullYear();
+    const initialYearRef = useRef(Math.abs(dateYear - currentYear) > 10 ? currentYear : dateYear);
     const day = date.getDate();
     const month = date.getMonth();
-    const year = date.getFullYear();
     const months = RESET_MONTHS[langIndex] || RESET_MONTHS[0];
+    const years = useMemo(() => (
+        Array.from({ length: 21 }, (_, index) => initialYearRef.current - 10 + index)
+    ), []);
+    const year = years.includes(dateYear) ? dateYear : initialYearRef.current;
     const days = Array.from({ length: new Date(year, month + 1, 0).getDate() }, (_, index) => index + 1);
-    const years = Array.from({ length: 7 }, (_, index) => year - 3 + index);
 
-    const commitDate = (nextYear, nextMonth, nextDay) => {
+    const buildDate = (baseDate, nextYear, nextMonth, nextDay) => {
         const maxDay = new Date(nextYear, nextMonth + 1, 0).getDate();
-        const next = new Date(date);
+        const next = new Date(baseDate);
         next.setFullYear(nextYear, nextMonth, Math.min(nextDay, maxDay));
         next.setHours(0, 0, 0, 0);
-        onDateChange(next);
+        return next;
+    };
+
+    useEffect(() => {
+        if (dateYear !== year) onDateChange(buildDate(date, year, month, day));
+    }, [date, dateYear, day, month, onDateChange, year]);
+
+    const commitDate = (nextYear, nextMonth, nextDay) => {
+        onDateChange(buildDate(date, nextYear, nextMonth, nextDay));
     };
 
     return (
