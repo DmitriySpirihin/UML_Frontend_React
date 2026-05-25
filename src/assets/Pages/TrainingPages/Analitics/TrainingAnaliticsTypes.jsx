@@ -147,9 +147,8 @@ const TrainingAnaliticsTypes = () => {
                 >
                   <div style={{
                     ...styles(theme, fSize).trainingTypeIcon,
-                    background: `linear-gradient(135deg, ${accent.hue}, rgba(${accent.rgb}, ${index === 0 ? 0.72 : 0.58}))`,
-                    WebkitMaskImage: 'radial-gradient(circle, white 70%, transparent 75%)',
-                    maskImage: 'radial-gradient(circle, white 70%, transparent 75%)'
+                    background: `radial-gradient(circle at 32% 20%, rgba(255,255,255,0.24), transparent 42%), linear-gradient(145deg, rgba(${accent.rgb}, ${index === 0 ? 0.34 : 0.26}), rgba(8,14,20,0.32))`,
+                    border: `1px solid rgba(${accent.rgb},0.28)`
                   }}>
                     {index === 0 ? (<MdFitnessCenter fontSize={29}/>) : (<FaRunning fontSize={29}/>)}
                   </div>
@@ -263,14 +262,14 @@ const styles = (theme, fSize) => {
     trainingTypeIcon: {
       width: '72px',
       height: '72px',
-      borderRadius: '50%',
+      borderRadius: '24px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       margin: '0 auto 20px',
       color: 'white',
       fontWeight: 'bold',
-      boxShadow: `0 10px 28px rgba(${accent.rgb}, 0.26)`,
+      boxShadow: `0 1px 0 rgba(255,255,255,0.11) inset, 0 14px 30px -20px rgba(${accent.rgb}, 0.70)`,
       position: 'relative',
       zIndex: 2
     },

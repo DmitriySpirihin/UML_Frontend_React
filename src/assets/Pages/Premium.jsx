@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AppData, UserData } from '../StaticClasses/AppData';
+import { AppData, formatLocalDateKey, UserData } from '../StaticClasses/AppData';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { beginCell } from 'ton-core';
 import Colors from '../StaticClasses/Colors';
@@ -162,7 +162,7 @@ const Premium = () => {
   if (!currentEndDate) {
     return langIndex === 0 ? 'Нет подписки' : 'No subscription';
   }
-  const endDateStr = new Date(currentEndDate).toISOString().split('T')[0];
+  const endDateStr = formatLocalDateKey(currentEndDate);
   const year = endDateStr.slice(0, 4);
   const day = parseInt(endDateStr.slice(8), 10);
   const monthIndex = parseInt(endDateStr.slice(5, 7), 10) - 1;

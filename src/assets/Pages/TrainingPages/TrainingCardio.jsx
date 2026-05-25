@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AppData } from '../../StaticClasses/AppData.js';
+import { AppData, formatLocalDateKey } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { theme$, lang$, setPage, setShowPopUpPanel } from '../../StaticClasses/HabitsBus';
 import { addCardioSession, updateCardioSession, getCardioSession, deleteCardioSession } from '../../StaticClasses/TrainingLogHelper.js';
@@ -156,7 +156,7 @@ const TrainingCardio = () => {
   const resetForm = useCallback(() => {
     resetFormMetrics();
     setSelectedType('RUNNING');
-    setSelectedDate(parseLocalDate(new Date().toISOString().split('T')[0]));
+    setSelectedDate(parseLocalDate(formatLocalDateKey()));
     setSessionId(null);
   }, [resetFormMetrics]);
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import Colors from '../StaticClasses/Colors'
 import { theme$, lang$, devMessage$, isPasswordCorrect$, premium$, isValidation$, setPage, lastPage$, habitAccent$ } from '../StaticClasses/HabitsBus'
-import { AppData, UserData, getSectionStreak, getSectionStreakInfo } from '../StaticClasses/AppData'
+import { AppData, UserData, formatLocalDateKey, getSectionStreak, getSectionStreakInfo } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
 import { FaRobot, FaStar, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift, FaTelegramPlane, FaSlidersH, FaCheck } from "react-icons/fa";
@@ -500,7 +500,7 @@ useEffect(() => {
 }
 
 function buildMainMenuSummary(lang, visibleItems, heroWidgetIds = ['HabitsMain', 'TrainingMain', 'MentalMain']) {
-    const todayKey = new Date().toISOString().split('T')[0];
+    const todayKey = formatLocalDateKey();
     const chosenHabits = AppData.choosenHabits || [];
     const chosenHabitIds = new Set(chosenHabits.map((id) => String(id)));
     const todayHabits = AppData.habitsByDate?.[todayKey] || {};
@@ -984,7 +984,7 @@ function getInfo(id) {
     return '';
 }
 function getTodaySleepHours() {
-  const entry = AppData.sleepingLog[new Date().toISOString().split('T')[0]];
+  const entry = AppData.sleepingLog[formatLocalDateKey()];
   if (!entry || typeof entry.duration !== 'number') return '';
   return formatMsToHhMm(entry.duration);
 }
@@ -996,7 +996,7 @@ const formatMsToHhMm = (ms) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
 function getTodaySessionCount() {
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = formatLocalDateKey();
   const getCount = (log) => (log[todayKey] ? log[todayKey].length : 0);
   const totalSessions = 
     getCount(AppData.breathingLog) + 
@@ -1006,7 +1006,7 @@ function getTodaySessionCount() {
   return totalSessions;
 }
 function getTodayMentalSessionCount() {
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = formatLocalDateKey();
   return Array.isArray(AppData.mentalLog?.[todayKey]) ? AppData.mentalLog[todayKey].length : 0;
 }
 export default MainMenu

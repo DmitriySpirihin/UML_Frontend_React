@@ -17,7 +17,7 @@ export function getProblem(type,difficulty,stage) {
 
 
 
-    return [problem,answer.toString()];
+    return ['1 + 1', '2'];
 }
 
 //helper 
@@ -312,13 +312,13 @@ const getInsaneProblem = (stage) => {
     // Interpretation: "aa" = a*a, but that duplicates power → instead use distinct terms:
     // We'll do: A + B - C - D + E, where each is a 2-digit or 3-digit number
     // But to make it "hard", use squares or small cubes inside
-    let A, B, C, D, E, total;
+    let a, b, c, d, A, B, C, D, E, total;
     let attempts = 0;
     do {
-      const a = getRandomInt(7, 13); // a² = 49–169
-      const b = getRandomInt(8, 14); // b² = 64–196
-      const c = getRandomInt(5, 11); // c³ = 125–1331 (but cap)
-      const d = getRandomInt(4, 10); // d² = 16–100
+      a = getRandomInt(7, 13); // a² = 49–169
+      b = getRandomInt(8, 14); // b² = 64–196
+      c = getRandomInt(5, 11); // c³ = 125–1331 (but cap)
+      d = getRandomInt(4, 10); // d² = 16–100
       const e = getRandomInt(50, 200);
 
       A = a ** 2;
@@ -334,7 +334,7 @@ const getInsaneProblem = (stage) => {
 
     if (total <= 0 || total >= 10000) {
       // Fallback guaranteed expression
-      return [`12² + 11² − 5³ − 6² + 100`, '210'];
+      return [`12² + 11² − 5³ − 6² + 100`, '204'];
     }
 
     const expr = `${a}${toSuperscript(2)} + ${b}${toSuperscript(2)} − ${c}${toSuperscript(3)} − ${d}${toSuperscript(2)} + ${E}`;

@@ -13,7 +13,7 @@ import {
 } from 'react-icons/md';
 import { FaBed, FaPen, FaRegClock, FaSun } from 'react-icons/fa';
 
-import { AppData } from '../../StaticClasses/AppData.js';
+import { AppData, formatLocalDateKey } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { playEffects } from '../../StaticClasses/Effects.js';
 import { saveData } from '../../StaticClasses/SaveHelper.js';
@@ -81,7 +81,7 @@ function isNotFutureDate(dateString) {
 }
 
 const SleepNew = () => {
-  const fallbackDate = new Date().toISOString().split('T')[0];
+  const fallbackDate = formatLocalDateKey();
   const dateString = selectedSleepDate$.value || fallbackDate;
   const [theme, setTheme] = useState(theme$.value);
   const [fSize, setFontSize] = useState(fontSize$.value);

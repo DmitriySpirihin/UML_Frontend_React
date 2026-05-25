@@ -1,4 +1,3 @@
-import { init, miniApp, viewport } from '@telegram-apps/sdk';
 import { AppData, Data } from '../StaticClasses/AppData';
 import { openDB } from 'idb';
 import 'reflect-metadata';
@@ -6,43 +5,19 @@ import { instanceToPlain, plainToClass } from 'class-transformer';
 import { NotificationsManager } from '../StaticClasses/NotificationsManager';
 import {setShowPopUpPanel,setAddPanel} from '../StaticClasses/HabitsBus';
 
-export async function initializeTelegramSDK(opts = {}) {
+export async function initializeTelegramSDK() {
   try {
-    // 1. Initialize the SDK package
-    await init();
-    
-    // 2. Safe Platform Check (Raw Telegram Object)
     const rawWebApp = window.Telegram?.WebApp;
     const platform = rawWebApp?.platform || 'unknown';
-
-    // 3. Define Mobile Explicitly
     const isMobile = platform === 'android' || platform === 'ios';
 
-    // 4. Mount & Configure Viewport
-    if (viewport.mount.isAvailable()) {
-      await viewport.mount();
-      
-      if (isMobile) {
-        viewport.expand(); 
-        
-        if (viewport.requestFullscreen.isAvailable()) {
-          await viewport.requestFullscreen();
-        }
-      }
-    }
-
-    // 5. Signal that the app is ready
-    if (miniApp.ready.isAvailable()) {
-      await miniApp.ready();
-    }
-
-    // 6. Setup Buttons (Hide them)
     if (rawWebApp) {
-      // Настройка BackButton - СИСТЕМНОЕ окно подтверждения
-      rawWebApp.enableClosingConfirmation();
-        
+      rawWebApp.ready?.();
+      if (isMobile) {
+        rawWebApp.expand?.();
+        rawWebApp.requestFullscreen?.();
+      }
 
-      // Настройка SettingsButton
       if (rawWebApp.SettingsButton) {
         rawWebApp.SettingsButton.show();
         rawWebApp.SettingsButton.onClick(() => {
@@ -50,8 +25,8 @@ export async function initializeTelegramSDK(opts = {}) {
         });
       }
 
-      // Скрываем неиспользуемые кнопки
       if (rawWebApp.SecondaryButton) rawWebApp.SecondaryButton.hide();
+      rawWebApp.enableClosingConfirmation?.();
     }
 
     return true;
@@ -89,7 +64,7 @@ export async function initDBandCloud() {
   const dbName = 'UML_Data';
   try {
     db = await openDB(dbName, 2, {
-      upgrade(db, oldVersion) {
+      upgrade(db) {
         if (!db.objectStoreNames.contains('UserData')) {
           db.createObjectStore('UserData');
         }
@@ -402,7 +377,13 @@ function isIOS() {
 
 // Optional: Validate structure (adjust based on your Data class)
 function isValidAppData(obj) {
-  // Example: check for expected top-level fields
-  return obj && typeof obj === 'object' && 
-         (obj.user !== undefined || obj.version !== undefined || obj.entries !== undefined);
+  return obj && typeof obj === 'object' &&
+    (
+      obj.lastSave !== undefined ||
+      obj.prefs !== undefined ||
+      obj.choosenHabits !== undefined ||
+      obj.trainingLog !== undefined ||
+      obj.todoList !== undefined ||
+      obj.sleepingLog !== undefined
+    );
 }

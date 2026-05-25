@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, useTransform, useMotionValue, animate, AnimatePresence } from 'framer-motion'
 import { allHabits } from '../../Classes/Habit.js'
-import { AppData, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
+import { AppData, formatLocalDateKey, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
 import { logSectionVisit } from '../../StaticClasses/AppData.js'
 import { playEffects } from '../../StaticClasses/Effects.js'
 
@@ -33,7 +33,7 @@ import TimerOffIcon from '@mui/icons-material/TimerOffTwoTone';
 import Slider from '@mui/material/Slider';
 import HoverInfoButton from '../../Helpers/HoverInfoButton.jsx';
 
-const dateKey = new Date().toISOString().split('T')[0];
+const dateKey = formatLocalDateKey();
 const clickSound = new Audio('Audio/Click.wav');
 const skipSound = new Audio('Audio/Skip.wav');
 const isDoneSound = new Audio('Audio/IsDone.wav');
@@ -136,7 +136,7 @@ function isNegativeHabit(id, habit) {
         return AppData.choosenHabitsTypes[habitIndex];
     }
 
-    return getCategoryKey(habit) === NEGATIVE_CATEGORY;
+    return getHabitCategoryKey(habit) === NEGATIVE_CATEGORY;
 }
 
 function getHabitEffectiveCategoryKey(habit) {
@@ -404,7 +404,7 @@ function getCategoryIcon(categoryKey, theme) {
 function getDateKeyWithOffset(offset) {
     const date = new Date();
     date.setDate(date.getDate() + offset);
-    return date.toISOString().split('T')[0];
+    return formatLocalDateKey(date);
 }
 
 function getWeekdayLabel(offset, langIndex) {
@@ -1014,7 +1014,7 @@ const HabitsMain = () => {
 
     const onConfirmAction = async () => {
         switch (cP.type) {
-            case 0:
+            case 0: {
             // Ensure array exists
             if (!AppData.CustomHabits) AppData.CustomHabits = [];
             
@@ -1061,7 +1061,8 @@ const HabitsMain = () => {
             
 	            setDataVersion(v => v + 1);
 	            await saveData();
-	            break;
+                    break;
+                }
             case 1:
                 if (newGoal.length > 0) {
                     cP.setGoals(prev => [...prev, { text: newGoal, isDone: false }]);
@@ -1948,7 +1949,6 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
     const habit = getAllHabits().find(h => h.id === id);
-    if (!habit) return null;
 
     const [habitInfo, setHabitInfo] = useState({
         name: habit?.name || ["", ""],
@@ -2136,6 +2136,8 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 
     useEffect(() => { const sub = expandedCard$.subscribe(cId => setExpanded(cId === id)); return () => sub.unsubscribe(); }, [id]);
     useEffect(() => { setCanDrag(!showTimerSlider); }, [showTimerSlider]);
+
+    if (!habit) return null;
 
     const startTimer = () => { if (statusValue < 1 && !isNegative && !isAutoComplete) { setTimer(true); setTime(0); } }
     const stopTimer = () => { if (!isNegative) { setTimer(false); setProgress(0); setTime(0); } }

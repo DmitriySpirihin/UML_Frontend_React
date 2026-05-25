@@ -23,7 +23,7 @@ import {
   FaThumbtack
 } from 'react-icons/fa';
 import { FaCheck } from 'react-icons/fa6';
-import { AppData, logSectionVisit } from '../../StaticClasses/AppData.js';
+import { AppData, formatLocalDateKey, logSectionVisit } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { playEffects } from '../../StaticClasses/Effects.js';
 import { saveData } from '../../StaticClasses/SaveHelper';
@@ -130,7 +130,7 @@ const setTodoFocusCollapsed = (isCollapsed) => {
 function getDateKeyWithOffset(offset) {
   const date = new Date();
   date.setDate(date.getDate() + offset);
-  return date.toISOString().split('T')[0];
+  return dateKey(date);
 }
 
 function getWeekdayLabel(offset, langIndex) {
@@ -157,8 +157,14 @@ function isTaskActiveOnDate(task, targetDateKey) {
   const deadlineKey = dateKey(deadline);
 
   if (startKey && deadlineKey) return targetDateKey >= startKey && targetDateKey <= deadlineKey;
-  if (startKey) return targetDateKey === startKey;
-  if (deadlineKey) return targetDateKey === deadlineKey;
+  if (deadlineKey) return (!startKey || targetDateKey >= startKey) && targetDateKey <= deadlineKey;
+  if (startKey) {
+    if (task.isDone) {
+      const completedKey = dateKey(parseDate(task.completedAt)) || startKey;
+      return targetDateKey === completedKey;
+    }
+    return targetDateKey >= startKey;
+  }
   return targetDateKey === dateKey(new Date());
 }
 
@@ -236,10 +242,6 @@ const ToDoMain = () => {
   useEffect(() => {
     processTaskList();
   }, [filterParams, sortParams, searchQuery, refreshTrigger, showHiddenTasks, selectedDateKey]);
-
-  useEffect(() => {
-    if (searchInputRef.current) searchInputRef.current.focus();
-  }, []);
 
   const processTaskList = () => {
     let processedList = AppData.todoList ? [...AppData.todoList] : [];
@@ -2098,8 +2100,8 @@ const styles = (theme, accent, fSize = 0) => {
       cursor: 'pointer',
       borderRadius: 17
     }),
-    expandedGoalText: (done) => ({ flex: 1, minWidth: 0, color: done ? TODO_SUCCESS.hue : text, fontSize: 13, fontWeight: done ? 800 : 650, textDecoration: 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }),
-    expandedGoalDot: (done) => ({ width: 30, height: 30, borderRadius: 11, border: `1px solid ${done ? TODO_SUCCESS.ring : (isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)')}`, background: done ? TODO_SUCCESS.hue : 'transparent', color: isLight ? '#FFFFFF' : '#0E1512', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: done ? `0 8px 16px -12px ${TODO_SUCCESS.hue}` : 'none' }),
+    expandedGoalText: (done) => ({ flex: 1, minWidth: 0, color: done ? TODO_SUCCESS.hue : text, fontSize: 13, fontWeight: done ? 800 : 650, lineHeight: 1.35, textDecoration: 'none', overflow: 'visible', overflowWrap: 'anywhere', whiteSpace: 'normal', wordBreak: 'break-word' }),
+    expandedGoalDot: (done) => ({ width: 30, height: 30, marginTop: 1, borderRadius: 11, border: `1px solid ${done ? TODO_SUCCESS.ring : (isLight ? 'rgba(15,23,42,0.12)' : 'rgba(255,255,255,0.12)')}`, background: done ? TODO_SUCCESS.hue : 'transparent', color: isLight ? '#FFFFFF' : '#0E1512', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: done ? `0 8px 16px -12px ${TODO_SUCCESS.hue}` : 'none' }),
     moreGoals: { color: sub, fontSize: 11, fontWeight: 850 },
     emptyChecklist: { color: sub, fontSize: 12, fontWeight: 750, minHeight: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' },
     checklistAddRow: {
@@ -2237,10 +2239,7 @@ function parseDate(dateStr) {
 
 function dateKey(date) {
   if (!(date instanceof Date) || isNaN(date)) return '';
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return formatLocalDateKey(date);
 }
 
 function daysToDeadlineNum(dateStr) {
@@ -2257,10 +2256,7 @@ function isDeadlinePassed(dateStr) {
 }
 
 function isTodayTask(task) {
-  const today = dateKey(new Date());
-  const deadline = parseDate(task.deadLine);
-  const start = parseDate(task.startDate);
-  return dateKey(deadline) === today || dateKey(start) === today;
+  return isTaskActiveOnDate(task, dateKey(new Date()));
 }
 
 function isTaskCompletedBeforeToday(task) {

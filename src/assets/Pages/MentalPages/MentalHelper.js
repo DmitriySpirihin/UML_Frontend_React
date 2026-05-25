@@ -1,6 +1,6 @@
 // math
 import { saveData } from "../../StaticClasses/SaveHelper";
-import { AppData } from "../../StaticClasses/AppData";
+import { AppData, formatLocalDateKey } from "../../StaticClasses/AppData";
 import { NotificationsManager } from "../../StaticClasses/NotificationsManager";
 
 export const quickMathCategories = [
@@ -265,7 +265,7 @@ export async function saveSessionDuration(duration,hasRecord,cat,ind,record ,rig
   const types = ['MATH','MEMORY','LOGIC','FOCUS'];
   const difficulties = ['NOVICE','MIDDLE','PRO','INSANE','ENDLESS','RELAXE'];
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDateKey();
 let base, maxTimeMult;
   switch (cat) {
     case 0: // MATH

@@ -11,12 +11,12 @@ export const getTrainingAccent = () => (
 export const getTrainingPageBackground = (theme, accent = getTrainingAccent()) => {
   const isLight = theme === 'light' || theme === 'speciallight';
   return isLight
-    ? `radial-gradient(680px 420px at 12% -12%, rgba(${accent.rgb},0.20), transparent 58%),
-       radial-gradient(560px 360px at 94% 8%, rgba(${accent.rgb},0.13), transparent 60%),
-       linear-gradient(180deg, rgba(${accent.rgb},0.12) 0%, ${Colors.get('background', theme)} 58%)`
-    : `radial-gradient(720px 440px at 10% -12%, rgba(${accent.rgb},0.24), transparent 58%),
-       radial-gradient(560px 380px at 96% 10%, rgba(${accent.rgb},0.14), transparent 62%),
-       linear-gradient(180deg, rgba(${accent.rgb},0.13) 0%, ${Colors.get('background', theme)} 62%)`;
+    ? `radial-gradient(circle at 14% -6%, rgba(${accent.rgb},0.22), transparent 34%),
+       radial-gradient(circle at 92% 12%, rgba(${accent.rgb},0.11), transparent 30%),
+       linear-gradient(180deg, rgba(${accent.rgb},0.12) 0%, ${Colors.get('background', theme)} 52%)`
+    : `radial-gradient(circle at 14% -6%, rgba(${accent.rgb},0.32), transparent 34%),
+       radial-gradient(circle at 92% 12%, rgba(20,184,166,0.16), transparent 30%),
+       linear-gradient(180deg, #162536 0%, ${Colors.get('background', theme)} 76%)`;
 };
 
 export const getTrainingPanelBackground = (theme, accent = getTrainingAccent()) => {

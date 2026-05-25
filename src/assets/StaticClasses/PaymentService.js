@@ -1,11 +1,9 @@
 import { UserData } from "./AppData";
 
-const now = new Date();
-
 // Create invoice + redirect
-const API_BASE = 'https://ultymylife.ru'; // ✅ CLEAN
+const API_BASE = 'https://ultymylife.ru';
 
-const { WebApp } = window.Telegram;
+const getTelegramWebApp = () => window.Telegram?.WebApp;
 
 export async function initiateSbpPayment(userId, plan) {
   try {
@@ -17,8 +15,9 @@ export async function initiateSbpPayment(userId, plan) {
 
     localStorage.setItem('pendingPaymentId', invoice.paymentId);
 
-    if (window.Telegram?.WebApp?.openLink) {
-      window.Telegram.WebApp.openLink(invoice.confirmation.confirmation_url);
+    const webApp = getTelegramWebApp();
+    if (webApp?.openLink) {
+      webApp.openLink(invoice.confirmation.confirmation_url);
     } else {
       window.open(invoice.confirmation.confirmation_url, '_blank');
     }
@@ -48,7 +47,8 @@ async function createSbpInvoice(userId, plan) {
 // 2. Telegram Stars Payment (FIXED)
 // ---------------------------------------------------------
 export async function initiateTgStarsPayment(userId, plan) {
-  if (!window.Telegram?.WebApp) {
+  const webApp = getTelegramWebApp();
+  if (!webApp) {
     alert('Telegram Stars payments are only available inside Telegram.');
     return;
   }
@@ -72,7 +72,7 @@ export async function initiateTgStarsPayment(userId, plan) {
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Failed to create Stars invoice');
 
-    window.Telegram.WebApp.openTelegramLink(data.invoice_link);
+    webApp.openTelegramLink(data.invoice_link);
   } catch (err) {
     console.error('Stars payment error:', err);
     alert('Не удалось создать счёт Telegram Stars. Попробуйте позже.');
@@ -111,7 +111,8 @@ export async function fetchTonInvoice(userId, plan) {
 // frontend/utils/referrals.js
 // t.me/UltyMyLife_bot/umlminiapp
 export async function sendReferalLink() {
-  if (!window.Telegram?.WebApp) {
+  const webApp = getTelegramWebApp();
+  if (!webApp) {
     alert('Available only in Telegram');
     return;
   }
@@ -126,7 +127,7 @@ export async function sendReferalLink() {
   const referalLink = `https://t.me/${BOT_USERNAME}/${APP_NAME}?startapp=${uid}`;
   const messageText = 'Привет! Присоединяйся к UltyMyLife и получим оба по месяцу Premium бесплатно! 🎁';
 
-  window.Telegram.WebApp.openTelegramLink(
+  webApp.openTelegramLink(
     `https://t.me/share/url?url=${encodeURIComponent(referalLink)}&text=${encodeURIComponent(messageText)}`
   );
 }

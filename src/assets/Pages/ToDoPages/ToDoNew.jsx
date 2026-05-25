@@ -20,7 +20,7 @@ import {
   FaTrashAlt
 } from 'react-icons/fa';
 import { MdClose, MdDone } from 'react-icons/md';
-import { AppData } from '../../StaticClasses/AppData.js';
+import { AppData, formatLocalDateKey } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
 import { fontSize$, lang$, lastPage$, selectedTodo$, setPage, setShowPopUpPanel, theme$ } from '../../StaticClasses/HabitsBus.js';
 import { addCustomCategory, createGoal, removeCustomCategory, setTodoFieldVisibility, todoEvents$ } from './ToDoHelper';
@@ -62,7 +62,7 @@ const ToDoNew = () => {
   const [difficultyIdx, setDifficultyIdx] = useState(2);
   const [urgencyIdx, setUrgencyIdx] = useState(1);
   const [selectedCatIndex, setSelectedCatIndex] = useState(0);
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDate, setStartDate] = useState(formatLocalDateKey());
   const [deadLine, setDeadLine] = useState('');
   const [subGoals, setSubGoals] = useState([]);
   const [newSubGoal, setNewSubGoal] = useState('');
@@ -236,7 +236,7 @@ const ToDoNew = () => {
       setExpandedSubGoals({});
       setDifficultyIdx(2);
       setUrgencyIdx(1);
-      setStartDate(new Date().toISOString().split('T')[0]);
+      setStartDate(formatLocalDateKey());
       setDeadLine('');
       setTaskIcon('');
       setTaskEmojiInput('');

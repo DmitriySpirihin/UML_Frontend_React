@@ -1,4 +1,4 @@
-import { AppData, UserData } from './AppData';
+import { AppData, formatLocalDateKey, UserData } from './AppData';
 import { saveData } from './SaveHelper';
 
 const DEMO_SEED_KEY = 'umlDemoSeed:main-sections:v1';
@@ -6,7 +6,7 @@ const DEMO_SEED_KEY = 'umlDemoSeed:main-sections:v1';
 const dateKey = (offset = 0) => {
   const date = new Date();
   date.setDate(date.getDate() + offset);
-  return date.toISOString().split('T')[0];
+  return formatLocalDateKey(date);
 };
 
 const dayStart = (key, hour = 9, minute = 0) => {

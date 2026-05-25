@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { allHabits } from '../../Classes/Habit.js'
-import { AppData, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
+import { AppData, formatLocalDateKey, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
 import Colors from '../../StaticClasses/Colors'
 import { FaChevronLeft, FaChevronRight, FaListUl, FaPencilAlt, FaInfoCircle, FaCrown } from 'react-icons/fa'
 import { TbFlame, TbTrophy } from 'react-icons/tb'
@@ -119,7 +119,7 @@ const HabitMetrics = () => {
     useEffect(() => {
         if (habitId > -1) {
             let maxS = 0; let curS = 0; let tempS = 0;
-            const today = new Date().toISOString().split('T')[0];
+            const today = formatLocalDateKey();
             
             habitsData.forEach(day => {
                 if (habitId in day) {
@@ -955,10 +955,10 @@ function getHabitStatusElements(daysCount, habitsByDate, habitId, isLight, ui, i
     const numberOfDays = daysMapping[daysCount] ?? 7;
     const items = [];
     const today = new Date();
-    const todayKey = today.toISOString().split('T')[0];
+    const todayKey = formatLocalDateKey(today);
     for (let i = numberOfDays - 1; i >= 0; i--) {
         const d = new Date(today); d.setDate(today.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
+        const dateStr = formatLocalDateKey(d);
         const val = habitsByDate[dateStr]?.[habitId];
         const isToday = dateStr === todayKey;
         const isDone = val > 0;

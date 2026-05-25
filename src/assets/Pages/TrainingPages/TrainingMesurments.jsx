@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
-import { AppData, UserData } from '../../StaticClasses/AppData.js'
+import { AppData, formatLocalDateKey, UserData } from '../../StaticClasses/AppData.js'
 import { saveData } from '../../StaticClasses/SaveHelper.js'
 import Colors from '../../StaticClasses/Colors'
 import { theme$, lang$, fontSize$, premium$, setPage } from '../../StaticClasses/HabitsBus'
@@ -126,7 +126,7 @@ const TrainingMesurments = () => {
     // --- CRUD ---
     const onAddDay = async () => {
         if (currentType === -1) return;
-        const newDateStr = new Date(year, month, day).toISOString().split('T')[0];
+        const newDateStr = formatLocalDateKey(new Date(year, month, day));
         const val = getCombinedValue();
         if (val <= 0) return;
 
@@ -145,7 +145,7 @@ const TrainingMesurments = () => {
 
     const onRedactConfirm = async () => {
         if (currentType === -1 || currentInd === -1) return;
-        const newDateStr = new Date(year, month, day).toISOString().split('T')[0];
+        const newDateStr = formatLocalDateKey(new Date(year, month, day));
         const val = getCombinedValue();
         const category = [...getMeasurementsCategory(currentType)];
         category[currentInd] = { date: newDateStr, value: val };

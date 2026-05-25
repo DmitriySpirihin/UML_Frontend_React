@@ -366,16 +366,20 @@ export function CardioMetricCard({
   const isLight = theme === 'light';
   
   // Get latest value and calculate trend
-  const values = data.map(d => d[config.dataKey] || 0);
+  const values = data.map(d => {
+    if (metricType === 'speed') return calculateSpeed(d.distance, d.duration);
+    return d[config.dataKey] || 0;
+  });
   const latestValue = values[values.length - 1] || 0;
   const avgValue = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+  const maxValue = values.length > 0 ? Math.max(...values) : 0;
   
   // Calculate trend (compare last 3 vs previous 3)
   let trend = 0;
   if (values.length >= 6) {
     const recentAvg = values.slice(-3).reduce((a, b) => a + b, 0) / 3;
     const previousAvg = values.slice(-6, -3).reduce((a, b) => a + b, 0) / 3;
-    trend = ((recentAvg - previousAvg) / previousAvg) * 100;
+    trend = previousAvg === 0 ? 0 : ((recentAvg - previousAvg) / previousAvg) * 100;
   }
 
   return (

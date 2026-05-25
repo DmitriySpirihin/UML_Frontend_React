@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AppData, UserData } from '../StaticClasses/AppData.js';
+import { AppData, formatLocalDateKey, UserData } from '../StaticClasses/AppData.js';
 import { saveData } from '../StaticClasses/SaveHelper.js';
 import { sendReferalLink } from '../StaticClasses/PaymentService'; 
 import Colors from '../StaticClasses/Colors';
@@ -38,6 +38,21 @@ const PROFILE_ACCENT = {
     cold: '#58D3FF',
     coldRgb: '88,211,255'
 };
+
+const createTestAvatar = (name, bg, fg = '#FFFFFF') => {
+    const letter = encodeURIComponent((name || '?').charAt(0).toUpperCase());
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><defs><radialGradient id="g" cx="30%" cy="18%" r="82%"><stop offset="0%" stop-color="#ffffff" stop-opacity=".30"/><stop offset="48%" stop-color="${bg}"/><stop offset="100%" stop-color="#0b1117"/></radialGradient></defs><rect width="96" height="96" rx="48" fill="url(#g)"/><text x="50%" y="56%" dominant-baseline="middle" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif" font-size="42" font-weight="900" fill="${fg}">${letter}</text></svg>`;
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
+const DEV_PROFILE_FRIENDS = [
+    { id: 'dev-friend-1', uid: 901, name: 'Дмитрий', username: 'Diiimaan777', level: 18, xp: 7200, photo: createTestAvatar('Дмитрий', '#579BC8') },
+    { id: 'dev-friend-2', uid: 902, name: 'Демиан', username: 'DemianWorkSelf', level: 21, xp: 9300, photo: createTestAvatar('Демиан', '#2FD6BD') },
+    { id: 'dev-friend-3', uid: 903, name: 'Kris', username: 'kris_fit', level: 14, xp: 4100, photo: createTestAvatar('Kris', '#A66BFF') },
+    { id: 'dev-friend-4', uid: 904, name: 'Азалия', username: 'azalia_daily', level: 12, xp: 3600, photo: createTestAvatar('Азалия', '#D49A5C') },
+    { id: 'dev-friend-5', uid: 905, name: 'Максим', username: 'max_power', level: 9, xp: 2200, photo: createTestAvatar('Максим', '#EF6461') },
+    { id: 'dev-friend-6', uid: 906, name: 'Анна', username: 'anna_focus', level: 16, xp: 5400, photo: createTestAvatar('Анна', '#7AA988') }
+];
 
 const Icon = ({ children, size = 20, stroke = 1.75 }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -161,7 +176,7 @@ const generateRange = (start, end, step = 1) => {
     return arr;
 };
 
-const dateKey = (date) => date.toISOString().split('T')[0];
+const dateKey = (date) => formatLocalDateKey(date);
 
 const getRecentDateKeys = (period = 7) => Array.from({ length: period }, (_, index) => {
     const date = new Date();
@@ -215,6 +230,36 @@ const friendPlural = (count, lang) => {
     return 'друзей';
 };
 
+const getFriendName = (friend) => {
+    const parts = [friend?.first_name, friend?.last_name].filter(Boolean).join(' ').trim();
+    return friend?.name || friend?.username || friend?.userName || friend?.tgUsername || parts || 'Друг';
+};
+
+const getFriendPhoto = (friend) => (
+    friend?.photo || friend?.photo_url || friend?.photoUrl || friend?.avatar || friend?.image || friend?.picture || null
+);
+
+const getFriendHandle = (friend) => {
+    const raw = friend?.username || friend?.userName || friend?.tgUsername || friend?.telegram || '';
+    if (!raw || /^https?:\/\//i.test(raw)) return '';
+    return raw.startsWith('@') ? raw : `@${raw}`;
+};
+
+const normalizeFriend = (friend, index) => ({
+    ...friend,
+    id: friend?.id || friend?.uid || friend?.telegramId || `friend-${index}`,
+    name: getFriendName(friend),
+    photo: getFriendPhoto(friend),
+    handle: getFriendHandle(friend),
+    level: Number(friend?.level || friend?.lvl || 1),
+    xp: Number(friend?.xp || friend?.score || 0)
+});
+
+const getProfileFriendsSource = () => {
+    if (Array.isArray(UserData.friends) && UserData.friends.length > 0) return UserData.friends;
+    return import.meta.env.DEV ? DEV_PROFILE_FRIENDS : [];
+};
+
 const UserPanel = () => {
     const [theme, setThemeState] = useState('dark');
     const [lang, setLangIndex] = useState(AppData.prefs[0]);
@@ -222,7 +267,7 @@ const UserPanel = () => {
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
 
     // --- FRIENDS STATE (Loaded directly from UserData) ---
-    const [friends] = useState(UserData.friends || []);
+    const [friends] = useState(getProfileFriendsSource);
 
     // --- METRICS EDIT STATE ---
     const [showBodyMetrics, setShowBodyMetrics] = useState(false);
@@ -236,6 +281,7 @@ const UserPanel = () => {
     const [showXpGuide, setShowXpGuide] = useState(false);
     const [selectedXpRule, setSelectedXpRule] = useState('training');
     const [activityPeriod, setActivityPeriod] = useState(7);
+    const [selectedFriend, setSelectedFriend] = useState(null);
 
     // --- LISTS FOR PICKERS ---
     const agesList = useMemo(() => generateRange(10, 100), []);
@@ -288,6 +334,7 @@ const UserPanel = () => {
 
     const selectedXpRuleBase = XP_RULES.find(rule => rule.key === selectedXpRule) || XP_RULES[0];
     const selectedXpRuleData = { ...selectedXpRuleBase, icon: XP_RULE_ICONS[selectedXpRuleBase.key] };
+    const normalizedFriends = useMemo(() => friends.map(normalizeFriend), [friends]);
     const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF');
     const habitAccentSource = String(AppData.habitAccentColor || '').trim().toLowerCase() === '#22c55e'
         ? SHARED_HABITS_ACCENT.hue
@@ -479,11 +526,13 @@ const UserPanel = () => {
                     theme={theme}
                 />
                 <FriendsCompact
-                    friends={friends}
+                    friends={normalizedFriends}
                     lang={lang}
                     theme={theme}
                     onInvite={sendReferalLink}
                     onOpen={toggleFriendsPanel}
+                    expanded={showFriendsPanel}
+                    onFriendOpen={setSelectedFriend}
                 />
 
                 <div style={{ height: '18px' }} />
@@ -588,6 +637,14 @@ const UserPanel = () => {
                         </div>
 
                         <ModalActions onClose={() => setShowBodyMetrics(false)} onConfirm={onSaveMetrics} theme={theme} lang={lang} />
+                    </BottomSheet>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {selectedFriend && (
+                    <BottomSheet onClose={() => setSelectedFriend(null)} theme={theme}>
+                        <FriendProfileSheet friend={selectedFriend} lang={lang} theme={theme} />
                     </BottomSheet>
                 )}
             </AnimatePresence>
@@ -736,36 +793,81 @@ const XpGuide = ({ stats, lang, theme, selectedRule, onSelectRule }) => {
     );
 };
 
-const FriendCard = ({ friend, theme }) => {
+const FriendAvatar = ({ friend, theme, size = 42, overlap = false }) => {
+    const s = styles(theme);
+    const initial = (friend?.name || '?').charAt(0).toUpperCase();
+    return (
+        <span
+            style={{
+                ...s.friendAvatarShell,
+                width: size,
+                height: size,
+                marginLeft: overlap ? -10 : 0
+            }}
+        >
+            {friend?.photo ? (
+                <img src={friend.photo} alt={friend.name} style={s.friendAvatarImage} />
+            ) : (
+                <span style={s.friendAvatarFallback}>{initial}</span>
+            )}
+        </span>
+    );
+};
+
+const FriendCard = ({ friend, theme, lang, onClick }) => {
     // Calculate progress based on friend.xp and friend.level
     // Assuming xp needed for next level is level * 500
     const level = friend.level || 1;
     const xp = friend.xp || 0;
     const maxXp = level * 500;
     const pct = Math.min(100, Math.max(0, (xp / maxXp) * 100));
+    const s = styles(theme);
 
     return (
-        <div style={styles(theme).friendCard}>
-            {/* Friend Avatar */}
-            <div style={styles(theme).friendAvatar}>
-                {friend.name ? friend.name.charAt(0).toUpperCase() : '?'}
-            </div>
-
-            {/* Friend Info & Progress */}
+        <MotionButton type="button" whileTap={{ scale: 0.985 }} onClick={() => onClick?.(friend)} style={s.friendCard}>
+            <FriendAvatar friend={friend} theme={theme} size={44} />
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                    <span style={styles(theme).friendName}>
+                    <span style={s.friendName}>
                         {friend.name}
                     </span>
-                    <span style={styles(theme).friendLevel}>
+                    <span style={s.friendLevel}>
                         LVL {level}
                     </span>
                 </div>
-                
-                {/* Mini XP Bar */}
-                <div style={styles(theme).friendTrack}>
+                <div style={s.friendMeta}>{friend.handle || (lang === 0 ? 'Твой друг' : 'Your friend')}</div>
+                <div style={s.friendTrack}>
                     <div style={{ width: `${pct}%`, height: '100%', backgroundColor: Colors.get('accent', theme), borderRadius: '999px' }} />
                 </div>
+            </div>
+            <IoIosArrowForward size={16} color={Colors.get('subText', theme)} style={{ opacity: 0.58 }} />
+        </MotionButton>
+    );
+};
+
+const FriendProfileSheet = ({ friend, lang, theme }) => {
+    const s = styles(theme);
+    const level = friend.level || 1;
+    const xp = friend.xp || 0;
+    const maxXp = level * 500;
+    const pct = Math.min(100, Math.max(0, (xp / maxXp) * 100));
+    return (
+        <div style={s.friendProfile}>
+            <FriendAvatar friend={friend} theme={theme} size={78} />
+            <div style={s.friendProfileName}>{friend.name}</div>
+            <div style={s.friendProfileSub}>{friend.handle || (lang === 0 ? 'Профиль друга' : 'Friend profile')}</div>
+            <div style={s.friendProfileStats}>
+                <div style={s.friendProfileStat}>
+                    <span>{lang === 0 ? 'Уровень' : 'Level'}</span>
+                    <strong>{level}</strong>
+                </div>
+                <div style={s.friendProfileStat}>
+                    <span>XP</span>
+                    <strong>{xp}</strong>
+                </div>
+            </div>
+            <div style={s.friendProfileTrack}>
+                <div style={{ width: `${pct}%`, height: '100%', borderRadius: 999, background: `linear-gradient(90deg, ${PROFILE_ACCENT.cold}, ${PROFILE_ACCENT.hue})` }} />
             </div>
         </div>
     );
@@ -1193,7 +1295,7 @@ const BodyPills = ({ body, lang, theme, onEdit }) => {
     );
 };
 
-const FriendsCompact = ({ friends, lang, theme, onInvite, onOpen }) => {
+const FriendsCompact = ({ friends, lang, theme, onInvite, onOpen, expanded, onFriendOpen }) => {
     const s = styles(theme);
     const topFriends = friends.slice(0, 3);
     const hasFriends = friends.length > 0;
@@ -1204,26 +1306,11 @@ const FriendsCompact = ({ friends, lang, theme, onInvite, onOpen }) => {
             {hasFriends && (
                 <MotionButton type="button" whileTap={{ scale: 0.98 }} onClick={onOpen} style={s.friendsCompactCard}>
                     <div style={s.friendsAvatars}>
-                        {topFriends.map((friend, index) => {
-                            const name = friend.name || '?';
-                            const tones = ['#9A84C8', '#7AA988', '#D49A5C'];
-                            const tone = friend.tone || tones[index % tones.length];
-                            return (
-                                <span
-                                    key={`${name}-${index}`}
-                                    style={{
-                                        ...s.friendBubble,
-                                        background: `${tone}24`,
-                                        borderColor: Colors.get('background', theme),
-                                        color: tone,
-                                        marginLeft: index === 0 ? 0 : -10,
-                                        zIndex: 4 - index
-                                    }}
-                                >
-                                    {name.charAt(0).toUpperCase()}
-                                </span>
-                            );
-                        })}
+                        {topFriends.map((friend, index) => (
+                            <span key={`${friend.id}-${index}`} style={{ zIndex: 4 - index }}>
+                                <FriendAvatar friend={friend} theme={theme} size={40} overlap={index > 0} />
+                            </span>
+                        ))}
                     </div>
                     <div style={s.friendsCompactText}>
                         <div style={s.friendsCompactTitle}>
@@ -1233,9 +1320,31 @@ const FriendsCompact = ({ friends, lang, theme, onInvite, onOpen }) => {
                             {topFriends.map(friend => friend.name).filter(Boolean).join(' · ')}
                         </div>
                     </div>
-                    <IoIosArrowForward size={18} color={Colors.get('subText', theme)} style={{ opacity: 0.8, flexShrink: 0 }} />
+                    <IoIosArrowForward size={18} color={Colors.get('subText', theme)} style={{ opacity: 0.8, flexShrink: 0, transform: expanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.16s ease' }} />
                 </MotionButton>
             )}
+            <AnimatePresence initial={false}>
+                {hasFriends && expanded && (
+                    <MotionDiv
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.16, ease: 'easeOut' }}
+                        style={s.friendsList}
+                    >
+                        <div style={s.friendsListTitle}>{lang === 0 ? 'Твои друзья' : 'Your friends'}</div>
+                        {friends.map(friend => (
+                            <FriendCard
+                                key={friend.id}
+                                friend={friend}
+                                theme={theme}
+                                lang={lang}
+                                onClick={onFriendOpen}
+                            />
+                        ))}
+                    </MotionDiv>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
@@ -1934,10 +2043,12 @@ const styles = (theme) => {
             padding: '13px 14px',
             margin: 0,
             background: isLight
-                ? 'linear-gradient(145deg, rgba(255,255,255,0.94), rgba(247,249,252,0.86))'
-                : 'linear-gradient(145deg, rgba(23,26,30,0.92), rgba(18,20,23,0.9))',
+                ? 'radial-gradient(180px 110px at 8% 0%, rgba(183,243,255,0.18), transparent 72%), linear-gradient(145deg, rgba(255,255,255,0.94), rgba(247,249,252,0.84))'
+                : 'radial-gradient(190px 120px at 8% 0%, rgba(183,243,255,0.13), transparent 74%), linear-gradient(145deg, rgba(18,26,31,0.92), rgba(13,16,19,0.90))',
             border: `1px solid ${border}`,
-            boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset',
+            boxShadow: isLight
+                ? '0 1px 0 rgba(255,255,255,0.72) inset, 0 16px 28px -28px rgba(15,23,42,0.22)'
+                : '0 1px 0 rgba(255,255,255,0.075) inset, 0 18px 34px -28px rgba(0,0,0,0.74)',
             display: 'flex',
             alignItems: 'center',
             gap: '14px',
@@ -1947,6 +2058,38 @@ const styles = (theme) => {
             textAlign: 'left'
         },
         friendsAvatars: { display: 'flex', alignItems: 'center', flexShrink: 0, minWidth: '64px' },
+        friendAvatarShell: {
+            position: 'relative',
+            borderRadius: '50%',
+            border: `2px solid ${Colors.get('background', theme)}`,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            overflow: 'hidden',
+            background: isLight
+                ? 'linear-gradient(145deg, rgba(245,250,253,0.96), rgba(219,234,242,0.88))'
+                : 'linear-gradient(145deg, rgba(35,48,57,0.98), rgba(18,24,30,0.96))',
+            boxShadow: isLight
+                ? '0 8px 18px -14px rgba(15,23,42,0.34)'
+                : '0 10px 24px -17px rgba(0,0,0,0.92), 0 0 0 1px rgba(183,243,255,0.08) inset'
+        },
+        friendAvatarImage: {
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block'
+        },
+        friendAvatarFallback: {
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: PROFILE_ACCENT.hue,
+            fontSize: '15px',
+            fontWeight: 950
+        },
         friendBubble: {
             width: '38px',
             height: '38px',
@@ -1970,6 +2113,20 @@ const styles = (theme) => {
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis'
+        },
+        friendsList: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            padding: '2px 0 0'
+        },
+        friendsListTitle: {
+            padding: '0 2px 2px',
+            color: sub,
+            fontSize: '11px',
+            fontWeight: 850,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase'
         },
         infoGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '0 0 18px' },
         infoCard: {
@@ -2097,18 +2254,80 @@ const styles = (theme) => {
         },
         actionLabel: { fontSize: '14px', fontWeight: '800', flex: 1, textAlign: 'left' },
         friendCard: {
-            background: panel, borderRadius: '18px', padding: '11px 13px',
+            width: '100%',
+            background: isLight
+                ? 'linear-gradient(145deg, rgba(255,255,255,0.86), rgba(246,249,252,0.72))'
+                : 'linear-gradient(145deg, rgba(21,27,32,0.84), rgba(13,16,19,0.78))',
+            borderRadius: '18px',
+            padding: '11px 13px',
             display: 'flex', alignItems: 'center', gap: '12px',
-            border: `1px solid ${border}`, boxShadow: '0 1px 0 rgba(255,255,255,0.04) inset'
+            border: `1px solid ${border}`,
+            boxShadow: '0 1px 0 rgba(255,255,255,0.045) inset',
+            color: text,
+            fontFamily: 'inherit',
+            textAlign: 'left',
+            cursor: 'pointer'
         },
         friendAvatar: {
             width: '40px', height: '40px', borderRadius: '13px',
             background: faint, display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: '16px', fontWeight: '900', color: text, flexShrink: 0
         },
-        friendName: { fontSize: '14px', fontWeight: '800', color: text },
-        friendLevel: { fontSize: '10px', fontWeight: '850', color: Colors.get('accent', theme), backgroundColor: 'rgba(255,215,0,0.1)', padding:'3px 7px', borderRadius:'999px' },
+        friendName: { fontSize: '14px', fontWeight: '850', color: text, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+        friendMeta: { fontSize: '11px', fontWeight: 700, color: sub, lineHeight: 1.1 },
+        friendLevel: { fontSize: '10px', fontWeight: '850', color: PROFILE_ACCENT.hue, backgroundColor: isLight ? 'rgba(14,165,233,0.10)' : 'rgba(183,243,255,0.10)', padding:'3px 7px', borderRadius:'999px' },
         friendTrack: { width: '100%', height: '5px', backgroundColor: faint, borderRadius: '999px', overflow: 'hidden' },
+        friendProfile: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            padding: '8px 4px 18px',
+            textAlign: 'center'
+        },
+        friendProfileName: {
+            marginTop: '12px',
+            color: text,
+            fontSize: '22px',
+            fontWeight: 950,
+            lineHeight: 1.1
+        },
+        friendProfileSub: {
+            marginTop: '5px',
+            color: sub,
+            fontSize: '13px',
+            fontWeight: 750
+        },
+        friendProfileStats: {
+            width: '100%',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: '10px',
+            marginTop: '18px'
+        },
+        friendProfileStat: {
+            minHeight: '68px',
+            borderRadius: '18px',
+            border: `1px solid ${border}`,
+            background: panel,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '4px',
+            color: sub,
+            fontSize: '11px',
+            fontWeight: 800,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em'
+        },
+        friendProfileTrack: {
+            width: '100%',
+            height: '7px',
+            borderRadius: 999,
+            background: faint,
+            overflow: 'hidden',
+            marginTop: '12px'
+        },
         backdrop: {
             position:'fixed',
             inset:0,

@@ -26,7 +26,7 @@
        
 */
 
-import { AppData } from "../../StaticClasses/AppData"
+import { AppData, formatLocalDateKey } from "../../StaticClasses/AppData"
 import { saveData } from "../../StaticClasses/SaveHelper"
 import { BehaviorSubject } from 'rxjs';
 export const todoEvents$ = new BehaviorSubject(null);
@@ -48,7 +48,7 @@ const createdGoal = {
   category: ((category ?? '').trim() || 'General'),
   icon: (icon ?? 'task'),
   isDone: false,
-  startDate: (startdate && typeof startdate === 'string' && !isNaN(Date.parse(startdate))) ? startdate : today.toISOString().split('T')[0],
+  startDate: (startdate && typeof startdate === 'string' && !isNaN(Date.parse(startdate))) ? startdate : formatLocalDateKey(today),
   deadLine: validDeadline,
   completedAt: null,
   goals: Array.isArray(goals) ? [...goals] : [],

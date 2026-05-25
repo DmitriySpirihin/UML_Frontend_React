@@ -22,8 +22,8 @@ function confirmAction(){
 }
 
 function triggerHaptic(){
-    if (AppData.prefs[3] == 0 && typeof Telegram !== 'undefined' && Telegram.WebApp?.HapticFeedback) {
-        Telegram.WebApp.HapticFeedback.impactOccurred('light');
+    if (AppData.prefs[3] == 0 && window.Telegram?.WebApp?.HapticFeedback) {
+        window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
     }
 }
 

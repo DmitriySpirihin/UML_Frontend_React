@@ -305,6 +305,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
     const isContactsPanel = panelNum === 3;
     const isBackupPanel = panelNum === 4;
     const isNotificationsPanel = panelNum === 5;
+    const useMinimalTopBar = isBugPanel || isContactsPanel || isNotificationsPanel;
     const trimmedReport = report.trim();
     const closePanel = () => {
         setIsOpen(false);
@@ -325,7 +326,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
                     style={styles.panelScreen}
                 >
                     <div style={styles.panelContent} className="no-scrollbar">
-                        <div style={isNotificationsPanel ? styles.panelTopBarMinimal : styles.panelTopBar}>
+                        <div style={useMinimalTopBar ? styles.panelTopBarMinimal : styles.panelTopBar}>
                             <div aria-hidden="true" style={{ width: 44, height: 44 }} />
                             <motion.button type="button" whileTap={{ scale: 0.92 }} onClick={closePanel} style={styles.panelCloseButton} aria-label={langIndex === 0 ? 'Закрыть' : 'Close'}>
                                 <FaTimes size={13} />
@@ -404,6 +405,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
                                     href="https://t.me/DemianWorkSelf"
                                     name={langIndex === 0 ? 'Демиан' : 'Demian'}
                                     label="Founder"
+                                    handle="@DemianWorkSelf"
                                     accent="#5FB6C6"
                                 />
                                 <ContactLink
@@ -411,6 +413,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
                                     href="https://t.me/Diiimaan777"
                                     name={langIndex === 0 ? 'Дмитрий' : 'Dmitry'}
                                     label="Cofounder"
+                                    handle="@Diiimaan777"
                                     accent="#7AA988"
                                 />
                             </div>
@@ -478,7 +481,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
     );
 };
 
-const ContactLink = ({ theme, href, name, label, accent }) => {
+const ContactLink = ({ theme, href, name, label, handle, accent }) => {
     const styles = s(theme);
     return (
         <motion.a href={href} target="_blank" rel="noopener noreferrer" whileTap={{ scale: 0.98 }} style={styles.contactCard}>
@@ -487,7 +490,7 @@ const ContactLink = ({ theme, href, name, label, accent }) => {
             </div>
             <div style={styles.contactText}>
                 <div style={styles.contactName}>{name}</div>
-                <div style={styles.contactLabel}>{label}</div>
+                <div style={styles.contactLabel}>{label}{handle ? ` · ${handle}` : ''}</div>
             </div>
             <FaChevronRight size={12} color={Colors.get('subText', theme)} style={{ opacity: 0.48 }} />
         </motion.a>

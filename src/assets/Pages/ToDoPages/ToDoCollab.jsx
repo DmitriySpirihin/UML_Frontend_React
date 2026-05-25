@@ -1,16 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaCheck, FaCopy, FaLink, FaShareAlt, FaUserFriends, FaUsers } from 'react-icons/fa';
+import { FaLock, FaTools } from 'react-icons/fa';
 import { AppData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { fontSize$, lang$, theme$ } from '../../StaticClasses/HabitsBus';
+import { fontSize$, lang$, setPage, theme$ } from '../../StaticClasses/HabitsBus';
 import { buildTodoAccent, TODO_SECTION_TOP } from './ToDoVisuals.js';
 
 const ToDoCollab = () => {
   const [theme, setTheme] = useState('dark');
   const [lang, setLang] = useState(AppData.prefs[0]);
   const [fSize, setFSize] = useState(AppData.prefs[4]);
-  const [copied, setCopied] = useState(false);
   const accent = useMemo(() => buildTodoAccent(AppData.todoAccentColor || '#149DFF'), []);
   const s = styles(theme, accent, fSize);
 
@@ -23,27 +22,6 @@ const ToDoCollab = () => {
     return () => subs.forEach(sub => sub.unsubscribe());
   }, []);
 
-  const tasks = useMemo(() => (AppData.todoList || []).filter(task => !task.isDone && !task.isHidden).slice(0, 5), []);
-  const invite = useMemo(() => buildInvite(tasks), [tasks]);
-
-  const copyInvite = async () => {
-    try {
-      await navigator.clipboard?.writeText(invite);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    }
-  };
-
-  const shareInvite = () => {
-    const text = encodeURIComponent(invite);
-    const url = `https://t.me/share/url?url=&text=${text}`;
-    if (window.Telegram?.WebApp?.openTelegramLink) window.Telegram.WebApp.openTelegramLink(url);
-    else window.open(url, '_blank', 'noopener,noreferrer');
-  };
-
   return (
     <div style={s.container}>
       <motion.div style={s.scroll} className="no-scrollbar" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -52,76 +30,24 @@ const ToDoCollab = () => {
           <div style={s.pageSubtitle}>{lang === 0 ? 'План на день - шаг к цели' : 'Today plan, tomorrow progress'}</div>
         </div>
 
-        <section style={s.hero}>
-          <div style={s.heroIcon}><FaUserFriends /></div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={s.eyebrow}>{lang === 0 ? 'СОВМЕСТНО' : 'TOGETHER'}</div>
-            <h1 style={s.title}>{lang === 0 ? 'Выполнение задач' : 'Shared execution'}</h1>
-            <div style={s.heroText}>
-              {lang === 0
-                ? 'Без backend это работает как приглашение: человек получает список и контекст, а синхронное состояние можно будет подключить позже.'
-                : 'Without a backend this works as an invite: a person gets the list and context, while live sync can be added later.'}
-            </div>
+        <section style={s.closedPanel}>
+          <div style={s.heroIcon}><FaLock /></div>
+          <div style={s.eyebrow}>{lang === 0 ? 'РАЗДЕЛ ЗАКРЫТ' : 'SECTION CLOSED'}</div>
+          <h1 style={s.title}>{lang === 0 ? 'Совместные задачи на доработке' : 'Shared tasks are being improved'}</h1>
+          <div style={s.heroText}>
+            {lang === 0
+              ? 'Пока убрали этот раздел из меню, чтобы не показывать недоделанную механику.'
+              : 'This section is hidden from the menu while the shared workflow is being finished.'}
           </div>
-        </section>
-
-        <section style={s.invitePanel}>
-          <div style={s.panelHeader}>
-            <div>
-              <div style={s.panelTitle}>{lang === 0 ? 'Приглашение' : 'Invite'}</div>
-              <div style={s.panelSub}>{lang === 0 ? `${tasks.length} активных задач` : `${tasks.length} active tasks`}</div>
-            </div>
-            <div style={s.panelIcon}><FaLink /></div>
-          </div>
-          <div style={s.inviteBox}>{invite}</div>
-          <div style={s.actionGrid}>
-            <button type="button" onClick={copyInvite} style={s.actionButton(copied)}>
-              {copied ? <FaCheck /> : <FaCopy />}
-              {copied ? (lang === 0 ? 'Скопировано' : 'Copied') : (lang === 0 ? 'Копировать' : 'Copy')}
-            </button>
-            <button type="button" onClick={shareInvite} style={s.actionButton(false)}>
-              <FaShareAlt />
-              {lang === 0 ? 'Отправить' : 'Share'}
-            </button>
-          </div>
-        </section>
-
-        <section style={s.taskPanel}>
-          <div style={s.panelHeader}>
-            <div>
-              <div style={s.panelTitle}>{lang === 0 ? 'Что отправится' : 'Included'}</div>
-              <div style={s.panelSub}>{lang === 0 ? 'Название, срок и чек-лист' : 'Name, deadline, checklist'}</div>
-            </div>
-            <FaUsers color={accent.hue} />
-          </div>
-          {tasks.length === 0 ? (
-            <div style={s.empty}>{lang === 0 ? 'Нет активных задач для приглашения' : 'No active tasks to invite to'}</div>
-          ) : (
-            tasks.map(task => (
-              <div key={task.id} style={s.taskRow}>
-                <span style={s.taskDot} />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={s.taskName}>{task.name}</div>
-                  <div style={s.taskMeta}>{task.deadLine || (lang === 0 ? 'без срока' : 'no deadline')}</div>
-                </div>
-                <div style={s.taskCount}>{task.goals?.length || 0}</div>
-              </div>
-            ))
-          )}
+          <button type="button" onClick={() => setPage('ToDoMain')} style={s.backButton}>
+            <FaTools />
+            {lang === 0 ? 'Вернуться к задачам' : 'Back to tasks'}
+          </button>
         </section>
       </motion.div>
     </div>
   );
 };
-
-function buildInvite(tasks) {
-  const lines = tasks.map((task, index) => {
-    const deadline = task.deadLine ? `, срок: ${task.deadLine}` : '';
-    const goals = task.goals?.length ? `, шагов: ${task.goals.length}` : '';
-    return `${index + 1}. ${task.name}${deadline}${goals}`;
-  });
-  return `UltyMyLife совместные задачи\n${lines.length ? lines.join('\n') : 'Список пока пуст'}\nКод: UML-${Date.now().toString(36).toUpperCase()}`;
-}
 
 const styles = (theme, accent, fSize = 0) => {
   const isLight = theme === 'light' || theme === 'speciallight';
@@ -141,11 +67,12 @@ const styles = (theme, accent, fSize = 0) => {
     pageHeader: { width: '100%', margin: '0 auto 8px', padding: '4px 18px 8px', boxSizing: 'border-box', textAlign: 'center' },
     pageTitle: { color: text, fontFamily: 'inherit', fontSize: 24, fontWeight: 700, letterSpacing: 0, lineHeight: 1.05, opacity: 0.86 },
     pageSubtitle: { marginTop: 5, color: sub, fontSize: fSize === 0 ? 8 : 9, fontWeight: 600, letterSpacing: '0.14em', opacity: 0.82 },
-    hero: { display: 'flex', alignItems: 'center', gap: 14, borderRadius: 26, padding: 16, background: `radial-gradient(260px 150px at 0% 0%, ${accent.soft}, transparent 72%), ${panel}`, border: `1px solid ${border}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
-    heroIcon: { width: 54, height: 54, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent.hue, background: accent.soft, border: `1px solid ${accent.ring}`, fontSize: 22, flexShrink: 0 },
+    closedPanel: { minHeight: '420px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, borderRadius: 28, padding: '28px 18px', textAlign: 'center', background: `radial-gradient(280px 160px at 50% 0%, ${accent.soft}, transparent 72%), ${panel}`, border: `1px solid ${border}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
+    heroIcon: { width: 58, height: 58, borderRadius: 19, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent.hue, background: accent.soft, border: `1px solid ${accent.ring}`, fontSize: 22, flexShrink: 0 },
     eyebrow: { color: accent.hue, fontSize: 11, fontWeight: 950, letterSpacing: 1.5 },
     title: { margin: '3px 0 0', color: text, fontSize: fSize === 0 ? 27 : 29, lineHeight: 1.05, fontWeight: 950, letterSpacing: 0 },
-    heroText: { marginTop: 7, color: sub, fontSize: 12, fontWeight: 750, lineHeight: 1.35 },
+    heroText: { maxWidth: 300, marginTop: 2, color: sub, fontSize: 13, fontWeight: 750, lineHeight: 1.4 },
+    backButton: { minHeight: 46, marginTop: 8, borderRadius: 16, border: `1px solid ${accent.ring}`, background: accent.soft, color: accent.hue, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '0 16px', fontSize: 13, fontWeight: 900, fontFamily: 'inherit', cursor: 'pointer' },
     invitePanel: { marginTop: 14, borderRadius: 24, padding: 15, background: panel, border: `1px solid ${border}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
     taskPanel: { marginTop: 12, borderRadius: 24, padding: 15, background: panel, border: `1px solid ${border}`, boxShadow: glassShadow, backdropFilter: 'blur(26px) saturate(170%)', WebkitBackdropFilter: 'blur(26px) saturate(170%)' },
     panelHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 },

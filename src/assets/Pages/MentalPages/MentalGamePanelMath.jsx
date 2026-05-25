@@ -1220,7 +1220,7 @@ const congratulations = (isEndlessMode, langIndex, score, rightAnswers, totalAns
   return stripResultEmojis(candidates[randomIndex]);
 };
 function playVibro(type){
-  if(AppData.prefs[3] == 0 && Telegram.WebApp.HapticFeedback)Telegram.WebApp.HapticFeedback.impactOccurred(type);
+  if(AppData.prefs[3] == 0 && window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred(type);
 }
 function interpolateColor(color1, color2, factor) {
   if (!color1 || !color2) return color1 || color2 || '#000000';

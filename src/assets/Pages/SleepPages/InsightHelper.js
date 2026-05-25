@@ -1,4 +1,4 @@
-import { AppData, UserData } from "../../StaticClasses/AppData";
+import { AppData, formatLocalDateKey, UserData } from "../../StaticClasses/AppData";
 import { allHabits } from "../../Classes/Habit";
 import { getSleepDayEntry } from "../../StaticClasses/SleepLogHelper";
 
@@ -140,11 +140,7 @@ const INSIGHT_USER_PROMPT_TEMPLATES = {
 };
 
 export function getInsightPrompt(langIndex, type = INSIGHT_TYPES.GENERAL) {
-    const getLocalISODate = (dateObj) => {
-        const offset = dateObj.getTimezoneOffset() * 60000;
-        const localDate = new Date(dateObj.getTime() - offset);
-        return localDate.toISOString().split('T')[0];
-    };
+    const getLocalISODate = (dateObj) => formatLocalDateKey(dateObj);
 
     const today = new Date();
     const last7Days = [];

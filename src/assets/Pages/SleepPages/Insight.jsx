@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { AppData, UserData } from '../../StaticClasses/AppData.js';
+import { AppData, formatLocalDateKey, UserData } from '../../StaticClasses/AppData.js';
 import { theme$, lang$, fontSize$, premium$, setPage } from '../../StaticClasses/HabitsBus.js';
 import { getInsight, INSIGHT_TYPES } from './InsightHelper.js';
 import { buildHabitsAccent } from '../HabitsPages/HabitVisuals.jsx';
@@ -185,7 +185,7 @@ const Insight = ({
 
         setLoading(true);
 
-        const today = new Date().toISOString().split('T')[0];
+        const today = formatLocalDateKey();
         const cacheKey = `${type}_${langIndex}`;
         const cached = AppData.insightCache[cacheKey];
 

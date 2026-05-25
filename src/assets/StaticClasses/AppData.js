@@ -46,6 +46,14 @@ const DEFAULT_SECTION_NOTIFICATIONS = {
 };
 const COFFEE_SECTION_ACCENT_COLORS = ['#B86A37', '#B87963', '#D8785E', '#D49A5C', '#C8A46F', '#A57926', '#A46C3B', '#A6846B', '#8F6A4A', '#9A8580'];
 
+export const formatLocalDateKey = (date = new Date()) => {
+  const localDate = new Date(date);
+  const year = localDate.getFullYear();
+  const month = String(localDate.getMonth() + 1).padStart(2, '0');
+  const day = String(localDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const normalizeAccentHex = (color, fallback = DEFAULT_HABITS_ACCENT_COLOR) => {
   if (typeof color !== 'string') return fallback;
   const trimmed = color.trim();
@@ -546,7 +554,7 @@ static getLastTrainingDayIndex() {
   }
   static normalizeHabitEventTimestamp(day, eventTimestamp = null) {
     if (Number.isFinite(eventTimestamp)) return eventTimestamp;
-    if (day === new Date().toISOString().split('T')[0]) return Date.now();
+    if (day === formatLocalDateKey()) return Date.now();
     const [year, month, date] = day.split('-').map(Number);
     return new Date(year, month - 1, date, 23, 59, 0, 0).getTime();
   }
@@ -577,7 +585,7 @@ static getLastTrainingDayIndex() {
   }
   static async addHabit(habitId,dateString,goals,isNegative,daysToForm,autoComplete = false){
     const isStartDateEarlier = Date.now() - new Date(dateString).getTime() > 86400000;
-    const todayKey = new Date().toISOString().split('T')[0];
+    const todayKey = formatLocalDateKey();
     if (!this.habitsByDate || typeof this.habitsByDate !== 'object') this.habitsByDate = {};
     if(!this.choosenHabits.includes(habitId)) {
        this.choosenHabits.push(habitId);
@@ -596,7 +604,7 @@ static getLastTrainingDayIndex() {
     const endDate = new Date();
     let currentDate = startDate;
     while (currentDate < endDate) {
-    const current = currentDate.toISOString().split('T')[0];
+    const current = formatLocalDateKey(currentDate);
     if(!(current in this.habitsByDate)) {
       this.habitsByDate[current] = {};
       this.habitsByDate[current][habitId] = getHabitPerformPercent(habitId) < 100 ? 1 : 1; 
@@ -783,14 +791,15 @@ static getLastTrainingDayIndex() {
 
 export const fillEmptyDays = () => {
   const today = new Date();
-  const dayTostart = AppData.choosenHabitsStartDates.length === 0 ? '' : new Date(Math.min(...AppData.choosenHabitsStartDates.map(date => new Date(date).getTime()))).toISOString().split('T')[0];
-  if(dayTostart !== '' && dayTostart !== today.toISOString().split('T')[0]){
-   if(dayTostart !== today.toISOString().split('T')[0]){
+  const todayKey = formatLocalDateKey(today);
+  const dayTostart = AppData.choosenHabitsStartDates.length === 0 ? '' : formatLocalDateKey(new Date(Math.min(...AppData.choosenHabitsStartDates.map(date => new Date(date).getTime()))));
+  if(dayTostart !== '' && dayTostart !== todayKey){
+   if(dayTostart !== todayKey){
    const startDate = new Date(dayTostart);
    const endDate = today.setDate(today.getDate() - 1);
    let currentDate = startDate;
    while (currentDate < endDate) {
-    const current = currentDate.toISOString().split('T')[0];
+    const current = formatLocalDateKey(currentDate);
     if(!(current in AppData.habitsByDate)) {
       AppData.habitsByDate[current] = {};
     
@@ -816,7 +825,7 @@ export const fillEmptyDays = () => {
   }
    
  }
- const now = new Date().toISOString().split('T')[0];
+ const now = formatLocalDateKey();
  if(!(now in AppData.habitsByDate)){
    AppData.habitsByDate[now] = {};
    for (let index = 0; index < AppData.choosenHabits.length; index++) {
@@ -839,7 +848,7 @@ export const fillEmptyDays = () => {
 
 
 export const logSectionVisit = async (sectionId) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDateKey();
   if (!AppData.sectionVisits[sectionId]) {
     AppData.sectionVisits[sectionId] = [];
   }
@@ -994,7 +1003,7 @@ export class Data{
 
 export function getHabitPerformPercent(habitId){
   const habits = Array.from(Object.values(AppData.habitsByDate));
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatLocalDateKey();
   const isNegative = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habitId)];
   let currentStreak = 0;
   for(let i = habits.length - 2; i >= 0; i--){

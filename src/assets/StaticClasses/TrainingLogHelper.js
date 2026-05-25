@@ -1,4 +1,4 @@
-import { AppData} from '../StaticClasses/AppData';
+import { AppData, formatLocalDateKey } from '../StaticClasses/AppData';
 import {saveData} from '../StaticClasses/SaveHelper';
 /* training log structure   store in AppData.trainingLog
 {
@@ -42,8 +42,7 @@ import {saveData} from '../StaticClasses/SaveHelper';
 }
 */
 export function formatDateKey(date) {
-  const d = new Date(date);
-  return d.toISOString().split('T')[0]; // "2025-12-08"
+  return formatLocalDateKey(date);
 }
 
 export function findPreviousSimilarExercise(exId, setIndex, beforeDate, trainingLog) {
@@ -629,7 +628,7 @@ export const getWeeklyTrainingAmount = () => {
     for (let i = 0; i < 7; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
+      const dateStr = formatDateKey(date);
       last7Days.push(dateStr);
     }
 
