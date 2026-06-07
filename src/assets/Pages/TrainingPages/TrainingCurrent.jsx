@@ -159,19 +159,33 @@ function needPrev(need){
 }    
 
 const onNewset = (exId,setInd) => {
-  setCurrentExId(exId,setInd);
+  const sessionForDefaults = AppData.trainingLog?.[trainInfo.dayKey]?.[trainInfo.dInd] || session;
+  const nextDefaults = getNewSetDefaultsForExercise(
+    exId,
+    setInd,
+    sessionForDefaults,
+    new Date(trainInfo.dayKey),
+    AppData.trainingLog
+  );
+  setCurrentExId(exId);
   setCurrentSet(setInd);
+  setReps(nextDefaults.reps);
+  setWeight(nextDefaults.weight);
+  setExTime(nextDefaults.time);
+  setIsWarmUp(nextDefaults.type === 0);
   setShowAddNewSetPanel(true);
 }
-const addset = () => {
-   addSet(trainInfo.dayKey, trainInfo.dInd, currentExId, reps, weight,exTime, isWarmUp);
+const addset = async () => {
+   const saved = await addSet(trainInfo.dayKey, trainInfo.dInd, currentExId, reps, weight,exTime, isWarmUp);
+   if (!saved) return;
    setShowAddNewSetPanel(false);
+   setSession({...AppData.trainingLog[trainInfo.dayKey][trainInfo.dInd]});
    setTonnage(getTonnage(trainInfo.dayKey, trainInfo.dInd));
    setAllReps(getAllReps(trainInfo.dayKey, trainInfo.dInd));
    setTimer(needTimer);
 }
 const onRedactSet = (exId,setIndex) => {
-  setCurrentExId(exId,setIndex);
+  setCurrentExId(exId);
   setCurrentSet(setIndex);
   const set = AppData.trainingLog[trainInfo.dayKey][trainInfo.dInd].exercises[exId].sets[setIndex];
   setReps(set.reps);
@@ -180,14 +194,17 @@ const onRedactSet = (exId,setIndex) => {
   setIsWarmUp(set.type === 0);
   setShowRedactSetPanel(true);
 }
-const redactset = () => {
-   redactSet(trainInfo.dayKey, trainInfo.dInd, currentExId,currentSet, reps, weight,exTime, isWarmUp);
+const redactset = async () => {
+   const saved = await redactSet(trainInfo.dayKey, trainInfo.dInd, currentExId,currentSet, reps, weight,exTime, isWarmUp);
+   if (!saved) return;
    setShowRedactSetPanel(false);
+   setSession({...AppData.trainingLog[trainInfo.dayKey][trainInfo.dInd]});
    setTonnage(getTonnage(trainInfo.dayKey, trainInfo.dInd));
    setAllReps(getAllReps(trainInfo.dayKey, trainInfo.dInd));
 }
-const onFinishExercise = (exId) => {
-  finishExercise(trainInfo.dayKey, trainInfo.dInd, exId);
+const onFinishExercise = async (exId) => {
+  const saved = await finishExercise(trainInfo.dayKey, trainInfo.dInd, exId);
+  if (saved) setSession({...AppData.trainingLog[trainInfo.dayKey][trainInfo.dInd]});
 }
 const onFinishSession = () => {
     setShowConfirmPanel(false);
@@ -703,8 +720,8 @@ return (
         </div>
       }
       {!isCompleted && needTimer &&
-          <div style={styles.topSection}>
-                <div style={styles.label}>
+          <div style={styles(theme).topSection}>
+                <div style={styles(theme).label}>
                     <span style={{opacity: 0.7, fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px'}}>
                         {langIndex === 0 ? 'отдых: ' : 'rest: '}
                     </span>
@@ -2241,6 +2258,88 @@ function getExerciseVolume(exercise) {
     const weight = Number(set.weight) || 0;
     return sum + reps * weight;
   }, 0);
+}
+
+function getNewSetDefaultsForExercise(exId, setIndex, session, beforeDate, trainingLog) {
+  const exIdStr = String(exId);
+  const currentSets = session?.exercises?.[exIdStr]?.sets;
+  if (Array.isArray(currentSets) && currentSets.length > 0) {
+    return normalizeSetDefaults(currentSets[Math.min(setIndex, currentSets.length - 1)]);
+  }
+
+  const exactPreviousSet = findPreviousSimilarExercise(exIdStr, setIndex, beforeDate, trainingLog);
+  if (exactPreviousSet) {
+    return normalizeSetDefaults(exactPreviousSet);
+  }
+
+  const fallbackPreviousSet = findLatestPreviousExerciseSet(exIdStr, beforeDate, trainingLog);
+  return normalizeSetDefaults(fallbackPreviousSet);
+}
+
+function findLatestPreviousExerciseSet(exIdStr, beforeDate, trainingLog) {
+  if (!trainingLog || !beforeDate || Number.isNaN(beforeDate.getTime())) return null;
+
+  const beforeTimestamp = beforeDate.getTime();
+  let latestSet = null;
+  let latestTime = -Infinity;
+
+  Object.entries(trainingLog).forEach(([dateKey, sessions]) => {
+    const sessionDate = new Date(dateKey);
+    const sessionTime = sessionDate.getTime();
+    if (Number.isNaN(sessionTime) || sessionTime >= beforeTimestamp || sessionTime < latestTime) return;
+    if (!Array.isArray(sessions)) return;
+
+    sessions.forEach((logSession) => {
+      if (!logSession?.completed) return;
+      const sets = logSession.exercises?.[exIdStr]?.sets;
+      if (!Array.isArray(sets) || sets.length === 0) return;
+      latestSet = sets[sets.length - 1];
+      latestTime = sessionTime;
+    });
+  });
+
+  return latestSet;
+}
+
+function normalizeSetDefaults(set) {
+  return {
+    type: set?.type === 1 ? 1 : 0,
+    reps: clampToRange(Number(set?.reps), repsRange, 10),
+    weight: normalizeWeightForPicker(set?.weight),
+    time: normalizeTimeForPicker(set?.time)
+  };
+}
+
+function clampToRange(value, range, fallback) {
+  if (!Number.isFinite(value)) return fallback;
+  const min = range[0];
+  const max = range[range.length - 1];
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+function normalizeWeightForPicker(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return 0;
+  const rounded = Math.round(numeric * 4) / 4;
+  return Math.min(499.75, Math.max(0, rounded));
+}
+
+function normalizeTimeForPicker(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return 0;
+
+  let totalSeconds = Math.round(numeric / 1000);
+  let minutes = Math.floor(totalSeconds / 60);
+  let seconds = Math.round((totalSeconds % 60) / 5) * 5;
+
+  if (seconds >= 60) {
+    minutes += 1;
+    seconds = 0;
+  }
+
+  minutes = Math.min(minutesRange[minutesRange.length - 1], Math.max(minutesRange[0], minutes));
+  seconds = Math.min(secondsRange[secondsRange.length - 1], Math.max(secondsRange[0], seconds));
+  return (minutes * 60000) + (seconds * 1000);
 }
 
 function Difference({ exId, setIndex, beforeDate, value, isReps, theme, isTime = false }) {

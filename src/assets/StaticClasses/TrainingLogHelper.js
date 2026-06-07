@@ -399,6 +399,7 @@ export async function redactSet(date, sessionIndex, exerciseId, setIndex, newRep
   // 2. Apply new values
   oldSet.reps = newReps;
   oldSet.weight = newWeight;
+  oldSet.time = newTime;
   oldSet.type = newType;
 
   // 3. Add new tonnage

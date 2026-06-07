@@ -107,7 +107,7 @@ const TrainingProgramm = () => {
     };
 
     const onAddProgram = () => {
-        addProgram(capitalizeName(name), capitalizeName(description));
+        addProgram(toLocalizedPair(capitalizeName(name), langIndex === 0 ? 'Новая программа' : 'New program'), toLocalizedPair(capitalizeName(description), langIndex === 0 ? 'Новая программа' : 'New program'));
         setName(''); setDescription(''); onClose(); setShowAddPanel(false);
     };
 
@@ -130,18 +130,21 @@ const TrainingProgramm = () => {
         updatePrograms();
     };
 
-    const onRemove = (type) => {
+    const onRemove = (type, targetDay = currentDay, targetExerciseIndex = currentExId) => {
         setCurrentType(type);
+        if (type === 1) setCurrentDay(targetDay);
         let msg = '';
         if (type === 0) {
             const n = programs[currentId].name;
             msg = langIndex === 0 ? `Удалить программу "${Array.isArray(n) ? n[langIndex] : n}"?` : `Delete program "${Array.isArray(n) ? n[langIndex] : n}"?`;
         } else if (type === 1) {
-            const dn = programs[currentId]?.schedule[currentDay]?.name;
-            msg = langIndex === 0 ? `Удалить день "${dn[langIndex]}"?` : `Delete day "${dn[langIndex]}"?`;
+            const dn = programs[currentId]?.schedule[targetDay]?.name;
+            const label = Array.isArray(dn) ? dn[langIndex] : dn;
+            msg = langIndex === 0 ? `Удалить день "${label}"?` : `Delete day "${label}"?`;
         } else {
-            const exId = programs[currentId].schedule[currentDay]?.exercises[currentExId]?.exId;
-            removeExerciseFromSchedule(currentId, currentDay, exId);
+            const exId = programs[currentId]?.schedule[targetDay]?.exercises[targetExerciseIndex]?.exId;
+            if (exId == null) return;
+            removeExerciseFromSchedule(currentId, targetDay, exId);
             updatePrograms();
             return;
         }
@@ -180,7 +183,7 @@ const TrainingProgramm = () => {
 
     return (
         <div style={styles(theme).container}>
-            <div style={{ width: '100%', maxWidth: '600px', paddingBottom: '80px' }}>
+            <div style={{ width: '100%', maxWidth: '600px', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 170px)' }}>
                 {Object.entries(programs)
                     .map(([idStr, program]) => ({ id: Number(idStr), ...program }))
                     .filter(p => p.show)
@@ -271,8 +274,9 @@ const TrainingProgramm = () => {
         fSize={fSize}
         langIndex={langIndex}
         onAddEx={() => { setCurrentDay(dayIndex); setShowExercisesList(true); }}
-        onRemove={() => { setCurrentDay(dayIndex); onRemove(1); }}
-        onRemoveEx={(exIdx) => { setCurrentExId(exIdx); onRemove(2); }}
+        onRemove={() => { setCurrentDay(dayIndex); onRemove(1, dayIndex); }}
+        onRemoveEx={(exIdx) => { setCurrentExId(exIdx); onRemove(2, dayIndex, exIdx); }}
+        daysCount={program.schedule.length}
         // FIXED: Properly bound reordering handlers with program context
         onMoveDayUp={() => {
             if (dayIndex > 0) {
@@ -445,6 +449,7 @@ const DayItem = ({
     onAddEx, 
     onRemove, 
     onRemoveEx,
+    daysCount,
     onMoveDayUp,
     onMoveDayDown,
     onMoveExerciseUp,
@@ -489,12 +494,12 @@ const DayItem = ({
                     onClick={(e) => { e.stopPropagation(); onMoveDayDown(); }}
                     style={{ 
                         ...styles(theme).miniBtn,backgroundColor:'transparent', 
-                        opacity: index === day.scheduleLength - 1 ? 0.3 : 1,
-                        cursor: index === day.scheduleLength - 1 ? 'not-allowed' : 'pointer'
+                        opacity: index === daysCount - 1 ? 0.3 : 1,
+                        cursor: index === daysCount - 1 ? 'not-allowed' : 'pointer'
                     }}
                   
                 >
-                    <FaChevronUp size={12} style={{ transform: 'rotate(180deg)' }} color={index === day.scheduleLength - 1 ? Colors.get('subText', theme) : getTrainingAccent().hue} />
+                    <FaChevronUp size={12} style={{ transform: 'rotate(180deg)' }} color={index === daysCount - 1 ? Colors.get('subText', theme) : getTrainingAccent().hue} />
                 </Motion.div>
             </div>}
             
@@ -638,6 +643,10 @@ const ModalActions = ({ onClose, onConfirm, theme }) => (
 );
 
 const capitalizeName = (s) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+const toLocalizedPair = (value, fallback) => {
+    const safe = value?.trim() || fallback;
+    return [safe, safe];
+};
 
 const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
     const accent = getTrainingAccent();
@@ -648,9 +657,11 @@ const styles = (theme, isCurrentGroup, isCurrentExercise, fSize) => {
         background: getTrainingPageBackground(theme, accent),
         display: "flex", flexDirection: "column",
         overflowY: 'auto', alignItems: "center",
-        minHeight: "100dvh",
-        height: "auto",
-        padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 18px 116px',
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehaviorY: 'contain',
+        minHeight: 0,
+        height: "100dvh",
+        padding: 'calc(env(safe-area-inset-top, 0px) + 24px) 18px calc(env(safe-area-inset-bottom, 0px) + 156px)',
         width: "100vw",
         fontFamily: 'inherit', boxSizing: 'border-box'
     },
