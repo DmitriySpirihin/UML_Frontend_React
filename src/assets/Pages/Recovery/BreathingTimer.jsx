@@ -43,6 +43,72 @@ const buildStepsFromPhases = (p) => {
   return s.length ? s : [{ in: 4000 }, { out: 4000 }];
 };
 
+const defaultBreathingLevel = {
+  cycles: 6,
+  strategy: '4-4-4-4',
+  steps: [{ in: 4000 }, { hold: 4000 }, { out: 4000 }, { hold: 4000 }],
+};
+
+const getStepType = (step) => {
+  if (!step || typeof step !== 'object') return null;
+  if (step.in !== undefined) return 'in';
+  if (step.out !== undefined) return 'out';
+  if (step.hold !== undefined) return 'hold';
+  if (step.rest !== undefined) return 'rest';
+  return null;
+};
+
+const getStepDuration = (step) => {
+  const type = getStepType(step);
+  return type ? Number(step[type]) || 0 : 0;
+};
+
+const normalizeProtocolSteps = (steps) => {
+  if (!Array.isArray(steps) || steps.length === 0) return defaultBreathingLevel.steps;
+  return steps
+    .map((step) => {
+      const type = getStepType(step);
+      const duration = getStepDuration(step);
+      return type && duration > 0 ? { [type]: duration } : null;
+    })
+    .filter(Boolean);
+};
+
+const phasesFromSteps = (steps) => {
+  const phases = { in: 0, hold1: 0, out: 0, hold2: 0 };
+  let holdCount = 0;
+  let seenIn = false;
+  let seenOut = false;
+
+  for (const step of steps) {
+    const type = getStepType(step);
+    const seconds = Math.round((getStepDuration(step) / 1000) * 10) / 10;
+    if (!type || seconds <= 0 || type === 'rest') return null;
+
+    if (type === 'in') {
+      if (seenIn) return null;
+      phases.in = seconds;
+      seenIn = true;
+    } else if (type === 'out') {
+      if (seenOut) return null;
+      phases.out = seconds;
+      seenOut = true;
+    } else if (type === 'hold') {
+      holdCount += 1;
+      if (holdCount === 1) phases.hold1 = seconds;
+      else if (holdCount === 2) phases.hold2 = seconds;
+      else return null;
+    }
+  }
+
+  return seenIn && seenOut ? phases : null;
+};
+
+const getProtocolLevel = (protocol, index = 0) => {
+  const levels = Array.isArray(protocol?.levels) && protocol.levels.length ? protocol.levels : [defaultBreathingLevel];
+  return levels[Math.min(Math.max(index, 0), levels.length - 1)] ?? defaultBreathingLevel;
+};
+
 function PhaseStepper({ theme, label, value, min = 0, max = 20, step = 1, onChange, wide = false }) {
   const textMain = Colors.get('mainText', theme);
   const textSub = Colors.get('subText', theme);
@@ -101,6 +167,8 @@ const BreathingTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIn
 
   // --- STATE ---
   const [customPhases, setCustomPhases] = useState({ in: 4, hold1: 4, out: 4, hold2: 4 });
+  const [levelIndex, setLevelIndex] = useState(0);
+  const [manualPhases, setManualPhases] = useState(false);
   const [mode, setMode] = useState('time'); // 'time' | 'cycles'
   const [limitMinutes, setLimitMinutes] = useState(5);
   const [limitCycles, setLimitCycles] = useState(10);
@@ -174,7 +242,37 @@ const BreathingTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIn
     startTimeRef.current = 0;
   }, [currentStepIndex]);
 
-  const cycleSteps = useMemo(() => buildStepsFromPhases(customPhases), [customPhases]);
+  const selectedLevel = useMemo(() => getProtocolLevel(protocol, levelIndex), [protocol, levelIndex]);
+  const protocolSteps = useMemo(() => normalizeProtocolSteps(selectedLevel.steps), [selectedLevel]);
+  const editableProtocolPhases = useMemo(() => phasesFromSteps(protocolSteps), [protocolSteps]);
+
+  useEffect(() => {
+    const level = getProtocolLevel(protocol, 0);
+    const steps = normalizeProtocolSteps(level.steps);
+    const nextPhases = phasesFromSteps(steps);
+    setLevelIndex(0);
+    setManualPhases(false);
+    setMode('cycles');
+    setLimitCycles(Math.max(1, Number(level.cycles) || 1));
+    if (nextPhases) setCustomPhases(nextPhases);
+  }, [protocol]);
+
+  useEffect(() => {
+    const nextPhases = phasesFromSteps(protocolSteps);
+    setManualPhases(false);
+    setLimitCycles(Math.max(1, Number(selectedLevel.cycles) || 1));
+    if (nextPhases) setCustomPhases(nextPhases);
+  }, [protocolSteps, selectedLevel]);
+
+  const updatePhase = (key, value) => {
+    setManualPhases(true);
+    setCustomPhases(prev => ({ ...prev, [key]: value }));
+  };
+
+  const cycleSteps = useMemo(
+    () => manualPhases ? buildStepsFromPhases(customPhases) : protocolSteps,
+    [manualPhases, customPhases, protocolSteps]
+  );
 
   const cycleDurationMs = useMemo(
     () => cycleSteps.reduce((acc, s) => acc + (s.in ?? s.out ?? s.hold ?? s.rest ?? 0), 0),
@@ -185,8 +283,8 @@ const BreathingTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIn
     const cycles = mode === 'cycles'
       ? Math.max(1, limitCycles)
       : Math.max(1, Math.ceil((limitMinutes * 60 * 1000) / Math.max(cycleDurationMs, 1000)) + 5);
-    return { cycles, steps: cycleSteps };
-  }, [mode, limitCycles, limitMinutes, cycleDurationMs, cycleSteps]);
+    return { cycles, steps: cycleSteps, strategy: selectedLevel.strategy };
+  }, [mode, limitCycles, limitMinutes, cycleDurationMs, cycleSteps, selectedLevel]);
 
   const allSteps = useMemo(() => {
     const steps = [];
@@ -429,20 +527,59 @@ const BreathingTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIn
                     {/* Phases editor */}
                     <div>
                         <div style={{ fontSize: '10px', color: textSub, fontWeight: 900, textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.1em' }}>
-                            {langIndex === 0 ? 'Фазы (сек)' : 'Phases (sec)'}
+                            {langIndex === 0 ? 'Схема протокола' : 'Protocol pattern'}
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
-                            {[
-                                { key: 'in',    ru: 'Вдох',     en: 'Inhale' },
-                                { key: 'hold1', ru: 'Задержка', en: 'Hold' },
-                                { key: 'out',   ru: 'Выдох',    en: 'Exhale' },
-                                { key: 'hold2', ru: 'Задержка', en: 'Hold' },
-                            ].map(f => (
-                                <PhaseStepper key={f.key} theme={theme} label={langIndex === 0 ? f.ru : f.en}
-                                    value={customPhases[f.key]} min={0} max={20}
-                                    onChange={v => setCustomPhases(prev => ({ ...prev, [f.key]: v }))} />
-                            ))}
-                        </div>
+                        {Array.isArray(protocol?.levels) && protocol.levels.length > 1 && (
+                          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '8px', scrollbarWidth: 'none' }}>
+                            {protocol.levels.map((level, index) => {
+                              const active = levelIndex === index;
+                              return (
+                                <Motion.button
+                                  key={`${level.strategy}-${index}`}
+                                  whileTap={{ scale: 0.96 }}
+                                  onClick={() => setLevelIndex(index)}
+                                  style={{
+                                    flex: '0 0 auto',
+                                    minHeight: '34px',
+                                    borderRadius: '13px',
+                                    border: `1px solid ${active ? Colors.get('in', theme) : 'rgba(126,230,210,0.16)'}`,
+                                    background: active ? 'rgba(126,230,210,0.18)' : 'rgba(255,255,255,0.035)',
+                                    color: active ? Colors.get('in', theme) : textSub,
+                                    padding: '0 11px',
+                                    fontSize: '11px',
+                                    fontWeight: 900,
+                                    cursor: 'pointer',
+                                    fontFamily: 'inherit',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {level.strategy || `${index + 1}`}
+                                </Motion.button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {editableProtocolPhases ? (
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
+                              {[
+                                  { key: 'in',    ru: 'Вдох',     en: 'Inhale' },
+                                  { key: 'hold1', ru: 'Задержка', en: 'Hold' },
+                                  { key: 'out',   ru: 'Выдох',    en: 'Exhale' },
+                                  { key: 'hold2', ru: 'Задержка', en: 'Hold' },
+                              ].map(f => (
+                                  <PhaseStepper key={f.key} theme={theme} label={langIndex === 0 ? f.ru : f.en}
+                                      value={customPhases[f.key]} min={0} max={180}
+                                      onChange={v => updatePhase(f.key, v)} />
+                              ))}
+                          </div>
+                        ) : (
+                          <BreathingPatternPanel
+                            theme={theme}
+                            accent={Colors.get('in', theme)}
+                            steps={cycleSteps}
+                            langIndex={langIndex}
+                          />
+                        )}
                     </div>
 
                     {/* Mode toggle */}
@@ -485,6 +622,7 @@ const BreathingTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIn
                         theme={theme}
                         accent={Colors.get('in', theme)}
                         phases={customPhases}
+                        steps={cycleSteps}
                         langIndex={langIndex}
                     />
 
@@ -733,16 +871,81 @@ function CountdownStage({ seconds, theme, accent, isRu }) {
   );
 }
 
-function BreathingTipPanel({ theme, accent, phases, langIndex }) {
+const getBreathingStepLabel = (step, langIndex) => {
+  const isRu = langIndex === 0;
+  const type = getStepType(step);
+  if (type === 'in') return isRu ? 'Вдох' : 'In';
+  if (type === 'out') return isRu ? 'Выдох' : 'Out';
+  if (type === 'hold') return isRu ? 'Пауза' : 'Hold';
+  if (type === 'rest') return isRu ? 'Отдых' : 'Rest';
+  return isRu ? 'Шаг' : 'Step';
+};
+
+const formatStepSeconds = (ms) => {
+  const seconds = (Number(ms) || 0) / 1000;
+  if (seconds >= 60) {
+    const minutes = Math.floor(seconds / 60);
+    const rest = Math.round(seconds % 60);
+    return rest ? `${minutes}m ${rest}s` : `${minutes}m`;
+  }
+  return Number.isInteger(seconds) ? `${seconds}s` : `${seconds.toFixed(1)}s`;
+};
+
+function BreathingPatternPanel({ theme, accent, steps, langIndex }) {
+  const textMain = Colors.get('mainText', theme);
+  const textSub = Colors.get('subText', theme);
+  return (
+    <div style={{
+      borderRadius: '16px',
+      padding: '10px',
+      background: `linear-gradient(135deg, ${accent}10, rgba(255,255,255,0.028))`,
+      border: `1px solid ${accent}20`,
+    }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+        {steps.map((step, index) => {
+          const type = getStepType(step);
+          const duration = getStepDuration(step);
+          return (
+            <div key={`${type}-${duration}-${index}`} style={{
+              minHeight: '28px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              borderRadius: '999px',
+              padding: '0 9px',
+              color: textMain,
+              background: 'rgba(0,0,0,0.18)',
+              border: `1px solid ${accent}20`,
+              fontSize: '10px',
+              fontWeight: 850,
+            }}>
+              <span style={{ color: textSub }}>{getBreathingStepLabel(step, langIndex)}</span>
+              <span style={{ color: accent }}>{formatStepSeconds(duration)}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BreathingTipPanel({ theme, accent, phases, steps: rawSteps, langIndex }) {
   const textMain = Colors.get('mainText', theme);
   const textSub = Colors.get('subText', theme);
   const isRu = langIndex === 0;
-  const steps = [
-    { label: isRu ? 'Вдох' : 'In', value: phases.in },
-    { label: isRu ? 'Пауза' : 'Hold', value: phases.hold1 },
-    { label: isRu ? 'Выдох' : 'Out', value: phases.out },
-    { label: isRu ? 'Пауза' : 'Hold', value: phases.hold2 },
+  const phaseSteps = [
+    { label: isRu ? 'Вдох' : 'In', value: phases.in, unit: 's' },
+    { label: isRu ? 'Пауза' : 'Hold', value: phases.hold1, unit: 's' },
+    { label: isRu ? 'Выдох' : 'Out', value: phases.out, unit: 's' },
+    { label: isRu ? 'Пауза' : 'Hold', value: phases.hold2, unit: 's' },
   ].filter((step) => step.value > 0);
+  const steps = rawSteps?.length
+    ? rawSteps.map((step) => ({
+      label: getBreathingStepLabel(step, langIndex),
+      value: formatStepSeconds(getStepDuration(step)),
+      unit: '',
+    }))
+    : phaseSteps;
 
   return (
     <div style={{
@@ -772,7 +975,7 @@ function BreathingTipPanel({ theme, accent, phases, langIndex }) {
             fontWeight: 800
           }}>
             <span style={{ color: textSub }}>{step.label}</span>
-            <span style={{ color: accent }}>{step.value}s</span>
+            <span style={{ color: accent }}>{step.value}{step.unit}</span>
           </div>
         ))}
       </div>
