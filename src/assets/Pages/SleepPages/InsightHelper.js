@@ -1,5 +1,4 @@
-import { AppData, formatLocalDateKey, UserData } from "../../StaticClasses/AppData";
-import { allHabits } from "../../Classes/Habit";
+import { AppData, formatLocalDateKey } from "../../StaticClasses/AppData";
 import { getSleepDayEntry } from "../../StaticClasses/SleepLogHelper";
 
 // FIXED: Removed trailing space in API URL (critical bug fix)
@@ -150,9 +149,7 @@ export function getInsightPrompt(langIndex, type = INSIGHT_TYPES.GENERAL) {
         last7Days.push(getLocalISODate(d));
     }
 
-    // EXTRACT USER NAME FROM PROFILE (critical addition)
     const user = AppData.pData || {};
-    const userName = UserData.name?.trim() || (langIndex === 0 ? 'Пользователь' : 'User');
     
     // Existing data sources + NEW wellness logs
     const habitsByDate = AppData.habitsByDate || {};
@@ -162,9 +159,6 @@ export function getInsightPrompt(langIndex, type = INSIGHT_TYPES.GENERAL) {
     const hardening = AppData.hardeningLog || {};      // ACTIVELY PROCESSED
     const sleeping = AppData.sleepingLog || {};
     const todoList = AppData.todoList || [];
-    const programs = AppData.programs || {};
-    const exercises = AppData.exercises || {};
-    const allhabits = allHabits || {};
 
     const formatSection = (title, contentLines) => {
         if (contentLines.length === 0) return `${title} (last 7 days):\n  No data found\n`;
@@ -176,7 +170,7 @@ export function getInsightPrompt(langIndex, type = INSIGHT_TYPES.GENERAL) {
 
 const userBlock = `
 USER CONTEXT:
-- Name: ${userName || 'User'}
+- Name: User
 - Profile: ${user.age || '?'} y.o, ${user.gender === 0 ? 'Male' : 'Female'}, ${user.height ? `${user.height} cm` : ''}${user.weight ? `, ${user.weight} kg` : ''}${user.height && user.weight ? `, BMI: ${(user.weight / ((user.height/100) ** 2)).toFixed(1)}` : ''}
 - Primary Goal: ${user.goal !== undefined ? ['Muscle Gain', 'Strength', 'Fat Loss', 'Maintenance', 'Endurance'][user.goal] || 'General' : 'General'}
 - Training Experience: ${user.trainingExperience ? `${user.trainingExperience} months` : 'Beginner'}
@@ -193,7 +187,7 @@ ${Object.entries(latestMeasurements).length > 0
 
 const identityBlock = `
 USER:
-- Name: ${userName || 'User'}
+- Name: User
 `.trim();
 
     // 2. TODO LIST (UNCHANGED)
@@ -202,7 +196,7 @@ USER:
         const completedSub = subtasks.filter(g => g.isDone).length;
         const subProgress = subtasks.length > 0 ? `(${completedSub}/${subtasks.length} goals)` : "";
         const status = task.isDone ? "✅ DONE" : "⏳ IN PROGRESS";
-        return `  - [${task.category}] ${task.name}: ${status} ${subProgress} | Priority: ${task.priority}/5, Urgency: ${task.urgency}/5, Difficulty: ${task.difficulty}/5 | Deadline: ${task.deadLine}`;
+        return `  - Task #${task.id || 'unknown'}: ${status} ${subProgress} | Priority: ${task.priority}/5, Urgency: ${task.urgency}/5, Difficulty: ${task.difficulty}/5 | Deadline: ${task.deadLine || 'none'}`;
     });
     const todoBlock = formatSection('TO-DO LIST & PRODUCTIVITY', todoLines);
 
@@ -212,7 +206,7 @@ USER:
         const s = getSleepDayEntry(date, sleeping);
         if (!s) return;
         const durHrs = Math.round((s.duration || 0) / 360000) / 10;
-        sleepLines.push(`  ${date}: Sleep=${durHrs}h, Mood=${s.mood}/5, Note="${s.note || ''}"`);
+        sleepLines.push(`  ${date}: Sleep=${durHrs}h, Mood=${s.mood}/5`);
     });
     const sleepBlock = formatSection('SLEEP_AND_RECOVERY', sleepLines);
 
@@ -261,13 +255,11 @@ USER:
         if (!dayData) return;
         const arr = Array.isArray(dayData) ? dayData : Object.entries(dayData).map(([habitId, status]) => ({ habitId: Number(habitId), status }));
         const dayHabits = arr.map(item => {
-            const h = allhabits[item.habitId];
-            const name = h?.name ? (h.name[1] || h.name[0]) : `Habit #${item.habitId}`; 
             let statusStr = "Skipped";
             if (item.status === -2) statusStr = "Done";
             if (item.status === 1) statusStr = "Abstained (Success)";
             if (item.status === 0) statusStr = "Failed/Skipped";
-            return `${name}: ${statusStr}`;
+            return `Habit #${item.habitId}: ${statusStr}`;
         });
         if (dayHabits.length > 0) habitLines.push(`  ${date}: ${dayHabits.join(', ')}`);
     });
@@ -324,37 +316,20 @@ last7Days.forEach(date => {
                 metrics.push(`Cadence: ${s.avgCadence} ${unit}`);
             }
             if (s.rpe > 0) metrics.push(`RPE: ${s.rpe}/10`);
-            if (s.notes?.trim()) {
-                const note = s.notes.trim().length > 40 
-                    ? s.notes.trim().substring(0, 40) + '...' 
-                    : s.notes.trim();
-                metrics.push(`Notes: "${note}"`);
-            }
-            
             trainingLines.push(`  DATE: ${date} | ${metrics.join(' | ')}`);
             
         } else if (isGym) {
             // === СИЛОВАЯ ТРЕНИРОВКА ===
-            const program = programs[s.programId];
-            const programName = program?.name 
-                ? (Array.isArray(program.name) ? program.name[1] || `Prog #${s.programId}` : program.name)
-                : `Prog #${s.programId}`;
-            
             // Длительность в минутах (силовые хранятся в миллисекундах)
             const durationMinutes = Math.round((s.duration || 0) / 60000);
             
-            trainingLines.push(`  DATE: ${date} | Program: ${programName} | Duration: ${durationMinutes} min`);
+            trainingLines.push(`  DATE: ${date} | Program #${s.programId} | Duration: ${durationMinutes} min`);
             
             // Упражнения
             const order = s.exerciseOrder || [];
             order.forEach(exId => {
                 const exData = s.exercises?.[exId];
                 if (!exData) return;
-                
-                const exMeta = exercises[exId];
-                const exName = exMeta?.name 
-                    ? (Array.isArray(exMeta.name) ? exMeta.name[1] || `Ex #${exId}` : exMeta.name)
-                    : `Ex #${exId}`;
                 
                 let maxWeight = 0;
                 let totalReps = 0;
@@ -364,7 +339,7 @@ last7Days.forEach(date => {
                 });
                 
                 const volume = exData.totalTonnage || 0;
-                trainingLines.push(`    - ${exName}: Max=${maxWeight}kg, Reps=${totalReps}, Vol=${volume.toFixed(1)}kg`);
+                trainingLines.push(`    - Exercise #${exId}: Max=${maxWeight}kg, Reps=${totalReps}, Vol=${volume.toFixed(1)}kg`);
             });
         }
     });

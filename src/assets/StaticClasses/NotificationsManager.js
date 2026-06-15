@@ -3,8 +3,34 @@ import { serializeData, deserializeData ,saveData} from './SaveHelper';
 import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel,setValidation,setIsServerAvailable} from './HabitsBus';
 import { applyLocalNoPremium, applyLocalTestPremium } from './PremiumTestHelper';
 import pako from 'pako';
+import { decryptCloudBackup, encryptCloudBackup, isEncryptedCloudBackup } from './CloudEncryption';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
+const CLOUD_PASSWORD_SESSION_KEY = 'uml_cloud_backup_password';
+
+function getCloudPassword({ confirm = false } = {}) {
+  if (typeof window === 'undefined') return '';
+
+  const cached = window.sessionStorage?.getItem(CLOUD_PASSWORD_SESSION_KEY);
+  if (cached && !confirm) return cached;
+
+  const password = window.prompt(
+    AppData.prefs[0] === 0
+      ? 'Пароль шифрования облачной копии. Без него восстановить данные будет невозможно.'
+      : 'Cloud backup encryption password. Without it, restore is impossible.'
+  );
+  if (!password) return '';
+
+  if (confirm) {
+    const repeated = window.prompt(AppData.prefs[0] === 0 ? 'Повтори пароль шифрования' : 'Repeat encryption password');
+    if (password !== repeated) {
+      throw new Error('Encryption passwords do not match');
+    }
+  }
+
+  window.sessionStorage?.setItem(CLOUD_PASSWORD_SESSION_KEY, password);
+  return password;
+}
 
 export class NotificationsManager {
     // Updated to use your SmartApe server
@@ -150,28 +176,28 @@ export async function cloudBackup() {
     }
 
     const dataString = typeof dataToSave === 'string' ? dataToSave : JSON.stringify(dataToSave);
-
-    // 📦 COMPRESSION STEP
-    // 1. Deflate the string to a compressed Uint8Array
-    const compressedData = pako.deflate(dataString);
-    // 2. Convert binary to Base64 string for safe transport
-    const base64Data = btoa(String.fromCharCode(...compressedData));
+    const password = getCloudPassword({ confirm: true });
+    if (!password) {
+      setShowPopUpPanel(AppData.prefs[0] === 0 ? '❌ Пароль нужен для шифрования' : '❌ Password required for encryption', 2200, false);
+      return;
+    }
+    const encryptedData = await encryptCloudBackup(dataString, password);
 
     // Update timestamp
     const now = new Date();
     AppData.lastBackupDate = now.toISOString();
     await saveData();
 
-    const response = await NotificationsManager.sendMessage('backup', base64Data);
+    const response = await NotificationsManager.sendMessage('backup', encryptedData);
     
     if (response?.success) {
-      setShowPopUpPanel('✅ Compressed backup saved!', 2000, true);
+      setShowPopUpPanel(AppData.prefs[0] === 0 ? '✅ Зашифрованная копия сохранена!' : '✅ Encrypted backup saved!', 2000, true);
     } else {
       setShowPopUpPanel('❌ ' + (response?.message || 'Backup failed'), 2000, false);
     }
   } catch (error) {
     console.error('Backup error:', error);
-    setShowPopUpPanel('❌ Backup failed', 2000, false);
+    setShowPopUpPanel('❌ ' + (error.message || 'Backup failed'), 2500, false);
   }
 }
 // 📥 Manual Restore from Server
@@ -247,8 +273,17 @@ export async function cloudRestore() {
         }
     }
 
+    if (!finalDataToLoad && isEncryptedCloudBackup(rawData)) {
+        const password = getCloudPassword();
+        if (!password) {
+          setShowPopUpPanel(AppData.prefs[0] === 0 ? '❌ Нужен пароль шифрования' : '❌ Encryption password required', 2200, false);
+          return;
+        }
+        finalDataToLoad = await decryptCloudBackup(rawData, password);
+    }
+
     // ---------------------------------------------------------
-    // 🔓 STEP 2: DECOMPRESS OR LOAD
+    // 🔓 STEP 2: DECOMPRESS LEGACY BACKUPS OR LOAD
     // ---------------------------------------------------------
 
     if (!finalDataToLoad) {

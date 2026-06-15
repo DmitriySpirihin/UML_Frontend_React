@@ -560,12 +560,7 @@ export function habitReminder(langIndex,_cron,hour,minute,needMessage) {
             if(needMessage)setShowPopUpPanel(langIndex === 0 ? 'Нет выбранных привычек' : 'No habits chosen',2000,false);
             return;
         }
-        const habits = AppData.choosenHabits
-            .map(habitId => allHabits?.find(h => (h.id === habitId && !AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habitId)])))
-            .filter(Boolean);
-        let message = '⏰ ' + UserData.name + " ," + messages[langIndex][Math.floor(Math.random() * messages[langIndex].length)] + ': ';
-        const habitNames = habits.map(h => h.name[langIndex]).join(', ');
-        message += habitNames + '$' + _cron;
+        const message = '⏰ ' + messages[langIndex][Math.floor(Math.random() * messages[langIndex].length)] + '$' + _cron;
         AppData.notify[0] = {enabled:true,cron:_cron};
         NotificationsManager.sendMessage("habit", message);
         if(needMessage)setShowPopUpPanel(langIndex === 0 ? 'Уведомление установлено  на ' + hour + ':' + minute : 'Notification set on ' + hour + ':' + minute,2000,true);
@@ -603,9 +598,7 @@ const trainingReminder = (langIndex,_cron,hour,minute) => {
     return;
   }
     try {
-        const userName = UserData.name;
-        let message = "🏋️⏰ " + messages[langIndex][Math.floor(Math.random() * messages[langIndex].length)] + ' ' + userName + ' !';
-        message += '$' + _cron;
+        const message = "🏋️⏰ " + messages[langIndex][Math.floor(Math.random() * messages[langIndex].length)] + '$' + _cron;
         AppData.notify[1] = {enabled:true,cron:_cron};
         NotificationsManager.sendMessage("training", message);
         setShowPopUpPanel(langIndex === 0 ? 'Уведомление установлено  на ' + hour + ':' + minute : 'Notification set on ' + hour + ':' + minute,2000,true);

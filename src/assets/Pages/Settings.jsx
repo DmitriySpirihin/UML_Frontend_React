@@ -431,6 +431,11 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
                                         </div>
                                     </div>
                                 </div>
+                                <div style={styles.backupPrivacyNote}>
+                                    {langIndex === 0
+                                        ? 'Облачная копия шифруется на устройстве. Сервер не видит привычки, задачи и заметки. Без пароля восстановление невозможно.'
+                                        : 'Cloud backup is encrypted on this device. The server cannot read habits, tasks, or notes. Restore is impossible without the password.'}
+                                </div>
                                 <div style={styles.backupActionsGrid}>
                                     <ActionButton icon={<FaCloudUploadAlt />} text={langIndex === 0 ? 'Создать' : 'Backup'} onClick={cloudBackup} theme={theme} color="#D49A5C" />
                                     <ActionButton icon={<FaCloudDownloadAlt />} text={langIndex === 0 ? 'Восстановить' : 'Restore'} onClick={cloudRestore} theme={theme} color="#6F8BD6" />
@@ -536,7 +541,7 @@ const syncSectionNotification = (sectionId, value, langIndex) => {
 
     const requestType = value.enabled ? definition.serverType : `${definition.serverType}off`;
     const message = value.enabled
-        ? `⏰ ${UserData.name ? `${UserData.name}, ` : ''}${definition.message[langIndex]}$${value.cron}`
+        ? `⏰ ${definition.message[langIndex]}$${value.cron}`
         : UserData.id;
 
     NotificationsManager.sendMessage(requestType, message).catch(() => {});
@@ -1298,6 +1303,16 @@ const s = (theme, fSize = 0) => {
             fontSize: fSize === 0 ? '18px' : '21px',
             fontWeight: 900,
             lineHeight: 1.1
+        },
+        backupPrivacyNote: {
+            borderRadius: '18px',
+            padding: '12px 14px',
+            background: isLight ? 'rgba(49, 126, 116, 0.10)' : 'rgba(107, 220, 196, 0.10)',
+            border: `1px solid ${isLight ? 'rgba(49, 126, 116, 0.20)' : 'rgba(107, 220, 196, 0.18)'}`,
+            color: sub,
+            fontSize: fSize === 0 ? '12px' : '13px',
+            fontWeight: 750,
+            lineHeight: 1.45
         },
         backupActionsGrid: {
             display: 'grid',
