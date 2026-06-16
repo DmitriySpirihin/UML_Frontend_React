@@ -2,7 +2,7 @@ import { AppData, Data } from '../StaticClasses/AppData';
 import { openDB } from 'idb';
 import 'reflect-metadata';
 import { instanceToPlain, plainToClass } from 'class-transformer';
-import { NotificationsManager } from '../StaticClasses/NotificationsManager';
+import { NotificationsManager, scheduleAutoCloudBackup } from '../StaticClasses/NotificationsManager';
 import {setShowPopUpPanel,setAddPanel} from '../StaticClasses/HabitsBus';
 
 export async function initializeTelegramSDK() {
@@ -10,6 +10,7 @@ export async function initializeTelegramSDK() {
     const rawWebApp = window.Telegram?.WebApp;
     const platform = rawWebApp?.platform || 'unknown';
     const isMobile = platform === 'android' || platform === 'ios';
+    setAppMediaMetadata();
 
     if (rawWebApp) {
       rawWebApp.ready?.();
@@ -33,6 +34,26 @@ export async function initializeTelegramSDK() {
   } catch (error) {
     console.error('SDK Init Error:', error);
     return true;
+  }
+}
+
+function setAppMediaMetadata() {
+  if (typeof window === 'undefined' || !('mediaSession' in navigator) || !window.MediaMetadata) return;
+
+  try {
+    const baseUrl = import.meta.env?.BASE_URL || '/';
+    const normalizedBaseUrl = baseUrl.startsWith('http') ? baseUrl : `${window.location.origin}${baseUrl}`;
+    const artworkUrl = new URL('images/Ui/app-logo.png', normalizedBaseUrl).href;
+    navigator.mediaSession.metadata = new window.MediaMetadata({
+      title: 'UltyMyLife',
+      artist: 'All your life - one place',
+      album: 'UltyMyLife',
+      artwork: [
+        { src: artworkUrl, sizes: '640x640', type: 'image/png' }
+      ]
+    });
+  } catch (error) {
+    console.warn('Media metadata setup failed:', error);
   }
 }
 
@@ -82,7 +103,7 @@ export async function initDBandCloud() {
 /**
  * Saves application data to local IndexedDB only
  */
-export async function saveData() {
+export async function saveData({ skipCloudBackup = false } = {}) {
   if (isNewUserPreviewMode()) {
     return { success: true, preview: true };
   }
@@ -99,12 +120,20 @@ export async function saveData() {
 
   try {
     await db.put('UserData', dataToSave, 'current');
+    if (!skipCloudBackup) {
+      queueAutoCloudBackup();
+    }
    // console.log('Data saved to DB');
     return { success: true };
   } catch (e) {
     console.error('Saving to DB failed:', e);
     return { success: false, error: e.message || 'Failed to save to local database' };
   }
+}
+
+function queueAutoCloudBackup() {
+  if (typeof window === 'undefined') return;
+  scheduleAutoCloudBackup();
 }
 
 /**

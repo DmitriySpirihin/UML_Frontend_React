@@ -6,7 +6,7 @@ import Colors from '../StaticClasses/Colors';
 import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud, isNewUserPreviewMode, loadData } from '../StaticClasses/SaveHelper';
 import { initializeTelegramSDK, getTelegramContext } from '../StaticClasses/SaveHelper';
-import { isUserHasPremium ,sendXp,getFriendsList} from '../StaticClasses/NotificationsManager';
+import { cloudRestore, isUserHasPremium ,sendXp,getFriendsList,retryPendingCloudBackup} from '../StaticClasses/NotificationsManager';
 import { applyLocalTestPremium } from '../StaticClasses/PremiumTestHelper';
 import { calculateStats } from '../Helpers/UserStats.js';
 import { FaUser } from 'react-icons/fa';
@@ -100,7 +100,11 @@ useEffect(() => {
       }
 
       if (!newUserPreview) {
-        await loadData();
+        const localLoadResult = await loadData();
+        if (!localLoadResult.success && UserData.id && UserData.id !== 0) {
+          await cloudRestore({ silent: true, confirmOverwrite: false });
+        }
+        retryPendingCloudBackup();
       } else {
         AppData.pData = { filled: false, age: 20, gender: 0, height: 180, weight: 70, goal: 1, activityLevel: 1 };
         AppData.profileOnboardingShown = false;

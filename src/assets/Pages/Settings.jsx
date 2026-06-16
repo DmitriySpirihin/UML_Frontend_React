@@ -433,11 +433,11 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
                                 </div>
                                 <div style={styles.backupPrivacyNote}>
                                     {langIndex === 0
-                                        ? 'Облачная копия шифруется на устройстве. Сервер не видит привычки, задачи и заметки. Без пароля восстановление невозможно.'
-                                        : 'Cloud backup is encrypted on this device. The server cannot read habits, tasks, or notes. Restore is impossible without the password.'}
+                                        ? 'Данные автоматически шифруются на устройстве перед отправкой. Сервер и админы видят только нечитаемую копию.'
+                                        : 'Data is encrypted on this device before upload. The server and admins only see an unreadable backup.'}
                                 </div>
                                 <div style={styles.backupActionsGrid}>
-                                    <ActionButton icon={<FaCloudUploadAlt />} text={langIndex === 0 ? 'Создать' : 'Backup'} onClick={cloudBackup} theme={theme} color="#D49A5C" />
+                                    <ActionButton icon={<FaCloudUploadAlt />} text={langIndex === 0 ? 'Синхронизировать' : 'Sync now'} onClick={cloudBackup} theme={theme} color="#D49A5C" />
                                     <ActionButton icon={<FaCloudDownloadAlt />} text={langIndex === 0 ? 'Восстановить' : 'Restore'} onClick={cloudRestore} theme={theme} color="#6F8BD6" />
                                 </div>
                                 <div style={styles.dangerCard}>

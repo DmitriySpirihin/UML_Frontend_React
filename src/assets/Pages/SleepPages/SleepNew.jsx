@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import Slider from '@mui/material/Slider';
 import {
   MdCheck,
   MdClose,
@@ -21,11 +20,11 @@ import { fontSize$, lang$, lastPage$, selectedSleepDate$, setPage, theme$ } from
 import { addDayToSleepingLog } from './SleepHelper.js';
 import { buildSleepAccent } from './SleepVisuals.js';
 
-const clickSound = new Audio('Audio/Click.wav');
-const STEP_MINUTES = 10;
+const STEP_MINUTES = 5;
 const STEP_MS = STEP_MINUTES * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
+const MAX_SLEEP_MINUTES = 23 * 60 + 55;
 
 const MOODS = [
   { Icon: MdSentimentVeryDissatisfied, label: ['Плохо', 'Bad'] },
@@ -41,6 +40,20 @@ const formatMsToHhMm = (ms) => {
   const minutes = totalMinutes % 60;
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 };
+
+const parseHhMmToMs = (value) => {
+  const [hoursRaw, minutesRaw] = String(value || '').split(':');
+  const hours = Number(hoursRaw);
+  const minutes = Number(minutesRaw);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
+  return ((Math.max(0, Math.min(23, hours)) * 60) + Math.max(0, Math.min(59, minutes))) * 60000;
+};
+
+const clampDurationMinutes = (value) => Math.max(STEP_MINUTES, Math.min(MAX_SLEEP_MINUTES, Math.round(Number(value) || STEP_MINUTES)));
+
+const addDurationToTime = (timeMs, durationMinutes) => (
+  (timeMs + clampDurationMinutes(durationMinutes) * 60000) % DAY_MS
+);
 
 const formatDuration = (ms, langIndex) => {
   const totalMinutes = Math.floor(ms / 60000);
@@ -94,6 +107,9 @@ const SleepNew = () => {
 
   const accent = useMemo(() => buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF'), []);
   const duration = getDurationFromTimes(bedTime, wakeTime);
+  const durationMinutes = Math.round(duration / 60000);
+  const durationHoursValue = Math.floor(durationMinutes / 60);
+  const durationMinutesValue = durationMinutes % 60;
   const s = styles(theme, accent, fSize);
 
   useEffect(() => {
@@ -113,8 +129,28 @@ const SleepNew = () => {
 
   const closePanel = () => setPage(lastPage$.value || 'SleepMain');
 
+  const updateBedTime = (value) => {
+    const nextBedTime = parseHhMmToMs(value);
+    if (nextBedTime === null) return;
+    setBedTime(nextBedTime);
+    setWakeTime(addDurationToTime(nextBedTime, durationMinutes));
+  };
+
+  const updateWakeTime = (value) => {
+    const nextWakeTime = parseHhMmToMs(value);
+    if (nextWakeTime === null) return;
+    setWakeTime(nextWakeTime);
+  };
+
+  const updateDuration = (nextHours, nextMinutes) => {
+    const hours = Math.max(0, Math.min(23, Math.floor(Number(nextHours) || 0)));
+    const minutes = Math.max(0, Math.min(59, Math.floor(Number(nextMinutes) || 0)));
+    const nextDurationMinutes = clampDurationMinutes(hours * 60 + minutes);
+    setWakeTime(addDurationToTime(bedTime, nextDurationMinutes));
+  };
+
   const handleSave = async () => {
-    playEffects(clickSound);
+    playEffects(null);
     addDayToSleepingLog(dateString, duration, bedTime, mood, note.trim(), sleepType);
     await saveData();
     closePanel();
@@ -167,7 +203,7 @@ const SleepNew = () => {
                   type="button"
                   whileTap={{ scale: 0.96 }}
                   onClick={() => {
-                    playEffects(clickSound);
+                    playEffects(null);
                     setSleepType(option.id);
                     if (option.id === 'day') {
                       setBedTime(13 * HOUR_MS);
@@ -191,10 +227,8 @@ const SleepNew = () => {
             title={langIndex === 0 ? 'Время отбоя' : 'Bedtime'}
             value={formatMsToHhMm(bedTime)}
             hint={langIndex === 0 ? 'Когда лег спать' : 'When sleep started'}
-            sliderValue={bedTime}
-            onChange={setBedTime}
-            min={0}
-            max={DAY_MS - STEP_MS}
+            inputValue={formatMsToHhMm(bedTime)}
+            onChange={updateBedTime}
             theme={theme}
             accent={accent}
           />
@@ -204,12 +238,22 @@ const SleepNew = () => {
             title={langIndex === 0 ? 'Время подъема' : 'Wake time'}
             value={formatMsToHhMm(wakeTime)}
             hint={langIndex === 0 ? 'Когда проснулся' : 'When you woke up'}
-            sliderValue={wakeTime}
-            onChange={setWakeTime}
-            min={0}
-            max={DAY_MS - STEP_MS}
+            inputValue={formatMsToHhMm(wakeTime)}
+            onChange={updateWakeTime}
             theme={theme}
             accent={accent}
+          />
+
+          <DurationControl
+            icon={<FaRegClock />}
+            title={langIndex === 0 ? 'Сколько поспал' : 'Sleep duration'}
+            hint={langIndex === 0 ? 'Можно ввести точно руками' : 'Enter exact hours and minutes'}
+            hours={durationHoursValue}
+            minutes={durationMinutesValue}
+            onChange={updateDuration}
+            theme={theme}
+            accent={accent}
+            langIndex={langIndex}
           />
 
           <section style={s.card}>
@@ -228,7 +272,7 @@ const SleepNew = () => {
                     key={label[0]}
                     whileTap={{ scale: 0.92 }}
                     onClick={() => {
-                      playEffects(clickSound);
+                      playEffects(null);
                       setMood(moodValue);
                     }}
                     style={s.moodButton(selected, color)}
@@ -289,7 +333,7 @@ const TimeStat = ({ icon, label, value, theme, accent, wide = false }) => {
   );
 };
 
-const TimeControl = ({ icon, title, value, hint, sliderValue, onChange, min, max, theme, accent }) => {
+const TimeControl = ({ icon, title, value, hint, inputValue, onChange, theme, accent }) => {
   const s = styles(theme, accent, 0);
   return (
     <section style={s.card}>
@@ -301,36 +345,75 @@ const TimeControl = ({ icon, title, value, hint, sliderValue, onChange, min, max
         </div>
         <div style={s.controlValue}>{value}</div>
       </div>
-      <Slider
-        value={sliderValue}
-        onChange={(_, next) => onChange(next)}
-        min={min}
-        max={max}
-        step={STEP_MS}
-        sx={{
-          color: accent.hue,
-          height: 5,
-          mt: 1.2,
-          '& .MuiSlider-thumb': {
-            width: 22,
-            height: 22,
-            backgroundColor: Colors.get('background', theme),
-            border: `3px solid ${accent.hue}`,
-            boxShadow: `0 0 0 7px ${accent.soft}`,
-            '&:focus, &:hover, &.Mui-active, &.Mui-focusVisible': {
-              boxShadow: `0 0 0 10px ${accent.ring}`
-            }
-          },
-          '& .MuiSlider-track': { border: 'none' },
-          '& .MuiSlider-rail': {
-            opacity: 1,
-            backgroundColor: theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.12)'
-          }
-        }}
+      <input
+        type="time"
+        value={inputValue}
+        step={STEP_MS / 1000}
+        onChange={(event) => onChange(event.target.value)}
+        style={s.timeInput}
       />
     </section>
   );
 };
+
+const DurationControl = ({ icon, title, hint, hours, minutes, onChange, theme, accent, langIndex }) => {
+  const s = styles(theme, accent, 0);
+  const adjust = (deltaMinutes) => {
+    const current = hours * 60 + minutes;
+    const next = clampDurationMinutes(current + deltaMinutes);
+    onChange(Math.floor(next / 60), next % 60);
+  };
+
+  return (
+    <section style={s.card}>
+      <div style={s.controlHeader}>
+        <div style={s.controlIcon}>{icon}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={s.cardTitle}>{title}</div>
+          <div style={s.cardHint}>{hint}</div>
+        </div>
+        <div style={s.controlValue}>{`${hours}:${minutes.toString().padStart(2, '0')}`}</div>
+      </div>
+      <div style={s.durationGrid}>
+        <NumberField
+          label={langIndex === 0 ? 'часы' : 'hours'}
+          value={hours}
+          min={0}
+          max={23}
+          onChange={(nextHours) => onChange(nextHours, minutes)}
+          styles={s}
+        />
+        <NumberField
+          label={langIndex === 0 ? 'мин' : 'min'}
+          value={minutes}
+          min={0}
+          max={59}
+          onChange={(nextMinutes) => onChange(hours, nextMinutes)}
+          styles={s}
+        />
+        <div style={s.stepperRow}>
+          <button type="button" onClick={() => adjust(-15)} style={s.stepperButton}>-15</button>
+          <button type="button" onClick={() => adjust(15)} style={s.stepperButton}>+15</button>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+const NumberField = ({ label, value, min, max, onChange, styles: s }) => (
+  <label style={s.numberField}>
+    <span style={s.numberLabel}>{label}</span>
+    <input
+      type="number"
+      inputMode="numeric"
+      min={min}
+      max={max}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      style={s.numberInput}
+    />
+  </label>
+);
 
 export default SleepNew;
 
@@ -521,6 +604,77 @@ const styles = (theme, accent, fSize = 0) => {
       fontWeight: 950,
       fontVariantNumeric: 'tabular-nums',
       whiteSpace: 'nowrap'
+    },
+    timeInput: {
+      width: '100%',
+      marginTop: 13,
+      height: 52,
+      borderRadius: 17,
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.10)'}`,
+      background: isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.055)',
+      color: text,
+      outline: 'none',
+      fontSize: 22,
+      fontWeight: 950,
+      fontVariantNumeric: 'tabular-nums',
+      fontFamily: 'inherit',
+      padding: '0 14px',
+      boxSizing: 'border-box',
+      colorScheme: isLight ? 'light' : 'dark'
+    },
+    durationGrid: {
+      marginTop: 13,
+      display: 'grid',
+      gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+      gap: 9
+    },
+    numberField: {
+      minWidth: 0,
+      height: 64,
+      borderRadius: 17,
+      border: `1px solid ${isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.10)'}`,
+      background: isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.055)',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      gap: 3,
+      padding: '7px 12px',
+      boxSizing: 'border-box'
+    },
+    numberLabel: {
+      color: sub,
+      fontSize: 10,
+      fontWeight: 900,
+      textTransform: 'uppercase'
+    },
+    numberInput: {
+      width: '100%',
+      border: 'none',
+      outline: 'none',
+      background: 'transparent',
+      color: text,
+      fontSize: 24,
+      fontWeight: 950,
+      fontVariantNumeric: 'tabular-nums',
+      fontFamily: 'inherit',
+      padding: 0,
+      minWidth: 0
+    },
+    stepperRow: {
+      gridColumn: '1 / -1',
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+      gap: 9
+    },
+    stepperButton: {
+      height: 44,
+      borderRadius: 15,
+      border: `1px solid ${accent.ring}`,
+      background: accent.soft,
+      color: text,
+      fontSize: 14,
+      fontWeight: 950,
+      fontFamily: 'inherit'
     },
     cardHeader: {
       display: 'flex',

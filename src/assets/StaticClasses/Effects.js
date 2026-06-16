@@ -10,12 +10,10 @@ export function isVibroEnabled() {
   return isEnabled(AppData.prefs?.[3]);
 }
 
-export function playSound(sound, volume = 0.5) {
-  if (!isSoundEnabled() || !sound) return;
-  if (!sound.paused) sound.pause();
-  sound.currentTime = 0;
-  sound.volume = volume;
-  sound.play();
+export function playSound() {
+  // UI tap sounds interrupt external music on iOS/Telegram. Keep the API so callers
+  // still get haptics through playEffects, but do not start short Audio clips.
+  return;
 }
 
 export function playHaptic(type = 'light') {

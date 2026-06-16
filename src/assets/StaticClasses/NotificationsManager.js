@@ -4,32 +4,88 @@ import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel,setVa
 import { applyLocalNoPremium, applyLocalTestPremium } from './PremiumTestHelper';
 import pako from 'pako';
 import { decryptCloudBackup, encryptCloudBackup, isEncryptedCloudBackup } from './CloudEncryption';
+import { getCloudBackupKey, getCloudBackupKeyStorageStatus, getOrCreateCloudBackupKey } from './CloudBackupKey';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
-const CLOUD_PASSWORD_SESSION_KEY = 'uml_cloud_backup_password';
+const AUTO_BACKUP_DELAY_MS = 12000;
+const RETRY_BACKUP_DELAY_MS = 2500;
+const CLOUD_BACKUP_PENDING_KEY = 'uml_cloud_backup_pending_v1';
 
-function getCloudPassword({ confirm = false } = {}) {
-  if (typeof window === 'undefined') return '';
+let autoBackupTimer = null;
+let autoBackupInFlight = false;
+let autoBackupQueued = false;
 
-  const cached = window.sessionStorage?.getItem(CLOUD_PASSWORD_SESSION_KEY);
-  if (cached && !confirm) return cached;
+function getPendingBackupStorageKey() {
+  const userId = UserData.id || 'anonymous';
+  return `${CLOUD_BACKUP_PENDING_KEY}:${userId}`;
+}
 
-  const password = window.prompt(
-    AppData.prefs[0] === 0
-      ? 'Пароль шифрования облачной копии. Без него восстановить данные будет невозможно.'
-      : 'Cloud backup encryption password. Without it, restore is impossible.'
-  );
-  if (!password) return '';
+function setPendingCloudBackup() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage?.setItem(getPendingBackupStorageKey(), Date.now().toString());
+  } catch {
+    // Pending retry is best-effort; local app data has already been saved.
+  }
+}
 
-  if (confirm) {
-    const repeated = window.prompt(AppData.prefs[0] === 0 ? 'Повтори пароль шифрования' : 'Repeat encryption password');
-    if (password !== repeated) {
-      throw new Error('Encryption passwords do not match');
-    }
+function clearPendingCloudBackup() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage?.removeItem(getPendingBackupStorageKey());
+  } catch {
+    // Ignore storage cleanup failures.
+  }
+}
+
+function hasPendingCloudBackup() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return !!window.localStorage?.getItem(getPendingBackupStorageKey());
+  } catch {
+    return false;
+  }
+}
+
+export function scheduleAutoCloudBackup(delayMs = AUTO_BACKUP_DELAY_MS) {
+  if (typeof window === 'undefined') return;
+  if (UserData.id === 0 || UserData.id === null || UserData.id === undefined) return;
+
+  clearTimeout(autoBackupTimer);
+  autoBackupTimer = window.setTimeout(() => {
+    runQueuedAutoCloudBackup();
+  }, delayMs);
+}
+
+async function runQueuedAutoCloudBackup() {
+  if (autoBackupInFlight) {
+    autoBackupQueued = true;
+    return;
   }
 
-  window.sessionStorage?.setItem(CLOUD_PASSWORD_SESSION_KEY, password);
-  return password;
+  autoBackupInFlight = true;
+  try {
+    await cloudBackup({ silent: true });
+  } catch (error) {
+    console.warn('Auto cloud backup failed:', error);
+  } finally {
+    autoBackupInFlight = false;
+    if (autoBackupQueued) {
+      autoBackupQueued = false;
+      scheduleAutoCloudBackup();
+    }
+  }
+}
+
+export function retryPendingCloudBackup() {
+  if (!hasPendingCloudBackup()) return;
+  scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    retryPendingCloudBackup();
+  });
 }
 
 export class NotificationsManager {
@@ -167,43 +223,59 @@ export async function isUserHasPremium(uid) {
 
 
 
-export async function cloudBackup() {
+export async function cloudBackup({ silent = false, skipLocalSave = false } = {}) {
   try {
     const dataToSave = serializeData();
     if (!dataToSave) {
-      setShowPopUpPanel('Nothing to back up', 2000, false);
-      return;
+      if (!silent) setShowPopUpPanel('Nothing to back up', 2000, false);
+      return false;
     }
 
     const dataString = typeof dataToSave === 'string' ? dataToSave : JSON.stringify(dataToSave);
-    const password = getCloudPassword({ confirm: true });
-    if (!password) {
-      setShowPopUpPanel(AppData.prefs[0] === 0 ? '❌ Пароль нужен для шифрования' : '❌ Password required for encryption', 2200, false);
-      return;
+    const backupKey = await getOrCreateCloudBackupKey();
+    if (!backupKey) {
+      if (!silent) {
+        setShowPopUpPanel(AppData.prefs[0] === 0 ? '❌ Не удалось создать ключ шифрования' : '❌ Could not create encryption key', 2200, false);
+      }
+      setPendingCloudBackup();
+      return false;
     }
-    const encryptedData = await encryptCloudBackup(dataString, password);
-
-    // Update timestamp
-    const now = new Date();
-    AppData.lastBackupDate = now.toISOString();
-    await saveData();
+    const encryptedData = await encryptCloudBackup(dataString, backupKey);
 
     const response = await NotificationsManager.sendMessage('backup', encryptedData);
     
     if (response?.success) {
-      setShowPopUpPanel(AppData.prefs[0] === 0 ? '✅ Зашифрованная копия сохранена!' : '✅ Encrypted backup saved!', 2000, true);
+      clearPendingCloudBackup();
+      AppData.lastBackupDate = new Date().toISOString();
+      if (!skipLocalSave) {
+        await saveData({ skipCloudBackup: true });
+      }
+      if (!silent) {
+        const status = await getCloudBackupKeyStorageStatus();
+        const message = status.hasTelegramCloudStorage
+          ? (AppData.prefs[0] === 0 ? '✅ Автокопия сохранена и зашифрована' : '✅ Auto backup saved and encrypted')
+          : (AppData.prefs[0] === 0 ? '✅ Копия зашифрована на этом устройстве' : '✅ Backup encrypted on this device');
+        setShowPopUpPanel(message, 2000, true);
+      }
+      return true;
     } else {
-      setShowPopUpPanel('❌ ' + (response?.message || 'Backup failed'), 2000, false);
+      setPendingCloudBackup();
+      if (!silent) setShowPopUpPanel('❌ ' + (response?.message || 'Backup failed'), 2000, false);
+      return false;
     }
   } catch (error) {
+    setPendingCloudBackup();
     console.error('Backup error:', error);
-    setShowPopUpPanel('❌ ' + (error.message || 'Backup failed'), 2500, false);
+    if (!silent) setShowPopUpPanel('❌ ' + (error.message || 'Backup failed'), 2500, false);
+    return false;
   }
 }
 // 📥 Manual Restore from Server
-export async function cloudRestore() {
-  const confirmed = confirm('⚠️ Overwrite current data?');
-  if (!confirmed) return;
+export async function cloudRestore({ silent = false, confirmOverwrite = true } = {}) {
+  if (confirmOverwrite) {
+    const confirmed = confirm('⚠️ Overwrite current data?');
+    if (!confirmed) return false;
+  }
 
   try {
     const response = await NotificationsManager.sendMessage('restore', '');
@@ -211,8 +283,8 @@ export async function cloudRestore() {
 
     if (!response || !response.success || !response.message) {
       const errorMsg = response?.message || '⚠️ No backup found';
-      setShowPopUpPanel(errorMsg, 2000, false);
-      return;
+      if (!silent) setShowPopUpPanel(errorMsg, 2000, false);
+      return false;
     }
 
     let rawData = response.message;
@@ -267,19 +339,34 @@ export async function cloudRestore() {
                   //  console.log("♻️ Detected Legacy JSON String");
                     finalDataToLoad = rawData;
                 }
-            } catch (e) {
+            } catch {
                 // Not JSON, assume it's Base64
             }
         }
     }
 
     if (!finalDataToLoad && isEncryptedCloudBackup(rawData)) {
-        const password = getCloudPassword();
-        if (!password) {
-          setShowPopUpPanel(AppData.prefs[0] === 0 ? '❌ Нужен пароль шифрования' : '❌ Encryption password required', 2200, false);
-          return;
+        const backupKey = await getCloudBackupKey();
+        if (backupKey) {
+          try {
+            finalDataToLoad = await decryptCloudBackup(rawData, backupKey);
+          } catch (error) {
+            console.warn('Auto backup key decrypt failed. Old password backups are not restored automatically.', error);
+          }
         }
-        finalDataToLoad = await decryptCloudBackup(rawData, password);
+
+        if (!finalDataToLoad) {
+          if (!silent) {
+            setShowPopUpPanel(
+              AppData.prefs[0] === 0
+                ? 'Старая копия требует обновления. Новые автокопии будут без пароля.'
+                : 'Old backup needs an update. New auto backups do not use passwords.',
+              2800,
+              false
+            );
+          }
+          return false;
+        }
     }
 
     // ---------------------------------------------------------
@@ -306,8 +393,10 @@ export async function cloudRestore() {
     // ---------------------------------------------------------
     try {
         deserializeData(finalDataToLoad);
-        await saveData();
-        setShowPopUpPanel('✅ Data restored!', 2000, true);
+        await saveData({ skipCloudBackup: true });
+        scheduleAutoCloudBackup();
+        if (!silent) setShowPopUpPanel('✅ Data restored!', 2000, true);
+        return true;
     } catch (err) {
         console.error("❌ Final Apply Failed:", err);
         throw new Error("Restored data is not valid JSON.");
@@ -315,7 +404,8 @@ export async function cloudRestore() {
 
   } catch (error) {
     console.error('Restore Logic Error:', error);
-    setShowPopUpPanel('❌ Restore failed', 2000, false);
+    if (!silent) setShowPopUpPanel('❌ Restore failed', 2000, false);
+    return false;
   }
 }
 
