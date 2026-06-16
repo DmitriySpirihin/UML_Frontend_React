@@ -94,6 +94,19 @@ const SECTION_ROOT_PAGES = new Set([
   'RobotMain',
 ]);
 
+const getBottomPanelForPage = (page) => {
+  if (!page || page === 'LoadPanel') return '';
+  if (page.startsWith('Habit') || page.startsWith('Habits')) return 'BtnsHabits';
+  if (page.startsWith('Training')) return 'BtnsTraining';
+  if (page.startsWith('Recovery')) return 'BtnsRecovery';
+  if (page.startsWith('Mental')) return 'BtnsMental';
+  if (page.startsWith('Sleep')) return 'BtnsSleep';
+  if (page.startsWith('ToDo')) return 'BtnsToDo';
+  if (page.startsWith('Robot')) return 'BtnsRobot';
+  if (page.startsWith('Info')) return 'BtnsInfo';
+  return 'BtnsMenu';
+};
+
 
 function App() {
   const [page, setPageState] = useState('LoadPanel');
@@ -176,12 +189,14 @@ function App() {
 
     const viewport = window.visualViewport;
     let stableHeight = Math.max(window.innerHeight || 0, viewport?.height || 0);
+    const shouldDetectKeyboard = ['ios', 'android'].includes(window.Telegram?.WebApp?.platform)
+      || navigator.maxTouchPoints > 1;
 
     const updateViewportHeight = () => {
       const currentHeight = viewport?.height || window.innerHeight;
       stableHeight = Math.max(stableHeight, window.innerHeight || 0, currentHeight || 0);
       document.documentElement.style.setProperty('--app-viewport-height', `${Math.round(currentHeight)}px`);
-      setKeyboardVisible(stableHeight - currentHeight > 140);
+      setKeyboardVisible(shouldDetectKeyboard && stableHeight - currentHeight > 140);
     };
 
     updateViewportHeight();
@@ -200,6 +215,13 @@ function App() {
     const subscription = confirmationPanel$.subscribe(setConfirmationPanel);
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const expectedBottomPanel = getBottomPanelForPage(page);
+    if (expectedBottomPanel && bottomBtnPanel !== expectedBottomPanel) {
+      bottomBtnPanel$.next(expectedBottomPanel);
+    }
+  }, [page, bottomBtnPanel]);
 
   useEffect(() => {
     const webApp = window.Telegram?.WebApp;

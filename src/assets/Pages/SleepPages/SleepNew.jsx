@@ -24,7 +24,6 @@ const STEP_MINUTES = 5;
 const STEP_MS = STEP_MINUTES * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
-const MAX_SLEEP_MINUTES = 23 * 60 + 55;
 
 const MOODS = [
   { Icon: MdSentimentVeryDissatisfied, label: ['Плохо', 'Bad'] },
@@ -48,12 +47,6 @@ const parseHhMmToMs = (value) => {
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
   return ((Math.max(0, Math.min(23, hours)) * 60) + Math.max(0, Math.min(59, minutes))) * 60000;
 };
-
-const clampDurationMinutes = (value) => Math.max(STEP_MINUTES, Math.min(MAX_SLEEP_MINUTES, Math.round(Number(value) || STEP_MINUTES)));
-
-const addDurationToTime = (timeMs, durationMinutes) => (
-  (timeMs + clampDurationMinutes(durationMinutes) * 60000) % DAY_MS
-);
 
 const formatDuration = (ms, langIndex) => {
   const totalMinutes = Math.floor(ms / 60000);
@@ -107,9 +100,6 @@ const SleepNew = () => {
 
   const accent = useMemo(() => buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF'), []);
   const duration = getDurationFromTimes(bedTime, wakeTime);
-  const durationMinutes = Math.round(duration / 60000);
-  const durationHoursValue = Math.floor(durationMinutes / 60);
-  const durationMinutesValue = durationMinutes % 60;
   const s = styles(theme, accent, fSize);
 
   useEffect(() => {
@@ -133,20 +123,12 @@ const SleepNew = () => {
     const nextBedTime = parseHhMmToMs(value);
     if (nextBedTime === null) return;
     setBedTime(nextBedTime);
-    setWakeTime(addDurationToTime(nextBedTime, durationMinutes));
   };
 
   const updateWakeTime = (value) => {
     const nextWakeTime = parseHhMmToMs(value);
     if (nextWakeTime === null) return;
     setWakeTime(nextWakeTime);
-  };
-
-  const updateDuration = (nextHours, nextMinutes) => {
-    const hours = Math.max(0, Math.min(23, Math.floor(Number(nextHours) || 0)));
-    const minutes = Math.max(0, Math.min(59, Math.floor(Number(nextMinutes) || 0)));
-    const nextDurationMinutes = clampDurationMinutes(hours * 60 + minutes);
-    setWakeTime(addDurationToTime(bedTime, nextDurationMinutes));
   };
 
   const handleSave = async () => {
@@ -244,16 +226,13 @@ const SleepNew = () => {
             accent={accent}
           />
 
-          <DurationControl
+          <DurationSummary
             icon={<FaRegClock />}
             title={langIndex === 0 ? 'Сколько поспал' : 'Sleep duration'}
-            hint={langIndex === 0 ? 'Можно ввести точно руками' : 'Enter exact hours and minutes'}
-            hours={durationHoursValue}
-            minutes={durationMinutesValue}
-            onChange={updateDuration}
+            hint={langIndex === 0 ? 'Считается по отбою и подъему' : 'Calculated from bedtime and wake time'}
+            value={formatDuration(duration, langIndex)}
             theme={theme}
             accent={accent}
-            langIndex={langIndex}
           />
 
           <section style={s.card}>
@@ -345,25 +324,21 @@ const TimeControl = ({ icon, title, value, hint, inputValue, onChange, theme, ac
         </div>
         <div style={s.controlValue}>{value}</div>
       </div>
-      <input
-        type="time"
-        value={inputValue}
-        step={STEP_MS / 1000}
-        onChange={(event) => onChange(event.target.value)}
-        style={s.timeInput}
-      />
+      <div style={s.timeInputFrame}>
+        <input
+          type="time"
+          value={inputValue}
+          step={STEP_MS / 1000}
+          onChange={(event) => onChange(event.target.value)}
+          style={s.timeInput}
+        />
+      </div>
     </section>
   );
 };
 
-const DurationControl = ({ icon, title, hint, hours, minutes, onChange, theme, accent, langIndex }) => {
+const DurationSummary = ({ icon, title, hint, value, theme, accent }) => {
   const s = styles(theme, accent, 0);
-  const adjust = (deltaMinutes) => {
-    const current = hours * 60 + minutes;
-    const next = clampDurationMinutes(current + deltaMinutes);
-    onChange(Math.floor(next / 60), next % 60);
-  };
-
   return (
     <section style={s.card}>
       <div style={s.controlHeader}>
@@ -372,48 +347,11 @@ const DurationControl = ({ icon, title, hint, hours, minutes, onChange, theme, a
           <div style={s.cardTitle}>{title}</div>
           <div style={s.cardHint}>{hint}</div>
         </div>
-        <div style={s.controlValue}>{`${hours}:${minutes.toString().padStart(2, '0')}`}</div>
-      </div>
-      <div style={s.durationGrid}>
-        <NumberField
-          label={langIndex === 0 ? 'часы' : 'hours'}
-          value={hours}
-          min={0}
-          max={23}
-          onChange={(nextHours) => onChange(nextHours, minutes)}
-          styles={s}
-        />
-        <NumberField
-          label={langIndex === 0 ? 'мин' : 'min'}
-          value={minutes}
-          min={0}
-          max={59}
-          onChange={(nextMinutes) => onChange(hours, nextMinutes)}
-          styles={s}
-        />
-        <div style={s.stepperRow}>
-          <button type="button" onClick={() => adjust(-15)} style={s.stepperButton}>-15</button>
-          <button type="button" onClick={() => adjust(15)} style={s.stepperButton}>+15</button>
-        </div>
+        <div style={s.durationValue}>{value}</div>
       </div>
     </section>
   );
 };
-
-const NumberField = ({ label, value, min, max, onChange, styles: s }) => (
-  <label style={s.numberField}>
-    <span style={s.numberLabel}>{label}</span>
-    <input
-      type="number"
-      inputMode="numeric"
-      min={min}
-      max={max}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      style={s.numberInput}
-    />
-  </label>
-);
 
 export default SleepNew;
 
@@ -605,76 +543,46 @@ const styles = (theme, accent, fSize = 0) => {
       fontVariantNumeric: 'tabular-nums',
       whiteSpace: 'nowrap'
     },
-    timeInput: {
+    timeInputFrame: {
       width: '100%',
       marginTop: 13,
       height: 52,
       borderRadius: 17,
       border: `1px solid ${isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.10)'}`,
       background: isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.055)',
+      display: 'flex',
+      alignItems: 'center',
+      overflow: 'hidden',
+      boxSizing: 'border-box'
+    },
+    timeInput: {
+      display: 'block',
+      flex: '1 1 0',
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
+      height: '100%',
+      border: 'none',
+      background: 'transparent',
       color: text,
       outline: 'none',
       fontSize: 22,
       fontWeight: 950,
       fontVariantNumeric: 'tabular-nums',
       fontFamily: 'inherit',
-      padding: '0 14px',
+      textAlign: 'center',
+      padding: '0 12px',
       boxSizing: 'border-box',
-      colorScheme: isLight ? 'light' : 'dark'
+      colorScheme: isLight ? 'light' : 'dark',
+      appearance: 'none',
+      WebkitAppearance: 'none'
     },
-    durationGrid: {
-      marginTop: 13,
-      display: 'grid',
-      gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-      gap: 9
-    },
-    numberField: {
-      minWidth: 0,
-      height: 64,
-      borderRadius: 17,
-      border: `1px solid ${isLight ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.10)'}`,
-      background: isLight ? 'rgba(255,255,255,0.62)' : 'rgba(255,255,255,0.055)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      gap: 3,
-      padding: '7px 12px',
-      boxSizing: 'border-box'
-    },
-    numberLabel: {
-      color: sub,
-      fontSize: 10,
-      fontWeight: 900,
-      textTransform: 'uppercase'
-    },
-    numberInput: {
-      width: '100%',
-      border: 'none',
-      outline: 'none',
-      background: 'transparent',
+    durationValue: {
       color: text,
       fontSize: 24,
       fontWeight: 950,
       fontVariantNumeric: 'tabular-nums',
-      fontFamily: 'inherit',
-      padding: 0,
-      minWidth: 0
-    },
-    stepperRow: {
-      gridColumn: '1 / -1',
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-      gap: 9
-    },
-    stepperButton: {
-      height: 44,
-      borderRadius: 15,
-      border: `1px solid ${accent.ring}`,
-      background: accent.soft,
-      color: text,
-      fontSize: 14,
-      fontWeight: 950,
-      fontFamily: 'inherit'
+      whiteSpace: 'nowrap'
     },
     cardHeader: {
       display: 'flex',
