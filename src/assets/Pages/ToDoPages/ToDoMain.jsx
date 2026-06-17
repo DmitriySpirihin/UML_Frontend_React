@@ -1007,7 +1007,8 @@ const CategoryPanel = ({ title, categoryKey, count, doneCount, todayCount, child
   };
 
   return (
-    <div style={s.category}>
+    <div style={s.category(tone)}>
+      <span aria-hidden="true" style={s.categoryRail(tone)} />
       <div
         role="button"
         tabIndex={0}
@@ -1893,14 +1894,43 @@ const styles = (theme, accent, fSize = 0) => {
       gap: 8,
       cursor: 'pointer'
     },
-	    category: { width: '100%', margin: '0 auto', boxSizing: 'border-box' },
+	    category: (tone = accent) => ({
+	      width: '100%',
+	      margin: '0 auto',
+	      boxSizing: 'border-box',
+	      position: 'relative',
+	      overflow: 'hidden',
+	      borderRadius: 28,
+	      padding: '10px 10px 12px 14px',
+	      background: isLight
+	        ? `linear-gradient(145deg, rgba(255,255,255,0.78), ${tone.soft})`
+	        : `radial-gradient(260px 150px at 0% 0%, ${tone.soft}, transparent 70%), linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.018))`,
+	      border: `1px solid ${isLight ? 'rgba(15,23,42,0.075)' : 'rgba(190,220,235,0.105)'}`,
+	      boxShadow: isLight
+	        ? '0 14px 34px -30px rgba(15,23,42,0.22), 0 1px 0 rgba(255,255,255,0.72) inset'
+	        : `0 1px 0 rgba(255,255,255,0.055) inset, 0 18px 42px -34px rgba(0,0,0,0.72), 0 0 0 1px ${tone.soft} inset`,
+	      backdropFilter: 'blur(22px) saturate(155%)',
+	      WebkitBackdropFilter: 'blur(22px) saturate(155%)'
+	    }),
+	    categoryRail: (tone = accent) => ({
+	      position: 'absolute',
+	      left: 0,
+	      top: 14,
+	      bottom: 14,
+	      width: 3,
+	      borderRadius: 999,
+	      background: tone.hue,
+	      boxShadow: `0 0 18px ${tone.glow || tone.ring}`,
+	      opacity: 0.85,
+	      pointerEvents: 'none'
+	    }),
 	    categoryHeader: {
 	      width: '100%',
 	      display: 'flex',
 	      alignItems: 'center',
 	      justifyContent: 'space-between',
-	      padding: '4px 4px 10px',
-	      marginBottom: 6,
+	      padding: '2px 2px 12px',
+	      marginBottom: 2,
 	      gap: 10,
 	      color: text,
 	      cursor: 'pointer',
@@ -1937,7 +1967,7 @@ const styles = (theme, accent, fSize = 0) => {
       fontVariantNumeric: 'tabular-nums'
     }),
     chevron: { color: sub, display: 'flex' },
-    categoryBody: { overflowY: 'hidden', overflowX: 'visible', display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 1px 2px', boxSizing: 'border-box' },
+    categoryBody: { overflowY: 'hidden', overflowX: 'visible', display: 'flex', flexDirection: 'column', gap: 10, padding: '2px 0 0', boxSizing: 'border-box' },
     taskCard: (done, overdue, pinned, tone = accent) => ({
       position: 'relative',
       borderRadius: 34,

@@ -30,6 +30,9 @@ const DEFAULT_TRAINING_ACCENT_COLOR = '#579BC8';
 const LEGACY_TRAINING_ACCENT_COLORS = ['#5FB6C6', '#FC5200', '#FF7A1A', '#9A8580', '#B87963', '#D8785E', '#7D92D6', '#8F7CFF', '#8A7CD6', '#9A84C8', '#A66BFF', '#BF5AF2'];
 const DEFAULT_SECTION_VISITS = { habits: [], todo: [], mental: [], recovery: [], training: [], sleep: [] };
 const DEFAULT_SECTION_LAST_OPENED_AT = { habits: 0, todo: 0, mental: 0, recovery: 0, training: 0, sleep: 0 };
+const HABIT_BACKFILL_MIN_DAYS = 45;
+const HABIT_BACKFILL_BUFFER_DAYS = 14;
+const HABIT_BACKFILL_MAX_DAYS = 160;
 const DEFAULT_NOTIFY_CRON = '10 12 * * 1,2,3,4,5';
 const DEFAULT_NOTIFY_SETTINGS = [
   { enabled: false, cron: DEFAULT_NOTIFY_CRON },
@@ -52,6 +55,54 @@ export const formatLocalDateKey = (date = new Date()) => {
   const month = String(localDate.getMonth() + 1).padStart(2, '0');
   const day = String(localDate.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+const parseLocalDateKey = (dateKey) => {
+  const [year, month, day] = String(dateKey || '').split('-').map(Number);
+  if (!year || !month || !day) return null;
+  const date = new Date(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+  return date;
+};
+
+const cloneDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+const addLocalDays = (date, days = 1) => {
+  const next = cloneDate(date);
+  next.setDate(next.getDate() + days);
+  return next;
+};
+
+const getHabitIndex = (habitId) => AppData.choosenHabits.findIndex(id => Number(id) === Number(habitId));
+
+const getHabitStartDate = (habitIndex) => {
+  const raw = AppData.choosenHabitsStartDates?.[habitIndex];
+  if (!raw) return null;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return null;
+  parsed.setHours(0, 0, 0, 0);
+  return parsed;
+};
+
+const getDefaultHabitStatusForDay = (habitId, habitIndex, dayKey, todayKey) => {
+  const isNegative = AppData.choosenHabitsTypes?.[habitIndex] === true;
+  if (isNegative) return 1;
+  if (AppData.isHabitAutoComplete(habitId)) return 1;
+  return dayKey === todayKey ? 0 : -1;
+};
+
+const getHabitBackfillStartDate = (habitIndex, today) => {
+  const startDate = getHabitStartDate(habitIndex);
+  if (!startDate || startDate > today) return null;
+
+  const targetDays = Math.max(1, Number(AppData.choosenHabitsDaysToForm?.[habitIndex]) || 1);
+  const backfillDays = Math.min(
+    HABIT_BACKFILL_MAX_DAYS,
+    Math.max(HABIT_BACKFILL_MIN_DAYS, targetDays + HABIT_BACKFILL_BUFFER_DAYS)
+  );
+  const windowStart = addLocalDays(today, -(backfillDays - 1));
+
+  return startDate > windowStart ? startDate : windowStart;
 };
 
 const normalizeAccentHex = (color, fallback = DEFAULT_HABITS_ACCENT_COLOR) => {
@@ -257,6 +308,7 @@ export class AppData{
   static sectionVisits = { ...DEFAULT_SECTION_VISITS };
   static sectionLastOpenedAt = { ...DEFAULT_SECTION_LAST_OPENED_AT };
   static profileFriendsExpanded = true;
+  static premiumSnapshot = { hasPremium: false, premiumEndDate: null, isValidation: false, checkedAt: 0 };
   static menuCardsStates =
 {
   "MainCard": {
@@ -402,6 +454,14 @@ static habitCardWidgets = {
       ? { ...DEFAULT_SECTION_LAST_OPENED_AT, ...data.sectionLastOpenedAt }
       : { ...DEFAULT_SECTION_LAST_OPENED_AT };
     this.profileFriendsExpanded = data.profileFriendsExpanded ?? true;
+    this.premiumSnapshot = data.premiumSnapshot && typeof data.premiumSnapshot === 'object'
+      ? {
+          hasPremium: data.premiumSnapshot.hasPremium === true,
+          premiumEndDate: data.premiumSnapshot.premiumEndDate || null,
+          isValidation: data.premiumSnapshot.isValidation === true,
+          checkedAt: Number(data.premiumSnapshot.checkedAt) || 0
+        }
+      : { hasPremium: false, premiumEndDate: null, isValidation: false, checkedAt: 0 };
     this.todoFieldsVisibility = data.todoFieldsVisibility || { priority: true, difficulty: true, urgency: true };
     this.insightCache = data.insightCache || {};
     this.sectionVisits = data.sectionVisits || { ...DEFAULT_SECTION_VISITS };
@@ -572,16 +632,19 @@ static getLastTrainingDayIndex() {
     }
   }
   static syncLastSkip(habitId) {
-    const habitIndex = this.choosenHabits.indexOf(Number(habitId));
-    if (habitIndex === -1 || !this.choosenHabitsTypes[habitIndex]) return;
+    const habitIndex = getHabitIndex(habitId);
+    if (habitIndex === -1 || !this.choosenHabitsTypes[habitIndex]) return false;
     let latestSkip = null;
     Object.entries(this.habitsByDate).forEach(([day, habits]) => {
-      if (habits?.[habitId] < 1) {
+      if (habits?.[habitId] < 0) {
         const timestamp = this.getHabitEventTimestamp(day, habitId) || this.normalizeHabitEventTimestamp(day);
         if (!latestSkip || timestamp > latestSkip) latestSkip = timestamp;
       }
     });
-    this.choosenHabitsLastSkip[habitId] = latestSkip || new Date(this.choosenHabitsStartDates[habitIndex]).getTime();
+    const nextLastSkip = latestSkip || new Date(this.choosenHabitsStartDates[habitIndex]).getTime();
+    if (this.choosenHabitsLastSkip[habitId] === nextLastSkip) return false;
+    this.choosenHabitsLastSkip[habitId] = nextLastSkip;
+    return true;
   }
   static async addHabit(habitId,dateString,goals,isNegative,daysToForm,autoComplete = false){
     const isStartDateEarlier = Date.now() - new Date(dateString).getTime() > 86400000;
@@ -616,8 +679,7 @@ static getLastTrainingDayIndex() {
    }
    if (!this.habitsByDate[todayKey]) this.habitsByDate[todayKey] = {};
    if(isNegative){
-       if(getHabitPerformPercent(habitId) < 100)this.habitsByDate[todayKey][habitId] = isStartDateEarlier ? 1 : -1;
-       else this.habitsByDate[todayKey][habitId] = 1;
+       this.habitsByDate[todayKey][habitId] = 1;
    }
    else this.habitsByDate[todayKey][habitId] = this.isHabitAutoComplete(habitId) || getHabitPerformPercent(habitId) >= 100 ? 1 : 0;
    await saveData();
@@ -790,60 +852,35 @@ static getLastTrainingDayIndex() {
 }
 
 export const fillEmptyDays = () => {
-  const today = new Date();
-  const todayKey = formatLocalDateKey(today);
-  const dayTostart = AppData.choosenHabitsStartDates.length === 0 ? '' : formatLocalDateKey(new Date(Math.min(...AppData.choosenHabitsStartDates.map(date => new Date(date).getTime()))));
-  if(dayTostart !== '' && dayTostart !== todayKey){
-   if(dayTostart !== todayKey){
-   const startDate = new Date(dayTostart);
-   const endDate = today.setDate(today.getDate() - 1);
-   let currentDate = startDate;
-   while (currentDate < endDate) {
-    const current = formatLocalDateKey(currentDate);
-    if(!(current in AppData.habitsByDate)) {
-      AppData.habitsByDate[current] = {};
-    
-      for (let index = 0; index < AppData.choosenHabits.length; index++) {
-        const isNegative = AppData.choosenHabitsTypes[index]; 
-        if(isNegative){
-            if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime()){
-            const isStartDateEarlier = Date.now() - AppData.choosenHabitsLastSkip[AppData.choosenHabits[index]] > 86400000;
-            AppData.habitsByDate[current][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? isStartDateEarlier ? 1 : -1 : 1; 
-          }
-        }
-        else{
-           if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(current).getTime()){
-           const habitId = AppData.choosenHabits[index];
-           AppData.habitsByDate[current][habitId] = AppData.isHabitAutoComplete(habitId) || getHabitPerformPercent(habitId) >= 100 ? 1 : -1;
-           }
-        }
+  const todayKey = formatLocalDateKey();
+  const today = parseLocalDateKey(todayKey);
+  let changed = false;
+
+  if (!today) return false;
+  if (!AppData.habitsByDate || typeof AppData.habitsByDate !== 'object') {
+    AppData.habitsByDate = {};
+    changed = true;
+  }
+
+  (AppData.choosenHabits || []).forEach((habitId, index) => {
+    const startDate = getHabitBackfillStartDate(index, today);
+    if (!startDate || startDate > today) return;
+
+    for (let currentDate = cloneDate(startDate); currentDate <= today; currentDate = addLocalDays(currentDate, 1)) {
+      const dayKey = formatLocalDateKey(currentDate);
+      if (!AppData.habitsByDate[dayKey] || typeof AppData.habitsByDate[dayKey] !== 'object') {
+        AppData.habitsByDate[dayKey] = {};
+        changed = true;
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(AppData.habitsByDate[dayKey], habitId)) {
+        AppData.habitsByDate[dayKey][habitId] = getDefaultHabitStatusForDay(habitId, index, dayKey, todayKey);
+        changed = true;
       }
     }
-    currentDate.setDate(currentDate.getDate() + 1);
-   }
-   
-  }
-   
- }
- const now = formatLocalDateKey();
- if(!(now in AppData.habitsByDate)){
-   AppData.habitsByDate[now] = {};
-   for (let index = 0; index < AppData.choosenHabits.length; index++) {
-    const isNegative = AppData.choosenHabitsTypes[index]; 
-     if(isNegative){
-            if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(now).getTime()){
-            const isStartDateEarlier = Date.now() - AppData.choosenHabitsLastSkip[AppData.choosenHabits[index]] > 86400000;
-            AppData.habitsByDate[now][AppData.choosenHabits[index]] = getHabitPerformPercent(AppData.choosenHabits[index]) < 100 ? isStartDateEarlier ? 1 : -1 : 1; 
-          }
-        }
-        else{
-           if(new Date(AppData.choosenHabitsStartDates[index]).getTime() <= new Date(now).getTime()){
-             const habitId = AppData.choosenHabits[index];
-             AppData.habitsByDate[now][habitId] = AppData.isHabitAutoComplete(habitId) || getHabitPerformPercent(habitId) >= 100 ? 1 : -1;
-           }
-        }
-   }
-  }
+  });
+
+  return changed;
 }
 
 
@@ -993,6 +1030,7 @@ export class Data{
     this.sectionVisits = AppData.sectionVisits;
     this.sectionLastOpenedAt = AppData.sectionLastOpenedAt;
     this.profileFriendsExpanded = AppData.profileFriendsExpanded;
+    this.premiumSnapshot = AppData.premiumSnapshot;
     this.todoFieldsVisibility = AppData.todoFieldsVisibility;
     this.menuCardsStates = AppData.menuCardsStates;
     this.infoMiniPanel = AppData.infoMiniPanel;
@@ -1001,21 +1039,48 @@ export class Data{
   }
 }
 
-export function getHabitPerformPercent(habitId){
-  const habits = Array.from(Object.values(AppData.habitsByDate));
-  const today = formatLocalDateKey();
-  const isNegative = AppData.choosenHabitsTypes[AppData.choosenHabits.indexOf(habitId)];
-  let currentStreak = 0;
-  for(let i = habits.length - 2; i >= 0; i--){
-      if(habitId in habits[i]){
-        if(habits[i][habitId] > 0)currentStreak ++;
-          else break;
+export function getHabitCurrentStreak(habitId){
+  const habitIndex = getHabitIndex(habitId);
+  if (habitIndex === -1) return 0;
+
+  const todayKey = formatLocalDateKey();
+  const isNegative = AppData.choosenHabitsTypes?.[habitIndex] === true;
+  const startDate = getHabitStartDate(habitIndex);
+  const startKey = startDate ? formatLocalDateKey(startDate) : '';
+  const dateKeys = Object.keys(AppData.habitsByDate || {})
+    .filter(key => (!startKey || key >= startKey) && key <= todayKey)
+    .sort((a, b) => b.localeCompare(a));
+
+  let streak = 0;
+  for (const key of dateKeys) {
+    const day = AppData.habitsByDate?.[key];
+    if (!day || !Object.prototype.hasOwnProperty.call(day, habitId)) {
+      if (isNegative) {
+        streak += 1;
+        continue;
+      }
+      break;
     }
+
+    const status = day[habitId];
+    if (key === todayKey && !isNegative && status === 0) continue;
+    if (status > 0) {
+      streak += 1;
+      continue;
+    }
+    if (isNegative && status === 0) {
+      streak += 1;
+      continue;
+    }
+    break;
   }
-  if(today in AppData.habitsByDate){
-     if(AppData.habitsByDate[today][habitId] > 0)currentStreak ++;
-     if(isNegative && AppData.habitsByDate[today][habitId] < 0) currentStreak = 0;
-  }
-  
-  return Math.ceil(currentStreak / AppData.choosenHabitsDaysToForm[AppData.choosenHabits.indexOf(habitId)] * 100) ;
+
+  return streak;
+}
+
+export function getHabitPerformPercent(habitId){
+  const habitIndex = getHabitIndex(habitId);
+  if (habitIndex === -1) return 0;
+  const target = Math.max(1, Number(AppData.choosenHabitsDaysToForm?.[habitIndex]) || 1);
+  return Math.ceil(getHabitCurrentStreak(habitId) / target * 100);
 }

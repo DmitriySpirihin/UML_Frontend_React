@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, useTransform, useMotionValue, animate, AnimatePresence } from 'framer-motion'
 import { allHabits } from '../../Classes/Habit.js'
-import { AppData, formatLocalDateKey, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
+import { AppData, formatLocalDateKey, getHabitCurrentStreak, getHabitPerformPercent, UserData } from '../../StaticClasses/AppData.js'
 import { logSectionVisit } from '../../StaticClasses/AppData.js'
 import { playEffects } from '../../StaticClasses/Effects.js'
 
@@ -2990,8 +2990,7 @@ function getSkippedAmount(id) {
         
         // Check if the habit exists for this date and if its status indicates skipped
         if (habitsOnDate && id in habitsOnDate) {
-            // Assuming status 2 means skipped (adjust according to your status codes)
-            if (habitsOnDate[id] < 1) { // Replace 2 with your actual "skipped" status value
+            if (habitsOnDate[id] < 0) {
                 amount++;
             }
         }
@@ -3000,23 +2999,7 @@ function getSkippedAmount(id) {
     return amount;
 }
 function getDoneAmount(id) {
-    let amount = 0;
-    
-    // Iterate through all dates in habitsByDate
-    for (const date in AppData.habitsByDate) {
-        const habitsOnDate = AppData.habitsByDate[date];
-        
-        // Check if the habit exists for this date and if its status indicates skipped
-        if (habitsOnDate && id in habitsOnDate) {
-            // Assuming status 2 means skipped (adjust according to your status codes)
-            if (habitsOnDate[id] === 1) { // Replace 2 with your actual "skipped" status value
-                amount++;
-            }
-            else if(habitsOnDate[id] < 1)amount = 0;
-        }
-    }
-    
-    return amount;
+    return getHabitCurrentStreak(id);
 }
 function getDaysAmount(id) {
     let amount = 0;
@@ -3027,10 +3010,7 @@ function getDaysAmount(id) {
         
         // Check if the habit exists for this date and if its status indicates skipped
         if (habitsOnDate && id in habitsOnDate) {
-            // Assuming status 2 means skipped (adjust according to your status codes)
-            if (habitsOnDate[id]) { // Replace 2 with your actual "skipped" status value
-                amount++;
-            }
+            amount++;
         }
     }
     

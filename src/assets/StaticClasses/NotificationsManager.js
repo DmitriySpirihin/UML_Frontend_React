@@ -7,13 +7,17 @@ import { decryptCloudBackup, encryptCloudBackup, isEncryptedCloudBackup } from '
 import { getCloudBackupKey, getCloudBackupKeyStorageStatus, getOrCreateCloudBackupKey } from './CloudBackupKey';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
+const API_TIMEOUT_MS = 7000;
+const PREMIUM_TIMEOUT_MS = 4500;
 const AUTO_BACKUP_DELAY_MS = 12000;
 const RETRY_BACKUP_DELAY_MS = 2500;
+const CLOUD_SYNC_COOLDOWN_MS = 60000;
 const CLOUD_BACKUP_PENDING_KEY = 'uml_cloud_backup_pending_v1';
 
 let autoBackupTimer = null;
 let autoBackupInFlight = false;
 let autoBackupQueued = false;
+let lastCloudSyncCheckAt = 0;
 
 function getPendingBackupStorageKey() {
   const userId = UserData.id || 'anonymous';
@@ -44,6 +48,19 @@ function hasPendingCloudBackup() {
     return !!window.localStorage?.getItem(getPendingBackupStorageKey());
   } catch {
     return false;
+  }
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = API_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: options.signal || controller.signal
+    });
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -82,9 +99,26 @@ export function retryPendingCloudBackup() {
   scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
 }
 
+export function syncCloudBackupIfNewer({ force = false } = {}) {
+  if (typeof window === 'undefined') return;
+  if (!UserData.id || UserData.id === 0) return;
+  const now = Date.now();
+  if (!force && now - lastCloudSyncCheckAt < CLOUD_SYNC_COOLDOWN_MS) return;
+  lastCloudSyncCheckAt = now;
+  cloudRestore({ silent: true, confirmOverwrite: false, preferNewer: true }).catch(error => {
+    console.warn('Cloud sync check failed:', error);
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
     retryPendingCloudBackup();
+  });
+  window.addEventListener('focus', () => {
+    syncCloudBackupIfNewer();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') syncCloudBackupIfNewer();
   });
 }
 
@@ -92,9 +126,9 @@ export class NotificationsManager {
     // Updated to use your SmartApe server
     
 
-    static async sendMessage(type, message) {
+    static async sendMessage(type, message, metadata = {}) {
         try {
-            const response = await fetch(BASE_URL, {
+            const response = await fetchWithTimeout(BASE_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,7 +138,7 @@ export class NotificationsManager {
                     type: type,
                     message: message,
                     userId: UserData.id,
-                    metadata: {} // any additional data
+                    metadata
                 })
             });
 
@@ -150,6 +184,38 @@ const getCurrentPremiumSnapshot = (isServerAvailable = false) => ({
   isServerAvailable
 });
 
+const toPremiumDate = (value) => {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+export function applyCachedPremiumSnapshot() {
+  const snapshot = AppData.premiumSnapshot;
+  if (!snapshot || typeof snapshot !== 'object') return false;
+
+  const premiumEndDate = toPremiumDate(snapshot.premiumEndDate);
+  const isActive = snapshot.hasPremium === true && (!premiumEndDate || premiumEndDate.getTime() > Date.now());
+  const isValidation = snapshot.isValidation === true;
+
+  UserData.hasPremium = isActive;
+  UserData.premiumEndDate = premiumEndDate;
+  UserData.isValidation = isValidation;
+
+  setPremium(isActive);
+  setValidation(isValidation);
+  return isActive || isValidation;
+}
+
+function rememberPremiumSnapshot({ hasPremium, premiumEndDate, isValidation }) {
+  AppData.premiumSnapshot = {
+    hasPremium: hasPremium === true,
+    premiumEndDate: premiumEndDate ? premiumEndDate.toISOString() : null,
+    isValidation: isValidation === true,
+    checkedAt: Date.now()
+  };
+}
+
 export async function isUserHasPremium(uid) {
   if (applyLocalTestPremium()) {
     return {
@@ -169,7 +235,7 @@ export async function isUserHasPremium(uid) {
   }
 
   try {
-    const response = await fetch(BASE_URL, {
+    const response = await fetchWithTimeout(BASE_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -179,7 +245,7 @@ export async function isUserHasPremium(uid) {
         userId: uid,
         metadata: {}
       })
-    });
+    }, PREMIUM_TIMEOUT_MS);
 
     if (!response.ok) {
       console.warn(`Premium check failed with HTTP ${response.status}`);
@@ -203,10 +269,14 @@ export async function isUserHasPremium(uid) {
       UserData.hasPremium = hasPremium;
       UserData.premiumEndDate = premiumEndDate;
       UserData.isValidation = isValidation;
+      rememberPremiumSnapshot({ hasPremium, premiumEndDate, isValidation });
 
       setPremium(hasPremium);
       setValidation(isValidation);
       setIsServerAvailable(technicalWorks);
+      saveData({ skipCloudBackup: true }).catch(error => {
+        console.warn('Premium snapshot save failed:', error);
+      });
       
      // console.log(`Premium: ${hasPremium}, Valid: ${isValidation}, Server OK: ${isServerAvailable}`);
       
@@ -232,6 +302,7 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
     }
 
     const dataString = typeof dataToSave === 'string' ? dataToSave : JSON.stringify(dataToSave);
+    const snapshotTime = getSnapshotTime(dataString) || Date.now();
     const backupKey = await getOrCreateCloudBackupKey();
     if (!backupKey) {
       if (!silent) {
@@ -242,7 +313,9 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
     }
     const encryptedData = await encryptCloudBackup(dataString, backupKey);
 
-    const response = await NotificationsManager.sendMessage('backup', encryptedData);
+    const response = await NotificationsManager.sendMessage('backup', encryptedData, {
+      clientUpdatedAt: snapshotTime
+    });
     
     if (response?.success) {
       clearPendingCloudBackup();
@@ -260,6 +333,7 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
       return true;
     } else {
       setPendingCloudBackup();
+      if (response?.conflict) syncCloudBackupIfNewer({ force: true });
       if (!silent) setShowPopUpPanel('❌ ' + (response?.message || 'Backup failed'), 2000, false);
       return false;
     }
@@ -270,8 +344,18 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
     return false;
   }
 }
+function getSnapshotTime(dataString) {
+  try {
+    const parsed = JSON.parse(dataString);
+    const time = Date.parse(parsed?.lastSave || '');
+    return Number.isFinite(time) ? time : 0;
+  } catch {
+    return 0;
+  }
+}
+
 // 📥 Manual Restore from Server
-export async function cloudRestore({ silent = false, confirmOverwrite = true } = {}) {
+export async function cloudRestore({ silent = false, confirmOverwrite = true, preferNewer = false } = {}) {
   if (confirmOverwrite) {
     const confirmed = confirm('⚠️ Overwrite current data?');
     if (!confirmed) return false;
@@ -392,6 +476,17 @@ export async function cloudRestore({ silent = false, confirmOverwrite = true } =
     // 💾 STEP 3: APPLY DATA
     // ---------------------------------------------------------
     try {
+        if (preferNewer) {
+          const remoteTime = getSnapshotTime(finalDataToLoad);
+          const localTime = Date.parse(AppData.lastSave || '');
+          const hasLocalTime = Number.isFinite(localTime) && localTime > 0;
+
+          if (hasLocalTime && remoteTime > 0 && remoteTime <= localTime) {
+            if (remoteTime < localTime) scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
+            return false;
+          }
+        }
+
         deserializeData(finalDataToLoad);
         await saveData({ skipCloudBackup: true });
         scheduleAutoCloudBackup();
@@ -451,11 +546,11 @@ export async function getFriendsList() {
     try {
         const FRIENDS_URL = `https://ultymylife.ru/api/my-friends/${UserData.id}`;
         
-        const response = await fetch(FRIENDS_URL, {
+        const response = await fetchWithTimeout(FRIENDS_URL, {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include'
-        });
+        }, PREMIUM_TIMEOUT_MS);
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 

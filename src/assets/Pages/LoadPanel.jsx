@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AppData, UserData, fillEmptyDays } from '../StaticClasses/AppData';
+import { AppData, UserData } from '../StaticClasses/AppData';
 import { theme$, lang$, setPage, setTheme, setLang as setAppLang } from '../StaticClasses/HabitsBus';
 import Colors from '../StaticClasses/Colors';
 import { setAllHabits } from '../Classes/Habit';
 import { initDBandCloud, isNewUserPreviewMode, loadData } from '../StaticClasses/SaveHelper';
 import { initializeTelegramSDK, getTelegramContext } from '../StaticClasses/SaveHelper';
-import { cloudRestore, isUserHasPremium ,sendXp,getFriendsList,retryPendingCloudBackup} from '../StaticClasses/NotificationsManager';
+import { applyCachedPremiumSnapshot, cloudRestore, isUserHasPremium ,sendXp,getFriendsList,retryPendingCloudBackup,syncCloudBackupIfNewer} from '../StaticClasses/NotificationsManager';
 import { applyLocalTestPremium } from '../StaticClasses/PremiumTestHelper';
 import { calculateStats } from '../Helpers/UserStats.js';
 import { FaUser } from 'react-icons/fa';
@@ -25,6 +25,29 @@ function getDisplayName(user, lang) {
 function waitForMinimumLoad(startedAt, minMs = 850) {
   const remaining = minMs - (Date.now() - startedAt);
   return remaining > 0 ? new Promise(resolve => setTimeout(resolve, remaining)) : Promise.resolve();
+}
+
+function refreshPremiumInBackground(hasLocalTestPremium) {
+  if (hasLocalTestPremium || !UserData.id || UserData.id === 0) return;
+
+  isUserHasPremium(UserData.id).catch(error => {
+    console.warn('Startup premium sync failed:', error);
+  });
+}
+
+function runStartupSyncInBackground() {
+  if (!UserData.id || UserData.id === 0) return;
+
+  window.setTimeout(async () => {
+    try {
+      const currentStats = calculateStats();
+      await sendXp(currentStats.level.xp, currentStats.level.current);
+      await getFriendsList();
+      syncCloudBackupIfNewer({ force: true });
+    } catch (error) {
+      console.warn('Startup background sync failed:', error);
+    }
+  }, 2600);
 }
 
 function getPreviewLanguageIndex() {
@@ -47,6 +70,22 @@ function LoadPanel() {
   const avatarIsFallback = !userPhoto || userPhoto === GUEST_PHOTO;
 
 useEffect(() => {
+  let isMounted = true;
+  let startupFinished = false;
+
+  const finishStartup = (newUserPreview = isNewUserPreviewMode()) => {
+    if (!isMounted || startupFinished) return;
+    startupFinished = true;
+    setLoading(false);
+    const nextPage = newUserPreview || (!AppData.pData?.filled && !AppData.profileOnboardingShown) ? 'ProfileOnboarding' : 'MainMenu';
+    setPage(nextPage);
+  };
+
+  const failSafeTimer = window.setTimeout(() => {
+    console.warn('Startup fail-safe opened the app before background sync finished');
+    finishStartup(false);
+  }, 2500);
+
   async function initializeApp() {
     const startedAt = Date.now();
     try {
@@ -81,16 +120,17 @@ useEffect(() => {
         if (referrerId && !isNaN(referrerId) && Number(referrerId) !== user.id) {
           const refKey = `ref_processed_${referrerId}_${user.id}`;
           if (!localStorage.getItem(refKey)) {
-            try {
-              const response = await fetch(`${API_ORIGIN}/api/record-referral`, {
+            fetch(`${API_ORIGIN}/api/record-referral`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
                 body: JSON.stringify({ referrerId: Number(referrerId), newUserId: user.id }),
-              });
-              if (!response.ok) throw new Error(`HTTP ${response.status}`);
-              localStorage.setItem(refKey, '1');
-            } catch (err) { console.warn('Referral submission failed:', err); }
+              })
+              .then(response => {
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                localStorage.setItem(refKey, '1');
+              })
+              .catch(err => console.warn('Referral submission failed:', err));
           }
         }
       } else {
@@ -101,8 +141,14 @@ useEffect(() => {
 
       if (!newUserPreview) {
         const localLoadResult = await loadData();
-        if (!localLoadResult.success && UserData.id && UserData.id !== 0) {
-          await cloudRestore({ silent: true, confirmOverwrite: false });
+        if (UserData.id && UserData.id !== 0) {
+          if (!localLoadResult.success) {
+            window.setTimeout(() => {
+              cloudRestore({ silent: true, confirmOverwrite: false }).catch(error => {
+                console.warn('Startup cloud restore failed:', error);
+              });
+            }, 1500);
+          }
         }
         retryPendingCloudBackup();
       } else {
@@ -122,36 +168,30 @@ useEffect(() => {
         setUserPhoto(AppData.profileAvatarPhoto);
       }
       const hasLocalTestPremium = applyLocalTestPremium();
-      fillEmptyDays();
+      if (!hasLocalTestPremium) {
+        applyCachedPremiumSnapshot();
+      }
       setAllHabits();
 
-      // --- SYNC & SOCIAL LOGIC ---
-      if (UserData.id && UserData.id !== 0) { 
-        // 1. Check Premium
-        if (!hasLocalTestPremium) {
-          await isUserHasPremium(UserData.id);
-        }
-        
-        const currentStats = calculateStats(); // Helper to get the XP values
-        await sendXp(currentStats.level.xp, currentStats.level.current);
-        
-        await getFriendsList(); 
-      }
-
       await waitForMinimumLoad(startedAt);
-      setLoading(false);
-      const nextPage = newUserPreview || (!AppData.pData?.filled && !AppData.profileOnboardingShown) ? 'ProfileOnboarding' : 'MainMenu';
-      setTimeout(() => setPage(nextPage), 1200);
+      window.clearTimeout(failSafeTimer);
+      finishStartup(newUserPreview);
+      refreshPremiumInBackground(hasLocalTestPremium);
+      runStartupSyncInBackground();
 
     } catch (error) {
       console.error('Initialization error:', error);
       await waitForMinimumLoad(startedAt);
-      setLoading(false);
-      const nextPage = isNewUserPreviewMode() || (!AppData.pData?.filled && !AppData.profileOnboardingShown) ? 'ProfileOnboarding' : 'MainMenu';
-      setTimeout(() => setPage(nextPage), 1200);
+      window.clearTimeout(failSafeTimer);
+      finishStartup(isNewUserPreviewMode());
     }
   }
   initializeApp();
+
+  return () => {
+    isMounted = false;
+    window.clearTimeout(failSafeTimer);
+  };
 }, []);
 
   useEffect(() => {

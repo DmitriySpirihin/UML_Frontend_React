@@ -107,6 +107,11 @@ const getBottomPanelForPage = (page) => {
   return 'BtnsMenu';
 };
 
+const shouldUseAndroidLiteMode = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  const platform = window.Telegram?.WebApp?.platform || '';
+  return platform === 'android' || /Android/i.test(navigator.userAgent || '');
+};
 
 function App() {
   const [page, setPageState] = useState('LoadPanel');
@@ -117,6 +122,7 @@ function App() {
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
   const [isTechicalWorks, setIsTechicalWorks] = useState(false);
+  const [isPerformanceLite, setIsPerformanceLite] = useState(false);
   const lang = AppData.prefs[0];
   
 
@@ -149,6 +155,17 @@ function App() {
       if (seeded) window.location.reload();
     });
   }, [page]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const enabled = shouldUseAndroidLiteMode();
+    setIsPerformanceLite(enabled);
+    document.documentElement.classList.toggle('uml-android-lite', enabled);
+
+    return () => {
+      document.documentElement.classList.remove('uml-android-lite');
+    };
+  }, []);
 
   // ... rest of your useEffects (subscriptions) — keep these
   useEffect(() => {
@@ -263,7 +280,7 @@ function App() {
   }, [addPanel, confirmationPanel, notifyPanel, page]);
 
   return (
-    <MotionConfig transition={{ duration: 0.18, ease: 'easeOut' }}>
+    <MotionConfig reducedMotion={isPerformanceLite ? 'always' : 'user'} transition={{ duration: isPerformanceLite ? 0.12 : 0.18, ease: 'easeOut' }}>
       {
         isTechicalWorks && 
         <motion.div

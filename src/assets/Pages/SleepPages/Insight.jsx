@@ -657,8 +657,9 @@ const styles = (theme, activeOrSize, accentOverride = null, bottomInset = 104) =
         },
         contentBody: {
             flex: 1,
+            minHeight: 0,
             overflowY: 'auto',
-            padding: '14px 14px calc(100px + env(safe-area-inset-bottom, 0px))',
+            padding: `14px 14px calc(${bottomInset}px + env(safe-area-inset-bottom, 0px))`,
             scrollbarWidth: 'none',
             fontSize: fSize === 0 ? 14 : 16
         },

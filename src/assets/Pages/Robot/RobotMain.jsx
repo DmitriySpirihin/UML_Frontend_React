@@ -22,7 +22,7 @@ const RobotMain = () => {
 
   return (
     <div style={styles(theme, fSize).container}>
-      <Insight />
+      <Insight bottomInset={92} />
       <button type="button" onClick={() => setPage('MainMenu')} style={styles(theme, fSize).homeDock}>
           <HomeRounded style={styles(theme, fSize).homeIcon} />
           <span style={styles(theme, fSize).homeDot} />
@@ -46,6 +46,7 @@ const styles = (theme, fSize) => {
     justifyContent: 'start',
     alignItems: 'center',
     minHeight: '100dvh',
+    height: 'var(--app-viewport-height)',
     padding: 0,
     boxSizing: 'border-box',
     width: '100vw',
