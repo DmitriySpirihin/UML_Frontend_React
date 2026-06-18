@@ -12,6 +12,31 @@ WebApp?.ready?.();
 
 const manifestUrl = 'https://dmitriyspirihin.github.io/UML_Frontend_React/tonconnect-manifest.json';
 const walletsListSource = `${import.meta.env.BASE_URL}wallets.json`;
+const cacheRescueVersion = 'stable-20260618-1425';
+
+if (typeof window !== 'undefined') {
+  const reloadFreshApp = (reason) => {
+    if (window.__umlReloadingFreshApp) return;
+    window.__umlReloadingFreshApp = true;
+    const url = new URL(window.location.href);
+    url.searchParams.set('v', cacheRescueVersion);
+    url.searchParams.set('cache_rescue', reason);
+    window.location.replace(url.toString());
+  };
+
+  window.addEventListener('vite:preloadError', (event) => {
+    event.preventDefault();
+    reloadFreshApp('vite-preload');
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const message = String(event.reason?.message || event.reason || '');
+    if (/dynamically imported module|module script failed|Importing a module script failed|Load failed/i.test(message)) {
+      event.preventDefault();
+      reloadFreshApp('dynamic-import');
+    }
+  });
+}
 
 // ------------------------------------------------------
 // 3. INITIALIZE APP

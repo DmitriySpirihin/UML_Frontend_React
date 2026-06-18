@@ -1,6 +1,6 @@
 import './App.css'
 import { AppData, UserData } from './assets/StaticClasses/AppData';
-import { useState,useEffect, Suspense, lazy, use, Fragment} from 'react';
+import { useState,useEffect, Suspense, lazy, use} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
@@ -21,7 +21,6 @@ import {
   notifyPanel$,
   isServerAvailable$,
   confirmationPanel$,
-  dataSyncVersion$,
   setKeyboardVisible,
   setPage as navigateToPage,
   lastPage$,
@@ -124,7 +123,6 @@ function App() {
   const [notifyPanel, setNotifyPanelState] = useState(false);
   const [isTechicalWorks, setIsTechicalWorks] = useState(false);
   const [isPerformanceLite, setIsPerformanceLite] = useState(false);
-  const [dataSyncVersion, setDataSyncVersion] = useState(dataSyncVersion$.value);
   const lang = AppData.prefs[0];
   
 
@@ -232,11 +230,6 @@ function App() {
 
   useEffect(() => {
     const subscription = confirmationPanel$.subscribe(setConfirmationPanel);
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const subscription = dataSyncVersion$.subscribe(setDataSyncVersion);
     return () => subscription.unsubscribe();
   }, []);
 
@@ -412,7 +405,7 @@ function App() {
       </Suspense>}
       
       {page === 'LoadPanel' && <LoadPanel/>}
-      {page !== 'LoadPanel' && <Fragment key={`${page}:${dataSyncVersion}`}>
+      {page !== 'LoadPanel' && <>
       {page === 'ProfileOnboarding' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <ProfileOnboarding/>
       </Suspense>}
@@ -556,7 +549,7 @@ function App() {
       {page === 'AddExercisePanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <AddExercisePanel/>
       </Suspense>}
-      </Fragment>}
+      </>}
 
       {page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && page !== 'RobotMain' && <>
         {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
