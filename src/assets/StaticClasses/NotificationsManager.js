@@ -21,6 +21,7 @@ const RETRY_BACKUP_DELAY_MS = 1500;
 const CLOUD_SYNC_COOLDOWN_MS = 5000;
 const CLOUD_AUTO_SYNC_INTERVAL_MS = 30000;
 const CLOUD_BACKUP_PENDING_KEY = 'uml_cloud_backup_pending_v1';
+const CLOUD_DEVICE_ID_KEY = 'uml_cloud_device_id_v1';
 const COMPRESSED_BACKUP_PREFIX = 'UMLZIP1.';
 
 let autoBackupTimer = null;
@@ -57,6 +58,37 @@ function hasPendingCloudBackup() {
     return !!window.localStorage?.getItem(getPendingBackupStorageKey());
   } catch {
     return false;
+  }
+}
+
+function getCloudDeviceStorageKey() {
+  const userId = UserData.id || 'anonymous';
+  return `${CLOUD_DEVICE_ID_KEY}:${userId}`;
+}
+
+function createCloudDeviceId() {
+  try {
+    const bytes = new Uint8Array(12);
+    globalThis.crypto?.getRandomValues?.(bytes);
+    const random = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    if (random && !/^0+$/.test(random)) return `web_${random}`;
+  } catch {
+    // Fall back below.
+  }
+  return `web_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function getCloudDeviceId() {
+  if (typeof window === 'undefined') return 'server';
+  const storageKey = getCloudDeviceStorageKey();
+  try {
+    const existing = window.localStorage?.getItem(storageKey);
+    if (existing) return existing;
+    const next = createCloudDeviceId();
+    window.localStorage?.setItem(storageKey, next);
+    return next;
+  } catch {
+    return createCloudDeviceId();
   }
 }
 
@@ -383,7 +415,8 @@ export async function cloudBackup({ silent = false, skipLocalSave = false, resol
     let serverFailureMessage = '';
     try {
       serverResponse = await NotificationsManager.sendMessage('backup', encryptedData, {
-        clientUpdatedAt: snapshotTime
+        clientUpdatedAt: snapshotTime,
+        deviceId: getCloudDeviceId()
       });
     } catch (error) {
       serverFailureMessage = error.message || 'server unavailable';
@@ -644,7 +677,17 @@ async function getCloudRestoreSources() {
 
   try {
     const serverResponse = await NotificationsManager.sendMessage('restore', '');
-    if (serverResponse?.success && serverResponse.message) {
+    if (serverResponse?.success && Array.isArray(serverResponse.message)) {
+      serverResponse.message.forEach((source, index) => {
+        const message = source?.content || source?.message || source;
+        if (message) {
+          sources.push({
+            name: `server:${source?.deviceId || index}`,
+            message
+          });
+        }
+      });
+    } else if (serverResponse?.success && serverResponse.message) {
       sources.push({ name: 'server', message: serverResponse.message });
     }
   } catch (error) {
