@@ -1,5 +1,6 @@
 const MANIFEST_KEY = 'umlCloudBackupManifestV1';
-const CHUNK_KEY_PREFIX = 'umlCloudBackupChunkV1:';
+const CHUNK_KEY_PREFIX = 'umlCloudBackupChunkV1_';
+const LEGACY_CHUNK_KEY_PREFIX = 'umlCloudBackupChunkV1:';
 const CHUNK_SIZE = 3000;
 const MAX_CHUNKS = 900;
 const CLOUD_STORAGE_TIMEOUT_MS = 4500;
@@ -134,6 +135,7 @@ export async function saveTelegramCloudBackup(content, clientUpdatedAt = Date.no
   const oldCount = oldManifest?.chunkCount || 0;
   for (let index = chunks.length; index < oldCount; index += 1) {
     await removeItem(`${CHUNK_KEY_PREFIX}${index}`);
+    await removeItem(`${LEGACY_CHUNK_KEY_PREFIX}${index}`);
   }
 
   return { saved: true, manifest };
@@ -149,7 +151,7 @@ export async function loadTelegramCloudBackup() {
 
   const chunks = [];
   for (let index = 0; index < manifest.chunkCount; index += 1) {
-    const chunk = await getItem(`${CHUNK_KEY_PREFIX}${index}`);
+    const chunk = await getItem(`${CHUNK_KEY_PREFIX}${index}`) || await getItem(`${LEGACY_CHUNK_KEY_PREFIX}${index}`);
     if (!chunk) return { success: false, corrupt: true };
     chunks.push(chunk);
   }
@@ -169,6 +171,7 @@ export async function deleteTelegramCloudBackup() {
   const chunkCount = Math.min(manifest?.chunkCount || 0, MAX_CHUNKS);
   for (let index = 0; index < chunkCount; index += 1) {
     await removeItem(`${CHUNK_KEY_PREFIX}${index}`);
+    await removeItem(`${LEGACY_CHUNK_KEY_PREFIX}${index}`);
   }
   await removeItem(MANIFEST_KEY);
   return true;
