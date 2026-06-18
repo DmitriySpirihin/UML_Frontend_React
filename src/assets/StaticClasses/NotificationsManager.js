@@ -19,6 +19,7 @@ const PREMIUM_TIMEOUT_MS = 4500;
 const AUTO_BACKUP_DELAY_MS = 1500;
 const RETRY_BACKUP_DELAY_MS = 1500;
 const CLOUD_SYNC_COOLDOWN_MS = 5000;
+const CLOUD_AUTO_SYNC_INTERVAL_MS = 30000;
 const CLOUD_BACKUP_PENDING_KEY = 'uml_cloud_backup_pending_v1';
 const COMPRESSED_BACKUP_PREFIX = 'UMLZIP1.';
 
@@ -105,6 +106,14 @@ export function syncCloudBackup({ silent = false, force = true } = {}) {
   return runCloudSync({ silent, force });
 }
 
+function canRunVisibleCloudSync() {
+  if (typeof window === 'undefined') return false;
+  if (!UserData.id || UserData.id === 0) return false;
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;
+  if (typeof document !== 'undefined' && document.visibilityState && document.visibilityState !== 'visible') return false;
+  return true;
+}
+
 async function runCloudSync({ silent = true, force = false } = {}) {
   if (typeof window === 'undefined') return;
   if (!UserData.id || UserData.id === 0) return;
@@ -128,10 +137,11 @@ async function runCloudSync({ silent = true, force = false } = {}) {
     });
 
     if (!silent) {
-      const message = AppData.prefs[0] === 0
-        ? '✅ Данные синхронизированы'
-        : '✅ Data synced';
-      setShowPopUpPanel(message, 1800, true);
+      const synced = restored || backedUp;
+      const message = synced
+        ? (AppData.prefs[0] === 0 ? '✅ Данные синхронизированы' : '✅ Data synced')
+        : (AppData.prefs[0] === 0 ? '❌ Не удалось синхронизировать' : '❌ Sync failed');
+      setShowPopUpPanel(message, synced ? 1800 : 2400, synced);
     }
 
     return restored || backedUp;
@@ -152,9 +162,15 @@ if (typeof window !== 'undefined') {
   window.addEventListener('focus', () => {
     syncCloudBackupIfNewer();
   });
+  window.addEventListener('pageshow', () => {
+    syncCloudBackupIfNewer({ force: true });
+  });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') syncCloudBackupIfNewer();
   });
+  window.setInterval(() => {
+    if (canRunVisibleCloudSync()) syncCloudBackupIfNewer();
+  }, CLOUD_AUTO_SYNC_INTERVAL_MS);
 }
 
 export class NotificationsManager {
