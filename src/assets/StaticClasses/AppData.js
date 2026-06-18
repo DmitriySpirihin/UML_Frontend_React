@@ -232,6 +232,40 @@ const isLegacyTrainingAccentColor = (color) => {
   return isOldOrangeBrown || isPurpleLeaning;
 };
 
+const hasObjectEntries = (value) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length > 0;
+const hasArrayEntries = (value) => Array.isArray(value) && value.length > 0;
+const hasNestedArrayEntries = (value) => Array.isArray(value) && value.some(item => Array.isArray(item) ? item.length > 0 : !!item);
+
+export function hasMeaningfulUserData(data = AppData) {
+  if (!data) return false;
+  const hasMeasurements = Array.isArray(data.measurements)
+    && data.measurements.some(entry => Array.isArray(entry) && entry.length > 0);
+  const hasSectionVisits = data.sectionVisits && typeof data.sectionVisits === 'object'
+    && Object.values(data.sectionVisits).some(value => Number(value) > 0);
+
+  return (
+    hasArrayEntries(data.choosenHabits) ||
+    hasArrayEntries(data.CustomHabits) ||
+    hasObjectEntries(data.habitsByDate) ||
+    hasObjectEntries(data.choosenHabitsGoals) ||
+    hasObjectEntries(data.habitEventTimes) ||
+    hasArrayEntries(data.todoList) ||
+    hasObjectEntries(data.trainingLog) ||
+    hasObjectEntries(data.breathingLog) ||
+    hasObjectEntries(data.meditationLog) ||
+    hasObjectEntries(data.hardeningLog) ||
+    hasObjectEntries(data.mentalLog) ||
+    hasObjectEntries(data.sleepingLog) ||
+    hasMeasurements ||
+    hasNestedArrayEntries(data.profilePreferredSections) ||
+    hasSectionVisits
+  );
+}
+
+export function hasCompletedProfileOrExistingData(data = AppData) {
+  return data?.pData?.filled === true || data?.profileOnboardingShown === true || hasMeaningfulUserData(data);
+}
+
 export class AppData{
    static insightData = '';
    // Format: { [category]: { text: "...", date: "2023-10-27" } }
@@ -350,7 +384,7 @@ export class AppData{
   "ToDoMain": true
 };
 static mainHeroWidgets = ["HabitsMain", "TrainingMain", "MentalMain"];
-static habitCardWidgets = {
+  static habitCardWidgets = {
   days: true,
   skips: true,
   streak: true,
@@ -393,6 +427,9 @@ static habitCardWidgets = {
     setNotify(this.notify);
     this.pData = data.pData || {filled:false,age:20,gender:0,height:180,weight:70,goal:1,activityLevel:1};
     this.profileOnboardingShown = data.profileOnboardingShown ?? this.pData.filled === true;
+    if (this.profileOnboardingShown !== true && hasMeaningfulUserData(data)) {
+      this.profileOnboardingShown = true;
+    }
     this.profileNicknameMode = data.profileNicknameMode || 'telegram';
     this.profileCustomNickname = data.profileCustomNickname || '';
     this.profileAvatarPhoto = data.profileAvatarPhoto || '';

@@ -1,4 +1,4 @@
-import {AppData, UserData } from './AppData';
+import {AppData, UserData, hasCompletedProfileOrExistingData } from './AppData';
 import { serializeData, deserializeData ,saveData} from './SaveHelper';
 import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel,setValidation,setIsServerAvailable} from './HabitsBus';
 import { applyLocalNoPremium, applyLocalTestPremium } from './PremiumTestHelper';
@@ -302,6 +302,10 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
     }
 
     const dataString = typeof dataToSave === 'string' ? dataToSave : JSON.stringify(dataToSave);
+    const localSnapshot = parseSnapshot(dataString);
+    if (silent && !hasCompletedProfileOrExistingData(localSnapshot)) {
+      return false;
+    }
     const snapshotTime = getSnapshotTime(dataString) || Date.now();
     const backupKey = await getOrCreateCloudBackupKey();
     if (!backupKey) {
@@ -351,6 +355,14 @@ function getSnapshotTime(dataString) {
     return Number.isFinite(time) ? time : 0;
   } catch {
     return 0;
+  }
+}
+
+function parseSnapshot(dataString) {
+  try {
+    return JSON.parse(dataString);
+  } catch {
+    return null;
   }
 }
 
@@ -476,6 +488,14 @@ export async function cloudRestore({ silent = false, confirmOverwrite = true, pr
     // 💾 STEP 3: APPLY DATA
     // ---------------------------------------------------------
     try {
+        const restoredSnapshot = parseSnapshot(finalDataToLoad);
+        if ((silent || preferNewer)
+          && hasCompletedProfileOrExistingData(AppData)
+          && !hasCompletedProfileOrExistingData(restoredSnapshot)) {
+          scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
+          return false;
+        }
+
         if (preferNewer) {
           const remoteTime = getSnapshotTime(finalDataToLoad);
           const localTime = Date.parse(AppData.lastSave || '');

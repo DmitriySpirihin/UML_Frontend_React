@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AppData, UserData } from '../StaticClasses/AppData';
+import { AppData, UserData, hasCompletedProfileOrExistingData } from '../StaticClasses/AppData';
 import { theme$, lang$, setPage, setTheme, setLang as setAppLang } from '../StaticClasses/HabitsBus';
 import Colors from '../StaticClasses/Colors';
 import { setAllHabits } from '../Classes/Habit';
@@ -73,17 +73,18 @@ useEffect(() => {
   let isMounted = true;
   let startupFinished = false;
 
-  const finishStartup = (newUserPreview = isNewUserPreviewMode()) => {
+  const finishStartup = ({ newUserPreview = isNewUserPreviewMode(), allowOnboarding = false } = {}) => {
     if (!isMounted || startupFinished) return;
     startupFinished = true;
     setLoading(false);
-    const nextPage = newUserPreview || (!AppData.pData?.filled && !AppData.profileOnboardingShown) ? 'ProfileOnboarding' : 'MainMenu';
+    const shouldShowOnboarding = newUserPreview || (allowOnboarding && !hasCompletedProfileOrExistingData(AppData));
+    const nextPage = shouldShowOnboarding ? 'ProfileOnboarding' : 'MainMenu';
     setPage(nextPage);
   };
 
   const failSafeTimer = window.setTimeout(() => {
     console.warn('Startup fail-safe opened the app before background sync finished');
-    finishStartup(false);
+    finishStartup({ newUserPreview: false, allowOnboarding: false });
   }, 2500);
 
   async function initializeApp() {
@@ -175,7 +176,8 @@ useEffect(() => {
 
       await waitForMinimumLoad(startedAt);
       window.clearTimeout(failSafeTimer);
-      finishStartup(newUserPreview);
+      const allowOnboarding = newUserPreview || !UserData.id || UserData.id === 0;
+      finishStartup({ newUserPreview, allowOnboarding });
       refreshPremiumInBackground(hasLocalTestPremium);
       runStartupSyncInBackground();
 
@@ -183,7 +185,7 @@ useEffect(() => {
       console.error('Initialization error:', error);
       await waitForMinimumLoad(startedAt);
       window.clearTimeout(failSafeTimer);
-      finishStartup(isNewUserPreviewMode());
+      finishStartup({ newUserPreview: isNewUserPreviewMode(), allowOnboarding: false });
     }
   }
   initializeApp();
