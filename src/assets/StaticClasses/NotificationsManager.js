@@ -403,6 +403,9 @@ export async function cloudRestore({ silent = false, confirmOverwrite = true, pr
 
     if (!response || !response.success || !response.message) {
       const errorMsg = response?.message || '⚠️ No backup found';
+      if ((silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
+        scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
+      }
       if (!silent) setShowPopUpPanel(errorMsg, 2000, false);
       return false;
     }
@@ -543,6 +546,9 @@ export async function cloudRestore({ silent = false, confirmOverwrite = true, pr
 
   } catch (error) {
     console.error('Restore Logic Error:', error);
+    if ((silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
+      scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
+    }
     if (!silent) setShowPopUpPanel('❌ Restore failed', 2000, false);
     return false;
   }
