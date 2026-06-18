@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import Colors from '../StaticClasses/Colors'
 import { theme$, lang$, devMessage$, isPasswordCorrect$, premium$, isValidation$, setPage, lastPage$, habitAccent$ } from '../StaticClasses/HabitsBus'
@@ -74,6 +74,7 @@ const openGuide = () => {
 
     // --- STATE ДЛЯ УПРАВЛЕНИЯ СПИСКОМ ---
     const [itemsState, setItemsState] = useState(AppData.menuCardsStates || {});
+    const skipInitialItemsPersist = useRef(true);
     const sleepAccent = buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF');
     const todoAccent = buildTodoAccent(AppData.todoAccentColor || '#149DFF');
     const mentalAccent = buildSectionAccent(AppData.mentalAccentColor || '#A66BFF', '#A66BFF');
@@ -91,25 +92,29 @@ const openGuide = () => {
     ];
 
     useEffect(() => {
-    if (AppData.menuCardsStates && Object.keys(AppData.menuCardsStates).length > 0) {
-        setItemsState(AppData.menuCardsStates);
-    }
-}, []);
+        if (AppData.menuCardsStates && Object.keys(AppData.menuCardsStates).length > 0) {
+            setItemsState(AppData.menuCardsStates);
+        }
+    }, []);
 
-useEffect(() => {
-    if (Object.keys(itemsState).length > 0) {
-        AppData.menuCardsStates = itemsState;
-        const persist = async () => {
-            try {
-                await saveData();
-                console.log("Menu states saved successfully");
-            } catch (e) {
-                console.error("Failed to save menu states", e);
-            }
-        };
-        persist();
-    }
-}, [itemsState]);
+    useEffect(() => {
+        if (skipInitialItemsPersist.current) {
+            skipInitialItemsPersist.current = false;
+            return;
+        }
+        if (Object.keys(itemsState).length > 0) {
+            AppData.menuCardsStates = itemsState;
+            const persist = async () => {
+                try {
+                    await saveData();
+                    console.log("Menu states saved successfully");
+                } catch (e) {
+                    console.error("Failed to save menu states", e);
+                }
+            };
+            persist();
+        }
+    }, [itemsState]);
 
     const handleToggleHeroWidget = async (id) => {
         const current = mainHeroWidgets.length > 0 ? mainHeroWidgets : ['HabitsMain', 'TrainingMain', 'MentalMain'];

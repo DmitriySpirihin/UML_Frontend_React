@@ -67,6 +67,10 @@ function writeTelegramKey(key) {
   });
 }
 
+function uniqueKeys(keys) {
+  return keys.filter((key, index) => key && keys.indexOf(key) === index);
+}
+
 function createBackupKey() {
   if (!globalThis.crypto?.getRandomValues) {
     throw new Error('Secure browser crypto is unavailable');
@@ -76,19 +80,28 @@ function createBackupKey() {
   return bytesToBase64(bytes);
 }
 
-export async function getCloudBackupKey() {
-  if (typeof window === 'undefined') return '';
+export async function getCloudBackupKeyCandidates() {
+  if (typeof window === 'undefined') return [];
 
   const localKey = readLocalKey();
-  if (localKey) return localKey;
-
   const telegramKey = await readTelegramKey();
   if (telegramKey) {
     writeLocalKey(telegramKey);
-    return telegramKey;
   }
 
-  return '';
+  return uniqueKeys([telegramKey, localKey]);
+}
+
+export async function rememberCloudBackupKey(key) {
+  if (typeof window === 'undefined' || !key) return false;
+
+  writeLocalKey(key);
+  return writeTelegramKey(key);
+}
+
+export async function getCloudBackupKey() {
+  const keys = await getCloudBackupKeyCandidates();
+  return keys[0] || '';
 }
 
 export async function getOrCreateCloudBackupKey() {
@@ -96,13 +109,12 @@ export async function getOrCreateCloudBackupKey() {
 
   const existingKey = await getCloudBackupKey();
   if (existingKey) {
-    await writeTelegramKey(existingKey);
+    await rememberCloudBackupKey(existingKey);
     return existingKey;
   }
 
   const newKey = createBackupKey();
-  writeLocalKey(newKey);
-  await writeTelegramKey(newKey);
+  await rememberCloudBackupKey(newKey);
   return newKey;
 }
 

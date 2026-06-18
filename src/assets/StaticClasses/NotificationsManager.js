@@ -4,7 +4,12 @@ import { emitDataSynced, setDevMessage, setIsPasswordCorrect,setPremium ,setShow
 import { applyLocalNoPremium, applyLocalTestPremium } from './PremiumTestHelper';
 import pako from 'pako';
 import { decryptCloudBackup, encryptCloudBackup, isEncryptedCloudBackup } from './CloudEncryption';
-import { getCloudBackupKey, getCloudBackupKeyStorageStatus, getOrCreateCloudBackupKey } from './CloudBackupKey';
+import {
+  getCloudBackupKeyCandidates,
+  getCloudBackupKeyStorageStatus,
+  getOrCreateCloudBackupKey,
+  rememberCloudBackupKey
+} from './CloudBackupKey';
 import { deleteTelegramCloudBackup, loadTelegramCloudBackup, saveTelegramCloudBackup } from './TelegramCloudBackup';
 import { mergeAppSnapshots } from './DataMerge';
 
@@ -319,19 +324,23 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
     }
     const encryptedData = await encryptCloudBackup(dataString, backupKey);
 
-    const telegramSave = await saveTelegramCloudBackup(encryptedData, snapshotTime);
-    if (telegramSave.saved) {
-      clearPendingCloudBackup();
-      AppData.lastBackupDate = new Date().toISOString();
-      if (!skipLocalSave) {
-        await saveData({ skipCloudBackup: true, touchLastSave: false });
-      }
-      if (!silent) {
-        setShowPopUpPanel(AppData.prefs[0] === 0 ? '✅ Копия синхронизирована в Telegram' : '✅ Backup synced with Telegram', 2000, true);
-      }
-      return true;
+    let serverResponse = null;
+    try {
+      serverResponse = await NotificationsManager.sendMessage('backup', encryptedData, {
+        clientUpdatedAt: snapshotTime
+      });
+    } catch (error) {
+      console.warn('Server cloud backup failed, Telegram backup will still be attempted:', error);
     }
 
+    if (serverResponse?.conflict) {
+      setPendingCloudBackup();
+      syncCloudBackupIfNewer({ force: true });
+      if (!silent) setShowPopUpPanel(AppData.prefs[0] === 0 ? '↩️ В облаке уже есть более свежая копия' : '↩️ Cloud backup is newer', 2200, false);
+      return false;
+    }
+
+    const telegramSave = await saveTelegramCloudBackup(encryptedData, snapshotTime);
     if (telegramSave.conflict) {
       setPendingCloudBackup();
       syncCloudBackupIfNewer({ force: true });
@@ -339,30 +348,34 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
       return false;
     }
 
-    const response = await NotificationsManager.sendMessage('backup', encryptedData, {
-      clientUpdatedAt: snapshotTime
-    });
-    
-    if (response?.success) {
-      clearPendingCloudBackup();
+    const serverSaved = serverResponse?.success === true;
+    const telegramSaved = telegramSave.saved === true;
+
+    if (serverSaved || telegramSaved) {
+      if (serverSaved) clearPendingCloudBackup();
+      else setPendingCloudBackup();
       AppData.lastBackupDate = new Date().toISOString();
       if (!skipLocalSave) {
         await saveData({ skipCloudBackup: true, touchLastSave: false });
       }
       if (!silent) {
         const status = await getCloudBackupKeyStorageStatus();
-        const message = status.hasTelegramCloudStorage
-          ? (AppData.prefs[0] === 0 ? '✅ Автокопия сохранена и зашифрована' : '✅ Auto backup saved and encrypted')
-          : (AppData.prefs[0] === 0 ? '✅ Копия зашифрована на этом устройстве' : '✅ Backup encrypted on this device');
+        let message = AppData.prefs[0] === 0 ? '✅ Копия сохранена и зашифрована' : '✅ Backup saved and encrypted';
+        if (serverSaved && telegramSaved && status.hasTelegramCloudStorage) {
+          message = AppData.prefs[0] === 0 ? '✅ Копия синхронизирована между устройствами' : '✅ Backup synced across devices';
+        } else if (!serverSaved && telegramSaved) {
+          message = AppData.prefs[0] === 0 ? '✅ Копия сохранена в Telegram, сервер повторит позже' : '✅ Backup saved in Telegram; server retry queued';
+        } else if (serverSaved && !telegramSaved && status.hasTelegramCloudStorage) {
+          message = AppData.prefs[0] === 0 ? '✅ Копия сохранена на сервере' : '✅ Backup saved on server';
+        }
         setShowPopUpPanel(message, 2000, true);
       }
       return true;
-    } else {
-      setPendingCloudBackup();
-      if (response?.conflict) syncCloudBackupIfNewer({ force: true });
-      if (!silent) setShowPopUpPanel('❌ ' + (response?.message || 'Backup failed'), 2000, false);
-      return false;
     }
+
+    setPendingCloudBackup();
+    if (!silent) setShowPopUpPanel('❌ ' + (serverResponse?.message || 'Backup failed'), 2000, false);
+    return false;
   } catch (error) {
     setPendingCloudBackup();
     console.error('Backup error:', error);
@@ -388,6 +401,132 @@ function parseSnapshot(dataString) {
   }
 }
 
+function unwrapCloudBackupPayload(rawData) {
+  let data = rawData;
+  let finalDataToLoad = null;
+
+  if (typeof data === 'object' && data !== null && data.success === true && data.message) {
+    data = data.message;
+  }
+
+  if (typeof data === 'object' && data !== null) {
+    if (data.content) {
+      data = data.content;
+    } else {
+      finalDataToLoad = JSON.stringify(data);
+    }
+  }
+
+  if (typeof data === 'string') {
+    if (data.startsWith('"') && data.endsWith('"')) {
+      data = data.slice(1, -1);
+    }
+
+    if (data.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.content) {
+          data = parsed.content;
+        } else if (parsed.success && parsed.message) {
+          data = parsed.message;
+        } else {
+          finalDataToLoad = data;
+        }
+      } catch {
+        // Not JSON, keep as encoded payload.
+      }
+    }
+  }
+
+  return { rawData: data, finalDataToLoad };
+}
+
+async function decodeCloudBackupPayload(rawData) {
+  let { rawData: data, finalDataToLoad } = unwrapCloudBackupPayload(rawData);
+
+  if (!finalDataToLoad && isEncryptedCloudBackup(data)) {
+    const backupKeys = await getCloudBackupKeyCandidates();
+    for (const backupKey of backupKeys) {
+      try {
+        finalDataToLoad = await decryptCloudBackup(data, backupKey);
+        await rememberCloudBackupKey(backupKey);
+        break;
+      } catch (error) {
+        console.warn('Auto backup key decrypt failed with one candidate:', error);
+      }
+    }
+
+    if (!finalDataToLoad) return null;
+  }
+
+  if (!finalDataToLoad) {
+    try {
+      const cleanBase64 = String(data).replace(/\s/g, '');
+      const binaryData = Uint8Array.from(atob(cleanBase64), c => c.charCodeAt(0));
+      finalDataToLoad = pako.inflate(binaryData, { to: 'string' });
+    } catch (error) {
+      console.warn('Cloud backup decompression failed. Trying raw data as fallback.', error);
+      finalDataToLoad = typeof data === 'object' ? JSON.stringify(data) : data;
+    }
+  }
+
+  return finalDataToLoad;
+}
+
+async function applyCloudBackupData(finalDataToLoad, { silent = false, preferNewer = false } = {}) {
+  const restoredSnapshot = parseSnapshot(finalDataToLoad);
+  if (!restoredSnapshot || typeof restoredSnapshot !== 'object') {
+    throw new Error('Restored data is not valid JSON.');
+  }
+  if ((silent || preferNewer)
+    && hasCompletedProfileOrExistingData(AppData)
+    && !hasCompletedProfileOrExistingData(restoredSnapshot)) {
+    scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
+    return false;
+  }
+
+  const localSnapshot = parseSnapshot(serializeData()) || {};
+  const merged = mergeAppSnapshots(localSnapshot, restoredSnapshot || {});
+  const mergedDataString = JSON.stringify(merged.snapshot);
+
+  if (preferNewer) {
+    const remoteTime = merged.remoteTime || getSnapshotTime(finalDataToLoad);
+    const localTime = merged.localTime || Date.parse(AppData.lastSave || '');
+    const hasLocalTime = Number.isFinite(localTime) && localTime > 0;
+
+    if (hasLocalTime && remoteTime > 0 && remoteTime <= localTime && !merged.changedLocal) {
+      if (remoteTime < localTime) scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
+      return false;
+    }
+  }
+
+  deserializeData(mergedDataString);
+  await saveData({ skipCloudBackup: true, touchLastSave: false });
+  emitDataSynced();
+  scheduleAutoCloudBackup(merged.changedLocal ? RETRY_BACKUP_DELAY_MS : AUTO_BACKUP_DELAY_MS);
+  if (!silent) setShowPopUpPanel('✅ Data restored!', 2000, true);
+  return true;
+}
+
+async function getCloudRestoreSources() {
+  const sources = [];
+  const telegramBackup = await loadTelegramCloudBackup();
+  if (telegramBackup.success) {
+    sources.push({ name: 'telegram', message: telegramBackup.message });
+  }
+
+  try {
+    const serverResponse = await NotificationsManager.sendMessage('restore', '');
+    if (serverResponse?.success && serverResponse.message) {
+      sources.push({ name: 'server', message: serverResponse.message });
+    }
+  } catch (error) {
+    console.warn('Server cloud restore failed:', error);
+  }
+
+  return sources;
+}
+
 // 📥 Manual Restore from Server
 export async function cloudRestore({ silent = false, confirmOverwrite = true, preferNewer = false } = {}) {
   if (confirmOverwrite) {
@@ -396,163 +535,42 @@ export async function cloudRestore({ silent = false, confirmOverwrite = true, pr
   }
 
   try {
-    const telegramBackup = await loadTelegramCloudBackup();
-    const response = telegramBackup.success
-      ? { success: true, message: telegramBackup.message }
-      : await NotificationsManager.sendMessage('restore', '');
-   // console.log("📥 Server Raw Response:", response);
-
-    if (!response || !response.success || !response.message) {
-      const errorMsg = response?.message || '⚠️ No backup found';
+    const sources = await getCloudRestoreSources();
+    if (sources.length === 0) {
       if ((silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
         scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
       }
-      if (!silent) setShowPopUpPanel(errorMsg, 2000, false);
+      if (!silent) setShowPopUpPanel('⚠️ No backup found', 2000, false);
       return false;
     }
 
-    let rawData = response.message;
-    let finalDataToLoad = null;
-
-    // ---------------------------------------------------------
-    // 📦 STEP 0: UNWRAP NESTED SERVER RESPONSE (The Fix)
-    // ---------------------------------------------------------
-    // The logs show rawData is: { success: true, message: "eJz..." }
-    // We need to extract the inner .message
-    if (typeof rawData === 'object' && rawData !== null) {
-        if (rawData.success === true && rawData.message) {
-          //  console.log("📦 Unwrapping nested server response...");
-            rawData = rawData.message; // Now rawData is just the "eJz..." string
-        }
-    }
-
-    // ---------------------------------------------------------
-    // 🔍 STEP 1: DETECT FORMAT & UNWRAP (Standard Checks)
-    // ---------------------------------------------------------
-    
-    // Case A: It's an Object (e.g., { content: "base64..." } OR Legacy { xp: 100... })
-    if (typeof rawData === 'object' && rawData !== null) {
-        if (rawData.content) {
-            // It's the new standard wrapper -> Extract Base64 string
-            rawData = rawData.content; 
-        } else {
-            // It's Legacy Data (Plain Object) -> No decompression needed
-          // console.log("♻️ Detected Legacy Object Data");
-            finalDataToLoad = JSON.stringify(rawData); 
-        }
-    }
-
-    // Case B: It's a String (e.g., "base64..." OR '{"content":"..."}' OR Legacy JSON)
-    if (typeof rawData === 'string') {
-        // Clean up accidental double-quotes
-        if (rawData.startsWith('"') && rawData.endsWith('"')) {
-            rawData = rawData.slice(1, -1);
-        }
-
-        // Check if it's a JSON string masking the real data
-        if (rawData.trim().startsWith('{')) {
-            try {
-                const parsed = JSON.parse(rawData);
-                if (parsed.content) {
-                    rawData = parsed.content; // Extracted Base64 from JSON string
-                } else if (parsed.success && parsed.message) {
-                    // Handle double-nested JSON string case
-                    rawData = parsed.message;
-                } else {
-                    // It's a Legacy JSON string
-                  //  console.log("♻️ Detected Legacy JSON String");
-                    finalDataToLoad = rawData;
-                }
-            } catch {
-                // Not JSON, assume it's Base64
-            }
-        }
-    }
-
-    if (!finalDataToLoad && isEncryptedCloudBackup(rawData)) {
-        const backupKey = await getCloudBackupKey();
-        if (backupKey) {
-          try {
-            finalDataToLoad = await decryptCloudBackup(rawData, backupKey);
-          } catch (error) {
-            console.warn('Auto backup key decrypt failed. Old password backups are not restored automatically.', error);
-          }
-        }
-
+    for (const source of sources) {
+      try {
+        const finalDataToLoad = await decodeCloudBackupPayload(source.message);
         if (!finalDataToLoad) {
-          if (!silent) {
-            setShowPopUpPanel(
-              AppData.prefs[0] === 0
-                ? 'Старая копия требует обновления. Новые автокопии будут без пароля.'
-                : 'Old backup needs an update. New auto backups do not use passwords.',
-              2800,
-              false
-            );
-          }
-          return false;
+          console.warn(`Cloud restore source ${source.name} could not be decrypted.`);
+          continue;
         }
+        const applied = await applyCloudBackupData(finalDataToLoad, { silent, preferNewer });
+        if (applied) return true;
+      } catch (error) {
+        console.warn(`Cloud restore source ${source.name} failed:`, error);
+      }
     }
 
-    // ---------------------------------------------------------
-    // 🔓 STEP 2: DECOMPRESS LEGACY BACKUPS OR LOAD
-    // ---------------------------------------------------------
-
-    if (!finalDataToLoad) {
-        try {
-            // Remove whitespace/newlines (Fixes InvalidCharacterError)
-            const cleanBase64 = String(rawData).replace(/\s/g, '');
-
-           // console.log("🔓 Decrypting Base64...");
-            const binaryData = Uint8Array.from(atob(cleanBase64), c => c.charCodeAt(0));
-            finalDataToLoad = pako.inflate(binaryData, { to: 'string' });
-        } catch (e) {
-            console.warn("⚠️ Decompression failed. Trying raw data as fallback.", e);
-            // Fallback
-            finalDataToLoad = typeof rawData === 'object' ? JSON.stringify(rawData) : rawData;
-        }
+    if ((silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
+      scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
     }
-
-    // ---------------------------------------------------------
-    // 💾 STEP 3: APPLY DATA
-    // ---------------------------------------------------------
-    try {
-        const restoredSnapshot = parseSnapshot(finalDataToLoad);
-        if (!restoredSnapshot || typeof restoredSnapshot !== 'object') {
-          throw new Error('Restored data is not valid JSON.');
-        }
-        if ((silent || preferNewer)
-          && hasCompletedProfileOrExistingData(AppData)
-          && !hasCompletedProfileOrExistingData(restoredSnapshot)) {
-          scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
-          return false;
-        }
-
-        const localSnapshot = parseSnapshot(serializeData()) || {};
-        const merged = mergeAppSnapshots(localSnapshot, restoredSnapshot || {});
-        const mergedDataString = JSON.stringify(merged.snapshot);
-
-        if (preferNewer) {
-          const remoteTime = merged.remoteTime || getSnapshotTime(finalDataToLoad);
-          const localTime = merged.localTime || Date.parse(AppData.lastSave || '');
-          const hasLocalTime = Number.isFinite(localTime) && localTime > 0;
-
-          if (hasLocalTime && remoteTime > 0 && remoteTime <= localTime && !merged.changedLocal) {
-            if (remoteTime < localTime) scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
-            return false;
-          }
-        }
-
-        deserializeData(mergedDataString);
-        await saveData({ skipCloudBackup: true, touchLastSave: false });
-        emitDataSynced();
-        scheduleAutoCloudBackup(merged.changedLocal ? RETRY_BACKUP_DELAY_MS : AUTO_BACKUP_DELAY_MS);
-        if (!silent) setShowPopUpPanel('✅ Data restored!', 2000, true);
-        return true;
-    } catch (err) {
-        console.error("❌ Final Apply Failed:", err);
-        throw new Error("Restored data is not valid JSON.");
+    if (!silent) {
+      setShowPopUpPanel(
+        AppData.prefs[0] === 0
+          ? '❌ Не удалось восстановить копию'
+          : '❌ Restore failed',
+        2200,
+        false
+      );
     }
-
+    return false;
   } catch (error) {
     console.error('Restore Logic Error:', error);
     if ((silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
