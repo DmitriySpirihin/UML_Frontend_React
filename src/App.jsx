@@ -1,6 +1,6 @@
 import './App.css'
 import { AppData, UserData } from './assets/StaticClasses/AppData';
-import { useState,useEffect, Suspense, lazy, use} from 'react';
+import { useState,useEffect, Suspense, lazy, use, Fragment} from 'react';
 import MainBtns from './assets/Pages/MainBtns'
 import BtnsHabits from './assets/Pages/BottomBtns/BtnsHabits'
 import BtnsTraining from './assets/Pages/BottomBtns/BtnsTraining'
@@ -412,7 +412,7 @@ function App() {
       </Suspense>}
       
       {page === 'LoadPanel' && <LoadPanel/>}
-      {page !== 'LoadPanel' && <React.Fragment key={`${page}:${dataSyncVersion}`}>
+      {page !== 'LoadPanel' && <Fragment key={`${page}:${dataSyncVersion}`}>
       {page === 'ProfileOnboarding' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <ProfileOnboarding/>
       </Suspense>}
@@ -556,7 +556,7 @@ function App() {
       {page === 'AddExercisePanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <AddExercisePanel/>
       </Suspense>}
-      </React.Fragment>}
+      </Fragment>}
 
       {page !== 'ProfileOnboarding' && page !== 'AddHabitPanel' && page !== 'ToDoNew' && page !== 'SleepNew' && page !== 'AddExercisePanel' && page !== 'RobotMain' && <>
         {bottomBtnPanel === 'BtnsHabits' &&  !keyboardVisible && <BtnsHabits/>}
