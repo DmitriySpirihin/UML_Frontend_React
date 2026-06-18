@@ -23,7 +23,6 @@ const CLOUD_BACKUP_PENDING_KEY = 'uml_cloud_backup_pending_v1';
 const COMPRESSED_BACKUP_PREFIX = 'UMLZIP1.';
 
 let autoBackupTimer = null;
-let autoBackupInFlight = false;
 let autoBackupQueued = false;
 let lastCloudSyncCheckAt = 0;
 let cloudSyncCheckInFlight = false;
@@ -84,22 +83,10 @@ export function scheduleAutoCloudBackup(delayMs = AUTO_BACKUP_DELAY_MS) {
 }
 
 async function runQueuedAutoCloudBackup() {
-  if (autoBackupInFlight) {
-    autoBackupQueued = true;
-    return;
-  }
-
-  autoBackupInFlight = true;
   try {
-    await cloudBackup({ silent: true });
+    await runCloudSync({ silent: true, force: true });
   } catch (error) {
-    console.warn('Auto cloud backup failed:', error);
-  } finally {
-    autoBackupInFlight = false;
-    if (autoBackupQueued) {
-      autoBackupQueued = false;
-      scheduleAutoCloudBackup();
-    }
+    console.warn('Auto cloud sync failed:', error);
   }
 }
 
@@ -109,25 +96,58 @@ export function retryPendingCloudBackup() {
 }
 
 export function syncCloudBackupIfNewer({ force = false } = {}) {
+  runCloudSync({ silent: true, force }).catch(error => {
+    console.warn('Cloud sync check failed:', error);
+  });
+}
+
+export function syncCloudBackup({ silent = false, force = true } = {}) {
+  return runCloudSync({ silent, force });
+}
+
+async function runCloudSync({ silent = true, force = false } = {}) {
   if (typeof window === 'undefined') return;
   if (!UserData.id || UserData.id === 0) return;
-  if (cloudSyncCheckInFlight) return;
+  if (cloudSyncCheckInFlight) {
+    autoBackupQueued = true;
+    return false;
+  }
   const now = Date.now();
   if (!force && now - lastCloudSyncCheckAt < CLOUD_SYNC_COOLDOWN_MS) return;
   lastCloudSyncCheckAt = now;
   cloudSyncCheckInFlight = true;
-  cloudRestore({ silent: true, confirmOverwrite: false, preferNewer: true })
-    .catch(error => {
-      console.warn('Cloud sync check failed:', error);
-    })
-    .finally(() => {
-      cloudSyncCheckInFlight = false;
+  try {
+    const restored = await cloudRestore({
+      silent: true,
+      confirmOverwrite: false,
+      preferNewer: false,
+      queueBackup: false
     });
+    const backedUp = await cloudBackup({
+      silent: true
+    });
+
+    if (!silent) {
+      const message = AppData.prefs[0] === 0
+        ? '✅ Данные синхронизированы'
+        : '✅ Data synced';
+      setShowPopUpPanel(message, 1800, true);
+    }
+
+    return restored || backedUp;
+  } finally {
+    cloudSyncCheckInFlight = false;
+    if (autoBackupQueued) {
+      autoBackupQueued = false;
+      scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
+    }
+  }
 }
 
 if (typeof window !== 'undefined') {
   window.addEventListener('online', () => {
     retryPendingCloudBackup();
+    scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
   });
   window.addEventListener('focus', () => {
     syncCloudBackupIfNewer();
@@ -319,7 +339,7 @@ export async function isUserHasPremium(uid) {
 
 
 
-export async function cloudBackup({ silent = false, skipLocalSave = false } = {}) {
+export async function cloudBackup({ silent = false, skipLocalSave = false, resolveConflict = true } = {}) {
   try {
     const dataToSave = serializeData();
     if (!dataToSave) {
@@ -356,7 +376,7 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
 
     if (serverResponse?.conflict) {
       setPendingCloudBackup();
-      syncCloudBackupIfNewer({ force: true });
+      if (resolveConflict) scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
       if (!silent) setShowPopUpPanel(AppData.prefs[0] === 0 ? '↩️ В облаке уже есть более свежая копия' : '↩️ Cloud backup is newer', 2200, false);
       return false;
     }
@@ -364,7 +384,7 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
     const telegramSave = await saveTelegramCloudBackup(encryptedData, snapshotTime);
     if (telegramSave.conflict) {
       setPendingCloudBackup();
-      syncCloudBackupIfNewer({ force: true });
+      if (resolveConflict) scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
       if (!silent) setShowPopUpPanel(AppData.prefs[0] === 0 ? '↩️ В Telegram уже есть более свежая копия' : '↩️ Telegram backup is newer', 2200, false);
       return false;
     }
@@ -423,6 +443,19 @@ function parseSnapshot(dataString) {
   } catch {
     return null;
   }
+}
+
+function stableStringify(value) {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return '';
+  }
+}
+
+function getSnapshotTimeFromSnapshot(snapshot) {
+  const time = Date.parse(snapshot?.lastSave || '');
+  return Number.isFinite(time) ? time : 0;
 }
 
 function bytesToBase64(bytes) {
@@ -550,29 +583,28 @@ async function decodeCloudBackupPayload(rawData) {
   return finalDataToLoad;
 }
 
-async function applyCloudBackupData(finalDataToLoad, { silent = false, preferNewer = false } = {}) {
-  const restoredSnapshot = parseSnapshot(finalDataToLoad);
+async function applyCloudBackupSnapshot(restoredSnapshot, { silent = false, preferNewer = false, queueBackup = true } = {}) {
   if (!restoredSnapshot || typeof restoredSnapshot !== 'object') {
     throw new Error('Restored data is not valid JSON.');
   }
   if ((silent || preferNewer)
     && hasCompletedProfileOrExistingData(AppData)
     && !hasCompletedProfileOrExistingData(restoredSnapshot)) {
-    scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
+    if (queueBackup) scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
     return false;
   }
 
   const localSnapshot = parseSnapshot(serializeData()) || {};
   const merged = mergeAppSnapshots(localSnapshot, restoredSnapshot || {});
-  const mergedDataString = JSON.stringify(merged.snapshot);
+  const mergedDataString = stableStringify(merged.snapshot);
 
   if (preferNewer) {
-    const remoteTime = merged.remoteTime || getSnapshotTime(finalDataToLoad);
+    const remoteTime = merged.remoteTime || getSnapshotTimeFromSnapshot(restoredSnapshot);
     const localTime = merged.localTime || Date.parse(AppData.lastSave || '');
     const hasLocalTime = Number.isFinite(localTime) && localTime > 0;
 
     if (hasLocalTime && remoteTime > 0 && remoteTime <= localTime && !merged.changedLocal) {
-      if (remoteTime < localTime) scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
+      if (remoteTime < localTime && queueBackup) scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
       return false;
     }
   }
@@ -580,7 +612,9 @@ async function applyCloudBackupData(finalDataToLoad, { silent = false, preferNew
   deserializeData(mergedDataString);
   await saveData({ skipCloudBackup: true, touchLastSave: false });
   emitDataSynced();
-  scheduleAutoCloudBackup(merged.changedLocal ? RETRY_BACKUP_DELAY_MS : AUTO_BACKUP_DELAY_MS);
+  if (queueBackup) {
+    scheduleAutoCloudBackup(merged.changedLocal ? RETRY_BACKUP_DELAY_MS : AUTO_BACKUP_DELAY_MS);
+  }
   if (!silent) setShowPopUpPanel('✅ Data restored!', 2000, true);
   return true;
 }
@@ -604,38 +638,70 @@ async function getCloudRestoreSources() {
   return sources;
 }
 
+async function getDecodedCloudSnapshots() {
+  const sources = await getCloudRestoreSources();
+  const decodedSnapshots = [];
+
+  for (const source of sources) {
+    try {
+      const finalDataToLoad = await decodeCloudBackupPayload(source.message);
+      if (!finalDataToLoad) {
+        console.warn(`Cloud restore source ${source.name} could not be decrypted.`);
+        continue;
+      }
+      const snapshot = parseSnapshot(finalDataToLoad);
+      if (!snapshot || typeof snapshot !== 'object') {
+        console.warn(`Cloud restore source ${source.name} is not valid JSON.`);
+        continue;
+      }
+      decodedSnapshots.push({
+        name: source.name,
+        snapshot,
+        time: getSnapshotTimeFromSnapshot(snapshot)
+      });
+    } catch (error) {
+      console.warn(`Cloud restore source ${source.name} failed:`, error);
+    }
+  }
+
+  return decodedSnapshots;
+}
+
+function combineCloudSnapshots(decodedSnapshots) {
+  const ordered = [...decodedSnapshots].sort((a, b) => a.time - b.time);
+  let combined = ordered[0]?.snapshot || null;
+
+  for (let index = 1; index < ordered.length; index += 1) {
+    combined = mergeAppSnapshots(combined, ordered[index].snapshot, {
+      touchLastSaveOnChange: false
+    }).snapshot;
+  }
+
+  return combined;
+}
+
 // 📥 Manual Restore from Server
-export async function cloudRestore({ silent = false, confirmOverwrite = true, preferNewer = false } = {}) {
+export async function cloudRestore({ silent = false, confirmOverwrite = true, preferNewer = false, queueBackup = true } = {}) {
   if (confirmOverwrite) {
     const confirmed = confirm('⚠️ Overwrite current data?');
     if (!confirmed) return false;
   }
 
   try {
-    const sources = await getCloudRestoreSources();
-    if (sources.length === 0) {
-      if ((silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
+    const decodedSnapshots = await getDecodedCloudSnapshots();
+    if (decodedSnapshots.length === 0) {
+      if (queueBackup && (silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
         scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
       }
       if (!silent) setShowPopUpPanel('⚠️ No backup found', 2000, false);
       return false;
     }
 
-    for (const source of sources) {
-      try {
-        const finalDataToLoad = await decodeCloudBackupPayload(source.message);
-        if (!finalDataToLoad) {
-          console.warn(`Cloud restore source ${source.name} could not be decrypted.`);
-          continue;
-        }
-        const applied = await applyCloudBackupData(finalDataToLoad, { silent, preferNewer });
-        if (applied) return true;
-      } catch (error) {
-        console.warn(`Cloud restore source ${source.name} failed:`, error);
-      }
-    }
+    const combinedSnapshot = combineCloudSnapshots(decodedSnapshots);
+    const applied = await applyCloudBackupSnapshot(combinedSnapshot, { silent, preferNewer, queueBackup });
+    if (applied) return true;
 
-    if ((silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
+    if (queueBackup && (silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
       scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
     }
     if (!silent) {
@@ -650,7 +716,7 @@ export async function cloudRestore({ silent = false, confirmOverwrite = true, pr
     return false;
   } catch (error) {
     console.error('Restore Logic Error:', error);
-    if ((silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
+    if (queueBackup && (silent || preferNewer) && hasCompletedProfileOrExistingData(AppData)) {
       scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
     }
     if (!silent) setShowPopUpPanel('❌ Restore failed', 2000, false);

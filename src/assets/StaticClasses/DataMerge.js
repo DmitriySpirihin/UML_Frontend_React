@@ -182,7 +182,7 @@ function mergeMeasurements(localValue = [], remoteValue = [], preferRemote = tru
   ));
 }
 
-export function mergeAppSnapshots(localSnapshot = {}, remoteSnapshot = {}) {
+export function mergeAppSnapshots(localSnapshot = {}, remoteSnapshot = {}, { touchLastSaveOnChange = true } = {}) {
   const local = isPlainObject(localSnapshot) ? localSnapshot : {};
   const remote = isPlainObject(remoteSnapshot) ? remoteSnapshot : {};
   const localTime = parseTime(local.lastSave);
@@ -205,7 +205,7 @@ export function mergeAppSnapshots(localSnapshot = {}, remoteSnapshot = {}) {
   const mergedString = stableStringify(merged);
   const changedLocal = !!mergedString && mergedString !== localString;
 
-  if (changedLocal) {
+  if (changedLocal && touchLastSaveOnChange) {
     merged.lastSave = new Date().toISOString();
   }
 

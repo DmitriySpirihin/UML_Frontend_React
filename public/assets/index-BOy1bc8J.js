@@ -1,1 +1,1 @@
-window.location.replace('https://dmitriyspirihin.github.io/UML_Frontend_React/?v=stable-20260618-1425&cache_rescue=index-BOy1bc8J');
+window.location.replace('https://dmitriyspirihin.github.io/UML_Frontend_React/?v=autosync-20260618-1435&cache_rescue=index-BOy1bc8J');

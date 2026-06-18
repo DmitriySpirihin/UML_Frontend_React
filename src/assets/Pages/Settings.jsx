@@ -10,7 +10,7 @@ import { clearAllSaves } from '../StaticClasses/SaveHelper';
 import { MdBackup, MdInfoOutline, MdNotificationsActive } from 'react-icons/md'
 import { IoIosArrowBack } from 'react-icons/io'
 import { theme$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, lastPage$, setShowPopUpPanel } from '../StaticClasses/HabitsBus';
-import { cloudBackup, cloudRestore, deleteCloudBackup, NotificationsManager } from '../StaticClasses/NotificationsManager';
+import { cloudRestore, deleteCloudBackup, NotificationsManager, syncCloudBackup } from '../StaticClasses/NotificationsManager';
 import { playEffects } from '../StaticClasses/Effects';
 
 const transitionSound = new Audio('Audio/Transition.wav');
@@ -300,6 +300,7 @@ const SettingsDockButton = ({ icon, label, onClick, theme }) => (
 const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectionNotifications, setSectionNotifications }) => {
     const [report, setReport] = useState('');
     const [showDanger, setShowDanger] = useState(false);
+    const [lastBackupDate, setLastBackupDate] = useState(AppData.lastBackupDate);
     const styles = s(theme);
     const isBugPanel = panelNum === 1;
     const isContactsPanel = panelNum === 3;
@@ -307,6 +308,9 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
     const isNotificationsPanel = panelNum === 5;
     const useMinimalTopBar = isBugPanel || isContactsPanel || isNotificationsPanel;
     const trimmedReport = report.trim();
+    useEffect(() => {
+        if (isOpen && isBackupPanel) setLastBackupDate(AppData.lastBackupDate);
+    }, [isOpen, isBackupPanel]);
     const closePanel = () => {
         setIsOpen(false);
         playEffects(transitionSound);
@@ -316,6 +320,14 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
         sendBugreport(trimmedReport);
         setReport('');
         closePanel();
+    };
+    const syncNow = async () => {
+        await syncCloudBackup({ silent: false, force: true });
+        setLastBackupDate(AppData.lastBackupDate);
+    };
+    const restoreNow = async () => {
+        await cloudRestore();
+        setLastBackupDate(AppData.lastBackupDate);
     };
     return (
         <AnimatePresence>
@@ -425,9 +437,9 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
                                     <div style={styles.backupStatusText}>
                                         <div style={styles.backupStatusLabel}>{langIndex === 0 ? 'Последняя копия' : 'Latest copy'}</div>
                                         <div style={styles.backupStatusValue}>
-                                            {AppData.lastBackupDate === '' || AppData.lastBackupDate === null
+                                            {lastBackupDate === '' || lastBackupDate === null
                                                 ? (langIndex === 0 ? 'Пока нет' : 'None yet')
-                                                : AppData.lastBackupDate?.split('T')[0]}
+                                                : lastBackupDate?.split('T')[0]}
                                         </div>
                                     </div>
                                 </div>
@@ -437,8 +449,8 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
                                         : 'Data is encrypted on this device before upload. The server and admins only see an unreadable backup.'}
                                 </div>
                                 <div style={styles.backupActionsGrid}>
-                                    <ActionButton icon={<FaCloudUploadAlt />} text={langIndex === 0 ? 'Синхронизировать' : 'Sync now'} onClick={cloudBackup} theme={theme} color="#D49A5C" />
-                                    <ActionButton icon={<FaCloudDownloadAlt />} text={langIndex === 0 ? 'Восстановить' : 'Restore'} onClick={cloudRestore} theme={theme} color="#6F8BD6" />
+                                    <ActionButton icon={<FaCloudUploadAlt />} text={langIndex === 0 ? 'Синхронизировать' : 'Sync now'} onClick={syncNow} theme={theme} color="#D49A5C" />
+                                    <ActionButton icon={<FaCloudDownloadAlt />} text={langIndex === 0 ? 'Восстановить' : 'Restore'} onClick={restoreNow} theme={theme} color="#6F8BD6" />
                                 </div>
                                 <div style={styles.dangerCard}>
                                     <button type="button" onClick={() => setShowDanger(prev => !prev)} style={styles.dangerHeader}>
