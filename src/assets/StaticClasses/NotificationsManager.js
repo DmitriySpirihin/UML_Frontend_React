@@ -1,18 +1,19 @@
 import {AppData, UserData, hasCompletedProfileOrExistingData } from './AppData';
 import { serializeData, deserializeData ,saveData} from './SaveHelper';
-import { setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel,setValidation,setIsServerAvailable} from './HabitsBus';
+import { emitDataSynced, setDevMessage, setIsPasswordCorrect,setPremium ,setShowPopUpPanel,setValidation,setIsServerAvailable} from './HabitsBus';
 import { applyLocalNoPremium, applyLocalTestPremium } from './PremiumTestHelper';
 import pako from 'pako';
 import { decryptCloudBackup, encryptCloudBackup, isEncryptedCloudBackup } from './CloudEncryption';
 import { getCloudBackupKey, getCloudBackupKeyStorageStatus, getOrCreateCloudBackupKey } from './CloudBackupKey';
 import { deleteTelegramCloudBackup, loadTelegramCloudBackup, saveTelegramCloudBackup } from './TelegramCloudBackup';
+import { mergeAppSnapshots } from './DataMerge';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
 const API_TIMEOUT_MS = 7000;
 const PREMIUM_TIMEOUT_MS = 4500;
-const AUTO_BACKUP_DELAY_MS = 12000;
-const RETRY_BACKUP_DELAY_MS = 2500;
-const CLOUD_SYNC_COOLDOWN_MS = 60000;
+const AUTO_BACKUP_DELAY_MS = 1500;
+const RETRY_BACKUP_DELAY_MS = 1500;
+const CLOUD_SYNC_COOLDOWN_MS = 5000;
 const CLOUD_BACKUP_PENDING_KEY = 'uml_cloud_backup_pending_v1';
 
 let autoBackupTimer = null;
@@ -275,7 +276,7 @@ export async function isUserHasPremium(uid) {
       setPremium(hasPremium);
       setValidation(isValidation);
       setIsServerAvailable(technicalWorks);
-      saveData({ skipCloudBackup: true }).catch(error => {
+      saveData({ skipCloudBackup: true, touchLastSave: false }).catch(error => {
         console.warn('Premium snapshot save failed:', error);
       });
       
@@ -323,7 +324,7 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
       clearPendingCloudBackup();
       AppData.lastBackupDate = new Date().toISOString();
       if (!skipLocalSave) {
-        await saveData({ skipCloudBackup: true });
+        await saveData({ skipCloudBackup: true, touchLastSave: false });
       }
       if (!silent) {
         setShowPopUpPanel(AppData.prefs[0] === 0 ? '✅ Копия синхронизирована в Telegram' : '✅ Backup synced with Telegram', 2000, true);
@@ -346,7 +347,7 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
       clearPendingCloudBackup();
       AppData.lastBackupDate = new Date().toISOString();
       if (!skipLocalSave) {
-        await saveData({ skipCloudBackup: true });
+        await saveData({ skipCloudBackup: true, touchLastSave: false });
       }
       if (!silent) {
         const status = await getCloudBackupKeyStorageStatus();
@@ -516,6 +517,9 @@ export async function cloudRestore({ silent = false, confirmOverwrite = true, pr
     // ---------------------------------------------------------
     try {
         const restoredSnapshot = parseSnapshot(finalDataToLoad);
+        if (!restoredSnapshot || typeof restoredSnapshot !== 'object') {
+          throw new Error('Restored data is not valid JSON.');
+        }
         if ((silent || preferNewer)
           && hasCompletedProfileOrExistingData(AppData)
           && !hasCompletedProfileOrExistingData(restoredSnapshot)) {
@@ -523,20 +527,25 @@ export async function cloudRestore({ silent = false, confirmOverwrite = true, pr
           return false;
         }
 
+        const localSnapshot = parseSnapshot(serializeData()) || {};
+        const merged = mergeAppSnapshots(localSnapshot, restoredSnapshot || {});
+        const mergedDataString = JSON.stringify(merged.snapshot);
+
         if (preferNewer) {
-          const remoteTime = getSnapshotTime(finalDataToLoad);
-          const localTime = Date.parse(AppData.lastSave || '');
+          const remoteTime = merged.remoteTime || getSnapshotTime(finalDataToLoad);
+          const localTime = merged.localTime || Date.parse(AppData.lastSave || '');
           const hasLocalTime = Number.isFinite(localTime) && localTime > 0;
 
-          if (hasLocalTime && remoteTime > 0 && remoteTime <= localTime) {
+          if (hasLocalTime && remoteTime > 0 && remoteTime <= localTime && !merged.changedLocal) {
             if (remoteTime < localTime) scheduleAutoCloudBackup(RETRY_BACKUP_DELAY_MS);
             return false;
           }
         }
 
-        deserializeData(finalDataToLoad);
-        await saveData({ skipCloudBackup: true });
-        scheduleAutoCloudBackup();
+        deserializeData(mergedDataString);
+        await saveData({ skipCloudBackup: true, touchLastSave: false });
+        emitDataSynced();
+        scheduleAutoCloudBackup(merged.changedLocal ? RETRY_BACKUP_DELAY_MS : AUTO_BACKUP_DELAY_MS);
         if (!silent) setShowPopUpPanel('✅ Data restored!', 2000, true);
         return true;
     } catch (err) {
@@ -570,7 +579,7 @@ export async function deleteCloudBackup() {
     if (response?.success || telegramDeleted) {
       // ✅ Clear local lastBackupDate
       AppData.lastBackupDate = '';
-      await saveData();
+      await saveData({ skipCloudBackup: true, touchLastSave: false });
 
       // Optional: also save this state locally (IndexedDB)
       // await saveData();

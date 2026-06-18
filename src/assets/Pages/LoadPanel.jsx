@@ -143,13 +143,16 @@ useEffect(() => {
       if (!newUserPreview) {
         const localLoadResult = await loadData();
         if (UserData.id && UserData.id !== 0) {
-          if (!localLoadResult.success) {
-            window.setTimeout(() => {
-              cloudRestore({ silent: true, confirmOverwrite: false }).catch(error => {
-                console.warn('Startup cloud restore failed:', error);
-              });
-            }, 1500);
-          }
+          window.setTimeout(() => {
+            if (localLoadResult.success) {
+              syncCloudBackupIfNewer({ force: true });
+              return;
+            }
+
+            cloudRestore({ silent: true, confirmOverwrite: false, preferNewer: true }).catch(error => {
+              console.warn('Startup cloud restore failed:', error);
+            });
+          }, 300);
         }
         retryPendingCloudBackup();
       } else {

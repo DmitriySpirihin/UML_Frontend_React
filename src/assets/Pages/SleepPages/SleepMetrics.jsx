@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import MyBarChart from "../../Helpers/MyBarChart";
 import { AppData, UserData } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { theme$, lang$, fontSize$, premium$, setPage } from '../../StaticClasses/HabitsBus';
+import { dataSyncVersion$, theme$, lang$, fontSize$, premium$, setPage } from '../../StaticClasses/HabitsBus';
 import {
   MdAdd,
   MdBedtime,
@@ -255,34 +255,40 @@ const SleepMetrics = () => {
   const [fSize, setFSize] = useState(AppData.prefs[4]);
   const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
   const [periodIndex, setPeriodIndex] = useState(0);
+  const [dataSyncVersion, setDataSyncVersion] = useState(dataSyncVersion$.value);
 
   useEffect(() => {
     const themeSub = theme$.subscribe(setThemeState);
     const langSub = lang$.subscribe(value => setLangIndex(value === 'ru' ? 0 : 1));
     const fSizeSub = fontSize$.subscribe(setFSize);
     const premiumSub = premium$.subscribe(setHasPremium);
+    const dataSyncSub = dataSyncVersion$.subscribe(setDataSyncVersion);
     return () => {
       themeSub.unsubscribe();
       langSub.unsubscribe();
       fSizeSub.unsubscribe();
       premiumSub.unsubscribe();
+      dataSyncSub.unsubscribe();
     };
   }, []);
 
   const accent = useMemo(() => buildSleepAccent(AppData.sleepAccentColor || '#7C6CFF'), []);
   const s = styles(theme, accent, fSize);
 
-  const sleepData = useMemo(() => listSleepDayEntries()
-    .map((entry) => ({
+  const sleepData = useMemo(() => {
+    void dataSyncVersion;
+    return listSleepDayEntries()
+      .map((entry) => ({
       date: entry.key,
       durationMs: Number(entry.duration) || 0,
       bedtime: typeof entry.bedtime === 'number' ? entry.bedtime : null,
       wakeMs: getWakeMs(entry),
       mood: Number(entry.mood) || 0,
       note: entry.note || ''
-    }))
-    .filter((item) => item.durationMs > 0)
-    .sort((a, b) => toDate(a.date) - toDate(b.date)), []);
+      }))
+      .filter((item) => item.durationMs > 0)
+      .sort((a, b) => toDate(a.date) - toDate(b.date));
+  }, [dataSyncVersion]);
 
   const { filteredData, previousData } = useMemo(() => {
     const periodDays = PERIOD_DAYS[periodIndex];

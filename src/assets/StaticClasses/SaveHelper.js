@@ -103,9 +103,13 @@ export async function initDBandCloud() {
 /**
  * Saves application data to local IndexedDB only
  */
-export async function saveData({ skipCloudBackup = false } = {}) {
+export async function saveData({ skipCloudBackup = false, touchLastSave = true } = {}) {
   if (isNewUserPreviewMode()) {
     return { success: true, preview: true };
+  }
+
+  if (touchLastSave) {
+    AppData.lastSave = new Date().toISOString();
   }
 
   const dataToSave = serializeData();

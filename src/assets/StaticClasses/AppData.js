@@ -1007,7 +1007,7 @@ export class UserData {
 
 export class Data{
   constructor(){
-    this.lastSave = new Date().toISOString();
+    this.lastSave = AppData.lastSave || new Date().toISOString();
     this.isFirstStart = AppData.isFirstStart;
     this.prefs = AppData.prefs;
     this.choosenHabits = AppData.choosenHabits;

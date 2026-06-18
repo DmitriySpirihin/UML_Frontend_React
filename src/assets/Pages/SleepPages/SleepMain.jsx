@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fa';
 import { AppData, logSectionVisit } from '../../StaticClasses/AppData.js';
 import Colors from '../../StaticClasses/Colors';
-import { lang$, selectedSleepDate$, theme$ } from '../../StaticClasses/HabitsBus';
+import { dataSyncVersion$, lang$, selectedSleepDate$, theme$ } from '../../StaticClasses/HabitsBus';
 import { saveData } from '../../StaticClasses/SaveHelper';
 import { playEffects } from '../../StaticClasses/Effects.js';
 import { syncAutoSleepIntegrations } from '../../StaticClasses/SleepIntegrationService.js';
@@ -103,6 +103,7 @@ const SleepMain = () => {
   const [, setAccentPresetVersion] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [syncMessage, setSyncMessage] = useState('');
+  const [dataSyncVersion, setDataSyncVersion] = useState(dataSyncVersion$.value);
 
   const accent = useMemo(() => buildSleepAccent(accentColor), [accentColor]);
   const s = styles(theme, accent);
@@ -110,9 +111,11 @@ const SleepMain = () => {
   useEffect(() => {
     const sub1 = theme$.subscribe(setThemeState);
     const sub2 = lang$.subscribe((lang) => setLangIndex(lang === 'ru' ? 0 : 1));
+    const sub3 = dataSyncVersion$.subscribe(setDataSyncVersion);
     return () => {
       sub1.unsubscribe();
       sub2.unsubscribe();
+      sub3.unsubscribe();
     };
   }, []);
 
@@ -136,15 +139,17 @@ const SleepMain = () => {
     const key = formatDateKey(currentDate);
     selectedSleepDate$.next(key);
     setSelectedSleepEntry(getSleepDayEntry(key));
-  }, [currentDate]);
+  }, [currentDate, dataSyncVersion]);
 
   const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
   const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   const firstDayOfWeek = (monthStart.getDay() + 6) % 7;
   const calendarCells = [...Array(firstDayOfWeek).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)];
 
-  const sleepData = useMemo(() => listSleepDayEntries()
-    .sort((a, b) => b.key.localeCompare(a.key)), [selectedSleepEntry, syncMessage]);
+  const sleepData = useMemo(() => {
+    void dataSyncVersion;
+    return listSleepDayEntries().sort((a, b) => b.key.localeCompare(a.key));
+  }, [selectedSleepEntry, syncMessage, dataSyncVersion]);
 
   const sevenDays = useMemo(() => {
     const limit = new Date();
