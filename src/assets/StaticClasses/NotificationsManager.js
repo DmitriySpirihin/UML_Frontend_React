@@ -20,11 +20,13 @@ const AUTO_BACKUP_DELAY_MS = 1500;
 const RETRY_BACKUP_DELAY_MS = 1500;
 const CLOUD_SYNC_COOLDOWN_MS = 5000;
 const CLOUD_BACKUP_PENDING_KEY = 'uml_cloud_backup_pending_v1';
+const COMPRESSED_BACKUP_PREFIX = 'UMLZIP1.';
 
 let autoBackupTimer = null;
 let autoBackupInFlight = false;
 let autoBackupQueued = false;
 let lastCloudSyncCheckAt = 0;
+let cloudSyncCheckInFlight = false;
 
 function getPendingBackupStorageKey() {
   const userId = UserData.id || 'anonymous';
@@ -109,12 +111,18 @@ export function retryPendingCloudBackup() {
 export function syncCloudBackupIfNewer({ force = false } = {}) {
   if (typeof window === 'undefined') return;
   if (!UserData.id || UserData.id === 0) return;
+  if (cloudSyncCheckInFlight) return;
   const now = Date.now();
   if (!force && now - lastCloudSyncCheckAt < CLOUD_SYNC_COOLDOWN_MS) return;
   lastCloudSyncCheckAt = now;
-  cloudRestore({ silent: true, confirmOverwrite: false, preferNewer: true }).catch(error => {
-    console.warn('Cloud sync check failed:', error);
-  });
+  cloudSyncCheckInFlight = true;
+  cloudRestore({ silent: true, confirmOverwrite: false, preferNewer: true })
+    .catch(error => {
+      console.warn('Cloud sync check failed:', error);
+    })
+    .finally(() => {
+      cloudSyncCheckInFlight = false;
+    });
 }
 
 if (typeof window !== 'undefined') {
@@ -150,7 +158,18 @@ export class NotificationsManager {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                let detail = '';
+                try {
+                  const errorBody = await response.json();
+                  detail = errorBody.message || errorBody.error || '';
+                } catch {
+                  try {
+                    detail = await response.text();
+                  } catch {
+                    detail = '';
+                  }
+                }
+                throw new Error(detail || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
@@ -322,14 +341,16 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
       setPendingCloudBackup();
       return false;
     }
-    const encryptedData = await encryptCloudBackup(dataString, backupKey);
+    const encryptedData = await encryptCloudBackup(encodeCloudBackupPlainText(dataString), backupKey);
 
     let serverResponse = null;
+    let serverFailureMessage = '';
     try {
       serverResponse = await NotificationsManager.sendMessage('backup', encryptedData, {
         clientUpdatedAt: snapshotTime
       });
     } catch (error) {
+      serverFailureMessage = error.message || 'server unavailable';
       console.warn('Server cloud backup failed, Telegram backup will still be attempted:', error);
     }
 
@@ -374,7 +395,10 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
     }
 
     setPendingCloudBackup();
-    if (!silent) setShowPopUpPanel('❌ ' + (serverResponse?.message || 'Backup failed'), 2000, false);
+    if (!silent) {
+      const reason = getBackupFailureMessage(serverResponse, serverFailureMessage, telegramSave);
+      setShowPopUpPanel('❌ ' + reason, 2600, false);
+    }
     return false;
   } catch (error) {
     setPendingCloudBackup();
@@ -399,6 +423,59 @@ function parseSnapshot(dataString) {
   } catch {
     return null;
   }
+}
+
+function bytesToBase64(bytes) {
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function base64ToBytes(base64) {
+  const binary = atob(String(base64).replace(/\s/g, ''));
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+function encodeCloudBackupPlainText(dataString) {
+  const compressed = pako.deflate(dataString, { level: 9 });
+  return COMPRESSED_BACKUP_PREFIX + bytesToBase64(compressed);
+}
+
+function decodeCloudBackupPlainText(plainText) {
+  if (typeof plainText !== 'string' || !plainText.startsWith(COMPRESSED_BACKUP_PREFIX)) {
+    return plainText;
+  }
+
+  const compressedBase64 = plainText.slice(COMPRESSED_BACKUP_PREFIX.length);
+  return pako.inflate(base64ToBytes(compressedBase64), { to: 'string' });
+}
+
+function getTelegramBackupFailureMessage(telegramSave) {
+  if (telegramSave?.tooLarge) return AppData.prefs[0] === 0 ? 'Telegram-копия слишком большая' : 'Telegram backup is too large';
+  if (telegramSave?.writeFailed) return AppData.prefs[0] === 0 ? 'Telegram CloudStorage не записал данные' : 'Telegram CloudStorage write failed';
+  if (telegramSave?.unavailable) return AppData.prefs[0] === 0 ? 'Telegram CloudStorage недоступен' : 'Telegram CloudStorage unavailable';
+  return '';
+}
+
+function getBackupFailureMessage(serverResponse, serverFailureMessage, telegramSave) {
+  const serverMessage = serverResponse?.message || serverResponse?.error || serverFailureMessage;
+  const telegramMessage = getTelegramBackupFailureMessage(telegramSave);
+
+  if (serverMessage && telegramMessage) {
+    return AppData.prefs[0] === 0
+      ? `Сервер: ${serverMessage}. Telegram: ${telegramMessage}`
+      : `Server: ${serverMessage}. Telegram: ${telegramMessage}`;
+  }
+  if (serverMessage) return serverMessage;
+  if (telegramMessage) return telegramMessage;
+  return AppData.prefs[0] === 0 ? 'Backup failed: нет ответа от сервера и Telegram' : 'Backup failed: no server or Telegram response';
 }
 
 function unwrapCloudBackupPayload(rawData) {
@@ -448,7 +525,8 @@ async function decodeCloudBackupPayload(rawData) {
     const backupKeys = await getCloudBackupKeyCandidates();
     for (const backupKey of backupKeys) {
       try {
-        finalDataToLoad = await decryptCloudBackup(data, backupKey);
+        const decrypted = await decryptCloudBackup(data, backupKey);
+        finalDataToLoad = decodeCloudBackupPlainText(decrypted);
         await rememberCloudBackupKey(backupKey);
         break;
       } catch (error) {
@@ -462,8 +540,7 @@ async function decodeCloudBackupPayload(rawData) {
   if (!finalDataToLoad) {
     try {
       const cleanBase64 = String(data).replace(/\s/g, '');
-      const binaryData = Uint8Array.from(atob(cleanBase64), c => c.charCodeAt(0));
-      finalDataToLoad = pako.inflate(binaryData, { to: 'string' });
+      finalDataToLoad = pako.inflate(base64ToBytes(cleanBase64), { to: 'string' });
     } catch (error) {
       console.warn('Cloud backup decompression failed. Trying raw data as fallback.', error);
       finalDataToLoad = typeof data === 'object' ? JSON.stringify(data) : data;

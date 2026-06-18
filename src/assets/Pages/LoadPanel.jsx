@@ -43,7 +43,6 @@ function runStartupSyncInBackground() {
       const currentStats = calculateStats();
       await sendXp(currentStats.level.xp, currentStats.level.current);
       await getFriendsList();
-      syncCloudBackupIfNewer({ force: true });
     } catch (error) {
       console.warn('Startup background sync failed:', error);
     }
@@ -143,6 +142,7 @@ useEffect(() => {
       if (!newUserPreview) {
         const localLoadResult = await loadData();
         if (UserData.id && UserData.id !== 0) {
+          const startupCloudSyncDelay = localLoadResult.success ? 3200 : 300;
           window.setTimeout(() => {
             if (localLoadResult.success) {
               syncCloudBackupIfNewer({ force: true });
@@ -152,7 +152,7 @@ useEffect(() => {
             cloudRestore({ silent: true, confirmOverwrite: false, preferNewer: true }).catch(error => {
               console.warn('Startup cloud restore failed:', error);
             });
-          }, 300);
+          }, startupCloudSyncDelay);
         }
         retryPendingCloudBackup();
       } else {
