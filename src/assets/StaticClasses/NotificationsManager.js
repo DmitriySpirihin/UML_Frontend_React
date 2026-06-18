@@ -5,6 +5,7 @@ import { applyLocalNoPremium, applyLocalTestPremium } from './PremiumTestHelper'
 import pako from 'pako';
 import { decryptCloudBackup, encryptCloudBackup, isEncryptedCloudBackup } from './CloudEncryption';
 import { getCloudBackupKey, getCloudBackupKeyStorageStatus, getOrCreateCloudBackupKey } from './CloudBackupKey';
+import { deleteTelegramCloudBackup, loadTelegramCloudBackup, saveTelegramCloudBackup } from './TelegramCloudBackup';
 
 const BASE_URL = 'https://ultymylife.ru/api/notifications';
 const API_TIMEOUT_MS = 7000;
@@ -317,6 +318,26 @@ export async function cloudBackup({ silent = false, skipLocalSave = false } = {}
     }
     const encryptedData = await encryptCloudBackup(dataString, backupKey);
 
+    const telegramSave = await saveTelegramCloudBackup(encryptedData, snapshotTime);
+    if (telegramSave.saved) {
+      clearPendingCloudBackup();
+      AppData.lastBackupDate = new Date().toISOString();
+      if (!skipLocalSave) {
+        await saveData({ skipCloudBackup: true });
+      }
+      if (!silent) {
+        setShowPopUpPanel(AppData.prefs[0] === 0 ? '✅ Копия синхронизирована в Telegram' : '✅ Backup synced with Telegram', 2000, true);
+      }
+      return true;
+    }
+
+    if (telegramSave.conflict) {
+      setPendingCloudBackup();
+      syncCloudBackupIfNewer({ force: true });
+      if (!silent) setShowPopUpPanel(AppData.prefs[0] === 0 ? '↩️ В Telegram уже есть более свежая копия' : '↩️ Telegram backup is newer', 2200, false);
+      return false;
+    }
+
     const response = await NotificationsManager.sendMessage('backup', encryptedData, {
       clientUpdatedAt: snapshotTime
     });
@@ -374,7 +395,10 @@ export async function cloudRestore({ silent = false, confirmOverwrite = true, pr
   }
 
   try {
-    const response = await NotificationsManager.sendMessage('restore', '');
+    const telegramBackup = await loadTelegramCloudBackup();
+    const response = telegramBackup.success
+      ? { success: true, message: telegramBackup.message }
+      : await NotificationsManager.sendMessage('restore', '');
    // console.log("📥 Server Raw Response:", response);
 
     if (!response || !response.success || !response.message) {
@@ -529,9 +553,15 @@ export async function deleteCloudBackup() {
   if (!confirmed) return;
 
   try {
-    const response = await NotificationsManager.sendMessage('deleteBackup', '');
+    const telegramDeleted = await deleteTelegramCloudBackup();
+    let response = null;
+    try {
+      response = await NotificationsManager.sendMessage('deleteBackup', '');
+    } catch (error) {
+      if (!telegramDeleted) throw error;
+    }
 
-    if (response?.success) {
+    if (response?.success || telegramDeleted) {
       // ✅ Clear local lastBackupDate
       AppData.lastBackupDate = '';
       await saveData();
