@@ -19,7 +19,7 @@ import {
 } from './HabitVisuals.jsx';
 
 import { MdDone, MdClose } from 'react-icons/md'
-import { FaPlus, FaTrash, FaPencilAlt, FaFire, FaChevronDown, FaClock, FaSlidersH, FaPalette } from 'react-icons/fa'
+import { FaPlus, FaTrash, FaPencilAlt, FaFire, FaChevronDown, FaClock, FaSlidersH, FaPalette, FaEye, FaRegEyeSlash } from 'react-icons/fa'
 //new
 import {FiCalendar, FiEdit3, FiTrash2, FiChevronUp} from 'react-icons/fi'
 import {MdSkipNext} from 'react-icons/md'
@@ -43,16 +43,24 @@ const HABITS_HERO_DETAILS_COLLAPSE_KEY = 'uml_habits_hero_details_collapsed_v1';
 const DEFAULT_HABIT_CARD_WIDGETS = {
     days: true,
     skips: true,
-    streak: true,
     timer: true,
     description: true,
     goals: true,
     achievements: true
 };
+const HABIT_WEEKDAYS = [
+    { id: 1, label: ['ПН', 'MO'] },
+    { id: 2, label: ['ВТ', 'TU'] },
+    { id: 3, label: ['СР', 'WE'] },
+    { id: 4, label: ['ЧТ', 'TH'] },
+    { id: 5, label: ['ПТ', 'FR'] },
+    { id: 6, label: ['СБ', 'SA'] },
+    { id: 7, label: ['ВС', 'SU'] }
+];
+const ALL_HABIT_WEEKDAYS = HABIT_WEEKDAYS.map(day => day.id);
 const HABIT_CARD_WIDGET_OPTIONS = [
     { key: 'days', label: ['Дни', 'Days'], hint: ['сколько дней привычка есть в трекере', 'how many days the habit is tracked'] },
     { key: 'skips', label: ['Пропуски', 'Skips'], hint: ['сколько раз привычка была пропущена', 'how many times the habit was skipped'] },
-    { key: 'streak', label: ['Серии', 'Streaks'], hint: ['текущая серия выполнений', 'current completion streak'] },
     { key: 'timer', label: ['Таймер', 'Timer'], hint: ['обратный таймер или время без срыва', 'countdown or time without relapse'] },
     { key: 'description', label: ['Описание', 'Description'], hint: ['текст с пояснением привычки', 'habit explanation text'] },
     { key: 'goals', label: ['Микроцели', 'Micro goals'], hint: ['список целей внутри карточки', 'goal list inside the card'] },
@@ -65,7 +73,6 @@ function normalizeHabitCardWidgets(widgets = {}) {
         ...DEFAULT_HABIT_CARD_WIDGETS,
         days: widgets.days ?? statsFallback ?? DEFAULT_HABIT_CARD_WIDGETS.days,
         skips: widgets.skips ?? statsFallback ?? DEFAULT_HABIT_CARD_WIDGETS.skips,
-        streak: widgets.streak ?? statsFallback ?? DEFAULT_HABIT_CARD_WIDGETS.streak,
         timer: widgets.timer ?? statsFallback ?? DEFAULT_HABIT_CARD_WIDGETS.timer,
         description: widgets.description ?? DEFAULT_HABIT_CARD_WIDGETS.description,
         goals: widgets.goals ?? DEFAULT_HABIT_CARD_WIDGETS.goals,
@@ -441,7 +448,7 @@ function buildWeekSummary(habitsCards, langIndex) {
     return [-6, -5, -4, -3, -2, -1, 0].map(offset => {
         const key = getDateKeyWithOffset(offset);
         const dayData = AppData.habitsByDate?.[key] || {};
-        const idsForDay = habitsCards.filter(id => Object.prototype.hasOwnProperty.call(dayData, id) || offset === 0);
+        const idsForDay = habitsCards.filter(id => AppData.isHabitScheduledForDate(id, key) && (Object.prototype.hasOwnProperty.call(dayData, id) || offset === 0));
         const total = idsForDay.length;
         const done = idsForDay.filter(id => dayData[id] === 1 || (offset === 0 && AppData.isHabitAutoComplete(id))).length;
 
@@ -842,6 +849,32 @@ const styles = (theme, fSize = 0) => {
             gap: 18,
             boxSizing: 'border-box'
         },
+        revealActions: {
+            width: 'calc(100% - 56px)',
+            maxWidth: 660,
+            margin: '14px auto 0',
+            display: 'flex',
+            gap: 10,
+            justifyContent: 'center',
+            boxSizing: 'border-box'
+        },
+        hiddenRevealBar: (active) => ({
+            minHeight: 42,
+            borderRadius: 16,
+            border: `1px solid ${active ? HABITS_ACCENT.ring : (isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)')}`,
+            background: active ? HABITS_ACCENT.soft : (isLight ? 'rgba(255,255,255,0.58)' : 'rgba(255,255,255,0.045)'),
+            color: active ? HABITS_ACCENT.hue : Colors.get('subText', theme),
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            padding: '0 13px',
+            fontSize: 12,
+            fontWeight: 900,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            boxShadow: isLight ? '0 1px 0 rgba(255,255,255,0.72) inset' : '0 1px 0 rgba(255,255,255,0.045) inset'
+        }),
         icon: { color: Colors.get('icons', theme), fontSize: '24px' }
     }
 }
@@ -875,6 +908,7 @@ const HabitsMain = () => {
     const [showAccentSettings, setShowAccentSettings] = useState(false);
     const [habitCardWidgets, setHabitCardWidgets] = useState(normalizeHabitCardWidgets(AppData.habitCardWidgets));
     const [selectedDateKey, setSelectedDateKey] = useState(dateKey);
+    const [showHiddenHabits, setShowHiddenHabits] = useState(false);
     const scrollViewRef = React.useRef(null);
 
     const [cP, setCP] = useState({ show: false, type: -1, hId: 0, gId: 0, setGoals: null, hInfo: null })
@@ -885,6 +919,8 @@ const HabitsMain = () => {
     const [habitEmojiInput, setHabitEmojiInput] = useState('');
     const [selectIconPanel, setSelectIconPanel] = useState(false);
     const [newCategory, setNewCategory] = useState('Здоровье');
+    const [editScheduleType, setEditScheduleType] = useState('daily');
+    const [editScheduleDays, setEditScheduleDays] = useState(ALL_HABIT_WEEKDAYS);
 
     const [habitTodelete, setHabitToDelete] = useState(null);
     const [confirmMessage, setConfirmMessage] = useState('');
@@ -898,6 +934,9 @@ const HabitsMain = () => {
             setNewIcon(nextIcon);
             setHabitEmojiInput(emojiFromIconName(nextIcon));
             setNewCategory(getAllHabits().find(h => h.id === cP.hId)?.category[0] || 'Здоровье');
+            const schedule = AppData.getHabitSchedule(cP.hId);
+            setEditScheduleType(schedule.type);
+            setEditScheduleDays(schedule.days);
         }
         if (cP.type === 4) {
             if (cP.gId <= 0) return;
@@ -968,24 +1007,36 @@ const HabitsMain = () => {
         return () => subscription.unsubscribe();
     }, []);
 
+    const visibleHabitCards = React.useMemo(
+        () => habitsCards.filter(id => AppData.isHabitScheduledForDate(id, selectedDateKey)),
+        [habitsCards, selectedDateKey, dataVersion]
+    );
+    const displayedHabitCards = React.useMemo(
+        () => showHiddenHabits ? habitsCards : visibleHabitCards,
+        [showHiddenHabits, habitsCards, visibleHabitCards]
+    );
+    const hiddenHabitsCount = Math.max(0, habitsCards.length - visibleHabitCards.length);
+
     useEffect(() => {
-        if (habitsCards.length > 0) {
+        if (displayedHabitCards.length > 0) {
             const cats = new Set();
-            habitsCards.forEach(id => {
+            displayedHabitCards.forEach(id => {
                 const h = getAllHabits().find(h => h.id === id);
                 const categoryKey = getHabitEffectiveCategoryKey(h);
                 if (h && !cats.has(categoryKey)) { cats.add(categoryKey); }
             });
             setCategories(sortCategoriesWithNegativeLast(Array.from(cats)));
+        } else {
+            setCategories([]);
         }
-    }, [habitsCards]);
+    }, [displayedHabitCards]);
 
-    const addHabit = async (id, dateString, goals, isNegative, daysToForm, autoComplete = false) => {
+    const addHabit = async (id, dateString, goals, isNegative, daysToForm, autoComplete = false, schedule = null) => {
         const addedHabit = getAllHabits().find(h => h.id === id);
         const addedCategory = addedHabit?.category?.[0];
 
         if (!AppData.IsHabitInChoosenList(id)) {
-            await AppData.addHabit(id, dateString, goals, isNegative, daysToForm, autoComplete);
+            await AppData.addHabit(id, dateString, goals, isNegative, daysToForm, autoComplete, schedule);
         }
 
         setHabitsCards([...(AppData.choosenHabits || [])]);
@@ -1015,6 +1066,10 @@ const HabitsMain = () => {
     const onConfirmAction = async () => {
         switch (cP.type) {
             case 0: {
+            if (editScheduleType === 'weekly' && editScheduleDays.length === 0) {
+                setShowPopUpPanel(langIndex === 0 ? 'Выберите дни недели' : 'Choose weekdays', 2000, false);
+                return;
+            }
             // Ensure array exists
             if (!AppData.CustomHabits) AppData.CustomHabits = [];
             
@@ -1059,6 +1114,10 @@ const HabitsMain = () => {
                 // Optional: update local card category if needed, though HabitsMain refresh handles it
             });
             
+	            if (!AppData.choosenHabitsSchedule || typeof AppData.choosenHabitsSchedule !== 'object') AppData.choosenHabitsSchedule = {};
+	            AppData.choosenHabitsSchedule[cP.hId] = editScheduleType === 'weekly'
+	                ? { type: 'weekly', days: editScheduleDays }
+	                : { type: 'daily', days: ALL_HABIT_WEEKDAYS };
 	            setDataVersion(v => v + 1);
 	            await saveData();
                     break;
@@ -1148,6 +1207,14 @@ const HabitsMain = () => {
         window.setTimeout(() => settle(true), 260);
     }, []);
 
+    const toggleEditScheduleDay = (dayId) => {
+        setEditScheduleDays(prev => (
+            prev.includes(dayId)
+                ? prev.filter(day => day !== dayId)
+                : [...prev, dayId].sort((a, b) => a - b)
+        ));
+    };
+
     const isLight = theme === 'light' || theme === 'speciallight';
 
     return (
@@ -1205,11 +1272,11 @@ const HabitsMain = () => {
                     onAccentClick={() => setShowAccentSettings(true)}
                     onBack={() => setPage('MainMenu')}
                 />
-                <HabitsHero theme={theme} langIndex={langIndex} habitsCards={habitsCards} fSize={fSize} selectedDateKey={selectedDateKey} onOpenWidgets={() => setShowWidgetSettings(true)} />
+                <HabitsHero theme={theme} langIndex={langIndex} habitsCards={visibleHabitCards} fSize={fSize} selectedDateKey={selectedDateKey} onOpenWidgets={() => setShowWidgetSettings(true)} />
                 <div style={styles(theme).categoriesWrap}>
                     {buildMenu({
                         theme,
-                        habitsCards,
+                        habitsCards: displayedHabitCards,
                         categories,
                         selectedDateKey,
                         setCP,
@@ -1224,6 +1291,27 @@ const HabitsMain = () => {
                         onCategoryToggle: settleTopAfterCategoryToggle
                     })}
                 </div>
+                {hiddenHabitsCount > 0 && (
+                    <div style={styles(theme).revealActions}>
+                        <motion.button
+                            type="button"
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => {
+                                setShowHiddenHabits(prev => !prev);
+                                playEffects(clickSound);
+                            }}
+                            style={styles(theme).hiddenRevealBar(showHiddenHabits)}
+                        >
+                            {showHiddenHabits ? <FaRegEyeSlash /> : <FaEye />}
+                            <span>
+                                {showHiddenHabits
+                                    ? (langIndex === 0 ? 'Скрыть скрытые' : 'Hide hidden')
+                                    : (langIndex === 0 ? 'Скрытые' : 'Hidden')}
+                            </span>
+                            <b>{hiddenHabitsCount}</b>
+                        </motion.button>
+                    </div>
+                )}
             </div>}
 
             {cP.show && (
@@ -1348,6 +1436,84 @@ const HabitsMain = () => {
                                             </button>
                                         );
                                     })}
+                                </div>
+
+                                <div style={{
+                                    padding: 12,
+                                    borderRadius: 18,
+                                    border: `1px solid ${isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.07)'}`,
+                                    background: isLight ? 'rgba(15,23,42,0.025)' : 'rgba(255,255,255,0.035)'
+                                }}>
+                                    <div style={{ color: Colors.get('subText', theme), fontSize: 11, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+                                        {langIndex === 0 ? 'Расписание' : 'Schedule'}
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setEditScheduleType('daily');
+                                                setEditScheduleDays(ALL_HABIT_WEEKDAYS);
+                                            }}
+                                            style={{
+                                                minHeight: 40,
+                                                borderRadius: 14,
+                                                border: `1px solid ${editScheduleType === 'daily' ? HABITS_ACCENT.ring : (isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.075)')}`,
+                                                background: editScheduleType === 'daily' ? HABITS_ACCENT.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)'),
+                                                color: editScheduleType === 'daily' ? HABITS_ACCENT.hue : Colors.get('subText', theme),
+                                                fontSize: 12,
+                                                fontWeight: 900,
+                                                fontFamily: 'inherit',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            {langIndex === 0 ? 'Каждый день' : 'Every day'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setEditScheduleType('weekly')}
+                                            style={{
+                                                minHeight: 40,
+                                                borderRadius: 14,
+                                                border: `1px solid ${editScheduleType === 'weekly' ? HABITS_ACCENT.ring : (isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.075)')}`,
+                                                background: editScheduleType === 'weekly' ? HABITS_ACCENT.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)'),
+                                                color: editScheduleType === 'weekly' ? HABITS_ACCENT.hue : Colors.get('subText', theme),
+                                                fontSize: 12,
+                                                fontWeight: 900,
+                                                fontFamily: 'inherit',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            {langIndex === 0 ? 'Дни недели' : 'Weekdays'}
+                                        </button>
+                                    </div>
+                                    {editScheduleType === 'weekly' && (
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 6, marginTop: 10 }}>
+                                            {HABIT_WEEKDAYS.map(day => {
+                                                const active = editScheduleDays.includes(day.id);
+                                                return (
+                                                    <button
+                                                        key={day.id}
+                                                        type="button"
+                                                        onClick={() => toggleEditScheduleDay(day.id)}
+                                                        style={{
+                                                            minHeight: 34,
+                                                            borderRadius: 12,
+                                                            border: `1px solid ${active ? HABITS_ACCENT.ring : (isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.075)')}`,
+                                                            background: active ? HABITS_ACCENT.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.04)'),
+                                                            color: active ? HABITS_ACCENT.hue : Colors.get('subText', theme),
+                                                            fontSize: 10,
+                                                            fontWeight: 950,
+                                                            fontFamily: 'inherit',
+                                                            padding: 0,
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        {day.label[langIndex]}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -1937,6 +2103,7 @@ function buildMenu({ theme, habitsCards, categories, selectedDateKey, setCP, set
                         setHabitToDelete={setHabitToDelete}
                         habitCardWidgets={habitCardWidgets}
                         onStatusChange={onStatusChange}
+                        isScheduledForSelectedDate={AppData.isHabitScheduledForDate(habit.id, selectedDateKey)}
                     />
                 ))}
             </CategoryPanel>
@@ -1944,7 +2111,7 @@ function buildMenu({ theme, habitsCards, categories, selectedDateKey, setCP, set
     });
 }
 
-function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete, habitCardWidgets, onStatusChange }) {
+function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId, fSize, setNeedConfirmation, setConfirmMessage, setHabitToDelete, habitCardWidgets, onStatusChange, isScheduledForSelectedDate = true }) {
     const [status, setStatus] = useState(AppData.habitsByDate[activeDateKey]?.[id] ?? 0);
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium);
@@ -1959,7 +2126,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     const isNegative = isNegativeHabit(id, habit);
     const effectiveCategoryKey = getHabitEffectiveCategoryKey(habit);
     const isSelectedToday = activeDateKey === dateKey;
-    const isAutoComplete = isSelectedToday && !isNegative && AppData.isHabitAutoComplete(id);
+    const isAutoComplete = isScheduledForSelectedDate && isSelectedToday && !isNegative && AppData.isHabitAutoComplete(id);
     const percent = getHabitPerformPercent(id);
     const maxX = 120;
     const minX = -maxX;
@@ -1988,7 +2155,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     const actionTone = isNegative ? doneTone : categoryTone;
     const isLight = theme === 'light' || theme === 'speciallight';
     const widgets = normalizeHabitCardWidgets(habitCardWidgets);
-    const showStatsRow = widgets.days || widgets.skips || widgets.streak || widgets.timer;
+    const showStatsRow = widgets.days || widgets.skips || widgets.timer;
     const safePercent = Math.max(0, Math.min(100, percent));
 
     let cardBg = isLight
@@ -2049,9 +2216,13 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
    
     useEffect(() => { const sub = premium$.subscribe(setHasPremium); return () => sub.unsubscribe(); }, []);
     useEffect(() => {
+        if (!isScheduledForSelectedDate) {
+            setStatus(0);
+            return;
+        }
         const nextStatus = AppData.habitsByDate?.[activeDateKey]?.[id];
         setStatus(isAutoComplete ? 1 : (nextStatus ?? 0));
-    }, [activeDateKey, id, isAutoComplete]);
+    }, [activeDateKey, id, isAutoComplete, isScheduledForSelectedDate]);
     useEffect(() => {
         if (isAutoComplete && status !== 1) setStatus(1);
     }, [isAutoComplete, status]);
@@ -2082,9 +2253,10 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
             previousDateKeyRef.current = activeDateKey;
             return;
         }
+        if (!isScheduledForSelectedDate) return;
         const storedStatus = AppData.habitsByDate?.[activeDateKey]?.[id];
         if (status !== undefined && (status !== 0 || storedStatus !== undefined)) AppData.changeStatus(activeDateKey, id, status);
-    }, [status, id, activeDateKey]);
+    }, [status, id, activeDateKey, isScheduledForSelectedDate]);
 
     const getHabitIcon = () => {
         return (
@@ -2101,6 +2273,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     const constrainedX = useTransform(x, [-1, 1], [minX, maxX]);
 
     const handledDrag = (event, info) => {
+        if (!isScheduledForSelectedDate) return;
         if (isAutoComplete) return;
         if (isNegative) {
             if (info.offset.x < minX && canDrag) { setNewStatus(false); animate(constrainedX, 0, { type: 'tween', duration: 0.2 }); setCanDrag(false); }
@@ -2114,6 +2287,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
     }
     const onDragEnd = () => { if (canDrag) animate(constrainedX, 0, { type: 'tween', duration: 0.2 }); setCanDrag(true); }
     const setNewStatus = (isOverZero) => {
+        if (!isScheduledForSelectedDate) return;
         const currentStatus = AppData.habitsByDate?.[activeDateKey]?.[id] ?? statusValue;
         let newStatus = 0;
         if (isOverZero) { newStatus = 1; }
@@ -2139,7 +2313,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 
     if (!habit) return null;
 
-    const startTimer = () => { if (statusValue < 1 && !isNegative && !isAutoComplete) { setTimer(true); setTime(0); } }
+    const startTimer = () => { if (isScheduledForSelectedDate && statusValue < 1 && !isNegative && !isAutoComplete) { setTimer(true); setTime(0); } }
     const stopTimer = () => { if (!isNegative) { setTimer(false); setProgress(0); setTime(0); } }
     const onDeleteHabit = (id) => { setHabitToDelete(id); setNeedConfirmation(true); setConfirmMessage(AppData.prefs[0] === 0 ? `⚠️ Вы уверены?` : `⚠️ Are you sure?`); }
     const actionButtonStyle = {
@@ -2184,6 +2358,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
                 clipPath: 'inset(0 round 28px)',
                 backgroundClip: 'padding-box',
                 isolation: 'isolate',
+                opacity: isScheduledForSelectedDate ? 1 : 0.62,
                 x: constrainedX,
                 transition: 'background 0.52s ease, border-color 0.52s ease, box-shadow 0.52s ease'
             }}
@@ -2191,7 +2366,7 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
                 const el = document.getElementById(id);
                 if (el.clientHeight < 88 || (event.nativeEvent.pageY - (el.getBoundingClientRect().top + window.scrollY)) < 88) toggleIsActive();
             }}
-            drag={canDrag && !isAutoComplete ? 'x' : false} dragConstraints={{ left: minX, right: statusValue > 0 || isNegative ? 0 : maxX }}
+            drag={canDrag && !isAutoComplete && isScheduledForSelectedDate ? 'x' : false} dragConstraints={{ left: minX, right: statusValue > 0 || isNegative ? 0 : maxX }}
             onDrag={handledDrag} onDragEnd={onDragEnd} whileTap={{ scale: 0.985 }}
         >
            
@@ -2217,19 +2392,10 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
                         </div>
                         <span style={{ color: subTextColor, fontSize: 10, fontWeight: 900, fontVariantNumeric: 'tabular-nums', minWidth: 30, textAlign: 'right' }}>{safePercent}%</span>
                     </div>
-
-                   {/*
-
-                    {timer && <span style={{ fontSize: '14px', fontWeight: '700', color: status===1 ? (isLight?'#2E7D32':'#FFF') : habitColor, marginTop: '4px', opacity: 0.9 }}>{parsedTime(time, maxTimer,langIndex, isNegative)}</span>}
-                     {!timer && !isNegative && currentStreak > 0 && <span style={{ fontSize: '14px', fontWeight: '700', color: status===1 ? (isLight?'#2E7D32':'#FFF') : habitColor, marginTop: '4px', opacity: 0.9 }}>{getDayName(langIndex,currentStreak)}</span>}
-
-                    */}
-
 	                    {showStatsRow && <div style={{display:'flex', gap: 6, marginTop: 8, justifyContent:'center', alignItems: 'center', width: '100%', overflow: 'hidden'}}>
 
 	                    {widgets.days && <MiniBadge theme={theme} icon={<FiCalendar size={9}/>} text={getDaysAmount(id)} color={subTextColor} />}
 	                    {widgets.skips && <MiniBadge theme={theme} icon={<MdClose size={9}/>} text={getSkippedAmount(id)} color={statusValue === -1 ? '#D95C5C' : subTextColor} />}
-                    {widgets.streak && !isNegative && <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={getDoneAmount(id)} color={statusValue === 1 ? doneTone.hue : '#D8785E'} />}
                     {widgets.timer && !isNegative && timer && <MiniBadge theme={theme} icon={<FaClock size={9}/>} text={parsedTime(time, maxTimer,langIndex, false)} color={categoryTone.hue} />}
 	                    {widgets.timer && isNegative &&  <MiniBadge theme={theme} icon={<FaFire size={9}/>} text={parsedTime(time, maxTimer,langIndex, isNegative)} color={isNegativeSuccess ? doneTone.hue : '#D8785E'} onClick={(e) => { e.stopPropagation(); setNewStatus(false); }} />}
 
@@ -2240,18 +2406,23 @@ function HabitCard({ id = 0, theme, activeDateKey = dateKey, setCP, setCurrentId
 
                 </div>
                 <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingLeft: '2px', alignSelf: 'center', gap: 8, flexShrink: 0 }}>
-                    {!isNegative && !isAutoComplete && <>
+                    {!isScheduledForSelectedDate && (
+                        <div style={{ padding: '7px 9px', borderRadius: '999px', backgroundColor: isLight ? 'rgba(15,23,42,0.04)' : 'rgba(255,255,255,0.045)', border: `1px solid ${isLight ? 'rgba(15,23,42,0.07)' : 'rgba(255,255,255,0.07)'}`, color: subTextColor, fontSize: '10px', fontWeight: 900, whiteSpace: 'nowrap' }}>
+                            {langIndex === 0 ? 'НЕ СЕГ.' : 'OFF'}
+                        </div>
+                    )}
+                    {isScheduledForSelectedDate && !isNegative && !isAutoComplete && <>
                     
                         {!timer && statusValue === 0 && <TimerOffIcon onClick={(e) => { e.stopPropagation(); setShowTimerSlider(true); }} style={{ color: subTextColor, opacity: 0.52, fontSize: '23px', transition: 'color 0.42s ease, opacity 0.42s ease' }} />}
                         {timer && <TimerIcon onClick={(e) => { e.stopPropagation(); stopTimer() }} style={{ color: categoryTone.hue, fontSize: '23px', transition: 'color 0.42s ease' }} />}
-		                        <div onClick={(e) => {e.stopPropagation(); setNewStatus(statusValue !== 1)}} style={{ width: 40, height: 30, borderRadius: 12, border: statusValue === 1 ? `1px solid ${doneTone.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`, background: statusValue === 1 ? doneTone.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)'), color: statusValue === 1 ? doneTone.hue : subTextColor, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.45s ease, border-color 0.45s ease, color 0.45s ease, box-shadow 0.45s ease', boxSizing: 'border-box', cursor: 'pointer', boxShadow: statusValue === 1 ? `0 1px 0 rgba(255,255,255,0.08) inset, 0 0 16px ${doneGlow}` : '0 1px 0 rgba(255,255,255,0.035) inset' }}>{statusValue === 1 && <FaCheck size={14} />}</div>
+		                        <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={(e) => {e.stopPropagation(); setNewStatus(statusValue !== 1)}} style={{ minWidth: 44, height: 32, padding: '0 8px', borderRadius: 12, border: statusValue === 1 ? `1px solid ${doneTone.ring}` : `1px solid ${isLight ? 'rgba(15,23,42,0.08)' : 'rgba(255,255,255,0.07)'}`, background: statusValue === 1 ? doneTone.soft : (isLight ? 'rgba(15,23,42,0.035)' : 'rgba(255,255,255,0.035)'), color: statusValue === 1 ? doneTone.hue : '#D8785E', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, transition: 'background 0.45s ease, border-color 0.45s ease, color 0.45s ease, box-shadow 0.45s ease', boxSizing: 'border-box', cursor: 'pointer', boxShadow: statusValue === 1 ? `0 1px 0 rgba(255,255,255,0.08) inset, 0 0 16px ${doneGlow}` : '0 1px 0 rgba(255,255,255,0.035) inset' }}><FaFire size={13} /><span style={{ fontSize: 12, fontWeight: 950, fontVariantNumeric: 'tabular-nums' }}>{currentDoneStreak}</span></motion.button>
                     </>}
 
 
 
 
-                    {isAutoComplete && <div style={{ padding: '7px 10px', borderRadius: '999px', backgroundColor: doneTone.soft, border: `1px solid ${doneTone.ring}`, color: doneTone.hue, fontSize: '11px', fontWeight: 900 }}>{langIndex === 0 ? 'АВТО' : 'AUTO'}</div>}
-                    {isNegative && <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={(e) => { e.stopPropagation(); setNewStatus(false); }} style={{ width: 40, height: 30, borderRadius: 10, backgroundColor: isNegativeSuccess ? doneTone.soft : 'rgba(216,120,94,0.07)', border: isNegativeSuccess ? `1px solid ${doneTone.ring}` : '1px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box', padding: 0, cursor: 'pointer', outline: 'none', WebkitAppearance: 'none', WebkitTapHighlightColor: 'transparent' }}><FaFire size={14} color={isNegativeSuccess ? doneTone.hue : '#D8785E'} /></motion.button>}
+                    {isScheduledForSelectedDate && isAutoComplete && <div style={{ padding: '7px 10px', borderRadius: '999px', backgroundColor: doneTone.soft, border: `1px solid ${doneTone.ring}`, color: doneTone.hue, fontSize: '11px', fontWeight: 900 }}>{langIndex === 0 ? 'АВТО' : 'AUTO'}</div>}
+                    {isScheduledForSelectedDate && isNegative && <motion.button type="button" whileTap={{ scale: 0.94 }} onClick={(e) => { e.stopPropagation(); setNewStatus(false); }} style={{ minWidth: 44, height: 32, borderRadius: 10, backgroundColor: isNegativeSuccess ? doneTone.soft : 'rgba(216,120,94,0.07)', border: isNegativeSuccess ? `1px solid ${doneTone.ring}` : '1px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, boxSizing: 'border-box', padding: '0 8px', cursor: 'pointer', outline: 'none', WebkitAppearance: 'none', WebkitTapHighlightColor: 'transparent', color: isNegativeSuccess ? doneTone.hue : '#D8785E' }}><FaFire size={14} /><span style={{ fontSize: 12, fontWeight: 950, fontVariantNumeric: 'tabular-nums' }}>{currentDoneStreak}</span></motion.button>}
                     
                 </div>
             </div>
@@ -2924,32 +3095,6 @@ const Achievement = ({ milestone, index, id, theme, langIndex }) => {
     );
 };
 
-const getDayName = (langIndex,days) => {
-    if (langIndex === 0) {
-        let daysText = '';
-        const lastDigit = days % 10;
-        const lastTwoDigits = days % 100;
-        
-        if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
-            daysText = 'дней';
-        } else if (lastDigit === 1) {
-            daysText = 'день';
-        } else if (lastDigit >= 2 && lastDigit <= 4) {
-            daysText = 'дня';
-        } else {
-            daysText = 'дней';
-        }
-
-        return days;
-        
-      /*  return days + ' ' + daysText;
-    } else {
-        // Английский язык
-        return days + (days === 1 ? ' day' : ' days');*/
-    }
-}
-
-
 const MiniBadge = ({ icon, text, color, theme, onClick }) => (
     <div onClick={onClick} style={{ 
         display: 'flex', alignItems: 'center', gap: '3px', 
@@ -2989,7 +3134,7 @@ function getSkippedAmount(id) {
         const habitsOnDate = AppData.habitsByDate[date];
         
         // Check if the habit exists for this date and if its status indicates skipped
-        if (habitsOnDate && id in habitsOnDate) {
+        if (habitsOnDate && id in habitsOnDate && AppData.isHabitScheduledForDate(id, date)) {
             if (habitsOnDate[id] < 0) {
                 amount++;
             }
@@ -3009,7 +3154,7 @@ function getDaysAmount(id) {
         const habitsOnDate = AppData.habitsByDate[date];
         
         // Check if the habit exists for this date and if its status indicates skipped
-        if (habitsOnDate && id in habitsOnDate) {
+        if (habitsOnDate && id in habitsOnDate && AppData.isHabitScheduledForDate(id, date)) {
             amount++;
         }
     }

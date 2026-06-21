@@ -47,6 +47,27 @@ const DEFAULT_SECTION_NOTIFICATIONS = {
   recovery: { enabled: false, time: '21:00', days: [1, 2, 3, 4, 5, 6, 7], cron: '0 21 * * *' },
   sleep: { enabled: false, time: '22:30', days: [1, 2, 3, 4, 5, 6, 7], cron: '30 22 * * *' }
 };
+const DEFAULT_HABIT_SCHEDULE_DAYS = [1, 2, 3, 4, 5, 6, 7];
+const DEFAULT_MEDITATION_SOUND_SETTINGS = {
+  background: 'warmPad',
+  start: 'softBell',
+  end: 'lowBell'
+};
+const MEDITATION_SOUND_ID_MIGRATIONS = {
+  ambient: 'warmPad',
+  whiteNoise: 'deepCalm',
+  rain: 'softRain',
+  chime: 'warmChime',
+  tap: 'breathTone',
+  doneBell: 'lowBell',
+  transition: 'softBowl',
+  softWarn: 'gentleClose'
+};
+const MEDITATION_SOUND_IDS = {
+  background: ['none', 'warmPad', 'softRain', 'deepCalm'],
+  start: ['none', 'softBell', 'warmChime', 'breathTone'],
+  end: ['none', 'lowBell', 'softBowl', 'gentleClose']
+};
 const COFFEE_SECTION_ACCENT_COLORS = ['#B86A37', '#B87963', '#D8785E', '#D49A5C', '#C8A46F', '#A57926', '#A46C3B', '#A6846B', '#8F6A4A', '#9A8580'];
 
 export const formatLocalDateKey = (date = new Date()) => {
@@ -75,6 +96,52 @@ const addLocalDays = (date, days = 1) => {
 
 const getHabitIndex = (habitId) => AppData.choosenHabits.findIndex(id => Number(id) === Number(habitId));
 
+const getWeekdayNumber = (date) => {
+  const day = date.getDay();
+  return day === 0 ? 7 : day;
+};
+
+const getWeekdayNumberFromKey = (dayKey) => {
+  const date = parseLocalDateKey(dayKey);
+  return date ? getWeekdayNumber(date) : getWeekdayNumber(new Date());
+};
+
+const normalizeHabitSchedule = (schedule = {}) => {
+  const rawDays = Array.isArray(schedule?.days) ? schedule.days : DEFAULT_HABIT_SCHEDULE_DAYS;
+  const days = rawDays
+    .map(day => Number.parseInt(day, 10))
+    .filter(day => Number.isInteger(day) && day >= 1 && day <= 7)
+    .filter((day, index, list) => list.indexOf(day) === index)
+    .sort((a, b) => a - b);
+  const type = schedule?.type === 'weekly' && days.length > 0 ? 'weekly' : 'daily';
+
+  return {
+    type,
+    days: type === 'daily' ? [...DEFAULT_HABIT_SCHEDULE_DAYS] : days
+  };
+};
+
+const normalizeHabitsScheduleMap = (schedules = {}, habitIds = []) => {
+  const source = schedules && typeof schedules === 'object' ? schedules : {};
+  return Object.fromEntries(
+    (habitIds || []).map(habitId => [habitId, normalizeHabitSchedule(source[habitId])])
+  );
+};
+
+const normalizeMeditationSoundId = (key, value) => {
+  const migrated = MEDITATION_SOUND_ID_MIGRATIONS[value] || value;
+  return MEDITATION_SOUND_IDS[key]?.includes(migrated) ? migrated : DEFAULT_MEDITATION_SOUND_SETTINGS[key];
+};
+
+const normalizeMeditationSoundSettings = (settings = {}) => {
+  const source = settings && typeof settings === 'object' ? settings : {};
+  return {
+    background: normalizeMeditationSoundId('background', source.background),
+    start: normalizeMeditationSoundId('start', source.start),
+    end: normalizeMeditationSoundId('end', source.end)
+  };
+};
+
 const getHabitStartDate = (habitIndex) => {
   const raw = AppData.choosenHabitsStartDates?.[habitIndex];
   if (!raw) return null;
@@ -86,6 +153,7 @@ const getHabitStartDate = (habitIndex) => {
 
 const getDefaultHabitStatusForDay = (habitId, habitIndex, dayKey, todayKey) => {
   const isNegative = AppData.choosenHabitsTypes?.[habitIndex] === true;
+  if (!AppData.isHabitScheduledForDate(habitId, dayKey)) return null;
   if (isNegative) return 1;
   if (AppData.isHabitAutoComplete(habitId)) return 1;
   return dayKey === todayKey ? 0 : -1;
@@ -286,6 +354,7 @@ export class AppData{
    static choosenHabitsStartDates = [];
    static choosenHabitsLastSkip = {};
    static choosenHabitsAutoComplete = {};
+   static choosenHabitsSchedule = {};
    static habitEventTimes = {};
    static choosenHabits = []; // id array
    static choosenHabitsAchievements = {};
@@ -319,6 +388,7 @@ export class AppData{
   static breathingLog = {};
   static meditationLog = {};
   static hardeningLog = {};
+  static meditationSoundSettings = { ...DEFAULT_MEDITATION_SOUND_SETTINGS };
   static recoveryAccentColor = DEFAULT_RECOVERY_ACCENT_COLOR;
   static recoveryAccentPresets = [];
   //mental
@@ -417,6 +487,7 @@ static mainHeroWidgets = ["HabitsMain", "TrainingMain", "MentalMain"];
     this.choosenHabitsTypes = [...data.choosenHabitsTypes];
     this.choosenHabitsGoals = data.choosenHabitsGoals;
     this.choosenHabitsAutoComplete = data.choosenHabitsAutoComplete || {};
+    this.choosenHabitsSchedule = normalizeHabitsScheduleMap(data.choosenHabitsSchedule, this.choosenHabits);
     this.habitEventTimes = data.habitEventTimes || {};
     this.choosenHabitsNotified = data.choosenHabitsNotified;
     this.choosenHabitsDaysToForm = data.choosenHabitsDaysToForm;
@@ -453,6 +524,7 @@ static mainHeroWidgets = ["HabitsMain", "TrainingMain", "MentalMain"];
     this.breathingLog = data.breathingLog;
     this.meditationLog = data.meditationLog;
     this.hardeningLog = data.hardeningLog;
+    this.meditationSoundSettings = normalizeMeditationSoundSettings(data.meditationSoundSettings);
     this.recoveryAccentColor = typeof data.recoveryAccentColor === 'string' && !LEGACY_RECOVERY_ACCENT_COLORS.includes(data.recoveryAccentColor.toUpperCase()) && !isCoffeeSectionAccent(data.recoveryAccentColor)
       ? normalizeSectionAccentColor(data.recoveryAccentColor, DEFAULT_RECOVERY_ACCENT_COLOR)
       : DEFAULT_RECOVERY_ACCENT_COLOR;
@@ -643,6 +715,28 @@ static getLastTrainingDayIndex() {
      }
      return false;
   } 
+  static getHabitSchedule(habitId) {
+    if (!this.choosenHabitsSchedule || typeof this.choosenHabitsSchedule !== 'object') this.choosenHabitsSchedule = {};
+    const current = normalizeHabitSchedule(this.choosenHabitsSchedule[habitId]);
+    this.choosenHabitsSchedule[habitId] = current;
+    return current;
+  }
+  static isHabitScheduledForDate(habitId, dayKey = formatLocalDateKey()) {
+    const schedule = this.getHabitSchedule(habitId);
+    if (schedule.type === 'daily') return true;
+    return schedule.days.includes(getWeekdayNumberFromKey(dayKey));
+  }
+  static async setHabitSchedule(habitId, schedule) {
+    if (!this.choosenHabitsSchedule || typeof this.choosenHabitsSchedule !== 'object') this.choosenHabitsSchedule = {};
+    this.choosenHabitsSchedule[habitId] = normalizeHabitSchedule(schedule);
+    await saveData();
+    return this.choosenHabitsSchedule[habitId];
+  }
+  static async setMeditationSoundSettings(settings) {
+    this.meditationSoundSettings = normalizeMeditationSoundSettings(settings);
+    await saveData();
+    return this.meditationSoundSettings;
+  }
   static isHabitAutoComplete(habitId) {
     return this.choosenHabitsAutoComplete?.[habitId] === true;
   }
@@ -683,7 +777,7 @@ static getLastTrainingDayIndex() {
     this.choosenHabitsLastSkip[habitId] = nextLastSkip;
     return true;
   }
-  static async addHabit(habitId,dateString,goals,isNegative,daysToForm,autoComplete = false){
+  static async addHabit(habitId,dateString,goals,isNegative,daysToForm,autoComplete = false,schedule = null){
     const isStartDateEarlier = Date.now() - new Date(dateString).getTime() > 86400000;
     const todayKey = formatLocalDateKey();
     if (!this.habitsByDate || typeof this.habitsByDate !== 'object') this.habitsByDate = {};
@@ -698,6 +792,7 @@ static getLastTrainingDayIndex() {
        this.choosenHabitsTypes.push(isNegative);
        if (!isNegative) this.choosenHabitsAutoComplete[habitId] = autoComplete === true;
        else delete this.choosenHabitsAutoComplete[habitId];
+       this.choosenHabitsSchedule[habitId] = normalizeHabitSchedule(schedule);
        habitReminder(this.prefs[0],this.notify[0].cron,0,0,false);
     }
     const startDate = new Date(dateString);
@@ -705,6 +800,10 @@ static getLastTrainingDayIndex() {
     let currentDate = startDate;
     while (currentDate < endDate) {
     const current = formatLocalDateKey(currentDate);
+    if (!this.isHabitScheduledForDate(habitId, current)) {
+      currentDate.setDate(currentDate.getDate() + 1);
+      continue;
+    }
     if(!(current in this.habitsByDate)) {
       this.habitsByDate[current] = {};
       this.habitsByDate[current][habitId] = getHabitPerformPercent(habitId) < 100 ? 1 : 1; 
@@ -715,7 +814,10 @@ static getLastTrainingDayIndex() {
      currentDate.setDate(currentDate.getDate() + 1);
    }
    if (!this.habitsByDate[todayKey]) this.habitsByDate[todayKey] = {};
-   if(isNegative){
+   if(!this.isHabitScheduledForDate(habitId, todayKey)){
+       delete this.habitsByDate[todayKey][habitId];
+   }
+   else if(isNegative){
        this.habitsByDate[todayKey][habitId] = 1;
    }
    else this.habitsByDate[todayKey][habitId] = this.isHabitAutoComplete(habitId) || getHabitPerformPercent(habitId) >= 100 ? 1 : 0;
@@ -733,6 +835,7 @@ static getLastTrainingDayIndex() {
     this.choosenHabitsDaysToForm.splice(index,1);
     delete this.choosenHabitsLastSkip[habitId];
     delete this.choosenHabitsAutoComplete[habitId];
+    delete this.choosenHabitsSchedule[habitId];
     delete this.habitEventTimes[habitId];
     this.choosenHabitsTypes.splice(index,1);
     delete this.choosenHabitsGoals[habitId];
@@ -905,14 +1008,18 @@ export const fillEmptyDays = () => {
 
     for (let currentDate = cloneDate(startDate); currentDate <= today; currentDate = addLocalDays(currentDate, 1)) {
       const dayKey = formatLocalDateKey(currentDate);
+      if (!AppData.isHabitScheduledForDate(habitId, dayKey)) continue;
       if (!AppData.habitsByDate[dayKey] || typeof AppData.habitsByDate[dayKey] !== 'object') {
         AppData.habitsByDate[dayKey] = {};
         changed = true;
       }
 
       if (!Object.prototype.hasOwnProperty.call(AppData.habitsByDate[dayKey], habitId)) {
-        AppData.habitsByDate[dayKey][habitId] = getDefaultHabitStatusForDay(habitId, index, dayKey, todayKey);
-        changed = true;
+        const defaultStatus = getDefaultHabitStatusForDay(habitId, index, dayKey, todayKey);
+        if (defaultStatus !== null) {
+          AppData.habitsByDate[dayKey][habitId] = defaultStatus;
+          changed = true;
+        }
       }
     }
   });
@@ -1014,6 +1121,7 @@ export class Data{
     this.choosenHabitsTypes = AppData.choosenHabitsTypes;
     this.habitsByDate = AppData.habitsByDate;
     this.choosenHabitsAutoComplete = AppData.choosenHabitsAutoComplete;
+    this.choosenHabitsSchedule = AppData.choosenHabitsSchedule;
     this.habitEventTimes = AppData.habitEventTimes;
     this.choosenHabitsAchievements = AppData.choosenHabitsAchievements;
     this.choosenHabitsLastSkip = AppData.choosenHabitsLastSkip;
@@ -1050,6 +1158,7 @@ export class Data{
     this.breathingLog = AppData.breathingLog;
     this.meditationLog = AppData.meditationLog;
     this.hardeningLog = AppData.hardeningLog;
+    this.meditationSoundSettings = AppData.meditationSoundSettings;
     this.recoveryAccentColor = AppData.recoveryAccentColor;
     this.recoveryAccentPresets = AppData.recoveryAccentPresets;
     this.mentalRecords = AppData.mentalRecords;
@@ -1083,13 +1192,15 @@ export function getHabitCurrentStreak(habitId){
   const todayKey = formatLocalDateKey();
   const isNegative = AppData.choosenHabitsTypes?.[habitIndex] === true;
   const startDate = getHabitStartDate(habitIndex);
-  const startKey = startDate ? formatLocalDateKey(startDate) : '';
-  const dateKeys = Object.keys(AppData.habitsByDate || {})
-    .filter(key => (!startKey || key >= startKey) && key <= todayKey)
-    .sort((a, b) => b.localeCompare(a));
+  const startKey = startDate ? formatLocalDateKey(startDate) : todayKey;
+  const today = parseLocalDateKey(todayKey);
+  if (!today) return 0;
 
   let streak = 0;
-  for (const key of dateKeys) {
+  for (let currentDate = cloneDate(today); formatLocalDateKey(currentDate) >= startKey; currentDate = addLocalDays(currentDate, -1)) {
+    const key = formatLocalDateKey(currentDate);
+    if (!AppData.isHabitScheduledForDate(habitId, key)) continue;
+
     const day = AppData.habitsByDate?.[key];
     if (!day || !Object.prototype.hasOwnProperty.call(day, habitId)) {
       if (isNegative) {

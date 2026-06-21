@@ -15,6 +15,16 @@ import EmojiIconPickerPanel, { emojiFromIconName, normalizeCustomEmoji } from '.
 
 const click = new Audio('Audio/Click.wav');
 const now = new Date();
+const HABIT_WEEKDAYS = [
+    { id: 1, label: ['ПН', 'MO'] },
+    { id: 2, label: ['ВТ', 'TU'] },
+    { id: 3, label: ['СР', 'WE'] },
+    { id: 4, label: ['ЧТ', 'TH'] },
+    { id: 5, label: ['ПТ', 'FR'] },
+    { id: 6, label: ['СБ', 'SA'] },
+    { id: 7, label: ['ВС', 'SU'] }
+];
+const ALL_HABIT_WEEKDAYS = HABIT_WEEKDAYS.map(day => day.id);
 
 // --- ВНЕШНИЕ ХЕЛПЕРЫ (ДЛЯ СТАБИЛЬНОСТИ) ---
 const getAllHabits = () => {
@@ -48,6 +58,8 @@ const AddHabitPanel = () => {
     const [isNegative, setIsNegative] = useState(false);
     const [daysToForm, setDaysToForm] = useState(66);
     const [habitAutoComplete, setHabitAutoComplete] = useState(false);
+    const [habitScheduleType, setHabitScheduleType] = useState('daily');
+    const [habitScheduleDays, setHabitScheduleDays] = useState(ALL_HABIT_WEEKDAYS);
 
     const [habitSearchQuery, setHabitSearchQuery] = useState('');
     const [selectIconPanel, setSelectIconPanel] = useState(false);
@@ -156,6 +168,8 @@ const AddHabitPanel = () => {
             setHabitCategory(selectedHabit.category[0]);
             setIsNegative(isNeg);
             setHabitAutoComplete(false);
+            setHabitScheduleType('daily');
+            setHabitScheduleDays(ALL_HABIT_WEEKDAYS);
             setGoals(setGoalForDefault(selectedHabit.name[0], langIndex));
             setDaysToForm(isNeg ? 120 : 66);
             if (window.Telegram?.WebApp?.HapticFeedback) window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
@@ -172,6 +186,8 @@ const AddHabitPanel = () => {
         setHabitCategory(habit.category[0]);
         setIsNegative(isNeg);
         setHabitAutoComplete(false);
+        setHabitScheduleType('daily');
+        setHabitScheduleDays(ALL_HABIT_WEEKDAYS);
         setGoals(setGoalForDefault(habit.name[0], langIndex));
         setDaysToForm(isNeg ? 120 : 66);
         if (habitSearchQuery.trim()) setFilterCategory(habit.category[langIndex]);
@@ -225,6 +241,8 @@ const AddHabitPanel = () => {
         setHabitCategory(selectedCat?.label?.[0] || 'Здоровье');
         setIsNegative(selectedCat?.isNegative || false);
         setHabitAutoComplete(false);
+        setHabitScheduleType('daily');
+        setHabitScheduleDays(ALL_HABIT_WEEKDAYS);
         setDaysToForm(selectedCat?.isNegative ? 120 : 66);
         setHabitId(-1);
     };
@@ -241,6 +259,8 @@ const AddHabitPanel = () => {
         setHabitCategory(selectedCat?.label?.[0] || 'Здоровье');
         setIsNegative(selectedCat?.isNegative || false);
         setHabitAutoComplete(false);
+        setHabitScheduleType('daily');
+        setHabitScheduleDays(ALL_HABIT_WEEKDAYS);
         setDaysToForm(selectedCat?.isNegative ? 120 : 66);
         setHabitId(-1);
     };
@@ -260,19 +280,34 @@ const AddHabitPanel = () => {
             setShowPopUpPanel(langIndex === 0 ? 'Выберите привычку' : 'Choose a habit', 2000, false);
             return;
         }
+        if (habitScheduleType === 'weekly' && habitScheduleDays.length === 0) {
+            setShowPopUpPanel(langIndex === 0 ? 'Выберите дни недели' : 'Choose weekdays', 2000, false);
+            return;
+        }
         setConfirmationPanel(true);
     };
 
     const handleSave = async () => {
         const dateStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         const finalGoals = goals.map(g => ({ text: g, isDone: false }));
+        const schedule = habitScheduleType === 'weekly'
+            ? { type: 'weekly', days: habitScheduleDays }
+            : { type: 'daily', days: ALL_HABIT_WEEKDAYS };
         const effectiveHabit = !showCreatePanel ? (selectedHabit || filteredHabits[0]) : null;
         const effectiveHabitId = effectiveHabit?.id ?? habitId;
         const effectiveHabitName = effectiveHabit?.name?.[langIndex] ?? habitName.trim();
         const added = showCreatePanel
-            ? await createHabit(habitName.trim(), getCategory(habitCategory), habitDescription.trim(), habitIcon, dateStr, finalGoals, isNegative, daysToForm, habitAutoComplete)
-            : await addHabit(effectiveHabitId, effectiveHabitName, false, dateStr, finalGoals, isNegative, daysToForm, habitAutoComplete);
+            ? await createHabit(habitName.trim(), getCategory(habitCategory), habitDescription.trim(), habitIcon, dateStr, finalGoals, isNegative, daysToForm, habitAutoComplete, schedule)
+            : await addHabit(effectiveHabitId, effectiveHabitName, false, dateStr, finalGoals, isNegative, daysToForm, habitAutoComplete, schedule);
         if (added) closePanel();
+    };
+
+    const toggleScheduleDay = (dayId) => {
+        setHabitScheduleDays(prev => (
+            prev.includes(dayId)
+                ? prev.filter(day => day !== dayId)
+                : [...prev, dayId].sort((a, b) => a - b)
+        ));
     };
 
     const resetCategoryForm = () => {
@@ -677,6 +712,51 @@ const AddHabitPanel = () => {
                                                 </p>
                                             </div>
                                         )}
+
+                                        <div style={configCard(ui)}>
+                                            <p style={cardLabel(ui)}>{langIndex === 0 ? 'расписание' : 'schedule'}</p>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                                <motion.button
+                                                    type="button"
+                                                    whileTap={{ scale: 0.98 }}
+                                                    onClick={() => {
+                                                        setHabitScheduleType('daily');
+                                                        setHabitScheduleDays(ALL_HABIT_WEEKDAYS);
+                                                    }}
+                                                    style={scheduleModeButton(ui, habitScheduleType === 'daily')}
+                                                >
+                                                    {langIndex === 0 ? 'Каждый день' : 'Every day'}
+                                                </motion.button>
+                                                <motion.button
+                                                    type="button"
+                                                    whileTap={{ scale: 0.98 }}
+                                                    onClick={() => setHabitScheduleType('weekly')}
+                                                    style={scheduleModeButton(ui, habitScheduleType === 'weekly')}
+                                                >
+                                                    {langIndex === 0 ? 'Дни недели' : 'Weekdays'}
+                                                </motion.button>
+                                            </div>
+                                            {habitScheduleType === 'weekly' && (
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 6, marginTop: 12 }}>
+                                                    {HABIT_WEEKDAYS.map(day => (
+                                                        <motion.button
+                                                            key={day.id}
+                                                            type="button"
+                                                            whileTap={{ scale: 0.94 }}
+                                                            onClick={() => toggleScheduleDay(day.id)}
+                                                            style={weekdayChip(ui, habitScheduleDays.includes(day.id))}
+                                                        >
+                                                            {day.label[langIndex]}
+                                                        </motion.button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <p style={{ fontSize: '12px', color: ui.sub, margin: '8px 0 0', textAlign: 'center' }}>
+                                                {habitScheduleType === 'daily'
+                                                    ? (langIndex === 0 ? 'Привычка будет видна каждый день.' : 'The habit will be visible every day.')
+                                                    : (langIndex === 0 ? 'В другие дни привычка будет скрыта.' : 'The habit will be hidden on other days.')}
+                                            </p>
+                                        </div>
 
                                         <div style={configCard(ui)}>
                                             <p style={cardLabel(ui)}>{langIndex === 0 ? 'микро-цели' : 'sub-goals'}</p>
@@ -1520,6 +1600,22 @@ const completionModeButton = (ui, active) => ({
     fontWeight: '800',
     cursor: 'pointer'
 });
+const scheduleModeButton = (ui, active) => ({
+    ...completionModeButton(ui, active),
+    minHeight: 44
+});
+const weekdayChip = (ui, active) => ({
+    minHeight: 38,
+    borderRadius: 13,
+    border: `1px solid ${active ? ui.accentRing : ui.border}`,
+    background: active ? ui.accentSoft : 'rgba(255,255,255,0.035)',
+    color: active ? ui.accent : ui.sub,
+    fontSize: 11,
+    fontWeight: 950,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    padding: 0
+});
 
 // --- ЛОГИКА (ОРИГИНАЛ) ---
 const months = [['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'], ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']];
@@ -1537,28 +1633,28 @@ function needDaysInfo(lang, days, isNegative) {
     return lang === 0 ? 'мне нужно ' + days + ' дней для формирования' : 'it takes ' + days + ' days to form';
 }
 
-const addHabit = async (habitId, habitName, isCustom, dateString, goals, isNegative, daysToForm, autoComplete = false) => {
+const addHabit = async (habitId, habitName, isCustom, dateString, goals, isNegative, daysToForm, autoComplete = false, schedule = null) => {
     if (habitId == null || habitId < 0) {
         setShowPopUpPanel(AppData.prefs[0] === 0 ? 'выберите привычку' : 'choose a habit', 2500, false);
         return false;
     }
     if (AppData.IsHabitInChoosenList(habitId)) { setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка уже в списке' : 'habit already in list', 2500, false); return false; }
     if (typeof addHabitFn === 'function') {
-        await addHabitFn(habitId, dateString, goals, isNegative, daysToForm, autoComplete);
+        await addHabitFn(habitId, dateString, goals, isNegative, daysToForm, autoComplete, schedule);
     } else {
-        await AppData.addHabit(habitId, dateString, goals, isNegative, daysToForm, autoComplete);
+        await AppData.addHabit(habitId, dateString, goals, isNegative, daysToForm, autoComplete, schedule);
     }
     emitHabitsChanged();
     setShowPopUpPanel(AppData.prefs[0] === 0 ? 'привычка добавлена' : 'habit added', 2500, true);
     return true;
 }
 
-const createHabit = async (name, category, description, icon, dateString, goals, isNegative, daysToForm, autoComplete = false) => {
+const createHabit = async (name, category, description, icon, dateString, goals, isNegative, daysToForm, autoComplete = false, schedule = null) => {
     const currentAll = getAllHabits();
     const maxId = currentAll.length > 0 ? Math.max(...currentAll.map(h => h.id)) : 0;
     const habitId = maxId + 1;
     await AppData.AddCustomHabit(name, category, description, icon, habitId);
-    return addHabit(habitId, name, true, dateString, goals, isNegative, daysToForm, autoComplete);
+    return addHabit(habitId, name, true, dateString, goals, isNegative, daysToForm, autoComplete, schedule);
 }
 
 const translateToEnglish = (ruText) => {
