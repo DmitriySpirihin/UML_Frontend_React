@@ -7,7 +7,7 @@ import App from './App.jsx';
 import WebApp from '@twa-dev/sdk';
 import './Analitics';
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
-import { shouldUsePerformanceLiteMode } from './assets/StaticClasses/PerformanceMode';
+import { applyPerformanceClasses } from './assets/StaticClasses/PerformanceMode';
 
 WebApp?.ready?.();
 
@@ -16,9 +16,7 @@ const walletsListSource = `${import.meta.env.BASE_URL}wallets.json`;
 const cacheRescueVersion = 'device-sync-20260618-1705';
 
 if (typeof window !== 'undefined') {
-  const performanceLite = shouldUsePerformanceLiteMode();
-  document.documentElement.classList.toggle('uml-performance-lite', performanceLite);
-  document.documentElement.classList.toggle('uml-android-lite', performanceLite);
+  applyPerformanceClasses();
 
   const reloadFreshApp = (reason) => {
     if (window.__umlReloadingFreshApp) return;

@@ -32,7 +32,7 @@ import Colors from './assets/StaticClasses/Colors'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { FaServer, FaCog, FaTools } from 'react-icons/fa';
 import { maybeSeedDemoData } from './assets/StaticClasses/DemoSeed';
-import { shouldUsePerformanceLiteMode } from './assets/StaticClasses/PerformanceMode';
+import { applyPerformanceClasses, getDevicePerformanceProfile } from './assets/StaticClasses/PerformanceMode';
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
 const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'));
 const HabitsInsight = lazy(() => import('./assets/Pages/HabitsPages/HabitsInsight'));
@@ -117,6 +117,7 @@ function App() {
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
   const [isTechicalWorks, setIsTechicalWorks] = useState(false);
+  const [performanceProfile] = useState(getDevicePerformanceProfile);
   const lang = AppData.prefs[0];
   
 
@@ -152,13 +153,12 @@ function App() {
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    const enabled = shouldUsePerformanceLiteMode();
-    document.documentElement.classList.toggle('uml-performance-lite', enabled);
-    document.documentElement.classList.toggle('uml-android-lite', enabled);
+    applyPerformanceClasses();
 
     return () => {
       document.documentElement.classList.remove('uml-performance-lite');
       document.documentElement.classList.remove('uml-android-lite');
+      document.documentElement.classList.remove('uml-tablet-lite');
     };
   }, []);
 
@@ -275,7 +275,7 @@ function App() {
   }, [addPanel, confirmationPanel, notifyPanel, page]);
 
   return (
-    <MotionConfig reducedMotion="user" transition={{ duration: 0.18, ease: 'easeOut' }}>
+    <MotionConfig reducedMotion="user" transition={{ duration: performanceProfile.performanceLite ? 0.14 : 0.18, ease: 'easeOut' }}>
       {
         isTechicalWorks && 
         <motion.div
