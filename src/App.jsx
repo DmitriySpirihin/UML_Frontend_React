@@ -32,6 +32,7 @@ import Colors from './assets/StaticClasses/Colors'
 import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import { FaServer, FaCog, FaTools } from 'react-icons/fa';
 import { maybeSeedDemoData } from './assets/StaticClasses/DemoSeed';
+import { shouldUsePerformanceLiteMode } from './assets/StaticClasses/PerformanceMode';
 const HabitCalendar = lazy(() => import('./assets/Pages/HabitsPages/HabitCalendar'));
 const HabitMetrics = lazy(() => import('./assets/Pages/HabitsPages/HabitMetrics'));
 const HabitsInsight = lazy(() => import('./assets/Pages/HabitsPages/HabitsInsight'));
@@ -107,12 +108,6 @@ const getBottomPanelForPage = (page) => {
   return 'BtnsMenu';
 };
 
-const shouldUseAndroidLiteMode = () => {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
-  const platform = window.Telegram?.WebApp?.platform || '';
-  return platform === 'android' || /Android/i.test(navigator.userAgent || '');
-};
-
 function App() {
   const [page, setPageState] = useState('LoadPanel');
   const [addPanel, setAddPanel] = useState('');
@@ -158,11 +153,13 @@ function App() {
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    const enabled = shouldUseAndroidLiteMode();
+    const enabled = shouldUsePerformanceLiteMode();
     setIsPerformanceLite(enabled);
+    document.documentElement.classList.toggle('uml-performance-lite', enabled);
     document.documentElement.classList.toggle('uml-android-lite', enabled);
 
     return () => {
+      document.documentElement.classList.remove('uml-performance-lite');
       document.documentElement.classList.remove('uml-android-lite');
     };
   }, []);

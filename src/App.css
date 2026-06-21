@@ -155,28 +155,36 @@ a {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translate3d(0, -6px, 0);
   overflow: hidden;
   pointer-events: none;
+  contain: layout paint style;
+  will-change: grid-template-rows, opacity, transform;
   transition:
-    grid-template-rows 320ms cubic-bezier(0.2, 0, 0.2, 1),
-    opacity 220ms ease,
-    transform 320ms cubic-bezier(0.2, 0, 0.2, 1),
-    margin 320ms cubic-bezier(0.2, 0, 0.2, 1);
+    grid-template-rows 220ms cubic-bezier(0.2, 0, 0.2, 1),
+    opacity 160ms ease,
+    transform 220ms cubic-bezier(0.2, 0, 0.2, 1),
+    margin 220ms cubic-bezier(0.2, 0, 0.2, 1),
+    padding 220ms cubic-bezier(0.2, 0, 0.2, 1);
 }
 
 .smooth-accordion.is-open {
   grid-template-rows: 1fr;
   opacity: 1;
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0);
   pointer-events: auto;
 }
 
 .smooth-accordion-inner {
   min-height: 0;
   overflow: hidden;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
+html.uml-performance-lite *,
+html.uml-performance-lite *::before,
+html.uml-performance-lite *::after,
 html.uml-android-lite *,
 html.uml-android-lite *::before,
 html.uml-android-lite *::after {
@@ -189,14 +197,30 @@ html.uml-android-lite *::after {
   scroll-behavior: auto !important;
 }
 
+html.uml-performance-lite .smooth-accordion,
 html.uml-android-lite .smooth-accordion {
+  contain-intrinsic-size: 0 1px;
   transition:
-    grid-template-rows 180ms ease,
-    opacity 140ms ease,
-    transform 180ms ease,
-    margin 180ms ease !important;
+    opacity 110ms ease,
+    transform 110ms ease,
+    margin 110ms ease,
+    padding 110ms ease !important;
+  will-change: opacity, transform;
 }
 
+html.uml-performance-lite .smooth-accordion.is-open,
+html.uml-android-lite .smooth-accordion.is-open {
+  content-visibility: visible;
+  grid-template-rows: 1fr;
+}
+
+html.uml-performance-lite .smooth-accordion:not(.is-open),
+html.uml-android-lite .smooth-accordion:not(.is-open) {
+  content-visibility: hidden;
+  grid-template-rows: 0fr;
+}
+
+html.uml-performance-lite .premium-border,
 html.uml-android-lite .premium-border {
   animation: none !important;
 }
