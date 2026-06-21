@@ -117,7 +117,6 @@ function App() {
   const [keyboardVisible, setKeyboardVisibleState] = useState(false);
   const [notifyPanel, setNotifyPanelState] = useState(false);
   const [isTechicalWorks, setIsTechicalWorks] = useState(false);
-  const [isPerformanceLite, setIsPerformanceLite] = useState(false);
   const lang = AppData.prefs[0];
   
 
@@ -154,7 +153,6 @@ function App() {
   useEffect(() => {
     if (typeof document === 'undefined') return;
     const enabled = shouldUsePerformanceLiteMode();
-    setIsPerformanceLite(enabled);
     document.documentElement.classList.toggle('uml-performance-lite', enabled);
     document.documentElement.classList.toggle('uml-android-lite', enabled);
 
@@ -277,7 +275,7 @@ function App() {
   }, [addPanel, confirmationPanel, notifyPanel, page]);
 
   return (
-    <MotionConfig reducedMotion={isPerformanceLite ? 'always' : 'user'} transition={{ duration: isPerformanceLite ? 0.12 : 0.18, ease: 'easeOut' }}>
+    <MotionConfig reducedMotion="user" transition={{ duration: 0.18, ease: 'easeOut' }}>
       {
         isTechicalWorks && 
         <motion.div

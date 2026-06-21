@@ -182,42 +182,14 @@ a {
   backface-visibility: hidden;
 }
 
-html.uml-performance-lite *,
-html.uml-performance-lite *::before,
-html.uml-performance-lite *::after,
-html.uml-android-lite *,
-html.uml-android-lite *::before,
-html.uml-android-lite *::after {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  filter: none !important;
-  animation-duration: 1ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 140ms !important;
-  scroll-behavior: auto !important;
-}
-
 html.uml-performance-lite .smooth-accordion,
 html.uml-android-lite .smooth-accordion {
-  contain-intrinsic-size: 0 1px;
   transition:
-    opacity 110ms ease,
-    transform 110ms ease,
-    margin 110ms ease,
-    padding 110ms ease !important;
-  will-change: opacity, transform;
-}
-
-html.uml-performance-lite .smooth-accordion.is-open,
-html.uml-android-lite .smooth-accordion.is-open {
-  content-visibility: visible;
-  grid-template-rows: 1fr;
-}
-
-html.uml-performance-lite .smooth-accordion:not(.is-open),
-html.uml-android-lite .smooth-accordion:not(.is-open) {
-  content-visibility: hidden;
-  grid-template-rows: 0fr;
+    grid-template-rows 190ms cubic-bezier(0.2, 0, 0.2, 1),
+    opacity 170ms ease,
+    transform 190ms cubic-bezier(0.2, 0, 0.2, 1),
+    margin 190ms cubic-bezier(0.2, 0, 0.2, 1),
+    padding 190ms cubic-bezier(0.2, 0, 0.2, 1) !important;
 }
 
 html.uml-performance-lite .premium-border,
