@@ -8,11 +8,11 @@ import BreathAudio from "../../Helpers/BreathAudio"
 import { saveBreathingSession } from '../../StaticClasses/RecoveryLogHelper';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 
-// Фоновый эмбиент
-const AMBIENT_SOUND_URL = 'Audio/Ambient.wav';
+const AMBIENT_SOUND_URL = 'Audio/relax/breathing-flow.mp3';
 const ambientAudio = new Audio(AMBIENT_SOUND_URL);
 ambientAudio.loop = true;
-ambientAudio.volume = 0.18;
+ambientAudio.preload = 'auto';
+ambientAudio.volume = 0.16;
 
 const startTimerDuration = 3000;
 

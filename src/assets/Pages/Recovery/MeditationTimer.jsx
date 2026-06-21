@@ -10,21 +10,21 @@ import { motion as Motion, AnimatePresence } from 'framer-motion';
 const SILENT_AUDIO_URL = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQQAAAAAAA==';
 const BACKGROUND_SOUND_OPTIONS = [
   { id: 'none', label: ['Без фона', 'No background'] },
-  { id: 'warmPad', label: ['Теплый фон', 'Warm space'], background: 'warmPad', previewVolume: 0.16 },
-  { id: 'softRain', label: ['Мягкий дождь', 'Soft rain'], background: 'softRain', previewVolume: 0.15 },
-  { id: 'deepCalm', label: ['Глубокий тон', 'Deep calm'], background: 'deepCalm', previewVolume: 0.12 }
+  { id: 'warmPad', label: ['Тихий эмбиент', 'Quiet ambient'], src: 'Audio/relax/meditation-pad.mp3', loop: true, volume: 0.2, previewVolume: 0.28 },
+  { id: 'softRain', label: ['Мягкий дождь', 'Soft rain'], src: 'Audio/relax/soft-rain.mp3', loop: true, volume: 0.18, previewVolume: 0.28 },
+  { id: 'deepCalm', label: ['Океан', 'Ocean'], src: 'Audio/relax/ocean-waves.mp3', loop: true, volume: 0.2, previewVolume: 0.28 }
 ];
 const START_SOUND_OPTIONS = [
   { id: 'none', label: ['Без звука', 'Silent'] },
-  { id: 'softBell', label: ['Мягкий колокол', 'Soft bell'], cue: 'softBell' },
-  { id: 'warmChime', label: ['Теплый звон', 'Warm chime'], cue: 'warmChime' },
-  { id: 'breathTone', label: ['Вдох', 'Breath tone'], cue: 'breathTone' }
+  { id: 'softBell', label: ['Мягкий колокол', 'Soft bell'], src: 'Audio/meditation-cues/soft-bell.mp3', volume: 0.72, maxMs: 3600 },
+  { id: 'warmChime', label: ['Теплый звон', 'Warm chime'], src: 'Audio/meditation-cues/warm-chime.mp3', volume: 0.5, maxMs: 4200 },
+  { id: 'breathTone', label: ['Тон дыхания', 'Breath tone'], src: 'Audio/meditation-cues/breath-tone.mp3', volume: 0.62, maxMs: 3600 }
 ];
 const END_SOUND_OPTIONS = [
   { id: 'none', label: ['Без звука', 'Silent'] },
-  { id: 'lowBell', label: ['Низкий колокол', 'Low bell'], cue: 'lowBell' },
-  { id: 'softBowl', label: ['Чаша', 'Singing bowl'], cue: 'softBowl' },
-  { id: 'gentleClose', label: ['Мягкий выход', 'Gentle close'], cue: 'gentleClose' }
+  { id: 'lowBell', label: ['Низкий колокол', 'Low bell'], src: 'Audio/meditation-cues/low-bell.mp3', volume: 0.58, maxMs: 5200 },
+  { id: 'softBowl', label: ['Чаша', 'Singing bowl'], src: 'Audio/meditation-cues/singing-bowl.mp3', volume: 0.76, maxMs: 6200 },
+  { id: 'gentleClose', label: ['Мягкий выход', 'Gentle close'], src: 'Audio/meditation-cues/gentle-close.mp3', volume: 0.72, maxMs: 6200 }
 ];
 const DEFAULT_SOUND_SETTINGS = { background: 'warmPad', start: 'softBell', end: 'lowBell' };
 const SOUND_ID_MIGRATIONS = {
@@ -41,6 +41,7 @@ const MEDITATION_GUIDES = {
   '0-0': {
     variant: 'breath',
     image: 'images/meditation-guides/mindful-breathing.jpg',
+    mobileImagePosition: '50% 42%',
     title: ['Осознанное дыхание', 'Mindful breathing'],
     cue: ['Дыхание - якорь внимания', 'Breath is the attention anchor'],
     steps: [
@@ -52,6 +53,7 @@ const MEDITATION_GUIDES = {
   '0-1': {
     variant: 'scan',
     image: 'images/meditation-guides/body-scan.jpg',
+    mobileImagePosition: '50% 42%',
     title: ['Сканирование тела', 'Body scan'],
     cue: ['Ведите внимание сверху вниз', 'Move attention through the body'],
     steps: [
@@ -63,6 +65,7 @@ const MEDITATION_GUIDES = {
   '1-0': {
     variant: 'focus',
     image: 'images/meditation-guides/focused-attention.jpg',
+    mobileImagePosition: '50% 42%',
     title: ['Один объект', 'Single object'],
     cue: ['Держите мягкий фокус', 'Hold a soft focus'],
     steps: [
@@ -74,6 +77,7 @@ const MEDITATION_GUIDES = {
   '1-1': {
     variant: 'gratitude',
     image: 'images/meditation-guides/gratitude.jpg',
+    mobileImagePosition: '50% 42%',
     title: ['Благодарность', 'Gratitude'],
     cue: ['Вспомните и почувствуйте', 'Recall and feel it'],
     steps: [
@@ -85,6 +89,7 @@ const MEDITATION_GUIDES = {
   '2-0': {
     variant: 'count',
     image: 'images/meditation-guides/breath-counting.jpg',
+    mobileImagePosition: '50% 42%',
     title: ['Подсчет дыханий', 'Breath counting'],
     cue: ['Счет держит внимание', 'Counting holds attention'],
     steps: [
@@ -96,6 +101,7 @@ const MEDITATION_GUIDES = {
   '2-1': {
     variant: 'open',
     image: 'images/meditation-guides/open-monitoring.jpg',
+    mobileImagePosition: '50% 42%',
     title: ['Открытое наблюдение', 'Open monitoring'],
     cue: ['Замечайте, не цепляясь', 'Notice without clinging'],
     steps: [
@@ -107,6 +113,7 @@ const MEDITATION_GUIDES = {
   '3-0': {
     variant: 'deep',
     image: 'images/meditation-guides/deep-focus.jpg',
+    mobileImagePosition: '50% 42%',
     title: ['Глубокий фокус', 'Deep focus'],
     cue: ['Одна точка, меньше усилия', 'One point, less force'],
     steps: [
@@ -118,6 +125,7 @@ const MEDITATION_GUIDES = {
   '3-1': {
     variant: 'alternate',
     image: 'images/meditation-guides/alternating.jpg',
+    mobileImagePosition: '50% 42%',
     title: ['Чередование', 'Alternating'],
     cue: ['Три режима в одной практике', 'Three modes in one practice'],
     steps: [
@@ -201,185 +209,25 @@ const normalizeSoundSettings = (settings = {}) => {
 
 const findSoundOption = (options, id) => options.find(option => option.id === id) || options[0];
 
-const createAudioContext = () => {
-  if (typeof window === 'undefined') return null;
-  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-  return AudioContextCtor ? new AudioContextCtor() : null;
-};
-
-const scheduleSoftTone = (ctx, output, { freq, start = 0, duration = 1.5, gain = 0.08, type = 'sine', detune = 0 }) => {
-  const oscillator = ctx.createOscillator();
-  const envelope = ctx.createGain();
-  const now = ctx.currentTime + start;
-  oscillator.type = type;
-  oscillator.frequency.setValueAtTime(freq, now);
-  oscillator.detune.setValueAtTime(detune, now);
-  envelope.gain.setValueAtTime(0.0001, now);
-  envelope.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), now + 0.045);
-  envelope.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  oscillator.connect(envelope).connect(output);
-  oscillator.start(now);
-  oscillator.stop(now + duration + 0.08);
-};
-
-const createNoiseSource = (ctx, seconds = 3, kind = 'soft') => {
-  const buffer = ctx.createBuffer(1, ctx.sampleRate * seconds, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  let brown = 0;
-  for (let i = 0; i < data.length; i += 1) {
-    const white = (Math.random() * 2) - 1;
-    if (kind === 'rain') {
-      data[i] = (Math.random() > 0.972 ? white * 0.42 : white * 0.05);
-    } else {
-      brown = (brown + (0.018 * white)) / 1.018;
-      data[i] = brown * 2.4;
-    }
-  }
-  const source = ctx.createBufferSource();
-  source.buffer = buffer;
-  source.loop = true;
-  return source;
-};
-
-const playMeditationCue = (cue, volume = 1) => {
-  const ctx = createAudioContext();
-  if (!ctx) return null;
-  const output = ctx.createGain();
-  const master = ctx.createGain();
-  const delay = ctx.createDelay();
-  const feedback = ctx.createGain();
-  const wet = ctx.createGain();
-  const start = ctx.currentTime;
-  const duration = cue === 'softBowl' ? 3.2 : cue === 'lowBell' ? 2.7 : 2.1;
-
-  master.gain.setValueAtTime(0.85 * volume, start);
-  delay.delayTime.setValueAtTime(0.18, start);
-  feedback.gain.setValueAtTime(0.2, start);
-  wet.gain.setValueAtTime(0.22, start);
-  output.connect(master);
-  output.connect(delay);
-  delay.connect(feedback).connect(delay);
-  delay.connect(wet).connect(master);
-  master.connect(ctx.destination);
-
-  if (cue === 'softBell') {
-    scheduleSoftTone(ctx, output, { freq: 528, duration: 1.55, gain: 0.08 });
-    scheduleSoftTone(ctx, output, { freq: 792, duration: 1.35, gain: 0.036, start: 0.02 });
-    scheduleSoftTone(ctx, output, { freq: 1056, duration: 1.05, gain: 0.018, start: 0.04 });
-  } else if (cue === 'warmChime') {
-    scheduleSoftTone(ctx, output, { freq: 432, duration: 1.6, gain: 0.07 });
-    scheduleSoftTone(ctx, output, { freq: 648, duration: 1.25, gain: 0.034, start: 0.08 });
-    scheduleSoftTone(ctx, output, { freq: 864, duration: 1.0, gain: 0.018, start: 0.16 });
-  } else if (cue === 'breathTone') {
-    scheduleSoftTone(ctx, output, { freq: 392, duration: 1.45, gain: 0.05 });
-    scheduleSoftTone(ctx, output, { freq: 523.25, duration: 1.3, gain: 0.032, start: 0.24 });
-  } else if (cue === 'lowBell') {
-    scheduleSoftTone(ctx, output, { freq: 196, duration: 2.45, gain: 0.075, type: 'sine' });
-    scheduleSoftTone(ctx, output, { freq: 392, duration: 2.0, gain: 0.035, start: 0.04 });
-    scheduleSoftTone(ctx, output, { freq: 588, duration: 1.6, gain: 0.018, start: 0.08 });
-  } else if (cue === 'softBowl') {
-    scheduleSoftTone(ctx, output, { freq: 174.6, duration: 3.0, gain: 0.068 });
-    scheduleSoftTone(ctx, output, { freq: 349.2, duration: 2.55, gain: 0.035, detune: -3 });
-    scheduleSoftTone(ctx, output, { freq: 522.8, duration: 2.0, gain: 0.015, detune: 4 });
-  } else {
-    scheduleSoftTone(ctx, output, { freq: 330, duration: 1.65, gain: 0.052 });
-    scheduleSoftTone(ctx, output, { freq: 440, duration: 1.35, gain: 0.026, start: 0.14 });
-  }
-
-  ctx.resume?.();
-  const timeout = window.setTimeout(() => ctx.close?.().catch(() => {}), (duration + 0.7) * 1000);
-  return {
-    stop: () => {
-      window.clearTimeout(timeout);
-      try { master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.12); } catch (error) { void error; }
-      window.setTimeout(() => ctx.close?.().catch(() => {}), 180);
-    }
-  };
-};
-
 const playCue = (options, id, volume = 1) => {
   const option = findSoundOption(options, id);
-  if (!option?.cue) return null;
-  return playMeditationCue(option.cue, volume);
-};
-
-const createGeneratedBackground = (kind, volume = 0.14) => {
-  const ctx = createAudioContext();
-  if (!ctx) return null;
-
-  const master = ctx.createGain();
-  const filter = ctx.createBiquadFilter();
-  const sources = [];
-  const start = ctx.currentTime;
-  master.gain.setValueAtTime(0.0001, start);
-  master.gain.exponentialRampToValueAtTime(volume, start + 1.2);
-  filter.type = 'lowpass';
-  filter.frequency.value = kind === 'softRain' ? 5200 : 1800;
-  filter.Q.value = 0.6;
-  filter.connect(master).connect(ctx.destination);
-
-  const addDrone = (freq, gainValue, type = 'sine', detune = 0) => {
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    oscillator.type = type;
-    oscillator.frequency.setValueAtTime(freq, start);
-    oscillator.detune.setValueAtTime(detune, start);
-    gain.gain.setValueAtTime(gainValue, start);
-    oscillator.connect(gain).connect(filter);
-    oscillator.start();
-    sources.push(oscillator);
+  if (!option?.src) return null;
+  const audio = new Audio(option.src);
+  const maxMs = option.maxMs || 4200;
+  let timeoutId;
+  audio.preload = 'auto';
+  audio.volume = Math.max(0, Math.min(1, (option.volume ?? 0.7) * volume));
+  audio.play().catch(() => {});
+  const stop = () => {
+    if (timeoutId) window.clearTimeout(timeoutId);
+    audio.pause();
+    audio.currentTime = 0;
   };
-
-  if (kind === 'softRain') {
-    const rain = createNoiseSource(ctx, 4, 'rain');
-    const highpass = ctx.createBiquadFilter();
-    const rainGain = ctx.createGain();
-    highpass.type = 'highpass';
-    highpass.frequency.value = 900;
-    rainGain.gain.value = 0.12;
-    rain.connect(highpass).connect(rainGain).connect(filter);
-    rain.start();
-    sources.push(rain);
-    addDrone(196, 0.012);
-    addDrone(293.66, 0.006, 'sine', -5);
-  } else if (kind === 'deepCalm') {
-    const noise = createNoiseSource(ctx, 5, 'soft');
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.value = 0.028;
-    noise.connect(noiseGain).connect(filter);
-    noise.start();
-    sources.push(noise);
-    addDrone(55, 0.04);
-    addDrone(110, 0.025, 'sine', 3);
-    addDrone(220, 0.009, 'triangle', -6);
-  } else {
-    const noise = createNoiseSource(ctx, 5, 'soft');
-    const noiseGain = ctx.createGain();
-    noiseGain.gain.value = 0.022;
-    noise.connect(noiseGain).connect(filter);
-    noise.start();
-    sources.push(noise);
-    addDrone(110, 0.028);
-    addDrone(164.81, 0.015, 'sine', -4);
-    addDrone(220, 0.011, 'triangle', 5);
-    addDrone(329.63, 0.005, 'sine', -8);
-  }
-
-  ctx.resume?.();
-
-  return {
-    stop: () => {
-      try { master.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35); } catch (error) { void error; }
-      window.setTimeout(() => {
-        sources.forEach(source => {
-          try { source.stop(); } catch (error) { void error; }
-          try { source.disconnect(); } catch (error) { void error; }
-        });
-        try { filter.disconnect(); master.disconnect(); } catch (error) { void error; }
-        ctx.close?.().catch(() => {});
-      }, 420);
-    }
-  };
+  audio.addEventListener('ended', () => {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  }, { once: true });
+  timeoutId = window.setTimeout(stop, maxMs);
+  return { stop };
 };
 
 const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolIndex = 0 }) => {
@@ -389,7 +237,8 @@ const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolI
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [soundSettings, setSoundSettings] = useState(() => normalizeSoundSettings(AppData.meditationSoundSettings));
   const silentAudioRef = useRef(null);
-  const generatedAudioRef = useRef(null);
+  const ambientAudioRef = useRef(null);
+  const cueAudioRef = useRef(null);
   const previewAudioRef = useRef(null);
   const previewTimerRef = useRef(null);
   const previewStopRef = useRef(null);
@@ -474,14 +323,19 @@ const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolI
     return () => clearInterval(interval);
   }, [isRunning, currentStepIndex, duration, allSteps.length]);
 
-  const stopGeneratedAudio = () => {
-    generatedAudioRef.current?.stop?.();
-    generatedAudioRef.current = null;
+  const stopAmbientTrack = (reset = false) => {
+    ambientAudioRef.current?.pause();
+    if (ambientAudioRef.current && reset) ambientAudioRef.current.currentTime = 0;
+    ambientAudioRef.current = null;
   };
 
   const stopAmbientAudio = (reset = false) => {
-    void reset;
-    stopGeneratedAudio();
+    stopAmbientTrack(reset);
+  };
+
+  const stopActiveCue = () => {
+    cueAudioRef.current?.stop?.();
+    cueAudioRef.current = null;
   };
 
   const stopSoundPreview = () => {
@@ -501,17 +355,21 @@ const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolI
     const option = findSoundOption(options, id);
     if (!option || option.id === 'none') return;
 
-    if (option.background) {
-      const generatedPreview = createGeneratedBackground(option.background, option.previewVolume || 0.13);
-      previewStopRef.current = generatedPreview?.stop || null;
+    if (option.src && option.loop) {
+      const audio = new Audio(option.src);
+      audio.loop = true;
+      audio.volume = option.previewVolume ?? option.volume ?? 0.2;
+      audio.preload = 'auto';
+      previewAudioRef.current = audio;
+      audio.play().catch(() => {});
       previewTimerRef.current = setTimeout(stopSoundPreview, 2200);
       return;
     }
 
-    if (option.cue) {
+    if (option.src) {
       const cuePreview = playCue(options, id, 0.9);
       previewStopRef.current = cuePreview?.stop || null;
-      const previewMs = option.cue === 'softBowl' ? 3200 : option.cue === 'lowBell' ? 2800 : 2400;
+      const previewMs = option.previewMs || option.maxMs || 3200;
       previewTimerRef.current = setTimeout(stopSoundPreview, previewMs);
     }
   };
@@ -535,8 +393,13 @@ const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolI
     const option = findSoundOption(BACKGROUND_SOUND_OPTIONS, soundSettings.background);
     stopAmbientAudio(false);
     ensureSilentAudio();
-    if (!audioEnabled || option.id === 'none') return;
-    generatedAudioRef.current = createGeneratedBackground(option.background || 'warmPad');
+    if (!audioEnabled || option.id === 'none' || !option.src) return;
+    const audio = new Audio(option.src);
+    audio.loop = true;
+    audio.volume = option.volume ?? 0.18;
+    audio.preload = 'auto';
+    ambientAudioRef.current = audio;
+    audio.play().catch(() => {});
   };
 
   const requestScreenWakeLock = async () => {
@@ -555,6 +418,7 @@ const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolI
 
   const cleanupSessionDevices = () => {
     stopSoundPreview();
+    stopActiveCue();
     stopAmbientAudio(true);
     stopSilentAudio();
     releaseScreenWakeLock();
@@ -640,7 +504,8 @@ const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolI
     setShowStartTimer(true);
   };
   const handleStart = () => {
-    playCue(START_SOUND_OPTIONS, soundSettings.start);
+    stopActiveCue();
+    cueAudioRef.current = playCue(START_SOUND_OPTIONS, soundSettings.start);
     setAudioEnabled(soundSettings.background !== 'none');
     setStartTime(Date.now());
     setIsStart(true);
@@ -657,8 +522,8 @@ const MeditationTimer = ({ show, setShow, protocol, categoryIndex = 0, protocolI
     cycles: session.cycles,
   });
   const onFinishSession = async () => {
-    playCue(END_SOUND_OPTIONS, soundSettings.end);
     cleanupSessionDevices();
+    cueAudioRef.current = playCue(END_SOUND_OPTIONS, soundSettings.end);
     await saveMeditationSession(startTime, Date.now(), getSaveMeta());
     setFinishMessage(congratulations(langIndex)); setIsFinished(true);
   };
@@ -1060,121 +925,275 @@ function getMeditationGuide(protocol, categoryIndex, protocolIndex) {
 function MeditationGuide({ accent, langIndex, protocol, categoryIndex, protocolIndex }) {
   const guide = getMeditationGuide(protocol, categoryIndex, protocolIndex);
   return (
-    <section style={{
-      borderRadius: 20,
-      border: '1px solid rgba(159,140,255,0.14)',
-      background: 'rgba(10,15,22,0.72)',
-      overflow: 'hidden',
-      flexShrink: 0,
-      position: 'relative',
-      minHeight: 236
-    }}>
-      <div style={{ position: 'relative', width: '100%', aspectRatio: '16 / 9', minHeight: 236, overflow: 'hidden' }}>
+    <section
+      className="uml-meditation-guide"
+      style={{
+        '--guide-accent': accent,
+        '--guide-accent-soft': `${accent}20`,
+        '--guide-accent-copy-ring': `${accent}33`,
+        '--guide-accent-ring': `${accent}55`,
+        '--guide-accent-glow': `${accent}40`,
+        '--guide-mobile-position': guide.mobileImagePosition || '50% 42%'
+      }}
+    >
+      <style>{`
+        .uml-meditation-guide {
+          border-radius: 20px;
+          border: 1px solid rgba(159,140,255,0.14);
+          background: rgba(10,15,22,0.72);
+          overflow: hidden;
+          flex-shrink: 0;
+          position: relative;
+          min-height: 236px;
+        }
+        .uml-meditation-guide__media {
+          position: relative;
+          width: 100%;
+          aspect-ratio: 16 / 9;
+          min-height: 236px;
+          overflow: hidden;
+        }
+        .uml-meditation-guide__image {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center center;
+          display: block;
+        }
+        .uml-meditation-guide__overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(180deg, rgba(9,13,20,0.20) 0%, rgba(9,13,20,0.18) 35%, rgba(9,13,20,0.86) 100%);
+        }
+        .uml-meditation-guide__top {
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          right: 12px;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        .uml-meditation-guide__copy {
+          max-width: 72%;
+          padding: 9px 11px;
+          border-radius: 15px;
+          background: rgba(10,15,22,0.56);
+          border: 1px solid var(--guide-accent-copy-ring);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+        }
+        .uml-meditation-guide__eyebrow {
+          color: var(--guide-accent);
+          font-size: 9px;
+          font-weight: 950;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          line-height: 1;
+        }
+        .uml-meditation-guide__title {
+          color: #F4F7FB;
+          font-size: 15px;
+          line-height: 1.08;
+          font-weight: 950;
+          margin-top: 5px;
+        }
+        .uml-meditation-guide__cue {
+          color: rgba(232,238,248,0.74);
+          font-size: 11px;
+          line-height: 1.2;
+          font-weight: 750;
+          margin-top: 4px;
+        }
+        .uml-meditation-guide__badge {
+          width: 38px;
+          height: 38px;
+          border-radius: 15px;
+          background: var(--guide-accent-soft);
+          border: 1px solid var(--guide-accent-ring);
+          color: #F4F7FB;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          font-weight: 950;
+          box-shadow: 0 0 24px var(--guide-accent-glow);
+        }
+        .uml-meditation-guide__steps {
+          position: absolute;
+          left: 10px;
+          right: 10px;
+          bottom: 10px;
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 7px;
+        }
+        .uml-meditation-guide__step {
+          min-width: 0;
+          min-height: 42px;
+          display: grid;
+          grid-template-columns: 20px minmax(0, 1fr);
+          gap: 6px;
+          align-items: center;
+          padding: 7px 8px;
+          border-radius: 14px;
+          background: rgba(10,15,22,0.62);
+          border: 1px solid rgba(255,255,255,0.12);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+        }
+        .uml-meditation-guide__step-index {
+          width: 20px;
+          height: 20px;
+          border-radius: 8px;
+          background: var(--guide-accent-soft);
+          color: #F4F7FB;
+          border: 1px solid var(--guide-accent-ring);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          font-weight: 950;
+          line-height: 1;
+        }
+        .uml-meditation-guide__step-text {
+          color: #F4F7FB;
+          font-size: 11px;
+          font-weight: 900;
+          line-height: 1.15;
+          white-space: normal;
+          overflow-wrap: anywhere;
+        }
+        @media (max-width: 520px) {
+          .uml-meditation-guide {
+            border-radius: 18px;
+            min-height: 286px;
+          }
+          .uml-meditation-guide__media {
+            aspect-ratio: auto;
+            min-height: 286px;
+          }
+          .uml-meditation-guide__image {
+            object-position: var(--guide-mobile-position);
+            transform: scale(1.04);
+          }
+          .uml-meditation-guide__overlay {
+            background: linear-gradient(180deg, rgba(9,13,20,0.38) 0%, rgba(9,13,20,0.10) 42%, rgba(9,13,20,0.88) 100%);
+          }
+          .uml-meditation-guide__top {
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            gap: 8px;
+          }
+          .uml-meditation-guide__copy {
+            max-width: min(58%, 220px);
+            padding: 8px 10px;
+            border-radius: 14px;
+          }
+          .uml-meditation-guide__eyebrow {
+            font-size: 8px;
+            letter-spacing: 0.1em;
+          }
+          .uml-meditation-guide__title {
+            font-size: 14px;
+            line-height: 1.06;
+            margin-top: 4px;
+          }
+          .uml-meditation-guide__cue {
+            font-size: 10px;
+            line-height: 1.16;
+            margin-top: 3px;
+          }
+          .uml-meditation-guide__badge {
+            width: 30px;
+            height: 30px;
+            border-radius: 12px;
+            font-size: 15px;
+          }
+          .uml-meditation-guide__steps {
+            left: 8px;
+            right: 8px;
+            bottom: 8px;
+            gap: 6px;
+          }
+          .uml-meditation-guide__step {
+            min-height: 48px;
+            grid-template-columns: 18px minmax(0, 1fr);
+            gap: 5px;
+            padding: 7px 6px;
+            border-radius: 13px;
+          }
+          .uml-meditation-guide__step-index {
+            width: 18px;
+            height: 18px;
+            border-radius: 7px;
+            font-size: 10px;
+          }
+          .uml-meditation-guide__step-text {
+            font-size: 10px;
+            line-height: 1.08;
+          }
+        }
+        @media (max-width: 380px) {
+          .uml-meditation-guide,
+          .uml-meditation-guide__media {
+            min-height: 270px;
+          }
+          .uml-meditation-guide__copy {
+            max-width: 60%;
+          }
+          .uml-meditation-guide__steps {
+            gap: 4px;
+          }
+          .uml-meditation-guide__step {
+            min-height: 45px;
+            grid-template-columns: 16px minmax(0, 1fr);
+            gap: 4px;
+            padding: 6px 5px;
+          }
+          .uml-meditation-guide__step-index {
+            width: 16px;
+            height: 16px;
+            font-size: 9px;
+          }
+          .uml-meditation-guide__step-text {
+            font-size: 9.5px;
+          }
+        }
+      `}</style>
+      <div className="uml-meditation-guide__media">
         <img
+          className="uml-meditation-guide__image"
           src={guide.image}
           alt={guide.title[langIndex]}
           loading="lazy"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            display: 'block'
-          }}
         />
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(180deg, rgba(9,13,20,0.20) 0%, rgba(9,13,20,0.18) 35%, rgba(9,13,20,0.86) 100%)'
-        }} />
-        <div style={{
-          position: 'absolute',
-          top: 12,
-          left: 12,
-          right: 12,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 12
-        }}>
-          <div style={{
-            maxWidth: '72%',
-            padding: '9px 11px',
-            borderRadius: 15,
-            background: 'rgba(10,15,22,0.56)',
-            border: `1px solid ${accent}33`,
-            backdropFilter: 'blur(14px)',
-            WebkitBackdropFilter: 'blur(14px)'
-          }}>
-            <div style={{ color: accent, fontSize: 9, fontWeight: 950, letterSpacing: '0.12em', textTransform: 'uppercase', lineHeight: 1 }}>
+        <div className="uml-meditation-guide__overlay" />
+        <div className="uml-meditation-guide__top">
+          <div className="uml-meditation-guide__copy">
+            <div className="uml-meditation-guide__eyebrow">
               {langIndex === 0 ? 'Визуальная инструкция' : 'Visual guide'}
             </div>
-            <div style={{ color: '#F4F7FB', fontSize: 15, lineHeight: 1.08, fontWeight: 950, marginTop: 5 }}>
+            <div className="uml-meditation-guide__title">
               {guide.title[langIndex]}
             </div>
-            <div style={{ color: 'rgba(232,238,248,0.74)', fontSize: 11, lineHeight: 1.2, fontWeight: 750, marginTop: 4 }}>
+            <div className="uml-meditation-guide__cue">
               {guide.cue[langIndex]}
             </div>
           </div>
-          <div style={{
-            width: 38,
-            height: 38,
-            borderRadius: 15,
-            background: `${accent}30`,
-            border: `1px solid ${accent}4f`,
-            color: '#F4F7FB',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 18,
-            fontWeight: 950,
-            boxShadow: `0 0 24px ${accent}40`
-          }}>
+          <div className="uml-meditation-guide__badge">
             {guide.variant === 'gratitude' ? '♡' : guide.variant === 'count' ? '10' : guide.variant === 'scan' ? '↓' : guide.variant === 'alternate' ? '↻' : '•'}
           </div>
         </div>
-        <div style={{
-          position: 'absolute',
-          left: 10,
-          right: 10,
-          bottom: 10,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-          gap: 7
-        }}>
+        <div className="uml-meditation-guide__steps">
           {guide.steps.map((step, index) => (
-            <div key={step[0]} style={{
-              minWidth: 0,
-              minHeight: 42,
-              display: 'grid',
-              gridTemplateColumns: '20px minmax(0, 1fr)',
-              gap: 6,
-              alignItems: 'center',
-              padding: '7px 8px',
-              borderRadius: 14,
-              background: 'rgba(10,15,22,0.62)',
-              border: '1px solid rgba(255,255,255,0.12)',
-              backdropFilter: 'blur(14px)',
-              WebkitBackdropFilter: 'blur(14px)'
-            }}>
-                <div style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: 8,
-                  background: `${accent}20`,
-                  color: '#F4F7FB',
-                  border: `1px solid ${accent}55`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 11,
-                  fontWeight: 950,
-                  lineHeight: 1
-                }}>
-                  {index + 1}
-                </div>
-              <div style={{ color: '#F4F7FB', fontSize: 11, fontWeight: 900, lineHeight: 1.15, whiteSpace: 'normal', overflowWrap: 'anywhere' }}>
+            <div key={step[0]} className="uml-meditation-guide__step">
+              <div className="uml-meditation-guide__step-index">{index + 1}</div>
+              <div className="uml-meditation-guide__step-text">
                 {step[langIndex]}
               </div>
             </div>

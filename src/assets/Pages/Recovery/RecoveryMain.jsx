@@ -317,7 +317,7 @@ const styles = (theme, fontSize = 0, item = null) => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            padding: '24px 4.5vw 140px',
+            padding: 'calc(46px + env(safe-area-inset-top, 0px)) 4.5vw 140px',
             boxSizing: 'border-box',
         },
         pageHeader: {

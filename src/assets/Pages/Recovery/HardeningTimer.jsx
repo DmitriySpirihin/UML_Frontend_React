@@ -7,9 +7,10 @@ import { FaInfoCircle, FaFire, FaSnowflake } from 'react-icons/fa';
 import { saveHardeningSession } from '../../StaticClasses/RecoveryLogHelper';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 
-const AMBIENT_SOUND_URL = 'Audio/Ambient.wav';
+const AMBIENT_SOUND_URL = 'Audio/relax/ocean-waves.mp3';
 const audio = new Audio(AMBIENT_SOUND_URL);
 audio.loop = true;
+audio.preload = 'auto';
 audio.volume = 0.18;
 
 const startTimerDuration = 3000;
