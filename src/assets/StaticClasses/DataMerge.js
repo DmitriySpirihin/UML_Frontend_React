@@ -10,7 +10,8 @@ const RECORD_FIELDS = [
   'choosenHabitsAchievements',
   'choosenHabitsLastSkip',
   'choosenHabitsAutoComplete',
-  'sectionVisits',
+  'choosenHabitsSchedule',
+  'choosenHabitsNotified',
   'sectionLastOpenedAt'
 ];
 

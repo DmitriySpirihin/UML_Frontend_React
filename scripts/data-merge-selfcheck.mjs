@@ -7,6 +7,8 @@ const local = {
   choosenHabitsStartDates: ['2026-06-20'],
   choosenHabitsTypes: [false],
   choosenHabitsDaysToForm: [66],
+  choosenHabitsSchedule: { 1: { type: 'weekly', days: [1, 3, 5] } },
+  choosenHabitsNotified: { 1: [false, true, false] },
   sectionVisits: { habits: ['2026-06-24', '2026-06-25'], sleep: ['2026-06-25'] }
 };
 
@@ -16,6 +18,8 @@ const newerButSparseRemote = {
   choosenHabitsStartDates: [],
   choosenHabitsTypes: [],
   choosenHabitsDaysToForm: [],
+  choosenHabitsSchedule: {},
+  choosenHabitsNotified: {},
   sectionVisits: { habits: [], sleep: ['2026-06-26'] }
 };
 
@@ -25,6 +29,8 @@ const mergedSparse = mergeAppSnapshots(local, newerButSparseRemote, {
 
 assert.deepEqual(mergedSparse.choosenHabits, [1]);
 assert.deepEqual(mergedSparse.choosenHabitsStartDates, ['2026-06-20']);
+assert.deepEqual(mergedSparse.choosenHabitsSchedule, { 1: { type: 'weekly', days: [1, 3, 5] } });
+assert.deepEqual(mergedSparse.choosenHabitsNotified, { 1: [false, true, false] });
 assert.deepEqual(mergedSparse.sectionVisits.habits, ['2026-06-24', '2026-06-25']);
 assert.deepEqual(mergedSparse.sectionVisits.sleep, ['2026-06-25', '2026-06-26']);
 
