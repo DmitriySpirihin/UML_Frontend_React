@@ -26,6 +26,8 @@ const isPlainObject = (value) => (
   value !== null && typeof value === 'object' && !Array.isArray(value)
 );
 
+const isDateKey = (key) => /^\d{4}-\d{2}-\d{2}$/.test(String(key || ''));
+
 function stableStringify(value) {
   try {
     return JSON.stringify(value);
@@ -53,6 +55,26 @@ function mergeRecords(localValue = {}, remoteValue = {}, preferRemote = true) {
     }
   });
 
+  return merged;
+}
+
+function mergeDateArrays(localValue = [], remoteValue = []) {
+  const dates = new Set();
+  [...(Array.isArray(localValue) ? localValue : []), ...(Array.isArray(remoteValue) ? remoteValue : [])]
+    .filter(isDateKey)
+    .forEach((date) => dates.add(date));
+  return [...dates].sort();
+}
+
+function mergeSectionVisits(localValue = {}, remoteValue = {}) {
+  if (!isPlainObject(localValue)) return isPlainObject(remoteValue) ? remoteValue : {};
+  if (!isPlainObject(remoteValue)) return localValue;
+
+  const keys = new Set([...Object.keys(localValue), ...Object.keys(remoteValue)]);
+  const merged = {};
+  keys.forEach((key) => {
+    merged[key] = mergeDateArrays(localValue[key], remoteValue[key]);
+  });
   return merged;
 }
 
@@ -182,6 +204,29 @@ function mergeMeasurements(localValue = [], remoteValue = [], preferRemote = tru
   ));
 }
 
+function habitMetadataScore(snapshot = {}) {
+  const habits = Array.isArray(snapshot.choosenHabits) ? snapshot.choosenHabits.length : 0;
+  const starts = Array.isArray(snapshot.choosenHabitsStartDates) ? snapshot.choosenHabitsStartDates.filter(Boolean).length : 0;
+  const types = Array.isArray(snapshot.choosenHabitsTypes) ? snapshot.choosenHabitsTypes.length : 0;
+  const daysToForm = Array.isArray(snapshot.choosenHabitsDaysToForm) ? snapshot.choosenHabitsDaysToForm.length : 0;
+  return habits > 0 ? habits + Math.min(habits, starts, types, daysToForm) : 0;
+}
+
+function keepMoreCompleteHabitMetadata(merged, local, remote) {
+  const localScore = habitMetadataScore(local);
+  const remoteScore = habitMetadataScore(remote);
+  if (localScore === remoteScore) return merged;
+
+  const source = localScore > remoteScore ? local : remote;
+  return {
+    ...merged,
+    choosenHabits: Array.isArray(source.choosenHabits) ? [...source.choosenHabits] : [],
+    choosenHabitsStartDates: Array.isArray(source.choosenHabitsStartDates) ? [...source.choosenHabitsStartDates] : [],
+    choosenHabitsTypes: Array.isArray(source.choosenHabitsTypes) ? [...source.choosenHabitsTypes] : [],
+    choosenHabitsDaysToForm: Array.isArray(source.choosenHabitsDaysToForm) ? [...source.choosenHabitsDaysToForm] : []
+  };
+}
+
 export function mergeAppSnapshots(localSnapshot = {}, remoteSnapshot = {}, { touchLastSaveOnChange = true } = {}) {
   const local = isPlainObject(localSnapshot) ? localSnapshot : {};
   const remote = isPlainObject(remoteSnapshot) ? remoteSnapshot : {};
@@ -196,21 +241,23 @@ export function mergeAppSnapshots(localSnapshot = {}, remoteSnapshot = {}, { tou
   RECORD_FIELDS.forEach((field) => {
     merged[field] = mergeRecords(local[field], remote[field], preferRemote);
   });
+  merged.sectionVisits = mergeSectionVisits(local.sectionVisits, remote.sectionVisits);
 
   ARRAY_UNION_FIELDS.forEach((field) => {
     merged[field] = mergeArrayUnion(local[field], remote[field], preferRemote);
   });
+  const finalMerged = keepMoreCompleteHabitMetadata(merged, local, remote);
 
   const localString = stableStringify(local);
-  const mergedString = stableStringify(merged);
+  const mergedString = stableStringify(finalMerged);
   const changedLocal = !!mergedString && mergedString !== localString;
 
   if (changedLocal && touchLastSaveOnChange) {
-    merged.lastSave = new Date().toISOString();
+    finalMerged.lastSave = new Date().toISOString();
   }
 
   return {
-    snapshot: merged,
+    snapshot: finalMerged,
     changedLocal,
     preferRemote,
     localTime,
