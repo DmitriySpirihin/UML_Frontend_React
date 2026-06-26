@@ -663,8 +663,8 @@ async function applyCloudBackupSnapshot(restoredSnapshot, { silent = false, pref
   await saveData({ skipCloudBackup: true, touchLastSave: repaired });
   AppData.needsDataRepairSave = false;
   emitDataSynced();
-  if (queueBackup) {
-    scheduleAutoCloudBackup(merged.changedLocal || repaired ? RETRY_BACKUP_DELAY_MS : AUTO_BACKUP_DELAY_MS);
+  if (queueBackup && !repaired) {
+    scheduleAutoCloudBackup(merged.changedLocal ? RETRY_BACKUP_DELAY_MS : AUTO_BACKUP_DELAY_MS);
   }
   if (!silent) setShowPopUpPanel('✅ Data restored!', 2000, true);
   return true;

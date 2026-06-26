@@ -170,7 +170,7 @@ export async function loadData() {
     deserializeData(localData);
     if (AppData.needsDataRepairSave) {
       rememberPreRepairBackup(localData);
-      await saveData({ skipCloudBackup: false, touchLastSave: true });
+      await saveData({ skipCloudBackup: true, touchLastSave: true });
       AppData.needsDataRepairSave = false;
     }
     return { success: true, data: JSON.parse(localData), source: 'local' };

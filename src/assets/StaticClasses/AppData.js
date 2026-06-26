@@ -355,6 +355,10 @@ const ensureSectionVisits = () => {
 };
 
 const repairRecoveredData = () => {
+  const allowAutoRepair = typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('autoRepair') === '1';
+  if (!allowAutoRepair) return false;
+
   const repairedHabits = ensureHabitMetadata();
   const repairedSections = ensureSectionVisits();
   return repairedHabits || repairedSections;
