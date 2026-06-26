@@ -6,7 +6,7 @@ import { sendBugreport } from '../StaticClasses/NotificationsManager'
 import { FaAddressCard, FaLanguage, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight, FaHome, FaUser, FaCog, FaPaperPlane, FaTelegramPlane, FaTimes, FaCloudUploadAlt, FaCloudDownloadAlt, FaTrashAlt, FaExclamationTriangle, FaBell, FaCheckCircle, FaTasks, FaDumbbell, FaBrain, FaSpa, FaBed, FaUndo } from 'react-icons/fa'
 import { LuVibrate, LuVibrateOff } from 'react-icons/lu'
 import { RiFontSize2 } from 'react-icons/ri'
-import { clearAllSaves, deserializeData, saveData, serializeData } from '../StaticClasses/SaveHelper';
+import { clearAllSaves, deserializeData, saveData } from '../StaticClasses/SaveHelper';
 import { MdBackup, MdInfoOutline, MdNotificationsActive } from 'react-icons/md'
 import { IoIosArrowBack } from 'react-icons/io'
 import { theme$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, lastPage$, setShowPopUpPanel } from '../StaticClasses/HabitsBus';
@@ -15,8 +15,6 @@ import { playEffects } from '../StaticClasses/Effects';
 
 const transitionSound = new Audio('Audio/Transition.wav');
 const version = '2.c.88.1.s';
-const PRE_REPAIR_BACKUP_KEY = 'uml_pre_repair_backup_v1';
-const PRE_REPAIR_BACKUP_AT_KEY = 'uml_pre_repair_backup_at_v1';
 const BEFORE_REPAIR_UNDO_KEY = 'uml_before_pre_repair_restore_v1';
 const BEFORE_REPAIR_UNDO_AT_KEY = 'uml_before_pre_repair_restore_at_v1';
 const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 18px)';
@@ -49,23 +47,6 @@ const countDateKeys = (record = {}) => (
         ? Object.keys(record).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key)).length
         : 0
 );
-
-function getPreRepairBackupInfo() {
-    if (typeof window === 'undefined') return null;
-    const raw = window.localStorage.getItem(PRE_REPAIR_BACKUP_KEY);
-    if (!raw) return null;
-    try {
-        const data = JSON.parse(raw);
-        return {
-            at: window.localStorage.getItem(PRE_REPAIR_BACKUP_AT_KEY) || '',
-            habits: Array.isArray(data.choosenHabits) ? data.choosenHabits.length : 0,
-            habitDays: countDateKeys(data.habitsByDate),
-            sectionVisits: Object.values(data.sectionVisits || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0)
-        };
-    } catch {
-        return { at: window.localStorage.getItem(PRE_REPAIR_BACKUP_AT_KEY) || '', broken: true };
-    }
-}
 
 function getRepairUndoInfo() {
     if (typeof window === 'undefined') return null;
@@ -345,7 +326,6 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
     const [report, setReport] = useState('');
     const [showDanger, setShowDanger] = useState(false);
     const [lastBackupDate, setLastBackupDate] = useState(AppData.lastBackupDate);
-    const [repairBackupInfo, setRepairBackupInfo] = useState(getPreRepairBackupInfo);
     const [repairUndoInfo, setRepairUndoInfo] = useState(getRepairUndoInfo);
     const styles = s(theme);
     const isBugPanel = panelNum === 1;
@@ -357,7 +337,6 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
     useEffect(() => {
         if (isOpen && isBackupPanel) {
             setLastBackupDate(AppData.lastBackupDate);
-            setRepairBackupInfo(getPreRepairBackupInfo());
             setRepairUndoInfo(getRepairUndoInfo());
         }
     }, [isOpen, isBackupPanel]);
@@ -379,33 +358,6 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
         await cloudRestore();
         setLastBackupDate(AppData.lastBackupDate);
     };
-    const restorePreRepairBackup = async () => {
-        const raw = typeof window !== 'undefined' ? window.localStorage.getItem(PRE_REPAIR_BACKUP_KEY) : '';
-        if (!raw) {
-            setShowPopUpPanel(langIndex === 0 ? 'Аварийная копия не найдена' : 'Emergency copy not found', 2200, false);
-            return;
-        }
-        const confirmed = window.confirm(langIndex === 0
-            ? 'Откатить данные к состоянию до repair? Текущая версия будет сохранена локально как запасная копия.'
-            : 'Restore data to the state before repair? Current data will be kept locally as a fallback copy.');
-        if (!confirmed) return;
-
-        try {
-            const current = serializeData();
-            if (current) {
-                window.localStorage.setItem(BEFORE_REPAIR_UNDO_KEY, current);
-                window.localStorage.setItem(BEFORE_REPAIR_UNDO_AT_KEY, new Date().toISOString());
-            }
-            deserializeData(raw);
-            AppData.lastSave = new Date().toISOString();
-            await saveData({ skipCloudBackup: true, touchLastSave: false });
-            setShowPopUpPanel(langIndex === 0 ? 'Откат repair применен' : 'Repair rollback applied', 1800, true);
-            window.setTimeout(() => window.location.reload(), 650);
-        } catch (error) {
-            console.error('Pre-repair restore failed:', error);
-            setShowPopUpPanel(langIndex === 0 ? 'Не удалось откатить repair' : 'Repair rollback failed', 2400, false);
-        }
-    };
     const restoreRepairUndoBackup = async () => {
         const raw = typeof window !== 'undefined' ? window.localStorage.getItem(BEFORE_REPAIR_UNDO_KEY) : '';
         if (!raw) {
@@ -413,8 +365,8 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
             return;
         }
         const confirmed = window.confirm(langIndex === 0
-            ? 'Вернуть состояние, которое было прямо перед нажатием “Откатить repair”?'
-            : 'Restore the state from right before pressing “Undo repair”?');
+            ? 'Вернуть состояние, которое было до последнего repair-rollback?'
+            : 'Restore the state from before the last repair rollback?');
         if (!confirmed) return;
 
         try {
@@ -547,24 +499,6 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
                                         ? 'Данные автоматически шифруются на устройстве перед отправкой. Сервер и админы видят только нечитаемую копию.'
                                         : 'Data is encrypted on this device before upload. The server and admins only see an unreadable backup.'}
                                 </div>
-                                {repairBackupInfo && (
-                                    <div style={styles.backupStatusCard}>
-                                        <div style={styles.backupStatusText}>
-                                            <div style={styles.backupStatusLabel}>
-                                                {langIndex === 0 ? 'Аварийная копия до repair' : 'Pre-repair emergency copy'}
-                                            </div>
-                                            <div style={styles.backupStatusValue}>
-                                                {repairBackupInfo.broken
-                                                    ? (langIndex === 0 ? 'Найдена, но не читается' : 'Found, but unreadable')
-                                                    : `${repairBackupInfo.habits} habits · ${repairBackupInfo.habitDays} days · ${repairBackupInfo.sectionVisits} visits`}
-                                            </div>
-                                            {repairBackupInfo.at && (
-                                                <div style={styles.backupStatusLabel}>{repairBackupInfo.at.replace('T', ' ').slice(0, 16)}</div>
-                                            )}
-                                        </div>
-                                        <ActionButton icon={<FaUndo />} text={langIndex === 0 ? 'Откатить repair' : 'Undo repair'} onClick={restorePreRepairBackup} theme={theme} color="#D95C5C" />
-                                    </div>
-                                )}
                                 {repairUndoInfo && (
                                     <div style={styles.backupStatusCard}>
                                         <div style={styles.backupStatusText}>
