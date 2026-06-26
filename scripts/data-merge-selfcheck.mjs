@@ -76,4 +76,35 @@ assert.deepEqual(equalScoreDifferentHabits.choosenHabitsTypes, [true, false]);
 assert.deepEqual(equalScoreDifferentHabits.choosenHabitsDaysToForm, [120, 66]);
 assert.deepEqual(equalScoreDifferentHabits.habitsByDate, { '2026-06-25': { 1: 1, 2: 1 } });
 
+const streakInflationConflict = mergeAppSnapshots({
+  lastSave: '2026-06-26T10:00:00.000Z',
+  choosenHabits: [1],
+  choosenHabitsStartDates: ['2026-06-20'],
+  choosenHabitsTypes: [false],
+  choosenHabitsDaysToForm: [66],
+  habitsByDate: {
+    '2026-06-24': { 1: -1 },
+    '2026-06-25': { 1: 0 }
+  }
+}, {
+  lastSave: '2026-06-26T11:00:00.000Z',
+  choosenHabits: [1],
+  choosenHabitsStartDates: ['2026-06-20'],
+  choosenHabitsTypes: [false],
+  choosenHabitsDaysToForm: [66],
+  habitsByDate: {
+    '2026-06-24': { 1: 1 },
+    '2026-06-25': { 1: 1 },
+    '2026-06-26': { 1: 1 }
+  }
+}, {
+  touchLastSaveOnChange: false
+}).snapshot;
+
+assert.deepEqual(streakInflationConflict.habitsByDate, {
+  '2026-06-24': { 1: -1 },
+  '2026-06-25': { 1: 0 },
+  '2026-06-26': { 1: 1 }
+});
+
 console.log('data merge self-check ok');

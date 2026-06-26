@@ -993,19 +993,16 @@ static getLastTrainingDayIndex() {
     const endDate = new Date();
     let currentDate = startDate;
     while (currentDate < endDate) {
-    const current = formatLocalDateKey(currentDate);
-    if (!this.isHabitScheduledForDate(habitId, current)) {
+      const current = formatLocalDateKey(currentDate);
+      if (!this.isHabitScheduledForDate(habitId, current)) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        continue;
+      }
+      if (isNegative) {
+        if (!(current in this.habitsByDate)) this.habitsByDate[current] = {};
+        this.habitsByDate[current][habitId] = 1;
+      }
       currentDate.setDate(currentDate.getDate() + 1);
-      continue;
-    }
-    if(!(current in this.habitsByDate)) {
-      this.habitsByDate[current] = {};
-      this.habitsByDate[current][habitId] = getHabitPerformPercent(habitId) < 100 ? 1 : 1; 
-     }
-     else{
-      this.habitsByDate[current][habitId] = getHabitPerformPercent(habitId) < 100 ? 1 : 1; 
-     }
-     currentDate.setDate(currentDate.getDate() + 1);
    }
    if (!this.habitsByDate[todayKey]) this.habitsByDate[todayKey] = {};
    if(!this.isHabitScheduledForDate(habitId, todayKey)){
@@ -1014,7 +1011,7 @@ static getLastTrainingDayIndex() {
    else if(isNegative){
        this.habitsByDate[todayKey][habitId] = 1;
    }
-   else this.habitsByDate[todayKey][habitId] = this.isHabitAutoComplete(habitId) || getHabitPerformPercent(habitId) >= 100 ? 1 : 0;
+   else this.habitsByDate[todayKey][habitId] = this.isHabitAutoComplete(habitId) ? 1 : 0;
    await saveData();
   }
   static async addHabitGoal(habitId,goal){

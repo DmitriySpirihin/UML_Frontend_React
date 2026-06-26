@@ -4,7 +4,6 @@ const RECORD_FIELDS = [
   'meditationLog',
   'hardeningLog',
   'mentalLog',
-  'habitsByDate',
   'habitEventTimes',
   'choosenHabitsGoals',
   'choosenHabitsAchievements',
@@ -59,6 +58,49 @@ function mergeRecords(localValue = {}, remoteValue = {}, preferRemote = true) {
     if (Object.prototype.hasOwnProperty.call(preferred, key)) merged[key] = mergeRecordValue(preferred[key], secondary[key]);
   });
 
+  return merged;
+}
+
+function isHabitStatus(value) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric);
+}
+
+function mergeHabitStatus(preferred, secondary) {
+  if (secondary === undefined) return preferred;
+  if (preferred === undefined) return secondary;
+  if (!isHabitStatus(preferred) || !isHabitStatus(secondary)) return preferred;
+
+  const preferredStatus = Number(preferred);
+  const secondaryStatus = Number(secondary);
+  if (preferredStatus === secondaryStatus) return preferred;
+  if (preferredStatus < 1 || secondaryStatus < 1) return Math.min(preferredStatus, secondaryStatus);
+  return preferred;
+}
+
+function mergeHabitDay(preferredDay = {}, secondaryDay = {}) {
+  if (!isPlainObject(preferredDay)) return isPlainObject(secondaryDay) ? secondaryDay : {};
+  if (!isPlainObject(secondaryDay)) return preferredDay;
+
+  const keys = new Set([...Object.keys(secondaryDay), ...Object.keys(preferredDay)]);
+  const merged = {};
+  keys.forEach((habitId) => {
+    merged[habitId] = mergeHabitStatus(preferredDay[habitId], secondaryDay[habitId]);
+  });
+  return merged;
+}
+
+function mergeHabitsByDate(localValue = {}, remoteValue = {}, preferRemote = true) {
+  if (!isPlainObject(localValue)) return isPlainObject(remoteValue) ? remoteValue : {};
+  if (!isPlainObject(remoteValue)) return localValue;
+
+  const preferred = preferRemote ? remoteValue : localValue;
+  const secondary = preferRemote ? localValue : remoteValue;
+  const keys = new Set([...Object.keys(secondary), ...Object.keys(preferred)]);
+  const merged = {};
+  keys.forEach((dateKey) => {
+    merged[dateKey] = mergeHabitDay(preferred[dateKey], secondary[dateKey]);
+  });
   return merged;
 }
 
@@ -289,6 +331,7 @@ export function mergeAppSnapshots(localSnapshot = {}, remoteSnapshot = {}, { tou
   RECORD_FIELDS.forEach((field) => {
     merged[field] = mergeRecords(local[field], remote[field], preferRemote);
   });
+  merged.habitsByDate = mergeHabitsByDate(local.habitsByDate, remote.habitsByDate, preferRemote);
   merged.sectionVisits = mergeSectionVisits(local.sectionVisits, remote.sectionVisits);
 
   ARRAY_UNION_FIELDS.forEach((field) => {
