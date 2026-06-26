@@ -74,6 +74,18 @@ export function getTelegramContext() {
 }
 
 let db = null;
+const PRE_REPAIR_BACKUP_KEY = 'uml_pre_repair_backup_v1';
+const PRE_REPAIR_BACKUP_AT_KEY = 'uml_pre_repair_backup_at_v1';
+
+function rememberPreRepairBackup(rawData) {
+  if (typeof window === 'undefined' || !rawData) return;
+  try {
+    window.localStorage.setItem(PRE_REPAIR_BACKUP_KEY, rawData);
+    window.localStorage.setItem(PRE_REPAIR_BACKUP_AT_KEY, new Date().toISOString());
+  } catch (error) {
+    console.warn('Pre-repair backup failed:', error);
+  }
+}
 
 export function isNewUserPreviewMode() {
   if (typeof window === 'undefined') return false;
@@ -155,8 +167,12 @@ export async function loadData() {
       return { success: false, error: 'No saved data found' };
     }
 
-    //console.log(localData);
     deserializeData(localData);
+    if (AppData.needsDataRepairSave) {
+      rememberPreRepairBackup(localData);
+      await saveData({ skipCloudBackup: false, touchLastSave: true });
+      AppData.needsDataRepairSave = false;
+    }
     return { success: true, data: JSON.parse(localData), source: 'local' };
   } catch (e) {
     console.error('Loading from DB failed:', e);

@@ -173,6 +173,193 @@ const getHabitBackfillStartDate = (habitIndex, today) => {
   return startDate > windowStart ? startDate : windowStart;
 };
 
+const DEFAULT_NEGATIVE_HABIT_IDS = new Set([
+  30, 31, 32, 33, 34, 35, 36, 37, 38,
+  111, 112, 113, 114, 115, 116, 117, 118, 119
+]);
+
+const isDateKey = (key) => /^\d{4}-\d{2}-\d{2}$/.test(String(key || ''));
+const normalizeStoredHabitId = (habitId) => {
+  const numberId = Number(habitId);
+  return Number.isFinite(numberId) ? numberId : habitId;
+};
+const sameHabitId = (left, right) => Number(left) === Number(right) || String(left) === String(right);
+
+const getLoggedDates = (record = {}) => (
+  record && typeof record === 'object'
+    ? Object.keys(record).filter(isDateKey).sort()
+    : []
+);
+
+const getHabitIdsFromHistory = () => {
+  const ids = [];
+  const seen = new Set();
+
+  Object.values(AppData.habitsByDate || {}).forEach((day) => {
+    if (!day || typeof day !== 'object' || Array.isArray(day)) return;
+    Object.keys(day).forEach((rawId) => {
+      const habitId = normalizeStoredHabitId(rawId);
+      const key = String(habitId);
+      if (seen.has(key)) return;
+      seen.add(key);
+      ids.push(habitId);
+    });
+  });
+
+  return ids;
+};
+
+const getFirstHabitDate = (habitId) => {
+  const dates = getLoggedDates(AppData.habitsByDate)
+    .filter((dateKey) => Object.keys(AppData.habitsByDate[dateKey] || {}).some((id) => sameHabitId(id, habitId)));
+  return dates[0] || formatLocalDateKey();
+};
+
+const isKnownNegativeHabit = (habitId) => {
+  if (DEFAULT_NEGATIVE_HABIT_IDS.has(Number(habitId))) return true;
+  const customHabit = (AppData.CustomHabits || []).find((habit) => sameHabitId(habit?.id, habitId));
+  const category = Array.isArray(customHabit?.category) ? customHabit.category : [customHabit?.category];
+  return category.includes('Отказ от вредного') || category.includes('Bad habits to quit');
+};
+
+const ensureHabitMetadata = () => {
+  let changed = false;
+
+  if (!Array.isArray(AppData.choosenHabits)) {
+    AppData.choosenHabits = [];
+    changed = true;
+  }
+  if (!Array.isArray(AppData.choosenHabitsStartDates)) {
+    AppData.choosenHabitsStartDates = [];
+    changed = true;
+  }
+  if (!Array.isArray(AppData.choosenHabitsTypes)) {
+    AppData.choosenHabitsTypes = [];
+    changed = true;
+  }
+  if (!Array.isArray(AppData.choosenHabitsDaysToForm)) {
+    AppData.choosenHabitsDaysToForm = [];
+    changed = true;
+  }
+  if (!AppData.choosenHabitsLastSkip || typeof AppData.choosenHabitsLastSkip !== 'object') {
+    AppData.choosenHabitsLastSkip = {};
+    changed = true;
+  }
+  if (!AppData.choosenHabitsAchievements || typeof AppData.choosenHabitsAchievements !== 'object') {
+    AppData.choosenHabitsAchievements = {};
+    changed = true;
+  }
+  if (!AppData.choosenHabitsNotified || typeof AppData.choosenHabitsNotified !== 'object') {
+    AppData.choosenHabitsNotified = {};
+    changed = true;
+  }
+  if (!AppData.choosenHabitsGoals || typeof AppData.choosenHabitsGoals !== 'object') {
+    AppData.choosenHabitsGoals = {};
+    changed = true;
+  }
+  if (!AppData.choosenHabitsAutoComplete || typeof AppData.choosenHabitsAutoComplete !== 'object') {
+    AppData.choosenHabitsAutoComplete = {};
+    changed = true;
+  }
+  if (!AppData.choosenHabitsSchedule || typeof AppData.choosenHabitsSchedule !== 'object') {
+    AppData.choosenHabitsSchedule = {};
+    changed = true;
+  }
+
+  getHabitIdsFromHistory().forEach((habitId) => {
+    if (AppData.choosenHabits.some((id) => sameHabitId(id, habitId))) return;
+    AppData.choosenHabits.push(habitId);
+    changed = true;
+  });
+
+  AppData.choosenHabits.forEach((habitId, index) => {
+    const isNegative = isKnownNegativeHabit(habitId);
+    const firstDate = getFirstHabitDate(habitId);
+
+    if (!AppData.choosenHabitsStartDates[index]) {
+      AppData.choosenHabitsStartDates[index] = firstDate;
+      changed = true;
+    }
+    if (typeof AppData.choosenHabitsTypes[index] !== 'boolean') {
+      AppData.choosenHabitsTypes[index] = isNegative;
+      changed = true;
+    }
+    if (!Number.isFinite(Number(AppData.choosenHabitsDaysToForm[index])) || Number(AppData.choosenHabitsDaysToForm[index]) <= 0) {
+      AppData.choosenHabitsDaysToForm[index] = isNegative ? 120 : 66;
+      changed = true;
+    }
+    if (!Array.isArray(AppData.choosenHabitsNotified[habitId])) {
+      AppData.choosenHabitsNotified[habitId] = [false, false, false];
+      changed = true;
+    }
+    if (!Array.isArray(AppData.choosenHabitsGoals[habitId])) {
+      AppData.choosenHabitsGoals[habitId] = [];
+      changed = true;
+    }
+    if (!Array.isArray(AppData.choosenHabitsAchievements[habitId])) {
+      AppData.choosenHabitsAchievements[habitId] = getAchievements(isNegative);
+      changed = true;
+    }
+    const schedule = normalizeHabitSchedule(AppData.choosenHabitsSchedule[habitId]);
+    if (JSON.stringify(AppData.choosenHabitsSchedule[habitId]) !== JSON.stringify(schedule)) {
+      AppData.choosenHabitsSchedule[habitId] = schedule;
+      changed = true;
+    }
+    if (!Number.isFinite(Number(AppData.choosenHabitsLastSkip[habitId]))) {
+      AppData.choosenHabitsLastSkip[habitId] = new Date(AppData.choosenHabitsStartDates[index]).getTime();
+      changed = true;
+    }
+    if (isNegative && Object.prototype.hasOwnProperty.call(AppData.choosenHabitsAutoComplete, habitId)) {
+      delete AppData.choosenHabitsAutoComplete[habitId];
+      changed = true;
+    }
+  });
+
+  return changed;
+};
+
+const mergeVisitDates = (sectionId, dates) => {
+  if (!Array.isArray(AppData.sectionVisits[sectionId])) AppData.sectionVisits[sectionId] = [];
+  const current = new Set(AppData.sectionVisits[sectionId].filter(isDateKey));
+  const before = current.size;
+  dates.filter(isDateKey).forEach((dateKey) => current.add(dateKey));
+  AppData.sectionVisits[sectionId] = Array.from(current).sort();
+  return current.size !== before;
+};
+
+const ensureSectionVisits = () => {
+  let changed = false;
+  if (!AppData.sectionVisits || typeof AppData.sectionVisits !== 'object') {
+    AppData.sectionVisits = { ...DEFAULT_SECTION_VISITS };
+    changed = true;
+  }
+
+  Object.keys(DEFAULT_SECTION_VISITS).forEach((sectionId) => {
+    if (!Array.isArray(AppData.sectionVisits[sectionId])) {
+      AppData.sectionVisits[sectionId] = [];
+      changed = true;
+    }
+  });
+
+  changed = mergeVisitDates('habits', getLoggedDates(AppData.habitsByDate)) || changed;
+  changed = mergeVisitDates('training', getLoggedDates(AppData.trainingLog)) || changed;
+  changed = mergeVisitDates('mental', getLoggedDates(AppData.mentalLog)) || changed;
+  changed = mergeVisitDates('recovery', [
+    ...getLoggedDates(AppData.breathingLog),
+    ...getLoggedDates(AppData.meditationLog),
+    ...getLoggedDates(AppData.hardeningLog)
+  ]) || changed;
+  changed = mergeVisitDates('sleep', getLoggedDates(AppData.sleepingLog)) || changed;
+
+  return changed;
+};
+
+const repairRecoveredData = () => {
+  const repairedHabits = ensureHabitMetadata();
+  const repairedSections = ensureSectionVisits();
+  return repairedHabits || repairedSections;
+};
+
 const normalizeAccentHex = (color, fallback = DEFAULT_HABITS_ACCENT_COLOR) => {
   if (typeof color !== 'string') return fallback;
   const trimmed = color.trim();
@@ -335,6 +522,7 @@ export function hasCompletedProfileOrExistingData(data = AppData) {
 }
 
 export class AppData{
+   static needsDataRepairSave = false;
    static insightData = '';
    // Format: { [category]: { text: "...", date: "2023-10-27" } }
    static insightCache = {};
@@ -480,19 +668,19 @@ static mainHeroWidgets = ["HabitsMain", "TrainingMain", "MentalMain"];
     setTheme(THEME.DARK);
     setSoundAndVibro(this.prefs[2],this.prefs[3]);
     setFontSize(this.prefs[4]);
-    this.choosenHabitsStartDates = [...data.choosenHabitsStartDates];
-    this.choosenHabitsLastSkip = data.choosenHabitsLastSkip;
-    this.choosenHabitsAchievements = data.choosenHabitsAchievements;
-    this.choosenHabits = [...data.choosenHabits];
-    this.choosenHabitsTypes = [...data.choosenHabitsTypes];
-    this.choosenHabitsGoals = data.choosenHabitsGoals;
+    this.choosenHabitsStartDates = Array.isArray(data.choosenHabitsStartDates) ? [...data.choosenHabitsStartDates] : [];
+    this.choosenHabitsLastSkip = data.choosenHabitsLastSkip && typeof data.choosenHabitsLastSkip === 'object' ? data.choosenHabitsLastSkip : {};
+    this.choosenHabitsAchievements = data.choosenHabitsAchievements && typeof data.choosenHabitsAchievements === 'object' ? data.choosenHabitsAchievements : {};
+    this.choosenHabits = Array.isArray(data.choosenHabits) ? [...data.choosenHabits] : [];
+    this.choosenHabitsTypes = Array.isArray(data.choosenHabitsTypes) ? [...data.choosenHabitsTypes] : [];
+    this.choosenHabitsGoals = data.choosenHabitsGoals && typeof data.choosenHabitsGoals === 'object' ? data.choosenHabitsGoals : {};
     this.choosenHabitsAutoComplete = data.choosenHabitsAutoComplete || {};
     this.choosenHabitsSchedule = normalizeHabitsScheduleMap(data.choosenHabitsSchedule, this.choosenHabits);
     this.habitEventTimes = data.habitEventTimes || {};
-    this.choosenHabitsNotified = data.choosenHabitsNotified;
-    this.choosenHabitsDaysToForm = data.choosenHabitsDaysToForm;
-    this.CustomHabits = data.CustomHabits;
-    this.habitsByDate = data.habitsByDate;
+    this.choosenHabitsNotified = data.choosenHabitsNotified && typeof data.choosenHabitsNotified === 'object' ? data.choosenHabitsNotified : {};
+    this.choosenHabitsDaysToForm = Array.isArray(data.choosenHabitsDaysToForm) ? data.choosenHabitsDaysToForm : [];
+    this.CustomHabits = Array.isArray(data.CustomHabits) ? data.CustomHabits : [];
+    this.habitsByDate = data.habitsByDate && typeof data.habitsByDate === 'object' ? data.habitsByDate : {};
     this.notify = normalizeNotifySettings(data.notify);
     this.sectionNotifications = normalizeSectionNotifications(data.sectionNotifications, this.notify);
     setNotify(this.notify);
@@ -628,6 +816,7 @@ static mainHeroWidgets = ["HabitsMain", "TrainingMain", "MentalMain"];
       goals: savedHabitCardWidgets.goals ?? true,
       achievements: savedHabitCardWidgets.achievements ?? true
     };
+    this.needsDataRepairSave = repairRecoveredData();
   } 
   static async setSectionNotification(section, config) {
     const normalized = normalizeSectionNotifications({

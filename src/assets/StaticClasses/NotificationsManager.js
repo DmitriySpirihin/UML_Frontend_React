@@ -659,10 +659,12 @@ async function applyCloudBackupSnapshot(restoredSnapshot, { silent = false, pref
   }
 
   deserializeData(mergedDataString);
-  await saveData({ skipCloudBackup: true, touchLastSave: false });
+  const repaired = AppData.needsDataRepairSave === true;
+  await saveData({ skipCloudBackup: true, touchLastSave: repaired });
+  AppData.needsDataRepairSave = false;
   emitDataSynced();
   if (queueBackup) {
-    scheduleAutoCloudBackup(merged.changedLocal ? RETRY_BACKUP_DELAY_MS : AUTO_BACKUP_DELAY_MS);
+    scheduleAutoCloudBackup(merged.changedLocal || repaired ? RETRY_BACKUP_DELAY_MS : AUTO_BACKUP_DELAY_MS);
   }
   if (!silent) setShowPopUpPanel('✅ Data restored!', 2000, true);
   return true;
