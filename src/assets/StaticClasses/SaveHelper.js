@@ -76,6 +76,10 @@ export function getTelegramContext() {
 let db = null;
 const PRE_REPAIR_BACKUP_KEY = 'uml_pre_repair_backup_v1';
 const PRE_REPAIR_BACKUP_AT_KEY = 'uml_pre_repair_backup_at_v1';
+const BEFORE_REPAIR_UNDO_KEY = 'uml_before_pre_repair_restore_v1';
+const AUTO_RESCUE_BACKUP_KEY = 'uml_before_auto_rescue_v1';
+const AUTO_RESCUE_BACKUP_AT_KEY = 'uml_before_auto_rescue_at_v1';
+const AUTO_RESCUE_MARKER_KEY = 'uml_repair_undo_auto_restored_v1';
 
 function rememberPreRepairBackup(rawData) {
   if (typeof window === 'undefined' || !rawData) return;
@@ -84,6 +88,101 @@ function rememberPreRepairBackup(rawData) {
     window.localStorage.setItem(PRE_REPAIR_BACKUP_AT_KEY, new Date().toISOString());
   } catch (error) {
     console.warn('Pre-repair backup failed:', error);
+  }
+}
+
+function parseSavedData(rawData) {
+  if (!rawData || typeof rawData !== 'string') return null;
+  try {
+    const parsed = JSON.parse(rawData);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+const countDateKeys = (record = {}) => (
+  record && typeof record === 'object' && !Array.isArray(record)
+    ? Object.keys(record).filter((key) => /^\d{4}-\d{2}-\d{2}$/.test(String(key))).length
+    : 0
+);
+
+const countVisitDates = (sectionVisits = {}) => (
+  sectionVisits && typeof sectionVisits === 'object' && !Array.isArray(sectionVisits)
+    ? Object.values(sectionVisits).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0)
+    : 0
+);
+
+const countObjectEntries = (value = {}) => (
+  value && typeof value === 'object' && !Array.isArray(value) ? Object.keys(value).length : 0
+);
+
+function getRecoveryScore(rawData) {
+  const data = parseSavedData(rawData);
+  if (!data) return null;
+
+  const habits = Array.isArray(data.choosenHabits) ? data.choosenHabits.length : 0;
+  const starts = Array.isArray(data.choosenHabitsStartDates) ? data.choosenHabitsStartDates.filter(Boolean).length : 0;
+  const types = Array.isArray(data.choosenHabitsTypes) ? data.choosenHabitsTypes.length : 0;
+  const daysToForm = Array.isArray(data.choosenHabitsDaysToForm) ? data.choosenHabitsDaysToForm.length : 0;
+  const habitMeta = habits > 0 ? Math.min(habits, starts, types, daysToForm) : 0;
+
+  return {
+    habits,
+    habitMeta,
+    habitDays: countDateKeys(data.habitsByDate),
+    habitGoals: countObjectEntries(data.choosenHabitsGoals),
+    sectionVisits: countVisitDates(data.sectionVisits)
+  };
+}
+
+function shouldUseRepairUndoSnapshot(currentRawData, undoRawData) {
+  const current = getRecoveryScore(currentRawData);
+  const undo = getRecoveryScore(undoRawData);
+  if (!current || !undo) return false;
+
+  const restoresHabits = undo.habits > current.habits && undo.habitMeta >= current.habitMeta;
+  const restoresHabitMeta = undo.habitMeta > current.habitMeta && undo.habits >= current.habits;
+  const restoresSections = undo.sectionVisits >= current.sectionVisits + 2;
+  const keepsHistory = undo.habitDays >= Math.max(0, current.habitDays - 1);
+  const keepsGoals = undo.habitGoals >= current.habitGoals;
+
+  return keepsHistory && keepsGoals && (restoresHabits || restoresHabitMeta || restoresSections);
+}
+
+function rememberAutoRescueBackup(rawData) {
+  if (typeof window === 'undefined' || !rawData) return;
+  try {
+    window.localStorage.setItem(AUTO_RESCUE_BACKUP_KEY, rawData);
+    window.localStorage.setItem(AUTO_RESCUE_BACKUP_AT_KEY, new Date().toISOString());
+  } catch (error) {
+    console.warn('Auto rescue backup failed:', error);
+  }
+}
+
+async function maybeRestoreRepairUndoSnapshot(localData) {
+  if (typeof window === 'undefined' || !db) return { data: localData, restored: false };
+
+  const undoRawData = window.localStorage.getItem(BEFORE_REPAIR_UNDO_KEY);
+  if (!undoRawData || !shouldUseRepairUndoSnapshot(localData, undoRawData)) {
+    return { data: localData, restored: false };
+  }
+
+  const undoScore = getRecoveryScore(undoRawData);
+  const marker = `${undoRawData.length}:${undoScore?.habits}:${undoScore?.sectionVisits}`;
+  if (window.localStorage.getItem(AUTO_RESCUE_MARKER_KEY) === marker) {
+    return { data: localData, restored: false };
+  }
+
+  try {
+    rememberAutoRescueBackup(localData);
+    await db.put('UserData', undoRawData, 'current');
+    window.localStorage.setItem(AUTO_RESCUE_MARKER_KEY, marker);
+    setShowPopUpPanel('Восстановил данные до отката repair', 2500, false);
+    return { data: undoRawData, restored: true };
+  } catch (error) {
+    console.warn('Repair undo auto restore failed:', error);
+    return { data: localData, restored: false };
   }
 }
 
@@ -161,13 +260,21 @@ export async function loadData() {
   }
 
   try {
-    const localData = await db.get('UserData', 'current');
+    let localData = await db.get('UserData', 'current');
     if (!localData) {
     //  console.log('No data in local DB');
       return { success: false, error: 'No saved data found' };
     }
 
+    const rescueResult = await maybeRestoreRepairUndoSnapshot(localData);
+    localData = rescueResult.data;
     deserializeData(localData);
+    if (rescueResult.restored) {
+      AppData.lastSave = new Date().toISOString();
+      AppData.needsDataRepairSave = false;
+      await saveData({ skipCloudBackup: false, touchLastSave: false });
+      return { success: true, data: JSON.parse(localData), source: 'local', repairedRollback: true };
+    }
     if (AppData.needsDataRepairSave) {
       rememberPreRepairBackup(localData);
       await saveData({ skipCloudBackup: true, touchLastSave: true });
