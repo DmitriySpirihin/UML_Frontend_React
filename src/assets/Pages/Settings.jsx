@@ -67,6 +67,23 @@ function getPreRepairBackupInfo() {
     }
 }
 
+function getRepairUndoInfo() {
+    if (typeof window === 'undefined') return null;
+    const raw = window.localStorage.getItem(BEFORE_REPAIR_UNDO_KEY);
+    if (!raw) return null;
+    try {
+        const data = JSON.parse(raw);
+        return {
+            at: window.localStorage.getItem(BEFORE_REPAIR_UNDO_AT_KEY) || '',
+            habits: Array.isArray(data.choosenHabits) ? data.choosenHabits.length : 0,
+            habitDays: countDateKeys(data.habitsByDate),
+            sectionVisits: Object.values(data.sectionVisits || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0)
+        };
+    } catch {
+        return { at: window.localStorage.getItem(BEFORE_REPAIR_UNDO_AT_KEY) || '', broken: true };
+    }
+}
+
 const Settings = () => {
     const [theme, setThemeState] = useState('dark');
     const [langIndex, setLangIndex] = useState(AppData.prefs[0]);
@@ -329,6 +346,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
     const [showDanger, setShowDanger] = useState(false);
     const [lastBackupDate, setLastBackupDate] = useState(AppData.lastBackupDate);
     const [repairBackupInfo, setRepairBackupInfo] = useState(getPreRepairBackupInfo);
+    const [repairUndoInfo, setRepairUndoInfo] = useState(getRepairUndoInfo);
     const styles = s(theme);
     const isBugPanel = panelNum === 1;
     const isContactsPanel = panelNum === 3;
@@ -340,6 +358,7 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
         if (isOpen && isBackupPanel) {
             setLastBackupDate(AppData.lastBackupDate);
             setRepairBackupInfo(getPreRepairBackupInfo());
+            setRepairUndoInfo(getRepairUndoInfo());
         }
     }, [isOpen, isBackupPanel]);
     const closePanel = () => {
@@ -379,12 +398,34 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
             }
             deserializeData(raw);
             AppData.lastSave = new Date().toISOString();
-            await saveData({ skipCloudBackup: false, touchLastSave: false });
+            await saveData({ skipCloudBackup: true, touchLastSave: false });
             setShowPopUpPanel(langIndex === 0 ? 'Откат repair применен' : 'Repair rollback applied', 1800, true);
             window.setTimeout(() => window.location.reload(), 650);
         } catch (error) {
             console.error('Pre-repair restore failed:', error);
             setShowPopUpPanel(langIndex === 0 ? 'Не удалось откатить repair' : 'Repair rollback failed', 2400, false);
+        }
+    };
+    const restoreRepairUndoBackup = async () => {
+        const raw = typeof window !== 'undefined' ? window.localStorage.getItem(BEFORE_REPAIR_UNDO_KEY) : '';
+        if (!raw) {
+            setShowPopUpPanel(langIndex === 0 ? 'Копия перед откатом не найдена' : 'Pre-rollback copy not found', 2200, false);
+            return;
+        }
+        const confirmed = window.confirm(langIndex === 0
+            ? 'Вернуть состояние, которое было прямо перед нажатием “Откатить repair”?'
+            : 'Restore the state from right before pressing “Undo repair”?');
+        if (!confirmed) return;
+
+        try {
+            deserializeData(raw);
+            AppData.lastSave = new Date().toISOString();
+            await saveData({ skipCloudBackup: false, touchLastSave: false });
+            setShowPopUpPanel(langIndex === 0 ? 'Состояние до отката возвращено' : 'Pre-rollback state restored', 1800, true);
+            window.setTimeout(() => window.location.reload(), 650);
+        } catch (error) {
+            console.error('Repair undo restore failed:', error);
+            setShowPopUpPanel(langIndex === 0 ? 'Не удалось отменить откат' : 'Rollback undo failed', 2400, false);
         }
     };
     return (
@@ -522,6 +563,24 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
                                             )}
                                         </div>
                                         <ActionButton icon={<FaUndo />} text={langIndex === 0 ? 'Откатить repair' : 'Undo repair'} onClick={restorePreRepairBackup} theme={theme} color="#D95C5C" />
+                                    </div>
+                                )}
+                                {repairUndoInfo && (
+                                    <div style={styles.backupStatusCard}>
+                                        <div style={styles.backupStatusText}>
+                                            <div style={styles.backupStatusLabel}>
+                                                {langIndex === 0 ? 'Копия перед откатом repair' : 'Copy before repair rollback'}
+                                            </div>
+                                            <div style={styles.backupStatusValue}>
+                                                {repairUndoInfo.broken
+                                                    ? (langIndex === 0 ? 'Найдена, но не читается' : 'Found, but unreadable')
+                                                    : `${repairUndoInfo.habits} habits · ${repairUndoInfo.habitDays} days · ${repairUndoInfo.sectionVisits} visits`}
+                                            </div>
+                                            {repairUndoInfo.at && (
+                                                <div style={styles.backupStatusLabel}>{repairUndoInfo.at.replace('T', ' ').slice(0, 16)}</div>
+                                            )}
+                                        </div>
+                                        <ActionButton icon={<FaUndo />} text={langIndex === 0 ? 'Отменить откат repair' : 'Undo repair rollback'} onClick={restoreRepairUndoBackup} theme={theme} color="#6F8BD6" />
                                     </div>
                                 )}
                                 <div style={styles.backupActionsGrid}>
