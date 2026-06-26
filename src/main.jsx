@@ -13,7 +13,7 @@ WebApp?.ready?.();
 
 const manifestUrl = 'https://dmitriyspirihin.github.io/UML_Frontend_React/tonconnect-manifest.json';
 const walletsListSource = `${import.meta.env.BASE_URL}wallets.json`;
-const cacheRescueVersion = 'section-streak-tap-only-20260626-2256';
+const cacheRescueVersion = 'section-streak-tap-only-20260626-2303';
 
 if (typeof window !== 'undefined') {
   applyPerformanceClasses();

@@ -33,7 +33,7 @@ const DEFAULT_SECTION_LAST_OPENED_AT = { habits: 0, todo: 0, mental: 0, recovery
 const HABIT_BACKFILL_MIN_DAYS = 45;
 const HABIT_BACKFILL_BUFFER_DAYS = 14;
 const HABIT_BACKFILL_MAX_DAYS = 160;
-const SECTION_VISIT_REPAIR_KEY = 'sectionVisitBackfill20260626VisitsOnly';
+const SECTION_VISIT_REPAIR_KEY = 'sectionVisitBackfill20260626TapOnly2';
 const SECTION_VISIT_REPAIR_MIN_DAYS = 30;
 const DEFAULT_NOTIFY_CRON = '10 12 * * 1,2,3,4,5';
 const DEFAULT_NOTIFY_SETTINGS = [
@@ -357,15 +357,13 @@ const repairInflatedSectionVisits = () => {
   if (AppData.repairFlags?.[SECTION_VISIT_REPAIR_KEY]) return false;
   if (!AppData.sectionVisits || typeof AppData.sectionVisits !== 'object') return false;
 
-  const hadStreakRepair = AppData.repairFlags?.positiveHabitBackfill20260626
-    || AppData.repairFlags?.positiveHabitBackfill20260626Strict;
   let changed = false;
   const sleepStreakLength = getCurrentDateStreakKeys(AppData.sectionVisits.sleep || []).length;
   const trustedLength = sleepStreakLength > 0 && sleepStreakLength < SECTION_VISIT_REPAIR_MIN_DAYS
     ? sleepStreakLength
     : 1;
 
-  if (hadStreakRepair) ['habits'].forEach((sectionId) => {
+  ['habits'].forEach((sectionId) => {
     const dates = Array.isArray(AppData.sectionVisits[sectionId]) ? AppData.sectionVisits[sectionId].filter(isDateKey) : [];
     const currentKeys = getCurrentDateStreakKeys(dates);
     if (currentKeys.length < SECTION_VISIT_REPAIR_MIN_DAYS) return;
