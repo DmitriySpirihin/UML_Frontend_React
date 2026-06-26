@@ -216,18 +216,62 @@ function habitMetadataScore(snapshot = {}) {
   return habits > 0 ? habits + Math.min(habits, starts, types, daysToForm) : 0;
 }
 
-function keepMoreCompleteHabitMetadata(merged, local, remote) {
-  const localScore = habitMetadataScore(local);
-  const remoteScore = habitMetadataScore(remote);
-  if (localScore === remoteScore) return merged;
+const habitIdKey = (habitId) => {
+  const numeric = Number(habitId);
+  return Number.isFinite(numeric) ? String(numeric) : String(habitId);
+};
 
-  const source = localScore > remoteScore ? local : remote;
+function getHabitMetadata(snapshot = {}, habitId) {
+  const key = habitIdKey(habitId);
+  const habits = Array.isArray(snapshot.choosenHabits) ? snapshot.choosenHabits : [];
+  const index = habits.findIndex((id) => habitIdKey(id) === key);
+  return {
+    id: index >= 0 ? habits[index] : habitId,
+    startDate: index >= 0 ? snapshot.choosenHabitsStartDates?.[index] : undefined,
+    type: index >= 0 ? snapshot.choosenHabitsTypes?.[index] : undefined,
+    daysToForm: index >= 0 ? snapshot.choosenHabitsDaysToForm?.[index] : undefined
+  };
+}
+
+function mergeHabitMetadata(merged, local, remote, preferRemote) {
+  const preferred = preferRemote ? remote : local;
+  const secondary = preferRemote ? local : remote;
+  const ids = [];
+  const seen = new Set();
+
+  [preferred, secondary].forEach((snapshot) => {
+    (Array.isArray(snapshot.choosenHabits) ? snapshot.choosenHabits : []).forEach((id) => {
+      const key = habitIdKey(id);
+      if (seen.has(key)) return;
+      seen.add(key);
+      ids.push(id);
+    });
+  });
+
+  if (!ids.length) return merged;
+
+  const preferredScore = habitMetadataScore(preferred);
+  const secondaryScore = habitMetadataScore(secondary);
+  const preferCompleteSecondary = secondaryScore > preferredScore;
+  const primaryMetaSource = preferCompleteSecondary ? secondary : preferred;
+  const fallbackMetaSource = preferCompleteSecondary ? preferred : secondary;
+  const metadata = ids.map((id) => {
+    const primary = getHabitMetadata(primaryMetaSource, id);
+    const fallback = getHabitMetadata(fallbackMetaSource, id);
+    return {
+      id: primary.id ?? fallback.id ?? id,
+      startDate: primary.startDate || fallback.startDate || '',
+      type: typeof primary.type === 'boolean' ? primary.type : fallback.type === true,
+      daysToForm: Number(primary.daysToForm) > 0 ? primary.daysToForm : (Number(fallback.daysToForm) > 0 ? fallback.daysToForm : 66)
+    };
+  });
+
   return {
     ...merged,
-    choosenHabits: Array.isArray(source.choosenHabits) ? [...source.choosenHabits] : [],
-    choosenHabitsStartDates: Array.isArray(source.choosenHabitsStartDates) ? [...source.choosenHabitsStartDates] : [],
-    choosenHabitsTypes: Array.isArray(source.choosenHabitsTypes) ? [...source.choosenHabitsTypes] : [],
-    choosenHabitsDaysToForm: Array.isArray(source.choosenHabitsDaysToForm) ? [...source.choosenHabitsDaysToForm] : []
+    choosenHabits: metadata.map((item) => item.id),
+    choosenHabitsStartDates: metadata.map((item) => item.startDate),
+    choosenHabitsTypes: metadata.map((item) => item.type),
+    choosenHabitsDaysToForm: metadata.map((item) => item.daysToForm)
   };
 }
 
@@ -250,7 +294,7 @@ export function mergeAppSnapshots(localSnapshot = {}, remoteSnapshot = {}, { tou
   ARRAY_UNION_FIELDS.forEach((field) => {
     merged[field] = mergeArrayUnion(local[field], remote[field], preferRemote);
   });
-  const finalMerged = keepMoreCompleteHabitMetadata(merged, local, remote);
+  const finalMerged = mergeHabitMetadata(merged, local, remote, preferRemote);
 
   const localString = stableStringify(local);
   const mergedString = stableStringify(finalMerged);

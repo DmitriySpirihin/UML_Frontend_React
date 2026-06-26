@@ -52,4 +52,28 @@ const mergedComplete = mergeAppSnapshots(local, remoteWithHabits, {
 assert.deepEqual(mergedComplete.choosenHabits, [1, 2]);
 assert.deepEqual(mergedComplete.choosenHabitsTypes, [false, true]);
 
+const equalScoreDifferentHabits = mergeAppSnapshots({
+  lastSave: '2026-06-26T10:00:00.000Z',
+  choosenHabits: [1],
+  choosenHabitsStartDates: ['2026-06-20'],
+  choosenHabitsTypes: [false],
+  choosenHabitsDaysToForm: [66],
+  habitsByDate: { '2026-06-25': { 1: 1 } }
+}, {
+  lastSave: '2026-06-26T11:00:00.000Z',
+  choosenHabits: [2],
+  choosenHabitsStartDates: ['2026-06-21'],
+  choosenHabitsTypes: [true],
+  choosenHabitsDaysToForm: [120],
+  habitsByDate: { '2026-06-25': { 2: 1 } }
+}, {
+  touchLastSaveOnChange: false
+}).snapshot;
+
+assert.deepEqual(equalScoreDifferentHabits.choosenHabits, [2, 1]);
+assert.deepEqual(equalScoreDifferentHabits.choosenHabitsStartDates, ['2026-06-21', '2026-06-20']);
+assert.deepEqual(equalScoreDifferentHabits.choosenHabitsTypes, [true, false]);
+assert.deepEqual(equalScoreDifferentHabits.choosenHabitsDaysToForm, [120, 66]);
+assert.deepEqual(equalScoreDifferentHabits.habitsByDate, { '2026-06-25': { 1: 1, 2: 1 } });
+
 console.log('data merge self-check ok');
