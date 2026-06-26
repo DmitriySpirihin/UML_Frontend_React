@@ -33,9 +33,8 @@ const DEFAULT_SECTION_LAST_OPENED_AT = { habits: 0, todo: 0, mental: 0, recovery
 const HABIT_BACKFILL_MIN_DAYS = 45;
 const HABIT_BACKFILL_BUFFER_DAYS = 14;
 const HABIT_BACKFILL_MAX_DAYS = 160;
-const HABIT_STREAK_REPAIR_KEY = 'positiveHabitBackfill20260626';
-const HABIT_STREAK_REPAIR_STRICT_KEY = 'positiveHabitBackfill20260626Strict';
-const HABIT_STREAK_REPAIR_MIN_DAYS = 30;
+const SECTION_VISIT_REPAIR_KEY = 'sectionVisitBackfill20260626VisitsOnly';
+const SECTION_VISIT_REPAIR_MIN_DAYS = 30;
 const DEFAULT_NOTIFY_CRON = '10 12 * * 1,2,3,4,5';
 const DEFAULT_NOTIFY_SETTINGS = [
   { enabled: false, cron: DEFAULT_NOTIFY_CRON },
@@ -194,15 +193,6 @@ const getLoggedDates = (record = {}) => (
     : []
 );
 
-const getValidDateKey = (value) => {
-  if (!value) return null;
-  if (typeof value === 'string' && isDateKey(value.slice(0, 10))) return value.slice(0, 10);
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return formatLocalDateKey(date);
-};
-
 const getHabitIdsFromHistory = () => {
   const ids = [];
   const seen = new Set();
@@ -330,15 +320,6 @@ const ensureHabitMetadata = () => {
   return changed;
 };
 
-const mergeVisitDates = (sectionId, dates) => {
-  if (!Array.isArray(AppData.sectionVisits[sectionId])) AppData.sectionVisits[sectionId] = [];
-  const current = new Set(AppData.sectionVisits[sectionId].filter(isDateKey));
-  const before = current.size;
-  dates.filter(isDateKey).forEach((dateKey) => current.add(dateKey));
-  AppData.sectionVisits[sectionId] = Array.from(current).sort();
-  return current.size !== before;
-};
-
 const ensureSectionVisits = () => {
   let changed = false;
   if (!AppData.sectionVisits || typeof AppData.sectionVisits !== 'object') {
@@ -353,90 +334,53 @@ const ensureSectionVisits = () => {
     }
   });
 
-  changed = mergeVisitDates('training', getLoggedDates(AppData.trainingLog)) || changed;
-  changed = mergeVisitDates('mental', getLoggedDates(AppData.mentalLog)) || changed;
-  changed = mergeVisitDates('recovery', [
-    ...getLoggedDates(AppData.breathingLog),
-    ...getLoggedDates(AppData.meditationLog),
-    ...getLoggedDates(AppData.hardeningLog)
-  ]) || changed;
-  changed = mergeVisitDates('sleep', getLoggedDates(AppData.sleepingLog)) || changed;
-
   return changed;
 };
 
-const getPositiveHabitCurrentStreakKeys = (habitId, habitIndex, todayKey) => {
-  const today = parseLocalDateKey(todayKey);
-  const startDate = getHabitStartDate(habitIndex);
-  const startKey = startDate ? formatLocalDateKey(startDate) : todayKey;
-  if (!today) return [];
-
+const getCurrentDateStreakKeys = (dates = []) => {
+  const dateSet = new Set((dates || []).filter(isDateKey));
   const keys = [];
-  for (let currentDate = cloneDate(today); formatLocalDateKey(currentDate) >= startKey; currentDate = addLocalDays(currentDate, -1)) {
-    const key = formatLocalDateKey(currentDate);
-    if (!AppData.isHabitScheduledForDate(habitId, key)) continue;
+  const today = parseLocalDateKey(formatLocalDateKey());
+  if (!today) return keys;
 
-    const status = AppData.habitsByDate?.[key]?.[habitId];
-    if (key === todayKey && status === 0) continue;
-    if (status > 0) {
-      keys.push(key);
-      continue;
-    }
-    break;
+  for (let date = cloneDate(today); ; date = addLocalDays(date, -1)) {
+    const key = formatLocalDateKey(date);
+    if (!dateSet.has(key)) break;
+    keys.push(key);
+    if (keys.length > 400) break;
   }
 
   return keys;
 };
 
-const repairInflatedPositiveHabitHistory = () => {
-  if (AppData.repairFlags?.[HABIT_STREAK_REPAIR_STRICT_KEY]) return false;
+const repairInflatedSectionVisits = () => {
+  if (AppData.repairFlags?.[SECTION_VISIT_REPAIR_KEY]) return false;
+  if (!AppData.sectionVisits || typeof AppData.sectionVisits !== 'object') return false;
 
+  const hadStreakRepair = AppData.repairFlags?.positiveHabitBackfill20260626
+    || AppData.repairFlags?.positiveHabitBackfill20260626Strict;
   let changed = false;
-  const todayKey = formatLocalDateKey();
-  const today = parseLocalDateKey(todayKey);
-  if (!today) return false;
+  const sleepStreakLength = getCurrentDateStreakKeys(AppData.sectionVisits.sleep || []).length;
+  const trustedLength = sleepStreakLength > 0 && sleepStreakLength < SECTION_VISIT_REPAIR_MIN_DAYS
+    ? sleepStreakLength
+    : 1;
 
-  (AppData.choosenHabits || []).forEach((habitId, index) => {
-    if (AppData.choosenHabitsTypes?.[index] === true) return;
-    if (AppData.isHabitAutoComplete(habitId)) return;
+  if (hadStreakRepair) ['habits'].forEach((sectionId) => {
+    const dates = Array.isArray(AppData.sectionVisits[sectionId]) ? AppData.sectionVisits[sectionId].filter(isDateKey) : [];
+    const currentKeys = getCurrentDateStreakKeys(dates);
+    if (currentKeys.length < SECTION_VISIT_REPAIR_MIN_DAYS) return;
 
-    const inflatedStreakKeys = getPositiveHabitCurrentStreakKeys(habitId, index, todayKey);
-    if (inflatedStreakKeys.length >= HABIT_STREAK_REPAIR_MIN_DAYS) {
-      inflatedStreakKeys.forEach((key) => {
-        if (!AppData.habitsByDate[key] || AppData.habitsByDate[key][habitId] <= 0) return;
-        AppData.habitsByDate[key][habitId] = 0;
-        changed = true;
-      });
-      return;
-    }
-
-    if (AppData.repairFlags?.[HABIT_STREAK_REPAIR_KEY]) return;
-
-    const startDate = getHabitStartDate(index);
-    if (!startDate || startDate >= today) return;
-
-    const pastKeys = [];
-    for (let date = cloneDate(startDate); date < today; date = addLocalDays(date, 1)) {
-      const key = formatLocalDateKey(date);
-      if (AppData.isHabitScheduledForDate(habitId, key)) pastKeys.push(key);
-    }
-
-    if (pastKeys.length < HABIT_STREAK_REPAIR_MIN_DAYS) return;
-    const looksBackfilled = pastKeys.every((key) => AppData.habitsByDate?.[key]?.[habitId] > 0);
-    if (!looksBackfilled) return;
-
-    pastKeys.forEach((key) => {
-      if (!AppData.habitsByDate[key] || AppData.habitsByDate[key][habitId] <= 0) return;
-      AppData.habitsByDate[key][habitId] = 0;
-      changed = true;
-    });
+    const inflatedKeys = new Set(currentKeys);
+    const keepKeys = new Set(currentKeys.slice(0, trustedLength));
+    AppData.sectionVisits[sectionId] = dates
+      .filter((dateKey) => !inflatedKeys.has(dateKey) || keepKeys.has(dateKey))
+      .sort();
+    changed = true;
   });
 
-  if (!changed) return false;
   AppData.repairFlags = {
     ...(AppData.repairFlags || {}),
-    [HABIT_STREAK_REPAIR_KEY]: AppData.repairFlags?.[HABIT_STREAK_REPAIR_KEY] || new Date().toISOString(),
-    [HABIT_STREAK_REPAIR_STRICT_KEY]: new Date().toISOString()
+    [SECTION_VISIT_REPAIR_KEY]: new Date().toISOString()
   };
   return true;
 };
@@ -446,9 +390,9 @@ const repairRecoveredData = () => {
     && new URLSearchParams(window.location.search).get('autoRepair') === '1';
 
   const repairedHabits = allowAutoRepair ? ensureHabitMetadata() : false;
-  const repairedInflatedHabits = repairInflatedPositiveHabitHistory();
   const repairedSections = ensureSectionVisits();
-  return repairedHabits || repairedInflatedHabits || repairedSections;
+  const repairedInflatedSections = repairInflatedSectionVisits();
+  return repairedHabits || repairedSections || repairedInflatedSections;
 };
 
 const normalizeAccentHex = (color, fallback = DEFAULT_HABITS_ACCENT_COLOR) => {
@@ -1332,60 +1276,6 @@ const normalizeDateKeyToLocalDate = (dateKey) => {
   return date;
 };
 
-const hasActivityEntry = (value) => {
-  if (Array.isArray(value)) return value.length > 0;
-  if (value && typeof value === 'object') return Object.keys(value).length > 0;
-  return Boolean(value);
-};
-
-const getActiveRecordDates = (record = {}) => (
-  getLoggedDates(record).filter((dateKey) => hasActivityEntry(record?.[dateKey]))
-);
-
-const getTodoActivityDates = () => {
-  const dates = new Set();
-  const todayKey = formatLocalDateKey();
-  const addRange = (fromKey, toKey) => {
-    const from = parseLocalDateKey(fromKey);
-    const to = parseLocalDateKey(toKey);
-    if (!from || !to || from > to) return;
-    for (let date = cloneDate(from); date <= to; date = addLocalDays(date, 1)) {
-      dates.add(formatLocalDateKey(date));
-    }
-  };
-
-  (AppData.todoList || []).forEach((task) => {
-    if (task?.isHidden) return;
-    const completedKey = getValidDateKey(task?.completedAt);
-    const startKey = getValidDateKey(task?.startDate);
-    const deadlineKey = getValidDateKey(task?.deadLine);
-
-    if (startKey && deadlineKey) addRange(startKey, deadlineKey > todayKey ? todayKey : deadlineKey);
-    else if (deadlineKey) addRange(startKey || deadlineKey, deadlineKey > todayKey ? todayKey : deadlineKey);
-    else if (startKey && !task.isDone) addRange(startKey, todayKey);
-    else if (completedKey) dates.add(completedKey);
-    else if (startKey) dates.add(startKey);
-  });
-
-  return Array.from(dates).sort();
-};
-
-const getSectionSourceDates = (sectionId) => {
-  if (sectionId === 'todo') return getTodoActivityDates();
-  if (sectionId === 'training') return getActiveRecordDates(AppData.trainingLog);
-  if (sectionId === 'mental') return getActiveRecordDates(AppData.mentalLog);
-  if (sectionId === 'sleep') return getActiveRecordDates(AppData.sleepingLog);
-  if (sectionId === 'recovery') {
-    return Array.from(new Set([
-      ...getActiveRecordDates(AppData.breathingLog),
-      ...getActiveRecordDates(AppData.meditationLog),
-      ...getActiveRecordDates(AppData.hardeningLog)
-    ])).sort();
-  }
-
-  return [];
-};
-
 const getStreakInfoFromDates = (dates) => {
   const visitDates = new Set((dates || []).filter(isDateKey));
   if (visitDates.size === 0) return { streak: 0, state: 'empty', lastVisitDate: null };
@@ -1424,21 +1314,8 @@ const getStreakInfoFromDates = (dates) => {
   };
 };
 
-const getBestStreakInfo = (...dateLists) => (
-  dateLists
-    .map(getStreakInfoFromDates)
-    .reduce((best, current) => (current.streak > best.streak ? current : best), {
-      streak: 0,
-      state: 'empty',
-      lastVisitDate: null
-    })
-);
-
 export const getSectionStreakInfo = (sectionId) => {
-  const sourceDates = getSectionSourceDates(sectionId);
-  const fallbackDates = AppData.sectionVisits?.[sectionId] || [];
-  if (sectionId === 'habits') return getStreakInfoFromDates(fallbackDates);
-  return getBestStreakInfo(fallbackDates, sourceDates);
+  return getStreakInfoFromDates(AppData.sectionVisits?.[sectionId] || []);
 };
 
 export const getSectionStreak = (sectionId) => {

@@ -14,7 +14,7 @@ import { cloudRestore, deleteCloudBackup, NotificationsManager, syncCloudBackup 
 import { playEffects } from '../StaticClasses/Effects';
 
 const transitionSound = new Audio('Audio/Transition.wav');
-const version = '2.c.88.7.s';
+const version = '2.c.88.8.s';
 const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 18px)';
 const NOTIFICATION_SECTION_DEFS = [
     { id: 'habits', label: ['Привычки', 'Habits'], detail: ['Ежедневные ритуалы и чек-ин', 'Daily rituals and check-in'], icon: <FaCheckCircle />, color: '#55DDEB', serverType: 'habit', message: ['время проверить привычки', 'time to check habits'] },
