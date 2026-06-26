@@ -28,6 +28,11 @@ const isPlainObject = (value) => (
 );
 
 const isDateKey = (key) => /^\d{4}-\d{2}-\d{2}$/.test(String(key || ''));
+const mergeRecordValue = (preferred, secondary) => {
+  if (isPlainObject(secondary) && isPlainObject(preferred)) return { ...secondary, ...preferred };
+  if (Array.isArray(secondary) && Array.isArray(preferred) && secondary.length > 0 && preferred.length === 0) return secondary;
+  return preferred;
+};
 
 function stableStringify(value) {
   try {
@@ -51,9 +56,7 @@ function mergeRecords(localValue = {}, remoteValue = {}, preferRemote = true) {
   const merged = { ...secondary, ...preferred };
 
   Object.keys(secondary).forEach((key) => {
-    if (isPlainObject(secondary[key]) && isPlainObject(preferred[key])) {
-      merged[key] = { ...secondary[key], ...preferred[key] };
-    }
+    if (Object.prototype.hasOwnProperty.call(preferred, key)) merged[key] = mergeRecordValue(preferred[key], secondary[key]);
   });
 
   return merged;

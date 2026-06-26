@@ -9,6 +9,7 @@ const local = {
   choosenHabitsDaysToForm: [66],
   choosenHabitsSchedule: { 1: { type: 'weekly', days: [1, 3, 5] } },
   choosenHabitsNotified: { 1: [false, true, false] },
+  choosenHabitsGoals: { 1: [{ text: 'keep', isDone: false }] },
   sectionVisits: { habits: ['2026-06-24', '2026-06-25'], sleep: ['2026-06-25'] }
 };
 
@@ -19,7 +20,8 @@ const newerButSparseRemote = {
   choosenHabitsTypes: [],
   choosenHabitsDaysToForm: [],
   choosenHabitsSchedule: {},
-  choosenHabitsNotified: {},
+  choosenHabitsNotified: { 1: [] },
+  choosenHabitsGoals: { 1: [] },
   sectionVisits: { habits: [], sleep: ['2026-06-26'] }
 };
 
@@ -31,6 +33,7 @@ assert.deepEqual(mergedSparse.choosenHabits, [1]);
 assert.deepEqual(mergedSparse.choosenHabitsStartDates, ['2026-06-20']);
 assert.deepEqual(mergedSparse.choosenHabitsSchedule, { 1: { type: 'weekly', days: [1, 3, 5] } });
 assert.deepEqual(mergedSparse.choosenHabitsNotified, { 1: [false, true, false] });
+assert.deepEqual(mergedSparse.choosenHabitsGoals, { 1: [{ text: 'keep', isDone: false }] });
 assert.deepEqual(mergedSparse.sectionVisits.habits, ['2026-06-24', '2026-06-25']);
 assert.deepEqual(mergedSparse.sectionVisits.sleep, ['2026-06-25', '2026-06-26']);
 
