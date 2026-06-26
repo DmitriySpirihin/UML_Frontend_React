@@ -3154,7 +3154,7 @@ function getDaysAmount(id) {
         const habitsOnDate = AppData.habitsByDate[date];
         
         // Check if the habit exists for this date and if its status indicates skipped
-        if (habitsOnDate && id in habitsOnDate && AppData.isHabitScheduledForDate(id, date)) {
+        if (habitsOnDate && id in habitsOnDate && habitsOnDate[id] !== 0 && AppData.isHabitScheduledForDate(id, date)) {
             amount++;
         }
     }

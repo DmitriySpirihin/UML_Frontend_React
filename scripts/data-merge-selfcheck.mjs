@@ -107,4 +107,16 @@ assert.deepEqual(streakInflationConflict.habitsByDate, {
   '2026-06-26': { 1: 1 }
 });
 
+const repairFlagsMerge = mergeAppSnapshots({
+  lastSave: '2026-06-26T10:00:00.000Z',
+  repairFlags: { positiveHabitBackfill20260626: 'done' }
+}, {
+  lastSave: '2026-06-26T11:00:00.000Z',
+  repairFlags: {}
+}, {
+  touchLastSaveOnChange: false
+}).snapshot;
+
+assert.deepEqual(repairFlagsMerge.repairFlags, { positiveHabitBackfill20260626: 'done' });
+
 console.log('data merge self-check ok');

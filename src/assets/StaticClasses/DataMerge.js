@@ -11,6 +11,7 @@ const RECORD_FIELDS = [
   'choosenHabitsAutoComplete',
   'choosenHabitsSchedule',
   'choosenHabitsNotified',
+  'repairFlags',
   'sectionLastOpenedAt'
 ];
 

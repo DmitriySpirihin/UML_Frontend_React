@@ -33,6 +33,8 @@ const DEFAULT_SECTION_LAST_OPENED_AT = { habits: 0, todo: 0, mental: 0, recovery
 const HABIT_BACKFILL_MIN_DAYS = 45;
 const HABIT_BACKFILL_BUFFER_DAYS = 14;
 const HABIT_BACKFILL_MAX_DAYS = 160;
+const HABIT_STREAK_REPAIR_KEY = 'positiveHabitBackfill20260626';
+const HABIT_STREAK_REPAIR_MIN_DAYS = 30;
 const DEFAULT_NOTIFY_CRON = '10 12 * * 1,2,3,4,5';
 const DEFAULT_NOTIFY_SETTINGS = [
   { enabled: false, cron: DEFAULT_NOTIFY_CRON },
@@ -341,7 +343,6 @@ const ensureSectionVisits = () => {
     }
   });
 
-  changed = mergeVisitDates('habits', getLoggedDates(AppData.habitsByDate)) || changed;
   changed = mergeVisitDates('training', getLoggedDates(AppData.trainingLog)) || changed;
   changed = mergeVisitDates('mental', getLoggedDates(AppData.mentalLog)) || changed;
   changed = mergeVisitDates('recovery', [
@@ -354,13 +355,57 @@ const ensureSectionVisits = () => {
   return changed;
 };
 
+const repairInflatedPositiveHabitHistory = () => {
+  if (AppData.repairFlags?.[HABIT_STREAK_REPAIR_KEY]) return false;
+
+  let changed = false;
+  const todayKey = formatLocalDateKey();
+  const today = parseLocalDateKey(todayKey);
+  if (!today) return false;
+
+  (AppData.choosenHabits || []).forEach((habitId, index) => {
+    if (AppData.choosenHabitsTypes?.[index] === true) return;
+    if (AppData.isHabitAutoComplete(habitId)) return;
+
+    const todayStatus = AppData.habitsByDate?.[todayKey]?.[habitId];
+    if (todayStatus !== 0) return;
+
+    const startDate = getHabitStartDate(index);
+    if (!startDate || startDate >= today) return;
+
+    const pastKeys = [];
+    for (let date = cloneDate(startDate); date < today; date = addLocalDays(date, 1)) {
+      const key = formatLocalDateKey(date);
+      if (AppData.isHabitScheduledForDate(habitId, key)) pastKeys.push(key);
+    }
+
+    if (pastKeys.length < HABIT_STREAK_REPAIR_MIN_DAYS) return;
+    const looksBackfilled = pastKeys.every((key) => AppData.habitsByDate?.[key]?.[habitId] > 0);
+    if (!looksBackfilled) return;
+
+    pastKeys.forEach((key) => {
+      if (!AppData.habitsByDate[key] || AppData.habitsByDate[key][habitId] <= 0) return;
+      AppData.habitsByDate[key][habitId] = 0;
+      changed = true;
+    });
+  });
+
+  if (!changed) return false;
+  AppData.repairFlags = {
+    ...(AppData.repairFlags || {}),
+    [HABIT_STREAK_REPAIR_KEY]: new Date().toISOString()
+  };
+  return true;
+};
+
 const repairRecoveredData = () => {
   const allowAutoRepair = typeof window !== 'undefined'
     && new URLSearchParams(window.location.search).get('autoRepair') === '1';
 
   const repairedHabits = allowAutoRepair ? ensureHabitMetadata() : false;
+  const repairedInflatedHabits = repairInflatedPositiveHabitHistory();
   const repairedSections = ensureSectionVisits();
-  return repairedHabits || repairedSections;
+  return repairedHabits || repairedInflatedHabits || repairedSections;
 };
 
 const normalizeAccentHex = (color, fallback = DEFAULT_HABITS_ACCENT_COLOR) => {
@@ -602,9 +647,10 @@ export class AppData{
 	  static todoAccentColor = DEFAULT_TODO_ACCENT_COLOR;
 	  static todoAccentPresets = [];
 	  static todoCustomCategories = []; // [{icon, label:[ru,en]}]
-  static sectionVisits = { ...DEFAULT_SECTION_VISITS };
-  static sectionLastOpenedAt = { ...DEFAULT_SECTION_LAST_OPENED_AT };
-  static profileFriendsExpanded = true;
+   static sectionVisits = { ...DEFAULT_SECTION_VISITS };
+   static sectionLastOpenedAt = { ...DEFAULT_SECTION_LAST_OPENED_AT };
+   static repairFlags = {};
+   static profileFriendsExpanded = true;
   static premiumSnapshot = { hasPremium: false, premiumEndDate: null, isValidation: false, checkedAt: 0 };
   static menuCardsStates =
 {
@@ -755,6 +801,7 @@ static mainHeroWidgets = ["HabitsMain", "TrainingMain", "MentalMain"];
     this.sectionLastOpenedAt = data.sectionLastOpenedAt && typeof data.sectionLastOpenedAt === 'object'
       ? { ...DEFAULT_SECTION_LAST_OPENED_AT, ...data.sectionLastOpenedAt }
       : { ...DEFAULT_SECTION_LAST_OPENED_AT };
+    this.repairFlags = data.repairFlags && typeof data.repairFlags === 'object' ? data.repairFlags : {};
     this.profileFriendsExpanded = data.profileFriendsExpanded ?? true;
     this.premiumSnapshot = data.premiumSnapshot && typeof data.premiumSnapshot === 'object'
       ? {
@@ -1243,6 +1290,15 @@ const normalizeDateKeyToLocalDate = (dateKey) => {
 };
 
 export const getSectionStreakInfo = (sectionId) => {
+  if (sectionId === 'habits') {
+    const streak = Math.max(0, ...(AppData.choosenHabits || []).map((habitId) => getHabitCurrentStreak(habitId)));
+    return {
+      streak,
+      state: streak > 0 ? 'fresh' : 'empty',
+      lastVisitDate: null
+    };
+  }
+
   const visitDates = new Set(AppData.sectionVisits[sectionId] || []);
   if (visitDates.size === 0) return { streak: 0, state: 'empty', lastVisitDate: null };
 
@@ -1366,6 +1422,7 @@ export class Data{
 	    this.todoCustomCategories = AppData.todoCustomCategories;
     this.sectionVisits = AppData.sectionVisits;
     this.sectionLastOpenedAt = AppData.sectionLastOpenedAt;
+    this.repairFlags = AppData.repairFlags;
     this.profileFriendsExpanded = AppData.profileFriendsExpanded;
     this.premiumSnapshot = AppData.premiumSnapshot;
     this.todoFieldsVisibility = AppData.todoFieldsVisibility;
