@@ -354,9 +354,9 @@ const getCurrentDateStreakKeys = (dates = []) => {
 };
 
 const repairInflatedSectionVisits = () => {
-  if (AppData.repairFlags?.[SECTION_VISIT_REPAIR_KEY]) return false;
   if (!AppData.sectionVisits || typeof AppData.sectionVisits !== 'object') return false;
 
+  const repairAlreadyRan = AppData.repairFlags?.[SECTION_VISIT_REPAIR_KEY];
   let changed = false;
   const sleepStreakLength = getCurrentDateStreakKeys(AppData.sectionVisits.sleep || []).length;
   const trustedLength = sleepStreakLength > 0 && sleepStreakLength < SECTION_VISIT_REPAIR_MIN_DAYS
@@ -376,11 +376,13 @@ const repairInflatedSectionVisits = () => {
     changed = true;
   });
 
+  if (!changed && repairAlreadyRan) return false;
+
   AppData.repairFlags = {
     ...(AppData.repairFlags || {}),
     [SECTION_VISIT_REPAIR_KEY]: new Date().toISOString()
   };
-  return true;
+  return changed || !repairAlreadyRan;
 };
 
 const repairRecoveredData = () => {
