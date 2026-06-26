@@ -3,10 +3,10 @@ import { AppData, UserData } from '../StaticClasses/AppData'
 import { motion, AnimatePresence } from 'framer-motion'
 import Colors from "../StaticClasses/Colors";
 import { sendBugreport } from '../StaticClasses/NotificationsManager'
-import { FaAddressCard, FaLanguage, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight, FaHome, FaUser, FaCog, FaPaperPlane, FaTelegramPlane, FaTimes, FaCloudUploadAlt, FaCloudDownloadAlt, FaTrashAlt, FaExclamationTriangle, FaBell, FaCheckCircle, FaTasks, FaDumbbell, FaBrain, FaSpa, FaBed, FaUndo } from 'react-icons/fa'
+import { FaAddressCard, FaLanguage, FaVolumeMute, FaVolumeUp, FaBug, FaCrown, FaChevronRight, FaHome, FaUser, FaCog, FaPaperPlane, FaTelegramPlane, FaTimes, FaCloudUploadAlt, FaCloudDownloadAlt, FaTrashAlt, FaExclamationTriangle, FaBell, FaCheckCircle, FaTasks, FaDumbbell, FaBrain, FaSpa, FaBed } from 'react-icons/fa'
 import { LuVibrate, LuVibrateOff } from 'react-icons/lu'
 import { RiFontSize2 } from 'react-icons/ri'
-import { clearAllSaves, deserializeData, saveData } from '../StaticClasses/SaveHelper';
+import { clearAllSaves } from '../StaticClasses/SaveHelper';
 import { MdBackup, MdInfoOutline, MdNotificationsActive } from 'react-icons/md'
 import { IoIosArrowBack } from 'react-icons/io'
 import { theme$, premium$, setLang, lang$, vibro$, sound$, fontSize$, setFontSize, setPage, lastPage$, setShowPopUpPanel } from '../StaticClasses/HabitsBus';
@@ -14,9 +14,7 @@ import { cloudRestore, deleteCloudBackup, NotificationsManager, syncCloudBackup 
 import { playEffects } from '../StaticClasses/Effects';
 
 const transitionSound = new Audio('Audio/Transition.wav');
-const version = '2.c.88.1.s';
-const BEFORE_REPAIR_UNDO_KEY = 'uml_before_pre_repair_restore_v1';
-const BEFORE_REPAIR_UNDO_AT_KEY = 'uml_before_pre_repair_restore_at_v1';
+const version = '2.c.88.2.s';
 const HEADER_TOP_PADDING = 'calc(env(safe-area-inset-top, 0px) + 18px)';
 const NOTIFICATION_SECTION_DEFS = [
     { id: 'habits', label: ['Привычки', 'Habits'], detail: ['Ежедневные ритуалы и чек-ин', 'Daily rituals and check-in'], icon: <FaCheckCircle />, color: '#55DDEB', serverType: 'habit', message: ['время проверить привычки', 'time to check habits'] },
@@ -41,29 +39,6 @@ const NOTIFICATION_DAY_LABELS = [
     ['Сб', 'Sat'],
     ['Вс', 'Sun']
 ];
-
-const countDateKeys = (record = {}) => (
-    record && typeof record === 'object'
-        ? Object.keys(record).filter(key => /^\d{4}-\d{2}-\d{2}$/.test(key)).length
-        : 0
-);
-
-function getRepairUndoInfo() {
-    if (typeof window === 'undefined') return null;
-    const raw = window.localStorage.getItem(BEFORE_REPAIR_UNDO_KEY);
-    if (!raw) return null;
-    try {
-        const data = JSON.parse(raw);
-        return {
-            at: window.localStorage.getItem(BEFORE_REPAIR_UNDO_AT_KEY) || '',
-            habits: Array.isArray(data.choosenHabits) ? data.choosenHabits.length : 0,
-            habitDays: countDateKeys(data.habitsByDate),
-            sectionVisits: Object.values(data.sectionVisits || {}).reduce((sum, list) => sum + (Array.isArray(list) ? list.length : 0), 0)
-        };
-    } catch {
-        return { at: window.localStorage.getItem(BEFORE_REPAIR_UNDO_AT_KEY) || '', broken: true };
-    }
-}
 
 const Settings = () => {
     const [theme, setThemeState] = useState('dark');
@@ -326,7 +301,6 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
     const [report, setReport] = useState('');
     const [showDanger, setShowDanger] = useState(false);
     const [lastBackupDate, setLastBackupDate] = useState(AppData.lastBackupDate);
-    const [repairUndoInfo, setRepairUndoInfo] = useState(getRepairUndoInfo);
     const styles = s(theme);
     const isBugPanel = panelNum === 1;
     const isContactsPanel = panelNum === 3;
@@ -337,7 +311,6 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
     useEffect(() => {
         if (isOpen && isBackupPanel) {
             setLastBackupDate(AppData.lastBackupDate);
-            setRepairUndoInfo(getRepairUndoInfo());
         }
     }, [isOpen, isBackupPanel]);
     const closePanel = () => {
@@ -357,28 +330,6 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
     const restoreNow = async () => {
         await cloudRestore();
         setLastBackupDate(AppData.lastBackupDate);
-    };
-    const restoreRepairUndoBackup = async () => {
-        const raw = typeof window !== 'undefined' ? window.localStorage.getItem(BEFORE_REPAIR_UNDO_KEY) : '';
-        if (!raw) {
-            setShowPopUpPanel(langIndex === 0 ? 'Копия перед откатом не найдена' : 'Pre-rollback copy not found', 2200, false);
-            return;
-        }
-        const confirmed = window.confirm(langIndex === 0
-            ? 'Вернуть состояние, которое было до последнего repair-rollback?'
-            : 'Restore the state from before the last repair rollback?');
-        if (!confirmed) return;
-
-        try {
-            deserializeData(raw);
-            AppData.lastSave = new Date().toISOString();
-            await saveData({ skipCloudBackup: false, touchLastSave: false });
-            setShowPopUpPanel(langIndex === 0 ? 'Состояние до отката возвращено' : 'Pre-rollback state restored', 1800, true);
-            window.setTimeout(() => window.location.reload(), 650);
-        } catch (error) {
-            console.error('Repair undo restore failed:', error);
-            setShowPopUpPanel(langIndex === 0 ? 'Не удалось отменить откат' : 'Rollback undo failed', 2400, false);
-        }
     };
     return (
         <AnimatePresence>
@@ -499,24 +450,6 @@ const AdditionalPanel = ({ theme, langIndex, isOpen, setIsOpen, panelNum, sectio
                                         ? 'Данные автоматически шифруются на устройстве перед отправкой. Сервер и админы видят только нечитаемую копию.'
                                         : 'Data is encrypted on this device before upload. The server and admins only see an unreadable backup.'}
                                 </div>
-                                {repairUndoInfo && (
-                                    <div style={styles.backupStatusCard}>
-                                        <div style={styles.backupStatusText}>
-                                            <div style={styles.backupStatusLabel}>
-                                                {langIndex === 0 ? 'Копия перед откатом repair' : 'Copy before repair rollback'}
-                                            </div>
-                                            <div style={styles.backupStatusValue}>
-                                                {repairUndoInfo.broken
-                                                    ? (langIndex === 0 ? 'Найдена, но не читается' : 'Found, but unreadable')
-                                                    : `${repairUndoInfo.habits} habits · ${repairUndoInfo.habitDays} days · ${repairUndoInfo.sectionVisits} visits`}
-                                            </div>
-                                            {repairUndoInfo.at && (
-                                                <div style={styles.backupStatusLabel}>{repairUndoInfo.at.replace('T', ' ').slice(0, 16)}</div>
-                                            )}
-                                        </div>
-                                        <ActionButton icon={<FaUndo />} text={langIndex === 0 ? 'Отменить откат repair' : 'Undo repair rollback'} onClick={restoreRepairUndoBackup} theme={theme} color="#6F8BD6" />
-                                    </div>
-                                )}
                                 <div style={styles.backupActionsGrid}>
                                     <ActionButton icon={<FaCloudUploadAlt />} text={langIndex === 0 ? 'Синхронизировать' : 'Sync now'} onClick={syncNow} theme={theme} color="#D49A5C" />
                                     <ActionButton icon={<FaCloudDownloadAlt />} text={langIndex === 0 ? 'Восстановить' : 'Restore'} onClick={restoreNow} theme={theme} color="#6F8BD6" />

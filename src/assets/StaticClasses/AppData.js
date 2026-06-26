@@ -499,7 +499,9 @@ export function hasMeaningfulUserData(data = AppData) {
   const hasMeasurements = Array.isArray(data.measurements)
     && data.measurements.some(entry => Array.isArray(entry) && entry.length > 0);
   const hasSectionVisits = data.sectionVisits && typeof data.sectionVisits === 'object'
-    && Object.values(data.sectionVisits).some(value => Number(value) > 0);
+    && Object.values(data.sectionVisits).some(value => (
+      Array.isArray(value) ? value.length > 0 : Number(value) > 0
+    ));
 
   return (
     hasArrayEntries(data.choosenHabits) ||

@@ -162,6 +162,8 @@ function rememberAutoRescueBackup(rawData) {
 
 async function maybeRestoreRepairUndoSnapshot(localData) {
   if (typeof window === 'undefined' || !db) return { data: localData, restored: false };
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('repairUndoRescue') !== '1') return { data: localData, restored: false };
 
   const undoRawData = window.localStorage.getItem(BEFORE_REPAIR_UNDO_KEY);
   if (!undoRawData || !shouldUseRepairUndoSnapshot(localData, undoRawData)) {
