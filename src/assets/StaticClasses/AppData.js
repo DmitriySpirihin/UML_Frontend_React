@@ -1344,13 +1344,27 @@ const getActiveRecordDates = (record = {}) => (
 
 const getTodoActivityDates = () => {
   const dates = new Set();
+  const todayKey = formatLocalDateKey();
+  const addRange = (fromKey, toKey) => {
+    const from = parseLocalDateKey(fromKey);
+    const to = parseLocalDateKey(toKey);
+    if (!from || !to || from > to) return;
+    for (let date = cloneDate(from); date <= to; date = addLocalDays(date, 1)) {
+      dates.add(formatLocalDateKey(date));
+    }
+  };
 
   (AppData.todoList || []).forEach((task) => {
+    if (task?.isHidden) return;
     const completedKey = getValidDateKey(task?.completedAt);
     const startKey = getValidDateKey(task?.startDate);
+    const deadlineKey = getValidDateKey(task?.deadLine);
 
-    if (completedKey) dates.add(completedKey);
-    if (startKey) dates.add(startKey);
+    if (startKey && deadlineKey) addRange(startKey, deadlineKey > todayKey ? todayKey : deadlineKey);
+    else if (deadlineKey) addRange(startKey || deadlineKey, deadlineKey > todayKey ? todayKey : deadlineKey);
+    else if (startKey && !task.isDone) addRange(startKey, todayKey);
+    else if (completedKey) dates.add(completedKey);
+    else if (startKey) dates.add(startKey);
   });
 
   return Array.from(dates).sort();
@@ -1410,19 +1424,21 @@ const getStreakInfoFromDates = (dates) => {
   };
 };
 
-export const getSectionStreakInfo = (sectionId) => {
-  if (sectionId === 'habits') {
-    const streak = Math.max(0, ...(AppData.choosenHabits || []).map((habitId) => getHabitCurrentStreak(habitId)));
-    return {
-      streak,
-      state: streak > 0 ? 'fresh' : 'empty',
+const getBestStreakInfo = (...dateLists) => (
+  dateLists
+    .map(getStreakInfoFromDates)
+    .reduce((best, current) => (current.streak > best.streak ? current : best), {
+      streak: 0,
+      state: 'empty',
       lastVisitDate: null
-    };
-  }
+    })
+);
 
+export const getSectionStreakInfo = (sectionId) => {
   const sourceDates = getSectionSourceDates(sectionId);
   const fallbackDates = AppData.sectionVisits?.[sectionId] || [];
-  return getStreakInfoFromDates(sourceDates.length > 0 ? sourceDates : fallbackDates);
+  if (sectionId === 'habits') return getStreakInfoFromDates(fallbackDates);
+  return getBestStreakInfo(fallbackDates, sourceDates);
 };
 
 export const getSectionStreak = (sectionId) => {
