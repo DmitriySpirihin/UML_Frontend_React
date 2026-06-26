@@ -34,6 +34,7 @@ const HABIT_BACKFILL_MIN_DAYS = 45;
 const HABIT_BACKFILL_BUFFER_DAYS = 14;
 const HABIT_BACKFILL_MAX_DAYS = 160;
 const HABIT_STREAK_REPAIR_KEY = 'positiveHabitBackfill20260626';
+const HABIT_STREAK_REPAIR_STRICT_KEY = 'positiveHabitBackfill20260626Strict';
 const HABIT_STREAK_REPAIR_MIN_DAYS = 30;
 const DEFAULT_NOTIFY_CRON = '10 12 * * 1,2,3,4,5';
 const DEFAULT_NOTIFY_SETTINGS = [
@@ -192,6 +193,15 @@ const getLoggedDates = (record = {}) => (
     ? Object.keys(record).filter(isDateKey).sort()
     : []
 );
+
+const getValidDateKey = (value) => {
+  if (!value) return null;
+  if (typeof value === 'string' && isDateKey(value.slice(0, 10))) return value.slice(0, 10);
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return formatLocalDateKey(date);
+};
 
 const getHabitIdsFromHistory = () => {
   const ids = [];
@@ -355,8 +365,31 @@ const ensureSectionVisits = () => {
   return changed;
 };
 
+const getPositiveHabitCurrentStreakKeys = (habitId, habitIndex, todayKey) => {
+  const today = parseLocalDateKey(todayKey);
+  const startDate = getHabitStartDate(habitIndex);
+  const startKey = startDate ? formatLocalDateKey(startDate) : todayKey;
+  if (!today) return [];
+
+  const keys = [];
+  for (let currentDate = cloneDate(today); formatLocalDateKey(currentDate) >= startKey; currentDate = addLocalDays(currentDate, -1)) {
+    const key = formatLocalDateKey(currentDate);
+    if (!AppData.isHabitScheduledForDate(habitId, key)) continue;
+
+    const status = AppData.habitsByDate?.[key]?.[habitId];
+    if (key === todayKey && status === 0) continue;
+    if (status > 0) {
+      keys.push(key);
+      continue;
+    }
+    break;
+  }
+
+  return keys;
+};
+
 const repairInflatedPositiveHabitHistory = () => {
-  if (AppData.repairFlags?.[HABIT_STREAK_REPAIR_KEY]) return false;
+  if (AppData.repairFlags?.[HABIT_STREAK_REPAIR_STRICT_KEY]) return false;
 
   let changed = false;
   const todayKey = formatLocalDateKey();
@@ -367,8 +400,17 @@ const repairInflatedPositiveHabitHistory = () => {
     if (AppData.choosenHabitsTypes?.[index] === true) return;
     if (AppData.isHabitAutoComplete(habitId)) return;
 
-    const todayStatus = AppData.habitsByDate?.[todayKey]?.[habitId];
-    if (todayStatus !== 0) return;
+    const inflatedStreakKeys = getPositiveHabitCurrentStreakKeys(habitId, index, todayKey);
+    if (inflatedStreakKeys.length >= HABIT_STREAK_REPAIR_MIN_DAYS) {
+      inflatedStreakKeys.forEach((key) => {
+        if (!AppData.habitsByDate[key] || AppData.habitsByDate[key][habitId] <= 0) return;
+        AppData.habitsByDate[key][habitId] = 0;
+        changed = true;
+      });
+      return;
+    }
+
+    if (AppData.repairFlags?.[HABIT_STREAK_REPAIR_KEY]) return;
 
     const startDate = getHabitStartDate(index);
     if (!startDate || startDate >= today) return;
@@ -393,7 +435,8 @@ const repairInflatedPositiveHabitHistory = () => {
   if (!changed) return false;
   AppData.repairFlags = {
     ...(AppData.repairFlags || {}),
-    [HABIT_STREAK_REPAIR_KEY]: new Date().toISOString()
+    [HABIT_STREAK_REPAIR_KEY]: AppData.repairFlags?.[HABIT_STREAK_REPAIR_KEY] || new Date().toISOString(),
+    [HABIT_STREAK_REPAIR_STRICT_KEY]: new Date().toISOString()
   };
   return true;
 };
@@ -1289,17 +1332,48 @@ const normalizeDateKeyToLocalDate = (dateKey) => {
   return date;
 };
 
-export const getSectionStreakInfo = (sectionId) => {
-  if (sectionId === 'habits') {
-    const streak = Math.max(0, ...(AppData.choosenHabits || []).map((habitId) => getHabitCurrentStreak(habitId)));
-    return {
-      streak,
-      state: streak > 0 ? 'fresh' : 'empty',
-      lastVisitDate: null
-    };
+const hasActivityEntry = (value) => {
+  if (Array.isArray(value)) return value.length > 0;
+  if (value && typeof value === 'object') return Object.keys(value).length > 0;
+  return Boolean(value);
+};
+
+const getActiveRecordDates = (record = {}) => (
+  getLoggedDates(record).filter((dateKey) => hasActivityEntry(record?.[dateKey]))
+);
+
+const getTodoActivityDates = () => {
+  const dates = new Set();
+
+  (AppData.todoList || []).forEach((task) => {
+    const completedKey = getValidDateKey(task?.completedAt);
+    const startKey = getValidDateKey(task?.startDate);
+
+    if (completedKey) dates.add(completedKey);
+    if (startKey) dates.add(startKey);
+  });
+
+  return Array.from(dates).sort();
+};
+
+const getSectionSourceDates = (sectionId) => {
+  if (sectionId === 'todo') return getTodoActivityDates();
+  if (sectionId === 'training') return getActiveRecordDates(AppData.trainingLog);
+  if (sectionId === 'mental') return getActiveRecordDates(AppData.mentalLog);
+  if (sectionId === 'sleep') return getActiveRecordDates(AppData.sleepingLog);
+  if (sectionId === 'recovery') {
+    return Array.from(new Set([
+      ...getActiveRecordDates(AppData.breathingLog),
+      ...getActiveRecordDates(AppData.meditationLog),
+      ...getActiveRecordDates(AppData.hardeningLog)
+    ])).sort();
   }
 
-  const visitDates = new Set(AppData.sectionVisits[sectionId] || []);
+  return [];
+};
+
+const getStreakInfoFromDates = (dates) => {
+  const visitDates = new Set((dates || []).filter(isDateKey));
   if (visitDates.size === 0) return { streak: 0, state: 'empty', lastVisitDate: null };
 
   const sortedDates = Array.from(visitDates).sort((a, b) => b.localeCompare(a));
@@ -1334,6 +1408,21 @@ export const getSectionStreakInfo = (sectionId) => {
     state: latestDiffDays === 1 ? 'atRisk' : 'fresh',
     lastVisitDate: sortedDates[0]
   };
+};
+
+export const getSectionStreakInfo = (sectionId) => {
+  if (sectionId === 'habits') {
+    const streak = Math.max(0, ...(AppData.choosenHabits || []).map((habitId) => getHabitCurrentStreak(habitId)));
+    return {
+      streak,
+      state: streak > 0 ? 'fresh' : 'empty',
+      lastVisitDate: null
+    };
+  }
+
+  const sourceDates = getSectionSourceDates(sectionId);
+  const fallbackDates = AppData.sectionVisits?.[sectionId] || [];
+  return getStreakInfoFromDates(sourceDates.length > 0 ? sourceDates : fallbackDates);
 };
 
 export const getSectionStreak = (sectionId) => {

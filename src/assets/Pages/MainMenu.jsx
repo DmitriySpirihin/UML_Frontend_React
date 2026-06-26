@@ -23,6 +23,10 @@ const menuSectionMap = {
     SleepMain: 'sleep'
 };
 
+const sectionMenuMap = Object.fromEntries(
+    Object.entries(menuSectionMap).map(([menuId, sectionId]) => [sectionId, menuId])
+);
+
 const menuIcon = (id) => {
     const Icon = MENU_ICON_MAP[id];
     return Icon ? <Icon /> : null;
@@ -532,7 +536,12 @@ function buildMainMenuSummary(lang, visibleItems, heroWidgetIds = ['HabitsMain',
     const sleepDuration = typeof sleepEntry?.duration === 'number' ? sleepEntry.duration : 0;
     const recoveryCount = getTodaySessionCount();
     const sectionIds = ['habits', 'training', 'mental', 'recovery', 'sleep', 'todo'];
-    const bestStreak = Math.max(0, ...sectionIds.map((id) => getSectionStreak(id)));
+    const sectionStreaks = sectionIds.map((id) => ({ id, streak: getSectionStreak(id) }));
+    const bestSection = sectionStreaks.reduce(
+        (best, current) => (current.streak > best.streak ? current : best),
+        { id: 'habits', streak: 0 }
+    );
+    const bestStreak = Math.max(0, bestSection.streak);
     const firstVisibleSection = visibleItems.find((item) => item.icon)?.id || 'HabitsMain';
     const hour = new Date().getHours();
     const greeting = lang === 0
@@ -597,7 +606,7 @@ function buildMainMenuSummary(lang, visibleItems, heroWidgetIds = ['HabitsMain',
 
     if (bestStreak > 0) {
         focus = {
-            targetId: 'HabitsMain',
+            targetId: sectionMenuMap[bestSection.id] || 'HabitsMain',
             empty: false,
             status: lang === 0 ? 'СЕРИЯ ДНЕЙ' : 'STREAK',
             title: lang === 0 ? `${bestStreak} дней подряд` : `${bestStreak} days in a row`,
