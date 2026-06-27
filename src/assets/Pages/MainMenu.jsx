@@ -51,11 +51,19 @@ const formatAdminMessage = (message) => (
 );
 
 const ADMIN_QUICK_ACTIONS = [
-    { type: 'userscount', label: 'Юзеры', icon: <FaUsers /> },
-    { type: 'userspremiumcount', label: 'Premium', icon: <FaCrown /> },
-    { type: 'usersgetallinfo', label: 'Список', icon: <FaUserShield /> },
-    { type: 'userschecknotify', label: 'Уведомления', icon: <FaCheck /> }
+    { id: 'users', type: 'userslist', label: 'Юзеры', icon: <FaUsers /> },
+    { id: 'premium', type: 'userspremiumcount', label: 'Premium', icon: <FaCrown /> },
+    { id: 'list', type: 'userslist', label: 'Список', icon: <FaUserShield /> },
+    { id: 'notifications', type: 'userschecknotify', label: 'Уведомления', icon: <FaCheck /> }
 ];
+
+const parseAdminUsers = (message = '') => (
+    String(message)
+        .split(';')
+        .map((part) => part.match(/^\s*\d+:\s*Name:\s*(.*),\s*ID:\s*(\d+)\s*$/))
+        .filter(Boolean)
+        .map((match) => ({ name: match[1].trim(), id: match[2] }))
+);
 
 const MainMenu = () => {
     const [theme, setThemeState] = useState(AppData.prefs[1] === 0 ? 'dark' : 'light');
@@ -64,8 +72,11 @@ const MainMenu = () => {
     const [clickCountUp, setClickCountUp] = useState(0);
     const [devConsolePanel, setDevConsolePanel] = useState(false);
     const [devMessage, setDevMessage] = useState('');
-    const [devInputMessage, setDevInputMessage] = useState('');
-    const [devMessageToAll, setDevMessageToAll] = useState('');
+    const [adminOutput, setAdminOutput] = useState('');
+    const [adminUsers, setAdminUsers] = useState([]);
+    const [adminTargetId, setAdminTargetId] = useState('');
+    const [adminPremiumDays, setAdminPremiumDays] = useState('30');
+    const [adminBroadcastMessage, setAdminBroadcastMessage] = useState('');
     const [isPasswordCorrect, setIsPasswordCorrect] = useState(false);
     const [passwordInput, setPasswordInput] = useState(false);
     const [adminPassword, setAdminPassword] = useState('');
@@ -251,22 +262,51 @@ const openGuide = () => {
         }
     };
 
-    const runAdminCommand = async (type, message = '') => {
+    const runAdminCommand = async (type, message = '', userId, metadata = {}) => {
         if (!isAdminAccount || !isPasswordCorrect) return;
         setAdminLoading(true);
-        setDevMessage(lang === 0 ? 'Загрузка...' : 'Loading...');
+        setAdminOutput(lang === 0 ? 'Загрузка...' : 'Loading...');
         try {
-            const requestType = type === 'userscount' ? 'usersgetallinfo' : type;
-            const result = await NotificationsManager.sendMessage(requestType, message);
-            const output = type === 'userscount'
-                ? `Our DB has ${String(result?.message || '').match(/Total:\s*(\d+)/)?.[1] || '?'} users now`
+            const requestType = type === 'userscount' || type === 'userslist' ? 'usersgetallinfo' : type;
+            const result = await NotificationsManager.sendMessage(requestType, message, metadata, userId ?? UserData.id);
+            const loadedUsers = requestType === 'usersgetallinfo' ? parseAdminUsers(result?.message) : [];
+            if (loadedUsers.length) setAdminUsers(loadedUsers);
+            const output = type === 'userscount' || type === 'userslist'
+                ? `Our DB has ${loadedUsers.length || String(result?.message || '').match(/Total:\s*(\d+)/)?.[1] || '?'} users now`
                 : result?.message;
-            setDevMessage(formatAdminMessage(output));
+            setAdminOutput(formatAdminMessage(output));
+            return result;
         } catch (error) {
-            setDevMessage(error.message || 'Admin request failed');
+            setAdminOutput(error.message || 'Admin request failed');
+            return null;
         } finally {
             setAdminLoading(false);
         }
+    };
+
+    const grantAdminPremium = async (targetId = adminTargetId) => {
+        const cleanId = String(targetId || '').trim();
+        const rawDays = Math.floor(Number(adminPremiumDays));
+        if (!cleanId) {
+            setAdminOutput(lang === 0 ? 'Укажи Telegram ID.' : 'Enter Telegram ID.');
+            return;
+        }
+        if (!adminPremiumDays.trim() || !Number.isFinite(rawDays) || rawDays < 1) {
+            setAdminOutput(lang === 0 ? 'Укажи срок в днях.' : 'Enter premium days.');
+            return;
+        }
+        const days = Math.min(3650, rawDays);
+        await runAdminCommand('usersetpremium', '', cleanId, { days });
+    };
+
+    const sendAdminBroadcast = async () => {
+        const text = adminBroadcastMessage.trim();
+        if (!text) {
+            setAdminOutput(lang === 0 ? 'Напиши текст уведомления.' : 'Write notification text.');
+            return;
+        }
+        if (!window.confirm(lang === 0 ? 'Отправить это уведомление всем пользователям?' : 'Send this notification to all users?')) return;
+        await runAdminCommand('sendtoall', text);
     };
 
     const handlePin = (id) => {
@@ -368,23 +408,47 @@ const openGuide = () => {
                         <div style={{ padding: 16, display: 'grid', gap: 12, overflowY: 'auto', maxHeight: 'calc(86vh - 72px)' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
                                 {ADMIN_QUICK_ACTIONS.map((action) => (
-                                    <button key={action.type} type="button" disabled={adminLoading} onClick={() => runAdminCommand(action.type)} style={{ minHeight: 46, borderRadius: 16, border: '1px solid rgba(183,243,255,0.15)', background: 'rgba(85,221,235,0.08)', color: Colors.get('mainText', theme), fontFamily: 'inherit', fontWeight: 850, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                    <button key={action.id} type="button" disabled={adminLoading} onClick={() => runAdminCommand(action.type)} style={{ minHeight: 46, borderRadius: 16, border: '1px solid rgba(183,243,255,0.15)', background: 'rgba(85,221,235,0.08)', color: Colors.get('mainText', theme), fontFamily: 'inherit', fontWeight: 850, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                                         {action.icon}
                                         <span>{action.label}</span>
                                     </button>
                                 ))}
                             </div>
 
-                            <pre style={{ margin: 0, minHeight: 150, maxHeight: 240, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderRadius: 16, border: `1px solid ${Colors.get('border', theme)}66`, background: theme === 'dark' ? 'rgba(0,0,0,0.28)' : '#F6F8FA', color: Colors.get('mainText', theme), padding: 12, fontSize: 12, lineHeight: 1.45, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
-                                {devMessage || (lang === 0 ? 'Выбери команду.' : 'Choose a command.')}
+                            <pre style={{ margin: 0, minHeight: 74, maxHeight: 160, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderRadius: 16, border: `1px solid ${Colors.get('border', theme)}66`, background: theme === 'dark' ? 'rgba(0,0,0,0.28)' : '#F6F8FA', color: Colors.get('mainText', theme), padding: 12, fontSize: 12, lineHeight: 1.45, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+                                {adminOutput || (lang === 0 ? 'Выбери действие.' : 'Choose an action.')}
                             </pre>
 
-                            <div style={{ display: 'grid', gap: 8 }}>
-                                <input style={{ borderRadius: 14, height: 42, border: `1px solid ${Colors.get('border', theme)}66`, background: Colors.get('inputField', theme), color: Colors.get('mainText', theme), padding: '0 12px', fontFamily: 'inherit', fontWeight: 700 }} placeholder="command: userscount / sendtoid" value={devInputMessage} onChange={(e) => setDevInputMessage(e.target.value)} />
-                                <textarea style={{ borderRadius: 14, minHeight: 82, border: `1px solid ${Colors.get('border', theme)}66`, background: Colors.get('inputField', theme), color: Colors.get('mainText', theme), padding: 12, fontFamily: 'inherit', resize: 'vertical' }} placeholder="message / payload" value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)} />
-                                <button type="button" disabled={adminLoading || !devInputMessage.trim()} onClick={() => runAdminCommand(devInputMessage.trim(), devMessageToAll)} style={{ height: 44, borderRadius: 16, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                            {adminUsers.length > 0 && (
+                                <div style={{ display: 'grid', gap: 8, maxHeight: 230, overflow: 'auto', paddingRight: 2 }}>
+                                    {adminUsers.map((user) => (
+                                        <div key={user.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', gap: 8, alignItems: 'center', borderRadius: 14, border: '1px solid rgba(183,243,255,0.14)', background: 'rgba(85,221,235,0.06)', padding: 10 }}>
+                                            <div style={{ minWidth: 0 }}>
+                                                <div style={{ color: Colors.get('mainText', theme), fontSize: 13, fontWeight: 850, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name || 'user'}</div>
+                                                <div style={{ color: Colors.get('subText', theme), fontSize: 11, fontWeight: 750 }}>{user.id}</div>
+                                            </div>
+                                            <a href={`tg://user?id=${user.id}`} style={{ minWidth: 44, height: 34, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: '#55DDEB', background: 'rgba(85,221,235,0.10)', border: '1px solid rgba(85,221,235,0.24)', fontWeight: 900 }}>TG</a>
+                                            <button type="button" disabled={adminLoading || !adminPremiumDays.trim()} onClick={() => grantAdminPremium(user.id)} style={{ minWidth: 58, height: 34, borderRadius: 12, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950 }}>+{adminPremiumDays}д</button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'grid', gap: 8, borderRadius: 16, border: '1px solid rgba(183,243,255,0.12)', background: 'rgba(0,0,0,0.14)', padding: 10 }}>
+                                <div style={{ color: Colors.get('subText', theme), fontSize: 12, fontWeight: 850 }}>{lang === 0 ? 'Премиум пользователю' : 'User premium'}</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 88px', gap: 8 }}>
+                                    <input style={{ minWidth: 0, borderRadius: 14, height: 42, border: `1px solid ${Colors.get('border', theme)}66`, background: Colors.get('inputField', theme), color: Colors.get('mainText', theme), padding: '0 12px', fontFamily: 'inherit', fontWeight: 700 }} placeholder="Telegram ID" inputMode="numeric" value={adminTargetId} onChange={(e) => setAdminTargetId(e.target.value)} />
+                                    <input style={{ minWidth: 0, borderRadius: 14, height: 42, border: `1px solid ${Colors.get('border', theme)}66`, background: Colors.get('inputField', theme), color: Colors.get('mainText', theme), padding: '0 12px', fontFamily: 'inherit', fontWeight: 700 }} placeholder="дней" inputMode="numeric" value={adminPremiumDays} onChange={(e) => setAdminPremiumDays(e.target.value.replace(/[^\d]/g, '').slice(0, 4))} />
+                                    <button type="button" disabled={adminLoading || !adminTargetId.trim() || !adminPremiumDays.trim()} onClick={() => grantAdminPremium()} style={{ gridColumn: '1 / -1', height: 42, borderRadius: 14, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950 }}>Выдать</button>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gap: 8, borderRadius: 16, border: '1px solid rgba(183,243,255,0.12)', background: 'rgba(0,0,0,0.14)', padding: 10 }}>
+                                <div style={{ color: Colors.get('subText', theme), fontSize: 12, fontWeight: 850 }}>{lang === 0 ? 'Уведомление всем' : 'Broadcast'}</div>
+                                <textarea style={{ borderRadius: 14, minHeight: 84, border: `1px solid ${Colors.get('border', theme)}66`, background: Colors.get('inputField', theme), color: Colors.get('mainText', theme), padding: 12, fontFamily: 'inherit', resize: 'vertical' }} placeholder={lang === 0 ? 'текст уведомления' : 'notification text'} value={adminBroadcastMessage} onChange={(e) => setAdminBroadcastMessage(e.target.value)} />
+                                <button type="button" disabled={adminLoading || !adminBroadcastMessage.trim()} onClick={sendAdminBroadcast} style={{ height: 44, borderRadius: 16, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                                     <FaPaperPlane />
-                                    <span>{adminLoading ? (lang === 0 ? 'Выполняю...' : 'Running...') : (lang === 0 ? 'Выполнить' : 'Run')}</span>
+                                    <span>{adminLoading ? (lang === 0 ? 'Отправляю...' : 'Sending...') : (lang === 0 ? 'Отправить всем' : 'Send to all')}</span>
                                 </button>
                             </div>
                         </div>

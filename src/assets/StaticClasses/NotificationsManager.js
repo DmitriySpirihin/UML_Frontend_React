@@ -206,7 +206,7 @@ export class NotificationsManager {
     // Updated to use your SmartApe server
     
 
-    static async sendMessage(type, message, metadata = {}) {
+    static async sendMessage(type, message, metadata = {}, userId = UserData.id) {
         try {
             const response = await fetchWithTimeout(BASE_URL, {
                 method: 'POST',
@@ -217,7 +217,7 @@ export class NotificationsManager {
                 body: JSON.stringify({
                     type: type,
                     message: message,
-                    userId: UserData.id,
+                    userId,
                     metadata
                 })
             });
