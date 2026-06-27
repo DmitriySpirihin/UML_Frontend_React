@@ -158,12 +158,9 @@ async function runCloudSync({ silent = true, force = false } = {}) {
   lastCloudSyncCheckAt = now;
   cloudSyncCheckInFlight = true;
   try {
-    const restored = await cloudRestore({
-      silent: true,
-      confirmOverwrite: false,
-      preferNewer: false,
-      queueBackup: false
-    });
+    // Background sync must not mutate live local data. Manual restore and the
+    // startup fallback still call cloudRestore when the user explicitly needs it.
+    const restored = false;
     const backedUp = await cloudBackup({
       silent: true
     });
