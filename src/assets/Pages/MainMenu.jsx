@@ -256,8 +256,12 @@ const openGuide = () => {
         setAdminLoading(true);
         setDevMessage(lang === 0 ? 'Загрузка...' : 'Loading...');
         try {
-            const result = await NotificationsManager.sendMessage(type, message);
-            setDevMessage(formatAdminMessage(result?.message));
+            const requestType = type === 'userscount' ? 'usersgetallinfo' : type;
+            const result = await NotificationsManager.sendMessage(requestType, message);
+            const output = type === 'userscount'
+                ? `Our DB has ${String(result?.message || '').match(/Total:\s*(\d+)/)?.[1] || '?'} users now`
+                : result?.message;
+            setDevMessage(formatAdminMessage(output));
         } catch (error) {
             setDevMessage(error.message || 'Admin request failed');
         } finally {
