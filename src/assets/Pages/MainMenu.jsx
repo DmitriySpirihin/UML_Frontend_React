@@ -5,7 +5,7 @@ import { theme$, lang$, devMessage$, isPasswordCorrect$, premium$, isValidation$
 import { AppData, UserData, formatLocalDateKey, getSectionStreak, getSectionStreakInfo } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
-import { FaRobot, FaStar, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift, FaTelegramPlane, FaSlidersH, FaCheck } from "react-icons/fa";
+import { FaRobot, FaStar, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift, FaTelegramPlane, FaSlidersH, FaCheck, FaUserShield, FaLock, FaTimes, FaUsers, FaPaperPlane } from "react-icons/fa";
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 import { sendReferalLink } from '../StaticClasses/PaymentService'
 import MainMenuRedesign, { MENU_ICON_MAP } from './MainMenuRedesign'
@@ -32,6 +32,28 @@ const menuIcon = (id) => {
     return Icon ? <Icon /> : null;
 };
 
+const ADMIN_TELEGRAM_USERNAME = 'demianworkself';
+const isLocalAdminPreview = () => {
+    if (typeof window === 'undefined') return false;
+    const host = window.location.hostname;
+    return (host === 'localhost' || host === '127.0.0.1') && new URLSearchParams(window.location.search).get('admin') === '1';
+};
+const isAdminTelegramAccount = () => {
+    if (typeof window === 'undefined') return false;
+    const username = window.Telegram?.WebApp?.initDataUnsafe?.user?.username || '';
+    return username.toLowerCase() === ADMIN_TELEGRAM_USERNAME || isLocalAdminPreview();
+};
+const formatAdminMessage = (message) => (
+    typeof message === 'string' ? message : JSON.stringify(message ?? '', null, 2)
+);
+
+const ADMIN_QUICK_ACTIONS = [
+    { type: 'userscount', label: 'Юзеры', icon: <FaUsers /> },
+    { type: 'userspremiumcount', label: 'Premium', icon: <FaCrown /> },
+    { type: 'usersgetallinfo', label: 'Список', icon: <FaUserShield /> },
+    { type: 'userschecknotify', label: 'Уведомления', icon: <FaCheck /> }
+];
+
 const MainMenu = () => {
     const [theme, setThemeState] = useState(AppData.prefs[1] === 0 ? 'dark' : 'light');
     const [lang, setLang] = useState(AppData.prefs[0]);
@@ -43,7 +65,10 @@ const MainMenu = () => {
     const [devMessageToAll, setDevMessageToAll] = useState('');
     const [isPasswordCorrect, setIsPasswordCorrect] = useState(false);
     const [passwordInput, setPasswordInput] = useState(false);
+    const [adminPassword, setAdminPassword] = useState('');
+    const [adminLoading, setAdminLoading] = useState(false);
     const [showReferralModal, setShowReferralModal] = useState(false);
+    const isAdminAccount = isAdminTelegramAccount();
     
     const [hasPremium, setHasPremium] = useState(UserData.hasPremium); 
     const [, setIsValidation] = useState(UserData.isValidation);
@@ -178,11 +203,11 @@ const openGuide = () => {
     }, []);
 
     useEffect(() => {
-        if (isPasswordCorrect) {
+        if (isPasswordCorrect && isAdminAccount) {
             setPasswordInput(false);
             setDevConsolePanel(true);
         }
-    }, [isPasswordCorrect]);
+    }, [isPasswordCorrect, isAdminAccount]);
 
     const handleClick = (isUp) => {
         if (isUp) {
@@ -191,17 +216,44 @@ const openGuide = () => {
             setClickCount(clickCount + 1);
         }
         if (clickCount === 8 && clickCountUp === 4) {
-            setPasswordInput(true);
+            if (isAdminAccount) setPasswordInput(true);
             setClickCount(0);
             setClickCountUp(0);
         }
     }
 
-    const checkPassword = (value) => {
-        if (value.length === 16) {
-            sendPassword(value);
+    const openAdmin = () => {
+        if (!isAdminAccount) return;
+        if (isPasswordCorrect) setDevConsolePanel(true);
+        else setPasswordInput(true);
+    };
+
+    const checkPassword = async () => {
+        if (!isAdminAccount || !adminPassword.trim()) return;
+        setAdminLoading(true);
+        try {
+            const result = await sendPassword(adminPassword.trim());
+            if (result?.message !== 'true') setDevMessage(lang === 0 ? 'Неверный пароль' : 'Wrong password');
+        } catch (error) {
+            setDevMessage(error.message || 'Admin login failed');
+        } finally {
+            setAdminLoading(false);
         }
-    }
+    };
+
+    const runAdminCommand = async (type, message = '') => {
+        if (!isAdminAccount || !isPasswordCorrect) return;
+        setAdminLoading(true);
+        setDevMessage(lang === 0 ? 'Загрузка...' : 'Loading...');
+        try {
+            const result = await NotificationsManager.sendMessage(type, message);
+            setDevMessage(formatAdminMessage(result?.message));
+        } catch (error) {
+            setDevMessage(error.message || 'Admin request failed');
+        } finally {
+            setAdminLoading(false);
+        }
+    };
 
     const handlePin = (id) => {
         setItemsState(prev => ({
@@ -285,17 +337,44 @@ const openGuide = () => {
 
     return (
         <>
-            {devConsolePanel && (
-                <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', flexDirection: 'column', top: '10vh', left: '0', width: '100vw', height: '40vh', backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 10000 }}>
-                    <div style={{ display: 'flex', overflowY: 'scroll', borderRadius: '12px', width: '85vw', height: '15vh', fontSize: '12px', fontFamily: 'inherit', border: '1px solid #333', color: 'white', padding: '10px' }}>
-                        {devMessage}
+            {isAdminAccount && devConsolePanel && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(7,11,15,0.78)', backdropFilter: 'blur(10px)', padding: 'calc(env(safe-area-inset-top, 0px) + 18px) 18px 18px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '100%', maxWidth: 460, maxHeight: '86vh', overflow: 'hidden', borderRadius: 24, border: '1px solid rgba(183,243,255,0.20)', background: theme === 'dark' ? 'rgba(18,26,33,0.98)' : 'rgba(255,255,255,0.98)', boxShadow: '0 28px 70px rgba(0,0,0,0.42)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, borderBottom: `1px solid ${Colors.get('border', theme)}55` }}>
+                            <div style={{ width: 38, height: 38, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(85,221,235,0.13)', color: '#55DDEB' }}><FaUserShield /></div>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ color: Colors.get('mainText', theme), fontSize: 16, fontWeight: 900 }}>Admin</div>
+                                <div style={{ color: Colors.get('subText', theme), fontSize: 11, fontWeight: 700 }}>@DemianWorkSelf</div>
+                            </div>
+                            <button type="button" onClick={() => setDevConsolePanel(false)} style={{ width: 36, height: 36, borderRadius: 12, border: 'none', background: Colors.get('simplePanel', theme), color: Colors.get('mainText', theme), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <FaTimes />
+                            </button>
+                        </div>
+
+                        <div style={{ padding: 16, display: 'grid', gap: 12, overflowY: 'auto', maxHeight: 'calc(86vh - 72px)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+                                {ADMIN_QUICK_ACTIONS.map((action) => (
+                                    <button key={action.type} type="button" disabled={adminLoading} onClick={() => runAdminCommand(action.type)} style={{ minHeight: 46, borderRadius: 16, border: '1px solid rgba(183,243,255,0.15)', background: 'rgba(85,221,235,0.08)', color: Colors.get('mainText', theme), fontFamily: 'inherit', fontWeight: 850, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                        {action.icon}
+                                        <span>{action.label}</span>
+                                    </button>
+                                ))}
+                            </div>
+
+                            <pre style={{ margin: 0, minHeight: 150, maxHeight: 240, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', borderRadius: 16, border: `1px solid ${Colors.get('border', theme)}66`, background: theme === 'dark' ? 'rgba(0,0,0,0.28)' : '#F6F8FA', color: Colors.get('mainText', theme), padding: 12, fontSize: 12, lineHeight: 1.45, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+                                {devMessage || (lang === 0 ? 'Выбери команду.' : 'Choose a command.')}
+                            </pre>
+
+                            <div style={{ display: 'grid', gap: 8 }}>
+                                <input style={{ borderRadius: 14, height: 42, border: `1px solid ${Colors.get('border', theme)}66`, background: Colors.get('inputField', theme), color: Colors.get('mainText', theme), padding: '0 12px', fontFamily: 'inherit', fontWeight: 700 }} placeholder="command: userscount / sendtoid" value={devInputMessage} onChange={(e) => setDevInputMessage(e.target.value)} />
+                                <textarea style={{ borderRadius: 14, minHeight: 82, border: `1px solid ${Colors.get('border', theme)}66`, background: Colors.get('inputField', theme), color: Colors.get('mainText', theme), padding: 12, fontFamily: 'inherit', resize: 'vertical' }} placeholder="message / payload" value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)} />
+                                <button type="button" disabled={adminLoading || !devInputMessage.trim()} onClick={() => runAdminCommand(devInputMessage.trim(), devMessageToAll)} style={{ height: 44, borderRadius: 16, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                    <FaPaperPlane />
+                                    <span>{adminLoading ? (lang === 0 ? 'Выполняю...' : 'Running...') : (lang === 0 ? 'Выполнить' : 'Run')}</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <textarea style={{ borderRadius: '12px', width: '85vw', height: '10vh', fontSize: '12px', background: '#111', color: 'white', marginTop: '10px' }} value={devMessageToAll} onChange={(e) => setDevMessageToAll(e.target.value)} />
-                    <div style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-around', marginTop: '10px' }}>
-                        <input style={{ borderRadius: '12px', width: '50vw', height: '3vh', background: '#222', color: 'white' }} type="text" onChange={(e) => setDevInputMessage(e.target.value)} />
-                        <button onClick={() => { if (devInputMessage === 'TrainingMain') { setPage('TrainingMain'); } else { NotificationsManager.sendMessage(devInputMessage, devMessageToAll) } }}>Submit</button>
-                    </div>
-                    <button onClick={() => setDevConsolePanel(false)} style={{ marginTop: '10px' }}>Close</button>
                 </div>
             )}
             <ReferralModal 
@@ -460,26 +539,29 @@ const openGuide = () => {
                 </>
               )}
             </AnimatePresence>
-            {passwordInput && (
-                <input
-                    style={{
-                        position: 'fixed',
-                        top: '12vh',
-                        left: '7.5vw',
-                        width: '85vw',
-                        height: '34px',
-                        fontSize: '13px',
-                        borderRadius: '12px',
-                        zIndex: 10001,
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        background: 'rgba(0,0,0,0.8)',
-                        color: '#fff',
-                        padding: '0 12px',
-                        boxSizing: 'border-box'
-                    }}
-                    type="password"
-                    onChange={(e) => checkPassword(e.target.value)}
-                />
+            {isAdminAccount && passwordInput && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 10001, background: 'rgba(7,11,15,0.78)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}>
+                    <div style={{ width: '100%', maxWidth: 360, borderRadius: 22, border: '1px solid rgba(183,243,255,0.20)', background: theme === 'dark' ? 'rgba(18,26,33,0.98)' : 'rgba(255,255,255,0.98)', padding: 18, boxSizing: 'border-box', boxShadow: '0 28px 70px rgba(0,0,0,0.42)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                            <div style={{ width: 38, height: 38, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(85,221,235,0.13)', color: '#55DDEB' }}><FaLock /></div>
+                            <div>
+                                <div style={{ color: Colors.get('mainText', theme), fontSize: 16, fontWeight: 900 }}>Admin</div>
+                                <div style={{ color: Colors.get('subText', theme), fontSize: 11, fontWeight: 700 }}>{lang === 0 ? 'Введите пароль' : 'Enter password'}</div>
+                            </div>
+                        </div>
+                        <input style={{ width: '100%', height: 44, borderRadius: 14, border: `1px solid ${Colors.get('border', theme)}66`, background: Colors.get('inputField', theme), color: Colors.get('mainText', theme), padding: '0 12px', boxSizing: 'border-box', fontFamily: 'inherit', fontWeight: 800 }} type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') checkPassword(); }} autoFocus />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
+                            <button type="button" onClick={() => setPasswordInput(false)} style={{ height: 42, borderRadius: 14, border: `1px solid ${Colors.get('border', theme)}66`, background: 'transparent', color: Colors.get('subText', theme), fontFamily: 'inherit', fontWeight: 850 }}>{lang === 0 ? 'Отмена' : 'Cancel'}</button>
+                            <button type="button" disabled={adminLoading} onClick={checkPassword} style={{ height: 42, borderRadius: 14, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950 }}>{adminLoading ? '...' : (lang === 0 ? 'Войти' : 'Login')}</button>
+                        </div>
+                        {devMessage && <div style={{ marginTop: 10, color: Colors.get('subText', theme), fontSize: 12, fontWeight: 700 }}>{devMessage}</div>}
+                    </div>
+                </div>
+            )}
+            {isAdminAccount && !devConsolePanel && !passwordInput && (
+                <button type="button" onClick={openAdmin} style={{ position: 'fixed', right: 16, top: 'calc(env(safe-area-inset-top, 0px) + 14px)', zIndex: 1200, width: 42, height: 42, borderRadius: 15, border: '1px solid rgba(183,243,255,0.20)', background: theme === 'dark' ? 'rgba(18,26,33,0.88)' : 'rgba(255,255,255,0.88)', color: '#55DDEB', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 14px 34px rgba(0,0,0,0.26)' }}>
+                    <FaUserShield />
+                </button>
             )}
             <MainMenuRedesign
                 theme={theme}
