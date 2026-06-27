@@ -14,6 +14,15 @@ export default defineConfig({
       assets: path.resolve(__dirname, './src/assets')
     }
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://ultymylife.ru',
+        changeOrigin: true,
+        secure: true
+      }
+    }
+  },
   build: {
     outDir: 'build',
     chunkSizeWarningLimit: 2000,

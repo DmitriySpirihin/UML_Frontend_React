@@ -13,7 +13,7 @@ import {
 import { deleteTelegramCloudBackup, loadTelegramCloudBackup, saveTelegramCloudBackup } from './TelegramCloudBackup';
 import { mergeAppSnapshots } from './DataMerge';
 
-const BASE_URL = 'https://ultymylife.ru/api/notifications';
+const BASE_URL = import.meta.env.DEV ? '/api/notifications' : 'https://ultymylife.ru/api/notifications';
 const API_TIMEOUT_MS = 7000;
 const PREMIUM_TIMEOUT_MS = 4500;
 const AUTO_BACKUP_DELAY_MS = 1500;
