@@ -1,0 +1,13 @@
+import{R as i,r as w,t as j,l as S,j as s,C as o,h as k,k as v,n as A,A as r,U,o as C,p as D,q as M,u as f}from"./index-D1r-3hKh.js";import{s as L}from"./TrainingData-C0VLI0-1.js";function _(){const[e,x]=i.useState("dark"),[c,b]=i.useState(0),[l,g]=i.useState("Guest"),[d,m]=i.useState("images/Ui/Guest.jpg"),[p,h]=i.useState(!0);return w.useEffect(()=>{async function u(){try{await k();const a=typeof window<"u"?!window.Telegram?.WebApp:!0;await v({mock:a});const{user:t,languageCode:y,colorScheme:T}=A();t?(r.isFirstStart&&(r.prefs[0]=y==="ru"?0:1,r.prefs[1]=T==="dark"?0:2),U.Init(t.id,t.username,t.photo_url),setTimeout(()=>g(t.username),1e3),setTimeout(()=>m(Array.isArray(t.photo_url)?t.photo_url[0]:t.photo_url),1e3)):(setTimeout(()=>g("guest"),1e3),setTimeout(()=>m("images/Ui/Guest.jpg"),1e3)),await C(),console.log(JSON.stringify(r.notify)),console.log(Telegram.WebApp.version),D(),M(),L(),setTimeout(()=>h(!1),1e3),setTimeout(()=>f("MainMenu"),2600)}catch(a){console.error("Initialization error:",a),setTimeout(()=>h(!1),1e3),setTimeout(()=>f("MainMenu"),2e3)}}u()},[]),i.useEffect(()=>{const u=j.subscribe(x),a=S.subscribe(t=>b(t==="ru"?0:1));return()=>{u.unsubscribe(),a.unsubscribe()}},[]),s.jsx(s.Fragment,{children:s.jsxs("div",{style:n(e).container,children:[s.jsx("img",{src:e==="dark"?"images/Ui/Main_Dark.png":"images/Ui/Main_Light.png",style:n(e).logo}),p&&s.jsx("div",{className:"spinner",children:s.jsx("style",{children:`.spinner {
+                        margin-top: 20%;
+                        border: 4px solid ${o.get("subText",e)};
+                        border-top: 4px solid ${o.get("habitCardSkipped",e)};
+                        border-radius: 50%;
+                        width: 10vw;
+                        height: 10vw;
+                        animation: spinner 1.6s linear infinite;
+                    }
+                    @keyframes spinner {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }`})}),!p&&d&&s.jsx("img",{src:d,style:n(e).userPhoto}),s.jsx("h2",{style:n(e).mainText,children:l!==""?c===0?`Добро пожаловать в UltyMyLife ${l}`:`Welcome to UltyMyLife ${l}`:c===0?"Загружаю данные...":"Loading data..."})]})})}const n=e=>({container:{backgroundColor:o.get("background",e),display:"flex",flexDirection:"column",justifyContent:"start",alignItems:"center",height:"100vh",width:"100vw"},logo:{width:"256px",objectFit:"contain",marginTop:"40%"},mainText:{marginTop:"10%",fontSize:"14px",color:o.get("subText",e)},userPhoto:{border:"4px solid "+o.get("border",e),boxShadow:"0px 0px 10px "+o.get("shadow",e),width:"10vw",height:"10vw",borderRadius:"50%",objectFit:"cover",marginTop:"20%"}});export{_ as default};
