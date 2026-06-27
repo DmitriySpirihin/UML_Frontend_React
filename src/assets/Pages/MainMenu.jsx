@@ -33,6 +33,7 @@ const menuIcon = (id) => {
 };
 
 const ADMIN_TELEGRAM_USERNAME = 'demianworkself';
+const ADMIN_TELEGRAM_IDS = new Set(['768852208', '8484480648']);
 const isLocalAdminPreview = () => {
     if (typeof window === 'undefined') return false;
     const host = window.location.hostname;
@@ -40,8 +41,10 @@ const isLocalAdminPreview = () => {
 };
 const isAdminTelegramAccount = () => {
     if (typeof window === 'undefined') return false;
-    const username = window.Telegram?.WebApp?.initDataUnsafe?.user?.username || '';
-    return username.toLowerCase() === ADMIN_TELEGRAM_USERNAME || isLocalAdminPreview();
+    const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    const username = user?.username || '';
+    const userId = user?.id != null ? String(user.id) : '';
+    return ADMIN_TELEGRAM_IDS.has(userId) || username.toLowerCase() === ADMIN_TELEGRAM_USERNAME || isLocalAdminPreview();
 };
 const formatAdminMessage = (message) => (
     typeof message === 'string' ? message : JSON.stringify(message ?? '', null, 2)
