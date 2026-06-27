@@ -8,6 +8,7 @@ import WebApp from '@twa-dev/sdk';
 import './Analitics';
 import { TonConnectUIProvider } from '@tonconnect/ui-react';
 import { applyPerformanceClasses } from './assets/StaticClasses/PerformanceMode';
+import { AnalyticsManager } from './assets/StaticClasses/AnalyticsManager';
 
 WebApp?.ready?.();
 
@@ -17,6 +18,7 @@ const cacheRescueVersion = 'disable-bg-restore-20260627-1200';
 
 if (typeof window !== 'undefined') {
   applyPerformanceClasses();
+  AnalyticsManager.init();
 
   const reloadFreshApp = (reason) => {
     if (window.__umlReloadingFreshApp) return;

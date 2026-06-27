@@ -2,6 +2,7 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import Colors, { THEME } from './Colors';
 import { AppData } from './AppData';
 import { HABITS_ACCENT, setHabitsAccentColor } from '../Pages/HabitsPages/HabitVisuals.jsx';
+import { AnalyticsManager } from './AnalyticsManager';
 export const expandedCard$ = new BehaviorSubject(null);
 export const setExpandedCard = (idOrNull) => expandedCard$.next(idOrNull);
 
@@ -76,6 +77,7 @@ export function setShowPopUpPanel(text,duration,isPositive ) {
 }
 const OVERLAY_PAGES = new Set(['UserPanel', 'AddHabitPanel', 'premium', 'ToDoNew', 'SleepNew', 'settings', 'ToDoPage', 'AddExercisePanel']);
 export const setPage = (page) => {
+  AnalyticsManager.trackPageChange(page);
   if (!OVERLAY_PAGES.has(setPage$.value)) {
     lastPage$.next(setPage$.value);
   }

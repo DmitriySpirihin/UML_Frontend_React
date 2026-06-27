@@ -5,7 +5,7 @@ import { theme$, lang$, devMessage$, isPasswordCorrect$, premium$, isValidation$
 import { AppData, UserData, formatLocalDateKey, getSectionStreak, getSectionStreakInfo } from '../StaticClasses/AppData'
 import { saveData } from '../StaticClasses/SaveHelper';
 import { NotificationsManager, sendPassword } from '../StaticClasses/NotificationsManager'
-import { FaRobot, FaStar, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift, FaTelegramPlane, FaSlidersH, FaCheck, FaUserShield, FaLock, FaTimes, FaUsers, FaPaperPlane } from "react-icons/fa";
+import { FaRobot, FaStar, FaChevronRight, FaCrown, FaThumbtack, FaTrashRestore, FaGift, FaTelegramPlane, FaSlidersH, FaCheck, FaUserShield, FaLock, FaTimes, FaUsers, FaPaperPlane, FaChartBar } from "react-icons/fa";
 import { getCurrentCycleAnalysis } from './TrainingPages/Analitics/TrainingAnaliticsMain'
 import { sendReferalLink } from '../StaticClasses/PaymentService'
 import MainMenuRedesign, { MENU_ICON_MAP } from './MainMenuRedesign'
@@ -52,6 +52,7 @@ const formatAdminMessage = (message) => (
 
 const ADMIN_QUICK_ACTIONS = [
     { id: 'users', type: 'userslist', label: 'Юзеры', icon: <FaUsers /> },
+    { id: 'analytics', type: 'analyticsreport', label: 'Аналитика', icon: <FaChartBar /> },
     { id: 'premium', type: 'userspremiumcount', label: 'Premium', icon: <FaCrown /> },
     { id: 'list', type: 'userslist', label: 'Список', icon: <FaUserShield /> },
     { id: 'notifications', type: 'userschecknotify', label: 'Уведомления', icon: <FaCheck /> }
@@ -60,10 +61,18 @@ const ADMIN_QUICK_ACTIONS = [
 const parseAdminUsers = (message = '') => (
     String(message)
         .split(';')
-        .map((part) => part.match(/^\s*\d+:\s*Name:\s*(.*),\s*ID:\s*(\d+)\s*$/))
+        .map((part) => part.match(/^\s*\d+:\s*Name:\s*(.*?),\s*(?:Username:\s*(.*?),\s*)?ID:\s*(\d+)\s*$/))
         .filter(Boolean)
-        .map((match) => ({ name: match[1].trim(), id: match[2] }))
+        .map((match) => ({ name: match[1].trim(), username: (match[2] || '').trim(), id: match[3] }))
 );
+
+const formatAdminDuration = (value) => {
+    const seconds = Math.round(Number(value || 0) / 1000);
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.round(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    return `${Math.round(minutes / 60)}h`;
+};
 
 const MainMenu = () => {
     const [theme, setThemeState] = useState(AppData.prefs[1] === 0 ? 'dark' : 'light');
@@ -74,6 +83,7 @@ const MainMenu = () => {
     const [devMessage, setDevMessage] = useState('');
     const [adminOutput, setAdminOutput] = useState('');
     const [adminUsers, setAdminUsers] = useState([]);
+    const [adminAnalytics, setAdminAnalytics] = useState(null);
     const [adminTargetId, setAdminTargetId] = useState('');
     const [adminPremiumDays, setAdminPremiumDays] = useState('30');
     const [adminBroadcastMessage, setAdminBroadcastMessage] = useState('');
@@ -268,9 +278,19 @@ const openGuide = () => {
         setAdminOutput(lang === 0 ? 'Загрузка...' : 'Loading...');
         try {
             const requestType = type === 'userscount' || type === 'userslist' ? 'usersgetallinfo' : type;
-            const result = await NotificationsManager.sendMessage(requestType, message, metadata, userId ?? UserData.id);
+            const requestUserId = isLocalAdminPreview() ? '768852208' : userId ?? UserData.id;
+            const result = await NotificationsManager.sendMessage(requestType, message, metadata, requestUserId);
+            if (requestType === 'analyticsreport') {
+                setAdminUsers([]);
+                setAdminAnalytics(result?.message || null);
+                setAdminOutput(lang === 0 ? 'Аналитика загружена.' : 'Analytics loaded.');
+                return result;
+            }
             const loadedUsers = requestType === 'usersgetallinfo' ? parseAdminUsers(result?.message) : [];
-            if (loadedUsers.length) setAdminUsers(loadedUsers);
+            if (loadedUsers.length) {
+                setAdminAnalytics(null);
+                setAdminUsers(loadedUsers);
+            }
             const output = type === 'userscount' || type === 'userslist'
                 ? `Our DB has ${loadedUsers.length || String(result?.message || '').match(/Total:\s*(\d+)/)?.[1] || '?'} users now`
                 : result?.message;
@@ -311,14 +331,21 @@ const openGuide = () => {
 
     const openAdminTelegramProfile = async (user) => {
         const id = String(user?.id || '').trim();
-        if (!id) return;
+        const username = String(user?.username || '').replace(/^@/, '').trim();
+        if (!id && !username) return;
         try {
             await navigator.clipboard?.writeText(id);
-            setAdminOutput(lang === 0 ? `Пробую открыть Telegram. ID скопирован: ${id}` : `Opening Telegram. ID copied: ${id}`);
         } catch {
-            setAdminOutput(lang === 0 ? `Пробую открыть Telegram. ID: ${id}` : `Opening Telegram. ID: ${id}`);
+            // Clipboard is best-effort only.
         }
-        window.location.href = `tg://user?id=${encodeURIComponent(id)}`;
+        if (username) {
+            const url = `https://t.me/${encodeURIComponent(username)}`;
+            setAdminOutput(lang === 0 ? `Открываю @${username}. ID скопирован: ${id}` : `Opening @${username}. ID copied: ${id}`);
+            if (window.Telegram?.WebApp?.openTelegramLink) window.Telegram.WebApp.openTelegramLink(url);
+            else window.open(url, '_blank', 'noopener,noreferrer');
+            return;
+        }
+        setAdminOutput(lang === 0 ? `У пользователя нет username в базе. ID скопирован: ${id}` : `No username in DB. ID copied: ${id}`);
     };
 
     const sendAdminBroadcast = async () => {
@@ -441,17 +468,53 @@ const openGuide = () => {
                                 {adminOutput || (lang === 0 ? 'Выбери действие.' : 'Choose an action.')}
                             </pre>
 
+                            {adminAnalytics && (
+                                <div style={{ display: 'grid', gap: 10 }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
+                                        {[
+                                            ['Users', adminAnalytics.summary?.users || 0],
+                                            ['Sessions', adminAnalytics.summary?.sessions || 0],
+                                            ['Events', adminAnalytics.summary?.events || 0],
+                                            ['Avg', `${adminAnalytics.summary?.avg_seconds || 0}s`]
+                                        ].map(([label, value]) => (
+                                            <div key={label} style={{ borderRadius: 14, border: '1px solid rgba(183,243,255,0.14)', background: 'rgba(85,221,235,0.06)', padding: 10 }}>
+                                                <div style={{ color: Colors.get('subText', theme), fontSize: 11, fontWeight: 800 }}>{label}</div>
+                                                <div style={{ color: Colors.get('mainText', theme), fontSize: 20, fontWeight: 950 }}>{value}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {[
+                                        ['Топ экранов', adminAnalytics.pages || [], (row) => `${row.page}: ${formatAdminDuration(row.duration_ms)} / ${row.opens} opens`],
+                                        ['Топ кликов', adminAnalytics.clicks || [], (row) => `${row.target} (${row.page || '-'}) · ${row.clicks}`],
+                                        ['Где выходят', adminAnalytics.exits || [], (row) => `${row.page || '-'} · ${row.exits}`]
+                                    ].map(([title, rows, render]) => (
+                                        <div key={title} style={{ borderRadius: 16, border: '1px solid rgba(183,243,255,0.12)', background: 'rgba(0,0,0,0.14)', padding: 10 }}>
+                                            <div style={{ color: Colors.get('subText', theme), fontSize: 12, fontWeight: 900, marginBottom: 8 }}>{title}</div>
+                                            <div style={{ display: 'grid', gap: 6 }}>
+                                                {rows.length ? rows.map((row, index) => (
+                                                    <div key={`${title}-${index}`} style={{ color: Colors.get('mainText', theme), fontSize: 12, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{render(row)}</div>
+                                                )) : <div style={{ color: Colors.get('subText', theme), fontSize: 12 }}>Пока нет данных.</div>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
                             {adminUsers.length > 0 && (
                                 <div style={{ display: 'grid', gap: 8, maxHeight: 230, overflow: 'auto', paddingRight: 2 }}>
                                     {adminUsers.map((user) => (
-                                        <div key={user.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto auto', gap: 8, alignItems: 'center', borderRadius: 14, border: '1px solid rgba(183,243,255,0.14)', background: 'rgba(85,221,235,0.06)', padding: 10 }}>
-                                            <div style={{ minWidth: 0 }}>
+                                        <div key={user.id} style={{ display: 'grid', gap: 8, borderRadius: 14, border: '1px solid rgba(183,243,255,0.14)', background: 'rgba(85,221,235,0.06)', padding: 10 }}>
+                                            <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                                <div style={{ minWidth: 0 }}>
                                                 <div style={{ color: Colors.get('mainText', theme), fontSize: 13, fontWeight: 850, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name || 'user'}</div>
-                                                <div style={{ color: Colors.get('subText', theme), fontSize: 11, fontWeight: 750 }}>{user.id}</div>
+                                                    <div style={{ color: Colors.get('subText', theme), fontSize: 11, fontWeight: 750, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.username ? `@${user.username} · ${user.id}` : user.id}</div>
+                                                </div>
                                             </div>
-                                            <button type="button" onClick={() => openAdminTelegramProfile(user)} style={{ minWidth: 44, height: 34, borderRadius: 12, border: '1px solid rgba(85,221,235,0.24)', color: '#55DDEB', background: 'rgba(85,221,235,0.10)', fontFamily: 'inherit', fontWeight: 900 }}>TG</button>
-                                            <button type="button" disabled={adminLoading || !adminPremiumDays.trim()} onClick={() => grantAdminPremium(user.id)} style={{ minWidth: 58, height: 34, borderRadius: 12, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950 }}>+{adminPremiumDays}д</button>
-                                            <button type="button" disabled={adminLoading} onClick={() => revokeAdminPremium(user.id)} style={{ minWidth: 66, height: 34, borderRadius: 12, border: '1px solid rgba(255,120,120,0.35)', background: 'rgba(255,120,120,0.12)', color: '#ff9b9b', fontFamily: 'inherit', fontWeight: 900 }}>Забрать</button>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
+                                                <button type="button" onClick={() => openAdminTelegramProfile(user)} style={{ height: 38, borderRadius: 12, border: '1px solid rgba(85,221,235,0.24)', color: '#55DDEB', background: 'rgba(85,221,235,0.10)', fontFamily: 'inherit', fontWeight: 900 }}>{user.username ? 'TG' : 'ID'}</button>
+                                                <button type="button" disabled={adminLoading || !adminPremiumDays.trim()} onClick={() => grantAdminPremium(user.id)} style={{ height: 38, borderRadius: 12, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950 }}>+{adminPremiumDays}д</button>
+                                                <button type="button" disabled={adminLoading} onClick={() => revokeAdminPremium(user.id)} style={{ height: 38, borderRadius: 12, border: '1px solid rgba(255,120,120,0.35)', background: 'rgba(255,120,120,0.12)', color: '#ff9b9b', fontFamily: 'inherit', fontWeight: 900 }}>Забрать</button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
