@@ -299,6 +299,28 @@ const openGuide = () => {
         await runAdminCommand('usersetpremium', '', cleanId, { days });
     };
 
+    const revokeAdminPremium = async (targetId = adminTargetId) => {
+        const cleanId = String(targetId || '').trim();
+        if (!cleanId) {
+            setAdminOutput(lang === 0 ? 'Укажи Telegram ID.' : 'Enter Telegram ID.');
+            return;
+        }
+        if (!window.confirm(lang === 0 ? `Забрать premium у ${cleanId}?` : `Remove premium from ${cleanId}?`)) return;
+        await runAdminCommand('userremovepremium', '', cleanId);
+    };
+
+    const openAdminTelegramProfile = async (user) => {
+        const id = String(user?.id || '').trim();
+        if (!id) return;
+        try {
+            await navigator.clipboard?.writeText(id);
+            setAdminOutput(lang === 0 ? `Пробую открыть Telegram. ID скопирован: ${id}` : `Opening Telegram. ID copied: ${id}`);
+        } catch {
+            setAdminOutput(lang === 0 ? `Пробую открыть Telegram. ID: ${id}` : `Opening Telegram. ID: ${id}`);
+        }
+        window.location.href = `tg://user?id=${encodeURIComponent(id)}`;
+    };
+
     const sendAdminBroadcast = async () => {
         const text = adminBroadcastMessage.trim();
         if (!text) {
@@ -422,13 +444,14 @@ const openGuide = () => {
                             {adminUsers.length > 0 && (
                                 <div style={{ display: 'grid', gap: 8, maxHeight: 230, overflow: 'auto', paddingRight: 2 }}>
                                     {adminUsers.map((user) => (
-                                        <div key={user.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', gap: 8, alignItems: 'center', borderRadius: 14, border: '1px solid rgba(183,243,255,0.14)', background: 'rgba(85,221,235,0.06)', padding: 10 }}>
+                                        <div key={user.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto auto', gap: 8, alignItems: 'center', borderRadius: 14, border: '1px solid rgba(183,243,255,0.14)', background: 'rgba(85,221,235,0.06)', padding: 10 }}>
                                             <div style={{ minWidth: 0 }}>
                                                 <div style={{ color: Colors.get('mainText', theme), fontSize: 13, fontWeight: 850, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name || 'user'}</div>
                                                 <div style={{ color: Colors.get('subText', theme), fontSize: 11, fontWeight: 750 }}>{user.id}</div>
                                             </div>
-                                            <a href={`tg://user?id=${user.id}`} style={{ minWidth: 44, height: 34, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: '#55DDEB', background: 'rgba(85,221,235,0.10)', border: '1px solid rgba(85,221,235,0.24)', fontWeight: 900 }}>TG</a>
+                                            <button type="button" onClick={() => openAdminTelegramProfile(user)} style={{ minWidth: 44, height: 34, borderRadius: 12, border: '1px solid rgba(85,221,235,0.24)', color: '#55DDEB', background: 'rgba(85,221,235,0.10)', fontFamily: 'inherit', fontWeight: 900 }}>TG</button>
                                             <button type="button" disabled={adminLoading || !adminPremiumDays.trim()} onClick={() => grantAdminPremium(user.id)} style={{ minWidth: 58, height: 34, borderRadius: 12, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950 }}>+{adminPremiumDays}д</button>
+                                            <button type="button" disabled={adminLoading} onClick={() => revokeAdminPremium(user.id)} style={{ minWidth: 66, height: 34, borderRadius: 12, border: '1px solid rgba(255,120,120,0.35)', background: 'rgba(255,120,120,0.12)', color: '#ff9b9b', fontFamily: 'inherit', fontWeight: 900 }}>Забрать</button>
                                         </div>
                                     ))}
                                 </div>
@@ -439,7 +462,8 @@ const openGuide = () => {
                                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 88px', gap: 8 }}>
                                     <input style={{ minWidth: 0, borderRadius: 14, height: 42, border: `1px solid ${Colors.get('border', theme)}66`, background: Colors.get('inputField', theme), color: Colors.get('mainText', theme), padding: '0 12px', fontFamily: 'inherit', fontWeight: 700 }} placeholder="Telegram ID" inputMode="numeric" value={adminTargetId} onChange={(e) => setAdminTargetId(e.target.value)} />
                                     <input style={{ minWidth: 0, borderRadius: 14, height: 42, border: `1px solid ${Colors.get('border', theme)}66`, background: Colors.get('inputField', theme), color: Colors.get('mainText', theme), padding: '0 12px', fontFamily: 'inherit', fontWeight: 700 }} placeholder="дней" inputMode="numeric" value={adminPremiumDays} onChange={(e) => setAdminPremiumDays(e.target.value.replace(/[^\d]/g, '').slice(0, 4))} />
-                                    <button type="button" disabled={adminLoading || !adminTargetId.trim() || !adminPremiumDays.trim()} onClick={() => grantAdminPremium()} style={{ gridColumn: '1 / -1', height: 42, borderRadius: 14, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950 }}>Выдать</button>
+                                    <button type="button" disabled={adminLoading || !adminTargetId.trim() || !adminPremiumDays.trim()} onClick={() => grantAdminPremium()} style={{ height: 42, borderRadius: 14, border: 'none', background: '#55DDEB', color: '#071016', fontFamily: 'inherit', fontWeight: 950 }}>Выдать</button>
+                                    <button type="button" disabled={adminLoading || !adminTargetId.trim()} onClick={() => revokeAdminPremium()} style={{ height: 42, borderRadius: 14, border: '1px solid rgba(255,120,120,0.35)', background: 'rgba(255,120,120,0.12)', color: '#ff9b9b', fontFamily: 'inherit', fontWeight: 950 }}>Забрать</button>
                                 </div>
                             </div>
 
