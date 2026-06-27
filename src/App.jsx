@@ -399,12 +399,16 @@ function App() {
         <MainBtns/>
       </Suspense>}
       
-      {page === 'LoadPanel' && <LoadPanel/>}
+      {page === 'LoadPanel' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <LoadPanel/>
+      </Suspense>}
       {page !== 'LoadPanel' && <>
       {page === 'ProfileOnboarding' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <ProfileOnboarding/>
       </Suspense>}
-      {page === 'MainMenu' && <MainMenu/>}
+      {page === 'MainMenu' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
+        <MainMenu/>
+      </Suspense>}
       {page === 'HabitsMain' && <Suspense fallback={<SuspenseSpinner theme={theme}/>}>
         <HabitsMain />
       </Suspense>}
