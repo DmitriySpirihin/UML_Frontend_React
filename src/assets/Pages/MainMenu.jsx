@@ -57,6 +57,7 @@ const ADMIN_QUICK_ACTIONS = [
     { id: 'list', type: 'userslist', label: 'Список', icon: <FaUserShield /> },
     { id: 'notifications', type: 'userschecknotify', label: 'Уведомления', icon: <FaCheck /> }
 ];
+const ADMIN_ANALYTICS_PERIODS = [1, 7, 30, 90];
 
 const parseAdminUsers = (message = '') => (
     String(message)
@@ -84,6 +85,7 @@ const MainMenu = () => {
     const [adminOutput, setAdminOutput] = useState('');
     const [adminUsers, setAdminUsers] = useState([]);
     const [adminAnalytics, setAdminAnalytics] = useState(null);
+    const [adminAnalyticsDays, setAdminAnalyticsDays] = useState(7);
     const [adminTargetId, setAdminTargetId] = useState('');
     const [adminPremiumDays, setAdminPremiumDays] = useState('30');
     const [adminBroadcastMessage, setAdminBroadcastMessage] = useState('');
@@ -283,7 +285,7 @@ const openGuide = () => {
             if (requestType === 'analyticsreport') {
                 setAdminUsers([]);
                 setAdminAnalytics(result?.message || null);
-                setAdminOutput(lang === 0 ? 'Аналитика загружена.' : 'Analytics loaded.');
+                setAdminOutput(lang === 0 ? `Аналитика за ${result?.message?.rangeDays || metadata?.days || 7} дн. загружена.` : `Analytics for ${result?.message?.rangeDays || metadata?.days || 7} days loaded.`);
                 return result;
             }
             const loadedUsers = requestType === 'usersgetallinfo' ? parseAdminUsers(result?.message) : [];
@@ -302,6 +304,12 @@ const openGuide = () => {
         } finally {
             setAdminLoading(false);
         }
+    };
+
+    const loadAdminAnalytics = async (days = adminAnalyticsDays) => {
+        const cleanDays = Math.max(1, Math.min(90, Number(days) || 7));
+        setAdminAnalyticsDays(cleanDays);
+        return runAdminCommand('analyticsreport', '', undefined, { days: cleanDays });
     };
 
     const grantAdminPremium = async (targetId = adminTargetId) => {
@@ -403,6 +411,29 @@ const openGuide = () => {
         });
     }
 
+    const renderAdminBars = (rows, valueKey, getLabel, getMeta, getValueText = (row) => Number(row[valueKey] || 0)) => {
+        const max = Math.max(1, ...rows.map(row => Number(row[valueKey] || 0)));
+        return (
+            <div style={{ display: 'grid', gap: 8 }}>
+                {rows.length ? rows.map((row, index) => {
+                    const value = Number(row[valueKey] || 0);
+                    return (
+                        <div key={`${valueKey}-${index}`} style={{ display: 'grid', gap: 5 }}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                                <div style={{ color: Colors.get('mainText', theme), fontSize: 12, fontWeight: 850, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getLabel(row)}</div>
+                                <div style={{ color: '#55DDEB', fontSize: 12, fontWeight: 950, flexShrink: 0 }}>{getValueText(row)}</div>
+                            </div>
+                            <div style={{ color: Colors.get('subText', theme), fontSize: 10, fontWeight: 750, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getMeta(row)}</div>
+                            <div style={{ height: 6, borderRadius: 999, background: 'rgba(183,243,255,0.08)', overflow: 'hidden' }}>
+                                <div style={{ width: `${Math.max(6, Math.round((value / max) * 100))}%`, height: '100%', borderRadius: 999, background: 'linear-gradient(90deg, #55DDEB, #B7F3FF)' }} />
+                            </div>
+                        </div>
+                    );
+                }) : <div style={{ color: Colors.get('subText', theme), fontSize: 12 }}>Пока нет данных.</div>}
+            </div>
+        );
+    };
+
     const getVisibleItems = () => {
         let items = [...initialMenuItems];
         items = items.filter(item => !itemsState[item.id]?.hidden);
@@ -467,7 +498,7 @@ const openGuide = () => {
                         <div style={{ padding: 16, display: 'grid', gap: 12, overflowY: 'auto', maxHeight: 'calc(86vh - 72px)' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
                                 {ADMIN_QUICK_ACTIONS.map((action) => (
-                                    <button key={action.id} type="button" disabled={adminLoading} onClick={() => runAdminCommand(action.type)} style={{ minHeight: 46, borderRadius: 16, border: '1px solid rgba(183,243,255,0.15)', background: 'rgba(85,221,235,0.08)', color: Colors.get('mainText', theme), fontFamily: 'inherit', fontWeight: 850, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                                    <button key={action.id} type="button" disabled={adminLoading} onClick={() => action.type === 'analyticsreport' ? loadAdminAnalytics() : runAdminCommand(action.type)} style={{ minHeight: 46, borderRadius: 16, border: '1px solid rgba(183,243,255,0.15)', background: 'rgba(85,221,235,0.08)', color: Colors.get('mainText', theme), fontFamily: 'inherit', fontWeight: 850, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                                         {action.icon}
                                         <span>{action.label}</span>
                                     </button>
@@ -480,33 +511,54 @@ const openGuide = () => {
 
                             {adminAnalytics && (
                                 <div style={{ display: 'grid', gap: 10 }}>
+                                    <div style={{ display: 'grid', gap: 8, borderRadius: 16, border: '1px solid rgba(183,243,255,0.12)', background: 'rgba(0,0,0,0.14)', padding: 10 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                            <div>
+                                                <div style={{ color: Colors.get('mainText', theme), fontSize: 13, fontWeight: 900 }}>Период аналитики</div>
+                                                <div style={{ color: Colors.get('subText', theme), fontSize: 10, fontWeight: 750 }}>Считаются только события за выбранные дни.</div>
+                                            </div>
+                                            <div style={{ color: '#55DDEB', fontSize: 12, fontWeight: 950, flexShrink: 0 }}>{adminAnalytics.rangeDays || adminAnalyticsDays} дн.</div>
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
+                                            {ADMIN_ANALYTICS_PERIODS.map((days) => {
+                                                const active = Number(adminAnalytics.rangeDays || adminAnalyticsDays) === days;
+                                                return (
+                                                    <button key={days} type="button" disabled={adminLoading} onClick={() => loadAdminAnalytics(days)} style={{ minHeight: 34, borderRadius: 11, border: `1px solid ${active ? 'rgba(85,221,235,0.55)' : 'rgba(183,243,255,0.14)'}`, background: active ? 'rgba(85,221,235,0.18)' : 'rgba(85,221,235,0.06)', color: active ? '#55DDEB' : Colors.get('mainText', theme), fontFamily: 'inherit', fontSize: 12, fontWeight: 900 }}>
+                                                        {days}д
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
                                         {[
-                                            ['Users', adminAnalytics.summary?.users || 0],
-                                            ['Sessions', adminAnalytics.summary?.sessions || 0],
-                                            ['Events', adminAnalytics.summary?.events || 0],
-                                            ['Avg', `${adminAnalytics.summary?.avg_seconds || 0}s`]
-                                        ].map(([label, value]) => (
+                                            ['Активные', adminAnalytics.summary?.users || 0, `из ${adminAnalytics.summary?.total_users || '?'} в базе`],
+                                            ['Сессии', adminAnalytics.summary?.sessions || 0, 'открытия приложения'],
+                                            ['События', adminAnalytics.summary?.events || 0, 'экраны, клики, выходы'],
+                                            ['Среднее', `${adminAnalytics.summary?.avg_seconds || 0}s`, 'на экране/сессии']
+                                        ].map(([label, value, hint]) => (
                                             <div key={label} style={{ borderRadius: 14, border: '1px solid rgba(183,243,255,0.14)', background: 'rgba(85,221,235,0.06)', padding: 10 }}>
                                                 <div style={{ color: Colors.get('subText', theme), fontSize: 11, fontWeight: 800 }}>{label}</div>
                                                 <div style={{ color: Colors.get('mainText', theme), fontSize: 20, fontWeight: 950 }}>{value}</div>
+                                                <div style={{ color: Colors.get('subText', theme), fontSize: 10, fontWeight: 700, marginTop: 2 }}>{hint}</div>
                                             </div>
                                         ))}
                                     </div>
-                                    {[
-                                        ['Топ экранов', adminAnalytics.pages || [], (row) => `${row.page}: ${formatAdminDuration(row.duration_ms)} / ${row.opens} opens`],
-                                        ['Топ кликов', adminAnalytics.clicks || [], (row) => `${row.target} (${row.page || '-'}) · ${row.clicks}`],
-                                        ['Где выходят', adminAnalytics.exits || [], (row) => `${row.page || '-'} · ${row.exits}`]
-                                    ].map(([title, rows, render]) => (
-                                        <div key={title} style={{ borderRadius: 16, border: '1px solid rgba(183,243,255,0.12)', background: 'rgba(0,0,0,0.14)', padding: 10 }}>
-                                            <div style={{ color: Colors.get('subText', theme), fontSize: 12, fontWeight: 900, marginBottom: 8 }}>{title}</div>
-                                            <div style={{ display: 'grid', gap: 6 }}>
-                                                {rows.length ? rows.map((row, index) => (
-                                                    <div key={`${title}-${index}`} style={{ color: Colors.get('mainText', theme), fontSize: 12, fontWeight: 800, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{render(row)}</div>
-                                                )) : <div style={{ color: Colors.get('subText', theme), fontSize: 12 }}>Пока нет данных.</div>}
-                                            </div>
-                                        </div>
-                                    ))}
+                                    <div style={{ borderRadius: 16, border: '1px solid rgba(183,243,255,0.12)', background: 'rgba(0,0,0,0.14)', padding: 10 }}>
+                                        <div style={{ color: Colors.get('mainText', theme), fontSize: 13, fontWeight: 900 }}>Топ экранов</div>
+                                        <div style={{ color: Colors.get('subText', theme), fontSize: 10, fontWeight: 750, margin: '2px 0 10px' }}>По времени. Внизу показываются открытия и активные юзеры.</div>
+                                        {renderAdminBars(adminAnalytics.pages || [], 'duration_ms', (row) => row.page || '-', (row) => `${row.opens || 0} открытий · ${row.users || 0} юз.`, (row) => formatAdminDuration(row.duration_ms))}
+                                    </div>
+                                    <div style={{ borderRadius: 16, border: '1px solid rgba(183,243,255,0.12)', background: 'rgba(0,0,0,0.14)', padding: 10 }}>
+                                        <div style={{ color: Colors.get('mainText', theme), fontSize: 13, fontWeight: 900 }}>Топ кликов</div>
+                                        <div style={{ color: Colors.get('subText', theme), fontSize: 10, fontWeight: 750, margin: '2px 0 10px' }}>Только клики по кнопкам/ссылкам, где удалось прочитать текст кнопки.</div>
+                                        {renderAdminBars(adminAnalytics.clicks || [], 'clicks', (row) => row.target || '-', (row) => row.page ? `экран: ${row.page}` : 'экран не определен')}
+                                    </div>
+                                    <div style={{ borderRadius: 16, border: '1px solid rgba(183,243,255,0.12)', background: 'rgba(0,0,0,0.14)', padding: 10 }}>
+                                        <div style={{ color: Colors.get('mainText', theme), fontSize: 13, fontWeight: 900 }}>Где выходят</div>
+                                        <div style={{ color: Colors.get('subText', theme), fontSize: 10, fontWeight: 750, margin: '2px 0 10px' }}>Последний экран перед закрытием или сворачиванием Mini App.</div>
+                                        {renderAdminBars(adminAnalytics.exits || [], 'exits', (row) => row.page || '-', (row) => `${row.users || 0} юз.`)}
+                                    </div>
                                 </div>
                             )}
 
