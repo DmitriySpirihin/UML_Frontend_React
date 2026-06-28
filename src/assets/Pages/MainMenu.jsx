@@ -345,7 +345,9 @@ const openGuide = () => {
             else window.open(url, '_blank', 'noopener,noreferrer');
             return;
         }
-        setAdminOutput(lang === 0 ? `У пользователя нет username в базе. ID скопирован: ${id}` : `No username in DB. ID copied: ${id}`);
+        const deepLink = `tg://user?id=${encodeURIComponent(id)}`;
+        setAdminOutput(lang === 0 ? `Пробую открыть Telegram. ID скопирован: ${id}` : `Trying to open Telegram. ID copied: ${id}`);
+        window.location.href = deepLink;
     };
 
     const sendAdminBroadcast = async () => {
