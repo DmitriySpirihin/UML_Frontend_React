@@ -346,7 +346,7 @@ const openGuide = () => {
             return;
         }
         const deepLink = `tg://user?id=${encodeURIComponent(id)}`;
-        setAdminOutput(lang === 0 ? `Пробую открыть Telegram. ID скопирован: ${id}` : `Trying to open Telegram. ID copied: ${id}`);
+        await runAdminCommand('userprofilelink', id);
         try {
             const link = document.createElement('a');
             link.href = deepLink;
@@ -356,7 +356,6 @@ const openGuide = () => {
         } catch {
             window.location.href = deepLink;
         }
-        await runAdminCommand('userprofilelink', id);
     };
 
     const sendAdminBroadcast = async () => {
